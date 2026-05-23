@@ -1,0 +1,349 @@
+name: CI/CD — ShareO
+
+# ─── Secrets necessários (configurar em Settings → Secrets → Actions) ───────
+#
+# Todos os ambientes:
+#   VERCEL_TOKEN              Token pessoal Vercel (Account Settings → Tokens)
+#   VERCEL_ORG_ID             vercel.json ou `vercel link` → .vercel/project.json
+#   VERCEL_PROJECT_ID         idem
+#   NEXT_PUBLIC_MAPBOX_TOKEN  Token público Mapbox (não é secret, mas centraliza)
+#   SENTRY_DSN                DSN do projeto Sentry
+#   SENTRY_AUTH_TOKEN         Token de upload de source maps (Sentry → Settings → Auth Tokens)
+#
+# Ambiente staging  (Settings → Environments → staging):
+#   DATABASE_URL_STAGING
+#   DIRECT_URL_STAGING
+#   NEXT_PUBLIC_SUPABASE_URL_STAGING
+#   NEXT_PUBLIC_SUPABASE_ANON_KEY_STAGING
+#   SUPABASE_SERVICE_ROLE_KEY_STAGING
+#   STAGING_URL               ex.: https://shareo-staging.vercel.app
+#
+# Ambiente production  (Settings → Environments → production):
+#   DATABASE_URL_PRODUCTION
+#   DIRECT_URL_PRODUCTION
+#   NEXT_PUBLIC_SUPABASE_URL_PRODUCTION
+#   NEXT_PUBLIC_SUPABASE_ANON_KEY_PRODUCTION
+#   SUPABASE_SERVICE_ROLE_KEY_PRODUCTION
+#   AUTH_SECRET_PRODUCTION
+#   ENCRYPTION_KEY_PRODUCTION
+# ────────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true  # cancela runs antigas do mesmo PR ao fazer push
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9"
+
+# ─── Job 1 + 2: Lint e Testes em paralelo ────────────────────────────────────
+
+jobs:
+  lint:
+    name: "1 · Lint & Type Check"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Gerar Prisma Client
+        run: pnpm prisma generate
+
+      - name: ESLint
+        run: pnpm lint
+
+      - name: Prettier (check)
+        run: pnpm prettier --check "**/*.{ts,tsx,json,md}"
+
+      - name: TypeScript
+        run: pnpm type-check
+
+  # ──────────────────────────────────────────────────────────────────────────
+
+  test:
+    name: "2 · Testes & Cobertura"
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4  # PostgreSQL 16 + PostGIS (espelha o Supabase)
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: shareo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/shareo_test"
+      DIRECT_URL:   "postgresql://postgres:postgres@localhost:5432/shareo_test"
+      AUTH_SECRET:  "ci-test-secret-not-used-in-production-32b"
+      ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+      NEXT_PUBLIC_SUPABASE_URL: "http://localhost:54321"
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "test-anon-key"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Gerar Prisma Client
+        run: pnpm prisma generate
+
+      - name: Aplicar migrations no banco de teste
+        run: pnpm prisma migrate deploy
+
+      - name: Testes unitários e de integração
+        run: pnpm test --ci --coverage --coverageThreshold='{"global":{"lines":70,"functions":70,"branches":70,"statements":70}}'
+
+      - name: Publicar relatório de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+
+# ─── Job 3: Build ─────────────────────────────────────────────────────────────
+
+  build:
+    name: "3 · Build"
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+
+    env:
+      # Variáveis públicas necessárias para o next build
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL_STAGING }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY_STAGING }}
+      NEXT_PUBLIC_MAPBOX_TOKEN: ${{ secrets.NEXT_PUBLIC_MAPBOX_TOKEN }}
+      NEXT_PUBLIC_APP_URL: ${{ secrets.STAGING_URL }}
+      NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('**/*.ts','**/*.tsx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-
+            ${{ runner.os }}-nextjs-
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Gerar Prisma Client
+        run: pnpm prisma generate
+
+      - name: Build
+        run: pnpm build
+
+      - name: Salvar artefato de build
+        uses: actions/upload-artifact@v4
+        with:
+          name: nextjs-build
+          path: |
+            .next/
+            !.next/cache
+          retention-days: 1
+
+# ─── Job 4: Preview Deploy (apenas em PRs) ────────────────────────────────────
+
+  preview:
+    name: "4 · Preview Deploy"
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'pull_request'
+    permissions:
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Deploy preview no Vercel
+        id: deploy
+        run: |
+          DEPLOY_URL=$(pnpm vercel deploy \
+            --token="${{ secrets.VERCEL_TOKEN }}" \
+            --yes \
+            2>&1 | grep -E "^https://" | tail -1)
+          echo "url=$DEPLOY_URL" >> "$GITHUB_OUTPUT"
+        env:
+          VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Comentar URL no PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const url = '${{ steps.deploy.outputs.url }}';
+            const sha = context.sha.substring(0, 7);
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: [
+                '### Preview Deploy',
+                '',
+                `**URL:** ${url}`,
+                `**Commit:** \`${sha}\``,
+                '',
+                '_Atualizado a cada push neste PR._'
+              ].join('\n')
+            });
+
+# ─── Job 5: Deploy Staging (push para main) ───────────────────────────────────
+
+  deploy-staging:
+    name: "5 · Deploy Staging"
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment:
+      name: staging
+      url: ${{ secrets.STAGING_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Gerar Prisma Client
+        run: pnpm prisma generate
+
+      - name: Aplicar migrations em staging
+        run: pnpm prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_STAGING }}
+          DIRECT_URL:   ${{ secrets.DIRECT_URL_STAGING }}
+
+      - name: Deploy no Vercel (staging)
+        run: |
+          pnpm vercel deploy \
+            --token="${{ secrets.VERCEL_TOKEN }}" \
+            --yes
+        env:
+          VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+# ─── Job 6: Deploy Production (aprovação manual obrigatória) ──────────────────
+
+  deploy-production:
+    name: "6 · Deploy Production"
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    environment:
+      name: production
+      url: https://www.shareo.com.br
+    # A aprovação manual é configurada em:
+    # Settings → Environments → production → Required reviewers
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Gerar Prisma Client
+        run: pnpm prisma generate
+
+      - name: Aplicar migrations em produção
+        run: pnpm prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_PRODUCTION }}
+          DIRECT_URL:   ${{ secrets.DIRECT_URL_PRODUCTION }}
+
+      - name: Deploy no Vercel (produção)
+        run: |
+          pnpm vercel deploy --prod \
+            --token="${{ secrets.VERCEL_TOKEN }}" \
+            --yes
+        env:
+          VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Criar release no Sentry
+        run: |
+          pnpm sentry-cli releases new "${{ github.sha }}"
+          pnpm sentry-cli releases set-commits "${{ github.sha }}" --auto
+          pnpm sentry-cli releases finalize "${{ github.sha }}"
+          pnpm sentry-cli releases deploys "${{ github.sha }}" new -e production
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG:        shareo
+          SENTRY_PROJECT:    shareo-web

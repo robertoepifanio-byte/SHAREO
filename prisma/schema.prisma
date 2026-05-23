@@ -1,0 +1,388 @@
+// ShareO — Prisma Schema v0.1 (MVP H1)
+// Gerado em: 2026-05-22
+// Revisar com o Arquiteto antes de aplicar a staging
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────
+
+enum UserType {
+  PF // Pessoa Física — usa CPF
+  PJ // Pessoa Jurídica — usa CNPJ
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum ItemCondition {
+  NEW       // Novo
+  EXCELLENT // Excelente
+  GOOD      // Bom
+  FAIR      // Regular
+}
+
+enum BookingStatus {
+  PENDING    // Aguardando resposta do locador
+  CONFIRMED  // Locador aceitou
+  ACTIVE     // Aluguel em andamento
+  RETURNED   // Item devolvido, aguardando avaliação
+  COMPLETED  // Concluído (avaliações feitas ou 7 dias após devolução)
+  CANCELLED  // Cancelado por qualquer parte
+  DISPUTED   // Disputa aberta
+}
+
+enum ReviewType {
+  ITEM        // Locatário avalia o item
+  BORROWER    // Locador avalia o locatário
+  OWNER       // Locatário avalia o locador
+}
+
+enum NotificationType {
+  BOOKING_REQUEST
+  BOOKING_CONFIRMED
+  BOOKING_CANCELLED
+  BOOKING_RETURNED
+  NEW_MESSAGE
+  NEW_REVIEW
+  ITEM_APPROVED
+  ITEM_REJECTED
+}
+
+// ─── Models ──────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  passwordHash  String?
+  name          String
+  phone         String?
+  userType      UserType  @default(PF)
+  role          UserRole  @default(USER)
+
+  // Documentos — armazenados criptografados (ver ADR-004)
+  // Nunca expor em respostas de API sem mascaramento
+  cpfHash       String?   @unique // bcrypt hash para verificação de unicidade
+  cpfEncrypted  String?           // AES-256-GCM para exibição mascarada
+  cnpjHash      String?   @unique
+  cnpjEncrypted String?
+
+  // Perfil
+  avatarUrl     String?
+  bio           String?   @db.Text
+
+  // Localização (base do usuário — para geo-search de proximidade)
+  city          String?
+  state         String?   @db.Char(2)
+  neighborhood  String?
+  // PostGIS: requer extensão "postgis" ativa no Supabase
+  // lat/lng armazenados separadamente para queries sem PostGIS no dev
+  latitude      Float?
+  longitude     Float?
+
+  isVerified    Boolean   @default(false)
+  isActive      Boolean   @default(true)
+
+  // LGPD — consentimento explícito no cadastro
+  consentAt     DateTime?
+  consentIp     String?
+  consentVersion String?  // versão da política aceita (ex.: "v1.0")
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime? // soft delete — nunca delete fisicamente
+
+  // Relações
+  items               Item[]
+  bookingsAsBorrower  Booking[]      @relation("BorrowerBookings")
+  bookingsAsOwner     Booking[]      @relation("OwnerBookings")
+  reviewsGiven        Review[]       @relation("ReviewsGiven")
+  reviewsReceived     Review[]       @relation("ReviewsReceived")
+  favorites           Favorite[]
+  messages            Message[]
+  conversations       ConversationParticipant[]
+  notifications       Notification[]
+  adminLogs           AdminLog[]
+  // NextAuth.js — @auth/prisma-adapter
+  accounts            Account[]
+  sessions            Session[]
+
+  @@index([email])
+  @@index([latitude, longitude])
+  @@map("users")
+}
+
+model Category {
+  id        String     @id @default(cuid())
+  slug      String     @unique // ex.: "ferramentas", "eletronicos"
+  name      String
+  icon      String?    // nome do SVG em /icones/
+  parentId  String?
+  parent    Category?  @relation("SubCategories", fields: [parentId], references: [id])
+  children  Category[] @relation("SubCategories")
+  items     Item[]
+  createdAt DateTime   @default(now())
+
+  @@map("categories")
+}
+
+model Item {
+  id          String        @id @default(cuid())
+  ownerId     String
+  owner       User          @relation(fields: [ownerId], references: [id])
+  categoryId  String
+  category    Category      @relation(fields: [categoryId], references: [id])
+
+  title       String
+  description String        @db.Text
+  condition   ItemCondition @default(GOOD)
+
+  // Preços — em centavos (evita float rounding issues)
+  pricePerDay   Int          // obrigatório
+  pricePerWeek  Int?
+  pricePerMonth Int?
+  depositAmount Int?         // caução
+
+  // Localização do item
+  address       String?
+  city          String
+  state         String      @db.Char(2)
+  neighborhood  String?
+  latitude      Float
+  longitude     Float
+  // Coluna geográfica PostGIS (Unsupported até Prisma nativo suportar)
+  // geom        Unsupported("geometry(Point, 4326)")?
+
+  // Status
+  isActive      Boolean     @default(true)
+  isApproved    Boolean     @default(true)  // true = publicação direta (moderação reativa no MVP)
+  approvedAt    DateTime?
+  approvedById  String?
+
+  viewCount     Int         @default(0)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  deletedAt     DateTime?
+
+  // Relações
+  images    ItemImage[]
+  bookings  Booking[]
+  reviews   Review[]
+  favorites Favorite[]
+
+  @@index([ownerId])
+  @@index([categoryId])
+  @@index([latitude, longitude])
+  @@index([isActive, isApproved, deletedAt])
+  @@map("items")
+}
+
+model ItemImage {
+  id        String   @id @default(cuid())
+  itemId    String
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  url       String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([itemId])
+  @@map("item_images")
+}
+
+model Booking {
+  id          String        @id @default(cuid())
+  itemId      String
+  item        Item          @relation(fields: [itemId], references: [id])
+  borrowerId  String
+  borrower    User          @relation("BorrowerBookings", fields: [borrowerId], references: [id])
+  ownerId     String
+  owner       User          @relation("OwnerBookings", fields: [ownerId], references: [id])
+
+  status      BookingStatus @default(PENDING)
+
+  startDate   DateTime
+  endDate     DateTime
+  totalDays   Int
+
+  // Snapshot de preço no momento da solicitação (protege contra mudança de preço)
+  dailyPrice      Int
+  totalPrice      Int
+  depositAmount   Int?
+
+  borrowerNote    String?   @db.Text
+  ownerNote       String?   @db.Text
+
+  cancelledAt     DateTime?
+  cancelledById   String?
+  cancelReason    String?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relações
+  reviews         Review[]
+  conversation    Conversation?
+
+  @@index([borrowerId])
+  @@index([ownerId])
+  @@index([itemId])
+  @@index([status])
+  @@map("bookings")
+}
+
+model Review {
+  id          String     @id @default(cuid())
+  bookingId   String
+  booking     Booking    @relation(fields: [bookingId], references: [id])
+  reviewerId  String
+  reviewer    User       @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  revieweeId  String
+  reviewee    User       @relation("ReviewsReceived", fields: [revieweeId], references: [id])
+  itemId      String?
+  item        Item?      @relation(fields: [itemId], references: [id])
+
+  reviewType  ReviewType
+  rating      Int        // 1–5
+  comment     String?    @db.Text
+
+  createdAt   DateTime   @default(now())
+
+  // Um revisor só avalia uma vez por booking por tipo
+  @@unique([bookingId, reviewerId, reviewType])
+  @@index([revieweeId])
+  @@index([itemId])
+  @@map("reviews")
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itemId    String
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, itemId])
+  @@map("favorites")
+}
+
+model Conversation {
+  id            String   @id @default(cuid())
+  bookingId     String?  @unique
+  booking       Booking? @relation(fields: [bookingId], references: [id])
+  lastMessageAt DateTime?
+  createdAt     DateTime @default(now())
+
+  messages      Message[]
+  participants  ConversationParticipant[]
+
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  lastReadAt     DateTime?
+
+  @@id([conversationId, userId])
+  @@map("conversation_participants")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id])
+  content        String       @db.Text
+  readAt         DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@map("messages")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  body      String
+  data      Json?            // dados extras (ex.: bookingId, itemId)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  @@index([userId, readAt])
+  @@map("notifications")
+}
+
+// ─── NextAuth.js — requerido pelo @auth/prisma-adapter ───────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+model AdminLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  admin      User     @relation(fields: [adminId], references: [id])
+  action     String   // ex.: "APPROVE_ITEM", "BAN_USER", "RESOLVE_DISPUTE"
+  entityType String   // ex.: "Item", "User", "Booking"
+  entityId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([adminId])
+  @@index([entityType, entityId])
+  @@map("admin_logs")
+}

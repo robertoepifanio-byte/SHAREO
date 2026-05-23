@@ -1,0 +1,1856 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shareo — Protótipo Interativo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ─── TOKENS ─────────────────────────────────────────────── */
+:root {
+  --navy:        #0D1B2A;
+  --orange:      #F97316; /* decorativo/fills sem texto */
+  --orange-cta:  #C05800; /* botões — branco sobre este: 4.47:1 ✅ WCAG AA */
+  --orange-link: #9A4700; /* texto laranja sobre branco: 6.5:1 ✅ WCAG AA */
+  --green:       #22C55E;
+  --bg:          #F8FAFC;
+  --surface:     #FFFFFF;
+  --text:        #0F172A;
+  --text2:       #64748B;
+  --border:      #E2E8F0;
+  --error:       #EF4444;
+  --r-card:      8px;
+  --r-card-lg:   12px;
+  --shadow:      0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+  --shadow-md:   0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -1px rgba(0,0,0,.06);
+  --max-w:       1280px;
+}
+
+/* ─── RESET ──────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-family: 'Inter', system-ui, sans-serif; font-size: 16px; }
+body { background: var(--bg); color: var(--text); min-height: 100vh; }
+a { text-decoration: none; color: inherit; }
+img { display: block; max-width: 100%; }
+ul { list-style: none; }
+
+/* ─── SKIP NAV ───────────────────────────────────────────── */
+.skip-nav {
+  position: absolute; top: -100%; left: 0; z-index: 9999;
+  background: var(--navy); color: #fff;
+  padding: 12px 20px; font-size: 14px; font-weight: 600;
+  border-radius: 0 0 var(--r-card) 0;
+  transition: top .15s;
+}
+.skip-nav:focus { top: 0; }
+
+/* ─── FOCUS VISIBLE ──────────────────────────────────────── */
+:focus-visible {
+  outline: 3px solid var(--orange-link);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible) { outline: none; }
+
+/* ─── SCREENS ────────────────────────────────────────────── */
+.screen { display: none; min-height: 100vh; padding-bottom: 72px; }
+.screen.active { display: block; }
+@media (min-width: 768px) { .screen { padding-bottom: 0; } }
+
+/* ─── HEADER ─────────────────────────────────────────────── */
+.header {
+  background: var(--navy);
+  position: sticky; top: 0; z-index: 100;
+  height: 64px;
+}
+.header__inner {
+  max-width: var(--max-w); margin: 0 auto;
+  height: 100%; padding: 0 16px;
+  display: flex; align-items: center; gap: 12px;
+}
+
+
+
+/* Header search — oculto em mobile, visível a partir de 768px */
+.header__search {
+  flex: 1; max-width: 480px;
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 8px; height: 40px;
+  display: none; /* ← oculto no mobile */
+  align-items: center; padding: 0 12px; gap: 8px;
+  cursor: pointer; transition: background .15s;
+}
+@media (min-width: 768px) { .header__search { display: flex; } }
+.header__search:hover { background: rgba(255,255,255,.18); }
+.header__search input {
+  flex: 1; background: transparent; border: none; outline: none;
+  color: #fff; font-size: 14px; font-family: inherit;
+}
+.header__search input::placeholder { color: rgba(255,255,255,.55); }
+
+.header__actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.btn-ghost-white {
+  background: transparent; border: 1px solid rgba(255,255,255,.3);
+  color: #fff; font-size: 13px; font-weight: 500;
+  padding: 6px 14px; border-radius: 6px; cursor: pointer;
+  font-family: inherit; transition: background .15s; white-space: nowrap;
+}
+.btn-ghost-white:hover { background: rgba(255,255,255,.1); }
+
+/* ─── BOTÃO PRIMÁRIO (unificado) ─────────────────────────── */
+.btn-primary {
+  background: var(--orange-cta); border: none;
+  color: #fff; font-weight: 600; cursor: pointer;
+  font-family: inherit; transition: opacity .15s;
+  border-radius: var(--r-card); display: inline-flex;
+  align-items: center; justify-content: center;
+}
+.btn-primary:hover { opacity: .88; }
+.btn-primary--sm  { font-size: 13px; padding: 6px 14px; }
+.btn-primary--md  { font-size: 14px; padding: 10px 20px; }
+.btn-primary--lg  { font-size: 15px; padding: 14px 24px; width: 100%; }
+.btn-primary--full { font-size: 15px; padding: 13px; width: 100%; }
+
+/* ─── BOTÃO OUTLINE ──────────────────────────────────────── */
+.btn-outline {
+  background: transparent; border: 1.5px solid var(--border);
+  color: var(--text); font-weight: 600; cursor: pointer;
+  font-family: inherit; border-radius: var(--r-card);
+  transition: border-color .15s; display: inline-flex;
+  align-items: center; justify-content: center;
+}
+.btn-outline:hover { border-color: var(--orange-cta); }
+.btn-outline--full { font-size: 14px; padding: 12px; width: 100%; }
+
+.avatar-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--orange); color: #fff;
+  font-weight: 700; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; border: 2px solid rgba(255,255,255,.3);
+  flex-shrink: 0;
+}
+
+/* ─── BOTTOM NAV ─────────────────────────────────────────── */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  height: 64px; background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+}
+@media (min-width: 768px) { .bottom-nav { display: none; } }
+.bnav-item {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 2px;
+  cursor: pointer; color: var(--text2); font-size: 12px; /* era 10px */
+  font-weight: 500; border: none; background: none; font-family: inherit;
+  transition: color .15s;
+}
+.bnav-item.active, .bnav-item:hover { color: var(--orange-link); }
+.bnav-item--disabled { opacity: .45; cursor: default; }
+.bnav-item--disabled:hover { color: var(--text2); }
+.bnav-icon { font-size: 22px; line-height: 1; }
+.bnav-add-circle {
+  width: 44px; height: 44px; background: var(--orange-cta);
+  border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; color: #fff; font-size: 24px;
+  margin-top: -8px; line-height: 1;
+}
+
+/* ─── DESKTOP NAV ────────────────────────────────────────── */
+.desktop-nav { display: none; }
+@media (min-width: 768px) {
+  .desktop-nav {
+    display: flex; align-items: center; gap: 4px; margin-left: 24px;
+  }
+  .dnav-item {
+    color: rgba(255,255,255,.75); font-size: 14px; font-weight: 500;
+    padding: 6px 12px; border-radius: 6px; cursor: pointer;
+    border: none; background: none; font-family: inherit;
+    transition: color .15s, background .15s;
+  }
+  .dnav-item:hover, .dnav-item.active {
+    color: #fff; background: rgba(255,255,255,.1);
+  }
+}
+
+/* ─── LAYOUT ─────────────────────────────────────────────── */
+.container { max-width: var(--max-w); margin: 0 auto; padding: 0 16px; }
+@media (min-width: 768px) { .container { padding: 0 32px; } }
+@media (min-width: 1280px) { .container { padding: 0 64px; } }
+.section { padding: 32px 0; }
+@media (min-width: 768px) { .section { padding: 48px 0; } }
+.section-title { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 20px; }
+@media (min-width: 768px) { .section-title { font-size: 24px; } }
+
+/* ─── HERO ───────────────────────────────────────────────── */
+.hero {
+  background: linear-gradient(135deg, var(--navy) 0%, #1a3a5c 100%);
+  padding: 48px 16px; text-align: center;
+}
+@media (min-width: 768px) { .hero { padding: 80px 32px; } }
+.hero__tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(34,197,94,.15); color: var(--green);
+  font-size: 12px; font-weight: 600;
+  padding: 4px 12px; border-radius: 20px;
+  margin-bottom: 20px; border: 1px solid rgba(34,197,94,.3);
+}
+.hero__title {
+  color: #fff; font-size: 32px; font-weight: 800;
+  line-height: 1.2; margin-bottom: 12px;
+}
+@media (min-width: 768px) { .hero__title { font-size: 48px; } }
+.hero__sub {
+  color: rgba(255,255,255,.75); font-size: 16px;
+  max-width: 560px; margin: 0 auto 32px;
+}
+.hero__search-box {
+  max-width: 600px; margin: 0 auto;
+  background: #fff; border-radius: var(--r-card-lg); /* era 12px hardcoded */
+  display: flex; overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,.2);
+}
+.hero__input {
+  flex: 1; border: none; outline: none;
+  padding: 16px 20px; font-size: 15px; font-family: inherit;
+}
+.hero__search-btn {
+  background: var(--orange-cta); border: none; color: #fff;
+  padding: 0 24px; font-size: 15px; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: opacity .15s; white-space: nowrap;
+}
+.hero__search-btn:hover { opacity: .88; }
+.hero__stats {
+  display: flex; justify-content: center; gap: 24px; margin-top: 32px; flex-wrap: wrap;
+}
+.hero__stat { color: rgba(255,255,255,.8); text-align: center; }
+.hero__stat strong { display: block; font-size: 24px; font-weight: 800; color: #fff; }
+.hero__stat span { font-size: 12px; }
+
+/* ─── CATEGORIAS ─────────────────────────────────────────── */
+/* Fade lateral para indicar scroll horizontal */
+.cats-wrap {
+  position: relative;
+}
+.cats-wrap::after {
+  content: '';
+  position: absolute; top: 0; right: 0; bottom: 4px;
+  width: 48px; pointer-events: none;
+  background: linear-gradient(to right, transparent, var(--bg));
+}
+.cats {
+  display: flex; gap: 12px; overflow-x: auto;
+  padding-bottom: 4px; scrollbar-width: none;
+}
+.cats::-webkit-scrollbar { display: none; }
+.cat-chip {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--r-card); padding: 14px 16px;
+  cursor: pointer; min-width: 88px; transition: border-color .15s, box-shadow .15s;
+  flex-shrink: 0;
+}
+.cat-chip:hover { border-color: var(--orange-cta); box-shadow: var(--shadow); }
+.cat-chip.active { border-color: var(--orange-cta); background: #fff3e0; }
+.cat-chip__icon { font-size: 28px; line-height: 1; display: flex; align-items: center; justify-content: center; }
+.cat-chip__icon img { display: block; }
+.cat-chip__label { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; }
+
+/* ─── ITEM GRID ──────────────────────────────────────────── */
+.item-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+}
+@media (min-width: 768px) { .item-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
+@media (min-width: 1024px) { .item-grid { grid-template-columns: repeat(4, 1fr); } }
+
+/* ─── ITEM CARD ──────────────────────────────────────────── */
+.item-card {
+  background: var(--surface); border-radius: var(--r-card);
+  border: 1px solid var(--border); overflow: hidden;
+  cursor: pointer; transition: box-shadow .2s, transform .2s;
+  display: flex; flex-direction: column;
+}
+.item-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.item-card__img {
+  width: 100%; aspect-ratio: 4/3;
+  background: linear-gradient(135deg, #e0e7ef 0%, #c8d6e5 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px; position: relative; overflow: hidden;
+}
+.item-card__badge {
+  position: absolute; top: 8px; left: 8px;
+  background: var(--green); color: #fff;
+  font-size: 12px; /* era 10px */ font-weight: 700;
+  padding: 2px 8px; border-radius: 20px;
+}
+/* Botão de favorito: 44×44px de área de toque (era 28×28px) */
+.item-card__fav {
+  position: absolute; top: 4px; right: 4px;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: transparent; border: none;
+  cursor: pointer; display: flex; align-items: center;
+  justify-content: center; font-size: 18px;
+}
+.item-card__fav-inner {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(255,255,255,.9);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; pointer-events: none;
+}
+.item-card__body { padding: 12px; flex: 1; display: flex; flex-direction: column; }
+.item-card__title {
+  font-size: 13px; font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px;
+}
+.item-card__meta {
+  font-size: 12px; color: var(--text2); margin-bottom: 6px;
+}
+.item-card__rating {
+  display: flex; align-items: center; gap: 3px;
+  font-size: 12px; color: var(--text2); margin-bottom: 8px;
+}
+.star { color: #f59e0b; }
+/* Preço mais proeminente — botão redundante removido */
+.item-card__price {
+  font-size: 16px; font-weight: 800; color: var(--text); margin-top: auto;
+}
+.item-card__price span { font-size: 12px; font-weight: 400; color: var(--text2); }
+
+/* ─── COMO FUNCIONA ──────────────────────────────────────── */
+.how-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+@media (min-width: 768px) { .how-grid { grid-template-columns: repeat(3, 1fr); } }
+.how-card {
+  background: var(--surface); border-radius: var(--r-card);
+  border: 1px solid var(--border); padding: 24px; text-align: center;
+}
+.how-card__num {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--orange-cta); color: #fff;
+  font-weight: 800; font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 12px;
+}
+.how-card__title { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+.how-card__desc { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+/* ─── BUSCA ──────────────────────────────────────────────── */
+.search-layout { display: flex; gap: 24px; align-items: flex-start; }
+.filter-sidebar { display: none; width: 240px; flex-shrink: 0; }
+@media (min-width: 1024px) { .filter-sidebar { display: block; } }
+.filter-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-card); padding: 20px; position: sticky; top: 80px;
+}
+.filter-title { font-size: 15px; font-weight: 700; margin-bottom: 16px; }
+.filter-group { margin-bottom: 20px; }
+.filter-label {
+  font-size: 12px; font-weight: 600; color: var(--text2);
+  text-transform: uppercase; letter-spacing: .05em;
+  margin-bottom: 10px; display: block;
+}
+.filter-option {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: var(--text); padding: 4px 0; cursor: pointer;
+}
+.filter-option input { accent-color: var(--orange-cta); }
+.range-slider { display: flex; gap: 8px; align-items: center; font-size: 13px; }
+.range-slider input[type=range] { flex: 1; accent-color: var(--orange-cta); }
+.search-main { flex: 1; min-width: 0; }
+.search-bar-row { display: flex; gap: 8px; margin-bottom: 16px; }
+.search-input-wrap { flex: 1; position: relative; }
+.search-input-wrap .si-icon {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  font-size: 16px; color: var(--text2);
+}
+.search-input {
+  width: 100%; height: 44px; border: 1.5px solid var(--border);
+  border-radius: var(--r-card); padding: 0 12px 0 38px;
+  font-size: 14px; font-family: inherit; outline: none; transition: border-color .15s;
+}
+.search-input:focus { border-color: var(--orange-cta); }
+.filter-btn {
+  height: 44px; padding: 0 16px; border: 1.5px solid var(--border);
+  border-radius: var(--r-card); background: var(--surface);
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  font-family: inherit; display: flex; align-items: center; gap: 6px; white-space: nowrap;
+}
+.results-meta {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;
+}
+.results-count { font-size: 14px; color: var(--text2); }
+.sort-select {
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 6px 10px; font-size: 13px; font-family: inherit;
+  outline: none; cursor: pointer; background: var(--surface);
+}
+.chip-row { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.chip {
+  background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: 20px; padding: 5px 14px;
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.chip.active {
+  border-color: var(--orange-cta); background: #fff3e0;
+  color: var(--orange-link); /* texto passa 6.5:1 */
+}
+
+/* ─── DETALHE DO ITEM ────────────────────────────────────── */
+.detail-layout { display: flex; flex-direction: column; gap: 24px; }
+@media (min-width: 1024px) { .detail-layout { flex-direction: row; align-items: flex-start; } }
+.detail-gallery { flex: 1; min-width: 0; }
+.gallery-main {
+  width: 100%; aspect-ratio: 4/3;
+  background: linear-gradient(135deg, #e0e7ef 0%, #c8d6e5 100%);
+  border-radius: var(--r-card); overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 72px; margin-bottom: 8px;
+}
+.gallery-thumbs { display: flex; gap: 8px; }
+.gallery-thumb {
+  width: 72px; height: 54px; border-radius: 6px;
+  background: linear-gradient(135deg, #dbe4ee 0%, #c0cfe0 100%);
+  cursor: pointer; flex-shrink: 0; border: 2px solid transparent;
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+}
+.gallery-thumb.active { border-color: var(--orange-cta); }
+.detail-info {
+  width: 100%; background: var(--surface);
+  border-radius: var(--r-card); border: 1px solid var(--border);
+  padding: 24px; position: sticky; top: 80px;
+}
+@media (min-width: 1024px) { .detail-info { width: 360px; flex-shrink: 0; } }
+.detail-cat {
+  font-size: 12px; font-weight: 600; color: var(--orange-link); /* era --orange */
+  text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px;
+}
+.detail-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+.detail-rating {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; color: var(--text2); margin-bottom: 16px; flex-wrap: wrap;
+}
+.price-block { margin-bottom: 20px; }
+.price-main { font-size: 28px; font-weight: 800; color: var(--text); }
+.price-main span { font-size: 14px; font-weight: 400; color: var(--text2); }
+/* Price alts com rótulo informativo para não parecerem clicáveis */
+.price-alts { display: flex; gap: 12px; margin-top: 8px; align-items: center; }
+.price-alts-label { font-size: 11px; color: var(--text2); margin-right: 2px; }
+.price-alt {
+  font-size: 12px; color: var(--text2);
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 10px;
+  cursor: default; /* deixa claro que não é clicável */
+}
+.date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.date-field label {
+  font-size: 12px; font-weight: 600; color: var(--text2);
+  text-transform: uppercase; letter-spacing: .04em;
+  display: block; margin-bottom: 4px;
+}
+.date-field input {
+  width: 100%; border: 1.5px solid var(--border);
+  border-radius: var(--r-card); padding: 8px 10px;
+  font-size: 13px; font-family: inherit; outline: none;
+}
+.date-field input:focus { border-color: var(--orange-cta); }
+/* Resumo de preço dinâmico */
+.price-summary {
+  background: var(--bg); border-radius: var(--r-card);
+  border: 1px solid var(--border); padding: 12px; margin-bottom: 16px;
+  font-size: 13px;
+}
+.price-summary-row {
+  display: flex; justify-content: space-between; margin-bottom: 6px;
+}
+.price-summary-row:last-child { margin-bottom: 0; font-weight: 700; }
+.price-summary-row.muted { color: var(--text2); }
+.price-divider { height: 1px; background: var(--border); margin: 8px 0; }
+.owner-mini {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px; background: var(--bg);
+  border-radius: var(--r-card); border: 1px solid var(--border);
+  margin-top: 16px; cursor: pointer;
+}
+.owner-av {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--navy); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 16px; flex-shrink: 0;
+}
+.owner-info__name { font-size: 14px; font-weight: 600; }
+.owner-info__meta { font-size: 12px; color: var(--text2); }
+.detail-desc { margin-top: 24px; }
+.detail-desc h3 { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+.detail-desc p { font-size: 14px; color: var(--text2); line-height: 1.7; }
+.tags-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.tag {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--text2);
+}
+
+/* ─── AUTH ───────────────────────────────────────────────── */
+.auth-wrap {
+  min-height: calc(100vh - 64px); display: flex;
+  align-items: center; justify-content: center; padding: 32px 16px;
+}
+.auth-card {
+  width: 100%; max-width: 420px;
+  background: var(--surface); border-radius: var(--r-card-lg); /* token consistente */
+  border: 1px solid var(--border); padding: 32px; box-shadow: var(--shadow-md);
+}
+.auth-logo {
+  display: flex; align-items: center; gap: 8px;
+  font-weight: 800; font-size: 20px; color: var(--navy);
+  margin-bottom: 24px; justify-content: center;
+}
+.auth-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; text-align: center; }
+.auth-sub { font-size: 14px; color: var(--text2); text-align: center; margin-bottom: 24px; }
+.form-group { margin-bottom: 16px; }
+/* Label unificada para todos os formulários */
+.form-group label, .form-label {
+  display: block; font-size: 12px; font-weight: 600; color: var(--text2);
+  margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em;
+}
+.form-input {
+  width: 100%; height: 44px; border: 1.5px solid var(--border);
+  border-radius: var(--r-card); padding: 0 14px;
+  font-size: 14px; font-family: inherit; outline: none; transition: border-color .15s;
+}
+.form-input:focus { border-color: var(--orange-cta); }
+.form-input.error { border-color: var(--error); }
+.form-error { font-size: 12px; color: var(--error); margin-top: 4px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.auth-footer { text-align: center; font-size: 13px; color: var(--text2); margin-top: 20px; }
+.link-orange { color: var(--orange-link); font-weight: 600; cursor: pointer; } /* 6.5:1 ✅ */
+.divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 20px 0; color: var(--text2); font-size: 12px;
+}
+.divider::before, .divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+.social-btn {
+  width: 100%; padding: 10px; border: 1.5px solid var(--border);
+  border-radius: var(--r-card); background: var(--surface);
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  font-family: inherit; display: flex; align-items: center;
+  justify-content: center; gap: 8px; margin-bottom: 10px; transition: border-color .15s;
+}
+.social-btn:hover { border-color: var(--orange-cta); }
+.type-tabs {
+  display: flex; background: var(--bg); border-radius: var(--r-card);
+  padding: 4px; gap: 4px; margin-bottom: 20px;
+}
+.type-tab {
+  flex: 1; padding: 8px; border-radius: 6px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  border: none; background: none; font-family: inherit;
+  color: var(--text2); transition: background .15s, color .15s;
+}
+.type-tab.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+
+/* ─── CADASTRAR ITEM ─────────────────────────────────────── */
+.add-layout { max-width: 680px; margin: 0 auto; padding: 32px 0; }
+.form-card {
+  background: var(--surface); border-radius: var(--r-card);
+  border: 1px solid var(--border); padding: 24px; margin-bottom: 16px;
+}
+.form-card-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+.photo-upload {
+  border: 2px dashed var(--border); border-radius: var(--r-card);
+  padding: 32px; text-align: center; cursor: pointer;
+  transition: border-color .15s; margin-bottom: 12px;
+}
+.photo-upload:hover { border-color: var(--orange-cta); }
+.photo-upload__icon { font-size: 40px; margin-bottom: 8px; }
+.photo-upload__text { font-size: 14px; color: var(--text2); }
+.photo-upload__text strong { color: var(--orange-link); }
+.photo-thumbs { display: flex; gap: 8px; flex-wrap: wrap; }
+.photo-thumb {
+  width: 80px; height: 60px; border-radius: 6px;
+  background: var(--bg); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; cursor: pointer;
+}
+.photo-thumb.has-img { background: linear-gradient(135deg, #e0e7ef 0%, #c8d6e5 100%); }
+.form-select {
+  width: 100%; height: 44px; border: 1.5px solid var(--border);
+  border-radius: var(--r-card); padding: 0 14px;
+  font-size: 14px; font-family: inherit; outline: none;
+  background: var(--surface); cursor: pointer;
+}
+.form-select:focus { border-color: var(--orange-cta); }
+.form-textarea {
+  width: 100%; border: 1.5px solid var(--border);
+  border-radius: var(--r-card); padding: 12px 14px;
+  font-size: 14px; font-family: inherit; outline: none;
+  resize: vertical; min-height: 100px;
+}
+.form-textarea:focus { border-color: var(--orange-cta); }
+.price-inputs { display: flex; gap: 12px; }
+.price-field { flex: 1; position: relative; }
+.price-field .prefix {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  font-size: 14px; color: var(--text2);
+}
+.price-field .form-input { padding-left: 30px; }
+.avail-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+.day-btn {
+  aspect-ratio: 1; border-radius: 8px;
+  background: var(--bg); border: 1.5px solid var(--border);
+  font-size: 12px; /* era 11px */ font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-family: inherit; transition: all .15s;
+}
+.day-btn.active { background: var(--orange-cta); border-color: var(--orange-cta); color: #fff; }
+
+/* Step indicator simplificado — form único sem steps falsos */
+.step-note {
+  background: #fff3e0; border: 1px solid #fed7aa;
+  border-radius: var(--r-card); padding: 10px 14px;
+  font-size: 13px; color: var(--orange-link);
+  margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+}
+
+/* ─── DASHBOARD ──────────────────────────────────────────── */
+.dash-layout { display: flex; gap: 24px; align-items: flex-start; padding: 32px 0; }
+.dash-sidebar { width: 240px; flex-shrink: 0; display: none; }
+@media (min-width: 768px) { .dash-sidebar { display: block; } }
+.dash-menu {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-card); overflow: hidden;
+}
+.dash-menu-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; font-size: 14px; font-weight: 500;
+  cursor: pointer; border: none; background: none;
+  font-family: inherit; width: 100%; text-align: left;
+  color: var(--text2); transition: background .15s, color .15s;
+  border-bottom: 1px solid var(--border);
+}
+.dash-menu-item:last-child { border-bottom: none; }
+.dash-menu-item:hover, .dash-menu-item.active { background: #fff3e0; color: var(--orange-link); }
+
+/* Tabs mobile para Dashboard (substitui sidebar oculta) */
+.dash-tabs {
+  display: flex; overflow-x: auto; gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px; padding-bottom: 0;
+  scrollbar-width: none;
+}
+.dash-tabs::-webkit-scrollbar { display: none; }
+@media (min-width: 768px) { .dash-tabs { display: none; } } /* oculto quando sidebar aparece */
+.dash-tab {
+  flex-shrink: 0; padding: 10px 16px; font-size: 13px; font-weight: 600;
+  border: none; background: none; cursor: pointer; font-family: inherit;
+  color: var(--text2); border-bottom: 2px solid transparent;
+  transition: color .15s, border-color .15s; white-space: nowrap;
+}
+.dash-tab.active { color: var(--orange-link); border-bottom-color: var(--orange-cta); }
+
+.dash-main { flex: 1; min-width: 0; }
+.kpi-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px; }
+@media (min-width: 640px) { .kpi-row { grid-template-columns: repeat(4, 1fr); } }
+.kpi-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-card); padding: 16px;
+}
+.kpi-label { font-size: 12px; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+.kpi-val { font-size: 28px; /* era 24px */ font-weight: 800; color: var(--text); }
+.kpi-delta { font-size: 12px; color: #15803d; font-weight: 600; margin-top: 2px; }
+.my-items-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 640px) { .my-items-grid { grid-template-columns: repeat(2, 1fr); } }
+.my-item-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-card); overflow: hidden; display: flex;
+}
+.my-item-img {
+  width: 96px; height: 80px; flex-shrink: 0;
+  background: linear-gradient(135deg, #e0e7ef 0%, #c8d6e5 100%);
+  display: flex; align-items: center; justify-content: center; font-size: 28px;
+}
+.my-item-body { padding: 12px; flex: 1; }
+.my-item-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.my-item-price { font-size: 12px; color: var(--orange-link); font-weight: 600; }
+.status-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 20px;
+  font-size: 12px; /* era 10px */ font-weight: 700;
+}
+.status-badge.disponivel { background: #dcfce7; color: #15803d; }
+.status-badge.alugado    { background: #fed7aa; color: #9a3412; }
+.status-badge.analise    { background: #e0e7ff; color: #3730a3; }
+.my-item-actions { display: flex; gap: 6px; margin-top: 8px; }
+/* my-item-btn: area de toque aumentada (era 4px 10px) */
+.my-item-btn {
+  font-size: 12px; font-weight: 600; padding: 6px 14px;
+  min-height: 36px; /* ← novo */
+  border-radius: var(--r-card); cursor: pointer; font-family: inherit;
+  border: 1.5px solid var(--border); background: none;
+  transition: border-color .15s; display: flex; align-items: center; gap: 4px;
+}
+.my-item-btn:hover { border-color: var(--orange-cta); }
+.profile-hero {
+  background: linear-gradient(135deg, var(--navy) 0%, #1a3a5c 100%);
+  border-radius: var(--r-card); padding: 24px; margin-bottom: 16px;
+  display: flex; gap: 16px; align-items: center;
+}
+.profile-av {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: var(--orange); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 800; flex-shrink: 0;
+  border: 3px solid rgba(255,255,255,.3);
+}
+.profile-name { color: #fff; font-size: 20px; font-weight: 700; }
+.profile-meta { color: rgba(255,255,255,.7); font-size: 13px; margin-top: 4px; }
+.profile-badges { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.profile-badge {
+  background: rgba(255,255,255,.12); color: rgba(255,255,255,.9);
+  font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 20px;
+  border: 1px solid rgba(255,255,255,.2);
+}
+
+/* ─── TOAST ──────────────────────────────────────────────── */
+.toast-container {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+  z-index: 9999; display: flex; flex-direction: column;
+  gap: 8px; pointer-events: none; min-width: 220px;
+}
+@media (min-width: 768px) { .toast-container { bottom: 24px; } }
+.toast {
+  background: var(--navy); color: #fff;
+  padding: 12px 20px; border-radius: 8px;
+  font-size: 14px; font-weight: 500; box-shadow: var(--shadow-md);
+  animation: slide-up .3s ease; pointer-events: none; text-align: center;
+}
+.toast.success { background: #15803d; }
+.toast.error   { background: var(--error); }
+@keyframes slide-up {
+  from { transform: translateY(16px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* ─── BACK BAR ───────────────────────────────────────────── */
+.back-bar { border-bottom: 1px solid var(--border); background: var(--surface); padding: 12px 16px; }
+.back-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 14px; font-weight: 500; color: var(--text2);
+  cursor: pointer; border: none; background: none; font-family: inherit;
+}
+.back-btn:hover { color: var(--text); }
+
+/* ─── MISC ───────────────────────────────────────────────── */
+.badge-eco {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: #dcfce7; color: #15803d;
+  font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 20px;
+}
+.divider-h { height: 1px; background: var(--border); margin: 16px 0; }
+.text-sm { font-size: 13px; color: var(--text2); }
+.mb8 { margin-bottom: 8px; } .mb16 { margin-bottom: 16px; } .mt16 { margin-top: 16px; }
+.map-placeholder {
+  width: 100%; height: 200px; border-radius: var(--r-card);
+  background: linear-gradient(135deg, #ccd9e5 0%, #a8c0d4 100%);
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border); font-size: 48px;
+  position: relative; overflow: hidden; margin-bottom: 16px;
+}
+.map-pin { position: absolute; font-size: 28px; filter: drop-shadow(0 2px 4px rgba(0,0,0,.3)); }
+
+
+
+/* ─── IMAGENS NOS PHOTO-THUMBS ───────────────────────────────── */
+.photo-thumb.has-img {
+  position: relative; overflow: hidden;
+  display: block; padding: 0; font-size: 0;
+}
+.photo-thumb.has-img img {
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%; object-fit: cover;
+}
+
+
+/* ─── LOGO SHAREO ──────────────────────────────────────────── */
+.shareo-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 21px;
+  letter-spacing: 2.5px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.shareo-logo--light { color: #ffffff; }   /* sobre fundo escuro */
+.shareo-logo--dark  { color: #0D1B2A; }   /* sobre fundo claro  */
+
+/* ─── LOGO SHAREO ──────────────────────────────────────────── */
+.shareo-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: 2.5px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  user-select: none;
+}
+.shareo-logo--light { color: #ffffff; }
+.shareo-logo--dark  { color: #0D1B2A; }
+
+/* A com ponto laranja dentro, no terço inferior da letra */
+.logo-a {
+  position: relative;
+  display: inline-block;
+}
+.logo-a::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: #F97316;
+  border-radius: 50%;
+  bottom: 1px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* O-ícone alinhado com a altura das letras maiúsculas */
+.logo-o-svg {
+  width: 22px;
+  height: 22px;
+  margin-left: 2px;
+  flex-shrink: 0;
+}
+
+
+/* ─── ÍCONES DE CATEGORIA ────────────────────────────────────── */
+.cat-chip__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+}
+.cat-chip__icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* ─── IMAGENS REAIS NOS CARDS ────────────────────────────────── */
+.item-card__img img {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  border-radius: 0;
+}
+.item-card__img > span[aria-hidden] { display: none; } /* esconde emoji fallback quando há img */
+
+.gallery-main { position: relative; }
+.gallery-main img {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.gallery-main > span[aria-hidden] { display: none; }
+
+.gallery-thumb { position: relative; overflow: hidden; }
+.gallery-thumb img {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.gallery-thumb > span[aria-hidden] { display: none; }
+</style>
+</head>
+<body>
+
+<!-- Skip navigation para teclado/leitores de tela -->
+<a class="skip-nav" href="#main-content">Pular para o conteúdo</a>
+
+<!-- ═══ HEADER ═══════════════════════════════════════════════ -->
+<header class="header" role="banner">
+  <div class="header__inner">
+    <div onclick="go('home')" role="link" tabindex="0" aria-label="Shareo — página inicial" style="cursor:pointer;flex-shrink:0;display:flex;align-items:center;"><img src="icones/Shareo%20logo%201.jpeg" alt="Shareo" style="height:52px;width:160px;object-fit:cover;object-position:center;border-radius:4px;" /></div>
+    <nav class="desktop-nav" aria-label="Navegação principal">
+      <button class="dnav-item active" onclick="go('home')" aria-current="page">Início</button>
+      <button class="dnav-item" onclick="go('search')">Explorar</button>
+      <button class="dnav-item" onclick="go('add-item')">Anunciar</button>
+    </nav>
+    <div class="header__search" onclick="go('search')" role="search" aria-label="Buscar itens">
+      <span aria-hidden="true">🔍</span>
+      <input type="text" placeholder="Buscar item para alugar…" readonly aria-label="Campo de busca">
+    </div>
+    <div class="header__actions">
+      <button class="btn-ghost-white" onclick="go('login')" id="btn-login-header">Entrar</button>
+      <button class="btn-primary btn-primary--sm" onclick="go('add-item')" aria-label="Anunciar item">+ Anunciar</button>
+      <div class="avatar-btn" id="avatar-header" style="display:none" onclick="go('dashboard')"
+           role="button" tabindex="0" aria-label="Meu perfil">R</div>
+    </div>
+  </div>
+</header>
+
+<!-- ═══ HOME ═════════════════════════════════════════════════ -->
+<main id="main-content">
+<div id="screen-home" class="screen active">
+
+  <section class="hero" aria-label="Seção principal">
+    <div class="hero__tag" aria-hidden="true">🌿 Economia Circular</div>
+    <h1 class="hero__title">Use Mais.<br>Possua Menos.</h1>
+    <p class="hero__sub">Alugue o que precisa de quem já tem. Próximo de você, rápido e seguro.</p>
+    <div class="hero__search-box" role="search">
+      <label for="hero-search" class="sr-only">Buscar item para alugar</label>
+      <input class="hero__input" id="hero-search" type="text" placeholder="O que você precisa alugar?">
+      <button class="hero__search-btn" onclick="go('search')" aria-label="Buscar">Buscar 🔍</button>
+    </div>
+    <div class="hero__stats" aria-label="Estatísticas da plataforma">
+      <div class="hero__stat"><strong>12.400+</strong><span>Itens disponíveis</span></div>
+      <div class="hero__stat"><strong>3.800+</strong><span>Proprietários</span></div>
+      <div class="hero__stat"><strong>4,9 ★</strong><span>Avaliação média</span></div>
+    </div>
+  </section>
+
+  <div class="container">
+
+    <section class="section" aria-labelledby="cats-title">
+      <h2 class="section-title" id="cats-title">Explorar por categoria</h2>
+      <div class="cats-wrap">
+        <div class="cats" role="list" aria-label="Categorias de itens">
+          <div class="cat-chip active" role="listitem button" tabindex="0" onclick="go('search')" aria-label="Ferramentas">
+            <div class="cat-chip__icon"><img src="icones/Ferramentas.png" alt="" aria-hidden="true"></div>
+            <div class="cat-chip__label">Ferramentas</div>
+          </div>
+          <div class="cat-chip" role="listitem button" tabindex="0" onclick="go('search')" aria-label="Construção Civil">
+            <div class="cat-chip__icon"><img src="icones/Constru%C3%A7%C3%A3o.png" alt="" aria-hidden="true"></div>
+            <div class="cat-chip__label">Construção</div>
+          </div>
+          <div class="cat-chip" role="listitem button" tabindex="0" onclick="go('search')" aria-label="Moda">
+            <div class="cat-chip__icon"><img src="icones/Moda.png" alt="" aria-hidden="true"></div>
+            <div class="cat-chip__label">Moda</div>
+          </div>
+          <div class="cat-chip" role="listitem button" tabindex="0" onclick="go('search')" aria-label="Eletrônicos">
+            <div class="cat-chip__icon"><img src="icones/Eletronicos.png" alt="" aria-hidden="true"></div>
+            <div class="cat-chip__label">Eletrônicos</div>
+          </div>
+          <div class="cat-chip" role="listitem button" tabindex="0" onclick="go('search')" aria-label="Casa">
+            <div class="cat-chip__icon"><img src="icones/Casa.png" alt="" aria-hidden="true"></div>
+            <div class="cat-chip__label">Casa</div>
+          </div>
+          <div class="cat-chip" role="listitem button" tabindex="0" onclick="go('search')" aria-label="Esporte e Lazer">
+            <div class="cat-chip__icon"><img src="icones/Esporte.png" alt="" aria-hidden="true"></div>
+            <div class="cat-chip__label">Esporte</div>
+          </div>
+          <div class="cat-chip" role="listitem button" tabindex="0" onclick="go('search')" aria-label="Jardim">
+            <div class="cat-chip__icon"><img src="icones/jardim.png" alt="" aria-hidden="true"></div>
+            <div class="cat-chip__label">Jardim</div>
+          </div>
+          <div class="cat-chip" role="listitem button" tabindex="0" onclick="go('search')" aria-label="Festas e Eventos">
+            <div class="cat-chip__icon"><img src="icones/Festas.png" alt="" aria-hidden="true"></div>
+            <div class="cat-chip__label">Festas</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section style="padding-bottom:32px" aria-label="Mapa de itens próximos">
+      <div class="map-placeholder" role="img" aria-label="Mapa com itens disponíveis em Natal, RN">
+        🗺️
+        <div class="map-pin" style="top:30%;left:35%" aria-hidden="true">📍</div>
+        <div class="map-pin" style="top:50%;left:55%" aria-hidden="true">📍</div>
+        <div class="map-pin" style="top:40%;left:70%" aria-hidden="true">📍</div>
+        <div class="map-pin" style="top:65%;left:45%" aria-hidden="true">📍</div>
+        <div style="position:absolute;bottom:10px;right:10px;background:#fff;border-radius:6px;padding:6px 10px;font-size:12px;font-weight:600;color:var(--text)">Ver no mapa</div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="nearby-title">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <h2 class="section-title" id="nearby-title" style="margin-bottom:0">Próximos de você</h2>
+        <button style="font-size:13px;border:none;background:none;cursor:pointer;font-family:inherit;color:var(--orange-link);font-weight:600" onclick="go('search')">Ver todos →</button>
+      </div>
+      <div class="item-grid">
+        <div class="item-card" onclick="go('item-detail')" role="article" aria-label="Furadeira de Impacto Bosch — R$35 por dia">
+          <div class="item-card__img" role="img" aria-label="Foto da Furadeira de Impacto Bosch">
+            <img src="https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=800&q=90" alt="Furadeira de Impacto Bosch" loading="lazy" onerror="this.style.display='none'">
+            <span aria-hidden="true">🔧</span>
+            <div class="item-card__badge" aria-label="Status: Disponível">Disponível</div>
+            <button class="item-card__fav" onclick="favToggle(event,this)" aria-label="Salvar nos favoritos">
+              <div class="item-card__fav-inner" aria-hidden="true">🤍</div>
+            </button>
+          </div>
+          <div class="item-card__body">
+            <div class="item-card__title">Furadeira de Impacto Bosch</div>
+            <div class="item-card__meta">📍 1,2 km · Ponta Negra</div>
+            <div class="item-card__rating"><span class="star" aria-hidden="true">★</span><span>4.9</span><span style="color:var(--text2)">(32 avaliações)</span></div>
+            <div class="item-card__price">R$ 35<span>/dia</span></div>
+          </div>
+        </div>
+        <div class="item-card" onclick="go('item-detail')" role="article" aria-label="Câmera Sony A7 III — R$150 por dia">
+          <div class="item-card__img" role="img" aria-label="Foto da Câmera Sony A7 III">
+            <img src="https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&q=90" alt="Câmera Sony A7 III" loading="lazy" onerror="this.style.display='none'">
+            <span aria-hidden="true">🎥</span>
+            <div class="item-card__badge">Disponível</div>
+            <button class="item-card__fav" onclick="favToggle(event,this)" aria-label="Salvar nos favoritos" aria-pressed="true">
+              <div class="item-card__fav-inner" aria-hidden="true">❤️</div>
+            </button>
+          </div>
+          <div class="item-card__body">
+            <div class="item-card__title">Câmera Sony A7 III + Lente</div>
+            <div class="item-card__meta">📍 2,5 km · Capim Macio</div>
+            <div class="item-card__rating"><span class="star" aria-hidden="true">★</span><span>5.0</span><span style="color:var(--text2)">(18 avaliações)</span></div>
+            <div class="item-card__price">R$ 150<span>/dia</span></div>
+          </div>
+        </div>
+        <div class="item-card" onclick="go('item-detail')" role="article" aria-label="Barraca de Camping 4 pessoas — R$60 por dia">
+          <div class="item-card__img" role="img" aria-label="Foto da Barraca de Camping">
+            <img src="https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800&q=90" alt="Barraca de Camping" loading="lazy" onerror="this.style.display='none'">
+            <span aria-hidden="true">🏕️</span>
+            <div class="item-card__badge">Disponível</div>
+            <button class="item-card__fav" onclick="favToggle(event,this)" aria-label="Salvar nos favoritos">
+              <div class="item-card__fav-inner" aria-hidden="true">🤍</div>
+            </button>
+          </div>
+          <div class="item-card__body">
+            <div class="item-card__title">Barraca de Camping 4 pessoas</div>
+            <div class="item-card__meta">📍 3,8 km · Lagoa Nova</div>
+            <div class="item-card__rating"><span class="star" aria-hidden="true">★</span><span>4.7</span><span style="color:var(--text2)">(45 avaliações)</span></div>
+            <div class="item-card__price">R$ 60<span>/dia</span></div>
+          </div>
+        </div>
+        <div class="item-card" onclick="go('item-detail')" role="article" aria-label="Conjunto de Halteres — R$25 por dia">
+          <div class="item-card__img" role="img" aria-label="Foto do Conjunto de Halteres">
+            <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800&q=90" alt="Conjunto de Halteres" loading="lazy" onerror="this.style.display='none'">
+            <span aria-hidden="true">🏋️</span>
+            <div class="item-card__badge">Disponível</div>
+            <button class="item-card__fav" onclick="favToggle(event,this)" aria-label="Salvar nos favoritos">
+              <div class="item-card__fav-inner" aria-hidden="true">🤍</div>
+            </button>
+          </div>
+          <div class="item-card__body">
+            <div class="item-card__title">Conjunto de Halteres 5–20kg</div>
+            <div class="item-card__meta">📍 0,8 km · Tirol</div>
+            <div class="item-card__rating"><span class="star" aria-hidden="true">★</span><span>4.8</span><span style="color:var(--text2)">(12 avaliações)</span></div>
+            <div class="item-card__price">R$ 25<span>/dia</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="how-title">
+      <h2 class="section-title" id="how-title">Como funciona</h2>
+      <div class="how-grid">
+        <div class="how-card">
+          <div class="how-card__num" aria-hidden="true">1</div>
+          <div class="how-card__title">Busque o que precisa</div>
+          <div class="how-card__desc">Pesquise por categoria, localização ou nome. Veja itens disponíveis perto de você no mapa.</div>
+        </div>
+        <div class="how-card">
+          <div class="how-card__num" aria-hidden="true">2</div>
+          <div class="how-card__title">Combine com o proprietário</div>
+          <div class="how-card__desc">Envie mensagem pelo chat do Shareo, combine as datas e a retirada do item com segurança.</div>
+        </div>
+        <div class="how-card">
+          <div class="how-card__num" aria-hidden="true">3</div>
+          <div class="how-card__title">Use e devolva</div>
+          <div class="how-card__desc">Retire, use pelo período combinado e devolva. Avalie a experiência e construa sua reputação.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div style="background:linear-gradient(135deg,var(--navy) 0%,#1a3a5c 100%);border-radius:var(--r-card-lg);padding:40px 32px">
+        <div class="badge-eco" style="margin-bottom:16px">🌿 Economia circular</div>
+        <h2 style="color:#fff;font-size:24px;font-weight:800;line-height:1.3;margin-bottom:12px">Tem itens parados?<br>Transforme em renda.</h2>
+        <p style="color:rgba(255,255,255,.75);font-size:14px;max-width:480px;margin-bottom:20px">Cadastre seus itens gratuitamente e comece a alugar para pessoas próximas. Sem mensalidade, sem complicação.</p>
+        <button class="btn-primary btn-primary--md" onclick="go('add-item')">Começar a anunciar →</button>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- ═══ BUSCA ════════════════════════════════════════════════ -->
+<div id="screen-search" class="screen">
+  <div class="container section">
+    <div class="search-bar-row" role="search">
+      <div class="search-input-wrap">
+        <span class="si-icon" aria-hidden="true">🔍</span>
+        <label for="search-field" style="position:absolute;width:1px;height:1px;overflow:hidden">Buscar itens</label>
+        <input class="search-input" id="search-field" type="text" placeholder="Buscar itens…" value="furadeira">
+      </div>
+      <button class="filter-btn" aria-label="Abrir filtros">⚙️ Filtros</button>
+      <button class="filter-btn" aria-label="Raio de busca: 5 km">📍 Raio: 5 km</button>
+    </div>
+    <div class="chip-row" role="list" aria-label="Filtrar por categoria">
+      <div class="chip active" role="listitem button" tabindex="0">Todos</div>
+      <div class="chip" role="listitem button" tabindex="0">🔧 Ferramentas</div>
+      <div class="chip" role="listitem button" tabindex="0">💻 Eletrônicos</div>
+      <div class="chip" role="listitem button" tabindex="0">🏗️ Construção</div>
+      <div class="chip" role="listitem button" tabindex="0">⚽ Esporte</div>
+      <div class="chip" role="listitem button" tabindex="0">🏠 Casa</div>
+    </div>
+    <div class="search-layout">
+      <aside class="filter-sidebar" aria-label="Painel de filtros">
+        <div class="filter-card">
+          <div class="filter-title">Filtros</div>
+          <div class="filter-group">
+            <span class="filter-label" id="filter-cat">Categoria</span>
+            <div role="group" aria-labelledby="filter-cat">
+              <label class="filter-option"><input type="checkbox" checked> Ferramentas</label>
+              <label class="filter-option"><input type="checkbox"> Eletrônicos</label>
+              <label class="filter-option"><input type="checkbox"> Construção</label>
+              <label class="filter-option"><input type="checkbox"> Esporte</label>
+              <label class="filter-option"><input type="checkbox"> Casa &amp; Jardim</label>
+            </div>
+          </div>
+          <div class="filter-group">
+            <span class="filter-label" id="filter-price">Preço/dia</span>
+            <div class="range-slider" role="group" aria-labelledby="filter-price">
+              <span>R$0</span>
+              <input type="range" min="0" max="500" value="200" aria-label="Preço máximo por dia">
+              <span>R$200</span>
+            </div>
+          </div>
+          <div class="filter-group">
+            <span class="filter-label" id="filter-dist">Distância</span>
+            <div role="group" aria-labelledby="filter-dist">
+              <label class="filter-option"><input type="radio" name="dist" checked> Até 2 km</label>
+              <label class="filter-option"><input type="radio" name="dist"> Até 5 km</label>
+              <label class="filter-option"><input type="radio" name="dist"> Até 10 km</label>
+              <label class="filter-option"><input type="radio" name="dist"> Qualquer</label>
+            </div>
+          </div>
+          <div class="filter-group">
+            <span class="filter-label" id="filter-rating">Avaliação</span>
+            <div role="group" aria-labelledby="filter-rating">
+              <label class="filter-option"><input type="checkbox"> ★★★★★ 5 estrelas</label>
+              <label class="filter-option"><input type="checkbox" checked> ★★★★+ 4+</label>
+              <label class="filter-option"><input type="checkbox"> ★★★+ 3+</label>
+            </div>
+          </div>
+          <button class="btn-primary btn-primary--full" style="margin-top:0">Aplicar filtros</button>
+        </div>
+      </aside>
+      <div class="search-main">
+        <div class="results-meta">
+          <span class="results-count" aria-live="polite">48 itens encontrados em Natal, RN</span>
+          <label for="sort-select" style="position:absolute;width:1px;height:1px;overflow:hidden">Ordenar por</label>
+          <select class="sort-select" id="sort-select">
+            <option>Mais próximos</option>
+            <option>Menor preço</option>
+            <option>Melhor avaliação</option>
+            <option>Mais recentes</option>
+          </select>
+        </div>
+        <div class="item-grid">
+          <div class="item-card" onclick="go('item-detail')">
+            <div class="item-card__img" role="img" aria-label="Furadeira de Impacto Bosch"><img src="https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=800&q=90" alt="Furadeira de Impacto Bosch" loading="lazy" onerror="this.style.display='none'"><span aria-hidden="true">🔧</span><div class="item-card__badge">Disponível</div><button class="item-card__fav" onclick="favToggle(event,this)" aria-label="Salvar nos favoritos"><div class="item-card__fav-inner" aria-hidden="true">🤍</div></button></div>
+            <div class="item-card__body"><div class="item-card__title">Furadeira de Impacto Bosch</div><div class="item-card__meta">📍 1,2 km · Ponta Negra</div><div class="item-card__rating"><span class="star" aria-hidden="true">★</span>4.9 (32)</div><div class="item-card__price">R$ 35<span>/dia</span></div></div>
+          </div>
+          <div class="item-card" onclick="go('item-detail')">
+            <div class="item-card__img" role="img" aria-label="Parafusadeira Dewalt"><img src="https://images.unsplash.com/photo-1581235720704-06d3acfcb36f?w=800&q=90" alt="Parafusadeira Dewalt" loading="lazy" onerror="this.style.display='none'"><span aria-hidden="true">🔩</span><div class="item-card__badge">Disponível</div><button class="item-card__fav" onclick="favToggle(event,this)" aria-label="Salvar nos favoritos"><div class="item-card__fav-inner" aria-hidden="true">🤍</div></button></div>
+            <div class="item-card__body"><div class="item-card__title">Parafusadeira Dewalt</div><div class="item-card__meta">📍 1,9 km · Candelária</div><div class="item-card__rating"><span class="star" aria-hidden="true">★</span>4.7 (15)</div><div class="item-card__price">R$ 28<span>/dia</span></div></div>
+          </div>
+          <div class="item-card" onclick="go('item-detail')">
+            <div class="item-card__img" role="img" aria-label="Serra Circular Skil"><img src="https://images.unsplash.com/photo-1504148455328-c376907d081c?w=800&q=90" alt="Serra Circular Skil" loading="lazy" onerror="this.style.display='none'"><span aria-hidden="true">⚡</span><div class="item-card__badge">Disponível</div><button class="item-card__fav" onclick="favToggle(event,this)" aria-label="Salvar nos favoritos"><div class="item-card__fav-inner" aria-hidden="true">🤍</div></button></div>
+            <div class="item-card__body"><div class="item-card__title">Serra Circular Skil 7¼"</div><div class="item-card__meta">📍 2,3 km · Lagoa Nova</div><div class="item-card__rating"><span class="star" aria-hidden="true">★</span>4.8 (8)</div><div class="item-card__price">R$ 45<span>/dia</span></div></div>
+          </div>
+          <div class="item-card" onclick="go('item-detail')">
+            <div class="item-card__img" role="img" aria-label="Lixadeira Orbital Black+Decker"><img src="https://images.unsplash.com/photo-1530124566582-a618bc2615dc?w=800&q=90" alt="Lixadeira Orbital" loading="lazy" onerror="this.style.display='none'"><span aria-hidden="true">🪚</span><div class="item-card__badge">Disponível</div><button class="item-card__fav" onclick="favToggle(event,this)" aria-label="Salvar nos favoritos"><div class="item-card__fav-inner" aria-hidden="true">🤍</div></button></div>
+            <div class="item-card__body"><div class="item-card__title">Lixadeira Orbital Black+Decker</div><div class="item-card__meta">📍 3,1 km · Tirol</div><div class="item-card__rating"><span class="star" aria-hidden="true">★</span>4.6 (22)</div><div class="item-card__price">R$ 20<span>/dia</span></div></div>
+          </div>
+          <div class="item-card" onclick="go('item-detail')">
+            <div class="item-card__img" role="img" aria-label="Martelete SDS-Plus Makita"><img src="https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=800&q=90" alt="Martelete SDS-Plus Makita" loading="lazy" onerror="this.style.display='none'"><span aria-hidden="true">🔨</span><div class="item-card__badge">Disponível</div><button class="item-card__fav" onclick="favToggle(event,this)" aria-label="Salvar nos favoritos"><div class="item-card__fav-inner" aria-hidden="true">🤍</div></button></div>
+            <div class="item-card__body"><div class="item-card__title">Martelete SDS-Plus Makita</div><div class="item-card__meta">📍 4,0 km · Petrópolis</div><div class="item-card__rating"><span class="star" aria-hidden="true">★</span>5.0 (7)</div><div class="item-card__price">R$ 55<span>/dia</span></div></div>
+          </div>
+          <div class="item-card" onclick="go('item-detail')">
+            <div class="item-card__img" role="img" aria-label="Nível a Laser 3D Bosch"><img src="https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=800&q=90" alt="Nível a Laser 3D Bosch" loading="lazy" onerror="this.style.display='none'"><span aria-hidden="true">🧱</span><div class="item-card__badge">Disponível</div><button class="item-card__fav" onclick="favToggle(event,this)" aria-label="Salvar nos favoritos"><div class="item-card__fav-inner" aria-hidden="true">🤍</div></button></div>
+            <div class="item-card__body"><div class="item-card__title">Nível a Laser 3D Bosch</div><div class="item-card__meta">📍 4,5 km · Alecrim</div><div class="item-card__rating"><span class="star" aria-hidden="true">★</span>4.9 (11)</div><div class="item-card__price">R$ 40<span>/dia</span></div></div>
+          </div>
+        </div>
+        <button class="btn-outline btn-outline--full" style="max-width:280px;margin:24px auto;display:flex">Carregar mais itens</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DETALHE DO ITEM ══════════════════════════════════════ -->
+<div id="screen-item-detail" class="screen">
+  <div class="back-bar">
+    <div class="container">
+      <button class="back-btn" onclick="go('search')" aria-label="Voltar para resultados">← Voltar para resultados</button>
+    </div>
+  </div>
+  <div class="container section">
+    <div class="detail-layout">
+      <div class="detail-gallery">
+        <div class="gallery-main" role="img" aria-label="Foto principal da Furadeira de Impacto Bosch"><img src="https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=800&q=90" alt="Furadeira de Impacto Bosch" onerror="this.style.display='none'"><span aria-hidden="true">🔧</span></div>
+        <div class="gallery-thumbs" role="list" aria-label="Miniaturas da galeria">
+          <button class="gallery-thumb active" role="listitem" aria-label="Foto 1" aria-current="true"><img src="https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=800&q=90" alt="" onerror="this.style.display='none'"><span aria-hidden="true">🔧</span></button>
+          <button class="gallery-thumb" role="listitem" aria-label="Foto 2"><img src="https://images.unsplash.com/photo-1581235720704-06d3acfcb36f?w=800&q=90" alt="" onerror="this.style.display='none'"><span aria-hidden="true">🪛</span></button>
+          <button class="gallery-thumb" role="listitem" aria-label="Foto 3 — embalagem"><img src="https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=800&q=90&sat=-100" alt="" onerror="this.style.display='none'"><span aria-hidden="true">📦</span></button>
+          <button class="gallery-thumb" role="listitem" aria-label="Foto 4 — manual"><img src="https://images.unsplash.com/photo-1530124566582-a618bc2615dc?w=800&q=90" alt="" onerror="this.style.display='none'"><span aria-hidden="true">📋</span></button>
+        </div>
+        <div class="detail-desc">
+          <h2 style="font-size:18px;font-weight:700;margin-bottom:16px">Sobre o item</h2>
+          <p>Furadeira de impacto Bosch GSB 13 RE Professional, 650W, 220V. Ideal para furar concreto, madeira e metal. Acompanha maleta original, mandril e 10 brocas variadas.</p>
+          <div class="tags-row" role="list" aria-label="Características do item">
+            <span class="tag" role="listitem">🔧 Ferramentas</span>
+            <span class="tag" role="listitem">Bosch</span>
+            <span class="tag" role="listitem">650W</span>
+            <span class="tag" role="listitem">220V</span>
+          </div>
+          <div class="divider-h"></div>
+          <h2 style="font-size:18px;font-weight:700;margin-bottom:16px">Avaliações (32)</h2>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="background:var(--bg);border-radius:8px;padding:12px;border:1px solid var(--border)">
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                <div style="font-size:13px;font-weight:600">Carlos M.</div>
+                <div style="font-size:12px;color:var(--text2)">há 3 dias</div>
+              </div>
+              <div style="color:#f59e0b;font-size:13px;margin-bottom:4px" aria-label="5 estrelas">★★★★★</div>
+              <div style="font-size:13px;color:var(--text2)">Ferramenta em perfeito estado, entrega rápida. Recomendo!</div>
+            </div>
+            <div style="background:var(--bg);border-radius:8px;padding:12px;border:1px solid var(--border)">
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                <div style="font-size:13px;font-weight:600">Ana L.</div>
+                <div style="font-size:12px;color:var(--text2)">há 1 semana</div>
+              </div>
+              <div style="color:#f59e0b;font-size:13px;margin-bottom:4px" aria-label="5 estrelas">★★★★★</div>
+              <div style="font-size:13px;color:var(--text2)">Excelente! Muito fácil de usar, proprietário super atencioso.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card lateral com preço dinâmico -->
+      <div class="detail-info" aria-label="Resumo e ação de locação">
+        <div class="detail-cat" aria-label="Categoria: Ferramentas">🔧 Ferramentas</div>
+        <h1 class="detail-title">Furadeira de Impacto Bosch GSB 13 RE</h1>
+        <div class="detail-rating">
+          <span style="color:#f59e0b" aria-label="4.9 estrelas">★★★★★</span>
+          <strong>4.9</strong> · <span>32 avaliações</span> · <span class="badge-eco">🌿 Eco</span>
+        </div>
+        <div class="price-block">
+          <div class="price-main">R$ 35 <span>/dia</span></div>
+          <div class="price-alts">
+            <span class="price-alts-label">Também:</span>
+            <span class="price-alt" aria-label="R$180 por semana">R$ 180/sem</span>
+            <span class="price-alt" aria-label="R$480 por mês">R$ 480/mês</span>
+          </div>
+        </div>
+        <div class="date-row">
+          <div class="date-field">
+            <label for="date-start">Retirada</label>
+            <input type="date" id="date-start" onchange="calcPrice()">
+          </div>
+          <div class="date-field">
+            <label for="date-end">Devolução</label>
+            <input type="date" id="date-end" onchange="calcPrice()">
+          </div>
+        </div>
+        <div class="price-summary" id="price-summary" aria-live="polite">
+          <div class="price-summary-row muted"><span>Selecione as datas acima</span><span>—</span></div>
+        </div>
+        <button class="btn-primary btn-primary--lg" style="margin-bottom:10px" onclick="toast('Solicitação enviada ao proprietário! ✅','success')">💬 Solicitar locação</button>
+        <button class="btn-outline btn-outline--full" onclick="toast('Salvo nos favoritos ❤️')">🤍 Salvar nos favoritos</button>
+        <div class="owner-mini" onclick="go('dashboard')" role="button" tabindex="0" aria-label="Ver perfil de João Silva">
+          <div class="owner-av" aria-hidden="true">J</div>
+          <div class="owner-info">
+            <div class="owner-info__name">João Silva</div>
+            <div class="owner-info__meta">⭐ 4.9 · 48 locações · Ponta Negra, Natal</div>
+          </div>
+          <span style="color:var(--text2);font-size:18px;margin-left:auto" aria-hidden="true">›</span>
+        </div>
+        <div style="margin-top:12px;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2)">
+          🔒 Pagamento seguro via Shareo · Seguro incluso
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LOGIN ════════════════════════════════════════════════ -->
+<div id="screen-login" class="screen">
+  <div class="auth-wrap">
+    <div class="auth-card" role="main" aria-label="Formulário de login">
+      <div class="auth-logo"><img src="icones/ShareO%20v2%20fundo%20transparente.png" alt="Shareo" style="height:44px;width:auto;margin-bottom:8px;" /></div></div>
+      </div>
+      </div>
+      <h1 class="auth-title">Bem-vindo de volta</h1>
+      <p class="auth-sub">Faça login para continuar</p>
+      <button class="social-btn" aria-label="Continuar com Google">
+        <span aria-hidden="true">🇬</span> Continuar com Google
+      </button>
+      <div class="divider" role="separator">ou entre com e-mail</div>
+      <div class="form-group">
+        <label for="login-email">E-mail</label>
+        <input class="form-input" id="login-email" type="email" placeholder="seu@email.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label for="login-pass">Senha</label>
+        <input class="form-input" id="login-pass" type="password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <div style="text-align:right;margin-top:-8px;margin-bottom:12px">
+        <button class="link-orange" style="border:none;background:none;font-size:13px;font-family:inherit;cursor:pointer">Esqueci minha senha</button>
+      </div>
+      <button class="btn-primary btn-primary--full" onclick="doLogin()" style="margin-top:4px">Entrar</button>
+      <div class="auth-footer">
+        Não tem conta? <span class="link-orange" onclick="go('signup')" role="link" tabindex="0">Criar conta grátis</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CADASTRO ══════════════════════════════════════════════ -->
+<div id="screen-signup" class="screen">
+  <div class="auth-wrap">
+    <div class="auth-card" style="max-width:480px" role="main" aria-label="Formulário de cadastro">
+      <div class="auth-logo"><img src="icones/ShareO%20v2%20fundo%20transparente.png" alt="Shareo" style="height:44px;width:auto;margin-bottom:8px;" /></div></div>
+      </div>
+      </div>
+      <h1 class="auth-title">Criar conta grátis</h1>
+      <p class="auth-sub">Use Mais. Possua Menos.</p>
+      <div class="type-tabs" role="tablist" aria-label="Tipo de conta">
+        <button class="type-tab active" role="tab" aria-selected="true" onclick="setTab(this)">👤 Pessoa Física</button>
+        <button class="type-tab" role="tab" aria-selected="false" onclick="setTab(this)">🏢 Empresa (PJ)</button>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label for="s-nome">Nome</label><input class="form-input" id="s-nome" type="text" placeholder="Roberto" autocomplete="given-name"></div>
+        <div class="form-group"><label for="s-sobrenome">Sobrenome</label><input class="form-input" id="s-sobrenome" type="text" placeholder="Silva" autocomplete="family-name"></div>
+      </div>
+      <div class="form-group"><label for="s-email">E-mail</label><input class="form-input" id="s-email" type="email" placeholder="seu@email.com" autocomplete="email"></div>
+      <div class="form-group"><label for="s-tel">Telefone (WhatsApp)</label><input class="form-input" id="s-tel" type="tel" placeholder="(84) 9 9999-9999" autocomplete="tel"></div>
+      <div class="form-row">
+        <div class="form-group"><label for="s-pass">Senha</label><input class="form-input" id="s-pass" type="password" placeholder="Mín. 8 caracteres" autocomplete="new-password"></div>
+        <div class="form-group"><label for="s-pass2">Confirmar senha</label><input class="form-input" id="s-pass2" type="password" placeholder="Repetir senha" autocomplete="new-password"></div>
+      </div>
+      <div class="form-group"><label for="s-cpf">CPF</label><input class="form-input" id="s-cpf" type="text" placeholder="000.000.000-00" autocomplete="off"></div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:16px">
+        Ao criar sua conta você concorda com os <span class="link-orange">Termos de Uso</span> e a <span class="link-orange">Política de Privacidade</span>.
+      </div>
+      <button class="btn-primary btn-primary--full" onclick="doLogin()">Criar minha conta</button>
+      <div class="auth-footer">
+        Já tem conta? <span class="link-orange" onclick="go('login')" role="link" tabindex="0">Entrar</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CADASTRAR ITEM ════════════════════════════════════════ -->
+<div id="screen-add-item" class="screen">
+  <div class="back-bar">
+    <div class="container">
+      <button class="back-btn" onclick="go('dashboard')">← Meus anúncios</button>
+    </div>
+  </div>
+  <div class="container">
+    <div class="add-layout">
+      <h1 style="font-size:24px;font-weight:800;margin-bottom:4px">Cadastrar novo item</h1>
+      <p class="text-sm mb16">Preencha as informações do item que deseja colocar para alugar.</p>
+
+      <!-- Nota informativa no lugar do step indicator falso -->
+      <div class="step-note" role="note">
+        <span aria-hidden="true">ℹ️</span>
+        Preencha todas as seções abaixo e clique em <strong>Publicar anúncio</strong> ao final.
+      </div>
+
+      <div class="form-card" aria-labelledby="section-fotos">
+        <div class="form-card-title" id="section-fotos">📷 Fotos do item</div>
+        <div class="photo-upload" role="button" tabindex="0" aria-label="Clique para enviar fotos ou arraste aqui">
+          <div class="photo-upload__icon" aria-hidden="true">📤</div>
+          <div class="photo-upload__text">
+            <strong>Clique para enviar</strong> ou arraste as fotos aqui<br>
+            <span style="font-size:12px">JPG, PNG ou WEBP · Mín. 800×600px · Até 10 fotos</span>
+          </div>
+        </div>
+        <div class="photo-thumbs" role="list" aria-label="Fotos carregadas">
+          <div class="photo-thumb has-img" role="listitem" aria-label="Foto 1 — Furadeira Bosch" tabindex="0"><img src="https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=400&q=90" alt="Furadeira Bosch" loading="lazy" onerror="this.style.display='none'"></div>
+          <div class="photo-thumb has-img" role="listitem" aria-label="Foto 2 — Parafusadeira" tabindex="0"><img src="https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=400&q=90" alt="Parafusadeira" loading="lazy" onerror="this.style.display='none'"></div>
+          <div class="photo-thumb has-img" role="listitem" aria-label="Foto 3 — Kit de ferramentas" tabindex="0"><img src="https://images.unsplash.com/photo-1504148455328-c376907d081c?w=400&q=90" alt="Kit de ferramentas" loading="lazy" onerror="this.style.display='none'"></div>
+          <div class="photo-thumb" role="listitem" aria-label="Adicionar foto" tabindex="0">+</div>
+        </div>
+      </div>
+
+      <div class="form-card" aria-labelledby="section-detalhes">
+        <div class="form-card-title" id="section-detalhes">📝 Informações do item</div>
+        <div class="form-group">
+          <label for="item-cat">Categoria</label>
+          <select class="form-select" id="item-cat">
+            <option>Selecione a categoria…</option>
+            <option selected>🔧 Ferramentas</option>
+            <option>🏗️ Construção</option>
+            <option>💻 Eletrônicos</option>
+            <option>👗 Moda</option>
+            <option>🏠 Casa e Jardim</option>
+            <option>⚽ Esporte e Lazer</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="item-titulo">Título do anúncio</label>
+          <input class="form-input" id="item-titulo" type="text" value="Furadeira de Impacto Bosch GSB 13 RE" placeholder="Ex.: Furadeira de Impacto Bosch 650W">
+        </div>
+        <div class="form-group">
+          <label for="item-desc">Descrição</label>
+          <textarea class="form-textarea" id="item-desc">Furadeira profissional em ótimo estado. Acompanha maleta original, 10 brocas e manual. Ideal para obra e reformas domésticas.</textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label for="item-marca">Marca</label><input class="form-input" id="item-marca" type="text" value="Bosch"></div>
+          <div class="form-group"><label for="item-modelo">Modelo</label><input class="form-input" id="item-modelo" type="text" value="GSB 13 RE"></div>
+        </div>
+        <div class="form-group">
+          <label for="item-condicao">Condição</label>
+          <select class="form-select" id="item-condicao">
+            <option selected>Seminovo — excelente estado</option>
+            <option>Usado — bom estado</option>
+            <option>Novo — nunca usado</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-card" aria-labelledby="section-preco">
+        <div class="form-card-title" id="section-preco">💰 Preço e disponibilidade</div>
+        <div class="price-inputs">
+          <div class="form-group price-field" style="flex:1">
+            <label for="preco-dia">Preço por dia</label>
+            <div class="price-field">
+              <span class="prefix" aria-hidden="true">R$</span>
+              <input class="form-input" id="preco-dia" type="number" value="35" style="padding-left:30px" aria-label="Preço por dia em reais">
+            </div>
+          </div>
+          <div class="form-group price-field" style="flex:1">
+            <label for="preco-sem">Preço por semana</label>
+            <div class="price-field">
+              <span class="prefix" aria-hidden="true">R$</span>
+              <input class="form-input" id="preco-sem" type="number" value="180" style="padding-left:30px" aria-label="Preço por semana em reais">
+            </div>
+          </div>
+          <div class="form-group price-field" style="flex:1">
+            <label for="preco-mes">Preço por mês</label>
+            <div class="price-field">
+              <span class="prefix" aria-hidden="true">R$</span>
+              <input class="form-input" id="preco-mes" type="number" value="480" style="padding-left:30px" aria-label="Preço por mês em reais">
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label id="avail-label">Dias disponíveis para retirada</label>
+          <p class="text-sm mb8">Selecione os dias da semana:</p>
+          <div class="avail-grid" role="group" aria-labelledby="avail-label">
+            <button class="day-btn" aria-pressed="false">Dom</button>
+            <button class="day-btn active" aria-pressed="true">Seg</button>
+            <button class="day-btn active" aria-pressed="true">Ter</button>
+            <button class="day-btn active" aria-pressed="true">Qua</button>
+            <button class="day-btn active" aria-pressed="true">Qui</button>
+            <button class="day-btn active" aria-pressed="true">Sex</button>
+            <button class="day-btn" aria-pressed="false">Sáb</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="item-local">Local de retirada</label>
+          <input class="form-input" id="item-local" type="text" value="Ponta Negra, Natal-RN" placeholder="Bairro / Ponto de referência">
+        </div>
+      </div>
+
+      <div style="display:flex;gap:12px">
+        <button class="btn-outline btn-outline--full" onclick="go('dashboard')">Salvar rascunho</button>
+        <button class="btn-primary btn-primary--full" onclick="toast('Item publicado com sucesso! 🎉','success');go('dashboard')">Publicar anúncio</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DASHBOARD ════════════════════════════════════════════ -->
+<div id="screen-dashboard" class="screen">
+  <div class="container">
+
+    <!-- Tabs mobile (visíveis apenas no mobile) -->
+    <nav class="dash-tabs" aria-label="Seções do painel" role="tablist">
+      <button class="dash-tab active" role="tab" aria-selected="true">Visão Geral</button>
+      <button class="dash-tab" role="tab" aria-selected="false">Anúncios</button>
+      <button class="dash-tab" role="tab" aria-selected="false">Locações</button>
+      <button class="dash-tab" role="tab" aria-selected="false">Receita</button>
+      <button class="dash-tab" role="tab" aria-selected="false">Mensagens</button>
+      <button class="dash-tab" role="tab" aria-selected="false">Avaliações</button>
+    </nav>
+
+    <div class="dash-layout">
+      <aside class="dash-sidebar" aria-label="Menu do painel">
+        <nav class="dash-menu">
+          <button class="dash-menu-item active" aria-current="page">📊 Visão geral</button>
+          <button class="dash-menu-item">📦 Meus anúncios</button>
+          <button class="dash-menu-item">📅 Locações ativas</button>
+          <button class="dash-menu-item">💰 Receita</button>
+          <button class="dash-menu-item">❤️ Favoritos</button>
+          <button class="dash-menu-item">💬 Mensagens</button>
+          <button class="dash-menu-item">⭐ Avaliações</button>
+          <button class="dash-menu-item">⚙️ Configurações</button>
+          <button class="dash-menu-item" onclick="doLogout()" style="color:var(--error)">🚪 Sair</button>
+        </nav>
+      </aside>
+
+      <div class="dash-main">
+        <div class="profile-hero" aria-label="Perfil do usuário">
+          <div class="profile-av" aria-hidden="true">R</div>
+          <div>
+            <div class="profile-name">Roberto Epifânio</div>
+            <div class="profile-meta">📍 Ponta Negra, Natal-RN · Membro desde 2024</div>
+            <div class="profile-badges" role="list" aria-label="Badges do perfil">
+              <span class="profile-badge" role="listitem">⭐ 4.9</span>
+              <span class="profile-badge" role="listitem">🔧 48 locações</span>
+              <span class="profile-badge" role="listitem">✅ Verificado</span>
+              <span class="profile-badge" role="listitem">🌿 Eco Shareo</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="kpi-row" role="list" aria-label="Indicadores de desempenho">
+          <div class="kpi-card" role="listitem">
+            <div class="kpi-label">Receita (mês)</div>
+            <div class="kpi-val">R$ 840</div>
+            <div class="kpi-delta" aria-label="Crescimento de 23% em relação ao mês anterior">↑ 23% vs. mês anterior</div>
+          </div>
+          <div class="kpi-card" role="listitem">
+            <div class="kpi-label">Locações ativas</div>
+            <div class="kpi-val">3</div>
+            <div class="kpi-delta">2 devoluções esta semana</div>
+          </div>
+          <div class="kpi-card" role="listitem">
+            <div class="kpi-label">Itens anunciados</div>
+            <div class="kpi-val">7</div>
+            <div class="kpi-delta">5 disponíveis agora</div>
+          </div>
+          <div class="kpi-card" role="listitem">
+            <div class="kpi-label">Avaliação média</div>
+            <div class="kpi-val">4.9 ⭐</div>
+            <div class="kpi-delta">↑ 0.1 vs. trimestre</div>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h2 class="section-title" style="margin-bottom:0">Meus anúncios</h2>
+          <button class="btn-primary btn-primary--sm" onclick="go('add-item')" aria-label="Criar novo anúncio">+ Novo item</button>
+        </div>
+        <div class="my-items-grid">
+          <div class="my-item-card">
+            <div class="my-item-img" role="img" aria-label="Furadeira de Impacto Bosch">🔧</div>
+            <div class="my-item-body">
+              <div class="my-item-name">Furadeira de Impacto Bosch</div>
+              <div style="display:flex;align-items:center;gap:8px;margin:4px 0">
+                <span class="status-badge disponivel">Disponível</span>
+                <span class="my-item-price">R$ 35/dia</span>
+              </div>
+              <div style="font-size:12px;color:var(--text2)">⭐ 4.9 · 32 avaliações · 18 locações</div>
+              <div class="my-item-actions">
+                <button class="my-item-btn" aria-label="Editar Furadeira de Impacto Bosch">✏️ Editar</button>
+                <button class="my-item-btn" aria-label="Ver estatísticas">📊 Stats</button>
+              </div>
+            </div>
+          </div>
+          <div class="my-item-card">
+            <div class="my-item-img" role="img" aria-label="Câmera Sony A7 III">🎥</div>
+            <div class="my-item-body">
+              <div class="my-item-name">Câmera Sony A7 III</div>
+              <div style="display:flex;align-items:center;gap:8px;margin:4px 0">
+                <span class="status-badge alugado">Alugado</span>
+                <span class="my-item-price">R$ 150/dia</span>
+              </div>
+              <div style="font-size:12px;color:var(--text2)">⭐ 5.0 · 18 avaliações · Devolução: 22/mai</div>
+              <div class="my-item-actions">
+                <button class="my-item-btn" aria-label="Editar Câmera Sony A7 III">✏️ Editar</button>
+                <button class="my-item-btn" aria-label="Abrir chat com locatário">💬 Chat</button>
+              </div>
+            </div>
+          </div>
+          <div class="my-item-card">
+            <div class="my-item-img" role="img" aria-label="Barraca de Camping">🏕️</div>
+            <div class="my-item-body">
+              <div class="my-item-name">Barraca de Camping 4p</div>
+              <div style="display:flex;align-items:center;gap:8px;margin:4px 0">
+                <span class="status-badge disponivel">Disponível</span>
+                <span class="my-item-price">R$ 60/dia</span>
+              </div>
+              <div style="font-size:12px;color:var(--text2)">⭐ 4.7 · 45 avaliações · 30 locações</div>
+              <div class="my-item-actions">
+                <button class="my-item-btn">✏️ Editar</button>
+                <button class="my-item-btn">📊 Stats</button>
+              </div>
+            </div>
+          </div>
+          <div class="my-item-card">
+            <div class="my-item-img" role="img" aria-label="Microfone Rode NT1-A">🎙️</div>
+            <div class="my-item-body">
+              <div class="my-item-name">Microfone Rode NT1-A</div>
+              <div style="display:flex;align-items:center;gap:8px;margin:4px 0">
+                <span class="status-badge analise">Em análise</span>
+                <span class="my-item-price">R$ 80/dia</span>
+              </div>
+              <div style="font-size:12px;color:var(--text2)">Aguardando aprovação Shareo</div>
+              <div class="my-item-actions">
+                <button class="my-item-btn">✏️ Editar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:32px">
+          <h2 class="section-title">Locações ativas</h2>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-card);padding:16px">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+              <div>
+                <div style="font-size:14px;font-weight:600;margin-bottom:4px">🎥 Câmera Sony A7 III</div>
+                <div style="font-size:12px;color:var(--text2)">Locatária: <strong>Ana Luiza M.</strong> · 19–22 mai 2026 (3 dias)</div>
+                <div style="font-size:12px;color:var(--text2);margin-top:2px">💰 R$ 450,00 · Comissão Shareo: R$ 45,00</div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+                <button class="my-item-btn">💬 Mensagem</button>
+                <button class="my-item-btn">📋 Contrato</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="doLogout()" style="display:flex;margin:24px 0;border:none;background:none;color:var(--error);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;align-items:center;gap:6px" class="btn-ghost-white" aria-label="Sair da conta" id="mobile-logout">
+          🚪 Sair da conta
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+</main><!-- /#main-content -->
+
+<!-- ═══ BOTTOM NAV ════════════════════════════════════════════ -->
+<nav class="bottom-nav" aria-label="Navegação mobile">
+  <button class="bnav-item active" id="bnav-home" onclick="go('home')" aria-label="Início" aria-current="page">
+    <span class="bnav-icon" aria-hidden="true">🏠</span>Início
+  </button>
+  <button class="bnav-item" id="bnav-search" onclick="go('search')" aria-label="Buscar itens">
+    <span class="bnav-icon" aria-hidden="true">🔍</span>Buscar
+  </button>
+  <button class="bnav-item" id="bnav-add" onclick="go('add-item')" aria-label="Anunciar item">
+    <div class="bnav-add-circle" aria-hidden="true">+</div>Anunciar
+  </button>
+  <button class="bnav-item" id="bnav-dash" onclick="go('dashboard')" aria-label="Meu perfil">
+    <span class="bnav-icon" aria-hidden="true">👤</span>Perfil
+  </button>
+  <!-- Chat: desabilitado visualmente até épico 4 estar pronto -->
+  <button class="bnav-item bnav-item--disabled" disabled aria-label="Chat — em breve" aria-disabled="true">
+    <span class="bnav-icon" aria-hidden="true">💬</span>Chat
+  </button>
+</nav>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toasts" aria-live="polite" aria-atomic="false"></div>
+
+<!-- sr-only utility -->
+<style>
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+</style>
+
+<!-- ═══ JAVASCRIPT ════════════════════════════════════════════ -->
+<script>
+// ── Estado ────────────────────────────────────────────────────
+let loggedIn = false;
+const protectedScreens = ['dashboard', 'add-item'];
+const DAILY_PRICE = 35;
+const COMMISSION  = 0.10;
+
+// ── Data mínima (hoje) para inputs de data ────────────────────
+(function setDateMins() {
+  const today = new Date().toISOString().split('T')[0];
+  const s = document.getElementById('date-start');
+  const e = document.getElementById('date-end');
+  if (s) { s.min = today; }
+  if (e) { e.min = today; }
+})();
+
+// ── Router ────────────────────────────────────────────────────
+function go(screen) {
+  if (protectedScreens.includes(screen) && !loggedIn) {
+    toast('Faça login para continuar 🔒');
+    showScreen('login');
+    return;
+  }
+  showScreen(screen);
+}
+
+function showScreen(screen) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const target = document.getElementById('screen-' + screen);
+  if (target) {
+    target.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  // Bottom nav
+  ['home','search','add','dash'].forEach(k => {
+    const el = document.getElementById('bnav-' + k);
+    if (el) { el.classList.remove('active'); el.removeAttribute('aria-current'); }
+  });
+  // Desktop nav aria-current
+  document.querySelectorAll('.dnav-item').forEach(el => el.removeAttribute('aria-current'));
+
+  const map = { home:'home', search:'search', 'add-item':'add', dashboard:'dash' };
+  const bk  = map[screen];
+  if (bk) {
+    const el = document.getElementById('bnav-' + bk);
+    if (el) { el.classList.add('active'); el.setAttribute('aria-current','page'); }
+  }
+}
+
+// ── Auth ──────────────────────────────────────────────────────
+function doLogin() {
+  loggedIn = true;
+  document.getElementById('btn-login-header').style.display = 'none';
+  document.getElementById('avatar-header').style.display = 'flex';
+  toast('Login realizado com sucesso! 🎉', 'success');
+  showScreen('home');
+}
+
+function doLogout() {
+  loggedIn = false;
+  document.getElementById('btn-login-header').style.display = '';
+  document.getElementById('avatar-header').style.display = 'none';
+  toast('Sessão encerrada. Até logo!');
+  showScreen('home');
+}
+
+// ── Cálculo dinâmico de preço ─────────────────────────────────
+function calcPrice() {
+  const s = document.getElementById('date-start');
+  const e = document.getElementById('date-end');
+  const summary = document.getElementById('price-summary');
+  if (!s || !e || !s.value || !e.value) return;
+
+  const start = new Date(s.value);
+  const end   = new Date(e.value);
+  const days  = Math.round((end - start) / 86400000);
+
+  // Garante que data final >= data inicial
+  if (days <= 0) {
+    e.min = s.value;
+    summary.innerHTML = '<div class="price-summary-row muted"><span>⚠️ Data de devolução inválida</span><span>—</span></div>';
+    return;
+  }
+  // Define mínimo de devolução = dia seguinte à retirada
+  const minEnd = new Date(start); minEnd.setDate(minEnd.getDate() + 1);
+  e.min = minEnd.toISOString().split('T')[0];
+
+  const subtotal   = days * DAILY_PRICE;
+  const commission = Math.round(subtotal * COMMISSION * 100) / 100;
+  const total      = subtotal + commission;
+  const fmt = v => 'R$ ' + v.toFixed(2).replace('.', ',');
+
+  summary.innerHTML = `
+    <div class="price-summary-row muted"><span>${days} dia${days>1?'s':''} × ${fmt(DAILY_PRICE)}</span><span>${fmt(subtotal)}</span></div>
+    <div class="price-summary-row muted"><span>Taxa Shareo (10%)</span><span>${fmt(commission)}</span></div>
+    <div class="price-divider"></div>
+    <div class="price-summary-row"><span>Total</span><span>${fmt(total)}</span></div>
+  `;
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+function toast(msg, type = '') {
+  const container = document.getElementById('toasts');
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' ' + type : '');
+  el.textContent = msg;
+  container.appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+// ── Favoritar ─────────────────────────────────────────────────
+function favToggle(e, btn) {
+  e.stopPropagation();
+  const inner = btn.querySelector('.item-card__fav-inner');
+  const isFaved = inner.textContent === '❤️';
+  inner.textContent = isFaved ? '🤍' : '❤️';
+  btn.setAttribute('aria-pressed', String(!isFaved));
+  btn.setAttribute('aria-label', isFaved ? 'Salvar nos favoritos' : 'Remover dos favoritos');
+  if (!isFaved) toast('Salvo nos favoritos ❤️');
+}
+
+// ── Tabs (Tipo de conta) ──────────────────────────────────────
+function setTab(btn) {
+  const tabs = btn.closest('[role=tablist]').querySelectorAll('[role=tab]');
+  tabs.forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
+  btn.classList.add('active');
+  btn.setAttribute('aria-selected','true');
+}
+
+// ── Dashboard mobile tabs ─────────────────────────────────────
+document.querySelectorAll('.dash-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.dash-tab').forEach(t => {
+      t.classList.remove('active'); t.setAttribute('aria-selected','false');
+    });
+    tab.classList.add('active');
+    tab.setAttribute('aria-selected','true');
+  });
+});
+
+// ── Dias de disponibilidade ───────────────────────────────────
+document.querySelectorAll('.day-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const pressed = btn.getAttribute('aria-pressed') === 'true';
+    btn.classList.toggle('active', !pressed);
+    btn.setAttribute('aria-pressed', String(!pressed));
+  });
+});
+
+// ── Category chips ────────────────────────────────────────────
+document.querySelectorAll('.cat-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+  });
+  chip.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') chip.click(); });
+});
+
+// ── Search chips ──────────────────────────────────────────────
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    chip.closest('.chip-row').querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+  });
+});
+
+// ── Gallery thumbs ────────────────────────────────────────────
+document.querySelectorAll('.gallery-thumb').forEach(thumb => {
+  thumb.addEventListener('click', () => {
+    document.querySelectorAll('.gallery-thumb').forEach(t => {
+      t.classList.remove('active'); t.removeAttribute('aria-current');
+    });
+    thumb.classList.add('active');
+    thumb.setAttribute('aria-current','true');
+    const main = document.querySelector('.gallery-main');
+    if (main) main.textContent = thumb.textContent;
+  });
+});
+
+// ── Header search ─────────────────────────────────────────────
+document.querySelector('.header__search')?.addEventListener('click', () => go('search'));
+
+// ── Logo keyboard ─────────────────────────────────────────────
+document.querySelector('.logo')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter') go('home');
+});
+</script>
+</body>
+</html>

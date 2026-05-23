@@ -1,0 +1,11 @@
+﻿Atividade / Função,Gestor de Projeto,PO,Designer,Arquiteto,Full Stack,QA/Tester,DevOps,SEO
+Planejamento do projeto,A,C,I,C,I,I,I,I
+Definição de requisitos,I,A,C,C,C,I,I,C
+Design de interface,I,C,A/R,I,I,I,I,C
+Arquitetura técnica,I,C,I,A/R,C,I,C,I
+Desenvolvimento front-end,I,C,C,C,A/R,I,I,C
+Desenvolvimento back-end,I,C,I,C,A/R,I,I,I
+Testes funcionais/responsivos,I,I,I,C,R,A,I,I
+Deploy e CI/CD,I,I,I,C,R,C,A,I
+Otimização SEO,I,C,C,I,R,I,I,A
+Monitoramento e manutenção,A,I,I,C,R,C,A,C

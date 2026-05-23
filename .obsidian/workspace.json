@@ -1,0 +1,197 @@
+{
+  "main": {
+    "id": "6218baea4631a619",
+    "type": "split",
+    "children": [
+      {
+        "id": "ab0a25417c994fad",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "e80ce807badd992a",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Design_Agente_Shareo.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Design_Agente_Shareo"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "2c51a83080e30722",
+    "type": "split",
+    "children": [
+      {
+        "id": "a2282d4908dde782",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "6b7df13883886049",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Explorador de arquivos"
+            }
+          },
+          {
+            "id": "e65b8726a0d60bfa",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Procurar"
+            }
+          },
+          {
+            "id": "ce30b8b4c230f539",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Marcadores"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "cac4bbcf7c32c541",
+    "type": "split",
+    "children": [
+      {
+        "id": "1282dbe59b7eeff0",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "fd8de56e5608da29",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Arquiteto_Agente_Shareo.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Links inversos para Arquiteto_Agente_Shareo"
+            }
+          },
+          {
+            "id": "2573fbb2394e960b",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Arquiteto_Agente_Shareo.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Links de saída para Arquiteto_Agente_Shareo"
+            }
+          },
+          {
+            "id": "a8b4998ea028fb09",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Etiquetas"
+            }
+          },
+          {
+            "id": "084054bfc0773857",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Todas as propriedades"
+            }
+          },
+          {
+            "id": "e82347c21efcff97",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Arquiteto_Agente_Shareo.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Sumário de Arquiteto_Agente_Shareo"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Abrir a troca rápida": false,
+      "graph:Abrir visualização em gráfico": false,
+      "canvas:Criar novo canvas": false,
+      "daily-notes:Abrir a nota de hoje": false,
+      "templates:Inserir modelo": false,
+      "command-palette:Abrir paleta de comandos": false,
+      "bases:Criar nova base": false
+    }
+  },
+  "active": "e80ce807badd992a",
+  "lastOpenFiles": [
+    "Shareo_Visao_Backlog_CriteriosAceitacao_v1.1.docx",
+    "~WRL0003.tmp",
+    "~WRD0002.tmp",
+    "~$areo_Visao_Backlog_CriteriosAceitacao.docx",
+    "Shareo logo 1.jpeg",
+    "Arquiteto_Agente_Shareo.md",
+    "Design_Agente_Shareo.md",
+    "ProductOwner_Agente_Shareo.md"
+  ]
+}

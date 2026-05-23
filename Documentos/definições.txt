@@ -1,0 +1,21 @@
+Planejamento do app
+Criar o Projeto.md
+	Product Requirements Document (documento de requisitos do produto).
+
+
+**Será desenvolvimento App ou site responsivo?
+O problema — o que acontece hoje que é ruim e por que o app precisa existir. Isso dá ao Claude Code (e a você) um norte claro. Sem isso, você constrói funcionalidades soltas que não se conectam.
+
+Quem vai usar — descrever a pessoa real que vai abrir o app. No nosso caso, uma jovem com diabetes e os pais dela. Isso influencia tudo: o tamanho dos botões, a linguagem da interface, a complexidade dos gráficos.
+
+O que o app faz — as funcionalidades, com o comportamento esperado de cada uma. Essa é a parte mais importante para o Claude Code. Não é uma lista de desejos — é uma descrição de como cada coisa funciona na prática.
+
+O que fica de fora — tão importante quanto definir o que o app faz é definir o que ele não faz. Sem isso, o escopo cresce sem controle e você nunca termina a primeira versão.
+
+Como saber se ficou certo — critérios de verificação. Isso é algo que a maioria dos PRDs tradicionais não inclui, mas para trabalhar com Claude Code é essencial. É o que permite que tanto você quanto o Claude Code avaliem se a funcionalidade está pronta.
+
+**Next.js (React)**
+É o framework web mais popular do mundo atualmente. Por ser tão usado, existe uma quantidade enorme de exemplos, tutoriais e suporte - o que facilita muito o desenvolvimento com ajuda de inteligência artificial. Ele cuida tanto da parte visual quanto da parte de servidor em um único projeto, simplificando a estrutura.
+
+**Tailwind CSS**
+Uma biblioteca de estilização que torna muito mais simples criar interfaces que funcionam bem em qualquer tamanho de tela (celular, tablet, computador). É a escolha padrão para projetos Next.js modernos.
