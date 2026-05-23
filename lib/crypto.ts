@@ -1,5 +1,4 @@
 import crypto from "crypto"
-import bcrypt from "bcryptjs"
 
 const ALGORITHM = "aes-256-gcm"
 const IV_LENGTH = 12
@@ -12,12 +11,19 @@ function getKey(): Buffer {
   return buf
 }
 
+// HMAC-SHA256 determinístico — permite lookup por unicidade no banco.
+// bcrypt seria seguro mas não-determinístico, tornando o índice UNIQUE inútil.
 export function hashDocument(doc: string): string {
-  return bcrypt.hashSync(doc.replace(/\D/g, ""), 10)
+  const key = process.env.ENCRYPTION_KEY
+  if (!key) throw new Error("ENCRYPTION_KEY não definida")
+  return crypto
+    .createHmac("sha256", Buffer.from(key, "hex"))
+    .update(doc.replace(/\D/g, ""))
+    .digest("hex")
 }
 
 export function verifyDocument(doc: string, hash: string): boolean {
-  return bcrypt.compareSync(doc.replace(/\D/g, ""), hash)
+  return hashDocument(doc) === hash
 }
 
 export function encryptDocument(doc: string): string {

@@ -1,8 +1,6 @@
 import { auth } from "@/lib/auth"
 import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
 
-// Rotas que qualquer usuário autenticado pode acessar
 const PROTECTED_PREFIXES = [
   "/dashboard",
   "/perfil",
@@ -14,22 +12,17 @@ const PROTECTED_PREFIXES = [
   "/api/chat",
 ]
 
-// Rotas restritas a ADMIN
-const ADMIN_PREFIXES = [
-  "/admin",
-  "/api/admin",
-]
+const ADMIN_PREFIXES = ["/admin", "/api/admin"]
 
-// Rotas de autenticação — redireciona para /dashboard se já logado
 const AUTH_ROUTES = ["/login", "/cadastro", "/esqueci-senha", "/redefinir-senha"]
 
-export default auth((req: NextRequest & { auth: Awaited<ReturnType<typeof auth>> | null }) => {
+export default auth((req) => {
   const { pathname } = req.nextUrl
-  const session = (req as any).auth
+  const session = req.auth
 
-  const isAdminRoute    = ADMIN_PREFIXES.some(p => pathname.startsWith(p))
-  const isProtectedRoute = PROTECTED_PREFIXES.some(p => pathname.startsWith(p))
-  const isAuthRoute     = AUTH_ROUTES.some(p => pathname.startsWith(p))
+  const isAdminRoute     = ADMIN_PREFIXES.some((p) => pathname.startsWith(p))
+  const isProtectedRoute = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p))
+  const isAuthRoute      = AUTH_ROUTES.some((p) => pathname.startsWith(p))
 
   // Usuário autenticado tenta acessar página de auth → redireciona para dashboard
   if (isAuthRoute && session) {
@@ -45,7 +38,7 @@ export default auth((req: NextRequest & { auth: Awaited<ReturnType<typeof auth>>
 
   // Rota admin: requer role ADMIN
   if (isAdminRoute && session?.user) {
-    const role = (session.user as any).role
+    const role = (session.user as { role?: string }).role
     if (role !== "ADMIN") {
       return NextResponse.redirect(new URL("/dashboard", req.url))
     }
@@ -55,8 +48,5 @@ export default auth((req: NextRequest & { auth: Awaited<ReturnType<typeof auth>>
 })
 
 export const config = {
-  matcher: [
-    // Inclui todas as rotas exceto arquivos estáticos e _next
-    "/((?!_next/static|_next/image|favicon.ico|icones/|images/).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icones/|images/).*)" ],
 }
