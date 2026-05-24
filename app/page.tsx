@@ -131,8 +131,8 @@ export default async function HomePage() {
                       <Image
                         src={CATEGORY_IMAGES[cat.name]}
                         alt=""
-                        width={44}
-                        height={44}
+                        width={72}
+                        height={72}
                         className="object-contain"
                         aria-hidden="true"
                       />
