@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth"
+import Image from "next/image"
 import Link from "next/link"
 
 export async function AppHeader() {
@@ -12,10 +13,17 @@ export async function AppHeader() {
         {/* Logo */}
         <Link
           href={session ? "/dashboard" : "/"}
-          className="flex-shrink-0 font-extrabold text-xl tracking-tight text-white outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-primary rounded-sm"
+          className="flex-shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-primary rounded-sm"
           aria-label="ShareO — página inicial"
         >
-          Share<span className="text-brand">O</span>
+          <Image
+            src="/icones/shareo-logo.jpeg"
+            alt="ShareO"
+            width={140}
+            height={46}
+            className="rounded object-cover object-center"
+            priority
+          />
         </Link>
 
         {/* Desktop nav */}

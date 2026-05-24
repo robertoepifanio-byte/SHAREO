@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Image from "next/image"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
@@ -11,15 +12,15 @@ export const metadata: Metadata = {
 
 export const revalidate = 3600
 
-const CATEGORY_ICONS: Record<string, string> = {
-  Ferramentas:  "🔧",
-  Construção:   "🏗️",
-  Moda:         "👗",
-  Eletrônicos:  "💻",
-  Casa:         "🏠",
-  Esporte:      "⚽",
-  Jardim:       "🌿",
-  Festas:       "🎉",
+const CATEGORY_IMAGES: Record<string, string> = {
+  Ferramentas: "/icones/ferramentas.png",
+  Construção:  "/icones/construcao.png",
+  Moda:        "/icones/moda.png",
+  Eletrônicos: "/icones/eletronicos.png",
+  Casa:        "/icones/casa.png",
+  Esporte:     "/icones/esporte.png",
+  Jardim:      "/icones/jardim.png",
+  Festas:      "/icones/festas.png",
 }
 
 export default async function HomePage() {
@@ -126,9 +127,18 @@ export default async function HomePage() {
                     className="flex min-w-[88px] flex-shrink-0 flex-col items-center gap-2 rounded-lg border-2 border-border bg-surface px-4 py-3.5 text-xs font-semibold text-primary transition-colors hover:border-brand hover:shadow-sm"
                     aria-label={cat.name}
                   >
-                    <span className="text-3xl leading-none" aria-hidden="true">
-                      {CATEGORY_ICONS[cat.name] ?? "📦"}
-                    </span>
+                    {CATEGORY_IMAGES[cat.name] ? (
+                      <Image
+                        src={CATEGORY_IMAGES[cat.name]}
+                        alt=""
+                        width={44}
+                        height={44}
+                        className="object-contain"
+                        aria-hidden="true"
+                      />
+                    ) : (
+                      <span className="text-3xl leading-none" aria-hidden="true">📦</span>
+                    )}
                     <span>{cat.name}</span>
                   </Link>
                 ))}
