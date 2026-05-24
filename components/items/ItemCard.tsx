@@ -1,5 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
+import { FavoriteButton } from "./FavoriteButton"
 
 interface ItemCardItem {
   id:           string
@@ -14,26 +15,13 @@ interface ItemCardItem {
   category:     { name: string }
   owner:        { name: string; isVerified: boolean }
   _count?:      { reviews: number; favorites: number }
+  avgRating?:   number | null
 }
 
 interface ItemCardProps {
   item:         ItemCardItem
   showActions?: boolean
-  onDelete?:   (id: string) => void
-}
-
-const CONDITION_LABEL: Record<string, string> = {
-  NEW:       "Novo",
-  EXCELLENT: "Excelente",
-  GOOD:      "Bom",
-  FAIR:      "Regular",
-}
-
-const CONDITION_COLOR: Record<string, string> = {
-  NEW:       "bg-success/10 text-success",
-  EXCELLENT: "bg-success/10 text-success",
-  GOOD:      "bg-brand/10 text-brand",
-  FAIR:      "bg-muted text-muted-foreground",
+  onDelete?:    (id: string) => void
 }
 
 export function ItemCard({ item, showActions = false, onDelete }: ItemCardProps) {
@@ -44,12 +32,14 @@ export function ItemCard({ item, showActions = false, onDelete }: ItemCardProps)
     ? `${item.neighborhood}, ${item.city}`
     : item.city
 
+  const isActive = item.isActive !== false
+
   return (
     <article
       className={[
         "group flex flex-col rounded-lg border border-border bg-surface",
-        "shadow-sm hover:shadow-md transition-shadow duration-200",
-        item.isActive === false ? "opacity-60" : "",
+        "shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200",
+        !isActive ? "opacity-60" : "",
       ].join(" ")}
     >
       <Link href={`/itens/${item.id}`} className="block flex-1">
@@ -61,56 +51,78 @@ export function ItemCard({ item, showActions = false, onDelete }: ItemCardProps)
               alt={item.title}
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-105"
-              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+              sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
             />
           ) : (
             <div className="flex h-full items-center justify-center text-muted-foreground/30">
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" aria-hidden="true">
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <circle cx="8.5" cy="8.5" r="1.5" />
-                <polyline points="21 15 16 10 5 21" />
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
               </svg>
             </div>
           )}
 
-          {/* Badges */}
-          <div className="absolute left-2 top-2 flex gap-1.5">
-            <span className={`rounded-md px-2 py-0.5 text-xs font-medium ${CONDITION_COLOR[item.condition] ?? "bg-muted text-muted-foreground"}`}>
-              {CONDITION_LABEL[item.condition] ?? item.condition}
-            </span>
-            {item.isActive === false && (
-              <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+          {/* Badge de disponibilidade */}
+          <div className="absolute left-2 top-2">
+            {isActive ? (
+              <span className="rounded-full bg-success px-2 py-0.5 text-xs font-bold text-white">
+                Disponível
+              </span>
+            ) : (
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
                 Pausado
               </span>
             )}
           </div>
 
+          {/* Favorito — apenas em listagens públicas */}
+          {!showActions && (
+            <FavoriteButton itemId={item.id} />
+          )}
+
           {/* Verificado */}
           {item.owner.isVerified && (
-            <div className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-success/90 text-white" title="Anunciante verificado">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden="true">
-                <polyline points="20 6 9 17 4 12" />
+            <div
+              className="absolute right-2 bottom-2 flex h-5 w-5 items-center justify-center rounded-full bg-success/90 text-white"
+              title="Anunciante verificado"
+              aria-label="Anunciante verificado"
+            >
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden="true">
+                <polyline points="20 6 9 17 4 12"/>
               </svg>
             </div>
           )}
         </div>
 
         {/* Conteúdo */}
-        <div className="p-4">
-          <p className="mb-1 text-xs text-muted-foreground">{item.category.name}</p>
-          <h3 className="mb-2 line-clamp-2 text-sm font-semibold leading-snug text-primary transition-colors group-hover:text-brand">
+        <div className="p-3">
+          <p className="mb-0.5 text-xs text-muted-foreground">{item.category.name}</p>
+          <h3 className="mb-1.5 line-clamp-2 text-sm font-semibold leading-snug text-primary transition-colors group-hover:text-brand">
             {item.title}
           </h3>
-          <p className="mb-3 text-lg font-bold text-brand">
-            {price}
-            <span className="text-xs font-normal text-muted-foreground">/dia</span>
+
+          {/* Rating */}
+          {item.avgRating != null && item._count && item._count.reviews > 0 && (
+            <div className="mb-1.5 flex items-center gap-1 text-xs text-muted-foreground">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="1" aria-hidden="true">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+              <span>{item.avgRating.toFixed(1)}</span>
+              <span>({item._count.reviews})</span>
+            </div>
+          )}
+
+          <p className="mb-2 text-base font-extrabold text-foreground">
+            {price}<span className="text-xs font-normal text-muted-foreground">/dia</span>
           </p>
+
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-              <circle cx="12" cy="10" r="3" />
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
             </svg>
-            {location}, {item.state}
+            {location}
           </div>
         </div>
       </Link>

@@ -222,8 +222,8 @@ export function RegisterForm() {
 
   return (
     <div className="rounded-lg border border-border bg-surface p-8 shadow-card">
-      <h1 className="mb-1 text-2xl font-bold text-primary">Criar conta</h1>
-      <p className="mb-6 text-sm text-muted-foreground">É grátis e leva menos de 2 minutos</p>
+      <h1 className="mb-1 text-center text-2xl font-bold text-primary">Criar conta</h1>
+      <p className="mb-6 text-center text-sm text-muted-foreground">É grátis e leva menos de 2 minutos</p>
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
         {errors.form && (

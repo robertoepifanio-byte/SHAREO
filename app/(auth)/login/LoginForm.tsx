@@ -50,8 +50,8 @@ export function LoginForm() {
 
   return (
     <div className="rounded-lg border border-border bg-surface p-8 shadow-card">
-      <h1 className="mb-1 text-2xl font-bold text-primary">Entrar na sua conta</h1>
-      <p className="mb-6 text-sm text-muted-foreground">
+      <h1 className="mb-1 text-center text-2xl font-bold text-primary">Entrar na sua conta</h1>
+      <p className="mb-6 text-center text-sm text-muted-foreground">
         Bem-vindo de volta ao ShareO
       </p>
 

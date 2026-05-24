@@ -94,6 +94,38 @@ export default async function ExplorarPage({ searchParams }: Props) {
       <AppHeader />
 
       <main className="container py-8">
+
+        {/* Chips de categoria — scroll horizontal */}
+        {categories.length > 0 && (
+          <div className="mb-6 flex gap-2 overflow-x-auto scrollbar-hide pb-1" role="list" aria-label="Filtrar por categoria">
+            <Link
+              href="/itens"
+              role="listitem"
+              className={`flex-shrink-0 rounded-full border px-4 py-1.5 text-xs font-medium transition-colors ${
+                !categoryId
+                  ? "border-brand bg-brand/10 text-brand"
+                  : "border-border bg-surface text-muted-foreground hover:border-brand/40"
+              }`}
+            >
+              Todos
+            </Link>
+            {categories.map((cat) => (
+              <Link
+                key={cat.id}
+                href={buildUrl({ categoryId: cat.id, page: 1 })}
+                role="listitem"
+                className={`flex-shrink-0 rounded-full border px-4 py-1.5 text-xs font-medium transition-colors ${
+                  categoryId === cat.id
+                    ? "border-brand bg-brand/10 text-brand"
+                    : "border-border bg-surface text-muted-foreground hover:border-brand/40"
+                }`}
+              >
+                {cat.name}
+              </Link>
+            ))}
+          </div>
+        )}
+
         {/* Filtros */}
         <form method="GET" action="/itens" className="mb-8">
           <div className="flex flex-col gap-3 md:flex-row md:items-end">
