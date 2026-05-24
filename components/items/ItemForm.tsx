@@ -320,8 +320,7 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
         await fetch(`/api/items/${itemId}/images`, { method: "POST", body: fd }).catch(() => {})
       }
 
-      router.push(`/itens/${itemId}`)
-      router.refresh()
+      window.location.href = `/itens/${itemId}`
     } catch {
       setErrors({ form: "Erro inesperado. Tente novamente." })
       setLoading(false)
