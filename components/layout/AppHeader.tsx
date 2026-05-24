@@ -8,7 +8,7 @@ export async function AppHeader() {
 
   return (
     <header className="sticky top-0 z-[200] bg-primary" role="banner">
-      <nav className="container flex h-16 items-center gap-3" aria-label="Navegação principal">
+      <div className="container flex h-16 items-center gap-3">
 
         {/* Logo */}
         <Link
@@ -30,7 +30,7 @@ export async function AppHeader() {
         </Link>
 
         {/* Desktop nav */}
-        <div className="hidden md:flex items-center gap-1 ml-6">
+        <nav className="hidden md:flex items-center gap-1 ml-6" aria-label="Navegação principal">
           <Link
             href="/"
             className="rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:bg-white/10 hover:text-white transition-colors outline-none focus-visible:ring-1 focus-visible:ring-white"
@@ -43,15 +43,13 @@ export async function AppHeader() {
           >
             Explorar
           </Link>
-          {session && (
-            <Link
-              href="/meus-anuncios"
-              className="rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:bg-white/10 hover:text-white transition-colors outline-none focus-visible:ring-1 focus-visible:ring-white"
-            >
-              Meus Anúncios
-            </Link>
-          )}
-        </div>
+          <Link
+            href="/itens/novo"
+            className="rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:bg-white/10 hover:text-white transition-colors outline-none focus-visible:ring-1 focus-visible:ring-white"
+          >
+            Anunciar
+          </Link>
+        </nav>
 
         {/* Search bar — desktop only */}
         <Link
@@ -96,15 +94,15 @@ export async function AppHeader() {
                 Entrar
               </Link>
               <Link
-                href="/cadastro"
-                className="inline-flex h-9 items-center px-4 rounded-md text-sm font-semibold bg-brand text-white hover:opacity-90 transition-opacity outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
+                href="/itens/novo"
+                className="inline-flex h-9 items-center gap-1 px-4 rounded-md text-sm font-semibold bg-brand text-white hover:opacity-90 transition-opacity outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
               >
-                Cadastrar
+                + Anunciar
               </Link>
             </>
           )}
         </div>
-      </nav>
+      </div>
     </header>
   )
 }
