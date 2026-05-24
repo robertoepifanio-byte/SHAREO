@@ -7,6 +7,7 @@ const PROTECTED_PREFIXES = [
   "/mensagens",
   "/favoritos",
   "/meus-anuncios",
+  "/itens/novo",
   "/api/bookings",
   "/api/users",
   "/api/chat",
