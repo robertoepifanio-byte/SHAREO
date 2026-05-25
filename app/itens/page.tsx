@@ -244,7 +244,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
               </p>
               <Suspense fallback={
                 <select disabled className="h-10 rounded-lg border border-input bg-surface px-3 text-sm opacity-50">
-                  <option>Mais recentes</option>
+                  <option>Mais próximos</option>
                 </select>
               }>
                 <SortSelect current={sort} />

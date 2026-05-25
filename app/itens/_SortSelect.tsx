@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation"
 
 const OPTIONS = [
-  { value: "recent",     label: "Mais recentes" },
+  { value: "recent",     label: "Mais próximos" },
   { value: "price_asc",  label: "Menor preço" },
   { value: "price_desc", label: "Maior preço" },
   { value: "views",      label: "Mais vistos" },
