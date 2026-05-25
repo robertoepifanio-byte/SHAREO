@@ -182,7 +182,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
                     : "border-border bg-surface text-muted-foreground hover:border-brand/40 hover:text-foreground"
                 }`}
               >
-                <CategoryIcon name={cat.name} size={28} />
+                <CategoryIcon name={cat.name} size={40} />
                 {cat.name}
               </Link>
             ))}
@@ -353,7 +353,6 @@ function FilterForm({
                 defaultChecked={categoryId === cat.id}
                 className="accent-brand"
               />
-              <CategoryIcon name={cat.name} size={22} />
               {cat.name}
             </label>
           ))}
