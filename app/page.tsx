@@ -1,9 +1,9 @@
 import type { Metadata } from "next"
-import Image from "next/image"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { ItemCard } from "@/components/items/ItemCard"
+import { CategoryIcon } from "@/components/ui/CategoryIcon"
 
 export const metadata: Metadata = {
   title: "ShareO — Use Mais. Possua Menos.",
@@ -12,16 +12,6 @@ export const metadata: Metadata = {
 
 export const revalidate = 3600
 
-const CATEGORY_IMAGES: Record<string, string> = {
-  Ferramentas: "/icones/ferramentas.png",
-  Construção:  "/icones/construcao.png",
-  Moda:        "/icones/moda.png",
-  Eletrônicos: "/icones/eletronicos.png",
-  Casa:        "/icones/casa.png",
-  Esporte:     "/icones/esporte.png",
-  Jardim:      "/icones/jardim.png",
-  Festas:      "/icones/festas.png",
-}
 
 export default async function HomePage() {
   const [categories, items] = await Promise.all([
@@ -127,18 +117,7 @@ export default async function HomePage() {
                     className="flex min-w-[88px] flex-shrink-0 flex-col items-center gap-2 rounded-lg border-2 border-border bg-surface px-4 py-3.5 text-xs font-semibold text-primary transition-colors hover:border-brand hover:shadow-sm"
                     aria-label={cat.name}
                   >
-                    {CATEGORY_IMAGES[cat.name] ? (
-                      <Image
-                        src={CATEGORY_IMAGES[cat.name]}
-                        alt=""
-                        width={72}
-                        height={72}
-                        className="object-contain"
-                        aria-hidden="true"
-                      />
-                    ) : (
-                      <span className="text-3xl leading-none" aria-hidden="true">📦</span>
-                    )}
+                    <CategoryIcon name={cat.name} size={72} />
                     <span>{cat.name}</span>
                   </Link>
                 ))}

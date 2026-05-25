@@ -1,10 +1,10 @@
 import { Suspense } from "react"
 import type { Metadata } from "next"
-import Image from "next/image"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { ItemCard } from "@/components/items/ItemCard"
+import { CategoryIcon } from "@/components/ui/CategoryIcon"
 import { SortSelect } from "./_SortSelect"
 
 export const metadata: Metadata = {
@@ -26,16 +26,6 @@ type Props = { searchParams: Promise<SearchParams> }
 
 const PAGE_SIZE = 20
 
-const CATEGORY_IMAGES: Record<string, string> = {
-  Ferramentas: "/icones/ferramentas.png",
-  Construção:  "/icones/construcao.png",
-  Moda:        "/icones/moda.png",
-  Eletrônicos: "/icones/eletronicos.png",
-  Casa:        "/icones/casa.png",
-  Esporte:     "/icones/esporte.png",
-  Jardim:      "/icones/jardim.png",
-  Festas:      "/icones/festas.png",
-}
 
 function getOrderBy(sort?: string) {
   switch (sort) {
@@ -192,16 +182,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
                     : "border-border bg-surface text-muted-foreground hover:border-brand/40 hover:text-foreground"
                 }`}
               >
-                {CATEGORY_IMAGES[cat.name] && (
-                  <Image
-                    src={CATEGORY_IMAGES[cat.name]}
-                    alt=""
-                    width={20}
-                    height={20}
-                    className="object-contain"
-                    aria-hidden="true"
-                  />
-                )}
+                <CategoryIcon name={cat.name} size={28} />
                 {cat.name}
               </Link>
             ))}
@@ -372,16 +353,7 @@ function FilterForm({
                 defaultChecked={categoryId === cat.id}
                 className="accent-brand"
               />
-              {CATEGORY_IMAGES[cat.name] && (
-                <Image
-                  src={CATEGORY_IMAGES[cat.name]}
-                  alt=""
-                  width={18}
-                  height={18}
-                  className="object-contain"
-                  aria-hidden="true"
-                />
-              )}
+              <CategoryIcon name={cat.name} size={22} />
               {cat.name}
             </label>
           ))}
