@@ -1,33 +1,49 @@
+import { Suspense } from "react"
 import type { Metadata } from "next"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { ItemCard } from "@/components/items/ItemCard"
+import { CategoryIcon } from "@/components/ui/CategoryIcon"
+import { SortSelect } from "./_SortSelect"
 
 export const metadata: Metadata = {
-  title:       "Explorar anúncios",
+  title:       "Explorar anúncios — ShareO",
   description: "Encontre itens para alugar perto de você no ShareO.",
 }
 
 interface SearchParams {
-  search?:     string
+  search?:    string
   categoryId?: string
-  city?:       string
-  state?:      string
-  page?:       string
+  city?:      string
+  sort?:      string
+  priceMax?:  string
+  minRating?: string
+  page?:      string
 }
 
 type Props = { searchParams: Promise<SearchParams> }
 
 const PAGE_SIZE = 20
 
+
+function getOrderBy(sort?: string) {
+  switch (sort) {
+    case "price_asc":  return { pricePerDay: "asc"  as const }
+    case "price_desc": return { pricePerDay: "desc" as const }
+    case "views":      return { viewCount:   "desc" as const }
+    default:           return { createdAt:   "desc" as const }
+  }
+}
+
 export default async function ExplorarPage({ searchParams }: Props) {
   const sp         = await searchParams
   const page       = Math.max(1, Number(sp.page ?? 1))
-  const search     = sp.search?.trim()
-  const categoryId = sp.categoryId
-  const city       = sp.city?.trim()
-  const state      = sp.state?.trim().toUpperCase()
+  const search     = sp.search?.trim() || undefined
+  const categoryId = sp.categoryId    || undefined
+  const city       = sp.city?.trim()  || undefined
+  const sort       = sp.sort          || undefined
+  const priceMaxR  = sp.priceMax ? Number(sp.priceMax) : undefined // reais
   const skip       = (page - 1) * PAGE_SIZE
 
   const where = {
@@ -41,8 +57,8 @@ export default async function ExplorarPage({ searchParams }: Props) {
       ],
     }),
     ...(categoryId && { categoryId }),
-    ...(city  && { city:  { contains: city,  mode: "insensitive" as const } }),
-    ...(state && { state }),
+    ...(city       && { city: { contains: city, mode: "insensitive" as const } }),
+    ...(priceMaxR  && { pricePerDay: { lte: priceMaxR * 100 } }),
   }
 
   const [items, total, categories] = await Promise.all([
@@ -50,21 +66,14 @@ export default async function ExplorarPage({ searchParams }: Props) {
       where,
       skip,
       take:    PAGE_SIZE,
-      orderBy: { createdAt: "desc" },
+      orderBy: getOrderBy(sort),
       select: {
-        id:           true,
-        title:        true,
-        pricePerDay:  true,
-        pricePerWeek: true,
-        condition:    true,
-        city:         true,
-        state:        true,
-        neighborhood: true,
-        isActive:     true,
-        category:     { select: { name: true } },
-        owner:        { select: { name: true, isVerified: true } },
-        images:       { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
-        _count:       { select: { reviews: true, favorites: true } },
+        id: true, title: true, pricePerDay: true, pricePerWeek: true,
+        condition: true, city: true, state: true, neighborhood: true, isActive: true,
+        category: { select: { name: true } },
+        owner:    { select: { name: true, isVerified: true } },
+        images:   { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
+        _count:   { select: { reviews: true, favorites: true } },
       },
     }),
     prisma.item.count({ where }),
@@ -76,15 +85,31 @@ export default async function ExplorarPage({ searchParams }: Props) {
   ])
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
+  const hasFilters = !!(search || categoryId || city || priceMaxR)
 
-  function buildUrl(overrides: { search?: string; categoryId?: string; city?: string; state?: string; page?: number }) {
-    const params = new URLSearchParams()
-    const merged = { search, categoryId, city, state, page, ...overrides }
-    if (merged.search)              params.set("search",     merged.search)
-    if (merged.categoryId)          params.set("categoryId", merged.categoryId)
-    if (merged.city)                params.set("city",       merged.city)
-    if (merged.state)               params.set("state",      merged.state)
-    if (merged.page && merged.page > 1) params.set("page",  String(merged.page))
+  function buildUrl(overrides: {
+    search?: string | undefined
+    categoryId?: string | undefined
+    sort?: string | undefined
+    priceMax?: string | undefined
+    page?: number
+  }) {
+    const params  = new URLSearchParams()
+    const merged  = {
+      search,
+      categoryId,
+      city,
+      sort,
+      priceMax: sp.priceMax,
+      page,
+      ...overrides,
+    }
+    if (merged.search)     params.set("search",     merged.search)
+    if (merged.categoryId) params.set("categoryId", merged.categoryId)
+    if (merged.city)       params.set("city",       merged.city)
+    if (merged.sort)       params.set("sort",       merged.sort)
+    if (merged.priceMax)   params.set("priceMax",   String(merged.priceMax))
+    if (merged.page && merged.page > 1) params.set("page", String(merged.page))
     const qs = params.toString()
     return `/itens${qs ? `?${qs}` : ""}`
   }
@@ -93,18 +118,55 @@ export default async function ExplorarPage({ searchParams }: Props) {
     <div className="min-h-screen bg-background">
       <AppHeader />
 
-      <main className="container py-8">
+      <main className="container py-6">
 
-        {/* Chips de categoria — scroll horizontal */}
+        {/* ─── BARRA DE BUSCA ─── */}
+        <form method="GET" action="/itens" className="mb-4 flex gap-2" role="search">
+          {/* hidden: preserva filtros ativos ao fazer nova busca */}
+          {categoryId && <input type="hidden" name="categoryId" value={categoryId} />}
+          {sort       && <input type="hidden" name="sort"       value={sort} />}
+          {sp.priceMax && <input type="hidden" name="priceMax"  value={sp.priceMax} />}
+
+          <div className="relative flex-1">
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              width="16" height="16" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <label htmlFor="search-field" className="sr-only">Buscar itens</label>
+            <input
+              id="search-field"
+              name="search"
+              type="search"
+              defaultValue={search ?? ""}
+              placeholder="Buscar itens…"
+              className="h-11 w-full rounded-lg border border-input bg-surface pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-ring focus:ring-2 focus:ring-ring/20 transition-colors"
+            />
+          </div>
+          <button
+            type="submit"
+            className="h-11 rounded-lg bg-brand px-5 text-sm font-semibold text-white hover:opacity-90 transition-opacity whitespace-nowrap"
+          >
+            Buscar
+          </button>
+        </form>
+
+        {/* ─── CHIPS DE CATEGORIA ─── */}
         {categories.length > 0 && (
-          <div className="mb-6 flex gap-2 overflow-x-auto scrollbar-hide pb-1" role="list" aria-label="Filtrar por categoria">
+          <div
+            className="mb-5 flex gap-2 overflow-x-auto scrollbar-hide pb-1"
+            role="list"
+            aria-label="Filtrar por categoria"
+          >
             <Link
-              href="/itens"
+              href={buildUrl({ categoryId: undefined, page: 1 })}
               role="listitem"
-              className={`flex-shrink-0 rounded-full border px-4 py-1.5 text-xs font-medium transition-colors ${
+              className={`flex-shrink-0 rounded-full border px-4 py-1.5 text-xs font-semibold whitespace-nowrap transition-all ${
                 !categoryId
                   ? "border-brand bg-brand/10 text-brand"
-                  : "border-border bg-surface text-muted-foreground hover:border-brand/40"
+                  : "border-border bg-surface text-muted-foreground hover:border-brand/40 hover:text-foreground"
               }`}
             >
               Todos
@@ -114,150 +176,263 @@ export default async function ExplorarPage({ searchParams }: Props) {
                 key={cat.id}
                 href={buildUrl({ categoryId: cat.id, page: 1 })}
                 role="listitem"
-                className={`flex-shrink-0 rounded-full border px-4 py-1.5 text-xs font-medium transition-colors ${
+                className={`inline-flex flex-shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all ${
                   categoryId === cat.id
                     ? "border-brand bg-brand/10 text-brand"
-                    : "border-border bg-surface text-muted-foreground hover:border-brand/40"
+                    : "border-border bg-surface text-muted-foreground hover:border-brand/40 hover:text-foreground"
                 }`}
               >
+                <CategoryIcon name={cat.name} size={40} />
                 {cat.name}
               </Link>
             ))}
           </div>
         )}
 
-        {/* Filtros */}
-        <form method="GET" action="/itens" className="mb-8">
-          <div className="flex flex-col gap-3 md:flex-row md:items-end">
-            <div className="flex-1">
-              <label htmlFor="search" className="mb-1.5 block text-sm font-medium text-foreground">
-                Buscar
-              </label>
-              <div className="relative">
-                <svg
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                  width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                  aria-hidden="true"
-                >
-                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-                <input
-                  id="search"
-                  name="search"
-                  type="search"
-                  defaultValue={search ?? ""}
-                  placeholder="Furadeira, câmera, mesas..."
-                  className="h-11 w-full rounded-md border border-input bg-surface pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-ring focus:ring-2 focus:ring-ring/20 transition-colors"
-                />
-              </div>
-            </div>
+        {/* ─── FILTROS MOBILE (collapsible) ─── */}
+        <details className="lg:hidden mb-5 rounded-xl border border-border bg-surface">
+          <summary className="flex cursor-pointer select-none items-center gap-2 px-4 py-3 text-sm font-semibold text-foreground">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <line x1="4" y1="6" x2="20" y2="6"/>
+              <line x1="8" y1="12" x2="16" y2="12"/>
+              <line x1="11" y1="18" x2="13" y2="18"/>
+            </svg>
+            Filtros
+            {hasFilters && (
+              <span className="ml-auto rounded-full bg-brand px-2 py-0.5 text-xs text-white">
+                Ativos
+              </span>
+            )}
+          </summary>
+          <div className="px-4 pb-4 pt-1">
+            <FilterForm
+              categories={categories}
+              categoryId={categoryId}
+              priceMax={sp.priceMax}
+              search={search}
+              sort={sort}
+            />
+          </div>
+        </details>
 
-            <div className="md:w-48">
-              <label htmlFor="categoryId" className="mb-1.5 block text-sm font-medium text-foreground">
-                Categoria
-              </label>
-              <select
-                id="categoryId"
-                name="categoryId"
-                defaultValue={categoryId ?? ""}
-                className="h-11 w-full appearance-none rounded-md border border-input bg-surface px-3 text-sm text-foreground outline-none focus:border-ring focus:ring-2 focus:ring-ring/20 transition-colors"
-              >
-                <option value="">Todas</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-              </select>
-            </div>
+        {/* ─── LAYOUT: SIDEBAR + RESULTADOS ─── */}
+        <div className="flex gap-6 items-start">
 
-            <div className="md:w-40">
-              <label htmlFor="city" className="mb-1.5 block text-sm font-medium text-foreground">
-                Cidade
-              </label>
-              <input
-                id="city"
-                name="city"
-                type="text"
-                defaultValue={city ?? ""}
-                placeholder="Natal"
-                className="h-11 w-full rounded-md border border-input bg-surface px-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-ring focus:ring-2 focus:ring-ring/20 transition-colors"
+          {/* Sidebar de filtros — visível apenas em ≥1024px */}
+          <aside className="hidden lg:block w-60 flex-shrink-0 sticky top-20" aria-label="Painel de filtros">
+            <div className="rounded-xl border border-border bg-surface p-5">
+              <p className="mb-4 text-[15px] font-bold text-primary">Filtros</p>
+              <FilterForm
+                categories={categories}
+                categoryId={categoryId}
+                priceMax={sp.priceMax}
+                search={search}
+                sort={sort}
               />
             </div>
+          </aside>
 
-            <button
-              type="submit"
-              className="h-11 px-6 rounded-md bg-brand text-sm font-medium text-white hover:bg-brand-hover transition-colors"
-            >
-              Buscar
-            </button>
+          {/* Área de resultados */}
+          <div className="min-w-0 flex-1">
 
-            {(search || categoryId || city || state) && (
-              <Link
-                href="/itens"
-                className="h-11 px-4 rounded-md border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-background transition-colors inline-flex items-center"
-              >
-                Limpar
-              </Link>
-            )}
-          </div>
-        </form>
-
-        {/* Resultado */}
-        <div className="mb-4 flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
-            {total === 0 ? "Nenhum anúncio encontrado" : `${total} anúncio${total !== 1 ? "s" : ""} encontrado${total !== 1 ? "s" : ""}`}
-          </p>
-        </div>
-
-        {items.length > 0 ? (
-          <>
-            <div className="grid grid-cols-1 gap-4 xs:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-              {items.map((item) => (
-                <ItemCard key={item.id} item={item} />
-              ))}
+            {/* Resultado count + ordenação */}
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground" aria-live="polite">
+                {total === 0
+                  ? "Nenhum anúncio encontrado"
+                  : `${total} anúncio${total !== 1 ? "s" : ""} encontrado${total !== 1 ? "s" : ""}`}
+              </p>
+              <Suspense fallback={
+                <select disabled className="h-10 rounded-lg border border-input bg-surface px-3 text-sm opacity-50">
+                  <option>Mais próximos</option>
+                </select>
+              }>
+                <SortSelect current={sort} />
+              </Suspense>
             </div>
 
-            {/* Paginação */}
-            {totalPages > 1 && (
-              <div className="mt-8 flex items-center justify-center gap-2">
-                {page > 1 && (
-                  <Link
-                    href={buildUrl({ page: page - 1 })}
-                    className="h-10 px-4 rounded-md border border-border text-sm text-foreground hover:bg-background transition-colors inline-flex items-center"
-                  >
-                    ← Anterior
-                  </Link>
+            {/* Grade de itens */}
+            {items.length > 0 ? (
+              <>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+                  {items.map((item) => (
+                    <ItemCard key={item.id} item={item} />
+                  ))}
+                </div>
+
+                {/* Paginação */}
+                {totalPages > 1 && (
+                  <div className="mt-8 flex items-center justify-center gap-2">
+                    {page > 1 && (
+                      <Link
+                        href={buildUrl({ page: page - 1 })}
+                        className="inline-flex h-10 items-center rounded-md border border-border px-4 text-sm text-foreground hover:bg-background transition-colors"
+                      >
+                        ← Anterior
+                      </Link>
+                    )}
+                    <span className="text-sm text-muted-foreground">
+                      Página {page} de {totalPages}
+                    </span>
+                    {page < totalPages && (
+                      <Link
+                        href={buildUrl({ page: page + 1 })}
+                        className="inline-flex h-10 items-center rounded-md border border-border px-4 text-sm text-foreground hover:bg-background transition-colors"
+                      >
+                        Próxima →
+                      </Link>
+                    )}
+                  </div>
                 )}
-                <span className="text-sm text-muted-foreground">
-                  Página {page} de {totalPages}
-                </span>
-                {page < totalPages && (
-                  <Link
-                    href={buildUrl({ page: page + 1 })}
-                    className="h-10 px-4 rounded-md border border-border text-sm text-foreground hover:bg-background transition-colors inline-flex items-center"
-                  >
-                    Próxima →
-                  </Link>
-                )}
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                </div>
+                <h3 className="mb-2 font-semibold text-primary">Nenhum resultado</h3>
+                <p className="mb-6 text-sm text-muted-foreground">
+                  Tente outros termos ou remova os filtros.
+                </p>
+                <Link href="/itens" className="text-sm font-medium text-brand hover:underline">
+                  Ver todos os anúncios
+                </Link>
               </div>
             )}
-          </>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground" aria-hidden="true">
-                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </svg>
-            </div>
-            <h3 className="mb-2 font-semibold text-primary">Nenhum resultado</h3>
-            <p className="mb-6 text-sm text-muted-foreground">
-              Tente outros termos ou remova os filtros.
-            </p>
-            <Link href="/itens" className="text-sm text-brand hover:underline">
-              Ver todos os anúncios
-            </Link>
           </div>
-        )}
+        </div>
       </main>
     </div>
+  )
+}
+
+/* ─── Sub-componente: formulário de filtros (reutilizado mobile e desktop) ─── */
+function FilterForm({
+  categories,
+  categoryId,
+  priceMax,
+  search,
+  sort,
+}: {
+  categories: { id: string; name: string }[]
+  categoryId?: string
+  priceMax?:   string
+  search?:     string
+  sort?:       string
+}) {
+  return (
+    <form method="GET" action="/itens" className="space-y-5">
+      {/* Preserva busca e ordenação ao aplicar filtros */}
+      {search && <input type="hidden" name="search" value={search} />}
+      {sort   && <input type="hidden" name="sort"   value={sort} />}
+
+      {/* Categoria */}
+      <fieldset>
+        <legend className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Categoria
+        </legend>
+        <div className="space-y-0.5">
+          <label className="flex cursor-pointer items-center gap-2 py-1 text-sm text-foreground">
+            <input
+              type="radio"
+              name="categoryId"
+              value=""
+              defaultChecked={!categoryId}
+              className="accent-brand"
+            />
+            Todas
+          </label>
+          {categories.map((cat) => (
+            <label key={cat.id} className="flex cursor-pointer items-center gap-2 py-1 text-sm text-foreground">
+              <input
+                type="radio"
+                name="categoryId"
+                value={cat.id}
+                defaultChecked={categoryId === cat.id}
+                className="accent-brand"
+              />
+              {cat.name}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      {/* Preço máximo / dia */}
+      <fieldset>
+        <legend className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Preço máx./dia
+        </legend>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">R$0</span>
+          <input
+            type="range"
+            name="priceMax"
+            min="0"
+            max="500"
+            step="10"
+            defaultValue={priceMax ?? "500"}
+            aria-label="Preço máximo por dia em reais"
+            className="flex-1 accent-brand"
+          />
+          <span className="min-w-[44px] text-right text-xs font-semibold text-foreground">
+            R${priceMax ?? "500"}
+          </span>
+        </div>
+      </fieldset>
+
+      {/* Distância */}
+      <fieldset>
+        <legend className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Distância
+        </legend>
+        <div className="space-y-0.5">
+          {(["Até 2 km", "Até 5 km", "Até 10 km", "Qualquer"] as const).map((label, i) => (
+            <label key={label} className="flex cursor-pointer items-center gap-2 py-1 text-sm text-foreground">
+              <input
+                type="radio"
+                name="dist"
+                value={["2", "5", "10", ""][i]}
+                defaultChecked={i === 3}
+                className="accent-brand"
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      {/* Avaliação mínima */}
+      <fieldset>
+        <legend className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Avaliação mínima
+        </legend>
+        <div className="space-y-0.5">
+          {[
+            { label: "★★★★★ 5 estrelas", value: "5" },
+            { label: "★★★★+ 4+",          value: "4" },
+            { label: "★★★+  3+",           value: "3" },
+          ].map((opt) => (
+            <label key={opt.value} className="flex cursor-pointer items-center gap-2 py-1 text-sm text-foreground">
+              <input
+                type="radio"
+                name="minRating"
+                value={opt.value}
+                className="accent-brand"
+              />
+              {opt.label}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <button
+        type="submit"
+        className="w-full rounded-lg bg-brand py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+      >
+        Aplicar filtros
+      </button>
+    </form>
   )
 }
