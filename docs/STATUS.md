@@ -8,7 +8,7 @@
 
 ## Resumo Executivo
 
-O MVP está em desenvolvimento ativo. **Sprint 1** (auth) e **Sprint 2** (anúncios) foram entregues e estão em produção local. O frontend foi alinhado ao protótipo oficial em todas as telas implementadas. A **Sprint 3** (reservas + chat) está em andamento.
+Sprints 1, 2 e 3 concluídas. O fluxo central do produto está funcional de ponta a ponta: cadastro → anúncio → busca → reserva → chat. Próxima frente: avaliações, perfil do usuário e admin dashboard.
 
 ---
 
@@ -39,19 +39,26 @@ O MVP está em desenvolvimento ativo. **Sprint 1** (auth) e **Sprint 2** (anúnc
 | Galeria interativa | ✅ Feito | `app/itens/[id]/_Gallery.tsx` |
 | Calculadora de preço | ✅ Feito | `app/itens/[id]/_PriceCalc.tsx` |
 | FavoriteButton | ✅ Feito | `components/items/FavoriteButton.tsx` |
-| Seed de imagens demo | ✅ Feito | `scripts/seed-images.mjs` |
 
 ---
 
-### 🔄 Sprint 3 — Reservas e Chat (em andamento)
+### ✅ Sprint 3 — Reservas e Chat (concluída)
 
-| Feature | Status | Notas |
+| Feature | Status | Arquivos |
 |---|---|---|
-| `POST /api/bookings` | ❌ Pendente | CTA "Solicitar locação" já está no UI com `alert("em breve")` |
-| Fluxo de reserva (7 estados) | ❌ Pendente | Máquina de estados definida no PRD |
-| Chat entre locador/locatário | ❌ Pendente | Supabase Realtime (ADR-003) |
-| Notificações in-app | ❌ Pendente | — |
-| Página `/reservas` (dashboard) | ❌ Pendente | — |
+| `POST /api/bookings` | ✅ Feito | `app/api/bookings/route.ts` |
+| `GET /api/bookings` | ✅ Feito | `app/api/bookings/route.ts` |
+| `GET /api/bookings/[id]` | ✅ Feito | `app/api/bookings/[id]/route.ts` |
+| `PATCH /api/bookings/[id]` — máquina de 7 estados | ✅ Feito | `app/api/bookings/[id]/route.ts` |
+| Página `/reservas` — dashboard Locatário/Locador | ✅ Feito | `app/reservas/page.tsx` |
+| Página `/reservas/[id]` — detalhe + ações | ✅ Feito | `app/reservas/[id]/page.tsx` |
+| `GET /api/conversations` | ✅ Feito | `app/api/conversations/route.ts` |
+| `GET /api/conversations/[id]` | ✅ Feito | `app/api/conversations/[id]/route.ts` |
+| `POST /api/conversations/[id]/messages` | ✅ Feito | `app/api/conversations/[id]/messages/route.ts` |
+| `PATCH /api/conversations/[id]/read` | ✅ Feito | `app/api/conversations/[id]/read/route.ts` |
+| Página `/mensagens` — lista de conversas | ✅ Feito | `app/mensagens/page.tsx` |
+| Chat em tempo real (`/mensagens/[id]`) | ✅ Feito | `app/mensagens/[id]/page.tsx` + `_ChatWindow.tsx` |
+| Notificações in-app (fire-and-forget) | ✅ Feito | integrado nas rotas de bookings e mensagens |
 
 ---
 
@@ -60,14 +67,14 @@ O MVP está em desenvolvimento ativo. **Sprint 1** (auth) e **Sprint 2** (anúnc
 | Tela | Status | Observações |
 |---|---|---|
 | Landing Page (`/`) | ✅ Alinhada | Hero, categorias com ícones PNG, grid de itens, "Como funciona", CTA |
-| Header / AppHeader | ✅ Alinhado | Logo navy, nav Início·Explorar·Anunciar, ações Entrar/+Anunciar |
+| Header / AppHeader | ✅ Alinhado | Logo navy, nav Início·Explorar·Anunciar·Reservas·Mensagens |
 | Explorar (`/itens`) | ✅ Alinhada | Sidebar filtros (lg+), chips com ícones 40px, sort, paginação |
-| Detalhe (`/itens/[id]`) | ✅ Alinhada | Galeria, calculadora, card sticky, avaliações, mini-card dono |
-| Login / Cadastro | ✅ Alinhados | Logo `shareo-logo-fb.png`, formulários com validação |
+| Detalhe (`/itens/[id]`) | ✅ Alinhada | Galeria, calculadora conectada à API, card sticky, avaliações |
+| Login / Cadastro | ✅ Alinhados | Logo `shareo-logo-fb.png` |
+| Reservas (`/reservas`) | ✅ Implementada | Abas Locatário/Locador, cards com status e ações |
+| Chat (`/mensagens`) | ✅ Implementada | Lista de conversas + tela de chat com envio otimista |
 | Perfil do usuário | ❌ Pendente | — |
-| Dashboard de reservas | ❌ Pendente | — |
-| Chat | ❌ Pendente | — |
-| Admin | ❌ Pendente | — |
+| Admin dashboard | ❌ Pendente | — |
 
 ---
 
@@ -79,12 +86,26 @@ O MVP está em desenvolvimento ativo. **Sprint 1** (auth) e **Sprint 2** (anúnc
 | `ItemCard` | ✅ Feito | `components/items/ItemCard.tsx` |
 | `AppHeader` | ✅ Feito | `components/layout/AppHeader.tsx` |
 | `SortSelect` | ✅ Feito | `app/itens/_SortSelect.tsx` |
+| `BookingActions` | ✅ Feito | `app/reservas/[id]/_BookingActions.tsx` |
+| `ChatWindow` | ✅ Feito | `app/mensagens/[id]/_ChatWindow.tsx` |
+| Zod schemas — bookings | ✅ Feito | `lib/validations/bookings.ts` |
+| Zod schemas — messages | ✅ Feito | `lib/validations/messages.ts` |
 | Prisma schema (11 models) | ✅ Feito | `prisma/schema.prisma` |
-| Seed de categorias | ✅ Feito | `prisma/seed.ts` |
 | CI/CD (GitHub Actions) | ✅ Feito | `.github/workflows/ci.yml` |
 | RLS policies (Supabase) | ✅ Feito | `supabase/rls-policies.sql` |
 | 3 instâncias Supabase | ❌ Pendente | Ação manual de infra |
 | Deploy Vercel (staging) | ❌ Pendente | — |
+| Supabase Realtime (WebSocket) | ⚠️ Parcial | Chat usa polling 3s como fallback; WebSocket requer config do JWT NextAuth ↔ Supabase |
+
+---
+
+## Próximas Frentes — Sprint 4
+
+1. **Avaliações** — `POST /api/bookings/[id]/reviews` após status `RETURNED`; estrelas na página de detalhe do item
+2. **Perfil do usuário** — `/perfil/[id]` público + `/meu-perfil` com edição (nome, bio, avatar, cidade)
+3. **Supabase Realtime** — substituir polling 3s por WebSocket real (canal `messages:conversation_id=eq.{id}`)
+4. **Admin dashboard** — `/admin` com listagem de itens pendentes, usuários e logs
+5. **Favoritos** — `GET /api/items/favorites` + página `/favoritos`
 
 ---
 
@@ -99,16 +120,4 @@ O MVP está em desenvolvimento ativo. **Sprint 1** (auth) e **Sprint 2** (anúnc
 | Renderização | SSG/SSR/ISR/CSR por tipo de página | CLAUDE.md |
 | Pagamento no MVP | Fora do escopo — combinação direta | PRD.md §3.2 |
 | Moderação de anúncios | Reativa (publicação direta no MVP) | PRD.md §3.2 |
-| Package manager | pnpm | package.json |
-| ORM | Prisma v5 | schema.prisma |
-
----
-
-## Próximos Passos — Sprint 3
-
-1. `POST /api/bookings` — criar reserva com validação de datas e conflito
-2. `GET /api/bookings` — listar reservas do usuário (locador e locatário)
-3. `PATCH /api/bookings/[id]` — máquina de estados (aceitar, recusar, cancelar, concluir)
-4. Página `/reservas` — dashboard com abas "Como locatário" / "Como locador"
-5. Supabase Realtime — canal de mensagens por conversa
-6. Página `/mensagens` — lista de conversas + chat em tempo real
+| Chat fallback (MVP) | Polling 3s até Realtime estar configurado | `_ChatWindow.tsx` |
