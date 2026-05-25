@@ -48,6 +48,22 @@ export async function AppHeader() {
           >
             Anunciar
           </Link>
+          {session && (
+            <>
+              <Link
+                href="/reservas"
+                className="rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:bg-white/10 hover:text-white transition-colors outline-none focus-visible:ring-1 focus-visible:ring-white"
+              >
+                Reservas
+              </Link>
+              <Link
+                href="/mensagens"
+                className="rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:bg-white/10 hover:text-white transition-colors outline-none focus-visible:ring-1 focus-visible:ring-white"
+              >
+                Mensagens
+              </Link>
+            </>
+          )}
         </nav>
 
         {/* Search bar — desktop only */}
