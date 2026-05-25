@@ -1,6 +1,5 @@
-import '@testing-library/jest-dom'
-import { configureAxe, toHaveNoViolations } from 'jest-axe'
-import { server } from '@/src/mocks/server'
+import "@testing-library/jest-dom"
+import { configureAxe, toHaveNoViolations } from "jest-axe"
 
 expect.extend(toHaveNoViolations)
 
@@ -9,7 +8,3 @@ configureAxe({
     region: { enabled: false },
   },
 })
-
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
-afterEach(() => server.resetHandlers())
-afterAll(() => server.close())
