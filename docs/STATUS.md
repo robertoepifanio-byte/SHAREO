@@ -127,11 +127,11 @@ Todos os P0 foram resolvidos. Os P1 pendentes são dependências humanas (backlo
 - [ ] `middleware.ts` — proteção de rotas com NextAuth
 
 ### Depende de você (15–30 min)
-- [ ] Criar projeto `shareo-dev` em [supabase.com](https://supabase.com/dashboard) → **New project** → South America (São Paulo)
-- [ ] Ativar extensão PostGIS: **Database → Extensions → postgis → Enable**
-- [ ] Preencher `.env.local` com as credenciais do projeto criado
-- [ ] Rodar `pnpm install && pnpm prisma migrate dev --name init && pnpm prisma db seed`
-- [ ] Verificar que `pnpm dev` sobe em [localhost:3000](http://localhost:3000)
+- [x] Criar projeto `shareo-dev` em [supabase.com](https://supabase.com/dashboard) → **New project** → South America (São Paulo)
+- [x] Ativar extensão PostGIS: **Database → Extensions → postgis → Enable**
+- [x] Preencher `.env.local` com as credenciais do projeto criado
+- [x] Rodar `pnpm install && pnpm prisma migrate dev --name init && pnpm prisma db seed`
+- [x] Verificar que `pnpm dev` sobe em [localhost:3000](http://localhost:3000)
 
 ### Depende de decisão (sem urgência técnica)
 - [ ] Escolher ferramenta de backlog: **Linear** (recomendado para times técnicos), Jira ou Notion
