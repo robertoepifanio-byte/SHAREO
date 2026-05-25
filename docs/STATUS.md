@@ -1,141 +1,90 @@
-# ShareO — Status de Prontidão para o MVP
+# ShareO — Status do Projeto
 
-**Gerado em**: 2026-05-22  
-**Referência**: Diagnóstico inicial + auditoria de artefatos  
+**Atualizado em**: 2026-05-24  
+**Branch ativa**: `feat/sprint-3-chat`  
 **Público**: Time técnico, Gestor de Projeto, PO
 
 ---
 
 ## Resumo Executivo
 
-O projeto passou de **zero artefatos técnicos** para um estado onde o primeiro commit de feature pode acontecer em **2–3 horas**, bastando criar o projeto Supabase de dev e preencher o `.env.local`.
-
-Todos os P0 foram resolvidos. Os P1 pendentes são dependências humanas (backlog, wireframes formais, instâncias de infraestrutura) — nenhum bloqueia o desenvolvimento local.
+O MVP está em desenvolvimento ativo. **Sprint 1** (auth) e **Sprint 2** (anúncios) foram entregues e estão em produção local. O frontend foi alinhado ao protótipo oficial em todas as telas implementadas. A **Sprint 3** (reservas + chat) está em andamento.
 
 ---
 
-## Status Consolidado — P0
+## Progresso por Sprint
 
-| # | Item | Status | Artefato |
-|---|---|---|---|
-| P0.1 | PRD / Especificação funcional | ✅ Feito | `PRD.md` |
-| P0.2 | Schema de banco de dados | ✅ Feito | `prisma/schema.prisma` |
-| P0.3 | ADR de autenticação | ✅ Feito | `ADRs/ADR-001-autenticacao.md` |
-| P0.4 | Ambiente de dev + README | ✅ Feito | `README.md` |
-| P0.5 | `.env.example` completo | ✅ Feito | `.env.example` |
-| P0.6 | Definição de "done" do MVP | ✅ Feito | `PRD.md` §3 + `.github/PULL_REQUEST_TEMPLATE.md` |
-| P0.7 | Ferramenta de backlog | ❌ Pendente | Decisão humana: Linear / Jira / Notion |
+### ✅ Sprint 1 — Autenticação e Perfil (concluída)
 
----
-
-## Status Consolidado — P1
-
-| # | Item | Status | Artefato |
-|---|---|---|---|
-| P1.1 | Backlog inicial (10+ histórias) | ❌ Pendente | Responsabilidade do PO |
-| P1.2 | Contratos de API — Auth | ✅ Feito | `docs/api/auth.md` |
-| P1.3 | Contratos de API — Items | ✅ Feito | `docs/api/items.md` |
-| P1.4 | Contratos de API — Bookings, Users, Chat, Admin | ❌ Pendente | Pode ser gerado pelo Claude Code |
-| P1.5 | Wireframes das 7 telas core | ⚠️ Coberto | `shareo-prototipo.html` serve como referência visual |
-| P1.6 | Máquina de estados do aluguel | ✅ Feito | `PRD.md` §4.4 |
-| P1.7 | ADR geo-search | ✅ Feito | `ADRs/ADR-002-mapas.md` |
-| P1.8 | ADR chat | ✅ Feito | `ADRs/ADR-003-chat.md` |
-| P1.9 | ADR criptografia CPF/CNPJ | ✅ Feito | `ADRs/ADR-004-criptografia-documentos.md` |
-| P1.10 | Políticas RLS — tabela messages | ✅ Feito | `supabase/rls-policies.sql` |
-| P1.11 | Políticas RLS — demais tabelas | ✅ Feito | `supabase/rls-policies.sql` |
-| P1.12 | CI/CD (GitHub Actions) | ✅ Feito | `.github/workflows/ci.yml` |
-| P1.13 | `tailwind.config.ts` | ✅ Feito | `tailwind.config.ts` |
-| P1.14 | 3 instâncias Supabase configuradas | ❌ Pendente | Ação manual de infra (15 min por instância) |
-
----
-
-## Artefatos Criados Nesta Sessão
-
-### Planejamento e Especificação
-| Arquivo | Descrição |
-|---|---|
-| `PRD.md` | Personas, 14 features (MoSCoW), fluxos end-to-end, máquina de estados do aluguel (7 estados), critérios de aceite por feature, métricas de sucesso |
-| `docs/estrutura-projeto.md` | Estrutura completa de pastas Next.js App Router + convenções de nomenclatura, imports e branches |
-
-### Architecture Decision Records
-| Arquivo | Decisão |
-|---|---|
-| `ADRs/ADR-001-autenticacao.md` | NextAuth.js v5 com Prisma adapter (contra JWT próprio e Supabase Auth) |
-| `ADRs/ADR-002-mapas.md` | Mapbox (free tier 50k loads/mês) + PostGIS para queries de proximidade |
-| `ADRs/ADR-003-chat.md` | Supabase Realtime via Postgres Changes — zero custo extra no MVP |
-| `ADRs/ADR-004-criptografia-documentos.md` | AES-256-GCM (exibição mascarada) + bcrypt hash (unicidade) para CPF/CNPJ |
-
-### Banco de Dados
-| Arquivo | Descrição |
-|---|---|
-| `prisma/schema.prisma` | 11 models de domínio + 3 modelos NextAuth. User, Item, Category, Booking, Review, Favorite, Conversation, Message, Notification, AdminLog, ItemImage, Account, Session, VerificationToken |
-| `prisma/seed.ts` | 8 categorias (Ferramentas, Eletrônicos, Casa, Construção, Esporte, Moda, Festas, Jardim) + usuário admin para dev/staging |
-
-### Configuração do Projeto
-| Arquivo | Descrição |
-|---|---|
-| `package.json` | Todas as dependências do MVP (next, prisma, next-auth, tanstack-query, zod, supabase, mapbox, sharp, bcryptjs, resend, sentry) + scripts |
-| `next.config.ts` | Headers de segurança (CSP, HSTS, X-Frame-Options), domínios de imagem Supabase, transpile Mapbox |
-| `tsconfig.json` | TypeScript strict, path alias `@/*`, moduleResolution bundler |
-| `tailwind.config.ts` | Tokens completos: paleta ShareO, breakpoints (xs/md/xl), tipografia Inter, espaçamento 4px grid, sombras, animações, z-index semântico |
-| `jest.config.ts` | Next.js Jest config, cobertura ≥70% em lib/utils/services/hooks, threshold global |
-| `jest.setup.ts` | `@testing-library/jest-dom` |
-| `.eslintrc.json` | next/core-web-vitals + @typescript-eslint + prettier |
-| `.prettierrc` | Formatação padrão do projeto |
-| `.gitignore` | Node modules, .next, .env*, coverage, playwright-report |
-| `postcss.config.js` | Tailwind + autoprefixer |
-
-### Fundação do App
-| Arquivo | Descrição |
-|---|---|
-| `app/layout.tsx` | Root layout: Inter font, metadata base, OpenGraph PT-BR |
-| `app/globals.css` | Tailwind directives |
-| `app/page.tsx` | Placeholder da home (substituir pela Landing Page na Sprint 1) |
-| `lib/prisma.ts` | Singleton PrismaClient com log query em dev |
-| `lib/auth.ts` | NextAuth.js v5: Credentials provider, JWT strategy, callbacks (role + userType no token) |
-| `lib/supabase/client.ts` | `createBrowserClient` para uso em Client Components |
-| `lib/supabase/server.ts` | `createServerClient` para Server Components e Route Handlers |
-
-### CI/CD e Qualidade
-| Arquivo | Descrição |
-|---|---|
-| `.github/workflows/ci.yml` | 6 estágios: lint, test (PostGIS container), build, preview deploy (PR), staging (merge main), production (aprovação manual) |
-| `.github/PULL_REQUEST_TEMPLATE.md` | Checklist de DoD: código, segurança/LGPD, banco, UI/UX |
-
-### Contratos de API
-| Arquivo | Domínio | Endpoints |
+| Feature | Status | Arquivos |
 |---|---|---|
-| `docs/api/README.md` | Convenções gerais | Formato de resposta, erros HTTP, preços em centavos, rate limiting, LGPD |
-| `docs/api/auth.md` | Auth | 6 endpoints: register, login (NextAuth), forgot-password, reset-password, change-password, delete-account |
-| `docs/api/items.md` | Items | 7 endpoints: list (geo), create, get, update, delete, upload-images, favorite |
-
-### Ambiente
-| Arquivo | Descrição |
-|---|---|
-| `.env.example` | Todas as variáveis documentadas: Supabase, NextAuth, Mapbox, Sentry, Resend, ENCRYPTION_KEY |
-| `README.md` | Setup em 5 passos + troubleshooting dos 4 erros mais comuns |
+| Página `/login` | ✅ Feito | `app/(auth)/login/page.tsx` |
+| Página `/cadastro` | ✅ Feito | `app/(auth)/cadastro/page.tsx` |
+| Layout auth com logo | ✅ Feito | `app/(auth)/layout.tsx` |
+| NextAuth.js v5 (Credentials) | ✅ Feito | `lib/auth.ts` |
+| `POST /api/auth/register` | ✅ Feito | `app/api/auth/register/route.ts` |
 
 ---
 
-## O Que Falta Para o Primeiro Commit
+### ✅ Sprint 2 — Domínio de Anúncios (concluída)
 
-### Pode ser feito agora (Claude Code)
-- [ ] Políticas RLS completas para todas as tabelas (`docs/rls-policies.sql`)
-- [ ] Contratos de API: Bookings, Users, Chat, Admin (`docs/api/bookings.md`, etc.)
-- [ ] `utils/cpf.ts` e `utils/cnpj.ts` com testes
-- [ ] `lib/crypto.ts` (implementação do ADR-004)
-- [ ] `middleware.ts` — proteção de rotas com NextAuth
+| Feature | Status | Arquivos |
+|---|---|---|
+| CRUD de itens | ✅ Feito | `app/api/items/` |
+| Upload de fotos | ✅ Feito | `app/api/items/[id]/images/` |
+| Formulário de anúncio (`/itens/novo`) | ✅ Feito | `app/itens/novo/page.tsx` |
+| Edição de anúncio (`/itens/[id]/editar`) | ✅ Feito | `app/itens/[id]/editar/page.tsx` |
+| Página Explorar (`/itens`) | ✅ Feito | `app/itens/page.tsx` |
+| Página de detalhe (`/itens/[id]`) | ✅ Feito | `app/itens/[id]/page.tsx` |
+| Galeria interativa | ✅ Feito | `app/itens/[id]/_Gallery.tsx` |
+| Calculadora de preço | ✅ Feito | `app/itens/[id]/_PriceCalc.tsx` |
+| FavoriteButton | ✅ Feito | `components/items/FavoriteButton.tsx` |
+| Seed de imagens demo | ✅ Feito | `scripts/seed-images.mjs` |
 
-### Depende de você (15–30 min)
-- [x] Criar projeto `shareo-dev` em [supabase.com](https://supabase.com/dashboard) → **New project** → South America (São Paulo)
-- [x] Ativar extensão PostGIS: **Database → Extensions → postgis → Enable**
-- [x] Preencher `.env.local` com as credenciais do projeto criado
-- [x] Rodar `pnpm install && pnpm prisma migrate dev --name init && pnpm prisma db seed`
-- [x] Verificar que `pnpm dev` sobe em [localhost:3000](http://localhost:3000)
+---
 
-### Depende de decisão (sem urgência técnica)
-- [ ] Escolher ferramenta de backlog: **Linear** (recomendado para times técnicos), Jira ou Notion
-- [ ] PO escrever as primeiras histórias de usuário
+### 🔄 Sprint 3 — Reservas e Chat (em andamento)
+
+| Feature | Status | Notas |
+|---|---|---|
+| `POST /api/bookings` | ❌ Pendente | CTA "Solicitar locação" já está no UI com `alert("em breve")` |
+| Fluxo de reserva (7 estados) | ❌ Pendente | Máquina de estados definida no PRD |
+| Chat entre locador/locatário | ❌ Pendente | Supabase Realtime (ADR-003) |
+| Notificações in-app | ❌ Pendente | — |
+| Página `/reservas` (dashboard) | ❌ Pendente | — |
+
+---
+
+## Alinhamento UI ao Protótipo
+
+| Tela | Status | Observações |
+|---|---|---|
+| Landing Page (`/`) | ✅ Alinhada | Hero, categorias com ícones PNG, grid de itens, "Como funciona", CTA |
+| Header / AppHeader | ✅ Alinhado | Logo navy, nav Início·Explorar·Anunciar, ações Entrar/+Anunciar |
+| Explorar (`/itens`) | ✅ Alinhada | Sidebar filtros (lg+), chips com ícones 40px, sort, paginação |
+| Detalhe (`/itens/[id]`) | ✅ Alinhada | Galeria, calculadora, card sticky, avaliações, mini-card dono |
+| Login / Cadastro | ✅ Alinhados | Logo `shareo-logo-fb.png`, formulários com validação |
+| Perfil do usuário | ❌ Pendente | — |
+| Dashboard de reservas | ❌ Pendente | — |
+| Chat | ❌ Pendente | — |
+| Admin | ❌ Pendente | — |
+
+---
+
+## Componentes e Infra
+
+| Item | Status | Artefato |
+|---|---|---|
+| `CategoryIcon` (centralizado) | ✅ Feito | `components/ui/CategoryIcon.tsx` |
+| `ItemCard` | ✅ Feito | `components/items/ItemCard.tsx` |
+| `AppHeader` | ✅ Feito | `components/layout/AppHeader.tsx` |
+| `SortSelect` | ✅ Feito | `app/itens/_SortSelect.tsx` |
+| Prisma schema (11 models) | ✅ Feito | `prisma/schema.prisma` |
+| Seed de categorias | ✅ Feito | `prisma/seed.ts` |
+| CI/CD (GitHub Actions) | ✅ Feito | `.github/workflows/ci.yml` |
+| RLS policies (Supabase) | ✅ Feito | `supabase/rls-policies.sql` |
+| 3 instâncias Supabase | ❌ Pendente | Ação manual de infra |
+| Deploy Vercel (staging) | ❌ Pendente | — |
 
 ---
 
@@ -147,22 +96,19 @@ Todos os P0 foram resolvidos. Os P1 pendentes são dependências humanas (backlo
 | API de mapas | Mapbox + PostGIS | ADR-002 |
 | Chat em tempo real | Supabase Realtime (Postgres Changes) | ADR-003 |
 | Criptografia de CPF/CNPJ | AES-256-GCM + bcrypt hash | ADR-004 |
-| Estratégia de renderização | SSG/SSR/ISR/CSR por tipo de página | CLAUDE.md |
-| Pagamento no MVP | Fora do escopo — combinação direta entre usuários | PRD.md §3.2 |
+| Renderização | SSG/SSR/ISR/CSR por tipo de página | CLAUDE.md |
+| Pagamento no MVP | Fora do escopo — combinação direta | PRD.md §3.2 |
 | Moderação de anúncios | Reativa (publicação direta no MVP) | PRD.md §3.2 |
 | Package manager | pnpm | package.json |
 | ORM | Prisma v5 | schema.prisma |
 
 ---
 
-## Estimativa para Sprint 1
+## Próximos Passos — Sprint 3
 
-Com o ambiente configurado, a Sprint 1 (features F01 Auth + F04 Anúncio básico) leva **5–7 dias úteis** para um desenvolvedor sênior, dado o nível de detalhe dos contratos de API existentes.
-
-**Sequência recomendada para a Sprint 1:**
-1. `utils/cpf.ts` + `utils/cnpj.ts` (com testes — base para registro)
-2. `lib/crypto.ts` (criptografia CPF/CNPJ)
-3. `POST /api/auth/register` (primeiro endpoint funcional)
-4. Páginas `/login` e `/cadastro` (UI com componentes `ui/Button` e `ui/Input`)
-5. `POST /api/items` + `GET /api/items` básico (sem PostGIS ainda — só filtro por cidade)
-6. Adicionar PostGIS queries no `GET /api/items` após validar o fluxo básico
+1. `POST /api/bookings` — criar reserva com validação de datas e conflito
+2. `GET /api/bookings` — listar reservas do usuário (locador e locatário)
+3. `PATCH /api/bookings/[id]` — máquina de estados (aceitar, recusar, cancelar, concluir)
+4. Página `/reservas` — dashboard com abas "Como locatário" / "Como locador"
+5. Supabase Realtime — canal de mensagens por conversa
+6. Página `/mensagens` — lista de conversas + chat em tempo real
