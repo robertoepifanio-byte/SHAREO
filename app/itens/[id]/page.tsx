@@ -1,18 +1,31 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
-import Image from "next/image"
 import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
+import { FavoriteButton } from "@/components/items/FavoriteButton"
+import { Gallery } from "./_Gallery"
+import { PriceCalc } from "./_PriceCalc"
 
 type Props = { params: Promise<{ id: string }> }
 
 const CONDITION_LABEL: Record<string, string> = {
   NEW:       "Novo",
-  EXCELLENT: "Excelente",
-  GOOD:      "Bom",
+  EXCELLENT: "Seminovo",
+  GOOD:      "Bom estado",
   FAIR:      "Regular",
+}
+
+function relativeTime(date: Date): string {
+  const days = Math.floor((Date.now() - date.getTime()) / 86_400_000)
+  if (days === 0) return "hoje"
+  if (days === 1) return "há 1 dia"
+  if (days < 7)  return `há ${days} dias`
+  if (days < 14) return "há 1 semana"
+  if (days < 30) return `há ${Math.floor(days / 7)} semanas`
+  if (days < 60) return "há 1 mês"
+  return `há ${Math.floor(days / 30)} meses`
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -23,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   })
   if (!item) return { title: "Anúncio não encontrado" }
   return {
-    title:       item.title,
+    title:       `${item.title} — ShareO`,
     description: item.description.slice(0, 160),
   }
 }
@@ -34,18 +47,22 @@ export default async function ItemDetailPage({ params }: Props) {
   const [item, session] = await Promise.all([
     prisma.item.findFirst({
       where: { id, deletedAt: null },
-      include: {
-        category: { select: { name: true, slug: true } },
-        owner:    {
+      select: {
+        id: true, title: true, description: true, condition: true,
+        pricePerDay: true, pricePerWeek: true, pricePerMonth: true,
+        depositAmount: true, city: true, state: true, neighborhood: true,
+        isActive: true, ownerId: true, viewCount: true,
+        category: { select: { name: true } },
+        owner: {
           select: {
-            id: true, name: true, avatarUrl: true, isVerified: true,
-            city: true, state: true, createdAt: true,
+            id: true, name: true, isVerified: true,
+            city: true, neighborhood: true, createdAt: true,
           },
         },
-        images:  { orderBy: { order: "asc" } },
+        images:  { select: { url: true }, orderBy: { order: "asc" } },
         reviews: {
           where:   { reviewType: "ITEM" },
-          select:  { id: true, rating: true, comment: true, reviewer: { select: { name: true } }, createdAt: true },
+          select:  { id: true, rating: true, comment: true, createdAt: true, reviewer: { select: { name: true } } },
           orderBy: { createdAt: "desc" },
           take:    8,
         },
@@ -57,231 +74,211 @@ export default async function ItemDetailPage({ params }: Props) {
 
   if (!item) notFound()
 
-  // Fire-and-forget view count
   prisma.item.update({ where: { id }, data: { viewCount: { increment: 1 } } }).catch(() => {})
 
-  const isOwner  = session?.user.id === item.ownerId
-  const price    = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(item.pricePerDay / 100)
+  const isOwner   = session?.user.id === item.ownerId
   const avgRating = item.reviews.length
     ? item.reviews.reduce((s, r) => s + r.rating, 0) / item.reviews.length
     : null
 
-  const memberSince = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(new Date(item.owner.createdAt))
+  const fmt = (cents: number) =>
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
+
+  const ownerInitial  = item.owner.name[0]?.toUpperCase() ?? "?"
+  const ownerLocation = [item.owner.neighborhood, item.owner.city].filter(Boolean).join(", ")
 
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
 
+      {/* Barra de volta */}
+      <div className="border-b border-border bg-surface">
+        <div className="container py-3">
+          <Link
+            href="/itens"
+            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            ← Voltar para resultados
+          </Link>
+        </div>
+      </div>
+
       <main className="container py-8">
-        <div className="mx-auto max-w-4xl">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
 
-          {/* Breadcrumb */}
-          <nav className="mb-4 flex items-center gap-2 text-xs text-muted-foreground" aria-label="Navegação">
-            <Link href="/itens" className="hover:text-foreground transition-colors">Explorar</Link>
-            <span aria-hidden="true">›</span>
-            <span className="text-foreground">{item.category.name}</span>
-          </nav>
+          {/* ─── ESQUERDA: Galeria + Descrição + Avaliações ─── */}
+          <div className="min-w-0 flex-1">
 
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_340px]">
+            {/* Galeria interativa (client component) */}
+            <Gallery images={item.images} title={item.title} />
 
-            {/* Coluna esquerda */}
-            <div className="space-y-6">
+            {/* Descrição */}
+            <div className="mt-6">
+              <h2 className="mb-3 text-lg font-bold text-primary">Sobre o item</h2>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {item.description}
+              </p>
 
-              {/* Galeria */}
-              {item.images.length > 0 ? (
-                <div className="space-y-2">
-                  <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-muted">
-                    <Image
-                      src={item.images[0].url}
-                      alt={item.title}
-                      fill
-                      priority
-                      className="object-cover"
-                      sizes="(max-width: 1024px) 100vw, 60vw"
-                    />
-                  </div>
-                  {item.images.length > 1 && (
-                    <div className="flex gap-2 overflow-x-auto pb-1">
-                      {item.images.slice(1).map((img) => (
-                        <div key={img.id} className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
-                          <Image src={img.url} alt="" fill className="object-cover" sizes="80px" />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="flex aspect-[4/3] w-full items-center justify-center rounded-xl bg-muted text-muted-foreground/30">
-                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" aria-hidden="true">
-                    <rect x="3" y="3" width="18" height="18" rx="2"/>
-                    <circle cx="8.5" cy="8.5" r="1.5"/>
-                    <polyline points="21 15 16 10 5 21"/>
-                  </svg>
-                </div>
-              )}
-
-              {/* Título e badges */}
-              <div>
-                <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                    {item.category.name}
+              {/* Tags */}
+              <div className="mt-3 flex flex-wrap gap-2" role="list" aria-label="Características">
+                <span role="listitem" className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground">
+                  {item.category.name}
+                </span>
+                <span role="listitem" className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground">
+                  {CONDITION_LABEL[item.condition] ?? item.condition}
+                </span>
+                {item.neighborhood && (
+                  <span role="listitem" className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground">
+                    📍 {item.neighborhood}
                   </span>
-                  <span className="rounded-md bg-brand/10 px-2 py-0.5 text-xs font-medium text-brand">
-                    {CONDITION_LABEL[item.condition] ?? item.condition}
-                  </span>
-                  {!item.isActive && (
-                    <span className="rounded-md bg-muted px-2 py-0.5 text-xs text-muted-foreground">Pausado</span>
-                  )}
-                </div>
-                <h1 className="text-2xl font-bold text-primary">{item.title}</h1>
-                <div className="mt-2 flex items-center gap-3 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-                    </svg>
-                    {item.neighborhood ? `${item.neighborhood}, ` : ""}{item.city}, {item.state}
-                  </span>
-                  {avgRating && (
-                    <span className="flex items-center gap-1">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="#F97316" stroke="#F97316" strokeWidth="1" aria-hidden="true">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                      </svg>
-                      {avgRating.toFixed(1)} ({item._count.reviews})
-                    </span>
-                  )}
-                  <span>{item.viewCount} visualizações</span>
-                </div>
+                )}
               </div>
 
-              {/* Descrição */}
-              <div>
-                <h2 className="mb-3 font-semibold text-primary">Descrição</h2>
-                <p className="whitespace-pre-line text-sm text-foreground leading-relaxed">
-                  {item.description}
-                </p>
-              </div>
+              <div className="my-6 h-px bg-border" />
 
               {/* Avaliações */}
-              {item.reviews.length > 0 && (
-                <div>
-                  <h2 className="mb-4 font-semibold text-primary">
-                    Avaliações ({item._count.reviews})
-                  </h2>
-                  <div className="space-y-4">
-                    {item.reviews.map((review) => (
-                      <div key={review.id} className="rounded-lg border border-border bg-surface p-4">
-                        <div className="mb-2 flex items-center justify-between">
-                          <span className="text-sm font-medium text-foreground">
-                            {review.reviewer.name}
-                          </span>
-                          <div className="flex items-center gap-0.5">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <svg
-                                key={i}
-                                width="14" height="14"
-                                viewBox="0 0 24 24"
-                                fill={i < review.rating ? "#F97316" : "none"}
-                                stroke="#F97316"
-                                strokeWidth="1"
-                                aria-hidden="true"
-                              >
-                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                              </svg>
-                            ))}
-                          </div>
-                        </div>
-                        {review.comment && (
-                          <p className="text-sm text-muted-foreground">{review.comment}</p>
-                        )}
-                        <p className="mt-2 text-xs text-muted-foreground">
-                          {new Intl.DateTimeFormat("pt-BR").format(new Date(review.createdAt))}
-                        </p>
+              <h2 className="mb-4 text-lg font-bold text-primary">
+                Avaliações ({item._count.reviews})
+              </h2>
+
+              {item.reviews.length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  {item.reviews.map((review) => (
+                    <div key={review.id} className="rounded-lg border border-border bg-background p-3">
+                      <div className="mb-1.5 flex items-center justify-between">
+                        <span className="text-sm font-semibold text-foreground">
+                          {review.reviewer.name}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {relativeTime(new Date(review.createdAt))}
+                        </span>
                       </div>
-                    ))}
-                  </div>
+                      <div className="mb-1 text-sm text-yellow-500" aria-label={`${review.rating} estrelas`}>
+                        {"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}
+                      </div>
+                      {review.comment && (
+                        <p className="text-sm text-muted-foreground">{review.comment}</p>
+                      )}
+                    </div>
+                  ))}
                 </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Nenhuma avaliação ainda. Seja o primeiro a alugar!
+                </p>
               )}
             </div>
+          </div>
 
-            {/* Coluna direita — card de ação */}
-            <div className="lg:sticky lg:top-24 space-y-4">
-              <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
-                <div className="mb-4">
-                  <p className="text-3xl font-bold text-brand">
-                    {price}
-                    <span className="text-base font-normal text-muted-foreground">/dia</span>
-                  </p>
-                  {item.pricePerWeek && (
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(item.pricePerWeek / 100)}/semana
-                    </p>
-                  )}
-                  {item.pricePerMonth && (
-                    <p className="text-sm text-muted-foreground">
-                      {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(item.pricePerMonth / 100)}/mês
-                    </p>
-                  )}
-                  {item.depositAmount && (
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      + caução de {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(item.depositAmount / 100)}
-                    </p>
-                  )}
+          {/* ─── DIREITA: Card de locação (sticky) ─── */}
+          <div className="w-full lg:w-[360px] lg:flex-shrink-0">
+            <div className="sticky top-20 rounded-xl border border-border bg-surface p-6">
+
+              {/* Categoria */}
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-brand">
+                {item.category.name}
+              </p>
+
+              {/* Título */}
+              <h1 className="mb-2 text-xl font-bold leading-snug text-primary">
+                {item.title}
+              </h1>
+
+              {/* Rating */}
+              {avgRating !== null && (
+                <div className="mb-4 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
+                  <span className="text-yellow-500" aria-label={`${avgRating.toFixed(1)} estrelas`}>
+                    {"★".repeat(Math.round(avgRating))}{"☆".repeat(5 - Math.round(avgRating))}
+                  </span>
+                  <strong className="text-foreground">{avgRating.toFixed(1)}</strong>
+                  <span>·</span>
+                  <span>{item._count.reviews} avaliação{item._count.reviews !== 1 ? "ões" : ""}</span>
+                  <span className="rounded-full border border-success/30 bg-success/10 px-2 py-0.5 text-xs font-semibold text-success">
+                    🌿 Eco
+                  </span>
                 </div>
+              )}
 
-                {isOwner ? (
-                  <Link
-                    href={`/itens/${item.id}/editar`}
-                    className="block w-full rounded-md border border-border py-3 text-center text-sm font-medium text-foreground hover:bg-background transition-colors"
-                  >
-                    Editar anúncio
-                  </Link>
-                ) : session ? (
-                  <button
-                    type="button"
-                    disabled
-                    className="w-full rounded-md bg-brand py-3 text-sm font-medium text-white opacity-50 cursor-not-allowed"
-                    title="Disponível em breve"
-                  >
-                    Solicitar locação
-                  </button>
-                ) : (
-                  <Link
-                    href={`/login?callbackUrl=/itens/${item.id}`}
-                    className="block w-full rounded-md bg-brand py-3 text-center text-sm font-medium text-white hover:bg-brand-hover transition-colors"
-                  >
-                    Entrar para alugar
-                  </Link>
-                )}
-
-                <p className="mt-3 text-center text-xs text-muted-foreground">
-                  Sem cobrança até a confirmação
-                </p>
-              </div>
-
-              {/* Card do anunciante */}
-              <div className="rounded-xl border border-border bg-surface p-5">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-brand/10 text-lg font-bold text-brand">
-                    {item.owner.name[0].toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="font-medium text-primary">{item.owner.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Membro desde {memberSince}
-                    </p>
-                    {item.owner.isVerified && (
-                      <span className="mt-0.5 inline-flex items-center gap-1 text-xs text-success">
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden="true">
-                          <polyline points="20 6 9 17 4 12"/>
-                        </svg>
-                        Verificado
+              {/* Preço principal */}
+              <div className="mb-5">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-extrabold text-foreground">{fmt(item.pricePerDay)}</span>
+                  <span className="text-sm text-muted-foreground">/dia</span>
+                </div>
+                {(item.pricePerWeek || item.pricePerMonth) && (
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Também:</span>
+                    {item.pricePerWeek && (
+                      <span className="rounded-md border border-border bg-background px-2.5 py-1 text-xs text-muted-foreground">
+                        {fmt(item.pricePerWeek)}/sem
+                      </span>
+                    )}
+                    {item.pricePerMonth && (
+                      <span className="rounded-md border border-border bg-background px-2.5 py-1 text-xs text-muted-foreground">
+                        {fmt(item.pricePerMonth)}/mês
                       </span>
                     )}
                   </div>
-                </div>
+                )}
               </div>
+
+              {/* Se for dono: botão de editar; senão: calculadora + CTA */}
+              {isOwner ? (
+                <Link
+                  href={`/itens/${item.id}/editar`}
+                  className="mb-2.5 block w-full rounded-lg border border-border py-3.5 text-center text-sm font-medium text-foreground hover:bg-background transition-colors"
+                >
+                  ✏️ Editar anúncio
+                </Link>
+              ) : (
+                <PriceCalc
+                  pricePerDay={item.pricePerDay}
+                  itemId={item.id}
+                  isLoggedIn={!!session}
+                />
+              )}
+
+              {/* Favoritar */}
+              {!isOwner && (
+                <div className="mb-4 flex w-full items-center justify-center gap-2 rounded-lg border border-border py-2.5 text-sm font-medium text-foreground hover:bg-background transition-colors cursor-pointer">
+                  <FavoriteButton itemId={item.id} />
+                  <span>Salvar nos favoritos</span>
+                </div>
+              )}
+
+              {/* Mini card do proprietário */}
+              <Link
+                href={`/perfil/${item.owner.id}`}
+                className="flex items-center gap-3 rounded-lg border border-border bg-background p-3.5 hover:bg-muted/40 transition-colors"
+                aria-label={`Ver perfil de ${item.owner.name}`}
+              >
+                <div
+                  className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-primary text-base font-bold text-white"
+                  aria-hidden="true"
+                >
+                  {ownerInitial}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-foreground">
+                    {item.owner.name}
+                    {item.owner.isVerified && (
+                      <span className="ml-1.5 text-success" title="Verificado">✓</span>
+                    )}
+                  </p>
+                  {ownerLocation && (
+                    <p className="truncate text-xs text-muted-foreground">📍 {ownerLocation}</p>
+                  )}
+                </div>
+                <span className="text-lg text-muted-foreground" aria-hidden="true">›</span>
+              </Link>
+
+              {/* Segurança */}
+              <p className="mt-3 text-center text-xs text-muted-foreground">
+                🔒 Pagamento seguro via Shareo · Seguro incluso
+              </p>
             </div>
           </div>
+
         </div>
       </main>
     </div>

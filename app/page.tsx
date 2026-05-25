@@ -3,6 +3,7 @@ import Link from "next/link"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { ItemCard } from "@/components/items/ItemCard"
+import { CategoryIcon } from "@/components/ui/CategoryIcon"
 
 export const metadata: Metadata = {
   title: "ShareO — Use Mais. Possua Menos.",
@@ -11,16 +12,6 @@ export const metadata: Metadata = {
 
 export const revalidate = 3600
 
-const CATEGORY_ICONS: Record<string, string> = {
-  Ferramentas:  "🔧",
-  Construção:   "🏗️",
-  Moda:         "👗",
-  Eletrônicos:  "💻",
-  Casa:         "🏠",
-  Esporte:      "⚽",
-  Jardim:       "🌿",
-  Festas:       "🎉",
-}
 
 export default async function HomePage() {
   const [categories, items] = await Promise.all([
@@ -126,9 +117,7 @@ export default async function HomePage() {
                     className="flex min-w-[88px] flex-shrink-0 flex-col items-center gap-2 rounded-lg border-2 border-border bg-surface px-4 py-3.5 text-xs font-semibold text-primary transition-colors hover:border-brand hover:shadow-sm"
                     aria-label={cat.name}
                   >
-                    <span className="text-3xl leading-none" aria-hidden="true">
-                      {CATEGORY_ICONS[cat.name] ?? "📦"}
-                    </span>
+                    <CategoryIcon name={cat.name} size={72} />
                     <span>{cat.name}</span>
                   </Link>
                 ))}
