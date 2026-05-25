@@ -1,5 +1,6 @@
 import { Suspense } from "react"
 import type { Metadata } from "next"
+import Image from "next/image"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
@@ -25,15 +26,15 @@ type Props = { searchParams: Promise<SearchParams> }
 
 const PAGE_SIZE = 20
 
-const CATEGORY_EMOJI: Record<string, string> = {
-  Ferramentas: "🔧",
-  Eletrônicos: "💻",
-  Construção:  "🏗️",
-  Esporte:     "⚽",
-  Casa:        "🏠",
-  Moda:        "👗",
-  Jardim:      "🌱",
-  Festas:      "🎉",
+const CATEGORY_IMAGES: Record<string, string> = {
+  Ferramentas: "/icones/ferramentas.png",
+  Construção:  "/icones/construcao.png",
+  Moda:        "/icones/moda.png",
+  Eletrônicos: "/icones/eletronicos.png",
+  Casa:        "/icones/casa.png",
+  Esporte:     "/icones/esporte.png",
+  Jardim:      "/icones/jardim.png",
+  Festas:      "/icones/festas.png",
 }
 
 function getOrderBy(sort?: string) {
@@ -185,14 +186,21 @@ export default async function ExplorarPage({ searchParams }: Props) {
                 key={cat.id}
                 href={buildUrl({ categoryId: cat.id, page: 1 })}
                 role="listitem"
-                className={`flex-shrink-0 rounded-full border px-4 py-1.5 text-xs font-semibold whitespace-nowrap transition-all ${
+                className={`inline-flex flex-shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all ${
                   categoryId === cat.id
                     ? "border-brand bg-brand/10 text-brand"
                     : "border-border bg-surface text-muted-foreground hover:border-brand/40 hover:text-foreground"
                 }`}
               >
-                {CATEGORY_EMOJI[cat.name] && (
-                  <span className="mr-1" aria-hidden="true">{CATEGORY_EMOJI[cat.name]}</span>
+                {CATEGORY_IMAGES[cat.name] && (
+                  <Image
+                    src={CATEGORY_IMAGES[cat.name]}
+                    alt=""
+                    width={20}
+                    height={20}
+                    className="object-contain"
+                    aria-hidden="true"
+                  />
                 )}
                 {cat.name}
               </Link>
@@ -364,8 +372,15 @@ function FilterForm({
                 defaultChecked={categoryId === cat.id}
                 className="accent-brand"
               />
-              {CATEGORY_EMOJI[cat.name] && (
-                <span aria-hidden="true">{CATEGORY_EMOJI[cat.name]}</span>
+              {CATEGORY_IMAGES[cat.name] && (
+                <Image
+                  src={CATEGORY_IMAGES[cat.name]}
+                  alt=""
+                  width={18}
+                  height={18}
+                  className="object-contain"
+                  aria-hidden="true"
+                />
               )}
               {cat.name}
             </label>
