@@ -19,8 +19,8 @@ export async function AppHeader() {
           <Image
             src="/icones/shareo-logo-navy.png"
             alt="ShareO"
-            width={112}
-            height={36}
+            width={80}
+            height={26}
             className="object-contain"
             priority
           />
