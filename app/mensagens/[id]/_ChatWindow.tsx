@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef, useTransition } from "react"
+import { getSupabaseBrowserClient } from "@/lib/supabase/client"
 
 interface Message {
   id:        string
@@ -8,6 +9,17 @@ interface Message {
   content:   string
   readAt:    string | null
   createdAt: string
+}
+
+// Payload que o Supabase Realtime envia (colunas em snake_case)
+interface RealtimeMessageRow {
+  id:              string
+  conversation_id: string
+  sender_id:       string
+  content:         string
+  read_at:         string | null
+  created_at:      string
+  deleted_at:      string | null
 }
 
 interface Props {
@@ -34,18 +46,84 @@ export function ChatWindow({ conversationId, currentUserId, initialMessages, oth
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [input,    setInput]    = useState("")
   const [error,    setError]    = useState("")
+  const [isLive,   setIsLive]   = useState(false)   // true quando Realtime está ativo
   const [pending,  startTransition] = useTransition()
-  const bottomRef  = useRef<HTMLDivElement>(null)
-  const inputRef   = useRef<HTMLTextAreaElement>(null)
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const inputRef  = useRef<HTMLTextAreaElement>(null)
 
   // Scroll para o final quando chegarem mensagens
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
-  // Polling leve (3s) como fallback enquanto não há Supabase Realtime configurado.
-  // Mescla com estado local para preservar mensagens otimistas ainda pendentes.
+  // Realtime ou polling — escolhe automaticamente conforme configuração
   useEffect(() => {
+    const supabase = getSupabaseBrowserClient()
+
+    if (supabase) {
+      // ── Supabase Realtime ──────────────────────────────────────────────
+      // Pré-requisito: habilitar a tabela `messages` na publicação
+      // supabase_realtime no Supabase Dashboard → Database → Replication.
+      //
+      // Nota de segurança: o filtro é aplicado server-side pelo Supabase,
+      // mas sem RLS qualquer cliente pode subscrever qualquer conversa.
+      // Para produção: habilitar RLS na tabela messages com política de participante.
+      const channel = supabase
+        .channel(`conv:${conversationId}`)
+        .on<RealtimeMessageRow>(
+          "postgres_changes",
+          {
+            event:  "INSERT",
+            schema: "public",
+            table:  "messages",
+            filter: `conversation_id=eq.${conversationId}`,
+          },
+          (payload) => {
+            const row = payload.new
+            // Ignora soft-deleted
+            if (row.deleted_at) return
+
+            const msg: Message = {
+              id:        row.id,
+              senderId:  row.sender_id,
+              content:   row.content,
+              readAt:    row.read_at,
+              createdAt: row.created_at,
+            }
+
+            setMessages((prev) => {
+              // Já temos esta mensagem (ex.: confirmação da API chegou antes do evento)
+              if (prev.some((m) => m.id === msg.id)) return prev
+              // Substitui mensagem otimista com mesmo conteúdo (race: Realtime chegou antes da API)
+              const withoutOptimistic = prev.filter(
+                (m) => !(
+                  m.id.startsWith("optimistic-") &&
+                  m.senderId === msg.senderId &&
+                  m.content  === msg.content
+                )
+              )
+              return [...withoutOptimistic, msg]
+            })
+
+            // Marca como lido se a mensagem é do outro participante
+            if (row.sender_id !== currentUserId) {
+              fetch(`/api/conversations/${conversationId}`).catch(() => {})
+            }
+          }
+        )
+        .subscribe((status) => {
+          setIsLive(status === "SUBSCRIBED")
+        })
+
+      return () => {
+        supabase.removeChannel(channel)
+        setIsLive(false)
+      }
+    }
+
+    // ── Fallback: polling a cada 3s ────────────────────────────────────
+    // Usado quando NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY
+    // não estão configuradas.
     const interval = setInterval(async () => {
       try {
         const res  = await fetch(`/api/conversations/${conversationId}`)
@@ -53,7 +131,7 @@ export function ChatWindow({ conversationId, currentUserId, initialMessages, oth
         if (!res.ok || !json.data?.messages) return
         const serverMessages = json.data.messages as Message[]
         setMessages((prev) => {
-          const serverIds = new Set(serverMessages.map((m) => m.id))
+          const serverIds        = new Set(serverMessages.map((m) => m.id))
           const pendingOptimistics = prev.filter(
             (m) => m.id.startsWith("optimistic-") && !serverIds.has(m.id),
           )
@@ -61,8 +139,9 @@ export function ChatWindow({ conversationId, currentUserId, initialMessages, oth
         })
       } catch { /* ignora falhas de rede transitórias */ }
     }, 3000)
+
     return () => clearInterval(interval)
-  }, [conversationId])
+  }, [conversationId, currentUserId])
 
   async function send() {
     const content = input.trim()
@@ -70,7 +149,6 @@ export function ChatWindow({ conversationId, currentUserId, initialMessages, oth
     setError("")
     setInput("")
 
-    // Otimista: adiciona a mensagem localmente imediatamente
     const optimistic: Message = {
       id:        `optimistic-${Date.now()}`,
       senderId:  currentUserId,
@@ -93,7 +171,7 @@ export function ChatWindow({ conversationId, currentUserId, initialMessages, oth
           setMessages((prev) => prev.filter((m) => m.id !== optimistic.id))
           return
         }
-        // Substitui otimista pelo real
+        // Substitui otimista pelo real (se o Realtime não o substituiu antes)
         setMessages((prev) =>
           prev.map((m) => m.id === optimistic.id ? json.data : m)
         )
@@ -111,7 +189,6 @@ export function ChatWindow({ conversationId, currentUserId, initialMessages, oth
     }
   }
 
-  // Agrupa mensagens por dia
   let lastDay = ""
 
   return (
@@ -126,8 +203,8 @@ export function ChatWindow({ conversationId, currentUserId, initialMessages, oth
           )}
 
           {messages.map((msg) => {
-            const isMe  = msg.senderId === currentUserId
-            const day   = fmtDay(msg.createdAt)
+            const isMe    = msg.senderId === currentUserId
+            const day     = fmtDay(msg.createdAt)
             const showDay = day !== lastDay
             lastDay = day
 
@@ -146,12 +223,12 @@ export function ChatWindow({ conversationId, currentUserId, initialMessages, oth
                       isMe
                         ? "rounded-br-sm bg-brand text-white"
                         : "rounded-bl-sm bg-surface border border-border text-foreground"
-                    }`}
+                    } ${msg.id.startsWith("optimistic-") ? "opacity-70" : ""}`}
                   >
                     <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                     <p className={`mt-1 text-right text-[10px] ${isMe ? "text-white/60" : "text-muted-foreground"}`}>
-                      {fmtTime(msg.createdAt)}
-                      {isMe && msg.readAt && " ✓✓"}
+                      {msg.id.startsWith("optimistic-") ? "enviando…" : fmtTime(msg.createdAt)}
+                      {isMe && !msg.id.startsWith("optimistic-") && msg.readAt && " ✓✓"}
                     </p>
                   </div>
                 </div>
@@ -191,9 +268,15 @@ export function ChatWindow({ conversationId, currentUserId, initialMessages, oth
               </svg>
             </button>
           </div>
-          <p className="mt-1 text-right text-[10px] text-muted-foreground">
-            Enter para enviar · Shift+Enter para nova linha
-          </p>
+          <div className="mt-1 flex items-center justify-between">
+            <span className={`flex items-center gap-1 text-[10px] ${isLive ? "text-success" : "text-muted-foreground"}`}>
+              {isLive && <span className="inline-block h-1.5 w-1.5 rounded-full bg-success animate-pulse" aria-hidden="true" />}
+              {isLive ? "ao vivo" : ""}
+            </span>
+            <p className="text-[10px] text-muted-foreground">
+              Enter para enviar · Shift+Enter para nova linha
+            </p>
+          </div>
         </div>
       </div>
     </div>
