@@ -9,8 +9,8 @@ const PROTECTED_PREFIXES = [
   "/meus-anuncios",
   "/itens/novo",
   "/api/bookings",
+  "/api/conversations",
   "/api/users",
-  "/api/chat",
 ]
 
 const ADMIN_PREFIXES = ["/admin", "/api/admin"]

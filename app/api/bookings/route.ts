@@ -126,33 +126,26 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Verifica conflito de datas
-    const conflict = await prisma.booking.findFirst({
-      where: {
-        itemId,
-        status: { in: ["CONFIRMED", "ACTIVE"] },
-        AND: [
-          { startDate: { lt: new Date(endDate) } },
-          { endDate:   { gt: new Date(startDate) } },
-        ],
-      },
-      select: { id: true },
-    })
-
-    if (conflict) {
-      return NextResponse.json(
-        { error: { code: "DATE_CONFLICT", message: "Item indisponível no período selecionado." } },
-        { status: 409 },
-      )
-    }
-
     const totalDays  = Math.ceil(
       (new Date(endDate).getTime() - new Date(startDate).getTime()) / 86_400_000,
     )
     const totalPrice = item.pricePerDay * totalDays
 
-    // Cria booking + conversation atomicamente
+    // Cria booking + conversation atomicamente (conflict check dentro da transação evita double-booking)
     const booking = await prisma.$transaction(async (tx) => {
+      const conflict = await tx.booking.findFirst({
+        where: {
+          itemId,
+          status: { in: ["CONFIRMED", "ACTIVE"] },
+          AND: [
+            { startDate: { lt: new Date(endDate) } },
+            { endDate:   { gt: new Date(startDate) } },
+          ],
+        },
+        select: { id: true },
+      })
+      if (conflict) throw Object.assign(new Error("DATE_CONFLICT"), { code: "DATE_CONFLICT" })
+
       const b = await tx.booking.create({
         data: {
           itemId,
@@ -201,7 +194,7 @@ export async function POST(req: NextRequest) {
       })
 
       return { ...b, conversationId: conv.id }
-    })
+    }, { timeout: 5000 })
 
     // Notificação para o locador (fire-and-forget)
     prisma.notification.create({
@@ -216,6 +209,12 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ data: booking }, { status: 201 })
   } catch (e) {
+    if (e instanceof Error && (e as NodeJS.ErrnoException).code === "DATE_CONFLICT") {
+      return NextResponse.json(
+        { error: { code: "DATE_CONFLICT", message: "Item indisponível no período selecionado." } },
+        { status: 409 },
+      )
+    }
     console.error("[POST /api/bookings]", e instanceof Error ? e.message : e)
     return NextResponse.json(
       { error: { code: "INTERNAL_ERROR", message: "Erro interno." } },

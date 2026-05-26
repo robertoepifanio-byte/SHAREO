@@ -43,16 +43,23 @@ export function ChatWindow({ conversationId, currentUserId, initialMessages, oth
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
-  // Polling leve (3s) como fallback enquanto não há Supabase Realtime configurado
+  // Polling leve (3s) como fallback enquanto não há Supabase Realtime configurado.
+  // Mescla com estado local para preservar mensagens otimistas ainda pendentes.
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
         const res  = await fetch(`/api/conversations/${conversationId}`)
         const json = await res.json()
-        if (res.ok && json.data?.messages) {
-          setMessages(json.data.messages)
-        }
-      } catch { /* ignora falhas de rede */ }
+        if (!res.ok || !json.data?.messages) return
+        const serverMessages = json.data.messages as Message[]
+        setMessages((prev) => {
+          const serverIds = new Set(serverMessages.map((m) => m.id))
+          const pendingOptimistics = prev.filter(
+            (m) => m.id.startsWith("optimistic-") && !serverIds.has(m.id),
+          )
+          return [...serverMessages, ...pendingOptimistics]
+        })
+      } catch { /* ignora falhas de rede transitórias */ }
     }, 3000)
     return () => clearInterval(interval)
   }, [conversationId])
