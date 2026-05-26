@@ -107,21 +107,6 @@
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
-  "pnpm": {
-    "overrides": {
-      "rollup": ">=3.30.0"
-    },
-    "onlyBuiltDependencies": [
-      "@prisma/client",
-      "@prisma/engines",
-      "@sentry/cli",
-      "esbuild",
-      "msw",
-      "prisma",
-      "sharp",
-      "unrs-resolver"
-    ]
-  },
   "lint-staged": {
     "*.{ts,tsx}": [
       "eslint --fix",

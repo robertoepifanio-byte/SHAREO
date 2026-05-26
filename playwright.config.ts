@@ -12,20 +12,13 @@ export default defineConfig({
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
-  projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-    {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
-    },
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 13'] },
-    },
-  ],
+  projects: process.env.CI
+    ? [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }]
+    : [
+        { name: 'chromium',      use: { ...devices['Desktop Chrome'] } },
+        { name: 'Mobile Chrome', use: { ...devices['Pixel 5'] } },
+        { name: 'Mobile Safari', use: { ...devices['iPhone 13'] } },
+      ],
   webServer: {
     command: 'pnpm dev',
     url: 'http://localhost:3000',
