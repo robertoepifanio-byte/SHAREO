@@ -32,7 +32,7 @@ export default async function HomePage() {
         images:   { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
         _count:   { select: { reviews: true, favorites: true } },
       },
-    }).catch(() => []),
+    }).then((rows) => rows.filter((r) => r.category && r.owner)).catch(() => []),
   ])
 
   return (
