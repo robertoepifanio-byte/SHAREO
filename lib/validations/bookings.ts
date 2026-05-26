@@ -36,9 +36,22 @@ export const ListBookingsQuerySchema = z.object({
 
 export type ListBookingsQuery = z.infer<typeof ListBookingsQuerySchema>
 
-export const PatchBookingSchema = z.object({
-  action: z.enum(["confirm", "cancel", "mark_active", "mark_returned", "open_dispute"]),
-  reason: z.string().max(500).optional(),
-})
+export const PatchBookingSchema = z
+  .object({
+    action: z.enum(["confirm", "cancel", "mark_active", "mark_returned", "open_dispute"]),
+    reason: z.string().max(500).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (
+      (data.action === "cancel" || data.action === "open_dispute") &&
+      !data.reason?.trim()
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Motivo obrigatório para esta ação.",
+        path: ["reason"],
+      })
+    }
+  })
 
 export type PatchBookingInput = z.infer<typeof PatchBookingSchema>
