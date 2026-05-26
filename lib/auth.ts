@@ -1,6 +1,5 @@
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
-import { PrismaAdapter } from "@auth/prisma-adapter"
 import { z } from "zod"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
@@ -11,12 +10,8 @@ const CredentialsSchema = z.object({
   password: z.string().min(1),
 })
 
-const secret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET
-
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
-  secret,
-  adapter: PrismaAdapter(prisma),
   providers: [
     Credentials({
       credentials: {
