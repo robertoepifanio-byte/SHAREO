@@ -111,3 +111,44 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm prisma generate
       - run: pnpm build
+
+  e2e:
+    name: E2E Tests (Playwright)
+    runs-on: ubuntu-latest
+    needs: [build]
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL_STAGING }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY_STAGING }}
+      AUTH_SECRET: "ci-e2e-secret-placeholder"
+      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/shareo_test"
+      DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/shareo_test"
+    services:
+      postgres:
+        image: postgis/postgis:15-3.4
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: shareo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm prisma generate
+      - run: pnpm prisma migrate deploy
+      - run: pnpm playwright install --with-deps chromium
+      - run: pnpm test:e2e
+        env:
+          BASE_URL: http://localhost:3000
