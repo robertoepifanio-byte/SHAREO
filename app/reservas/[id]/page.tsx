@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { BookingActions } from "./_BookingActions"
+import { ReviewForm }    from "./_ReviewForm"
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -62,6 +63,10 @@ export default async function BookingDetailPage({ params }: Props) {
       borrower:     { select: { id: true, name: true } },
       owner:        { select: { id: true, name: true } },
       conversation: { select: { id: true } },
+      reviews: {
+        where:  { reviewerId: userId },
+        select: { reviewType: true, rating: true, comment: true },
+      },
     },
   })
 
@@ -172,6 +177,39 @@ export default async function BookingDetailPage({ params }: Props) {
             isBorrower={isBorrower}
             conversationId={booking.conversation?.id}
           />
+
+          {/* Avaliações — disponíveis após devolução */}
+          {(booking.status === "RETURNED" || booking.status === "COMPLETED") && (
+            <div className="mt-6 space-y-4">
+              <h2 className="font-semibold text-foreground">Avaliações</h2>
+
+              {isBorrower && (
+                <>
+                  <ReviewForm
+                    bookingId={booking.id}
+                    reviewType="ITEM"
+                    targetName={booking.item.title}
+                    existing={booking.reviews.find((r) => r.reviewType === "ITEM") ?? null}
+                  />
+                  <ReviewForm
+                    bookingId={booking.id}
+                    reviewType="OWNER"
+                    targetName={booking.owner.name}
+                    existing={booking.reviews.find((r) => r.reviewType === "OWNER") ?? null}
+                  />
+                </>
+              )}
+
+              {isOwner && (
+                <ReviewForm
+                  bookingId={booking.id}
+                  reviewType="BORROWER"
+                  targetName={booking.borrower.name}
+                  existing={booking.reviews.find((r) => r.reviewType === "BORROWER") ?? null}
+                />
+              )}
+            </div>
+          )}
 
         </div>
       </main>
