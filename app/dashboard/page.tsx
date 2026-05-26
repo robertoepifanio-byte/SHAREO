@@ -11,13 +11,19 @@ export default async function DashboardPage() {
   const session = await auth()
   if (!session) redirect("/login")
 
-  const [itemCount, totalViews] = await Promise.all([
+  const [itemCount, totalViews, activeBookings] = await Promise.all([
     prisma.item.count({
       where: { ownerId: session.user.id, deletedAt: null },
     }),
     prisma.item.aggregate({
       where:   { ownerId: session.user.id, deletedAt: null },
       _sum:    { viewCount: true },
+    }),
+    prisma.booking.count({
+      where: {
+        status: { in: ["CONFIRMED", "ACTIVE"] },
+        OR: [{ borrowerId: session.user.id }, { ownerId: session.user.id }],
+      },
     }),
   ])
 
@@ -54,9 +60,8 @@ export default async function DashboardPage() {
               <p className="mt-1 text-sm text-muted-foreground">Visualizações</p>
             </div>
             <div className="col-span-2 rounded-lg border border-border bg-surface p-5 md:col-span-1">
-              <p className="text-2xl font-bold text-primary">0</p>
+              <p className="text-2xl font-bold text-primary">{activeBookings}</p>
               <p className="mt-1 text-sm text-muted-foreground">Locações ativas</p>
-              <p className="mt-0.5 text-xs text-muted-foreground/70">Disponível em breve</p>
             </div>
           </div>
 
