@@ -110,7 +110,7 @@ jobs:
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL_STAGING }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY_STAGING }}
-      AUTH_SECRET: "ci-e2e-secret-placeholder"
+      AUTH_SECRET: "ci-e2e-secret-placeholder-for-testing-only-32b"
       DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/shareo_test"
       DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/shareo_test"
     services:

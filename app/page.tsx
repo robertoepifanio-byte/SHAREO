@@ -39,6 +39,7 @@ export default async function HomePage() {
     <div className="min-h-screen bg-background">
       <AppHeader />
 
+      <main>
       {/* ─── HERO ─── */}
       <section
         className="bg-gradient-to-br from-primary to-[#1a3a5c] px-4 py-12 text-center md:py-20"
@@ -221,6 +222,7 @@ export default async function HomePage() {
         </section>
 
       </div>
+      </main>
     </div>
   )
 }
