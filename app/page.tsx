@@ -19,7 +19,7 @@ export default async function HomePage() {
       where:   { parentId: null },
       select:  { id: true, name: true },
       orderBy: { name: "asc" },
-    }),
+    }).catch(() => []),
     prisma.item.findMany({
       where:   { isActive: true, isApproved: true, deletedAt: null },
       take:    8,
@@ -32,7 +32,7 @@ export default async function HomePage() {
         images:   { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
         _count:   { select: { reviews: true, favorites: true } },
       },
-    }),
+    }).catch(() => []),
   ])
 
   return (
