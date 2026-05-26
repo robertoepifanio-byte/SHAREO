@@ -144,6 +144,7 @@ model Item {
   category    Category      @relation(fields: [categoryId], references: [id])
 
   title       String
+  slug        String?       @unique // ex.: "furadeira-dewalt-em-sao-paulo-sp" — SEO URL
   description String        @db.Text
   condition   ItemCondition @default(GOOD)
 
@@ -184,6 +185,7 @@ model Item {
   @@index([categoryId])
   @@index([latitude, longitude])
   @@index([isActive, isApproved, deletedAt])
+  @@index([slug])
   @@map("items")
 }
 
@@ -228,6 +230,7 @@ model Booking {
 
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime? // soft delete — LGPD obrigatório em dados transacionais
 
   // Relações
   reviews         Review[]
@@ -237,6 +240,7 @@ model Booking {
   @@index([ownerId])
   @@index([itemId])
   @@index([status])
+  @@index([deletedAt])
   @@map("bookings")
 }
 
@@ -309,6 +313,7 @@ model Message {
   content        String       @db.Text
   readAt         DateTime?
   createdAt      DateTime     @default(now())
+  deletedAt      DateTime?    // soft delete — LGPD obrigatório em mensagens privadas
 
   @@index([conversationId])
   @@index([senderId])

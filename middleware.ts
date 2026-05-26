@@ -1,5 +1,5 @@
-import { auth } from "@/lib/auth"
-import { NextResponse } from "next/server"
+import { getToken } from "next-auth/jwt"
+import { NextResponse, type NextRequest } from "next/server"
 
 const PROTECTED_PREFIXES = [
   "/dashboard",
@@ -17,36 +17,42 @@ const ADMIN_PREFIXES = ["/admin", "/api/admin"]
 
 const AUTH_ROUTES = ["/login", "/cadastro", "/esqueci-senha", "/redefinir-senha"]
 
-export default auth((req) => {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
-  const session = req.auth
 
   const isAdminRoute     = ADMIN_PREFIXES.some((p) => pathname.startsWith(p))
   const isProtectedRoute = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p))
   const isAuthRoute      = AUTH_ROUTES.some((p) => pathname.startsWith(p))
 
-  // Usuário autenticado tenta acessar página de auth → redireciona para dashboard
-  if (isAuthRoute && session) {
+  if (!isAdminRoute && !isProtectedRoute && !isAuthRoute) {
+    return NextResponse.next()
+  }
+
+  const token = await getToken({
+    req,
+    secret: process.env.AUTH_SECRET,
+    cookieName: "authjs.session-token",
+  })
+
+  if (isAuthRoute && token) {
     return NextResponse.redirect(new URL("/dashboard", req.url))
   }
 
-  // Rota protegida sem sessão → redireciona para login
-  if ((isProtectedRoute || isAdminRoute) && !session) {
+  if ((isProtectedRoute || isAdminRoute) && !token) {
     const loginUrl = new URL("/login", req.url)
     loginUrl.searchParams.set("callbackUrl", pathname)
     return NextResponse.redirect(loginUrl)
   }
 
-  // Rota admin: requer role ADMIN
-  if (isAdminRoute && session?.user) {
-    const role = (session.user as { role?: string }).role
+  if (isAdminRoute && token) {
+    const role = token.role as string | undefined
     if (role !== "ADMIN") {
       return NextResponse.redirect(new URL("/dashboard", req.url))
     }
   }
 
   return NextResponse.next()
-})
+}
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|icones/|images/).*)" ],

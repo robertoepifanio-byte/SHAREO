@@ -12,8 +12,8 @@ interface ItemCardItem {
   neighborhood?: string | null
   isActive?:    boolean
   images:       { url: string }[]
-  category:     { name: string }
-  owner:        { name: string; isVerified: boolean }
+  category:     { name: string } | null
+  owner:        { name: string; isVerified: boolean } | null
   _count?:      { reviews: number; favorites: number }
   avgRating?:   number | null
 }
@@ -82,7 +82,7 @@ export function ItemCard({ item, showActions = false, onDelete }: ItemCardProps)
           )}
 
           {/* Verificado */}
-          {item.owner.isVerified && (
+          {item.owner?.isVerified && (
             <div
               className="absolute right-2 bottom-2 flex h-5 w-5 items-center justify-center rounded-full bg-success/90 text-white"
               title="Anunciante verificado"
@@ -97,7 +97,7 @@ export function ItemCard({ item, showActions = false, onDelete }: ItemCardProps)
 
         {/* Conteúdo */}
         <div className="p-3">
-          <p className="mb-0.5 text-xs text-muted-foreground">{item.category.name}</p>
+          <p className="mb-0.5 text-xs text-muted-foreground">{item.category?.name}</p>
           <h3 className="mb-1.5 line-clamp-2 text-sm font-semibold leading-snug text-primary transition-colors group-hover:text-brand">
             {item.title}
           </h3>

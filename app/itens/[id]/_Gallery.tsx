@@ -39,24 +39,24 @@ export function Gallery({ images, title }: Props) {
 
       {/* Miniaturas */}
       {images.length > 1 && (
-        <div className="flex gap-2" role="list" aria-label="Miniaturas da galeria">
+        <ul className="flex gap-2 list-none p-0 m-0" aria-label="Miniaturas da galeria">
           {images.map((img, i) => (
-            <button
-              key={i}
-              onClick={() => setActive(i)}
-              role="listitem"
-              aria-label={`Foto ${i + 1}`}
-              aria-current={i === active ? "true" : undefined}
-              className={`relative h-[54px] w-[72px] flex-shrink-0 overflow-hidden rounded-md border-2 transition-colors ${
-                i === active
-                  ? "border-brand"
-                  : "border-transparent hover:border-border"
-              }`}
-            >
-              <Image src={img.url} alt="" fill className="object-cover" />
-            </button>
+            <li key={i}>
+              <button
+                onClick={() => setActive(i)}
+                aria-label={`Foto ${i + 1}`}
+                aria-current={i === active ? "true" : undefined}
+                className={`relative h-[54px] w-[72px] flex-shrink-0 overflow-hidden rounded-md border-2 transition-colors ${
+                  i === active
+                    ? "border-brand"
+                    : "border-transparent hover:border-border"
+                }`}
+              >
+                <Image src={img.url} alt="" fill className="object-cover" />
+              </button>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </>
   )

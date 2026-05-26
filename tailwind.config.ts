@@ -48,6 +48,9 @@ const config: Config = {
           hover: "#EA6C0A",     // laranja escurecido ~10%
           light: "#FED7AA",     // laranja claro (backgrounds sutis)
           foreground: "#FFFFFF",
+          cta: "#C05800",       // laranja WCAG AA sobre branco (4.47:1) — usar em Button primário
+          ctaHover: "#9A4500",  // hover do CTA
+          link: "#9A4700",      // laranja para texto/link sobre fundo branco
         },
         primary: {
           DEFAULT: "#0D1B2A",   // navy
@@ -96,6 +99,13 @@ const config: Config = {
           available: "#22C55E",
           rented: "#F59E0B",
           inactive: "#94A3B8",
+        },
+
+        // Estado desabilitado
+        disabled: {
+          bg: "#E2E8F0",
+          text: "#94A3B8",
+          border: "#CBD5E1",
         },
       },
 
@@ -196,6 +206,12 @@ const config: Config = {
       ringOffsetColor: {
         background: "#F8FAFC",
       },
+      ringWidth: {
+        DEFAULT: "2px",
+      },
+      ringOffsetWidth: {
+        DEFAULT: "2px",
+      },
 
       // ─── Aspect Ratios ───────────────────────────────────
       aspectRatio: {
@@ -267,7 +283,10 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    require('tailwindcss-animate'),
+    require('@tailwindcss/forms'),
+  ],
 }
 
 export default config

@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: "Alugue o que precisa de quem já tem. Marketplace de economia circular em Natal/RN.",
 }
 
-export const revalidate = 3600
+export const revalidate = 60
 
 
 export default async function HomePage() {
@@ -19,7 +19,7 @@ export default async function HomePage() {
       where:   { parentId: null },
       select:  { id: true, name: true },
       orderBy: { name: "asc" },
-    }),
+    }).catch(() => []),
     prisma.item.findMany({
       where:   { isActive: true, isApproved: true, deletedAt: null },
       take:    8,
@@ -32,13 +32,14 @@ export default async function HomePage() {
         images:   { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
         _count:   { select: { reviews: true, favorites: true } },
       },
-    }),
+    }).then((rows) => rows.filter((r) => r.category && r.owner)).catch(() => []),
   ])
 
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
 
+      <main>
       {/* ─── HERO ─── */}
       <section
         className="bg-gradient-to-br from-primary to-[#1a3a5c] px-4 py-12 text-center md:py-20"
@@ -221,6 +222,7 @@ export default async function HomePage() {
         </section>
 
       </div>
+      </main>
     </div>
   )
 }
