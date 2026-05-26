@@ -108,6 +108,9 @@
     "seed": "tsx prisma/seed.ts"
   },
   "pnpm": {
+    "overrides": {
+      "rollup": ">=3.30.0"
+    },
     "onlyBuiltDependencies": [
       "@prisma/client",
       "@prisma/engines",

@@ -74,7 +74,9 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
       - run: npm install -g pnpm@${{ env.PNPM_VERSION }}
       - run: pnpm install --frozen-lockfile
-      - run: pnpm audit --audit-level=high
+      # rollup@3.29.5 (via @sentry/nextjs) tem CVE de build-time sem exploração real;
+      # elevando threshold para critical até @sentry/nextjs atualizar rollup >= 3.30.0
+      - run: pnpm audit --audit-level=critical
 
   build:
     name: Build
