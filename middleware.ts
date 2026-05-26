@@ -21,7 +21,10 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
   const isAdminRoute     = ADMIN_PREFIXES.some((p) => pathname.startsWith(p))
-  const isProtectedRoute = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p))
+  // /perfil is protected but /perfil/[id] (public profile) is public
+  const isProtectedRoute = PROTECTED_PREFIXES.some((p) =>
+    p === "/perfil" ? pathname === "/perfil" : pathname.startsWith(p)
+  )
   const isAuthRoute      = AUTH_ROUTES.some((p) => pathname.startsWith(p))
 
   if (!isAdminRoute && !isProtectedRoute && !isAuthRoute) {
