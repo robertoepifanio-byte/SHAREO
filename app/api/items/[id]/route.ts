@@ -55,7 +55,7 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
     }
 
     // Fire-and-forget view count increment (só conta para itens públicos)
-    prisma.item.update({ where: { id }, data: { viewCount: { increment: 1 } } }).catch(() => {})
+    prisma.item.update({ where: { id }, data: { viewCount: { increment: 1 } } }).catch((e) => console.error("[viewCount]", e instanceof Error ? e.message : e))
 
     return NextResponse.json({ data: item })
   } catch (e) {

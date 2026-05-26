@@ -241,6 +241,7 @@ model Booking {
   @@index([itemId])
   @@index([status])
   @@index([deletedAt])
+  @@index([itemId, status, startDate, endDate])
   @@map("bookings")
 }
 
@@ -301,6 +302,7 @@ model ConversationParticipant {
   lastReadAt     DateTime?
 
   @@id([conversationId, userId])
+  @@index([userId])
   @@map("conversation_participants")
 }
 
@@ -315,7 +317,7 @@ model Message {
   createdAt      DateTime     @default(now())
   deletedAt      DateTime?    // soft delete — LGPD obrigatório em mensagens privadas
 
-  @@index([conversationId])
+  @@index([conversationId, createdAt])
   @@index([senderId])
   @@map("messages")
 }

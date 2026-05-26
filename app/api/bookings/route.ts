@@ -205,7 +205,7 @@ export async function POST(req: NextRequest) {
         body:   `${session.user.name} quer alugar "${booking.item.title}"`,
         data:   { bookingId: booking.id },
       },
-    }).catch(() => {})
+    }).catch((e) => console.error("[notification] BOOKING_REQUEST:", e instanceof Error ? e.message : e))
 
     return NextResponse.json({ data: booking }, { status: 201 })
   } catch (e) {

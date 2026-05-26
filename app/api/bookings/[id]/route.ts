@@ -202,7 +202,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (notif) {
       prisma.notification.create({
         data: { userId: notifyUserId, type: notif.type as never, title: notif.title, body: notif.body, data: { bookingId: id } },
-      }).catch(() => {})
+      }).catch((e) => console.error(`[notification] ${action}:`, e instanceof Error ? e.message : e))
     }
 
     return NextResponse.json({ data: updated })

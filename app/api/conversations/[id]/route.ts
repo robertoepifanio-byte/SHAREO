@@ -84,18 +84,18 @@ export async function GET(req: NextRequest, { params }: Params) {
         select:  { id: true, senderId: true, content: true, readAt: true, createdAt: true },
       }),
       prisma.message.count({ where: msgWhere }),
-
-      // Marca mensagens do outro como lidas (fire-and-forget)
-      prisma.message.updateMany({
-        where: { conversationId: id, senderId: { not: userId }, readAt: null },
-        data:  { readAt: new Date() },
-      }).then(() =>
-        prisma.conversationParticipant.update({
-          where: { conversationId_userId: { conversationId: id, userId } },
-          data:  { lastReadAt: new Date() },
-        })
-      ).catch(() => {}),
     ])
+
+    // Fire-and-forget outside Promise.all to avoid blocking the response
+    prisma.message.updateMany({
+      where: { conversationId: id, senderId: { not: userId }, readAt: null },
+      data:  { readAt: new Date() },
+    }).then(() =>
+      prisma.conversationParticipant.update({
+        where: { conversationId_userId: { conversationId: id, userId } },
+        data:  { lastReadAt: new Date() },
+      })
+    ).catch((e) => console.error("[mark-as-read]", e instanceof Error ? e.message : e))
 
     return NextResponse.json({
       data: {

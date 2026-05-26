@@ -35,9 +35,8 @@ export async function GET() {
         },
         participants: {
           select: {
-            userId:    true,
-            lastReadAt: true,
-            user: { select: { id: true, name: true, avatarUrl: true } },
+            userId: true,
+            user:   { select: { id: true, name: true, avatarUrl: true } },
           },
         },
         messages: {
@@ -45,18 +44,20 @@ export async function GET() {
           take:    1,
           select:  { content: true, senderId: true, createdAt: true },
         },
+        _count: {
+          select: {
+            messages: {
+              where: { senderId: { not: userId }, readAt: null },
+            },
+          },
+        },
       },
     })
 
     const data = conversations.map((conv) => {
       const other       = conv.participants.find((p) => p.userId !== userId)
-      const myLastRead  = conv.participants.find((p) => p.userId === userId)?.lastReadAt
       const lastMsg     = conv.messages[0]
-
-      // Conta mensagens não lidas aproximada (última mensagem mais recente que lastReadAt)
-      const unreadCount = myLastRead && lastMsg && lastMsg.senderId !== userId
-        && new Date(lastMsg.createdAt) > new Date(myLastRead)
-        ? 1 : 0
+      const unreadCount = conv._count.messages
 
       return {
         id:            conv.id,
