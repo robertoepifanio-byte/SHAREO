@@ -8,7 +8,10 @@ type RouteContext = { params: Promise<{ id: string }> }
 
 export async function GET(_req: NextRequest, { params }: RouteContext) {
   try {
-    const { id } = await params
+    const { id }     = await params
+    const session    = await auth().catch(() => null)
+    const userId     = session?.user.id
+    const isAdmin    = session?.user.role === "ADMIN"
 
     const item = await prisma.item.findFirst({
       where: { id, deletedAt: null },
@@ -42,7 +45,16 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
       )
     }
 
-    // Fire-and-forget view count increment
+    // Itens não aprovados/inativos só visíveis para o dono ou admin
+    const isOwner = userId === item.owner.id
+    if ((!item.isApproved || !item.isActive) && !isOwner && !isAdmin) {
+      return NextResponse.json(
+        { error: { code: "NOT_FOUND", message: "Anúncio não encontrado." } },
+        { status: 404 }
+      )
+    }
+
+    // Fire-and-forget view count increment (só conta para itens públicos)
     prisma.item.update({ where: { id }, data: { viewCount: { increment: 1 } } }).catch(() => {})
 
     return NextResponse.json({ data: item })

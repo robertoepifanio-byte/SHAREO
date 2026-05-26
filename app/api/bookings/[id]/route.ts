@@ -143,9 +143,15 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
 
     const transition = TRANSITIONS[action]
+    if (!transition) {
+      return NextResponse.json(
+        { error: { code: "INVALID_ACTION", message: "Ação não permitida." } },
+        { status: 422 },
+      )
+    }
     if (!transition.requiredStatus.includes(booking.status)) {
       return NextResponse.json(
-        { error: { code: "INVALID_TRANSITION", message: `Ação '${action}' não permitida no status '${booking.status}'.` } },
+        { error: { code: "INVALID_TRANSITION", message: "Esta ação não é permitida no momento." } },
         { status: 422 },
       )
     }
