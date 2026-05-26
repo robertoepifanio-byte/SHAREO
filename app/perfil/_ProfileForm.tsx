@@ -101,10 +101,11 @@ export function ProfileForm({ user }: { user: UserData }) {
     <form onSubmit={save} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <label htmlFor="profile-name" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Nome
           </label>
           <input
+            id="profile-name"
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -115,10 +116,11 @@ export function ProfileForm({ user }: { user: UserData }) {
         </div>
 
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <label htmlFor="profile-bio" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Bio <span className="font-normal normal-case text-muted-foreground">(opcional)</span>
           </label>
           <textarea
+            id="profile-bio"
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             rows={3}
@@ -129,10 +131,11 @@ export function ProfileForm({ user }: { user: UserData }) {
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <label htmlFor="profile-phone" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Telefone <span className="font-normal normal-case">(ex: +5584999999999)</span>
           </label>
           <input
+            id="profile-phone"
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
@@ -143,10 +146,11 @@ export function ProfileForm({ user }: { user: UserData }) {
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <label htmlFor="profile-city" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Cidade
           </label>
           <input
+            id="profile-city"
             type="text"
             value={city}
             onChange={(e) => setCity(e.target.value)}
@@ -156,10 +160,11 @@ export function ProfileForm({ user }: { user: UserData }) {
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <label htmlFor="profile-state" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Estado
           </label>
           <select
+            id="profile-state"
             value={state}
             onChange={(e) => setState(e.target.value)}
             className={inputCls}
@@ -172,10 +177,11 @@ export function ProfileForm({ user }: { user: UserData }) {
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <label htmlFor="profile-neighborhood" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Bairro
           </label>
           <input
+            id="profile-neighborhood"
             type="text"
             value={neighborhood}
             onChange={(e) => setNeighborhood(e.target.value)}
@@ -185,10 +191,11 @@ export function ProfileForm({ user }: { user: UserData }) {
         </div>
 
         <div className="sm:col-span-2">
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <label htmlFor="profile-avatar" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             URL do avatar <span className="font-normal normal-case">(opcional)</span>
           </label>
           <input
+            id="profile-avatar"
             type="url"
             value={avatarUrl}
             onChange={(e) => setAvatarUrl(e.target.value)}
