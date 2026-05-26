@@ -3,8 +3,8 @@ import Image from "next/image"
 import Link from "next/link"
 
 export async function AppHeader() {
-  const session = await auth()
-  const initial = session?.user.name?.[0]?.toUpperCase() ?? "U"
+  const session = await auth().catch(() => null)
+  const initial = session?.user?.name?.[0]?.toUpperCase() ?? "U"
 
   return (
     <header className="sticky top-0 z-[200] bg-primary" role="banner">
@@ -48,6 +48,22 @@ export async function AppHeader() {
           >
             Anunciar
           </Link>
+          {session && (
+            <>
+              <Link
+                href="/reservas"
+                className="rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:bg-white/10 hover:text-white transition-colors outline-none focus-visible:ring-1 focus-visible:ring-white"
+              >
+                Reservas
+              </Link>
+              <Link
+                href="/mensagens"
+                className="rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:bg-white/10 hover:text-white transition-colors outline-none focus-visible:ring-1 focus-visible:ring-white"
+              >
+                Mensagens
+              </Link>
+            </>
+          )}
         </nav>
 
         {/* Search bar — desktop only */}
@@ -78,7 +94,7 @@ export async function AppHeader() {
               <Link
                 href="/dashboard"
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-brand border-2 border-white/30 text-sm font-bold text-white hover:opacity-90 transition-opacity outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
-                title={session.user.name ?? "Meu perfil"}
+                title={session?.user?.name ?? "Meu perfil"}
                 aria-label="Meu perfil"
               >
                 {initial}

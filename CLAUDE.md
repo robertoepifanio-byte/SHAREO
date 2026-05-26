@@ -41,13 +41,27 @@ The repository contains no production code yet. It holds:
 
 **Security**: Row Level Security (RLS) in Supabase, rate limiting on auth/document-validation endpoints, LGPD compliance (explicit consent, minimal data, account deletion).
 
-## Working with Agent Specification Files
+## Subagents System
 
-Each `*_Agente_Shareo.md` defines how an AI agent should behave when acting in that role. When taking on a role:
-- Read the corresponding agent file to understand responsibilities and constraints
-- The Architect agent (`Arquiteto_Agente_Shareo.md`) is the authority on structural decisions
-- The Full Stack Dev agent (`FullStackDev_Agente_Shareo.md`) has the implementation patterns and API contracts
-- All agents must stay LGPD-compliant and follow the mobile-first design system
+The `.claude/Agents/` directory contains 9 Claude Code subagents. Each file has YAML frontmatter (`name`, `description`, `model`, `tools`) that enables automatic invocation. The legacy `*_Agente_Shareo.md` files (PascalCase) are kept as reference — the active subagents are the kebab-case files.
+
+| Subagent file | Role | Model |
+|---|---|---|
+| `arquiteto-shareo.md` | Architecture decisions, ADRs, rendering strategy | Opus |
+| `fullstack-dev-shareo.md` | Feature implementation, API routes, Tailwind, Supabase | Sonnet |
+| `designer-shareo.md` | Design system, Tailwind handoff, WCAG specs | Sonnet |
+| `devops-shareo.md` | CI/CD, Vercel, monitoring, infrastructure | Sonnet |
+| `qa-shareo.md` | Tests (Jest/Playwright/jest-axe), bug reports, Lighthouse | Sonnet |
+| `seguranca-shareo.md` | OWASP, LGPD, JWT, RLS, PCI-DSS | Opus |
+| `product-owner-shareo.md` | User stories, backlog, roadmap, acceptance criteria | Sonnet |
+| `gestor-projeto-shareo.md` | Sprint management, status reports, risk tracking | Sonnet |
+| `seo-shareo.md` | Metadata API, JSON-LD, Core Web Vitals, Mobile-First SEO | Sonnet |
+
+**Invocation rules:**
+- The `arquiteto-shareo` agent is the authority on structural decisions.
+- The `fullstack-dev-shareo` agent implements features — always consult `shareo-prototipo.html` first.
+- All agents enforce: LGPD compliance, WCAG 2.1 AA, mobile-first (375px base), tap targets ≥ 44×44px.
+- No `"use client"` in layout components — only on interactive leaf nodes (performance rule).
 
 ## Design System
 
