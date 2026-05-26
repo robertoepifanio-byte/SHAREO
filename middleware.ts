@@ -28,10 +28,11 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
+  const isSecure = process.env.NODE_ENV === "production"
   const token = await getToken({
     req,
     secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
-    cookieName: "authjs.session-token",
+    cookieName: isSecure ? "__Secure-authjs.session-token" : "authjs.session-token",
   })
 
   if (isAuthRoute && token) {
