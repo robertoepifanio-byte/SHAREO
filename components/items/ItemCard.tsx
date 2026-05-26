@@ -21,10 +21,11 @@ interface ItemCardItem {
 interface ItemCardProps {
   item:         ItemCardItem
   showActions?: boolean
+  isFavorited?: boolean
   onDelete?:    (id: string) => void
 }
 
-export function ItemCard({ item, showActions = false, onDelete }: ItemCardProps) {
+export function ItemCard({ item, showActions = false, isFavorited = false, onDelete }: ItemCardProps) {
   const imageUrl = item.images[0]?.url
   const price    = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" })
                       .format(item.pricePerDay / 100)
@@ -78,7 +79,7 @@ export function ItemCard({ item, showActions = false, onDelete }: ItemCardProps)
 
           {/* Favorito — apenas em listagens públicas */}
           {!showActions && (
-            <FavoriteButton itemId={item.id} />
+            <FavoriteButton itemId={item.id} initialFavorited={isFavorited} />
           )}
 
           {/* Verificado */}
