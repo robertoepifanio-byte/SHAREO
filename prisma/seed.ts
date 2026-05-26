@@ -6,12 +6,11 @@ const prisma = new PrismaClient()
 const categories = [
   { slug: "ferramentas", name: "Ferramentas", icon: "Ferramentas.png" },
   { slug: "eletronicos", name: "Eletrônicos", icon: "Eletronicos.png" },
-  { slug: "casa",        name: "Casa",        icon: "Casa.png"        },
-  { slug: "construcao",  name: "Construção",  icon: "Construção.png"  },
-  { slug: "esporte",     name: "Esporte",     icon: "Esporte.png"     },
-  { slug: "moda",        name: "Moda",        icon: "Moda.png"        },
-  { slug: "festas",      name: "Festas",      icon: "Festas.png"      },
-  { slug: "jardim",      name: "Jardim",      icon: "jardim.png"      },
+  { slug: "casa-jardim", name: "Casa e Jardim", icon: "casa-jardim.jpeg" },
+  { slug: "construcao",  name: "Construção",   icon: "Construção.png"  },
+  { slug: "esporte",     name: "Esporte",      icon: "Esporte.png"     },
+  { slug: "moda",        name: "Moda",         icon: "Moda.png"        },
+  { slug: "festas",      name: "Festas",       icon: "Festas.png"      },
 ]
 
 // Itens de exemplo para visualização no staging
@@ -110,7 +109,7 @@ const sampleItems = [
   },
   {
     slug:        "kit-jardinagem-completo-em-natal-rn-seed08",
-    categorySlug: "jardim",
+    categorySlug: "casa-jardim",
     title:        "Kit de Jardinagem Completo",
     description:  "Kit com tesoura de poda, cavadeira, ancinho, regador 10L e luvas. Ideal para quem quer cuidar do jardim sem precisar comprar ferramentas.",
     condition:    "GOOD" as const,
