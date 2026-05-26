@@ -79,6 +79,44 @@ function toDisplay(cents: number | null | undefined): string {
   return (cents / 100).toFixed(2).replace(".", ",")
 }
 
+// ─── Price input helper ───────────────────────────────────────────────────────
+
+function PriceInput({
+  label, value, onChange, required, helper,
+}: {
+  label: string; value: string; onChange: (v: string) => void; required?: boolean; helper?: string
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-sm font-medium text-foreground">
+        {label}
+        {required && <span className="ml-1 text-destructive" aria-hidden="true">*</span>}
+      </label>
+      <div className="relative">
+        <span className="absolute inset-y-0 left-3 flex items-center text-sm text-muted-foreground select-none">
+          R$
+        </span>
+        <input
+          type="text"
+          inputMode="decimal"
+          value={value}
+          onChange={(e) => {
+            const raw = e.target.value.replace(/[^0-9,]/g, "")
+            onChange(raw)
+          }}
+          placeholder="0,00"
+          className={[
+            "h-11 w-full rounded-md border border-input bg-surface pl-10 pr-3 text-sm text-foreground",
+            "placeholder:text-muted-foreground outline-none transition-colors",
+            "focus:border-ring focus:ring-2 focus:ring-ring/20",
+          ].join(" ")}
+        />
+      </div>
+      {helper && <p className="text-xs text-muted-foreground">{helper}</p>}
+    </div>
+  )
+}
+
 // ─── Componente ──────────────────────────────────────────────────────────────
 
 export function ItemForm({ mode, initialData }: ItemFormProps) {
@@ -178,44 +216,6 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
       URL.revokeObjectURL(img.previewUrl)
     }
     setImages((prev) => prev.filter((_, i) => i !== index))
-  }
-
-  // ─── Price input helper ─────────────────────────────────────────────────────
-
-  function PriceInput({
-    label, value, onChange, required, helper,
-  }: {
-    label: string; value: string; onChange: (v: string) => void; required?: boolean; helper?: string
-  }) {
-    return (
-      <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-foreground">
-          {label}
-          {required && <span className="ml-1 text-destructive" aria-hidden="true">*</span>}
-        </label>
-        <div className="relative">
-          <span className="absolute inset-y-0 left-3 flex items-center text-sm text-muted-foreground select-none">
-            R$
-          </span>
-          <input
-            type="text"
-            inputMode="decimal"
-            value={value}
-            onChange={(e) => {
-              const raw = e.target.value.replace(/[^0-9,]/g, "")
-              onChange(raw)
-            }}
-            placeholder="0,00"
-            className={[
-              "h-11 w-full rounded-md border border-input bg-surface pl-10 pr-3 text-sm text-foreground",
-              "placeholder:text-muted-foreground outline-none transition-colors",
-              "focus:border-ring focus:ring-2 focus:ring-ring/20",
-            ].join(" ")}
-          />
-        </div>
-        {helper && <p className="text-xs text-muted-foreground">{helper}</p>}
-      </div>
-    )
   }
 
   // ─── Validation ────────────────────────────────────────────────────────────
