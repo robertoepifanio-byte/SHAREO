@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: "Alugue o que precisa de quem já tem. Marketplace de economia circular em Natal/RN.",
 }
 
-export const revalidate = process.env.NODE_ENV === "production" ? 3600 : 60
+export const revalidate = 60
 
 
 export default async function HomePage() {
