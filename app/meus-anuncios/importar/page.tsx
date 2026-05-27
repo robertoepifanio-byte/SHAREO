@@ -2,44 +2,26 @@ import type { Metadata } from "next"
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
-import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
-import { MyItemsGrid } from "@/components/items/MyItemsGrid"
+import { ImportForm } from "@/components/items/ImportForm"
 
-export const metadata: Metadata = { title: "Meus Anúncios" }
+export const metadata: Metadata = { title: "Importar Itens — ShareO" }
 
-export default async function MeusAnunciosPage() {
+export default async function ImportarPage() {
   const session = await auth()
-  if (!session) redirect("/login?callbackUrl=/meus-anuncios")
-
-  const items = await prisma.item.findMany({
-    where:   { ownerId: session.user.id, deletedAt: null },
-    orderBy: { createdAt: "desc" },
-    select: {
-      id:           true,
-      title:        true,
-      pricePerDay:  true,
-      condition:    true,
-      city:         true,
-      state:        true,
-      neighborhood: true,
-      isActive:     true,
-      category:     { select: { name: true } },
-      owner:        { select: { name: true, isVerified: true } },
-      images:       { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
-      _count:       { select: { reviews: true, favorites: true } },
-    },
-  })
+  if (!session) redirect("/login?callbackUrl=/meus-anuncios/importar")
 
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
+
       <main className="container py-8">
+        {/* ── Header + tabs ── */}
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-primary">Meus Anúncios</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {items.length} {items.length === 1 ? "anúncio" : "anúncios"}
+              Importe vários itens de uma vez com um arquivo CSV
             </p>
           </div>
           <Link
@@ -59,8 +41,8 @@ export default async function MeusAnunciosPage() {
           <Link
             href="/meus-anuncios"
             role="tab"
-            aria-selected={true}
-            className="inline-flex h-9 items-center rounded-md bg-brand px-4 text-sm font-semibold text-white shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+            aria-selected={false}
+            className="inline-flex h-9 items-center rounded-md px-4 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
           >
             Anúncios
           </Link>
@@ -75,14 +57,14 @@ export default async function MeusAnunciosPage() {
           <Link
             href="/meus-anuncios/importar"
             role="tab"
-            aria-selected={false}
-            className="inline-flex h-9 items-center rounded-md px-4 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+            aria-selected={true}
+            className="inline-flex h-9 items-center rounded-md bg-brand px-4 text-sm font-semibold text-white shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
           >
             Importar
           </Link>
         </div>
 
-        <MyItemsGrid initialItems={items} />
+        <ImportForm />
       </main>
     </div>
   )
