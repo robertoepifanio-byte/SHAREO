@@ -78,6 +78,7 @@ model User {
   cnpjEncrypted String?
 
   // Perfil
+  slug          String?   @unique // URL da vitrine: /loja/[slug] — gerado no cadastro, editável
   avatarUrl     String?
   bio           String?   @db.Text
 

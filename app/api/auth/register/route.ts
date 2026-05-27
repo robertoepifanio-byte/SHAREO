@@ -6,6 +6,7 @@ import { hashDocument, encryptDocument } from "@/lib/crypto"
 import { RegisterSchema } from "@/lib/validations/auth"
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 import { sendWelcomeEmail } from "@/lib/email"
+import { generateUserSlug } from "@/lib/slugify"
 
 export async function POST(req: NextRequest) {
   try {
@@ -68,40 +69,51 @@ export async function POST(req: NextRequest) {
     }
 
     const passwordHash = await bcrypt.hash(d.password, 12)
-    const user = await prisma.user.create({
-      data: {
-        name:           d.name,
-        email:          d.email,
-        passwordHash,
-        phone:          d.phone || null,
-        userType:       d.userType,
-        cpfHash:        d.cpf  ? hashDocument(d.cpf)   : null,
-        cpfEncrypted:   d.cpf  ? encryptDocument(d.cpf) : null,
-        cnpjHash:       d.cnpj ? hashDocument(d.cnpj)  : null,
-        cnpjEncrypted:  d.cnpj ? encryptDocument(d.cnpj): null,
-        city:           d.city,
-        state:          d.state,
-        neighborhood:   d.neighborhood || null,
-        consentVersion: d.consentVersion,
-        consentAt:      new Date(),
-        consentIp:      ip,
-      },
-      select: {
-        id:         true,
-        name:       true,
-        email:      true,
-        userType:   true,
-        role:       true,
-        avatarUrl:  true,
-        bio:        true,
-        city:       true,
-        state:      true,
-        isVerified: true,
-        createdAt:  true,
-      },
+
+    // $transaction: criar user → gerar slug com o ID real → atualizar
+    const user = await prisma.$transaction(async (tx) => {
+      const created = await tx.user.create({
+        data: {
+          name:           d.name,
+          email:          d.email,
+          passwordHash,
+          phone:          d.phone || null,
+          userType:       d.userType,
+          cpfHash:        d.cpf  ? hashDocument(d.cpf)    : null,
+          cpfEncrypted:   d.cpf  ? encryptDocument(d.cpf)  : null,
+          cnpjHash:       d.cnpj ? hashDocument(d.cnpj)   : null,
+          cnpjEncrypted:  d.cnpj ? encryptDocument(d.cnpj) : null,
+          city:           d.city,
+          state:          d.state,
+          neighborhood:   d.neighborhood || null,
+          consentVersion: d.consentVersion,
+          consentAt:      new Date(),
+          consentIp:      ip,
+        },
+        select: { id: true, name: true, email: true },
+      })
+
+      return tx.user.update({
+        where: { id: created.id },
+        data:  { slug: generateUserSlug(created.name, created.id) },
+        select: {
+          id:         true,
+          name:       true,
+          email:      true,
+          slug:       true,
+          userType:   true,
+          role:       true,
+          avatarUrl:  true,
+          bio:        true,
+          city:       true,
+          state:      true,
+          isVerified: true,
+          createdAt:  true,
+        },
+      })
     })
 
-    // Boas-vindas — fire-and-forget: não atrasa o cadastro nem falha se o email falhar
+    // Boas-vindas — fire-and-forget
     sendWelcomeEmail(user.email, user.name).catch((err) =>
       console.error("[register] welcome email error:", err instanceof Error ? err.message : err)
     )

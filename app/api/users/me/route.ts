@@ -164,6 +164,7 @@ export async function PATCH(req: NextRequest) {
         ...(d.state        !== undefined && { state:        d.state }),
         ...(d.neighborhood !== undefined && { neighborhood: d.neighborhood }),
         ...(d.avatarUrl    !== undefined && { avatarUrl:    d.avatarUrl }),
+        ...(d.slug         !== undefined && { slug:         d.slug }),
       },
       select: {
         id:           true,
