@@ -9,6 +9,7 @@ interface Props {
   pricePerDay:    number           // centavos
   pricePerWeek?:  number | null    // centavos
   pricePerMonth?: number | null    // centavos
+  depositAmount?: number | null    // centavos — mostrado no resumo
   itemId:         string
   isLoggedIn:     boolean
 }
@@ -43,7 +44,7 @@ function buildBreakdown(
   return `${days} dia${days > 1 ? "s" : ""} × ${fmt(pricePerDay / 100)}`
 }
 
-export function PriceCalc({ pricePerDay, pricePerWeek, pricePerMonth, itemId, isLoggedIn }: Props) {
+export function PriceCalc({ pricePerDay, pricePerWeek, pricePerMonth, depositAmount, itemId, isLoggedIn }: Props) {
   const router  = useRouter()
   const today   = new Date().toISOString().split("T")[0]
 
@@ -164,12 +165,31 @@ export function PriceCalc({ pricePerDay, pricePerWeek, pricePerMonth, itemId, is
               <span>{fmt(fee)}</span>
             </div>
 
+            {/* Caução (se definida) */}
+            {depositAmount != null && depositAmount > 0 && (
+              <div className="mb-1.5 flex justify-between text-amber-700 text-xs">
+                <span className="flex items-center gap-1">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                  Caução (devolvida)
+                </span>
+                <span>+{fmt(depositAmount / 100)}</span>
+              </div>
+            )}
+
             <div className="my-2 h-px bg-border" />
 
             <div className="flex justify-between font-bold text-foreground">
-              <span>Total</span>
+              <span>Total do aluguel</span>
               <span>{fmt(total)}</span>
             </div>
+            {depositAmount != null && depositAmount > 0 && (
+              <div className="flex justify-between text-xs text-muted-foreground mt-0.5">
+                <span>Total com caução</span>
+                <span>{fmt(total + depositAmount / 100)}</span>
+              </div>
+            )}
           </>
         ) : (
           <div className="flex justify-between text-muted-foreground">

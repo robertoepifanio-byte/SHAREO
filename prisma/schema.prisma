@@ -63,6 +63,7 @@ enum NotificationType {
   NEW_REVIEW
   ITEM_APPROVED
   ITEM_REJECTED
+  REFERRAL_CREDIT
 }
 
 // ─── Models ──────────────────────────────────────────────
@@ -97,6 +98,13 @@ model User {
   // lat/lng armazenados separadamente para queries sem PostGIS no dev
   latitude      Float?
   longitude     Float?
+
+  // Programa de indicação
+  referralCode  String?   @unique // código único gerado no cadastro (ex.: "JOAO-X4K2")
+  referredById  String?           // quem indicou este usuário
+  referredBy    User?     @relation("Referrals", fields: [referredById], references: [id])
+  referrals     User[]    @relation("Referrals")
+  referralCredits ReferralCredit[]
 
   isVerified    Boolean   @default(false)
   isActive      Boolean   @default(true)
@@ -158,10 +166,11 @@ model Item {
   condition   ItemCondition @default(GOOD)
 
   // Preços — em centavos (evita float rounding issues)
-  pricePerDay   Int          // obrigatório
-  pricePerWeek  Int?
-  pricePerMonth Int?
-  depositAmount Int?         // caução
+  pricePerDay          Int          // obrigatório
+  pricePerWeek         Int?
+  pricePerMonth        Int?
+  depositAmount        Int?         // caução
+  estimatedRetailPrice Int?         // valor estimado de compra (para calculadora alugar vs comprar)
 
   // Localização do item
   address       String?
@@ -431,6 +440,23 @@ model OutboundWebhook {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+
+// Créditos do programa de indicação
+model ReferralCredit {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  amountCents Int                    // valor em centavos (ex.: 1500 = R$15)
+  reason      String                 // ex.: "Indicação aceita — João Silva", "Primeiro aluguel concluído"
+  usedAt      DateTime?              // null = disponível, não null = já usado
+  expiresAt   DateTime?              // validade opcional
+
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@map("referral_credits")
+}
 
 model AdminLog {
   id         String   @id @default(cuid())

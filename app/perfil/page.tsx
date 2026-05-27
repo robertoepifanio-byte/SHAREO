@@ -6,6 +6,8 @@ import { AppHeader } from "@/components/layout/AppHeader"
 import { ProfileForm } from "./_ProfileForm"
 import { DeleteAccountButton } from "./_DeleteAccountButton"
 import { UpgradePjForm } from "./_UpgradePjForm"
+import { ReferralSection } from "./_ReferralSection"
+import { getReferralStats, getOrCreateReferralCode } from "@/lib/referral"
 import Link from "next/link"
 
 export const metadata: Metadata = { title: "Meu Perfil — ShareO" }
@@ -22,7 +24,7 @@ export default async function ProfilePage() {
 
   const userId = session.user.id
 
-  const [user, reviewStats] = await Promise.all([
+  const [user, reviewStats, referralStats] = await Promise.all([
     prisma.user.findUnique({
       where:  { id: userId },
       select: {
@@ -64,6 +66,7 @@ export default async function ProfilePage() {
       _avg:  { rating: true },
       _count: { _all: true },
     }),
+    getReferralStats(userId),
   ])
 
   if (!user) redirect("/login")
@@ -266,6 +269,9 @@ export default async function ProfilePage() {
               </div>
             </div>
           )}
+
+          {/* ── Programa de Indicação ── */}
+          <ReferralSection stats={referralStats} userId={userId} />
 
           {/* ── Privacidade & dados (LGPD) ── */}
           <div className="rounded-xl border border-border bg-surface p-6">
