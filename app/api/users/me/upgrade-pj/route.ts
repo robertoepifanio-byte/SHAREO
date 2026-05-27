@@ -24,11 +24,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const ip =
-      req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-      req.headers.get("x-real-ip") ??
-      "unknown"
-
     const rl = checkRateLimit(`upgrade-pj:${session.user.id}`, 5, 60_000)
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
