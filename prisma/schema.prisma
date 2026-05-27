@@ -121,6 +121,7 @@ model User {
   conversations       ConversationParticipant[]
   notifications       Notification[]
   adminLogs           AdminLog[]
+  outboundWebhooks    OutboundWebhook[]
   // NextAuth.js — @auth/prisma-adapter
   accounts            Account[]
   sessions            Session[]
@@ -402,6 +403,31 @@ model PasswordResetToken {
 
   @@index([email])
   @@map("password_reset_tokens")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Webhooks de saída para integração PJ com ERPs e sistemas externos
+model OutboundWebhook {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  url       String              // endpoint que receberá os eventos
+  events    String[]            // ex.: ["booking.confirmed", "booking.paid"]
+  secret    String              // HMAC-SHA256 secret (mostrado apenas no momento da criação)
+  isActive  Boolean  @default(true)
+
+  // Auditoria das últimas entregas
+  lastFiredAt     DateTime?
+  lastStatusCode  Int?
+  failureCount    Int       @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("outbound_webhooks")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
