@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
+import { PjGate } from "@/components/premium/PjGate"
 
 export const metadata: Metadata = { title: "Desempenho dos Anúncios — ShareO" }
 
@@ -38,6 +39,38 @@ function StatCard({
 export default async function DesempenhoPage() {
   const session = await auth()
   if (!session) redirect("/login?callbackUrl=/meus-anuncios/desempenho")
+
+  // ── PJ gate ────────────────────────────────────────────────────────────────
+  const isPj = session.user.userType === "PJ"
+
+  if (!isPj) {
+    return (
+      <div className="min-h-screen bg-background">
+        <AppHeader />
+        <main className="container py-8">
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-primary">Meus Anúncios</h1>
+          </div>
+          {/* Tabs */}
+          <div className="mb-6 flex gap-1 rounded-lg border border-border bg-surface p-1 w-fit" role="tablist" aria-label="Seções">
+            <Link href="/meus-anuncios" role="tab" aria-selected={false}
+              className="inline-flex h-9 items-center rounded-md px-4 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">
+              Anúncios
+            </Link>
+            <Link href="/meus-anuncios/desempenho" role="tab" aria-selected={true}
+              className="inline-flex h-9 items-center rounded-md bg-brand px-4 text-sm font-semibold text-white shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">
+              Desempenho
+            </Link>
+            <Link href="/meus-anuncios/importar" role="tab" aria-selected={false}
+              className="inline-flex h-9 items-center rounded-md px-4 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">
+              Importar
+            </Link>
+          </div>
+          <PjGate feature="analytics" />
+        </main>
+      </div>
+    )
+  }
 
   const userId = session.user.id
 
