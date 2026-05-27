@@ -24,6 +24,7 @@ export const CreateItemSchema = z.object({
   neighborhood:  z.string().max(100).optional().or(z.literal("")).transform(v => v || undefined),
   latitude:      z.number().min(-90).max(90),
   longitude:     z.number().min(-180).max(180),
+  voltage:       z.enum(["110V", "220V", "Bivolt"]).nullable().optional(),
   requireIdVerification: z.boolean().optional().default(false),
   requirePhone:          z.boolean().optional().default(false),
 })

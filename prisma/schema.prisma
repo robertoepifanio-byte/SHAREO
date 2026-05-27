@@ -209,6 +209,9 @@ model Item {
   // Coluna geográfica PostGIS (Unsupported até Prisma nativo suportar)
   // geom        Unsupported("geometry(Point, 4326)")?
 
+  // Voltagem — para itens elétricos/eletrônicos
+  voltage String? // "110V" | "220V" | "Bivolt" — null = não se aplica
+
   // Requisitos para reserva
   requireIdVerification Boolean @default(false) // locatário precisa ter identidade verificada
   requirePhone          Boolean @default(false) // locatário precisa ter telefone cadastrado

@@ -45,6 +45,9 @@ export default async function EditarItemPage({ params }: Props) {
     latitude:      item.latitude,
     longitude:     item.longitude,
     images:        item.images,
+    voltage:                item.voltage,
+    requireIdVerification:  item.requireIdVerification,
+    requirePhone:           item.requirePhone,
   }
 
   return (
