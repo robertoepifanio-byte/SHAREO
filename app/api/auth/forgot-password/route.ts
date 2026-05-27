@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     // ── Enviar e-mail ─────────────────────────────────────────────────────────
     try {
       await sendPasswordResetEmail(email.toLowerCase(), user.name, token)
-      console.info(`[forgot-password] email sent (token ${token.slice(0, 8)}…)`)
+      console.warn(`[forgot-password] email sent (token ${token.slice(0, 8)}…)`)
     } catch (emailErr) {
       // Falha no envio não expõe informação ao cliente — token já está salvo no DB.
       // O usuário pode tentar novamente e o e-mail será reenviado.
