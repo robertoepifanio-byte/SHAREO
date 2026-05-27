@@ -44,7 +44,7 @@ function baseLayout(content: string) {
           <tr>
             <td align="center" style="padding:24px 0 0;">
               <p style="margin:0;font-size:12px;color:#94A3B8;">
-                © 2026 ShareO · Natal, RN, Brasil
+                © 2026 ShareO · Brasil
                 <br/>
                 <a href="${APP_URL}" style="color:#94A3B8;">shareo.com.br</a>
               </p>
@@ -147,7 +147,7 @@ export async function sendPasswordResetEmail(
   token: string,
 ): Promise<void> {
   const firstName = name.split(" ")[0]
-  const resetUrl  = `${APP_URL}/redefinir-senha/${token}`
+  const resetUrl  = `${APP_URL}/esqueci-senha/${token}`
 
   const { error } = await resend.emails.send({
     from:    `ShareO <${FROM}>`,
