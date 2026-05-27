@@ -64,6 +64,24 @@ enum NotificationType {
   ITEM_APPROVED
   ITEM_REJECTED
   REFERRAL_CREDIT
+  CONTRACT_PENDING
+  CHECKIN_DONE
+  CHECKOUT_DONE
+  LATE_FEE_APPLIED
+  ID_VERIFIED
+  ID_REJECTED
+}
+
+enum CheckPhase {
+  CHECKIN
+  CHECKOUT
+}
+
+enum IdVerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
 }
 
 // ─── Models ──────────────────────────────────────────────
@@ -108,6 +126,14 @@ model User {
 
   isVerified    Boolean   @default(false)
   isActive      Boolean   @default(true)
+
+  // Verificação de identidade
+  idVerificationStatus IdVerificationStatus @default(UNVERIFIED)
+  idDocumentUrl        String?
+  idSelfieUrl          String?
+  idSubmittedAt        DateTime?
+  idVerifiedAt         DateTime?
+  idRejectionReason    String?
 
   // LGPD — consentimento explícito no cadastro
   consentAt     DateTime?
@@ -252,13 +278,22 @@ model Booking {
   cancelledById   String?
   cancelReason    String?
 
+  // Devolução e taxa de atraso
+  returnedAt      DateTime? // data real de devolução (pode ser após endDate)
+  lateFeeAmount   Int?      // cents — calculado se returnedAt > endDate
+
+  // Contrato digital
+  contractSignedAt DateTime?
+
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   deletedAt       DateTime? // soft delete — LGPD obrigatório em dados transacionais
 
   // Relações
-  reviews         Review[]
-  conversation    Conversation?
+  reviews            Review[]
+  conversation       Conversation?
+  photos             BookingPhoto[]
+  contractAcceptance ContractAcceptance?
 
   @@index([borrowerId])
   @@index([ownerId])
@@ -471,4 +506,34 @@ model AdminLog {
   @@index([adminId])
   @@index([entityType, entityId])
   @@map("admin_logs")
+}
+
+// ─── Fotos de check-in / check-out ───────────────────────────────────────────
+
+model BookingPhoto {
+  id          String     @id @default(cuid())
+  bookingId   String
+  booking     Booking    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  url         String
+  phase       CheckPhase // CHECKIN | CHECKOUT
+  uploadedBy  String     // userId de quem fez o upload
+
+  createdAt   DateTime   @default(now())
+
+  @@index([bookingId])
+  @@map("booking_photos")
+}
+
+// ─── Contrato digital ─────────────────────────────────────────────────────────
+
+model ContractAcceptance {
+  id         String   @id @default(cuid())
+  bookingId  String   @unique
+  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  acceptedAt DateTime @default(now())
+  ipAddress  String?
+  userAgent  String?
+
+  @@map("contract_acceptances")
 }

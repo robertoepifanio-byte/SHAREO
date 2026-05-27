@@ -171,3 +171,114 @@ export async function sendWelcomeEmail(to: string, name: string): Promise<void> 
 
   if (error) throw new Error(`Resend error: ${error.message}`)
 }
+
+// ─── Lembretes automáticos ────────────────────────────────────────────────────
+
+function fmtDate(d: Date) {
+  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "long", year: "numeric" }).format(d)
+}
+
+/** Lembrete: reserva começa amanhã — enviado ao locatário e ao locador */
+export async function sendReminderStartTomorrow(
+  borrowerEmail: string, borrowerName: string,
+  ownerEmail:    string, ownerName:    string,
+  itemTitle:     string, bookingId:    string,
+  startDate:     Date,
+): Promise<void> {
+  const url  = `${APP_URL}/reservas/${bookingId}`
+  const html = (firstName: string, role: "borrower" | "owner") => baseLayout(`
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
+      ${role === "borrower" ? "🗓 Sua reserva começa amanhã!" : "🗓 Entrega de item amanhã!"}
+    </h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
+      Olá, ${firstName}! O aluguel de <strong>${itemTitle}</strong> começa em
+      <strong>${fmtDate(startDate)}</strong>.
+      ${role === "borrower"
+        ? "Combine os detalhes de retirada com o proprietário."
+        : "Lembre-se de combinar a entrega com o locatário."}
+    </p>
+    <div style="text-align:center;">${ctaButton(url, "Ver reserva")}</div>
+  `)
+
+  await Promise.all([
+    resend.emails.send({
+      from: `ShareO <${FROM}>`, to: borrowerEmail,
+      subject: `Lembrete: "${itemTitle}" começa amanhã — ShareO`,
+      html: html(borrowerName.split(" ")[0], "borrower"),
+    }),
+    resend.emails.send({
+      from: `ShareO <${FROM}>`, to: ownerEmail,
+      subject: `Lembrete: entrega de "${itemTitle}" amanhã — ShareO`,
+      html: html(ownerName.split(" ")[0], "owner"),
+    }),
+  ])
+}
+
+/** Lembrete: devolução amanhã — enviado ao locatário */
+export async function sendReminderReturnTomorrow(
+  borrowerEmail: string, borrowerName: string,
+  itemTitle:     string, bookingId:    string,
+  endDate:       Date,
+): Promise<void> {
+  const firstName = borrowerName.split(" ")[0]
+  const url       = `${APP_URL}/reservas/${bookingId}`
+
+  const html = baseLayout(`
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
+      ⏰ Devolução amanhã!
+    </h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
+      Olá, ${firstName}! O prazo de devolução de <strong>${itemTitle}</strong> é
+      <strong>${fmtDate(endDate)}</strong>. Combine com o proprietário para evitar taxa de atraso.
+    </p>
+    <div style="text-align:center;">${ctaButton(url, "Ver reserva")}</div>
+    <p style="margin:20px 0 0;font-size:12px;color:#94A3B8;">
+      Devoluções após o prazo podem gerar taxas adicionais.
+    </p>
+  `)
+
+  await resend.emails.send({
+    from: `ShareO <${FROM}>`, to: borrowerEmail,
+    subject: `⏰ Devolua "${itemTitle}" amanhã — ShareO`,
+    html,
+  })
+}
+
+/** Lembrete: item em atraso — enviado ao locatário e ao locador */
+export async function sendReminderOverdue(
+  borrowerEmail: string, borrowerName: string,
+  ownerEmail:    string, ownerName:    string,
+  itemTitle:     string, bookingId:    string,
+  endDate:       Date,   daysLate:     number,
+  dailyPriceCents: number,
+): Promise<void> {
+  const url       = `${APP_URL}/reservas/${bookingId}`
+  const lateFee   = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" })
+                      .format((dailyPriceCents * 1.5 * daysLate) / 100)
+
+  const html = (firstName: string, role: "borrower" | "owner") => baseLayout(`
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#B91C1C;">
+      🚨 Item em atraso — ${daysLate} dia${daysLate > 1 ? "s" : ""}
+    </h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
+      Olá, ${firstName}! O prazo de devolução de <strong>${itemTitle}</strong> era
+      <strong>${fmtDate(endDate)}</strong>. ${role === "borrower"
+        ? `O item está em atraso há <strong>${daysLate} dia${daysLate > 1 ? "s" : ""}</strong>. Taxa de atraso estimada: <strong>${lateFee}</strong>.`
+        : `O locatário ainda não devolveu o item (${daysLate} dia${daysLate > 1 ? "s" : ""} de atraso). Taxa de atraso estimada: <strong>${lateFee}</strong>.`}
+    </p>
+    <div style="text-align:center;">${ctaButton(url, "Ver reserva")}</div>
+  `)
+
+  await Promise.all([
+    resend.emails.send({
+      from: `ShareO <${FROM}>`, to: borrowerEmail,
+      subject: `🚨 "${itemTitle}" em atraso — devolva agora — ShareO`,
+      html: html(borrowerName.split(" ")[0], "borrower"),
+    }),
+    resend.emails.send({
+      from: `ShareO <${FROM}>`, to: ownerEmail,
+      subject: `🚨 Item "${itemTitle}" não devolvido (${daysLate}d de atraso) — ShareO`,
+      html: html(ownerName.split(" ")[0], "owner"),
+    }),
+  ])
+}
