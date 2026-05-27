@@ -39,11 +39,11 @@ import {
 const HAS_PNG = new Set<string>([
   "casa-jardim",
   "construcao",
+  "eletronicos",
+  "esporte",
   "ferramentas",
   "festas",
   "moda",
-  // "eletronicos",  ← gerar ainda
-  // "esporte",      ← gerar ainda
 ])
 
 /* ── Mapeamentos ────────────────────────────────────────────────── */
