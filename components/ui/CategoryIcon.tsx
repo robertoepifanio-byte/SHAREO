@@ -34,16 +34,16 @@ import {
 
 /**
  * ✏️  Adicione o slug aqui quando colocar o PNG em /public/icons/.
- * Exemplo: new Set(["casa-jardim", "construcao"])
+ * Os PNGs já têm o círculo embutido — o componente não adiciona borda extra.
  */
 const HAS_PNG = new Set<string>([
-  // "casa-jardim",
-  // "construcao",
-  // "eletronicos",
-  // "esporte",
-  // "ferramentas",
-  // "festas",
-  // "moda",
+  "casa-jardim",
+  "construcao",
+  "ferramentas",
+  "festas",
+  "moda",
+  // "eletronicos",  ← gerar ainda
+  // "esporte",      ← gerar ainda
 ])
 
 /* ── Mapeamentos ────────────────────────────────────────────────── */
@@ -85,8 +85,29 @@ export function CategoryIcon({ name, size = 64, className = "" }: CategoryIconPr
 
   const borderWidth = size >= 64 ? 2 : 1.5
   const iconSize    = Math.round(size * 0.46)
-  const imgPad      = Math.round(size * 0.12)
 
+  // PNGs já têm o círculo embutido — exibe direto sem container extra
+  if (usePng && slug) {
+    return (
+      <span
+        role="img"
+        aria-label={name}
+        className={`inline-flex flex-shrink-0
+          transition-transform duration-200 hover:scale-105 ${className}`}
+        style={{ width: size, height: size }}
+      >
+        <Image
+          src={`/icons/${slug}.png`}
+          alt={name}
+          width={size}
+          height={size}
+          className="object-contain"
+        />
+      </span>
+    )
+  }
+
+  // Fallback Lucide: círculo branco com borda #144D81
   return (
     <span
       role="img"
@@ -100,15 +121,7 @@ export function CategoryIcon({ name, size = 64, className = "" }: CategoryIconPr
         boxShadow: size >= 64 ? "0 2px 8px rgba(0,51,102,0.10)" : undefined,
       }}
     >
-      {usePng && slug ? (
-        <Image
-          src={`/icons/${slug}.png`}
-          alt={name}
-          width={size - imgPad * 2}
-          height={size - imgPad * 2}
-          className="object-contain"
-        />
-      ) : Icon ? (
+      {Icon && (
         <Icon
           width={iconSize}
           height={iconSize}
@@ -116,7 +129,7 @@ export function CategoryIcon({ name, size = 64, className = "" }: CategoryIconPr
           strokeWidth={1.75}
           fill="none"
         />
-      ) : null}
+      )}
     </span>
   )
 }
