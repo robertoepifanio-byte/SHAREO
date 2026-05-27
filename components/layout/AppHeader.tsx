@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth"
 import Image from "next/image"
 import Link from "next/link"
+import { NotificationBell } from "@/components/ui/NotificationBell"
 
 export async function AppHeader() {
   const session = await auth().catch(() => null)
@@ -90,6 +91,7 @@ export async function AppHeader() {
                 </svg>
                 Anunciar
               </Link>
+              <NotificationBell />
               <Link
                 href="/dashboard"
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-brand border-2 border-white/30 text-sm font-bold text-white hover:opacity-90 transition-opacity outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
