@@ -2,6 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── ShareO Design System — CSS custom properties ── */
+@layer base {
+  :root {
+    /* Icon theme — modo claro */
+    --icon-bg:    #FFFFFF;
+    --icon-color: #007B3C;
+    --icon-accent: #59C686;
+    --icon-border: #144D81;
+  }
+}
+
 @layer utilities {
   .scrollbar-hide {
     scrollbar-width: none;
