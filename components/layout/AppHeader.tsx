@@ -16,13 +16,12 @@ export async function AppHeader() {
           className="flex-shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-primary rounded-sm"
           aria-label="ShareO — página inicial"
         >
-          <div className="relative h-8 w-36 overflow-hidden">
+          <div className="relative h-8 w-36">
             <Image
-              src="/icones/shareo-logo-navy.png"
+              src="/icones/shareo-logo-v3.png"
               alt="ShareO"
               fill
-              className="object-cover"
-              style={{ objectPosition: "center center" }}
+              className="object-contain object-left"
               priority
             />
           </div>
