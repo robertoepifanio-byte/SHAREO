@@ -7,7 +7,7 @@ import { ProfileForm } from "./_ProfileForm"
 import { DeleteAccountButton } from "./_DeleteAccountButton"
 import { UpgradePjForm } from "./_UpgradePjForm"
 import { ReferralSection } from "./_ReferralSection"
-import { getReferralStats, getOrCreateReferralCode } from "@/lib/referral"
+import { getReferralStats } from "@/lib/referral"
 import Link from "next/link"
 
 export const metadata: Metadata = { title: "Meu Perfil — ShareO" }
@@ -271,7 +271,7 @@ export default async function ProfilePage() {
           )}
 
           {/* ── Programa de Indicação ── */}
-          <ReferralSection stats={referralStats} userId={userId} />
+          <ReferralSection stats={referralStats} />
 
           {/* ── Privacidade & dados (LGPD) ── */}
           <div className="rounded-xl border border-border bg-surface p-6">
