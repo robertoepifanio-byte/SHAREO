@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { ProfileForm } from "./_ProfileForm"
 import { DeleteAccountButton } from "./_DeleteAccountButton"
+import Link from "next/link"
 
 export const metadata: Metadata = { title: "Meu Perfil — ShareO" }
 
@@ -33,6 +34,7 @@ export default async function ProfilePage() {
         state:        true,
         neighborhood: true,
         avatarUrl:    true,
+        slug:         true,
         userType:     true,
         isVerified:   true,
         createdAt:    true,
@@ -135,6 +137,26 @@ export default async function ProfilePage() {
                   <p className="mt-1 text-sm text-muted-foreground">📞 {user.phone}</p>
                 )}
               </div>
+            </div>
+
+            {/* Link da vitrine */}
+            <div className="mt-4 flex items-center gap-3">
+              <Link
+                href={`/loja/${user.slug ?? user.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-semibold text-foreground hover:bg-background transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                  <polyline points="15 3 21 3 21 9"/>
+                  <line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+                Ver minha vitrine
+              </Link>
+              <span className="text-xs text-muted-foreground">
+                shareo.com.br/loja/{user.slug ?? user.id}
+              </span>
             </div>
 
             <div className="mt-5 border-t border-border pt-5">
