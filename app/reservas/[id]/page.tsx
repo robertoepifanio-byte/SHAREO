@@ -4,9 +4,11 @@ import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
-import { BookingActions } from "./_BookingActions"
-import { ReviewForm }     from "./_ReviewForm"
-import { PayButton }      from "@/components/bookings/PayButton"
+import { BookingActions }  from "./_BookingActions"
+import { ReviewForm }      from "./_ReviewForm"
+import { PayButton }       from "@/components/bookings/PayButton"
+import { ContractBanner }  from "./_ContractBanner"
+import { CheckInOut }      from "./_CheckInOut"
 
 type Props = {
   params:       Promise<{ id: string }>
@@ -58,6 +60,10 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
       cancelledAt:   true,
       cancelReason:  true,
       createdAt:     true,
+      contractSignedAt: true,
+      returnedAt:    true,
+      lateFeeAmount: true,
+      photos:        { select: { id: true, url: true, phase: true, createdAt: true }, orderBy: { createdAt: "asc" } },
       item: {
         select: {
           id:     true,
@@ -264,6 +270,56 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                   <p className="text-yellow-700">Aguardando pagamento do locatário.</p>
                 </>
               )}
+            </div>
+          )}
+
+          {/* ── Contrato digital ── */}
+          {isBorrower && (booking.status === "CONFIRMED" || booking.status === "ACTIVE") && (
+            <ContractBanner
+              bookingId={booking.id}
+              itemTitle={booking.item.title}
+              ownerName={booking.owner.name}
+              startDate={booking.startDate.toISOString()}
+              endDate={booking.endDate.toISOString()}
+              totalPrice={booking.totalPrice}
+              depositAmount={booking.depositAmount ?? null}
+              contractSigned={!!booking.contractSignedAt}
+            />
+          )}
+
+          {/* ── Fotos de check-in / check-out ── */}
+          {(booking.status === "ACTIVE" || booking.status === "RETURNED" || booking.status === "COMPLETED") && (
+            <div className="mb-6 rounded-xl border border-border bg-surface p-5 space-y-4">
+              <h2 className="font-semibold text-foreground">Fotos do item</h2>
+              <CheckInOut
+                bookingId={booking.id}
+                phase="CHECKIN"
+                label="Retirada"
+                existingPhotos={booking.photos.filter((p) => p.phase === "CHECKIN").map((p) => ({ ...p, createdAt: p.createdAt.toISOString() }))}
+                canUpload={isOwner && booking.status === "ACTIVE"}
+              />
+              <div className="h-px bg-border" />
+              <CheckInOut
+                bookingId={booking.id}
+                phase="CHECKOUT"
+                label="Devolução"
+                existingPhotos={booking.photos.filter((p) => p.phase === "CHECKOUT").map((p) => ({ ...p, createdAt: p.createdAt.toISOString() }))}
+                canUpload={isOwner && (booking.status === "RETURNED" || booking.status === "COMPLETED")}
+              />
+            </div>
+          )}
+
+          {/* ── Taxa de atraso ── */}
+          {booking.lateFeeAmount != null && booking.lateFeeAmount > 0 && (
+            <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-300 bg-red-50 px-4 py-4">
+              <span className="text-xl" aria-hidden="true">⏱</span>
+              <div>
+                <p className="text-sm font-semibold text-red-800">Taxa de atraso aplicada</p>
+                <p className="text-xs text-red-700">
+                  Item devolvido após o prazo. Taxa adicional:{" "}
+                  <strong>{new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(booking.lateFeeAmount / 100)}</strong>
+                </p>
+              </div>
             </div>
           )}
 

@@ -7,6 +7,7 @@ import { ProfileForm } from "./_ProfileForm"
 import { DeleteAccountButton } from "./_DeleteAccountButton"
 import { UpgradePjForm } from "./_UpgradePjForm"
 import { ReferralSection } from "./_ReferralSection"
+import { IdVerification }  from "./_IdVerification"
 import { getReferralStats } from "@/lib/referral"
 import Link from "next/link"
 
@@ -28,19 +29,21 @@ export default async function ProfilePage() {
     prisma.user.findUnique({
       where:  { id: userId },
       select: {
-        id:           true,
-        name:         true,
-        email:        true,
-        bio:          true,
-        phone:        true,
-        city:         true,
-        state:        true,
-        neighborhood: true,
-        avatarUrl:    true,
-        slug:         true,
-        userType:     true,
-        isVerified:   true,
-        createdAt:    true,
+        id:                   true,
+        name:                 true,
+        email:                true,
+        bio:                  true,
+        phone:                true,
+        city:                 true,
+        state:                true,
+        neighborhood:         true,
+        avatarUrl:            true,
+        slug:                 true,
+        userType:             true,
+        isVerified:           true,
+        idVerificationStatus: true,
+        idRejectionReason:    true,
+        createdAt:            true,
         _count: {
           select: {
             items:              { where: { isActive: true, deletedAt: null } },
@@ -276,6 +279,15 @@ export default async function ProfilePage() {
           {/* ── Privacidade & dados (LGPD) ── */}
           <div className="rounded-xl border border-border bg-surface p-6">
             <h2 className="mb-4 font-semibold text-foreground">Privacidade e dados</h2>
+
+            {/* Verificação de identidade */}
+            <IdVerification
+              status={user.idVerificationStatus}
+              rejectionReason={user.idRejectionReason}
+            />
+
+            <div className="h-px bg-border my-4" />
+
 
             <div className="mb-4 flex items-center justify-between">
               <div>
