@@ -113,6 +113,14 @@ export default async function DesempenhoPage() {
           >
             Desempenho
           </Link>
+          <Link
+            href="/meus-anuncios/importar"
+            role="tab"
+            aria-selected={false}
+            className="inline-flex h-9 items-center rounded-md px-4 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+          >
+            Importar
+          </Link>
         </div>
 
         {items.length === 0 ? (
