@@ -104,6 +104,7 @@ export default async function ItemDetailPage({ params }: Props) {
       </div>
 
       <main className="container py-8">
+        <h1 className="sr-only">{item.title}</h1>
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
 
           {/* ─── ESQUERDA: Galeria + Descrição + Avaliações ─── */}
@@ -180,9 +181,9 @@ export default async function ItemDetailPage({ params }: Props) {
               </p>
 
               {/* Título */}
-              <h1 className="mb-2 text-xl font-bold leading-snug text-primary">
+              <p className="mb-2 text-xl font-bold leading-snug text-primary" aria-hidden="true">
                 {item.title}
-              </h1>
+              </p>
 
               {/* Rating */}
               {avgRating !== null && (
