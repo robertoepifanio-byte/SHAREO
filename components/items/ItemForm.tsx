@@ -39,8 +39,9 @@ interface InitialData {
   pricePerDay:   number
   pricePerWeek?: number | null
   pricePerMonth?: number | null
-  depositAmount?: number | null
-  address?:       string | null
+  depositAmount?:        number | null
+  estimatedRetailPrice?: number | null
+  address?:              string | null
   city:           string
   state:          string
   neighborhood?:  string | null
@@ -145,7 +146,8 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
   const [pricePerDay,   setPricePerDay]   = useState(toDisplay(initialData?.pricePerDay))
   const [pricePerWeek,  setPricePerWeek]  = useState(toDisplay(initialData?.pricePerWeek))
   const [pricePerMonth, setPricePerMonth] = useState(toDisplay(initialData?.pricePerMonth))
-  const [depositAmount, setDepositAmount] = useState(toDisplay(initialData?.depositAmount))
+  const [depositAmount,        setDepositAmount]        = useState(toDisplay(initialData?.depositAmount))
+  const [estimatedRetailPrice, setEstimatedRetailPrice] = useState(toDisplay(initialData?.estimatedRetailPrice))
   const [address,       setAddress]       = useState(initialData?.address       ?? "")
   const [city,          setCity]          = useState(initialData?.city          ?? (process.env.NEXT_PUBLIC_DEFAULT_CITY ?? ""))
   const [state,         setState]         = useState(initialData?.state         ?? (process.env.NEXT_PUBLIC_DEFAULT_STATE ?? ""))
@@ -293,7 +295,8 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
       pricePerDay:   toCents(pricePerDay),
       pricePerWeek:  pricePerWeek  ? toCents(pricePerWeek)  : null,
       pricePerMonth: pricePerMonth ? toCents(pricePerMonth) : null,
-      depositAmount: depositAmount ? toCents(depositAmount) : null,
+      depositAmount:        depositAmount        ? toCents(depositAmount)        : null,
+      estimatedRetailPrice: estimatedRetailPrice ? toCents(estimatedRetailPrice) : null,
       address:       address.trim() || undefined,
       city:          city.trim(),
       state,
@@ -520,7 +523,17 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
             label="Caução"
             value={depositAmount}
             onChange={setDepositAmount}
-            helper="Opcional — valor retido como garantia"
+            helper="Opcional — valor retido como garantia durante o aluguel"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <PriceInput
+            id="estimated-retail-price"
+            label="Valor de compra estimado"
+            value={estimatedRetailPrice}
+            onChange={setEstimatedRetailPrice}
+            helper="Opcional — exibe economia vs comprar novo para o locatário"
           />
         </div>
       </section>

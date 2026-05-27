@@ -38,6 +38,11 @@ export default async function ReservasPage({ searchParams }: Props) {
   const tab = (sp.tab === "owner" ? "owner" : "borrower") as Tab
   const userId = session.user.id
 
+  // Contagem de solicitações pendentes (para banner de aprovação)
+  const pendingCount = tab === "owner"
+    ? await prisma.booking.count({ where: { ownerId: userId, status: "PENDING" } })
+    : 0
+
   const bookings = await prisma.booking.findMany({
     where: tab === "borrower" ? { borrowerId: userId } : { ownerId: userId },
     orderBy: { createdAt: "desc" },
@@ -90,6 +95,23 @@ export default async function ReservasPage({ searchParams }: Props) {
             </Link>
           ))}
         </div>
+
+        {/* Banner de solicitações pendentes — só aparece na aba "Como locador" */}
+        {tab === "owner" && pendingCount > 0 && (
+          <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-4" role="alert">
+            <span className="mt-0.5 text-xl" aria-hidden="true">🔔</span>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-amber-900">
+                {pendingCount === 1
+                  ? "Você tem 1 solicitação aguardando sua aprovação"
+                  : `Você tem ${pendingCount} solicitações aguardando sua aprovação`}
+              </p>
+              <p className="mt-0.5 text-xs text-amber-700">
+                Confirme ou recuse cada solicitação para liberar o período no calendário.
+              </p>
+            </div>
+          </div>
+        )}
 
         {bookings.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
