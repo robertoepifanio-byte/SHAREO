@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { CreateBookingSchema, ListBookingsQuerySchema } from "@/lib/validations/bookings"
 import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
+import { calcBookingTotal } from "@/lib/pricing"
 
 export async function GET(req: NextRequest) {
   try {
@@ -110,7 +111,7 @@ export async function POST(req: NextRequest) {
     // Carrega item e valida disponibilidade
     const item = await prisma.item.findFirst({
       where:  { id: itemId, isActive: true, isApproved: true, deletedAt: null },
-      select: { id: true, ownerId: true, pricePerDay: true, depositAmount: true },
+      select: { id: true, ownerId: true, pricePerDay: true, pricePerWeek: true, pricePerMonth: true, depositAmount: true },
     })
 
     if (!item) {
@@ -130,7 +131,9 @@ export async function POST(req: NextRequest) {
     const totalDays  = Math.ceil(
       (new Date(endDate).getTime() - new Date(startDate).getTime()) / 86_400_000,
     )
-    const totalPrice = item.pricePerDay * totalDays
+    const { totalPrice } = calcBookingTotal(
+      totalDays, item.pricePerDay, item.pricePerWeek, item.pricePerMonth,
+    )
 
     // Cria booking + conversation atomicamente (conflict check dentro da transação evita double-booking)
     const booking = await prisma.$transaction(async (tx) => {

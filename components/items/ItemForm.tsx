@@ -54,6 +54,18 @@ interface ItemFormProps {
   initialData?:  InitialData
 }
 
+// ─── Price suggestions by category slug ──────────────────────────────────────
+// Base: diária ≈ 5% do valor do produto (mercado brasileiro)
+const PRICE_SUGGESTIONS: Record<string, number> = {
+  "ferramentas":   35,
+  "eletronicos":   100,
+  "casa-jardim":   30,
+  "construcao":    45,
+  "esporte":       60,
+  "moda":          50,
+  "festas":        80,
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const BR_STATES = [
@@ -153,6 +165,29 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
   const [loading,       setLoading]       = useState(false)
   const [gettingLoc,    setGettingLoc]    = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Price suggestion derived from selected category
+  const selectedCat      = categories.find((c) => c.id === categoryId)
+  const suggestedDayPrice = selectedCat ? PRICE_SUGGESTIONS[selectedCat.slug] : undefined
+
+  function applyPriceSuggestion() {
+    if (!suggestedDayPrice) return
+    const suggested = suggestedDayPrice.toFixed(2).replace(".", ",")
+    setPricePerDay(suggested)
+    setErrors((p) => ({ ...p, pricePerDay: undefined! }))
+  }
+
+  function autoWeekly() {
+    const cents = toCents(pricePerDay)
+    if (!cents) return
+    setPricePerWeek(((cents * 4) / 100).toFixed(2).replace(".", ","))
+  }
+
+  function autoMonthly() {
+    const cents = toCents(pricePerDay)
+    if (!cents) return
+    setPricePerMonth(((cents * 12) / 100).toFixed(2).replace(".", ","))
+  }
 
   // Load categories on mount
   useEffect(() => {
@@ -405,6 +440,25 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
       <section className="rounded-lg border border-border bg-surface p-6 space-y-4">
         <h2 className="font-semibold text-primary">Preços</h2>
 
+        {/* Sugestão automática de preço por categoria */}
+        {suggestedDayPrice && !toCents(pricePerDay) && (
+          <div className="flex items-center gap-3 rounded-md border border-brand/25 bg-brand/5 px-3 py-2 text-xs text-muted-foreground">
+            <span>
+              💡 Sugestão para <strong>{selectedCat?.name}</strong>:{" "}
+              <strong className="text-foreground">R$ {suggestedDayPrice.toFixed(2).replace(".", ",")}/dia</strong>
+              <span className="ml-1 text-[11px]">(referência: 5% do valor do produto)</span>
+            </span>
+            <button
+              type="button"
+              onClick={applyPriceSuggestion}
+              disabled={loading}
+              className="ml-auto shrink-0 rounded-md bg-brand px-2.5 py-1 text-[11px] font-semibold text-white hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              Usar
+            </button>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <PriceInput
@@ -419,23 +473,47 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
             )}
           </div>
 
-          <PriceInput
-            id="price-per-week"
-            label="Preço por semana"
-            value={pricePerWeek}
-            onChange={setPricePerWeek}
-            helper="Opcional — desconto para locações semanais"
-          />
+          <div className="flex flex-col gap-1.5">
+            <PriceInput
+              id="price-per-week"
+              label="Preço por semana"
+              value={pricePerWeek}
+              onChange={setPricePerWeek}
+              helper="Desconto para locações ≥ 7 dias"
+            />
+            {toCents(pricePerDay) > 0 && !toCents(pricePerWeek) && (
+              <button
+                type="button"
+                onClick={autoWeekly}
+                disabled={loading}
+                className="self-start text-[11px] text-brand hover:underline disabled:opacity-50"
+              >
+                Calcular (4× diária = R$ {((toCents(pricePerDay) * 4) / 100).toFixed(2).replace(".", ",")})
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <PriceInput
-            id="price-per-month"
-            label="Preço por mês"
-            value={pricePerMonth}
-            onChange={setPricePerMonth}
-            helper="Opcional — desconto para locações mensais"
-          />
+          <div className="flex flex-col gap-1.5">
+            <PriceInput
+              id="price-per-month"
+              label="Preço por mês"
+              value={pricePerMonth}
+              onChange={setPricePerMonth}
+              helper="Desconto para locações ≥ 30 dias"
+            />
+            {toCents(pricePerDay) > 0 && !toCents(pricePerMonth) && (
+              <button
+                type="button"
+                onClick={autoMonthly}
+                disabled={loading}
+                className="self-start text-[11px] text-brand hover:underline disabled:opacity-50"
+              >
+                Calcular (12× diária = R$ {((toCents(pricePerDay) * 12) / 100).toFixed(2).replace(".", ",")})
+              </button>
+            )}
+          </div>
 
           <PriceInput
             id="deposit-amount"

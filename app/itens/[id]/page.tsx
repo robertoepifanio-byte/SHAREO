@@ -234,6 +234,8 @@ export default async function ItemDetailPage({ params }: Props) {
               ) : (
                 <PriceCalc
                   pricePerDay={item.pricePerDay}
+                  pricePerWeek={item.pricePerWeek}
+                  pricePerMonth={item.pricePerMonth}
                   itemId={item.id}
                   isLoggedIn={!!session}
                 />

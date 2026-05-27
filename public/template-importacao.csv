@@ -1,4 +1,7 @@
-titulo,descricao,categoria,preco_dia,condicao,cidade,estado,bairro
-Furadeira de Impacto Bosch 650W,Furadeira ideal para alvenaria e madeira. Inclui maleta e 10 brocas.,Ferramentas,35.00,BOM,Natal,RN,Tirol
-Projetor Full HD Epson,1080p com HDMI e controle remoto. Perfeito para eventos e apresentações.,Eletrônicos,80.00,EXCELENTE,Natal,RN,Ponta Negra
-Conjunto de Mesas e Cadeiras (10 unidades),Mesas redondas plásticas com 10 cadeiras. Ideal para festas.,Festas,120.00,BOM,Natal,RN,Lagoa Nova
+titulo,descricao,categoria,preco_dia,preco_semana,preco_mes,condicao,cidade,estado,bairro
+Furadeira de Impacto Bosch 650W,Furadeira ideal para alvenaria e madeira. Inclui maleta e 10 brocas.,Ferramentas,35.00,140.00,420.00,BOM,Natal,RN,Tirol
+Projetor Full HD Epson 3500 lúmens,1080p com HDMI e WiFi. Perfeito para eventos e apresentações.,Eletrônicos,100.00,400.00,1200.00,EXCELENTE,Natal,RN,Ponta Negra
+Conjunto de Mesas e Cadeiras (10 unidades),10 cadeiras plásticas brancas com 5 mesas dobráveis. Ideal para festas.,Festas,80.00,320.00,960.00,BOM,Natal,RN,Lagoa Nova
+Escada Telescópica 6m,Alumínio leve até 6m. Capacidade 150kg. Transporte compacto.,Construção,40.00,160.00,480.00,BOM,Natal,RN,Candelária
+Kit de Jardinagem Premium,Tesoura de poda, cavadeira, ancinho, regador 10L e luvas profissionais.,Casa e Jardim,30.00,120.00,360.00,EXCELENTE,Natal,RN,Petrópolis
+Barraca de Camping 4 pessoas,Barraca impermeável fácil montagem. Estacas e cordas incluídas.,Esporte,50.00,200.00,600.00,BOM,Natal,RN,Capim Macio
