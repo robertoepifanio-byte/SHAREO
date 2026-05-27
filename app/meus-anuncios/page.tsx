@@ -44,13 +44,33 @@ export default async function MeusAnunciosPage() {
           </div>
           <Link
             href="/itens/novo"
-            className="inline-flex items-center gap-1.5 h-10 px-5 rounded-md bg-brand text-sm font-medium text-white hover:bg-brand-hover transition-colors self-start sm:self-auto"
+            className="inline-flex h-11 items-center gap-1.5 rounded-md bg-brand px-5 text-sm font-semibold text-white hover:opacity-90 transition-opacity self-start sm:self-auto"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
               <line x1="12" y1="5" x2="12" y2="19"/>
               <line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
             Novo anúncio
+          </Link>
+        </div>
+
+        {/* Tabs */}
+        <div className="mb-6 flex gap-1 rounded-lg border border-border bg-surface p-1 w-fit" role="tablist" aria-label="Seções">
+          <Link
+            href="/meus-anuncios"
+            role="tab"
+            aria-selected={true}
+            className="inline-flex h-9 items-center rounded-md bg-brand px-4 text-sm font-semibold text-white shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+          >
+            Anúncios
+          </Link>
+          <Link
+            href="/meus-anuncios/desempenho"
+            role="tab"
+            aria-selected={false}
+            className="inline-flex h-9 items-center rounded-md px-4 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+          >
+            Desempenho
           </Link>
         </div>
 
