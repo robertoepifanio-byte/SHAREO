@@ -78,7 +78,7 @@ export default async function ReservasPage({ searchParams }: Props) {
             <Link
               key={t.value}
               href={`/reservas?tab=${t.value}`}
-              className={`rounded-md px-4 py-2 text-sm font-semibold transition-colors ${
+              className={`inline-flex h-11 items-center rounded-md px-4 text-sm font-semibold transition-colors ${
                 tab === t.value
                   ? "bg-brand text-white shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
@@ -163,14 +163,14 @@ export default async function ReservasPage({ searchParams }: Props) {
                   <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
                     <Link
                       href={`/reservas/${b.id}`}
-                      className="rounded-lg border border-border px-4 py-2 text-xs font-semibold text-foreground hover:bg-background transition-colors"
+                      className="inline-flex h-11 items-center rounded-lg border border-border px-4 text-sm font-semibold text-foreground hover:bg-background transition-colors"
                     >
                       Ver detalhes
                     </Link>
                     {b.conversation && (
                       <Link
                         href={`/mensagens/${b.conversation.id}`}
-                        className="rounded-lg bg-brand px-4 py-2 text-xs font-semibold text-white hover:opacity-90 transition-opacity"
+                        className="inline-flex h-11 items-center rounded-lg bg-brand px-4 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
                       >
                         💬 Mensagens
                       </Link>

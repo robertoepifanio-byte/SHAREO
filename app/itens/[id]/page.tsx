@@ -240,7 +240,7 @@ export default async function ItemDetailPage({ params }: Props) {
 
               {/* Favoritar */}
               {!isOwner && (
-                <div className="mb-4 flex w-full items-center justify-center gap-2 rounded-lg border border-border py-2.5 text-sm font-medium text-foreground hover:bg-background transition-colors cursor-pointer">
+                <div className="mb-4 flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-background transition-colors cursor-pointer">
                   <FavoriteButton itemId={item.id} />
                   <span>Salvar nos favoritos</span>
                 </div>
