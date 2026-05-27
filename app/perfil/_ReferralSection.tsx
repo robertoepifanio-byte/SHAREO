@@ -7,22 +7,16 @@ const fmt = (cents: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
 
 interface Props {
-  stats:  ReferralStats
-  userId: string
+  stats: ReferralStats
 }
 
-export function ReferralSection({ stats: initialStats, userId }: Props) {
-  const [stats,    setStats]    = useState(initialStats)
-  const [code,     setCode]     = useState(initialStats.code ?? "")
+export function ReferralSection({ stats: initialStats }: Props) {
+  const [stats,     setStats]    = useState(initialStats)
   const [codeInput, setCodeInput] = useState("")
-  const [copied,   setCopied]   = useState(false)
-  const [loading,  setLoading]  = useState(false)
-  const [error,    setError]    = useState("")
-  const [success,  setSuccess]  = useState("")
-
-  const shareUrl = typeof window !== "undefined"
-    ? `${window.location.origin}/cadastro?ref=${stats.code ?? ""}`
-    : ""
+  const [copied,    setCopied]   = useState(false)
+  const [loading,   setLoading]  = useState(false)
+  const [error,     setError]    = useState("")
+  const [success,   setSuccess]  = useState("")
 
   async function generateCode() {
     setLoading(true)
