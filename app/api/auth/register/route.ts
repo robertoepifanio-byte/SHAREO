@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { hashDocument, encryptDocument } from "@/lib/crypto"
 import { RegisterSchema } from "@/lib/validations/auth"
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
+import { sendWelcomeEmail } from "@/lib/email"
 
 export async function POST(req: NextRequest) {
   try {
@@ -99,6 +100,11 @@ export async function POST(req: NextRequest) {
         createdAt:  true,
       },
     })
+
+    // Boas-vindas — fire-and-forget: não atrasa o cadastro nem falha se o email falhar
+    sendWelcomeEmail(user.email, user.name).catch((err) =>
+      console.error("[register] welcome email error:", err instanceof Error ? err.message : err)
+    )
 
     return NextResponse.json({ data: user }, { status: 201 })
   } catch (e: unknown) {

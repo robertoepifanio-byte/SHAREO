@@ -4,6 +4,7 @@ import crypto from "crypto"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
+import { sendPasswordResetEmail } from "@/lib/email"
 
 const Schema = z.object({
   email: z.string().email("E-mail inválido"),
@@ -50,11 +51,15 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    // ── Email ─────────────────────────────────────────────────────────────────
-    // TODO Sprint 5: integrar Resend / SendGrid — substituir o console.info abaixo
-    const resetUrl = `${process.env.NEXTAUTH_URL ?? "https://shareo-rouge.vercel.app"}/redefinir-senha/${token}`
-    // Não logar e-mail (PII — LGPD art. 46). Apenas primeiros 8 chars do token para correlação.
-    console.info(`[forgot-password] token issued (${token.slice(0, 8)}…) url=${resetUrl}`)
+    // ── Enviar e-mail ─────────────────────────────────────────────────────────
+    try {
+      await sendPasswordResetEmail(email.toLowerCase(), user.name, token)
+      console.info(`[forgot-password] email sent (token ${token.slice(0, 8)}…)`)
+    } catch (emailErr) {
+      // Falha no envio não expõe informação ao cliente — token já está salvo no DB.
+      // O usuário pode tentar novamente e o e-mail será reenviado.
+      console.error("[forgot-password] email error:", emailErr instanceof Error ? emailErr.message : emailErr)
+    }
 
     return OK
   } catch (e: unknown) {
