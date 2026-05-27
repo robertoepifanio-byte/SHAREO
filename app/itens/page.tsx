@@ -1,6 +1,7 @@
 import { Suspense } from "react"
 import type { Metadata } from "next"
 import Link from "next/link"
+import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { ItemCard } from "@/components/items/ItemCard"
@@ -59,6 +60,21 @@ export default async function ExplorarPage({ searchParams }: Props) {
     ...(categoryId && { categoryId }),
     ...(city       && { city: { contains: city, mode: "insensitive" as const } }),
     ...(priceMaxR  && { pricePerDay: { lte: priceMaxR * 100 } }),
+  }
+
+  // Se o texto de busca bate exatamente com um nome de categoria, redireciona para filtro por categoria
+  if (search && !categoryId) {
+    const cats = await prisma.category.findMany({
+      where:   { parentId: null },
+      select:  { id: true, name: true },
+    })
+    const match = cats.find((c) => c.name.toLowerCase() === search.toLowerCase())
+    if (match) {
+      const params = new URLSearchParams({ categoryId: match.id })
+      if (sort)       params.set("sort",     sort)
+      if (sp.priceMax) params.set("priceMax", sp.priceMax)
+      redirect(`/itens?${params.toString()}`)
+    }
   }
 
   const [items, total, categories] = await Promise.all([
