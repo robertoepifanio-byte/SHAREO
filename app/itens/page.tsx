@@ -222,6 +222,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
           </summary>
           <div className="px-4 pb-4 pt-1">
             <FilterForm
+              key={`mobile-${categoryId ?? "all"}`}
               categories={categories}
               categoryId={categoryId}
               priceMax={sp.priceMax}
@@ -239,6 +240,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
             <div className="rounded-xl border border-border bg-surface p-5">
               <p className="mb-4 text-[15px] font-bold text-primary">Filtros</p>
               <FilterForm
+                key={`sidebar-${categoryId ?? "all"}`}
                 categories={categories}
                 categoryId={categoryId}
                 priceMax={sp.priceMax}
