@@ -70,7 +70,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
     return (
       <div className="rounded-lg border border-border bg-surface p-8 shadow-card text-center">
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-success/10">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2.5" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#007B3C" strokeWidth="2.5" aria-hidden="true">
             <polyline points="20 6 9 17 4 12"/>
           </svg>
         </div>

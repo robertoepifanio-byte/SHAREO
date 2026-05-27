@@ -15,8 +15,8 @@ function baseLayout(content: string) {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ShareO</title>
 </head>
-<body style="margin:0;padding:0;background:#F8FAFC;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#F8FAFC;padding:40px 16px;">
+<body style="margin:0;padding:0;background:#FFFFFF;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#FFFFFF;padding:40px 16px;">
     <tr>
       <td align="center">
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
@@ -24,8 +24,8 @@ function baseLayout(content: string) {
           <!-- Logo / Header -->
           <tr>
             <td align="center" style="padding-bottom:24px;">
-              <span style="font-size:26px;font-weight:800;color:#0D1B2A;letter-spacing:-0.5px;">
-                Share<span style="color:#F97316;">O</span>
+              <span style="font-size:26px;font-weight:800;color:#003366;letter-spacing:-0.5px;">
+                Share<span style="color:#007B3C;">O</span>
               </span>
               <p style="margin:4px 0 0;font-size:11px;color:#64748B;letter-spacing:0.5px;text-transform:uppercase;">
                 Use Mais. Possua Menos.
@@ -61,7 +61,7 @@ function baseLayout(content: string) {
 
 function ctaButton(href: string, label: string) {
   return `<a href="${href}"
-    style="display:inline-block;background:#F97316;color:#FFFFFF;font-size:15px;
+    style="display:inline-block;background:#007B3C;color:#FFFFFF;font-size:15px;
            font-weight:700;text-decoration:none;border-radius:8px;
            padding:14px 32px;margin:24px 0;">
     ${label}
@@ -70,7 +70,7 @@ function ctaButton(href: string, label: string) {
 
 function passwordResetHtml(firstName: string, resetUrl: string) {
   return baseLayout(`
-    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#0D1B2A;">
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
       Redefinir sua senha
     </h1>
     <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
@@ -90,7 +90,7 @@ function passwordResetHtml(firstName: string, resetUrl: string) {
     </p>
     <p style="margin:20px 0 0;font-size:12px;color:#94A3B8;">
       Ou acesse o link diretamente:<br/>
-      <a href="${resetUrl}" style="color:#F97316;word-break:break-all;">${resetUrl}</a>
+      <a href="${resetUrl}" style="color:#007B3C;word-break:break-all;">${resetUrl}</a>
     </p>
   `)
 }
@@ -98,7 +98,7 @@ function passwordResetHtml(firstName: string, resetUrl: string) {
 function welcomeHtml(name: string) {
   const firstName = name.split(" ")[0]
   return baseLayout(`
-    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#0D1B2A;">
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
       Bem-vindo ao ShareO, ${firstName}! 🎉
     </h1>
     <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
@@ -113,7 +113,7 @@ function welcomeHtml(name: string) {
     <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:28px;border-top:1px solid #E2E8F0;padding-top:24px;">
       <tr>
         <td style="padding:0 0 16px;">
-          <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#0D1B2A;">📦 Anuncie seu item</p>
+          <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#003366;">📦 Anuncie seu item</p>
           <p style="margin:0;font-size:13px;color:#64748B;line-height:1.5;">
             Tem uma furadeira, câmera ou barraca parada? Anuncie em minutos e comece a ganhar.
           </p>
@@ -121,7 +121,7 @@ function welcomeHtml(name: string) {
       </tr>
       <tr>
         <td style="padding:0 0 16px;">
-          <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#0D1B2A;">🔍 Encontre o que precisa</p>
+          <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#003366;">🔍 Encontre o que precisa</p>
           <p style="margin:0;font-size:13px;color:#64748B;line-height:1.5;">
             Filtre por categoria, preço e localização. Fale diretamente com o proprietário pelo chat.
           </p>
@@ -129,7 +129,7 @@ function welcomeHtml(name: string) {
       </tr>
       <tr>
         <td>
-          <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#0D1B2A;">⭐ Avalie e construa reputação</p>
+          <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#003366;">⭐ Avalie e construa reputação</p>
           <p style="margin:0;font-size:13px;color:#64748B;line-height:1.5;">
             Após cada locação, avalie a experiência. Uma boa reputação abre mais oportunidades.
           </p>
