@@ -284,7 +284,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
                     {page > 1 && (
                       <Link
                         href={buildUrl({ page: page - 1 })}
-                        className="inline-flex h-10 items-center rounded-md border border-border px-4 text-sm text-foreground hover:bg-background transition-colors"
+                        className="inline-flex h-11 items-center rounded-md border border-border px-4 text-sm text-foreground hover:bg-background transition-colors"
                       >
                         ← Anterior
                       </Link>
@@ -295,7 +295,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
                     {page < totalPages && (
                       <Link
                         href={buildUrl({ page: page + 1 })}
-                        className="inline-flex h-10 items-center rounded-md border border-border px-4 text-sm text-foreground hover:bg-background transition-colors"
+                        className="inline-flex h-11 items-center rounded-md border border-border px-4 text-sm text-foreground hover:bg-background transition-colors"
                       >
                         Próxima →
                       </Link>
@@ -447,7 +447,7 @@ function FilterForm({
 
       <button
         type="submit"
-        className="w-full rounded-lg bg-brand py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+        className="w-full h-11 rounded-lg bg-brand text-sm font-semibold text-white hover:opacity-90 transition-opacity"
       >
         Aplicar filtros
       </button>
