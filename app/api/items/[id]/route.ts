@@ -132,6 +132,8 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
         ...(d.latitude      !== undefined && { latitude:      d.latitude }),
         ...(d.longitude     !== undefined && { longitude:     d.longitude }),
         ...(d.isActive      !== undefined && { isActive:      d.isActive }),
+        ...(d.requireIdVerification !== undefined && { requireIdVerification: d.requireIdVerification }),
+        ...(d.requirePhone          !== undefined && { requirePhone:          d.requirePhone }),
       },
       select: { id: true, title: true, isActive: true, updatedAt: true, pricePerDay: true },
     })

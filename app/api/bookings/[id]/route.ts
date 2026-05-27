@@ -187,6 +187,16 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       data.cancelReason  = reason
     }
 
+    // Registra o tempo de resposta do proprietário (para badge de responsividade)
+    // Apenas na primeira ação sobre uma reserva PENDING (confirm ou cancel pelo dono)
+    if (
+      booking.status === "PENDING" &&
+      isOwner &&
+      (action === "confirm" || action === "cancel")
+    ) {
+      data.respondedAt = now
+    }
+
     const updated = await prisma.booking.update({
       where:  { id },
       data,

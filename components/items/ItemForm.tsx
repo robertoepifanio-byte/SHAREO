@@ -48,6 +48,8 @@ interface InitialData {
   latitude:       number
   longitude:      number
   images:         { id: string; url: string; order: number }[]
+  requireIdVerification?: boolean
+  requirePhone?:          boolean
 }
 
 interface ItemFormProps {
@@ -154,6 +156,8 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
   const [neighborhood,  setNeighborhood]  = useState(initialData?.neighborhood  ?? "")
   const [latitude,      setLatitude]      = useState(initialData?.latitude      ?? Number(process.env.NEXT_PUBLIC_DEFAULT_LAT ?? -5.7945))
   const [longitude,     setLongitude]     = useState(initialData?.longitude     ?? Number(process.env.NEXT_PUBLIC_DEFAULT_LNG ?? -35.211))
+  const [requireIdVerification, setRequireIdVerification] = useState(initialData?.requireIdVerification ?? false)
+  const [requirePhone,          setRequirePhone]          = useState(initialData?.requirePhone          ?? false)
 
   // Images
   const [images, setImages] = useState<ImageEntry[]>(
@@ -303,6 +307,8 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
       neighborhood:  neighborhood.trim() || undefined,
       latitude,
       longitude,
+      requireIdVerification,
+      requirePhone,
     }
 
     try {
@@ -687,6 +693,56 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
         <p className="text-xs text-muted-foreground">
           Formatos aceitos: JPEG, PNG, WebP · Máximo 5 MB por foto
         </p>
+      </section>
+
+      {/* ── Requisitos para reserva ─────────────────────────────────────────── */}
+      <section className="rounded-lg border border-border bg-surface p-6 space-y-4">
+        <div>
+          <h2 className="font-semibold text-primary">Requisitos para reserva</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Defina o que os locatários precisam ter para alugar este item. Aumenta a confiança e reduz riscos.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex items-start gap-3">
+            <input
+              id="req-id-verification"
+              type="checkbox"
+              checked={requireIdVerification}
+              onChange={(e) => setRequireIdVerification(e.target.checked)}
+              disabled={loading}
+              className="mt-0.5 h-4 w-4 cursor-pointer rounded border-input accent-brand"
+            />
+            <div>
+              <label htmlFor="req-id-verification" className="cursor-pointer text-sm font-medium text-foreground">
+                Identidade verificada
+              </label>
+              <p className="text-xs text-muted-foreground">
+                O locatário deve ter enviado e aprovado documento de identidade. Recomendado para itens de alto valor.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <input
+              id="req-phone"
+              type="checkbox"
+              checked={requirePhone}
+              onChange={(e) => setRequirePhone(e.target.checked)}
+              disabled={loading}
+              className="mt-0.5 h-4 w-4 cursor-pointer rounded border-input accent-brand"
+            />
+            <div>
+              <label htmlFor="req-phone" className="cursor-pointer text-sm font-medium text-foreground">
+                Telefone cadastrado
+              </label>
+              <p className="text-xs text-muted-foreground">
+                O locatário deve ter um número de telefone no perfil para permitir contato direto.
+              </p>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* ── Submit ──────────────────────────────────────────────────────────── */}

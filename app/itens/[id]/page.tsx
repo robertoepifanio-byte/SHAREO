@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { FavoriteButton } from "@/components/items/FavoriteButton"
+import { getOwnerResponseBadge } from "@/lib/ownerStats"
 import { Gallery } from "./_Gallery"
 import { PriceCalc } from "./_PriceCalc"
 
@@ -46,6 +47,7 @@ export default async function ItemDetailPage({ params }: Props) {
 
   const [item, session] = await Promise.all([
     prisma.item.findFirst({
+
       where: { id, deletedAt: null },
       select: {
         id: true, title: true, description: true, condition: true,
@@ -53,6 +55,7 @@ export default async function ItemDetailPage({ params }: Props) {
         depositAmount: true, estimatedRetailPrice: true,
         city: true, state: true, neighborhood: true,
         isActive: true, ownerId: true, viewCount: true,
+        requireIdVerification: true, requirePhone: true,
         category: { select: { name: true } },
         owner: {
           select: {
@@ -74,6 +77,10 @@ export default async function ItemDetailPage({ params }: Props) {
   ])
 
   if (!item) notFound()
+
+  const [responseBadge] = await Promise.all([
+    getOwnerResponseBadge(item.ownerId),
+  ])
 
   prisma.item.update({ where: { id }, data: { viewCount: { increment: 1 } } }).catch(() => {})
 
@@ -253,6 +260,29 @@ export default async function ItemDetailPage({ params }: Props) {
                 </div>
               )}
 
+              {/* Requisitos para reserva */}
+              {!isOwner && (item.requireIdVerification || item.requirePhone) && (
+                <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                  <p className="mb-1.5 text-xs font-semibold text-amber-800">
+                    📋 Requisitos do proprietário
+                  </p>
+                  <ul className="space-y-1">
+                    {item.requireIdVerification && (
+                      <li className="flex items-center gap-1.5 text-xs text-amber-700">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true" className="shrink-0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        Identidade verificada
+                      </li>
+                    )}
+                    {item.requirePhone && (
+                      <li className="flex items-center gap-1.5 text-xs text-amber-700">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true" className="shrink-0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                        Telefone cadastrado
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              )}
+
               {/* Se for dono: botão de editar; senão: calculadora + CTA */}
               {isOwner ? (
                 <Link
@@ -301,6 +331,11 @@ export default async function ItemDetailPage({ params }: Props) {
                   </p>
                   {ownerLocation && (
                     <p className="truncate text-xs text-muted-foreground">📍 {ownerLocation}</p>
+                  )}
+                  {responseBadge && (
+                    <p className="mt-0.5 text-xs font-medium text-brand">
+                      ⚡ {responseBadge.label}
+                    </p>
                   )}
                 </div>
                 <span className="text-lg text-muted-foreground" aria-hidden="true">›</span>
