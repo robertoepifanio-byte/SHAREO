@@ -156,6 +156,17 @@ export async function POST(req: NextRequest, { params }: Params) {
       select: { id: true, reviewType: true, rating: true, comment: true, createdAt: true },
     })
 
+    // Notifica o avaliado (fire-and-forget)
+    prisma.notification.create({
+      data: {
+        userId: revieweeId,
+        type:   "NEW_REVIEW",
+        title:  "Você recebeu uma avaliação",
+        body:   comment?.trim() ? `"${comment.trim().slice(0, 80)}"` : `Nota ${rating} recebida.`,
+        data:   { bookingId: id },
+      },
+    }).catch((e) => console.error("[notification] NEW_REVIEW:", e instanceof Error ? e.message : e))
+
     // Auto-complete booking once all 3 review types have been submitted (fire-and-forget)
     if (booking.status === "RETURNED") {
       prisma.review.count({ where: { bookingId: id } })
