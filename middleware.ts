@@ -15,7 +15,11 @@ const PROTECTED_PREFIXES = [
 
 const ADMIN_PREFIXES = ["/admin", "/api/admin"]
 
-const AUTH_ROUTES = ["/login", "/cadastro", "/esqueci-senha", "/redefinir-senha"]
+// Rotas de autenticação: redireciona usuários já logados para /dashboard.
+// /esqueci-senha/[token] (redefinição com token) deve permanecer acessível
+// mesmo com sessão ativa — por isso usamos correspondência exata para ela.
+const AUTH_ROUTES = ["/login", "/cadastro"]
+const AUTH_EXACT  = ["/esqueci-senha"]   // só a raiz, não sub-rotas com token
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
@@ -25,7 +29,9 @@ export async function middleware(req: NextRequest) {
   const isProtectedRoute = PROTECTED_PREFIXES.some((p) =>
     p === "/perfil" ? pathname === "/perfil" : pathname.startsWith(p)
   )
-  const isAuthRoute      = AUTH_ROUTES.some((p) => pathname.startsWith(p))
+  const isAuthRoute =
+    AUTH_ROUTES.some((p) => pathname.startsWith(p)) ||
+    AUTH_EXACT.some((p)  => pathname === p || pathname === p + "/")
 
   if (!isAdminRoute && !isProtectedRoute && !isAuthRoute) {
     return NextResponse.next()
