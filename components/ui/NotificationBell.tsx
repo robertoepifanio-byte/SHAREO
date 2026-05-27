@@ -98,7 +98,7 @@ export function NotificationBell() {
   const dropdown = (
     <div
       ref={dropdownRef}
-      className="fixed w-80 rounded-xl border border-border bg-card shadow-xl z-[9999]"
+      className="fixed w-80 rounded-xl border border-border bg-surface shadow-xl z-[9999]"
       style={{ top: dropdownPos.top, right: dropdownPos.right }}
     >
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
