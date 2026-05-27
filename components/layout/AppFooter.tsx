@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { ShareOLogo } from "@/components/ui/ShareOLogo"
 
 /**
  * Rodapé global do ShareO.
@@ -15,10 +16,8 @@ export function AppFooter() {
 
           {/* Brand + tagline */}
           <div className="max-w-xs">
-            <p className="text-2xl font-extrabold tracking-tight text-white">
-              Share<span className="text-[#59C686]">O</span>
-            </p>
-            <p className="mt-1 text-sm text-white/70">
+            <ShareOLogo variant="institutional" height={28} />
+            <p className="mt-2 text-sm text-white/70">
               Compartilhe. Economize. Sustentável.
             </p>
             <p className="mt-3 text-xs leading-relaxed text-white/50">
