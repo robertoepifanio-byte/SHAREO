@@ -118,6 +118,6 @@ export async function GET(req: NextRequest) {
     sent.push(`overdue:${b.id}`)
   }
 
-  console.log(`[cron/reminders] sent=${sent.length}`, sent)
+  console.warn(`[cron/reminders] sent=${sent.length}`, sent)
   return NextResponse.json({ ok: true, sent: sent.length, ids: sent })
 }
