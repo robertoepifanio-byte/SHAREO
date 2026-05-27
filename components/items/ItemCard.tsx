@@ -43,7 +43,7 @@ export function ItemCard({ item, showActions = false, isFavorited = false, onDel
         !isActive ? "opacity-60" : "",
       ].join(" ")}
     >
-      <Link href={`/itens/${item.id}`} className="block flex-1">
+      <Link href={`/itens/${item.id}`} className="block flex-1 rounded-t-lg outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface">
         {/* Imagem */}
         <div className="relative aspect-[4/3] w-full overflow-hidden rounded-t-lg bg-muted">
           {imageUrl ? (

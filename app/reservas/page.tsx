@@ -70,7 +70,7 @@ export default async function ReservasPage({ searchParams }: Props) {
         <h1 className="mb-6 text-2xl font-bold text-primary">Minhas Reservas</h1>
 
         {/* Abas */}
-        <div className="mb-6 flex gap-1 rounded-lg border border-border bg-surface p-1 w-fit">
+        <div className="mb-6 flex gap-1 rounded-lg border border-border bg-surface p-1 w-fit" role="tablist" aria-label="Papel na reserva">
           {([
             { value: "borrower", label: "Como locatário" },
             { value: "owner",    label: "Como locador" },
@@ -78,7 +78,9 @@ export default async function ReservasPage({ searchParams }: Props) {
             <Link
               key={t.value}
               href={`/reservas?tab=${t.value}`}
-              className={`inline-flex h-11 items-center rounded-md px-4 text-sm font-semibold transition-colors ${
+              role="tab"
+              aria-selected={tab === t.value}
+              className={`inline-flex h-11 items-center rounded-md px-4 text-sm font-semibold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 ${
                 tab === t.value
                   ? "bg-brand text-white shadow-sm"
                   : "text-muted-foreground hover:text-foreground"

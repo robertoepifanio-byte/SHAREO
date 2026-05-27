@@ -82,21 +82,23 @@ function toDisplay(cents: number | null | undefined): string {
 // ─── Price input helper ───────────────────────────────────────────────────────
 
 function PriceInput({
-  label, value, onChange, required, helper,
+  id, label, value, onChange, required, helper,
 }: {
-  label: string; value: string; onChange: (v: string) => void; required?: boolean; helper?: string
+  id: string; label: string; value: string; onChange: (v: string) => void; required?: boolean; helper?: string
 }) {
+  const helperId = helper ? `${id}-helper` : undefined
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-sm font-medium text-foreground">
+      <label htmlFor={id} className="text-sm font-medium text-foreground">
         {label}
         {required && <span className="ml-1 text-destructive" aria-hidden="true">*</span>}
       </label>
       <div className="relative">
-        <span className="absolute inset-y-0 left-3 flex items-center text-sm text-muted-foreground select-none">
+        <span className="absolute inset-y-0 left-3 flex items-center text-sm text-muted-foreground select-none" aria-hidden="true">
           R$
         </span>
         <input
+          id={id}
           type="text"
           inputMode="decimal"
           value={value}
@@ -105,6 +107,7 @@ function PriceInput({
             onChange(raw)
           }}
           placeholder="0,00"
+          aria-describedby={helperId}
           className={[
             "h-11 w-full rounded-md border border-input bg-surface pl-10 pr-3 text-sm text-foreground",
             "placeholder:text-muted-foreground outline-none transition-colors",
@@ -112,7 +115,7 @@ function PriceInput({
           ].join(" ")}
         />
       </div>
-      {helper && <p className="text-xs text-muted-foreground">{helper}</p>}
+      {helper && <p id={helperId} className="text-xs text-muted-foreground">{helper}</p>}
     </div>
   )
 }
@@ -405,6 +408,7 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <PriceInput
+              id="price-per-day"
               label="Preço por dia"
               value={pricePerDay}
               onChange={(v) => { setPricePerDay(v); setErrors((p) => ({ ...p, pricePerDay: undefined! })) }}
@@ -416,6 +420,7 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
           </div>
 
           <PriceInput
+            id="price-per-week"
             label="Preço por semana"
             value={pricePerWeek}
             onChange={setPricePerWeek}
@@ -425,6 +430,7 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <PriceInput
+            id="price-per-month"
             label="Preço por mês"
             value={pricePerMonth}
             onChange={setPricePerMonth}
@@ -432,6 +438,7 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
           />
 
           <PriceInput
+            id="deposit-amount"
             label="Caução"
             value={depositAmount}
             onChange={setDepositAmount}

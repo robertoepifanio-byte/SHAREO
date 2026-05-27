@@ -70,7 +70,7 @@ export default async function DashboardPage() {
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <Link
               href="/itens/novo"
-              className="flex items-center gap-4 rounded-lg border border-border bg-surface p-5 hover:border-brand/40 hover:bg-brand/5 transition-colors group"
+              className="flex items-center gap-4 rounded-lg border border-border bg-surface p-5 hover:border-brand/40 hover:bg-brand/5 transition-colors group outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
             >
               <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand group-hover:bg-brand/20 transition-colors">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -85,7 +85,7 @@ export default async function DashboardPage() {
 
             <Link
               href="/meus-anuncios"
-              className="flex items-center gap-4 rounded-lg border border-border bg-surface p-5 hover:border-brand/40 hover:bg-brand/5 transition-colors group"
+              className="flex items-center gap-4 rounded-lg border border-border bg-surface p-5 hover:border-brand/40 hover:bg-brand/5 transition-colors group outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
             >
               <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand group-hover:bg-brand/20 transition-colors">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -102,7 +102,7 @@ export default async function DashboardPage() {
 
             <Link
               href="/itens"
-              className="flex items-center gap-4 rounded-lg border border-border bg-surface p-5 hover:border-brand/40 hover:bg-brand/5 transition-colors group"
+              className="flex items-center gap-4 rounded-lg border border-border bg-surface p-5 hover:border-brand/40 hover:bg-brand/5 transition-colors group outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
             >
               <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand group-hover:bg-brand/20 transition-colors">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">

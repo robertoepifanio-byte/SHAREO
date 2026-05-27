@@ -284,7 +284,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
                     {page > 1 && (
                       <Link
                         href={buildUrl({ page: page - 1 })}
-                        className="inline-flex h-11 items-center rounded-md border border-border px-4 text-sm text-foreground hover:bg-background transition-colors"
+                        className="inline-flex h-11 items-center rounded-md border border-border px-4 text-sm text-foreground hover:bg-background transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
                       >
                         ← Anterior
                       </Link>
@@ -295,7 +295,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
                     {page < totalPages && (
                       <Link
                         href={buildUrl({ page: page + 1 })}
-                        className="inline-flex h-11 items-center rounded-md border border-border px-4 text-sm text-foreground hover:bg-background transition-colors"
+                        className="inline-flex h-11 items-center rounded-md border border-border px-4 text-sm text-foreground hover:bg-background transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
                       >
                         Próxima →
                       </Link>
