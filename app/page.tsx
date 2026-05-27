@@ -115,10 +115,10 @@ export default async function HomePage() {
                     key={cat.id}
                     href={`/itens?categoryId=${cat.id}`}
                     role="listitem"
-                    className="flex min-w-[88px] flex-shrink-0 flex-col items-center gap-2 rounded-lg border-2 border-border bg-surface px-4 py-3.5 text-xs font-semibold text-primary transition-colors hover:border-brand hover:shadow-sm"
+                    className="flex min-w-[110px] flex-shrink-0 flex-col items-center gap-2 rounded-lg border-2 border-border bg-surface px-3 py-3 text-xs font-semibold text-primary transition-colors hover:border-brand hover:shadow-sm"
                     aria-label={cat.name}
                   >
-                    <CategoryIcon name={cat.name} size={72} />
+                    <CategoryIcon name={cat.name} size={96} />
                     <span>{cat.name}</span>
                   </Link>
                 ))}
