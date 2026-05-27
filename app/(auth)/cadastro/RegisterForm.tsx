@@ -19,6 +19,7 @@ interface FormErrors {
   city?:         string
   state?:        string
   consent?:      string
+  ageConfirmed?: string
   form?:         string
 }
 
@@ -93,6 +94,7 @@ export function RegisterForm() {
   const [state,        setState]        = useState(process.env.NEXT_PUBLIC_DEFAULT_STATE ?? "")
   const [neighborhood, setNeighborhood] = useState("")
   const [consent,      setConsent]      = useState(false)
+  const [ageConfirmed, setAgeConfirmed] = useState(false)
   const [errors,       setErrors]       = useState<FormErrors>({})
   const [loading,      setLoading]      = useState(false)
   const [success,      setSuccess]      = useState(false)
@@ -120,9 +122,10 @@ export function RegisterForm() {
     if (!/[0-9]/.test(password))             errs.password = "Precisa de número"
     if (userType === "PF" && !cpf)           errs.cpf      = "CPF obrigatório"
     if (userType === "PJ" && !cnpj)          errs.cnpj     = "CNPJ obrigatório"
-    if (!city.trim())                        errs.city     = "Cidade obrigatória"
-    if (state.length !== 2)                  errs.state    = "UF inválida (ex: RN)"
-    if (!consent)                            errs.consent  = "Aceite os termos para continuar"
+    if (!city.trim())                        errs.city         = "Cidade obrigatória"
+    if (state.length !== 2)                  errs.state        = "UF inválida (ex: RN)"
+    if (!consent)                            errs.consent      = "Aceite os termos para continuar"
+    if (!ageConfirmed)                       errs.ageConfirmed = "Confirme que você tem 18 anos ou mais"
     return errs
   }
 
@@ -410,6 +413,28 @@ export function RegisterForm() {
           {errors.consent && (
             <p id="consent-error" role="alert" className="mt-1 text-xs text-destructive">
               {errors.consent}
+            </p>
+          )}
+        </div>
+
+        {/* Confirmação de idade */}
+        <div>
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              checked={ageConfirmed}
+              onChange={(e) => { setAgeConfirmed(e.target.checked); setErrors((p) => ({ ...p, ageConfirmed: undefined })) }}
+              disabled={loading}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-brand"
+              aria-describedby={errors.ageConfirmed ? "age-error" : undefined}
+            />
+            <span className="text-sm text-muted-foreground">
+              Declaro que tenho <span className="font-medium text-foreground">18 anos ou mais</span>
+            </span>
+          </label>
+          {errors.ageConfirmed && (
+            <p id="age-error" role="alert" className="mt-1 text-xs text-destructive">
+              {errors.ageConfirmed}
             </p>
           )}
         </div>
