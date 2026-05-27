@@ -4,6 +4,7 @@ import Link from "next/link"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { ItemCard } from "@/components/items/ItemCard"
+import { getOwnerResponseBadge } from "@/lib/ownerStats"
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -82,6 +83,10 @@ export default async function PublicProfilePage({ params }: Props) {
 
   if (!user) notFound()
 
+  const [responseBadge] = await Promise.all([
+    getOwnerResponseBadge(user.id),
+  ])
+
   const avgRating   = reviewStats._avg.rating
   const reviewCount = reviewStats._count._all
   const totalDeals  = user._count.bookingsAsOwner + user._count.bookingsAsBorrower
@@ -140,6 +145,12 @@ export default async function PublicProfilePage({ params }: Props) {
                 </div>
 
                 <p className="mt-1 text-sm text-muted-foreground">Membro desde {fmtMemberSince}</p>
+
+                {responseBadge && (
+                  <p className="mt-1 text-xs font-medium text-brand">
+                    ⚡ {responseBadge.label}
+                  </p>
+                )}
 
                 {(user.city || user.state) && (
                   <p className="mt-0.5 text-sm text-muted-foreground">

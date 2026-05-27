@@ -109,10 +109,21 @@ export async function POST(req: NextRequest) {
     const borrowerId = session.user.id
 
     // Carrega item e valida disponibilidade
-    const item = await prisma.item.findFirst({
-      where:  { id: itemId, isActive: true, isApproved: true, deletedAt: null },
-      select: { id: true, ownerId: true, pricePerDay: true, pricePerWeek: true, pricePerMonth: true, depositAmount: true },
-    })
+    const [item, borrower] = await Promise.all([
+      prisma.item.findFirst({
+        where:  { id: itemId, isActive: true, isApproved: true, deletedAt: null },
+        select: {
+          id: true, ownerId: true, title: true,
+          pricePerDay: true, pricePerWeek: true, pricePerMonth: true, depositAmount: true,
+          requireIdVerification: true,
+          requirePhone:          true,
+        },
+      }),
+      prisma.user.findUnique({
+        where:  { id: borrowerId },
+        select: { idVerificationStatus: true, phone: true },
+      }),
+    ])
 
     if (!item) {
       return NextResponse.json(
@@ -125,6 +136,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: { code: "CANNOT_BOOK_OWN_ITEM", message: "Você não pode alugar o próprio item." } },
         { status: 403 },
+      )
+    }
+
+    // Valida requisitos do proprietário
+    if (item.requireIdVerification && borrower?.idVerificationStatus !== "VERIFIED") {
+      return NextResponse.json(
+        { error: { code: "ID_VERIFICATION_REQUIRED", message: "O proprietário exige identidade verificada para alugar este item. Acesse seu perfil e envie seus documentos." } },
+        { status: 422 },
+      )
+    }
+
+    if (item.requirePhone && !borrower?.phone) {
+      return NextResponse.json(
+        { error: { code: "PHONE_REQUIRED", message: "O proprietário exige telefone cadastrado para alugar este item. Acesse seu perfil e adicione um número de telefone." } },
+        { status: 422 },
       )
     }
 

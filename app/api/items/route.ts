@@ -128,6 +128,8 @@ export async function POST(req: NextRequest) {
         neighborhood:  d.neighborhood ?? null,
         latitude:      d.latitude,
         longitude:     d.longitude,
+        requireIdVerification: d.requireIdVerification ?? false,
+        requirePhone:          d.requirePhone          ?? false,
       },
       select: {
         id:          true,

@@ -59,6 +59,7 @@ enum NotificationType {
   BOOKING_CONFIRMED
   BOOKING_CANCELLED
   BOOKING_RETURNED
+  BOOKING_AUTO_CANCELLED
   NEW_MESSAGE
   NEW_REVIEW
   ITEM_APPROVED
@@ -208,6 +209,10 @@ model Item {
   // Coluna geográfica PostGIS (Unsupported até Prisma nativo suportar)
   // geom        Unsupported("geometry(Point, 4326)")?
 
+  // Requisitos para reserva
+  requireIdVerification Boolean @default(false) // locatário precisa ter identidade verificada
+  requirePhone          Boolean @default(false) // locatário precisa ter telefone cadastrado
+
   // Status
   isActive      Boolean     @default(true)
   isApproved    Boolean     @default(true)  // true = publicação direta (moderação reativa no MVP)
@@ -277,6 +282,9 @@ model Booking {
   cancelledAt     DateTime?
   cancelledById   String?
   cancelReason    String?
+
+  // Resposta do proprietário (para cálculo do badge de responsividade)
+  respondedAt     DateTime? // quando o dono aceitou ou recusou (primeira ação sobre PENDING)
 
   // Devolução e taxa de atraso
   returnedAt      DateTime? // data real de devolução (pode ser após endDate)
