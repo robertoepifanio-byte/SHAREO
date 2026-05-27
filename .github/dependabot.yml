@@ -5,12 +5,44 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+      time: "09:00"
+      timezone: "America/Sao_Paulo"
     open-pull-requests-limit: 5
+
+    # Major version bumps têm breaking changes e exigem revisão manual.
+    # Dependabot só abrirá PRs de patch e minor automaticamente.
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
     groups:
-      dev-dependencies:
-        dependency-type: "development"
-      production-dependencies:
-        dependency-type: "production"
+      # prisma CLI e @prisma/client devem sempre estar na mesma versão
+      prisma:
+        patterns:
+          - "prisma"
+          - "@prisma/*"
+
+      # Componentes Radix podem ser agrupados com segurança
+      radix-ui:
+        patterns:
+          - "@radix-ui/*"
+
+      # Ferramentas de teste — mudanças rara quebram produção
+      testing:
+        patterns:
+          - "jest"
+          - "jest-*"
+          - "@jest/*"
+          - "ts-jest"
+          - "@testing-library/*"
+          - "jest-axe"
+          - "@playwright/*"
+
+      # TypeScript e @types — quase sempre patch-safe
+      typescript:
+        patterns:
+          - "typescript"
+          - "@types/*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -18,3 +50,6 @@ updates:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 3
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
