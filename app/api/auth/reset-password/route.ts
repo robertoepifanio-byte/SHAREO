@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 
 const Schema = z.object({
   token:    z.string().min(1),
@@ -15,6 +16,14 @@ const Schema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    const ip =
+      req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+      req.headers.get("x-real-ip") ??
+      "unknown"
+
+    const rl = checkRateLimit(`reset-password:${ip}`, 10, 60_000) // 10 por minuto por IP
+    if (!rl.allowed) return rateLimitResponse(rl.resetAt)
+
     const body   = await req.json()
     const parsed = Schema.safeParse(body)
 

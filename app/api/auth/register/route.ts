@@ -4,9 +4,18 @@ import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { hashDocument, encryptDocument } from "@/lib/crypto"
 import { RegisterSchema } from "@/lib/validations/auth"
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 
 export async function POST(req: NextRequest) {
   try {
+    const ip =
+      req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+      req.headers.get("x-real-ip") ??
+      "unknown"
+
+    const rl = checkRateLimit(`register:${ip}`, 5, 60_000) // 5 por minuto por IP
+    if (!rl.allowed) return rateLimitResponse(rl.resetAt)
+
     const body = await req.json()
     const parsed = RegisterSchema.safeParse(body)
 
@@ -58,11 +67,6 @@ export async function POST(req: NextRequest) {
     }
 
     const passwordHash = await bcrypt.hash(d.password, 12)
-    const ip =
-      req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-      req.headers.get("x-real-ip") ??
-      "unknown"
-
     const user = await prisma.user.create({
       data: {
         name:           d.name,

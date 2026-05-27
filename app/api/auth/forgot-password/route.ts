@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import crypto from "crypto"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 
 const Schema = z.object({
   email: z.string().email("E-mail inválido"),
@@ -16,6 +17,14 @@ const OK = NextResponse.json(
 
 export async function POST(req: NextRequest) {
   try {
+    const ip =
+      req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+      req.headers.get("x-real-ip") ??
+      "unknown"
+
+    const rl = checkRateLimit(`forgot-password:${ip}`, 3, 60_000) // 3 por minuto por IP
+    if (!rl.allowed) return rateLimitResponse(rl.resetAt)
+
     const body   = await req.json()
     const parsed = Schema.safeParse(body)
     if (!parsed.success) return OK  // não vaza info sobre e-mails
@@ -42,11 +51,10 @@ export async function POST(req: NextRequest) {
     })
 
     // ── Email ─────────────────────────────────────────────────────────────────
-    // Em staging/produção: configure RESEND_API_KEY e envie o e-mail real.
-    // Por ora, o token é logado no servidor para facilitar testes em staging.
-    const resetUrl = `${process.env.NEXTAUTH_URL ?? "https://shareo-rouge.vercel.app"}/esqueci-senha/${token}`
-    console.warn(`[forgot-password] Reset link for ${email}: ${resetUrl}`)  // TODO: enviar por e-mail
-    // TODO Sprint 5: integrar Resend / SendGrid para envio real
+    // TODO Sprint 5: integrar Resend / SendGrid — substituir o console.info abaixo
+    const resetUrl = `${process.env.NEXTAUTH_URL ?? "https://shareo-rouge.vercel.app"}/redefinir-senha/${token}`
+    // Não logar e-mail (PII — LGPD art. 46). Apenas primeiros 8 chars do token para correlação.
+    console.info(`[forgot-password] token issued (${token.slice(0, 8)}…) url=${resetUrl}`)
 
     return OK
   } catch (e: unknown) {
