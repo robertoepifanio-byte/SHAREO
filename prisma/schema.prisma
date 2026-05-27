@@ -41,6 +41,13 @@ enum BookingStatus {
   DISPUTED   // Disputa aberta
 }
 
+enum PaymentStatus {
+  PENDING    // Aguardando pagamento
+  PAID       // Pago com sucesso
+  REFUNDED   // Estornado
+  FAILED     // Falhou
+}
+
 enum ReviewType {
   ITEM        // Locatário avalia o item
   BORROWER    // Locador avalia o locatário
@@ -224,6 +231,12 @@ model Booking {
 
   borrowerNote    String?   @db.Text
   ownerNote       String?   @db.Text
+
+  // Pagamento via Stripe
+  paymentStatus         PaymentStatus @default(PENDING)
+  stripeSessionId       String?       @unique  // Stripe Checkout Session ID
+  stripePaymentIntentId String?
+  paidAt                DateTime?
 
   cancelledAt     DateTime?
   cancelledById   String?

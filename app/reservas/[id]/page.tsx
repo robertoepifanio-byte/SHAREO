@@ -5,9 +5,13 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { BookingActions } from "./_BookingActions"
-import { ReviewForm }    from "./_ReviewForm"
+import { ReviewForm }     from "./_ReviewForm"
+import { PayButton }      from "@/components/bookings/PayButton"
 
-type Props = { params: Promise<{ id: string }> }
+type Props = {
+  params:       Promise<{ id: string }>
+  searchParams: Promise<{ payment?: string }>
+}
 
 export const metadata: Metadata = { title: "Detalhe da Reserva — ShareO" }
 
@@ -28,18 +32,21 @@ function fmtDate(d: Date) {
   return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "long", year: "numeric" }).format(new Date(d))
 }
 
-export default async function BookingDetailPage({ params }: Props) {
+export default async function BookingDetailPage({ params, searchParams }: Props) {
   const session = await auth()
   if (!session) redirect("/login?callbackUrl=/reservas")
 
-  const { id } = await params
-  const userId  = session.user.id
+  const { id }      = await params
+  const { payment } = await searchParams
+  const userId       = session.user.id
 
   const booking = await prisma.booking.findUnique({
     where:  { id },
     select: {
       id:            true,
       status:        true,
+      paymentStatus: true,
+      paidAt:        true,
       startDate:     true,
       endDate:       true,
       totalDays:     true,
@@ -168,6 +175,97 @@ export default async function BookingDetailPage({ params }: Props) {
               )}
             </div>
           </div>
+
+          {/* ── Pagamento ── */}
+          {/* Banner de retorno do Stripe */}
+          {payment === "success" && (
+            <div className="mb-4 flex items-center gap-3 rounded-xl border border-success/30 bg-success/10 p-4">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0 text-success" aria-hidden="true">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              <div>
+                <p className="font-semibold text-success text-sm">Pagamento confirmado!</p>
+                <p className="text-xs text-success/80">O locador foi notificado. Combine a entrega do item.</p>
+              </div>
+            </div>
+          )}
+          {payment === "cancelled" && (
+            <div className="mb-4 flex items-center gap-3 rounded-xl border border-yellow-300 bg-yellow-50 p-4">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0 text-yellow-600" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <p className="text-sm text-yellow-700">Pagamento não finalizado. Clique em <strong>Pagar agora</strong> quando estiver pronto.</p>
+            </div>
+          )}
+
+          {/* Bloco de pagamento — só para o locatário em reserva CONFIRMED */}
+          {isBorrower && booking.status === "CONFIRMED" && (
+            <div className="mb-6 rounded-xl border border-border bg-surface p-5">
+              <h2 className="mb-3 font-semibold text-foreground">Pagamento</h2>
+
+              {booking.paymentStatus === "PAID" ? (
+                <div className="flex items-center gap-3 rounded-lg bg-success/10 p-3 text-sm">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0 text-success" aria-hidden="true">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                  <div>
+                    <p className="font-semibold text-success">Pago com sucesso</p>
+                    {booking.paidAt && (
+                      <p className="text-xs text-success/80">
+                        {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(booking.paidAt))}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="mb-4 text-sm text-muted-foreground">
+                    Sua reserva foi confirmada! Faça o pagamento para o locador combinar a entrega do item.
+                  </p>
+                  <div className="mb-3 flex items-center justify-between rounded-lg bg-background px-4 py-3 text-sm">
+                    <span className="text-muted-foreground">Valor a pagar</span>
+                    <span className="font-bold text-foreground">{fmt(booking.totalPrice)}</span>
+                  </div>
+                  <PayButton bookingId={booking.id} />
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Status de pagamento para o locador */}
+          {isOwner && booking.status === "CONFIRMED" && (
+            <div className={`mb-6 flex items-center gap-3 rounded-xl border p-4 text-sm ${
+              booking.paymentStatus === "PAID"
+                ? "border-success/30 bg-success/10"
+                : "border-yellow-300 bg-yellow-50"
+            }`}>
+              {booking.paymentStatus === "PAID" ? (
+                <>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0 text-success" aria-hidden="true">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                  <p className="text-success">
+                    <span className="font-semibold">Pagamento recebido.</span>{" "}
+                    Combine a entrega com o locatário e marque como Ativo quando entregar.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="flex-shrink-0 text-yellow-600" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  <p className="text-yellow-700">Aguardando pagamento do locatário.</p>
+                </>
+              )}
+            </div>
+          )}
 
           {/* Ações */}
           <BookingActions
