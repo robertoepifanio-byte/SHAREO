@@ -3,18 +3,47 @@
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { calcBookingTotal } from "@/lib/pricing"
 
 interface Props {
-  pricePerDay: number // centavos
-  itemId:      string
-  isLoggedIn:  boolean
+  pricePerDay:    number           // centavos
+  pricePerWeek?:  number | null    // centavos
+  pricePerMonth?: number | null    // centavos
+  itemId:         string
+  isLoggedIn:     boolean
 }
 
 const COMMISSION = 0.10
 const fmt = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v)
 
-export function PriceCalc({ pricePerDay, itemId, isLoggedIn }: Props) {
+/** Monta a linha de breakdown (ex: "2 semanas × R$160 + 3 dias × R$35") */
+function buildBreakdown(
+  days:          number,
+  pricePerDay:   number,
+  pricePerWeek?: number | null,
+  pricePerMonth?:number | null,
+): string {
+  if (days >= 30 && pricePerMonth) {
+    const months   = Math.floor(days / 30)
+    const restDays = days % 30
+    const parts: string[] = []
+    if (months > 0)   parts.push(`${months} mês${months > 1 ? "es" : ""} × ${fmt(pricePerMonth / 100)}`)
+    if (restDays > 0) parts.push(`${restDays} dia${restDays > 1 ? "s" : ""} × ${fmt(pricePerDay / 100)}`)
+    return parts.join(" + ")
+  }
+  if (days >= 7 && pricePerWeek) {
+    const weeks    = Math.floor(days / 7)
+    const restDays = days % 7
+    const parts: string[] = []
+    if (weeks > 0)    parts.push(`${weeks} sem${weeks > 1 ? "anas" : "ana"} × ${fmt(pricePerWeek / 100)}`)
+    if (restDays > 0) parts.push(`${restDays} dia${restDays > 1 ? "s" : ""} × ${fmt(pricePerDay / 100)}`)
+    return parts.join(" + ")
+  }
+  return `${days} dia${days > 1 ? "s" : ""} × ${fmt(pricePerDay / 100)}`
+}
+
+export function PriceCalc({ pricePerDay, pricePerWeek, pricePerMonth, itemId, isLoggedIn }: Props) {
   const router  = useRouter()
   const today   = new Date().toISOString().split("T")[0]
 
@@ -31,10 +60,19 @@ export function PriceCalc({ pricePerDay, itemId, isLoggedIn }: Props) {
         ))
       : 0
 
-  const dailyR   = pricePerDay / 100
-  const subtotal = days * dailyR
+  const { totalPrice: subtotalCents, savings: savingsCents } =
+    days > 0
+      ? calcBookingTotal(days, pricePerDay, pricePerWeek, pricePerMonth)
+      : { totalPrice: 0, savings: 0 }
+
+  const subtotal = subtotalCents / 100
+  const savings  = savingsCents  / 100
   const fee      = subtotal * COMMISSION
   const total    = subtotal + fee
+
+  const breakdown = days > 0
+    ? buildBreakdown(days, pricePerDay, pricePerWeek, pricePerMonth)
+    : ""
 
   async function solicitar() {
     setError("")
@@ -106,15 +144,28 @@ export function PriceCalc({ pricePerDay, itemId, isLoggedIn }: Props) {
       <div className="mb-4 rounded-lg border border-border bg-background p-3 text-sm" aria-live="polite">
         {days > 0 ? (
           <>
+            {/* Breakdown (diário, semanal ou mensal) */}
             <div className="mb-1.5 flex justify-between text-muted-foreground">
-              <span>{days} dia{days !== 1 ? "s" : ""} × {fmt(dailyR)}</span>
-              <span>{fmt(subtotal)}</span>
+              <span className="mr-2 min-w-0 break-words">{breakdown}</span>
+              <span className="shrink-0">{fmt(subtotal)}</span>
             </div>
+
+            {/* Desconto por período */}
+            {savings > 0 && (
+              <div className="mb-1.5 flex justify-between text-xs font-medium text-success">
+                <span>🏷️ Desconto por período</span>
+                <span>-{fmt(savings)}</span>
+              </div>
+            )}
+
+            {/* Taxa Shareo */}
             <div className="mb-1.5 flex justify-between text-muted-foreground">
               <span>Taxa Shareo (10%)</span>
               <span>{fmt(fee)}</span>
             </div>
+
             <div className="my-2 h-px bg-border" />
+
             <div className="flex justify-between font-bold text-foreground">
               <span>Total</span>
               <span>{fmt(total)}</span>

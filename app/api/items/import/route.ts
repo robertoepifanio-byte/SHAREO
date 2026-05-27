@@ -62,14 +62,22 @@ const BR_STATES = [
   "RO","RR","RS","SC","SE","SP","TO",
 ]
 
+function parsePriceField(v: string | undefined): number | null {
+  if (!v || v.trim() === "") return null
+  if (!/^\d+([.,]\d{1,2})?$/.test(v.trim())) return null
+  return Math.round(parseFloat(v.trim().replace(",", ".")) * 100)
+}
+
 const RowSchema = z.object({
-  titulo:    z.string().min(3,  "Mínimo 3 caracteres").max(200, "Máximo 200 caracteres"),
-  descricao: z.string().max(2000, "Máximo 2000 caracteres").optional().default(""),
-  categoria: z.string().min(1, "Categoria obrigatória"),
+  titulo:      z.string().min(3,  "Mínimo 3 caracteres").max(200, "Máximo 200 caracteres"),
+  descricao:   z.string().max(2000, "Máximo 2000 caracteres").optional().default(""),
+  categoria:   z.string().min(1, "Categoria obrigatória"),
   preco_dia: z
     .string()
     .regex(/^\d+([.,]\d{1,2})?$/, "Preço inválido — use formato 25.00")
     .transform((v) => Math.round(parseFloat(v.replace(",", ".")) * 100)),
+  preco_semana: z.string().optional().default(""),
+  preco_mes:    z.string().optional().default(""),
   condicao: z
     .string()
     .transform((v) => v.toUpperCase())
@@ -172,15 +180,17 @@ export async function POST(req: Request) {
         })
 
         const sharedData = {
-          title:        d.titulo,
-          description:  d.descricao,
+          title:         d.titulo,
+          description:   d.descricao,
           categoryId,
-          pricePerDay:  d.preco_dia,
-          condition:    d.condicao,
-          city:         d.cidade  || "",
-          state:        d.estado  || "",
-          neighborhood: d.bairro  || undefined,
-          isActive:     true,
+          pricePerDay:   d.preco_dia,
+          pricePerWeek:  parsePriceField(d.preco_semana) ?? undefined,
+          pricePerMonth: parsePriceField(d.preco_mes) ?? undefined,
+          condition:     d.condicao,
+          city:          d.cidade  || "",
+          state:         d.estado  || "",
+          neighborhood:  d.bairro  || undefined,
+          isActive:      true,
         }
 
         if (existing) {
