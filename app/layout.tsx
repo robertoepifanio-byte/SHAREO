@@ -1,11 +1,13 @@
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { Montserrat } from "next/font/google"
 import { BottomNav } from "@/components/layout/BottomNav"
+import { AppFooter } from "@/components/layout/AppFooter"
 import "./globals.css"
 
-const inter = Inter({
+const montserrat = Montserrat({
   subsets:  ["latin"],
-  variable: "--font-inter",
+  variable: "--font-montserrat",
+  weight:   ["400", "500", "600", "700", "800"],
   display:  "swap",
 })
 
@@ -26,11 +28,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={inter.variable}>
+    <html lang="pt-BR" className={montserrat.variable}>
       <body className="min-h-screen bg-background font-sans antialiased">
         {/* Padding bottom garante que o BottomNav não tape o conteúdo no mobile */}
         <div className="pb-16 md:pb-0">
           {children}
+          <AppFooter />
         </div>
         <BottomNav />
       </body>

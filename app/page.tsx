@@ -42,11 +42,11 @@ export default async function HomePage() {
       <main>
       {/* ─── HERO ─── */}
       <section
-        className="bg-gradient-to-br from-primary to-[#1a3a5c] px-4 py-12 text-center md:py-20"
+        className="bg-gradient-to-br from-primary to-[#144D81] px-4 py-12 text-center md:py-20"
         aria-label="Seção principal"
       >
         <div
-          className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-success/30 bg-success/15 px-3 py-1 text-xs font-semibold text-success"
+          className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/15 px-3 py-1 text-xs font-semibold text-accent"
           aria-hidden="true"
         >
           🌿 Economia Circular
@@ -202,8 +202,8 @@ export default async function HomePage() {
 
         {/* ─── CTA ─── */}
         <section className="pb-12">
-          <div className="rounded-xl bg-gradient-to-br from-primary to-[#1a3a5c] px-8 py-10">
-            <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-success/30 bg-success/15 px-3 py-1 text-xs font-semibold text-success">
+          <div className="rounded-xl bg-gradient-to-br from-primary to-[#144D81] px-8 py-10">
+            <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/15 px-3 py-1 text-xs font-semibold text-accent">
               🌿 Economia circular
             </div>
             <h2 className="mb-3 text-2xl font-extrabold leading-snug text-white">

@@ -34,45 +34,57 @@ const config: Config = {
     extend: {
       // ─── Cores ──────────────────────────────────────────
       colors: {
-        // Identidade Shareo
+        // Identidade Shareo (v1.0 — Maio 2026)
         shareo: {
-          navy: "#0D1B2A",
-          orange: "#F97316",
-          green: "#22C55E",
-          "off-white": "#F8FAFC",
+          navy:          "#003366",   // Azul Marinho oficial
+          "green-dark":  "#007B3C",   // Verde Escuro — botões, ação
+          "green-light": "#59C686",   // Verde Claro de Apoio — decorativo
+          "blue-medium": "#144D81",   // Azul Médio — seções intermediárias
+          "off-white":   "#FFFFFF",
         },
 
         // Aliases semânticos — usar nos componentes
         brand: {
-          DEFAULT: "#F97316",   // laranja — ação principal
-          hover: "#EA6C0A",     // laranja escurecido ~10%
-          light: "#FED7AA",     // laranja claro (backgrounds sutis)
+          DEFAULT:    "#007B3C",   // verde escuro — ação principal (WCAG 5.1:1 sobre branco)
+          hover:      "#005F2E",   // verde escurecido ~20%
+          light:      "#D4EDE1",   // verde claro (backgrounds sutis)
           foreground: "#FFFFFF",
-          cta: "#C05800",       // laranja WCAG AA sobre branco (4.47:1) — usar em Button primário
-          ctaHover: "#9A4500",  // hover do CTA
-          link: "#9A4700",      // laranja para texto/link sobre fundo branco
+          cta:        "#007B3C",   // verde WCAG AA sobre branco (5.1:1)
+          ctaHover:   "#005F2E",   // hover do CTA
+          link:       "#005F2E",   // verde para texto/link sobre fundo branco
         },
         primary: {
-          DEFAULT: "#0D1B2A",   // navy
-          hover: "#162436",     // navy claro
-          foreground: "#F8FAFC",
+          DEFAULT:    "#003366",   // azul marinho oficial
+          hover:      "#003D7A",   // azul marinho claro
+          foreground: "#FFFFFF",
         },
         success: {
-          DEFAULT: "#22C55E",
-          hover: "#16A34A",
-          light: "#DCFCE7",
+          DEFAULT:    "#007B3C",   // verde escuro WCAG-safe (5.1:1) — textos e ícones
+          hover:      "#005F2E",
+          light:      "#D4EDE1",   // fundo sutil para badges
+          foreground: "#FFFFFF",
+        },
+        // Verde claro decorativo — apenas fundos/ícones, NÃO texto em fundo branco (2.1:1)
+        // Em fundo escuro (#003366): ratio 7.4:1 ✅
+        accent: {
+          DEFAULT:    "#59C686",
+          foreground: "#003366",   // texto SOBRE fundo accent
+        },
+        // Azul médio — seções intermediárias, bordas de ícones
+        "blue-medium": {
+          DEFAULT:    "#144D81",
           foreground: "#FFFFFF",
         },
         destructive: {
-          DEFAULT: "#EF4444",
-          hover: "#DC2626",
-          light: "#FEE2E2",
+          DEFAULT:    "#E74C3C",   // vermelho suave
+          hover:      "#C0392B",
+          light:      "#FDEDEC",
           foreground: "#FFFFFF",
         },
 
         // Superfícies e fundos
-        background: "#F8FAFC",  // off-white — fundo da página
-        surface: "#FFFFFF",     // branco — cards, modais
+        background: "#FFFFFF",  // branco puro (identidade visual v1.0)
+        surface:    "#FFFFFF",  // branco — cards, modais
 
         // Texto
         foreground: "#0F172A",           // slate-900 — texto principal
@@ -80,8 +92,8 @@ const config: Config = {
 
         // Bordas
         border: "#E2E8F0",               // slate-200
-        input: "#E2E8F0",
-        ring: "#F97316",                 // laranja para focus ring
+        input:  "#E2E8F0",
+        ring:   "#007B3C",               // verde para focus ring
 
         // Status de booking
         booking: {
@@ -111,7 +123,7 @@ const config: Config = {
 
       // ─── Tipografia ─────────────────────────────────────
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
+        sans: ["var(--font-montserrat)", "system-ui", "sans-serif"],
       },
       fontSize: {
         // Escala completa alinhada ao Design System
@@ -187,24 +199,24 @@ const config: Config = {
 
       // ─── Sombras ─────────────────────────────────────────
       boxShadow: {
-        sm:    "0 1px 2px 0 rgb(13 27 42 / 0.05)",
-        DEFAULT:"0 1px 3px 0 rgb(13 27 42 / 0.10), 0 1px 2px -1px rgb(13 27 42 / 0.10)",
-        md:    "0 4px 6px -1px rgb(13 27 42 / 0.10), 0 2px 4px -2px rgb(13 27 42 / 0.10)",
-        lg:    "0 10px 15px -3px rgb(13 27 42 / 0.10), 0 4px 6px -4px rgb(13 27 42 / 0.10)",
-        xl:    "0 20px 25px -5px rgb(13 27 42 / 0.10), 0 8px 10px -6px rgb(13 27 42 / 0.10)",
-        card:  "0 2px 8px 0 rgb(13 27 42 / 0.08)",      // sombra padrão de cards
-        modal: "0 25px 50px -12px rgb(13 27 42 / 0.25)",
+        sm:    "0 1px 2px 0 rgb(0 51 102 / 0.05)",
+        DEFAULT:"0 1px 3px 0 rgb(0 51 102 / 0.10), 0 1px 2px -1px rgb(0 51 102 / 0.10)",
+        md:    "0 4px 6px -1px rgb(0 51 102 / 0.10), 0 2px 4px -2px rgb(0 51 102 / 0.10)",
+        lg:    "0 10px 15px -3px rgb(0 51 102 / 0.10), 0 4px 6px -4px rgb(0 51 102 / 0.10)",
+        xl:    "0 20px 25px -5px rgb(0 51 102 / 0.10), 0 8px 10px -6px rgb(0 51 102 / 0.10)",
+        card:  "0 2px 8px 0 rgb(0 51 102 / 0.08)",      // sombra padrão de cards
+        modal: "0 25px 50px -12px rgb(0 51 102 / 0.25)",
         none:  "none",
       },
 
       // ─── Ring (focus) ────────────────────────────────────
       ringColor: {
-        DEFAULT: "#F97316",
-        brand: "#F97316",
-        primary: "#0D1B2A",
+        DEFAULT: "#007B3C",
+        brand:   "#007B3C",
+        primary: "#003366",
       },
       ringOffsetColor: {
-        background: "#F8FAFC",
+        background: "#FFFFFF",
       },
       ringWidth: {
         DEFAULT: "2px",
