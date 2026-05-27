@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth"
+import Image from "next/image"
 import Link from "next/link"
-import { ShareOLogo } from "@/components/ui/ShareOLogo"
 import { NotificationBell } from "@/components/ui/NotificationBell"
 import { MobileMenu } from "@/components/layout/MobileMenu"
 
@@ -15,10 +15,19 @@ export async function AppHeader() {
         {/* Logo */}
         <Link
           href={session ? "/dashboard" : "/"}
-          className="flex-shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary rounded-sm"
+          className="flex-shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary rounded-lg"
           aria-label="ShareO — página inicial"
         >
-          <ShareOLogo variant="institutional" height={26} />
+          <div className="rounded-lg overflow-hidden bg-white px-2 py-1">
+            <Image
+              src="/logos/shareo-logo.png"
+              alt="ShareO"
+              width={120}
+              height={36}
+              className="object-contain h-8 w-auto"
+              priority
+            />
+          </div>
         </Link>
 
         {/* Nav desktop — oculta em mobile */}

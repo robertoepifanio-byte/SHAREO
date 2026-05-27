@@ -1,5 +1,5 @@
+import Image from "next/image"
 import Link from "next/link"
-import { ShareOLogo } from "@/components/ui/ShareOLogo"
 
 /**
  * Rodapé global do ShareO.
@@ -16,8 +16,16 @@ export function AppFooter() {
 
           {/* Brand + tagline */}
           <div className="max-w-xs">
-            <ShareOLogo variant="institutional" height={28} />
-            <p className="mt-2 text-sm text-white/70">
+            <div className="inline-block rounded-lg overflow-hidden bg-white px-3 py-1.5">
+              <Image
+                src="/logos/shareo-logo.png"
+                alt="ShareO"
+                width={110}
+                height={32}
+                className="object-contain h-7 w-auto"
+              />
+            </div>
+            <p className="mt-3 text-sm text-white/70">
               Compartilhe. Economize. Sustentável.
             </p>
             <p className="mt-3 text-xs leading-relaxed text-white/50">
