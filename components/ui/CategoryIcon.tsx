@@ -1,13 +1,13 @@
 import Image from "next/image"
 
 const CATEGORY_IMAGES: Record<string, string> = {
-  Ferramentas:    "/icones/ferramentas.png",
-  Construção:     "/icones/construcao.png",
-  Moda:           "/icones/moda.png",
-  Eletrônicos:    "/icones/eletronicos.png",
+  Ferramentas:     "/icones/ferramentas.jpeg",
+  Construção:      "/icones/construcao.jpeg",
+  Moda:            "/icones/moda.jpeg",
+  Eletrônicos:     "/icones/eletronicos.jpeg",
   "Casa e Jardim": "/icones/casa-jardim.jpeg",
-  Esporte:        "/icones/esporte.png",
-  Festas:         "/icones/festas.png",
+  Esporte:         "/icones/esporte.jpeg",
+  Festas:          "/icones/festas.jpeg",
 }
 
 interface CategoryIconProps {
