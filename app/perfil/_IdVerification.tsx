@@ -93,10 +93,11 @@ export function IdVerification({ status: initialStatus, rejectionReason }: Props
 
             <div className="space-y-4 px-6 py-4">
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">
+                <label htmlFor="id-doc" className="mb-1.5 block text-sm font-medium text-foreground">
                   Documento com foto (CNH, RG ou Passaporte)
                 </label>
                 <input
+                  id="id-doc"
                   ref={docRef}
                   type="file"
                   accept="image/*"
@@ -106,10 +107,11 @@ export function IdVerification({ status: initialStatus, rejectionReason }: Props
               </div>
 
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-foreground">
+                <label htmlFor="id-selfie" className="mb-1.5 block text-sm font-medium text-foreground">
                   Selfie segurando o documento
                 </label>
                 <input
+                  id="id-selfie"
                   ref={selfieRef}
                   type="file"
                   accept="image/*"
