@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import type { Stripe } from "stripe"
 import { stripe } from "@/lib/stripe"
 import { prisma } from "@/lib/prisma"
+import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
 
 // Vercel/Next.js: o body deve ser lido como raw buffer para validar a assinatura
 export const config = { api: { bodyParser: false } }
@@ -55,12 +56,17 @@ export async function POST(req: Request) {
           },
         })
 
-        // Notifica o locador que o pagamento foi recebido
+        // Webhook de saída + notificação para o locador
         const booking = await prisma.booking.findUnique({
           where:  { id: bookingId },
           select: { ownerId: true, item: { select: { title: true } } },
         })
         if (booking) {
+          dispatchWebhookEvent(booking.ownerId, "booking.paid", {
+            bookingId,
+            itemTitle: booking.item.title,
+          })
+
           prisma.notification.create({
             data: {
               userId: booking.ownerId,

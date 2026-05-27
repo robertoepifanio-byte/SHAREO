@@ -4,6 +4,8 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { PatchBookingSchema } from "@/lib/validations/bookings"
 import type { BookingStatus } from "@prisma/client"
+import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
+import type { WebhookEvent } from "@/lib/outboundWebhooks"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -190,6 +192,23 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       data,
       select: { id: true, status: true, updatedAt: true },
     })
+
+    // Webhooks de saída (fire-and-forget)
+    const webhookEventMap: Partial<Record<typeof action, WebhookEvent>> = {
+      confirm:       "booking.confirmed",
+      cancel:        "booking.cancelled",
+      mark_active:   "booking.active",
+      mark_returned: "booking.returned",
+    }
+    const webhookEvent = webhookEventMap[action]
+    if (webhookEvent) {
+      dispatchWebhookEvent(booking.ownerId, webhookEvent, {
+        bookingId: id,
+        itemTitle: booking.item.title,
+        status:    transition.nextStatus,
+        reason,
+      })
+    }
 
     // Notificações (fire-and-forget)
     const notifyUserId = isOwner ? booking.borrowerId : booking.ownerId

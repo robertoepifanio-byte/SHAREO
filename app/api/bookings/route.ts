@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { CreateBookingSchema, ListBookingsQuerySchema } from "@/lib/validations/bookings"
+import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
 
 export async function GET(req: NextRequest) {
   try {
@@ -195,6 +196,16 @@ export async function POST(req: NextRequest) {
 
       return { ...b, conversationId: conv.id }
     }, { timeout: 5000 })
+
+    // Webhook de saída para o locador (fire-and-forget)
+    dispatchWebhookEvent(item.ownerId, "booking.created", {
+      bookingId:  booking.id,
+      itemTitle:  booking.item.title,
+      borrower:   booking.item.owner.name,
+      startDate:  booking.startDate,
+      endDate:    booking.endDate,
+      totalPrice: booking.totalPrice,
+    })
 
     // Notificação para o locador (fire-and-forget)
     prisma.notification.create({
