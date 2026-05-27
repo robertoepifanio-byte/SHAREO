@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, type ChangeEvent, type FormEvent } from "react"
+import { useState, useEffect, useRef, useCallback, type ChangeEvent, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { Input } from "@/components/ui/Input"
@@ -48,6 +48,7 @@ interface InitialData {
   latitude:       number
   longitude:      number
   images:         { id: string; url: string; order: number }[]
+  voltage?:               string | null
   requireIdVerification?: boolean
   requirePhone?:          boolean
 }
@@ -68,6 +69,11 @@ const PRICE_SUGGESTIONS: Record<string, number> = {
   "moda":          50,
   "festas":        80,
 }
+
+// Categorias onde faz sentido exibir campo de voltagem
+const ELECTRICAL_CATEGORIES = new Set([
+  "ferramentas", "eletronicos", "construcao", "casa-jardim", "festas",
+])
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -156,6 +162,7 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
   const [neighborhood,  setNeighborhood]  = useState(initialData?.neighborhood  ?? "")
   const [latitude,      setLatitude]      = useState(initialData?.latitude      ?? Number(process.env.NEXT_PUBLIC_DEFAULT_LAT ?? -5.7945))
   const [longitude,     setLongitude]     = useState(initialData?.longitude     ?? Number(process.env.NEXT_PUBLIC_DEFAULT_LNG ?? -35.211))
+  const [voltage,               setVoltage]               = useState<string>(initialData?.voltage ?? "")
   const [requireIdVerification, setRequireIdVerification] = useState(initialData?.requireIdVerification ?? false)
   const [requirePhone,          setRequirePhone]          = useState(initialData?.requirePhone          ?? false)
 
@@ -170,11 +177,13 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
   const [errors,        setErrors]        = useState<Record<string, string>>({})
   const [loading,       setLoading]       = useState(false)
   const [gettingLoc,    setGettingLoc]    = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef    = useRef<HTMLInputElement>(null)
+  const cameraInputRef  = useRef<HTMLInputElement>(null)
 
   // Price suggestion derived from selected category
-  const selectedCat      = categories.find((c) => c.id === categoryId)
-  const suggestedDayPrice = selectedCat ? PRICE_SUGGESTIONS[selectedCat.slug] : undefined
+  const selectedCat       = categories.find((c) => c.id === categoryId)
+  const suggestedDayPrice  = selectedCat ? PRICE_SUGGESTIONS[selectedCat.slug] : undefined
+  const isElectrical       = selectedCat ? ELECTRICAL_CATEGORIES.has(selectedCat.slug) : false
 
   function applyPriceSuggestion() {
     if (!suggestedDayPrice) return
@@ -237,18 +246,23 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
 
   // ─── Images ────────────────────────────────────────────────────────────────
 
+  const addFiles = useCallback((files: File[]) => {
+    setImages((prev) => {
+      const visible   = prev.filter((i) => !(i.type === "existing" && deletedImageIds.includes((i as ExistingImage).id)))
+      const remaining = 10 - visible.length
+      const toAdd     = files.slice(0, remaining)
+      const newEntries: NewImage[] = toAdd.map((file) => ({
+        type:       "new",
+        file,
+        previewUrl: URL.createObjectURL(file),
+      }))
+      return [...prev, ...newEntries]
+    })
+  }, [deletedImageIds])
+
   function handleImageSelect(e: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? [])
-    const remaining = 10 - images.filter((i) => i.type !== "existing" || !deletedImageIds.includes((i as ExistingImage).id)).length
-    const toAdd = files.slice(0, remaining)
-
-    const newEntries: NewImage[] = toAdd.map((file) => ({
-      type:       "new",
-      file,
-      previewUrl: URL.createObjectURL(file),
-    }))
-
-    setImages((prev) => [...prev, ...newEntries])
+    addFiles(files)
     e.target.value = "" // reset so the same file can be re-selected
   }
 
@@ -307,6 +321,7 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
       neighborhood:  neighborhood.trim() || undefined,
       latitude,
       longitude,
+      voltage:       voltage || null,
       requireIdVerification,
       requirePhone,
     }
@@ -359,12 +374,29 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
         }
       }
 
-      // Upload new images
+      // Upload new images — mostra erros ao usuário
       const newImages = images.filter((img): img is NewImage => img.type === "new")
-      for (const img of newImages) {
+      const uploadErrors: string[] = []
+
+      for (let i = 0; i < newImages.length; i++) {
+        const img = newImages[i]
         const fd = new FormData()
         fd.append("file", img.file)
-        await fetch(`/api/items/${itemId}/images`, { method: "POST", body: fd }).catch(() => {})
+        try {
+          const res  = await fetch(`/api/items/${itemId}/images`, { method: "POST", body: fd })
+          const json = await res.json().catch(() => ({}))
+          if (!res.ok) {
+            uploadErrors.push(`Foto ${i + 1}: ${json.error?.message ?? "falha no upload"}`)
+          }
+        } catch {
+          uploadErrors.push(`Foto ${i + 1}: erro de rede`)
+        }
+      }
+
+      if (uploadErrors.length > 0) {
+        setErrors({ form: `Anúncio salvo, mas ${uploadErrors.length} foto(s) não foram enviadas: ${uploadErrors.join("; ")}. Tente editar o anúncio e adicionar novamente.` })
+        setLoading(false)
+        return
       }
 
       window.location.href = `/itens/${itemId}`
@@ -443,6 +475,27 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
             ))}
           </Select>
         </div>
+
+        {/* Voltagem — exibida apenas para categorias elétricas */}
+        {isElectrical && (
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="voltage" className="text-sm font-medium text-foreground">
+              Voltagem
+            </label>
+            <select
+              id="voltage"
+              value={voltage}
+              onChange={(e) => setVoltage(e.target.value)}
+              disabled={loading}
+              className="h-11 w-full rounded-md border border-input bg-surface px-3 text-sm text-foreground outline-none focus:border-ring focus:ring-2 focus:ring-ring/20 transition-colors"
+            >
+              <option value="">Não informado</option>
+              <option value="110V">110V</option>
+              <option value="220V">220V</option>
+              <option value="Bivolt">Bivolt (110V/220V)</option>
+            </select>
+          </div>
+        )}
       </section>
 
       {/* ── Preços ─────────────────────────────────────────────────────────── */}
@@ -664,34 +717,58 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
           ))}
 
           {visibleImages.length < 10 && (
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={loading}
-              className={[
-                "flex aspect-square flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed",
-                "border-border text-muted-foreground hover:border-brand hover:text-brand transition-colors",
-                "disabled:opacity-50 disabled:pointer-events-none",
-              ].join(" ")}
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
-              <span className="text-xs">Adicionar</span>
-            </button>
+            <div className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-md border-2 border-dashed border-border">
+              <button
+                type="button"
+                onClick={() => cameraInputRef.current?.click()}
+                disabled={loading}
+                className="flex flex-col items-center gap-0.5 rounded-md px-3 py-2 text-muted-foreground hover:text-brand transition-colors disabled:opacity-50"
+                title="Tirar foto com a câmera"
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+                <span className="text-[10px] font-medium">Câmera</span>
+              </button>
+              <div className="h-px w-8 bg-border" />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={loading}
+                className="flex flex-col items-center gap-0.5 rounded-md px-3 py-2 text-muted-foreground hover:text-brand transition-colors disabled:opacity-50"
+                title="Escolher da galeria"
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+                <span className="text-[10px] font-medium">Galeria</span>
+              </button>
+            </div>
           )}
         </div>
 
+        {/* Input oculto: câmera direta */}
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="sr-only"
+          onChange={handleImageSelect}
+        />
+        {/* Input oculto: galeria / arquivos */}
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept="image/*"
           multiple
           className="sr-only"
           onChange={handleImageSelect}
         />
         <p className="text-xs text-muted-foreground">
-          Formatos aceitos: JPEG, PNG, WebP · Máximo 5 MB por foto
+          Máximo 10 MB por foto · JPEG, PNG, WebP ou HEIC
         </p>
       </section>
 

@@ -55,6 +55,7 @@ export default async function ItemDetailPage({ params }: Props) {
         depositAmount: true, estimatedRetailPrice: true,
         city: true, state: true, neighborhood: true,
         isActive: true, ownerId: true, viewCount: true,
+        voltage: true,
         requireIdVerification: true, requirePhone: true,
         category: { select: { name: true } },
         owner: {
@@ -136,6 +137,11 @@ export default async function ItemDetailPage({ params }: Props) {
                 <span role="listitem" className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground">
                   {CONDITION_LABEL[item.condition] ?? item.condition}
                 </span>
+                {item.voltage && (
+                  <span role="listitem" className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">
+                    ⚡ {item.voltage}
+                  </span>
+                )}
                 {item.neighborhood && (
                   <span role="listitem" className="rounded-full border border-border bg-background px-3 py-1 text-xs text-muted-foreground">
                     📍 {item.neighborhood}

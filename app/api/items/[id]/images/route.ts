@@ -4,10 +4,14 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
 
-const MAX_BYTES  = Number(process.env.STORAGE_MAX_FILE_SIZE_MB ?? 5) * 1024 * 1024
-const ALLOWED    = ["image/jpeg", "image/png", "image/webp"]
+const MAX_BYTES  = Number(process.env.STORAGE_MAX_FILE_SIZE_MB ?? 10) * 1024 * 1024
 const BUCKET     = process.env.NEXT_PUBLIC_STORAGE_BUCKET ?? "item-images"
 const MAX_IMAGES = 10
+
+/** Aceita qualquer image/* — inclui HEIC/HEIF de câmeras iOS e outros formatos mobile */
+function isImageType(mimeType: string): boolean {
+  return mimeType.startsWith("image/") || mimeType === "application/octet-stream"
+}
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -65,14 +69,20 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       )
     }
 
-    if (!ALLOWED.includes(file.type)) {
+    if (!isImageType(file.type)) {
       return NextResponse.json(
-        { error: { code: "INVALID_TYPE", message: "Formatos aceitos: JPEG, PNG, WebP." } },
+        { error: { code: "INVALID_TYPE", message: "Selecione uma imagem (JPEG, PNG, WebP, HEIC)." } },
         { status: 415 }
       )
     }
 
-    const ext      = (file.name.split(".").pop() ?? "jpg").toLowerCase()
+    // Mapeia MIME → extensão (HEIC de iOS → salva como heic)
+    const MIME_EXT: Record<string, string> = {
+      "image/jpeg": "jpg", "image/jpg": "jpg", "image/png": "png",
+      "image/webp": "webp", "image/heic": "heic", "image/heif": "heif",
+      "image/gif": "gif",
+    }
+    const ext      = MIME_EXT[file.type] ?? (file.name.split(".").pop() ?? "jpg").toLowerCase()
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
     const path     = `${id}/${filename}`
 
