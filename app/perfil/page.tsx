@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { ProfileForm } from "./_ProfileForm"
+import { DeleteAccountButton } from "./_DeleteAccountButton"
 
 export const metadata: Metadata = { title: "Meu Perfil — ShareO" }
 
@@ -227,6 +228,31 @@ export default async function ProfilePage() {
               </div>
             </div>
           )}
+
+          {/* ── Privacidade & dados (LGPD) ── */}
+          <div className="rounded-xl border border-border bg-surface p-6">
+            <h2 className="mb-4 font-semibold text-foreground">Privacidade e dados</h2>
+
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-foreground">Exportar meus dados</p>
+                <p className="text-xs text-muted-foreground">
+                  Baixe um arquivo JSON com todos os seus dados (LGPD art. 20).
+                </p>
+              </div>
+              <a
+                href="/api/users/me/export"
+                download
+                className="inline-flex h-11 items-center rounded-lg border border-border px-4 text-sm font-semibold text-foreground hover:bg-background transition-colors"
+              >
+                Exportar
+              </a>
+            </div>
+
+            <div className="h-px bg-border my-4" />
+
+            <DeleteAccountButton />
+          </div>
 
         </div>
       </main>
