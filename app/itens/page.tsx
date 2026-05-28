@@ -7,6 +7,8 @@ import { AppHeader } from "@/components/layout/AppHeader"
 import { ItemCard } from "@/components/items/ItemCard"
 import { CategoryIcon } from "@/components/ui/CategoryIcon"
 import { SortSelect } from "./_SortSelect"
+import { ItemsMapLoader } from "@/components/items/ItemsMapLoader"
+import type { ItemPin } from "@/components/items/ItemsMap"
 
 export const metadata: Metadata = {
   title:       "Explorar anúncios",
@@ -86,6 +88,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
       select: {
         id: true, title: true, pricePerDay: true, pricePerWeek: true,
         condition: true, city: true, state: true, neighborhood: true, isActive: true,
+        latitude: true, longitude: true,
         category: { select: { name: true } },
         owner:    { select: { name: true, isVerified: true } },
         images:   { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
@@ -268,6 +271,24 @@ export default async function ExplorarPage({ searchParams }: Props) {
                 <SortSelect current={sort} />
               </Suspense>
             </div>
+
+            {/* Mapa */}
+            {items.length > 0 && (() => {
+              const pins: ItemPin[] = items
+                .filter((i) => i.latitude != null && i.longitude != null)
+                .map((i) => ({
+                  id:          i.id,
+                  title:       i.title,
+                  pricePerDay: i.pricePerDay,
+                  lat:         i.latitude!,
+                  lng:         i.longitude!,
+                }))
+              return pins.length > 0 ? (
+                <div className="mb-4 overflow-hidden rounded-xl border border-border">
+                  <ItemsMapLoader items={pins} height={260} />
+                </div>
+              ) : null
+            })()}
 
             {/* Grade de itens */}
             {items.length > 0 ? (
