@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 
 export const metadata: Metadata = {
-  title: "Minhas Reservas — ShareO",
+  title: "Minhas Reservas",
 }
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {

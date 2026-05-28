@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   })
   if (!item) return { title: "Anúncio não encontrado" }
   return {
-    title:       `${item.title} — ShareO`,
+    title:       `${item.title}`,
     description: item.description.slice(0, 160),
   }
 }

@@ -3,7 +3,7 @@ import { AppHeader } from "@/components/layout/AppHeader"
 import { EarningsCalc } from "./_EarningsCalc"
 
 export const metadata: Metadata = {
-  title:       "Quanto posso ganhar? — ShareO",
+  title:       "Quanto posso ganhar?",
   description: "Simule seus ganhos alugando itens parados em casa. Descubra quanto você pode faturar por mês.",
 }
 

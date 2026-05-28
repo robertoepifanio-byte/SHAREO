@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { prisma } from "@/lib/prisma"
 import { DisputeActions } from "./_Actions"
 
-export const metadata: Metadata = { title: "Admin — Disputas | ShareO" }
+export const metadata: Metadata = { title: "Admin — Disputas" }
 
 const fmt = (cents: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)

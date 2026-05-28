@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { ItemCard } from "@/components/items/ItemCard"
 
-export const metadata: Metadata = { title: "Favoritos — ShareO" }
+export const metadata: Metadata = { title: "Favoritos" }
 
 export default async function FavoritosPage() {
   const session = await auth()

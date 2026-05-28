@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { PjGate } from "@/components/premium/PjGate"
 
-export const metadata: Metadata = { title: "Desempenho dos Anúncios — ShareO" }
+export const metadata: Metadata = { title: "Desempenho dos Anúncios" }
 
 const fmtBRL = (cents: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)

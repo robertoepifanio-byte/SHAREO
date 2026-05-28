@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 
-export const metadata: Metadata = { title: "Mensagens — ShareO" }
+export const metadata: Metadata = { title: "Mensagens" }
 
 function timeAgo(d: Date | null) {
   if (!d) return ""

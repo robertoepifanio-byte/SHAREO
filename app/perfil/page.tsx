@@ -11,7 +11,7 @@ import { IdVerification }  from "./_IdVerification"
 import { getReferralStats } from "@/lib/referral"
 import Link from "next/link"
 
-export const metadata: Metadata = { title: "Meu Perfil — ShareO" }
+export const metadata: Metadata = { title: "Meu Perfil" }
 
 const REVIEW_TYPE_LABEL: Record<string, string> = {
   ITEM:     "sobre o item",

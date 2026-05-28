@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     select: { name: true },
   })
   if (!user) return { title: "Perfil não encontrado" }
-  return { title: `${user.name} — ShareO` }
+  return { title: `${user.name}` }
 }
 
 export default async function PublicProfilePage({ params }: Props) {

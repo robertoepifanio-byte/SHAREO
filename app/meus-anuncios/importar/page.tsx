@@ -6,7 +6,7 @@ import { AppHeader } from "@/components/layout/AppHeader"
 import { ImportForm } from "@/components/items/ImportForm"
 import { PjGate } from "@/components/premium/PjGate"
 
-export const metadata: Metadata = { title: "Importar Itens — ShareO" }
+export const metadata: Metadata = { title: "Importar Itens" }
 
 const TABS = (active: "anuncios" | "desempenho" | "importar") => (
   <div className="mb-6 flex gap-1 rounded-lg border border-border bg-surface p-1 w-fit" role="tablist" aria-label="Seções">
