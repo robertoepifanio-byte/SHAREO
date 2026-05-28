@@ -1,28 +1,9 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
-import { jwtVerify } from "jose"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { resolveUserId } from "@/lib/resolveUserId"
 import { UpdateProfileSchema } from "@/lib/validations/users"
-
-/** Resolves user ID from NextAuth session OR mobile Bearer JWT */
-async function resolveUserId(req: NextRequest): Promise<string | null> {
-  // 1. Try Bearer token (mobile)
-  const bearer = req.headers.get("authorization")
-  if (bearer?.startsWith("Bearer ")) {
-    const token = bearer.slice(7)
-    try {
-      const key = new TextEncoder().encode(process.env.AUTH_SECRET ?? "")
-      const { payload } = await jwtVerify(token, key)
-      if (typeof payload.sub === "string") return payload.sub
-    } catch {
-      // fall through to session check
-    }
-  }
-  // 2. Try NextAuth session (web)
-  const session = await auth()
-  return session?.user?.id ?? null
-}
 
 // LGPD art. 18 — direito ao esquecimento
 export async function DELETE() {

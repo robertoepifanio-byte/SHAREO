@@ -6,12 +6,12 @@ import { apiFetch } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
 
 interface Conversation {
-  id:        string
-  updatedAt: string
+  id:          string
+  updatedAt:   string
   unreadCount: number
-  otherUser: { id: string; name: string; avatarUrl: string | null }
+  otherUser:   { id: string; name: string; avatarUrl: string | null } | null
   lastMessage: { body: string; createdAt: string } | null
-  booking:   { item: { title: string } } | null
+  booking:     { item: { title: string } } | null
 }
 
 function relTime(d: string) {
@@ -72,13 +72,13 @@ export default function MensagensScreen() {
               {/* Avatar */}
               <View className="h-11 w-11 items-center justify-center rounded-full bg-primary">
                 <Text className="text-base font-bold text-white">
-                  {c.otherUser.name[0]?.toUpperCase()}
+                  {c.otherUser?.name[0]?.toUpperCase() ?? "?"}
                 </Text>
               </View>
 
               <View className="flex-1 min-w-0">
                 <View className="flex-row items-center justify-between">
-                  <Text className="text-sm font-semibold text-foreground">{c.otherUser.name}</Text>
+                  <Text className="text-sm font-semibold text-foreground">{c.otherUser?.name ?? "Usuário"}</Text>
                   {c.lastMessage && (
                     <Text className="text-xs text-muted">{relTime(c.lastMessage.createdAt)}</Text>
                   )}

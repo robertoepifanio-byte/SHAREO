@@ -1,18 +1,17 @@
+import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { resolveUserId } from "@/lib/resolveUserId"
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 },
       )
     }
-
-    const userId = session.user.id
 
     const conversations = await prisma.conversation.findMany({
       where: { participants: { some: { userId } } },
@@ -60,15 +59,17 @@ export async function GET() {
       const unreadCount = conv._count.messages
 
       return {
-        id:            conv.id,
-        lastMessageAt: conv.lastMessageAt,
+        id:          conv.id,
+        updatedAt:   conv.lastMessageAt,
         unreadCount,
-        booking:       conv.booking,
-        otherParticipant: other
+        booking:     conv.booking
+          ? { item: { title: conv.booking.item.title } }
+          : null,
+        otherUser: other
           ? { id: other.user.id, name: other.user.name, avatarUrl: other.user.avatarUrl }
           : null,
         lastMessage: lastMsg
-          ? { content: lastMsg.content.slice(0, 100), senderId: lastMsg.senderId, createdAt: lastMsg.createdAt }
+          ? { body: lastMsg.content.slice(0, 100), createdAt: lastMsg.createdAt }
           : null,
       }
     })
