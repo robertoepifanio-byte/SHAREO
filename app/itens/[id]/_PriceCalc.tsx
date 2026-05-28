@@ -158,8 +158,9 @@ export function PriceCalc({
           {availableModes.map((m) => (
             <button
               key={m}
+              type="button"
               onClick={() => handleModeChange(m)}
-              className={`flex-1 rounded-md py-1.5 text-xs font-semibold transition-colors ${
+              className={`flex-1 rounded-md py-3 text-xs font-semibold transition-colors ${
                 mode === m
                   ? "bg-brand text-white shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
