@@ -12,12 +12,30 @@ const securityHeaders = [
     key: "Strict-Transport-Security",
     value: "max-age=63072000; includeSubDomains; preload",
   },
-  // CSP mais permissiva em dev (Next.js Fast Refresh exige unsafe-eval)
+  // CSP mais permissiva em dev (Next.js Fast Refresh + mapbox-gl WebAssembly exigem unsafe-eval)
   {
     key: "Content-Security-Policy",
     value: isDev
-      ? "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: *.supabase.co; connect-src 'self' ws: wss: *.supabase.co api.mapbox.com events.mapbox.com; font-src 'self'; frame-src 'none';"
-      : "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: *.supabase.co; connect-src 'self' wss://*.supabase.co api.mapbox.com events.mapbox.com *.sentry.io; font-src 'self'; frame-src 'none';",
+      ? [
+          "default-src 'self'",
+          "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:",
+          "worker-src blob:",
+          "style-src 'self' 'unsafe-inline'",
+          "img-src 'self' data: blob: *.supabase.co *.mapbox.com",
+          "connect-src 'self' ws: wss: *.supabase.co api.mapbox.com events.mapbox.com *.tiles.mapbox.com",
+          "font-src 'self' data:",
+          "frame-src 'none'",
+        ].join("; ")
+      : [
+          "default-src 'self'",
+          "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:",
+          "worker-src blob:",
+          "style-src 'self' 'unsafe-inline'",
+          "img-src 'self' data: blob: *.supabase.co *.mapbox.com",
+          "connect-src 'self' wss://*.supabase.co api.mapbox.com events.mapbox.com *.tiles.mapbox.com *.sentry.io",
+          "font-src 'self' data:",
+          "frame-src 'none'",
+        ].join("; "),
   },
 ]
 
