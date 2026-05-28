@@ -115,17 +115,20 @@ export default async function DashboardPage() {
               </div>
             </Link>
 
-            <div className="flex items-center gap-4 rounded-lg border border-border bg-surface p-5 opacity-60 cursor-not-allowed">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+            <Link
+              href="/mensagens"
+              className="flex items-center gap-4 rounded-lg border border-border bg-surface p-5 hover:border-brand/40 hover:bg-brand/5 transition-colors group outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+            >
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand group-hover:bg-brand/20 transition-colors">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                 </svg>
               </div>
               <div>
-                <p className="font-medium text-foreground">Chat</p>
-                <p className="text-sm text-muted-foreground">Em desenvolvimento — Sprint 3</p>
+                <p className="font-medium text-primary">Chat</p>
+                <p className="text-sm text-muted-foreground">Veja suas conversas</p>
               </div>
-            </div>
+            </Link>
           </div>
         </div>
       </main>
