@@ -350,7 +350,7 @@ export function RegisterForm() {
           disabled={loading}
         />
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="col-span-2">
             <Input
               label="Cidade"
