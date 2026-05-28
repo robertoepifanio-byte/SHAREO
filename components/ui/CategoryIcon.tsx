@@ -69,14 +69,21 @@ const LUCIDE_MAP: Record<string, LucideIcon> = {
 }
 
 interface CategoryIconProps {
-  name:       string
-  size?:      number
-  className?: string
+  name:        string
+  size?:       number
+  className?:  string
+  /**
+   * monochrome — quando true, aplica filtro grayscale nas imagens PNG e usa
+   * currentColor nos ícones Lucide (cor controlada via Tailwind text-*).
+   * Usado nos filtros de busca (/itens) conforme Guia de Identidade Visual.
+   * Manter false (padrão) para a seção hero/categorias da homepage.
+   */
+  monochrome?: boolean
 }
 
 /* ── Componente ─────────────────────────────────────────────────── */
 
-export function CategoryIcon({ name, size = 64, className = "" }: CategoryIconProps) {
+export function CategoryIcon({ name, size = 64, className = "", monochrome = false }: CategoryIconProps) {
   const slug      = SLUG_MAP[name]
   const Icon      = LUCIDE_MAP[name]
   const usePng    = slug && HAS_PNG.has(slug)
@@ -101,7 +108,7 @@ export function CategoryIcon({ name, size = 64, className = "" }: CategoryIconPr
           alt={name}
           width={size}
           height={size}
-          className="object-contain"
+          className={`object-contain${monochrome ? " grayscale" : ""}`}
         />
       </span>
     )
@@ -117,7 +124,7 @@ export function CategoryIcon({ name, size = 64, className = "" }: CategoryIconPr
       style={{
         width:     size,
         height:    size,
-        border:    `${borderWidth}px solid #144D81`,
+        border:    `${borderWidth}px solid ${monochrome ? "#6B7280" : "#144D81"}`,
         boxShadow: size >= 64 ? "0 2px 8px rgba(0,51,102,0.10)" : undefined,
       }}
     >
@@ -125,7 +132,7 @@ export function CategoryIcon({ name, size = 64, className = "" }: CategoryIconPr
         <Icon
           width={iconSize}
           height={iconSize}
-          stroke="#007B3C"
+          stroke={monochrome ? "currentColor" : "#007B3C"}
           strokeWidth={1.75}
           fill="none"
         />
