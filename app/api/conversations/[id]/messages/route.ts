@@ -1,15 +1,22 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { SendMessageSchema } from "@/lib/validations/messages"
+import { resolveUserId } from "@/lib/resolveUserId"
+import { z } from "zod"
+
+const MessageSchema = z.object({
+  content: z.string().min(1).max(2000).optional(),
+  body:    z.string().min(1).max(2000).optional(),
+}).refine((d) => d.content ?? d.body, {
+  message: "Mensagem não pode ser vazia",
+})
 
 type Params = { params: Promise<{ id: string }> }
 
 export async function POST(req: NextRequest, { params }: Params) {
   try {
-    const session = await auth()
-    if (!session) {
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 },
@@ -17,7 +24,6 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
 
     const { id }   = await params
-    const userId   = session.user.id
 
     const conv = await prisma.conversation.findUnique({
       where:  { id },
@@ -38,8 +44,8 @@ export async function POST(req: NextRequest, { params }: Params) {
       )
     }
 
-    const body   = await req.json()
-    const parsed = SendMessageSchema.safeParse(body)
+    const rawBody = await req.json()
+    const parsed  = MessageSchema.safeParse(rawBody)
     if (!parsed.success) {
       return NextResponse.json(
         { error: { code: "CONTENT_REQUIRED", message: parsed.error.errors[0]?.message ?? "Conteúdo inválido." } },
@@ -47,12 +53,11 @@ export async function POST(req: NextRequest, { params }: Params) {
       )
     }
 
-    // Sanitiza HTML básico
-    const content = parsed.data.content.replace(/<[^>]*>/g, "").trim()
+    const rawContent = (parsed.data.content ?? parsed.data.body ?? "").replace(/<[^>]*>/g, "").trim()
 
     const [message] = await Promise.all([
       prisma.message.create({
-        data:   { conversationId: id, senderId: userId, content },
+        data:   { conversationId: id, senderId: userId, content: rawContent },
         select: { id: true, conversationId: true, senderId: true, content: true, readAt: true, createdAt: true },
       }),
       prisma.conversation.update({
@@ -68,12 +73,12 @@ export async function POST(req: NextRequest, { params }: Params) {
         userId: p.userId,
         type:   "NEW_MESSAGE" as const,
         title:  "Nova mensagem",
-        body:   content.slice(0, 80),
+        body:   rawContent.slice(0, 80),
         data:   { conversationId: id },
       })),
     }).catch(() => {})
 
-    return NextResponse.json({ data: message }, { status: 201 })
+    return NextResponse.json({ data: { ...message, body: message.content } }, { status: 201 })
   } catch (e) {
     console.error("[POST /api/conversations/:id/messages]", e instanceof Error ? e.message : e)
     return NextResponse.json(

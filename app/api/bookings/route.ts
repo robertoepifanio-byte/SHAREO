@@ -1,15 +1,15 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { resolveUserId } from "@/lib/resolveUserId"
 import { CreateBookingSchema, ListBookingsQuerySchema } from "@/lib/validations/bookings"
 import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
 import { calcBookingTotal } from "@/lib/pricing"
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 },
@@ -26,7 +26,6 @@ export async function GET(req: NextRequest) {
     }
 
     const { role, status, page, limit } = query.data
-    const userId = session.user.id
     const skip   = (page - 1) * limit
 
     const where = {
@@ -83,8 +82,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
+    const borrowerId = await resolveUserId(req)
+    if (!borrowerId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 },
@@ -106,7 +105,6 @@ export async function POST(req: NextRequest) {
     }
 
     const { itemId, startDate, endDate, borrowerNote } = parsed.data
-    const borrowerId = session.user.id
 
     // Carrega item e valida disponibilidade
     const [item, borrower] = await Promise.all([
@@ -121,7 +119,7 @@ export async function POST(req: NextRequest) {
       }),
       prisma.user.findUnique({
         where:  { id: borrowerId },
-        select: { idVerificationStatus: true, phone: true },
+        select: { idVerificationStatus: true, phone: true, name: true },
       }),
     ])
 
@@ -242,7 +240,7 @@ export async function POST(req: NextRequest) {
         userId: item.ownerId,
         type:   "BOOKING_REQUEST",
         title:  "Nova solicitação de aluguel",
-        body:   `${session.user.name} quer alugar "${booking.item.title}"`,
+        body:   `${borrower?.name ?? "Um usuário"} quer alugar "${booking.item.title}"`,
         data:   { bookingId: booking.id },
       },
     }).catch((e) => console.error("[notification] BOOKING_REQUEST:", e instanceof Error ? e.message : e))

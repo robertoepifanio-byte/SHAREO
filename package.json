@@ -117,6 +117,12 @@
       "prettier --write"
     ]
   },
+  "pnpm": {
+    "overrides": {
+      "@shareo/mobile>@types/react": "~18.3.0",
+      "@shareo/mobile>@types/react-dom": "~18.3.0"
+    }
+  },
   "packageManager": "pnpm@11.0.8",
   "engines": {
     "node": ">=20.0.0",

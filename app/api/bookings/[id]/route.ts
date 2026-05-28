@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { resolveUserId } from "@/lib/resolveUserId"
 import { PatchBookingSchema } from "@/lib/validations/bookings"
 import type { BookingStatus } from "@prisma/client"
 import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
@@ -9,10 +10,10 @@ import type { WebhookEvent } from "@/lib/outboundWebhooks"
 
 type Params = { params: Promise<{ id: string }> }
 
-export async function GET(_req: NextRequest, { params }: Params) {
+export async function GET(req: NextRequest, { params }: Params) {
   try {
-    const session = await auth()
-    if (!session) {
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 },
@@ -69,7 +70,6 @@ export async function GET(_req: NextRequest, { params }: Params) {
       )
     }
 
-    const userId = session.user.id
     if (booking.borrower.id !== userId && booking.owner.id !== userId) {
       return NextResponse.json(
         { error: { code: "FORBIDDEN", message: "Acesso negado." } },

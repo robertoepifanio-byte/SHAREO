@@ -18,9 +18,10 @@ interface Message {
 
 interface ConversationDetail {
   id:        string
-  otherUser: { id: string; name: string }
+  otherUser: { id: string; name: string; avatarUrl: string | null } | null
   booking:   { item: { title: string } } | null
   messages:  Message[]
+  meta:      { total: number; page: number; limit: number; hasMore: boolean }
 }
 
 function relTime(d: string) {
@@ -45,14 +46,14 @@ export default function ChatScreen() {
     queryKey: ["conversation", id],
     queryFn:  () => apiFetch<{ data: ConversationDetail }>(`/api/conversations/${id}`),
     enabled:  !!id && !!user,
-    refetchInterval: 5000, // poll every 5s for new messages
+    refetchInterval: 5000,
   })
 
   const conv = data?.data
 
   const send = useMutation({
-    mutationFn: (body: string) =>
-      apiFetch(`/api/conversations/${id}/messages`, { method: "POST", body: JSON.stringify({ body }) }),
+    mutationFn: (content: string) =>
+      apiFetch(`/api/conversations/${id}/messages`, { method: "POST", body: JSON.stringify({ content }) }),
     onSuccess: () => {
       setText("")
       qc.invalidateQueries({ queryKey: ["conversation", id] })
@@ -91,12 +92,12 @@ export default function ChatScreen() {
         </TouchableOpacity>
         <View className="h-9 w-9 items-center justify-center rounded-full bg-primary">
           <Text className="text-sm font-bold text-white">
-            {conv?.otherUser.name[0]?.toUpperCase() ?? "?"}
+            {conv?.otherUser?.name[0]?.toUpperCase() ?? "?"}
           </Text>
         </View>
         <View className="flex-1">
           <Text className="text-sm font-semibold text-foreground" numberOfLines={1}>
-            {conv?.otherUser.name ?? "…"}
+            {conv?.otherUser?.name ?? "…"}
           </Text>
           {conv?.booking?.item.title && (
             <Text className="text-[10px] text-brand" numberOfLines={1}>

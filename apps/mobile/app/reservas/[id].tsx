@@ -13,8 +13,8 @@ interface BookingDetail {
   endDate:    string
   totalPrice: number
   depositAmount: number | null
-  notes:      string | null
-  createdAt:  string
+  borrowerNote: string | null
+  createdAt:    string
   item: {
     id: string; title: string
     images: { url: string }[]
@@ -190,10 +190,10 @@ export default function BookingDetailScreen() {
         </View>
 
         {/* Observações */}
-        {booking.notes && (
+        {booking.borrowerNote && (
           <View className="mb-4 rounded-xl border border-border bg-surface p-4">
             <Text className="mb-1 text-xs font-bold uppercase tracking-widest text-muted">Observações</Text>
-            <Text className="text-sm text-foreground leading-relaxed">{booking.notes}</Text>
+            <Text className="text-sm text-foreground leading-relaxed">{booking.borrowerNote}</Text>
           </View>
         )}
 
