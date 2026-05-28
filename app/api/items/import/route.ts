@@ -146,6 +146,13 @@ export async function POST(req: Request) {
     const categories = await prisma.category.findMany({ select: { id: true, name: true } })
     const categoryMap = new Map(categories.map((c) => [c.name.toLowerCase(), c.id]))
 
+    if (session.user.userType !== "PJ") {
+      return NextResponse.json(
+        { error: { code: "FORBIDDEN", message: "Importação em massa é exclusiva para contas PJ." } },
+        { status: 403 },
+      )
+    }
+
     const ownerId = session.user.id
     let created = 0
     let updated = 0
@@ -199,7 +206,7 @@ export async function POST(req: Request) {
         } else {
           // latitude/longitude são obrigatórios no schema; padrão 0 para itens importados sem geo
           await prisma.item.create({
-            data: { ...sharedData, ownerId, latitude: 0, longitude: 0 },
+            data: { ...sharedData, ownerId },
           })
           created++
         }
