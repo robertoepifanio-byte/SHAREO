@@ -7,14 +7,10 @@ import type { NextRequest } from "next/server"
 import { NextResponse }     from "next/server"
 import { auth }             from "@/lib/auth"
 import { prisma }           from "@/lib/prisma"
-import { createClient }     from "@supabase/supabase-js"
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-)
+import { createAdminClient } from "@/lib/supabase/admin"
 
 export async function POST(req: NextRequest) {
+  const supabase = createAdminClient()
   const session = await auth()
   if (!session) return NextResponse.json({ error: { code: "UNAUTHORIZED" } }, { status: 401 })
 

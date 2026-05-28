@@ -10,14 +10,9 @@ import type { NextRequest } from "next/server"
 import { NextResponse }     from "next/server"
 import { auth }             from "@/lib/auth"
 import { prisma }           from "@/lib/prisma"
-import { createClient }     from "@supabase/supabase-js"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 type Ctx = { params: Promise<{ id: string }> }
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-)
 
 const ALLOWED_PHASES = ["CHECKIN", "CHECKOUT"] as const
 type Phase = (typeof ALLOWED_PHASES)[number]
@@ -91,6 +86,8 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   const ext      = file.name.split(".").pop()?.toLowerCase() ?? "jpg"
   const path     = `bookings/${id}/${phase.toLowerCase()}/${Date.now()}-${session.user.id}.${ext}`
   const buffer   = Buffer.from(await file.arrayBuffer())
+
+  const supabase = createAdminClient()
 
   const { error: uploadError } = await supabase.storage
     .from("booking-photos")
