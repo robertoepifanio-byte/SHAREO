@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { signOut } from "next-auth/react"
 
 interface Props {
   isLoggedIn: boolean
@@ -79,7 +80,7 @@ export function MobileMenu({ isLoggedIn }: Props) {
                     href={link.href}
                     className={`flex h-12 items-center rounded-lg px-4 text-base font-medium transition-colors ${
                       link.cta
-                        ? "bg-brand text-white hover:opacity-90"
+                        ? "bg-accent text-[#003366] font-bold hover:brightness-105"
                         : "text-white/80 hover:bg-white/10 hover:text-white"
                     }`}
                   >
@@ -87,6 +88,22 @@ export function MobileMenu({ isLoggedIn }: Props) {
                   </Link>
                 </li>
               ))}
+              {isLoggedIn && (
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => signOut({ callbackUrl: "/" })}
+                    className="flex h-12 w-full items-center rounded-lg px-4 text-base font-medium text-red-300 hover:bg-white/10 hover:text-red-200 transition-colors"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2" aria-hidden="true">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                      <polyline points="16 17 21 12 16 7"/>
+                      <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    Sair
+                  </button>
+                </li>
+              )}
             </ul>
           </nav>
         </>
