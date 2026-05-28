@@ -1,6 +1,11 @@
 import { Resend } from "resend"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Inicialização lazy: evita erro de build quando RESEND_API_KEY não está no ambiente de CI
+let _resend: Resend | null = null
+function getResend(): Resend {
+  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY)
+  return _resend
+}
 
 const FROM    = process.env.EMAIL_FROM    ?? "noreply@shareo.com.br"
 const APP_URL = process.env.NEXTAUTH_URL  ?? "https://shareo-rouge.vercel.app"
@@ -149,7 +154,7 @@ export async function sendPasswordResetEmail(
   const firstName = name.split(" ")[0]
   const resetUrl  = `${APP_URL}/esqueci-senha/${token}`
 
-  const { error } = await resend.emails.send({
+  const { error } = await getResend().emails.send({
     from:    `ShareO <${FROM}>`,
     to,
     subject: "Redefinir sua senha — ShareO",
@@ -162,7 +167,7 @@ export async function sendPasswordResetEmail(
 export async function sendWelcomeEmail(to: string, name: string): Promise<void> {
   const firstName = name.split(" ")[0]
 
-  const { error } = await resend.emails.send({
+  const { error } = await getResend().emails.send({
     from:    `ShareO <${FROM}>`,
     to,
     subject: `Bem-vindo ao ShareO, ${firstName}!`,
@@ -201,12 +206,12 @@ export async function sendReminderStartTomorrow(
   `)
 
   await Promise.all([
-    resend.emails.send({
+    getResend().emails.send({
       from: `ShareO <${FROM}>`, to: borrowerEmail,
       subject: `Lembrete: "${itemTitle}" começa amanhã — ShareO`,
       html: html(borrowerName.split(" ")[0], "borrower"),
     }),
-    resend.emails.send({
+    getResend().emails.send({
       from: `ShareO <${FROM}>`, to: ownerEmail,
       subject: `Lembrete: entrega de "${itemTitle}" amanhã — ShareO`,
       html: html(ownerName.split(" ")[0], "owner"),
@@ -237,7 +242,7 @@ export async function sendReminderReturnTomorrow(
     </p>
   `)
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: `ShareO <${FROM}>`, to: borrowerEmail,
     subject: `⏰ Devolua "${itemTitle}" amanhã — ShareO`,
     html,
@@ -270,12 +275,12 @@ export async function sendReminderOverdue(
   `)
 
   await Promise.all([
-    resend.emails.send({
+    getResend().emails.send({
       from: `ShareO <${FROM}>`, to: borrowerEmail,
       subject: `🚨 "${itemTitle}" em atraso — devolva agora — ShareO`,
       html: html(borrowerName.split(" ")[0], "borrower"),
     }),
-    resend.emails.send({
+    getResend().emails.send({
       from: `ShareO <${FROM}>`, to: ownerEmail,
       subject: `🚨 Item "${itemTitle}" não devolvido (${daysLate}d de atraso) — ShareO`,
       html: html(ownerName.split(" ")[0], "owner"),
