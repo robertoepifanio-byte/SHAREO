@@ -8,7 +8,7 @@ interface Props {
   userName: string
 }
 
-export function VerificationActions({ userId, userName }: Props) {
+export function VerificationActions({ userId }: Props) {
   const router  = useRouter()
   const [loading, setLoading]   = useState(false)
   const [showReject, setShowReject] = useState(false)

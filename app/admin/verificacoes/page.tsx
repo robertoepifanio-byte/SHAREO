@@ -48,7 +48,6 @@ export default async function VerificacoesPage() {
     }),
   ])
 
-  const initial = pending[0]?.name[0]?.toUpperCase() ?? "?"
 
   return (
     <div>
