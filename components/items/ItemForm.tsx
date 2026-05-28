@@ -177,6 +177,11 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
   const [errors,        setErrors]        = useState<Record<string, string>>({})
   const [loading,       setLoading]       = useState(false)
   const [gettingLoc,    setGettingLoc]    = useState(false)
+  const [geocoding,     setGeocoding]     = useState(false)
+  const [geocodeResult, setGeocodeResult] = useState<"ok" | "not_found" | "error" | null>(
+    initialData?.latitude ? "ok" : null
+  )
+  const gpsUsedRef = useRef(false)
   const fileInputRef    = useRef<HTMLInputElement>(null)
   const cameraInputRef  = useRef<HTMLInputElement>(null)
 
@@ -234,6 +239,8 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
         setLatitude(pos.coords.latitude)
         setLongitude(pos.coords.longitude)
         setGettingLoc(false)
+        setGeocodeResult("ok")
+        gpsUsedRef.current = true
         setErrors((p) => { const n = { ...p }; delete n.location; return n })
       },
       () => {
@@ -242,6 +249,36 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
       },
       { timeout: 8000 }
     )
+  }
+
+  async function geocodeAddress() {
+    if (gpsUsedRef.current) return
+    const query = [neighborhood.trim(), city.trim(), state, "Brasil"].filter(Boolean).join(", ")
+    if (city.trim().length < 2) return
+    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+    if (!token || token.endsWith("...")) return
+
+    setGeocoding(true)
+    setGeocodeResult(null)
+    try {
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json` +
+        `?access_token=${token}&country=BR&language=pt&limit=1&types=place,locality,neighborhood,address`
+      const res  = await fetch(url)
+      const data = await res.json() as { features?: { center: [number, number] }[] }
+      const feature = data?.features?.[0]
+      if (feature) {
+        const [lng, lat] = feature.center
+        setLatitude(lat)
+        setLongitude(lng)
+        setGeocodeResult("ok")
+      } else {
+        setGeocodeResult("not_found")
+      }
+    } catch {
+      setGeocodeResult("error")
+    } finally {
+      setGeocoding(false)
+    }
   }
 
   // ─── Images ────────────────────────────────────────────────────────────────
@@ -625,20 +662,47 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
           <p role="alert" className="text-xs text-destructive">{errors.location}</p>
         )}
 
-        {latitude !== 0 && longitude !== 0 && (
-          <p className="text-xs text-muted-foreground">
-            Coordenadas: {latitude.toFixed(4)}, {longitude.toFixed(4)}
+        {/* Status de geocoding */}
+        {geocoding && (
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
+            Buscando coordenadas…
+          </div>
+        )}
+        {!geocoding && geocodeResult === "ok" && (
+          <p className="text-xs text-success">
+            📍 Localização encontrada — {latitude.toFixed(4)}, {longitude.toFixed(4)}
+            {gpsUsedRef.current && " (GPS)"}
+          </p>
+        )}
+        {!geocoding && geocodeResult === "not_found" && (
+          <p className="text-xs text-amber-600">
+            ⚠️ Endereço não encontrado no mapa. Verifique cidade e estado, ou use o GPS.
+          </p>
+        )}
+        {!geocoding && geocodeResult === "error" && (
+          <p className="text-xs text-destructive">
+            Erro ao buscar localização. Tente novamente ou use o GPS.
           </p>
         )}
 
-        <div className="grid grid-cols-3 gap-3">
-          <div className="col-span-2">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="md:col-span-2">
             <Input
               label="Cidade"
               type="text"
               placeholder="Natal"
               value={city}
-              onChange={(e) => { setCity(e.target.value); setErrors((p) => ({ ...p, city: undefined! })) }}
+              onChange={(e) => {
+                setCity(e.target.value)
+                setErrors((p) => ({ ...p, city: undefined! }))
+                gpsUsedRef.current = false
+                setGeocodeResult(null)
+              }}
+              onBlur={geocodeAddress}
               error={errors.city}
               required
               disabled={loading}
@@ -647,7 +711,13 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
           <Select
             label="Estado"
             value={state}
-            onChange={(e) => { setState(e.target.value); setErrors((p) => ({ ...p, state: undefined! })) }}
+            onChange={(e) => {
+              setState(e.target.value)
+              setErrors((p) => ({ ...p, state: undefined! }))
+              gpsUsedRef.current = false
+              setGeocodeResult(null)
+            }}
+            onBlur={geocodeAddress}
             error={errors.state}
             placeholder="UF"
             required
@@ -666,7 +736,8 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
             placeholder="Ponta Negra"
             value={neighborhood}
             onChange={(e) => setNeighborhood(e.target.value)}
-            helper="Opcional"
+            onBlur={geocodeAddress}
+            helper="Opcional — melhora a precisão no mapa"
             disabled={loading}
           />
           <Input
