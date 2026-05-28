@@ -214,28 +214,7 @@ export default async function ItemDetailPage({ params }: Props) {
                 </div>
               )}
 
-              {/* Preço principal */}
-              <div className="mb-5">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-extrabold text-foreground">{fmt(item.pricePerDay)}</span>
-                  <span className="text-sm text-muted-foreground">/dia</span>
-                </div>
-                {(item.pricePerWeek || item.pricePerMonth) && (
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Também:</span>
-                    {item.pricePerWeek && (
-                      <span className="rounded-md border border-border bg-background px-2.5 py-1 text-xs text-muted-foreground">
-                        {fmt(item.pricePerWeek)}/sem
-                      </span>
-                    )}
-                    {item.pricePerMonth && (
-                      <span className="rounded-md border border-border bg-background px-2.5 py-1 text-xs text-muted-foreground">
-                        {fmt(item.pricePerMonth)}/mês
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
+              {/* Preço principal — exibido dentro do PriceCalc como tabs clicáveis */}
 
               {/* Caução */}
               {item.depositAmount != null && item.depositAmount > 0 && (
