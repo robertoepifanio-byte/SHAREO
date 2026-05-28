@@ -275,7 +275,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
             {/* Mapa */}
             {items.length > 0 && (() => {
               const pins: ItemPin[] = items
-                .filter((i) => i.latitude != null && i.longitude != null)
+                .filter((i) => i.latitude != null && i.longitude != null && (i.latitude !== 0 || i.longitude !== 0))
                 .map((i) => ({
                   id:          i.id,
                   title:       i.title,
