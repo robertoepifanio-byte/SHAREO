@@ -30,8 +30,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt-BR" className={montserrat.variable}>
       <body className="min-h-screen bg-background font-sans antialiased">
+        {/* Skip link — acessibilidade de teclado */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[9999] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary"
+        >
+          Pular para o conteúdo principal
+        </a>
         {/* Padding bottom garante que o BottomNav não tape o conteúdo no mobile */}
-        <div className="pb-16 md:pb-0">
+        <div id="main-content" className="pb-16 md:pb-0">
           {children}
           <AppFooter />
         </div>

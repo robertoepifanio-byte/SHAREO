@@ -152,7 +152,7 @@ export function NotificationBell() {
         aria-label="Notificações"
         aria-expanded={open}
         aria-haspopup="true"
-        className="relative flex h-9 w-9 items-center justify-center rounded-full text-white/75 hover:bg-white/10 hover:text-white transition-colors outline-none focus-visible:ring-2 focus-visible:ring-white"
+        className="relative flex h-11 w-11 items-center justify-center rounded-full text-white/75 hover:bg-white/10 hover:text-white transition-colors outline-none focus-visible:ring-2 focus-visible:ring-white"
       >
         {/* Bell icon */}
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

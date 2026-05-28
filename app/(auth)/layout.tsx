@@ -7,11 +7,11 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12">
       <Link href="/" className="mb-8 outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-4 rounded-sm">
         <Image
-          src="/icones/shareo-logo-fb.png"
+          src="/logos/shareo-logo.png"
           alt="ShareO"
-          width={180}
-          height={55}
-          className="object-contain"
+          width={160}
+          height={48}
+          className="object-contain h-12 w-auto"
           priority
         />
       </Link>
