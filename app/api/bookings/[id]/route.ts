@@ -7,6 +7,7 @@ import { PatchBookingSchema } from "@/lib/validations/bookings"
 import type { BookingStatus } from "@prisma/client"
 import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
 import type { WebhookEvent } from "@/lib/outboundWebhooks"
+import { sendBookingConfirmedEmail, sendBookingCancelledEmail } from "@/lib/email"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -124,7 +125,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     const booking = await prisma.booking.findUnique({
       where:  { id },
-      select: { id: true, status: true, borrowerId: true, ownerId: true, startDate: true, item: { select: { title: true } } },
+      select: {
+        id: true, status: true, borrowerId: true, ownerId: true, startDate: true, endDate: true,
+        item:     { select: { title: true } },
+        borrower: { select: { email: true, name: true } },
+        owner:    { select: { email: true, name: true } },
+      },
     })
 
     if (!booking) {
@@ -202,6 +208,24 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       data,
       select: { id: true, status: true, updatedAt: true },
     })
+
+    // E-mails transacionais (fire-and-forget)
+    if (action === "confirm") {
+      sendBookingConfirmedEmail(
+        booking.borrower.email, booking.borrower.name,
+        booking.item.title, id,
+        booking.startDate, booking.endDate,
+      ).catch((e) => console.error("[email] booking confirmed:", e instanceof Error ? e.message : e))
+    }
+    if (action === "cancel") {
+      const notifyEmail = isOwner ? booking.borrower.email : booking.owner.email
+      const notifyName  = isOwner ? booking.borrower.name  : booking.owner.name
+      const notifyRole  = isOwner ? "borrower" as const    : "owner" as const
+      sendBookingCancelledEmail(
+        notifyEmail, notifyName, notifyRole,
+        booking.item.title, id, reason ?? undefined,
+      ).catch((e) => console.error("[email] booking cancelled:", e instanceof Error ? e.message : e))
+    }
 
     // Webhooks de saída (fire-and-forget)
     const webhookEventMap: Partial<Record<typeof action, WebhookEvent>> = {

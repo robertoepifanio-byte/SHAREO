@@ -9,7 +9,9 @@ import {
   sendReminderStartTomorrow,
   sendReminderReturnTomorrow,
   sendReminderOverdue,
+  sendLateFeeEmail,
 } from "@/lib/email"
+import { getStripe } from "@/lib/stripe"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
@@ -75,8 +77,8 @@ export async function GET(req: NextRequest) {
         deletedAt: null,
       },
       select: {
-        id: true, startDate: true, endDate: true, dailyPrice: true,
-        item:     { select: { title: true } },
+        id: true, startDate: true, endDate: true, dailyPrice: true, lateFeeAmount: true,
+        item:     { select: { title: true, images: { select: { url: true }, orderBy: { order: "asc" }, take: 1 } } },
         borrower: { select: { email: true, name: true } },
         owner:    { select: { email: true, name: true } },
       },
@@ -104,10 +106,58 @@ export async function GET(req: NextRequest) {
     sent.push(`return:${b.id}`)
   }
 
+  const appUrl = process.env.NEXTAUTH_URL ?? "https://shareo-rouge.vercel.app"
+
   for (const b of overdueBookings) {
     const daysLate = Math.ceil(
       (startOfDay(today).getTime() - startOfDay(b.endDate).getTime()) / 86_400_000
     )
+
+    // Primeira detecção de atraso: grava lateFeeAmount + cria cobrança Stripe
+    if (b.lateFeeAmount == null) {
+      const lateFeeAmount = Math.round(b.dailyPrice * 1.5 * daysLate)
+
+      try {
+        await prisma.booking.update({
+          where: { id: b.id },
+          data:  { lateFeeAmount },
+        })
+
+        const stripe = getStripe()
+        const session = await stripe.checkout.sessions.create({
+          mode:                 "payment",
+          payment_method_types: ["card"],
+          customer_email:       b.borrower.email,
+          line_items: [{
+            quantity: 1,
+            price_data: {
+              currency:     "brl",
+              unit_amount:  lateFeeAmount,
+              product_data: {
+                name:        `Taxa de atraso — ${b.item.title}`,
+                description: `${daysLate} dia${daysLate > 1 ? "s" : ""} em atraso`,
+                ...(b.item.images[0]?.url && { images: [b.item.images[0].url] }),
+              },
+            },
+          }],
+          metadata: { bookingId: b.id, type: "late_fee" },
+          success_url: `${appUrl}/reservas/${b.id}?late_fee=paid`,
+          cancel_url:  `${appUrl}/reservas/${b.id}`,
+          expires_at:  Math.floor(Date.now() / 1000) + 72 * 3600, // 72h
+        })
+
+        await sendLateFeeEmail(
+          b.borrower.email, b.borrower.name,
+          b.item.title, b.id,
+          lateFeeAmount, session.url!,
+        )
+        sent.push(`late_fee:${b.id}`)
+      } catch (e) {
+        console.error("[cron] late fee charge", b.id, e instanceof Error ? e.message : e)
+      }
+    }
+
+    // Lembrete diário de atraso (independente de já ter cobrado)
     await sendReminderOverdue(
       b.borrower.email, b.borrower.name,
       b.owner.email,    b.owner.name,
