@@ -63,7 +63,7 @@ export async function AppHeader() {
               {/* Anunciar — apenas desktop */}
               <Link
                 href="/itens/novo"
-                className="hidden md:inline-flex items-center gap-1.5 h-11 px-4 rounded-md text-sm font-semibold bg-brand text-white hover:opacity-90 transition-opacity outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
+                className="hidden md:inline-flex items-center gap-1.5 h-11 px-4 rounded-md text-sm font-bold bg-accent text-[#003366] hover:brightness-105 transition-all outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
                   <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -94,7 +94,7 @@ export async function AppHeader() {
               {/* + Anunciar — apenas desktop (no mobile fica no menu hamburguer) */}
               <Link
                 href="/itens/novo"
-                className="hidden md:inline-flex h-11 items-center gap-1 px-4 rounded-md text-sm font-semibold bg-brand text-white hover:opacity-90 transition-opacity outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
+                className="hidden md:inline-flex h-11 items-center gap-1 px-4 rounded-md text-sm font-bold bg-accent text-[#003366] hover:brightness-105 transition-all outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
               >
                 + Anunciar
               </Link>

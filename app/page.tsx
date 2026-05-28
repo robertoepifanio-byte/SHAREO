@@ -200,6 +200,67 @@ export default async function HomePage() {
           </div>
         </section>
 
+        {/* ─── DEPOIMENTOS ─── */}
+        <section className="py-8" aria-labelledby="testimonials-title">
+          <h2 className="mb-6 text-xl font-bold text-primary md:text-2xl" id="testimonials-title">
+            O que dizem nossos usuários
+          </h2>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {[
+              {
+                name: "Ana Beatriz S.",
+                role: "Locatária",
+                text: "Aluguei uma furadeira para uma reforma e ficou ótimo. Paguei menos de R$ 20 por 3 dias e o proprietário foi super atencioso.",
+                rating: 5,
+                initial: "A",
+              },
+              {
+                name: "Carlos M.",
+                role: "Proprietário",
+                text: "Tenho equipamentos de camping parados há anos. Já gerei mais de R$ 400 em renda extra esse mês. Vale muito a pena anunciar!",
+                rating: 5,
+                initial: "C",
+              },
+              {
+                name: "Fernanda L.",
+                role: "Locatária",
+                text: "Precisava de uma câmera para um evento e encontrei exatamente o que queria a 2 km de casa. Processo fácil e seguro.",
+                rating: 5,
+                initial: "F",
+              },
+            ].map((t) => (
+              <div
+                key={t.name}
+                className="rounded-xl bg-[#144D81] p-6 flex flex-col gap-4"
+              >
+                {/* Estrelas */}
+                <div className="flex gap-0.5" aria-label={`${t.rating} estrelas`}>
+                  {Array.from({ length: t.rating }).map((_, i) => (
+                    <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill="#59C686" aria-hidden="true">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                  ))}
+                </div>
+                {/* Texto */}
+                <p className="flex-1 text-sm leading-relaxed text-white/85">&ldquo;{t.text}&rdquo;</p>
+                {/* Autor */}
+                <div className="flex items-center gap-3">
+                  <div
+                    className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-[#003366]"
+                    aria-hidden="true"
+                  >
+                    {t.initial}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white">{t.name}</p>
+                    <p className="text-xs text-white/55">{t.role}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
         {/* ─── CTA ─── */}
         <section className="pb-12">
           <div className="rounded-xl bg-gradient-to-br from-primary to-[#144D81] px-8 py-10">
@@ -214,7 +275,7 @@ export default async function HomePage() {
             </p>
             <Link
               href="/itens/novo"
-              className="inline-flex h-12 items-center rounded-lg bg-brand px-6 text-base font-semibold text-white hover:opacity-90 transition-opacity outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
+              className="inline-flex h-12 items-center rounded-lg bg-accent px-6 text-base font-bold text-[#003366] hover:brightness-105 transition-all outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
             >
               Começar a anunciar →
             </Link>
