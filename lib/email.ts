@@ -144,6 +144,71 @@ function welcomeHtml(name: string) {
   `)
 }
 
+function bookingConfirmedHtml(firstName: string, itemTitle: string, startDate: Date, endDate: Date, bookingUrl: string) {
+  return baseLayout(`
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
+      ✅ Reserva confirmada!
+    </h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
+      Olá, ${firstName}! O proprietário confirmou sua reserva de
+      <strong>${itemTitle}</strong>. Combine os detalhes de retirada com ele pelo chat.
+    </p>
+    <table width="100%" cellpadding="0" cellspacing="0"
+      style="margin-bottom:24px;border-radius:8px;border:1px solid #E2E8F0;padding:16px 20px;">
+      <tr>
+        <td style="padding-bottom:8px;">
+          <span style="font-size:12px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.5px;">Retirada</span><br/>
+          <span style="font-size:15px;font-weight:600;color:#0D1B2A;">${fmtDate(startDate)}</span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <span style="font-size:12px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.5px;">Devolução</span><br/>
+          <span style="font-size:15px;font-weight:600;color:#0D1B2A;">${fmtDate(endDate)}</span>
+        </td>
+      </tr>
+    </table>
+    <div style="text-align:center;">${ctaButton(bookingUrl, "Ver detalhes da reserva")}</div>
+  `)
+}
+
+function bookingCancelledHtml(firstName: string, itemTitle: string, role: "borrower" | "owner", reason: string | undefined, bookingUrl: string) {
+  const who = role === "borrower" ? "O proprietário cancelou" : "O locatário cancelou"
+  return baseLayout(`
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#B91C1C;">
+      ❌ Reserva cancelada
+    </h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
+      Olá, ${firstName}! ${who} a reserva de <strong>${itemTitle}</strong>.
+    </p>
+    ${reason ? `
+    <div style="margin-bottom:20px;padding:14px 18px;background:#FFF7ED;border-radius:8px;border:1px solid #FED7AA;">
+      <p style="margin:0;font-size:13px;color:#C2410C;"><strong>Motivo:</strong> ${reason}</p>
+    </div>` : ""}
+    <div style="text-align:center;">${ctaButton(bookingUrl, "Ver reserva")}</div>
+    <p style="margin:20px 0 0;font-size:13px;color:#64748B;line-height:1.6;">
+      Se tiver dúvidas, entre em contato com o suporte pelo chat da plataforma.
+    </p>
+  `)
+}
+
+function lateFeeHtml(firstName: string, itemTitle: string, lateFeeFormatted: string, paymentUrl: string, bookingUrl: string) {
+  return baseLayout(`
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#B91C1C;">
+      🚨 Taxa de atraso — pagamento necessário
+    </h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
+      Olá, ${firstName}! O prazo de devolução de <strong>${itemTitle}</strong> foi ultrapassado.
+      Uma taxa de atraso de <strong>${lateFeeFormatted}</strong> foi gerada.
+    </p>
+    <div style="text-align:center;">${ctaButton(paymentUrl, `Pagar taxa de atraso — ${lateFeeFormatted}`)}</div>
+    <p style="margin:20px 0 0;font-size:12px;color:#94A3B8;">
+      Após o pagamento, a reserva será encerrada e o item poderá ser devolvido.
+      <a href="${bookingUrl}" style="color:#007B3C;">Ver reserva →</a>
+    </p>
+  `)
+}
+
 // ─── Funções públicas ──────────────────────────────────────────────────────────
 
 export async function sendPasswordResetEmail(
@@ -247,6 +312,57 @@ export async function sendReminderReturnTomorrow(
     subject: `⏰ Devolua "${itemTitle}" amanhã — ShareO`,
     html,
   })
+}
+
+export async function sendBookingConfirmedEmail(
+  to: string, name: string,
+  itemTitle: string, bookingId: string,
+  startDate: Date, endDate: Date,
+): Promise<void> {
+  const firstName  = name.split(" ")[0]
+  const bookingUrl = `${APP_URL}/reservas/${bookingId}`
+  const { error } = await getResend().emails.send({
+    from:    `ShareO <${FROM}>`,
+    to,
+    subject: `✅ Reserva confirmada — ${itemTitle}`,
+    html:    bookingConfirmedHtml(firstName, itemTitle, startDate, endDate, bookingUrl),
+  })
+  if (error) throw new Error(`Resend error: ${error.message}`)
+}
+
+export async function sendBookingCancelledEmail(
+  to: string, name: string,
+  role: "borrower" | "owner",
+  itemTitle: string, bookingId: string,
+  reason?: string,
+): Promise<void> {
+  const firstName  = name.split(" ")[0]
+  const bookingUrl = `${APP_URL}/reservas/${bookingId}`
+  const { error } = await getResend().emails.send({
+    from:    `ShareO <${FROM}>`,
+    to,
+    subject: `❌ Reserva cancelada — ${itemTitle}`,
+    html:    bookingCancelledHtml(firstName, itemTitle, role, reason, bookingUrl),
+  })
+  if (error) throw new Error(`Resend error: ${error.message}`)
+}
+
+export async function sendLateFeeEmail(
+  to: string, name: string,
+  itemTitle: string, bookingId: string,
+  lateFeeAmountCents: number, paymentUrl: string,
+): Promise<void> {
+  const firstName       = name.split(" ")[0]
+  const lateFeeFormatted = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" })
+    .format(lateFeeAmountCents / 100)
+  const bookingUrl = `${APP_URL}/reservas/${bookingId}`
+  const { error } = await getResend().emails.send({
+    from:    `ShareO <${FROM}>`,
+    to,
+    subject: `🚨 Taxa de atraso — ${itemTitle} — ShareO`,
+    html:    lateFeeHtml(firstName, itemTitle, lateFeeFormatted, paymentUrl, bookingUrl),
+  })
+  if (error) throw new Error(`Resend error: ${error.message}`)
 }
 
 /** Lembrete: item em atraso — enviado ao locatário e ao locador */
