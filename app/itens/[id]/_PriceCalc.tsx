@@ -1,29 +1,43 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { calcBookingTotal } from "@/lib/pricing"
 
 interface Props {
-  pricePerDay:    number           // centavos
-  pricePerWeek?:  number | null    // centavos
-  pricePerMonth?: number | null    // centavos
-  depositAmount?: number | null    // centavos — mostrado no resumo
+  pricePerDay:    number
+  pricePerWeek?:  number | null
+  pricePerMonth?: number | null
+  depositAmount?: number | null
   itemId:         string
   isLoggedIn:     boolean
 }
 
+type Mode = "daily" | "weekly" | "monthly"
+
 const COMMISSION = 0.10
+
 const fmt = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v)
 
-/** Monta a linha de breakdown (ex: "2 semanas × R$160 + 3 dias × R$35") */
+const fmtDate = (iso: string) => {
+  const [y, m, d] = iso.split("-")
+  return `${d}/${m}/${y}`
+}
+
+/** Adiciona N dias a uma data ISO (YYYY-MM-DD) */
+function addDays(iso: string, days: number): string {
+  const d = new Date(`${iso}T12:00:00`)
+  d.setDate(d.getDate() + days)
+  return d.toISOString().split("T")[0]
+}
+
 function buildBreakdown(
-  days:          number,
-  pricePerDay:   number,
-  pricePerWeek?: number | null,
-  pricePerMonth?:number | null,
+  days:           number,
+  pricePerDay:    number,
+  pricePerWeek?:  number | null,
+  pricePerMonth?: number | null,
 ): string {
   if (days >= 30 && pricePerMonth) {
     const months   = Math.floor(days / 30)
@@ -44,36 +58,66 @@ function buildBreakdown(
   return `${days} dia${days > 1 ? "s" : ""} × ${fmt(pricePerDay / 100)}`
 }
 
-export function PriceCalc({ pricePerDay, pricePerWeek, pricePerMonth, depositAmount, itemId, isLoggedIn }: Props) {
-  const router  = useRouter()
-  const today   = new Date().toISOString().split("T")[0]
+export function PriceCalc({
+  pricePerDay, pricePerWeek, pricePerMonth,
+  depositAmount, itemId, isLoggedIn,
+}: Props) {
+  const router = useRouter()
+  const today  = new Date().toISOString().split("T")[0]
 
+  const availableModes: Mode[] = [
+    "daily",
+    ...(pricePerWeek  ? ["weekly"  as Mode] : []),
+    ...(pricePerMonth ? ["monthly" as Mode] : []),
+  ]
+
+  const [mode,      setMode]      = useState<Mode>("daily")
   const [startDate, setStartDate] = useState("")
-  const [endDate,   setEndDate]   = useState("")
+  const [numDays,   setNumDays]   = useState(1)
   const [note,      setNote]      = useState("")
   const [error,     setError]     = useState("")
   const [pending,   startTransition] = useTransition()
 
-  const days =
-    startDate && endDate
-      ? Math.max(0, Math.ceil(
-          (new Date(endDate).getTime() - new Date(startDate).getTime()) / 86_400_000,
-        ))
-      : 0
+  // Data de devolução calculada automaticamente
+  const endDate = useMemo(() => {
+    if (!startDate) return ""
+    if (mode === "weekly")  return addDays(startDate, 7)
+    if (mode === "monthly") return addDays(startDate, 30)
+    return addDays(startDate, numDays)
+  }, [startDate, mode, numDays])
+
+  const days = useMemo(() => {
+    if (!startDate) return 0
+    if (mode === "weekly")  return 7
+    if (mode === "monthly") return 30
+    return numDays
+  }, [startDate, mode, numDays])
 
   const { totalPrice: subtotalCents, savings: savingsCents } =
     days > 0
       ? calcBookingTotal(days, pricePerDay, pricePerWeek, pricePerMonth)
       : { totalPrice: 0, savings: 0 }
 
-  const subtotal = subtotalCents / 100
-  const savings  = savingsCents  / 100
-  const fee      = subtotal * COMMISSION
-  const total    = subtotal + fee
-
+  const subtotal  = subtotalCents / 100
+  const savings   = savingsCents  / 100
+  const fee       = subtotal * COMMISSION
+  const total     = subtotal + fee
   const breakdown = days > 0
     ? buildBreakdown(days, pricePerDay, pricePerWeek, pricePerMonth)
     : ""
+
+  const isReady = !!startDate && days > 0
+
+  function handleModeChange(m: Mode) {
+    setMode(m)
+    setError("")
+    if (m === "daily") setNumDays(1)
+  }
+
+  function handleStartChange(val: string) {
+    setStartDate(val)
+    setError("")
+  }
 
   async function solicitar() {
     setError("")
@@ -83,8 +127,8 @@ export function PriceCalc({ pricePerDay, pricePerWeek, pricePerMonth, depositAmo
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           itemId,
-          startDate: new Date(startDate).toISOString(),
-          endDate:   new Date(endDate).toISOString(),
+          startDate: new Date(`${startDate}T12:00:00`).toISOString(),
+          endDate:   new Date(`${endDate}T12:00:00`).toISOString(),
           borrowerNote: note || undefined,
         }),
       })
@@ -100,58 +144,128 @@ export function PriceCalc({ pricePerDay, pricePerWeek, pricePerMonth, depositAmo
     })
   }
 
+  const MODE_LABEL: Record<Mode, string> = {
+    daily:   "Diário",
+    weekly:  "Semanal",
+    monthly: "Mensal",
+  }
+
   return (
     <>
-      {/* Seleção de datas */}
-      <div className="mb-4 grid grid-cols-2 gap-2.5">
-        <div>
+      {/* Tabs de modalidade */}
+      {availableModes.length > 1 && (
+        <div className="mb-4 flex rounded-lg border border-border bg-background p-0.5">
+          {availableModes.map((m) => (
+            <button
+              key={m}
+              onClick={() => handleModeChange(m)}
+              className={`flex-1 rounded-md py-1.5 text-xs font-semibold transition-colors ${
+                mode === m
+                  ? "bg-brand text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {MODE_LABEL[m]}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Data de retirada */}
+      <div className="mb-3">
+        <label
+          htmlFor="date-start"
+          className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+        >
+          Retirada
+        </label>
+        <input
+          id="date-start"
+          type="date"
+          min={today}
+          value={startDate}
+          onChange={(e) => handleStartChange(e.target.value)}
+          className="h-10 w-full rounded-lg border border-input px-2.5 text-sm text-foreground outline-none focus:border-brand transition-colors"
+        />
+      </div>
+
+      {/* Quantidade de dias (só no modo diário) */}
+      {mode === "daily" && (
+        <div className="mb-3">
           <label
-            htmlFor="date-start"
+            htmlFor="num-days"
             className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
           >
-            Retirada
+            Quantidade de dias
           </label>
-          <input
-            id="date-start"
-            type="date"
-            min={today}
-            value={startDate}
-            onChange={(e) => {
-              setStartDate(e.target.value)
-              if (endDate && endDate <= e.target.value) setEndDate("")
-            }}
-            className="h-10 w-full rounded-lg border border-input px-2.5 text-sm text-foreground outline-none focus:border-brand transition-colors"
-          />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setNumDays((n) => Math.max(1, n - 1))}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-input text-lg text-muted-foreground hover:bg-background transition-colors"
+              aria-label="Diminuir"
+            >
+              −
+            </button>
+            <input
+              id="num-days"
+              type="number"
+              min={1}
+              max={365}
+              value={numDays}
+              onChange={(e) => setNumDays(Math.max(1, parseInt(e.target.value) || 1))}
+              className="h-10 w-full rounded-lg border border-input px-2.5 text-center text-sm font-semibold text-foreground outline-none focus:border-brand transition-colors"
+            />
+            <button
+              type="button"
+              onClick={() => setNumDays((n) => Math.min(365, n + 1))}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-input text-lg text-muted-foreground hover:bg-background transition-colors"
+              aria-label="Aumentar"
+            >
+              +
+            </button>
+          </div>
         </div>
-        <div>
-          <label
-            htmlFor="date-end"
-            className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
-          >
-            Devolução
-          </label>
-          <input
-            id="date-end"
-            type="date"
-            min={startDate || today}
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="h-10 w-full rounded-lg border border-input px-2.5 text-sm text-foreground outline-none focus:border-brand transition-colors"
-          />
+      )}
+
+      {/* Data de devolução — calculada automaticamente */}
+      <div className="mb-4">
+        <label
+          htmlFor="date-end"
+          className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+        >
+          Devolução
+          <span className="ml-1.5 rounded bg-muted px-1.5 py-0.5 text-[10px] font-normal normal-case text-muted-foreground">
+            calculado automaticamente
+          </span>
+        </label>
+        <div
+          id="date-end"
+          className="flex h-10 w-full items-center rounded-lg border border-input bg-muted/40 px-2.5 text-sm text-foreground"
+          aria-readonly="true"
+        >
+          {endDate ? fmtDate(endDate) : <span className="text-muted-foreground">—</span>}
         </div>
+        {endDate && (
+          <p className="mt-1 text-[10px] text-muted-foreground">
+            {mode === "daily"
+              ? `Retirada + ${numDays} dia${numDays > 1 ? "s" : ""}`
+              : mode === "weekly"
+              ? "Retirada + 7 dias"
+              : "Retirada + 30 dias"}
+          </p>
+        )}
       </div>
 
       {/* Resumo de preço */}
       <div className="mb-4 rounded-lg border border-border bg-background p-3 text-sm" aria-live="polite">
-        {days > 0 ? (
+        {days > 0 && startDate ? (
           <>
-            {/* Breakdown (diário, semanal ou mensal) */}
             <div className="mb-1.5 flex justify-between text-muted-foreground">
               <span className="mr-2 min-w-0 break-words">{breakdown}</span>
               <span className="shrink-0">{fmt(subtotal)}</span>
             </div>
 
-            {/* Desconto por período */}
             {savings > 0 && (
               <div className="mb-1.5 flex justify-between text-xs font-medium text-success">
                 <span>🏷️ Desconto por período</span>
@@ -159,15 +273,13 @@ export function PriceCalc({ pricePerDay, pricePerWeek, pricePerMonth, depositAmo
               </div>
             )}
 
-            {/* Taxa Shareo */}
             <div className="mb-1.5 flex justify-between text-muted-foreground">
               <span>Taxa Shareo (10%)</span>
               <span>{fmt(fee)}</span>
             </div>
 
-            {/* Caução (se definida) */}
             {depositAmount != null && depositAmount > 0 && (
-              <div className="mb-1.5 flex justify-between text-amber-700 text-xs">
+              <div className="mb-1.5 flex justify-between text-xs text-amber-700">
                 <span className="flex items-center gap-1">
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                     <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
@@ -185,7 +297,7 @@ export function PriceCalc({ pricePerDay, pricePerWeek, pricePerMonth, depositAmo
               <span>{fmt(total)}</span>
             </div>
             {depositAmount != null && depositAmount > 0 && (
-              <div className="flex justify-between text-xs text-muted-foreground mt-0.5">
+              <div className="mt-0.5 flex justify-between text-xs text-muted-foreground">
                 <span>Total com caução</span>
                 <span>{fmt(total + depositAmount / 100)}</span>
               </div>
@@ -193,14 +305,14 @@ export function PriceCalc({ pricePerDay, pricePerWeek, pricePerMonth, depositAmo
           </>
         ) : (
           <div className="flex justify-between text-muted-foreground">
-            <span>Selecione as datas acima</span>
+            <span>Selecione a data de retirada</span>
             <span>—</span>
           </div>
         )}
       </div>
 
       {/* Nota opcional */}
-      {days > 0 && isLoggedIn && (
+      {isReady && isLoggedIn && (
         <div className="mb-4">
           <label htmlFor="borrower-note" className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Mensagem ao proprietário (opcional)
@@ -225,7 +337,7 @@ export function PriceCalc({ pricePerDay, pricePerWeek, pricePerMonth, depositAmo
       {isLoggedIn ? (
         <button
           className="mb-2.5 w-full rounded-lg bg-brand py-3.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity disabled:opacity-50"
-          disabled={days === 0 || pending}
+          disabled={!isReady || pending}
           onClick={solicitar}
         >
           {pending ? "Enviando…" : "💬 Solicitar locação"}
