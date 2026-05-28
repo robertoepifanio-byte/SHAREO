@@ -198,7 +198,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
                     : "border-border bg-surface text-muted-foreground hover:border-brand/40 hover:text-foreground"
                 }`}
               >
-                <CategoryIcon name={cat.name} size={52} monochrome />
+                <CategoryIcon name={cat.name} size={52} />
                 {cat.name}
               </Link>
             ))}
