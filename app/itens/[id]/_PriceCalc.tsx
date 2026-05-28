@@ -144,31 +144,50 @@ export function PriceCalc({
     })
   }
 
-  const MODE_LABEL: Record<Mode, string> = {
-    daily:   "Diário",
-    weekly:  "Semanal",
-    monthly: "Mensal",
+  const MODE_PRICE: Record<Mode, { label: string; price: number; unit: string }> = {
+    daily:   { label: "Diário",  price: pricePerDay,          unit: "/dia" },
+    weekly:  { label: "Semanal", price: pricePerWeek  ?? 0,   unit: "/sem" },
+    monthly: { label: "Mensal",  price: pricePerMonth ?? 0,   unit: "/mês" },
   }
 
   return (
     <>
-      {/* Tabs de modalidade */}
-      {availableModes.length > 1 && (
-        <div className="mb-4 flex rounded-lg border border-border bg-background p-0.5">
-          {availableModes.map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => handleModeChange(m)}
-              className={`flex-1 rounded-md py-3 text-xs font-semibold transition-colors ${
-                mode === m
-                  ? "bg-brand text-white shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {MODE_LABEL[m]}
-            </button>
-          ))}
+      {/* Preço + seleção de modalidade */}
+      {availableModes.length === 1 ? (
+        /* Apenas diário — exibe preço estático */
+        <div className="mb-5 flex items-baseline gap-1">
+          <span className="text-3xl font-extrabold text-foreground">{fmt(pricePerDay / 100)}</span>
+          <span className="text-sm text-muted-foreground">/dia</span>
+        </div>
+      ) : (
+        /* Múltiplas modalidades — tabs clicáveis com preço */
+        <div className="mb-5 flex gap-2">
+          {availableModes.map((m) => {
+            const { label, price, unit } = MODE_PRICE[m]
+            const active = mode === m
+            return (
+              <button
+                key={m}
+                type="button"
+                onClick={() => handleModeChange(m)}
+                className={`flex flex-1 flex-col items-center rounded-xl border py-3 px-2 transition-all ${
+                  active
+                    ? "border-brand bg-brand/5 shadow-sm"
+                    : "border-border bg-background hover:border-brand/40 hover:bg-brand/5"
+                }`}
+              >
+                <span className={`text-[10px] font-semibold uppercase tracking-wider ${active ? "text-brand" : "text-muted-foreground"}`}>
+                  {label}
+                </span>
+                <span className={`mt-0.5 text-base font-extrabold leading-tight ${active ? "text-foreground" : "text-muted-foreground"}`}>
+                  {fmt(price / 100)}
+                </span>
+                <span className={`text-[10px] ${active ? "text-brand" : "text-muted-foreground"}`}>
+                  {unit}
+                </span>
+              </button>
+            )
+          })}
         </div>
       )}
 
