@@ -43,16 +43,12 @@ export async function POST(req: NextRequest) {
   }
 
   // Busca itens sem coordenadas
-  const items = await prisma.item.findMany({
-    where: {
-      OR: [
-        { latitude: { equals: null } },
-        { longitude: { equals: null } },
-      ],
-      deletedAt: null,
-    },
-    select: { id: true, title: true, neighborhood: true, city: true, state: true },
+  const allItems = await prisma.item.findMany({
+    where: { deletedAt: null },
+    select: { id: true, title: true, neighborhood: true, city: true, state: true, latitude: true, longitude: true },
   })
+
+  const items = allItems.filter((i) => i.latitude == null || i.longitude == null)
 
   if (items.length === 0) {
     return NextResponse.json({ ok: true, processed: 0, message: "Nenhum item sem coordenadas." })
