@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   if (user?.idVerificationStatus === "PENDING")
     return NextResponse.json({ error: { code: "ALREADY_PENDING", message: "Documentos já enviados, aguarde a análise." } }, { status: 409 })
 
-  const formData = await req.formData()
+  const formData = await req.formData() as globalThis.FormData
   const docFile  = formData.get("document") as File | null
   const selfie   = formData.get("selfie")   as File | null
 

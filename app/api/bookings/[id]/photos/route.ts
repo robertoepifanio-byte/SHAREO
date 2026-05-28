@@ -61,7 +61,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   if (!isParticipant)
     return NextResponse.json({ error: { code: "FORBIDDEN" } }, { status: 403 })
 
-  const formData = await req.formData()
+  const formData = await req.formData() as globalThis.FormData
   const phase    = formData.get("phase") as string
   const file     = formData.get("file") as File | null
 
