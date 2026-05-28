@@ -46,8 +46,8 @@ export async function POST(req: NextRequest) {
   const items = await prisma.item.findMany({
     where: {
       OR: [
-        { latitude: null },
-        { longitude: null },
+        { latitude: { equals: null } },
+        { longitude: { equals: null } },
       ],
       deletedAt: null,
     },
