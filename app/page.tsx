@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { ItemCard } from "@/components/items/ItemCard"
 import { CategoryIcon } from "@/components/ui/CategoryIcon"
+import { ItemsMapLoader } from "@/components/items/ItemsMapLoader"
+import type { ItemPin } from "@/components/items/ItemsMap"
 
 export const metadata: Metadata = {
   title: "ShareO — Use Mais. Possua Menos.",
@@ -27,6 +29,7 @@ export default async function HomePage() {
       select: {
         id: true, title: true, pricePerDay: true, condition: true,
         city: true, state: true, neighborhood: true, isActive: true,
+        latitude: true, longitude: true,
         category: { select: { name: true } },
         owner:    { select: { name: true, isVerified: true } },
         images:   { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
@@ -129,16 +132,16 @@ export default async function HomePage() {
 
         {/* ─── MAPA ─── */}
         <section className="pb-8" aria-label="Mapa de itens próximos">
-          <div
-            className="relative flex h-48 w-full items-center justify-center overflow-hidden rounded-lg border border-border bg-gradient-to-br from-[#ccd9e5] to-[#a8c0d4]"
-            role="img"
-            aria-label="Mapa com itens disponíveis em Natal, RN"
-          >
-            <span className="text-5xl" aria-hidden="true">🗺️</span>
-            <div className="absolute bottom-3 right-3 rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-primary shadow-sm" aria-hidden="true">
-              Ver no mapa
-            </div>
-          </div>
+          <ItemsMapLoader
+            height={192}
+            items={items.map<ItemPin>((i) => ({
+              id:          i.id,
+              title:       i.title,
+              pricePerDay: i.pricePerDay,
+              lat:         i.latitude,
+              lng:         i.longitude,
+            }))}
+          />
         </section>
 
         {/* ─── ITENS PRÓXIMOS ─── */}

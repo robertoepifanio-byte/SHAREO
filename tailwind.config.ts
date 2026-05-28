@@ -108,7 +108,7 @@ const config: Config = {
 
         // Status de item
         item: {
-          available: "#22C55E",
+          available: "#007B3C",
           rented: "#F59E0B",
           inactive: "#94A3B8",
         },

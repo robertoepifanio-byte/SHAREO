@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { Montserrat } from "next/font/google"
+import { Toaster } from "sonner"
 import { BottomNav } from "@/components/layout/BottomNav"
 import { AppFooter } from "@/components/layout/AppFooter"
 import "./globals.css"
@@ -43,7 +44,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AppFooter />
         </div>
         <BottomNav />
-      </body>
+            <Toaster richColors position="top-right" />
+    </body>
     </html>
   )
 }

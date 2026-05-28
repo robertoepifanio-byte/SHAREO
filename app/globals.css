@@ -5,6 +5,12 @@
 /* ── ShareO Design System — CSS custom properties ── */
 @layer base {
   :root {
+  --primary:#003366;
+  --brand:#007B3C;
+  --accent:#59C686;
+  --destructive:#E74C3C;
+  --background:#F8FAFC;
+  --surface:#FFFFFF;
     /* Icon theme — modo claro */
     --icon-bg:    #FFFFFF;
     --icon-color: #007B3C;
