@@ -206,7 +206,7 @@ export async function POST(req: Request) {
         } else {
           // latitude/longitude são obrigatórios no schema; padrão 0 para itens importados sem geo
           await prisma.item.create({
-            data: { ...sharedData, ownerId },
+            data: { ...sharedData, ownerId, latitude: 0, longitude: 0 },
           })
           created++
         }
