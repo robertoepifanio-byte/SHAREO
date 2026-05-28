@@ -11,9 +11,9 @@ type Props = { params: Promise<{ slug: string }> }
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const user = await getOwner(slug)
-  if (!user) return { title: "Vitrine não encontrada — ShareO" }
+  if (!user) return { title: "Vitrine não encontrada" }
   return {
-    title: `${user.name} — Vitrine ShareO`,
+    title: `${user.name} — Vitrine`,
     description: user.bio ?? `Confira os itens disponíveis para aluguel de ${user.name} no ShareO.`,
     openGraph: {
       title: `${user.name} — Vitrine ShareO`,

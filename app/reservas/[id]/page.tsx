@@ -15,7 +15,7 @@ type Props = {
   searchParams: Promise<{ payment?: string }>
 }
 
-export const metadata: Metadata = { title: "Detalhe da Reserva — ShareO" }
+export const metadata: Metadata = { title: "Detalhe da Reserva" }
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   PENDING:   { label: "Aguardando resposta", color: "bg-yellow-100 text-yellow-800" },

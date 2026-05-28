@@ -7,7 +7,7 @@ import { AppHeader } from "@/components/layout/AppHeader"
 import { PjGate } from "@/components/premium/PjGate"
 import { WebhooksPanel } from "./_WebhooksPanel"
 
-export const metadata: Metadata = { title: "Integrações PJ — ShareO" }
+export const metadata: Metadata = { title: "Integrações PJ" }
 
 export default async function IntegracoesPage() {
   const session = await auth()

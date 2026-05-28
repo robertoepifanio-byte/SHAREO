@@ -9,7 +9,7 @@ import { CategoryIcon } from "@/components/ui/CategoryIcon"
 import { SortSelect } from "./_SortSelect"
 
 export const metadata: Metadata = {
-  title:       "Explorar anúncios — ShareO",
+  title:       "Explorar anúncios",
   description: "Encontre itens para alugar perto de você no ShareO.",
 }
 

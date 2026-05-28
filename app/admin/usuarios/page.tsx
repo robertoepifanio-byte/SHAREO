@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { prisma } from "@/lib/prisma"
 import { UserActions } from "./_Actions"
 
-export const metadata: Metadata = { title: "Admin — Usuários | ShareO" }
+export const metadata: Metadata = { title: "Admin — Usuários" }
 
 export default async function AdminUsuariosPage() {
   const users = await prisma.user.findMany({

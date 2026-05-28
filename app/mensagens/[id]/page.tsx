@@ -8,7 +8,7 @@ import { ChatWindow } from "./_ChatWindow"
 
 type Props = { params: Promise<{ id: string }> }
 
-export const metadata: Metadata = { title: "Chat — ShareO" }
+export const metadata: Metadata = { title: "Chat" }
 
 export default async function ChatPage({ params }: Props) {
   const session = await auth()

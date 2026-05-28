@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { ResetPasswordForm } from "./_ResetPasswordForm"
 
-export const metadata: Metadata = { title: "Nova senha | ShareO" }
+export const metadata: Metadata = { title: "Nova senha" }
 
 export default async function ResetPasswordPage({
   params,
