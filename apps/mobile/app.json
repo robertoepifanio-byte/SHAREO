@@ -1,0 +1,58 @@
+{
+  "expo": {
+    "name": "ShareO",
+    "slug": "shareo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "shareo",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0D1B2A"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.shareo.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0D1B2A"
+      },
+      "package": "com.shareo.app"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-camera",
+        { "cameraPermission": "Permitir que o ShareO acesse sua câmera para fotos de check-in/checkout." }
+      ],
+      [
+        "expo-image-picker",
+        { "photosPermission": "Permitir que o ShareO acesse sua galeria para adicionar fotos." }
+      ],
+      [
+        "expo-location",
+        { "locationAlwaysAndWhenInUsePermission": "Permitir que o ShareO use sua localização para encontrar itens próximos." }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#0D1B2A"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
