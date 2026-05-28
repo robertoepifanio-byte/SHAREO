@@ -44,6 +44,17 @@ const NAV = [
       </svg>
     ),
   },
+  {
+    href:  "/admin/verificacoes",
+    label: "Verificações",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+        <rect x="2" y="5" width="20" height="14" rx="2"/>
+        <path d="M16 10a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/>
+        <path d="M6 9h2M6 13h2M6 17h12"/>
+      </svg>
+    ),
+  },
 ]
 
 const linkCls =
