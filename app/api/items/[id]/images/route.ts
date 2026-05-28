@@ -52,7 +52,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       )
     }
 
-    const formData = await req.formData()
+    const formData = await req.formData() as globalThis.FormData
     const file = formData.get("file")
 
     if (!(file instanceof File)) {
