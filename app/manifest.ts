@@ -14,32 +14,32 @@ export default function manifest(): MetadataRoute.Manifest {
     categories:       ["shopping", "lifestyle"],
     icons: [
       {
-        src:     "/logos/shareo-logo.png",
+        src:     "/logos/pwa-icon-192.png",
         sizes:   "192x192",
         type:    "image/png",
         purpose: "any",
       },
       {
-        src:     "/logos/shareo-logo.png",
+        src:     "/logos/pwa-icon-512.png",
         sizes:   "512x512",
         type:    "image/png",
-        purpose: "maskable",
+        purpose: "any maskable",
       },
     ],
     shortcuts: [
       {
-        name:       "Explorar itens",
-        short_name: "Explorar",
-        url:        "/itens",
+        name:        "Explorar itens",
+        short_name:  "Explorar",
+        url:         "/itens",
         description: "Encontre itens para alugar",
-        icons: [{ src: "/logos/shareo-logo.png", sizes: "96x96" }],
+        icons: [{ src: "/logos/pwa-icon-192.png", sizes: "192x192" }],
       },
       {
-        name:       "Minhas reservas",
-        short_name: "Reservas",
-        url:        "/reservas",
+        name:        "Minhas reservas",
+        short_name:  "Reservas",
+        url:         "/reservas",
         description: "Ver suas reservas ativas",
-        icons: [{ src: "/logos/shareo-logo.png", sizes: "96x96" }],
+        icons: [{ src: "/logos/pwa-icon-192.png", sizes: "192x192" }],
       },
     ],
   }
