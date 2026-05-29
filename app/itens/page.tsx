@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { ItemCard } from "@/components/items/ItemCard"
 import { CategoryIcon } from "@/components/ui/CategoryIcon"
@@ -12,6 +13,7 @@ import type { ItemPin } from "@/components/items/ItemsMap"
 import { DistanceFilter } from "./_DistanceFilter"
 import { FilterTrigger } from "./_FilterTrigger"
 import { haversineKm } from "@/lib/haversine"
+import { getUserMapLocation } from "@/lib/userLocation"
 
 export const metadata: Metadata = {
   title:       "Explorar anúncios",
@@ -47,7 +49,11 @@ function getOrderBy(sort?: string) {
 }
 
 export default async function ExplorarPage({ searchParams }: Props) {
-  const sp         = await searchParams
+  const [sp, session] = await Promise.all([
+    searchParams,
+    auth().catch(() => null),
+  ])
+  const userLoc = await getUserMapLocation(session?.user?.id)
   const page       = Math.max(1, Number(sp.page ?? 1))
   const search     = sp.search?.trim() || undefined
   const categoryId = sp.categoryId    || undefined
@@ -317,7 +323,13 @@ export default async function ExplorarPage({ searchParams }: Props) {
                 }))
               return pins.length > 0 ? (
                 <div className="mb-4 overflow-hidden rounded-xl border border-border">
-                  <ItemsMapLoader items={pins} height={260} />
+                  <ItemsMapLoader
+                    items={pins}
+                    height={260}
+                    defaultLat={userLoc.lat}
+                    defaultLng={userLoc.lng}
+                    defaultZoom={userLoc.zoom}
+                  />
                 </div>
               ) : null
             })()}
