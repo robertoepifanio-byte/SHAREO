@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { UpdateItemSchema } from "@/lib/validations/items"
+import { geocodeItem } from "@/lib/geocodeItem"
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -138,6 +139,15 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
       },
       select: { id: true, title: true, isActive: true, updatedAt: true, pricePerDay: true },
     })
+
+    // Regeocodifica em background quando endereço muda
+    if (d.city || d.state || d.neighborhood) {
+      prisma.item.findUnique({ where: { id }, select: { city: true, state: true, neighborhood: true } })
+        .then((it) => {
+          if (it) geocodeItem(id, { city: it.city, state: it.state, neighborhood: it.neighborhood })
+        })
+        .catch(() => undefined)
+    }
 
     return NextResponse.json({ data: updated })
   } catch (e) {
