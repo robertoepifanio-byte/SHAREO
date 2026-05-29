@@ -71,13 +71,13 @@ export function BookingProgressBar({ status, paymentStatus, compact = false }: P
         />
 
         {/* Dots + labels */}
-        <ol className="relative flex items-start justify-between" role="list">
+        <ol className="relative flex items-start justify-between">
           {STEPS.map((step) => {
             const done    = step.id < currentStep
             const current = step.id === currentStep
 
             return (
-              <li key={step.id} className="flex flex-col items-center" role="listitem">
+              <li key={step.id} className="flex flex-col items-center">
                 {/* Dot */}
                 <div
                   className={[

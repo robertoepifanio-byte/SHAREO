@@ -3,7 +3,6 @@ import Image from "next/image"
 import Link from "next/link"
 import { NotificationBell } from "@/components/ui/NotificationBell"
 import { MobileMenu } from "@/components/layout/MobileMenu"
-import { SignOutButton } from "@/components/ui/SignOutButton"
 
 export async function AppHeader() {
   const session = await auth().catch(() => null)
