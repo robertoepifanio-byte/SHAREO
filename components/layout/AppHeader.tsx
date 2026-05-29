@@ -25,6 +25,7 @@ export async function AppHeader() {
               alt="ShareO"
               width={120}
               height={36}
+              sizes="120px"
               className="object-contain h-8 w-auto"
               priority
             />
