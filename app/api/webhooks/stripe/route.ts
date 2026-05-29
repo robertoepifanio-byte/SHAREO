@@ -45,18 +45,62 @@ export async function POST(req: Request) {
           break
         }
 
+        const paymentIntentId = typeof session.payment_intent === "string"
+          ? session.payment_intent
+          : (session.payment_intent?.id ?? null)
+
+        const isLateFee = session.metadata?.type === "late_fee"
+
+        if (isLateFee) {
+          // Taxa de atraso paga — registra e notifica ambas as partes
+          await prisma.booking.update({
+            where: { id: bookingId },
+            data:  { lateFeeAmount: session.amount_total ?? undefined },
+          })
+
+          const booking = await prisma.booking.findUnique({
+            where:  { id: bookingId },
+            select: {
+              ownerId: true, borrowerId: true,
+              item:    { select: { title: true } },
+            },
+          })
+          if (booking) {
+            prisma.notification.create({
+              data: {
+                userId: booking.ownerId,
+                type:   "LATE_FEE_APPLIED" as never,
+                title:  "Taxa de atraso recebida",
+                body:   `A taxa de atraso de "${booking.item.title}" foi paga.`,
+                data:   { bookingId },
+              },
+            }).catch(() => undefined)
+
+            prisma.notification.create({
+              data: {
+                userId: booking.borrowerId,
+                type:   "LATE_FEE_APPLIED" as never,
+                title:  "Taxa de atraso paga",
+                body:   `Pagamento da taxa de atraso de "${booking.item.title}" confirmado.`,
+                data:   { bookingId },
+              },
+            }).catch(() => undefined)
+          }
+
+          console.warn(`[stripe webhook] late_fee paid for booking ${bookingId}`)
+          break
+        }
+
+        // Pagamento de aluguel normal
         await prisma.booking.update({
           where: { id: bookingId },
           data: {
             paymentStatus:         "PAID",
-            stripePaymentIntentId: typeof session.payment_intent === "string"
-              ? session.payment_intent
-              : (session.payment_intent?.id ?? null),
+            stripePaymentIntentId: paymentIntentId,
             paidAt: new Date(),
           },
         })
 
-        // Webhook de saída + notificação para o locador
         const booking = await prisma.booking.findUnique({
           where:  { id: bookingId },
           select: { ownerId: true, item: { select: { title: true } } },
