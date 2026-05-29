@@ -106,7 +106,7 @@ export async function GET(req: NextRequest) {
     sent.push(`return:${b.id}`)
   }
 
-  const appUrl = process.env.NEXTAUTH_URL ?? "https://shareo-rouge.vercel.app"
+  const appUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "https://shareo-rouge.vercel.app"
 
   for (const b of overdueBookings) {
     const daysLate = Math.ceil(
