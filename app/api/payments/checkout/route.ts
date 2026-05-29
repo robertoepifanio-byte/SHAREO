@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const appUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000"
+    const appUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000"
 
     const fmtDate = (d: Date) =>
       new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(d)
