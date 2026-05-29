@@ -249,7 +249,7 @@ export default function AjudaPage() {
               </Link>
             </div>
             <p className="mt-4 text-xs text-white/50">
-              Para problemas com uma reserva ativa, use a opção "Abrir disputa" na página da reserva — é mais rápido.
+              Para problemas com uma reserva ativa, use a opção &ldquo;Abrir disputa&rdquo; na página da reserva — é mais rápido.
             </p>
           </section>
         </div>
