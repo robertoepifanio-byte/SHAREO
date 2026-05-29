@@ -84,19 +84,50 @@ export default async function HomePage() {
           </button>
         </form>
 
-        {/* Stats */}
-        <div className="mt-8 flex flex-wrap justify-center gap-6" aria-label="Estatísticas da plataforma">
+        {/* Trust seals */}
+        <div className="mt-8 flex flex-wrap justify-center gap-6" aria-label="Garantias da plataforma">
+          <div className="flex items-center gap-2 text-white/80 text-sm">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-base flex-shrink-0">🔒</span>
+            <div className="text-left">
+              <strong className="block text-white text-xs font-semibold">Pagamento seguro</strong>
+              <span className="text-white/60 text-xs">Liberado só após confirmação</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-white/80 text-sm">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-base flex-shrink-0">✓</span>
+            <div className="text-left">
+              <strong className="block text-white text-xs font-semibold">Usuários verificados</strong>
+              <span className="text-white/60 text-xs">Identidade validada</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-white/80 text-sm">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-base flex-shrink-0">💬</span>
+            <div className="text-left">
+              <strong className="block text-white text-xs font-semibold">Suporte 7 dias</strong>
+              <span className="text-white/60 text-xs">Estamos aqui pra você</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── PROOF BAR ─── */}
+      <section className="bg-primary py-6" aria-label="Números da plataforma">
+        <div className="container flex flex-wrap justify-center gap-8 md:gap-16">
           <div className="text-center">
-            <strong className="block text-2xl font-extrabold text-white">12.400+</strong>
-            <span className="text-xs text-white/80">Itens disponíveis</span>
+            <strong className="block text-2xl font-extrabold text-accent">2.400+</strong>
+            <span className="text-xs text-white/60">Itens disponíveis</span>
           </div>
           <div className="text-center">
-            <strong className="block text-2xl font-extrabold text-white">3.800+</strong>
-            <span className="text-xs text-white/80">Proprietários</span>
+            <strong className="block text-2xl font-extrabold text-accent">890+</strong>
+            <span className="text-xs text-white/60">Usuários ativos</span>
           </div>
           <div className="text-center">
-            <strong className="block text-2xl font-extrabold text-white">4,9 ★</strong>
-            <span className="text-xs text-white/80">Avaliação média</span>
+            <strong className="block text-2xl font-extrabold text-accent">4,8 ★</strong>
+            <span className="text-xs text-white/60">Avaliação média</span>
+          </div>
+          <div className="text-center">
+            <strong className="block text-2xl font-extrabold text-accent">759 kg</strong>
+            <span className="text-xs text-white/60">CO₂ economizados</span>
           </div>
         </div>
       </section>

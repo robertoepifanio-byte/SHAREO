@@ -62,17 +62,35 @@ export function AppFooter() {
               <Link href="/cadastro" className="text-sm text-white/75 hover:text-white transition-colors">Criar conta</Link>
               <Link href="/perfil"   className="text-sm text-white/75 hover:text-white transition-colors">Meu perfil</Link>
             </div>
+
+            <div className="flex flex-col gap-2">
+              <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-white/40">
+                Suporte
+              </p>
+              <Link href="/ajuda"           className="text-sm text-white/75 hover:text-white transition-colors">Central de ajuda</Link>
+              <Link href="/ganhar"          className="text-sm text-white/75 hover:text-white transition-colors">Como ganhar</Link>
+              <Link href="/termos"          className="text-sm text-white/75 hover:text-white transition-colors">Termos de uso</Link>
+              <Link href="/privacidade"     className="text-sm text-white/75 hover:text-white transition-colors">Privacidade</Link>
+            </div>
           </nav>
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-8 flex flex-col gap-2 border-t border-white/20 pt-6 md:flex-row md:items-center md:justify-between">
+        <div className="mt-8 flex flex-col gap-3 border-t border-white/20 pt-6 md:flex-row md:items-center md:justify-between">
           <p className="text-xs text-white/40">
             © {year} ShareO · Todos os direitos reservados.
           </p>
-          <p className="text-xs text-white/40">
-            Natal/RN · Use Mais. Possua Menos.
-          </p>
+          <div className="flex flex-wrap gap-3">
+            <span className="flex items-center gap-1.5 rounded-md border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
+              🔒 Pagamento seguro
+            </span>
+            <span className="flex items-center gap-1.5 rounded-md border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
+              ✓ Usuários verificados
+            </span>
+            <span className="flex items-center gap-1.5 rounded-md border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
+              🌿 Economia circular
+            </span>
+          </div>
         </div>
       </div>
     </footer>

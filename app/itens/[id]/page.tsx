@@ -390,10 +390,25 @@ export default async function ItemDetailPage({ params }: Props) {
                 <span className="text-lg text-muted-foreground" aria-hidden="true">›</span>
               </Link>
 
-              {/* Segurança */}
-              <p className="mt-3 text-center text-xs text-muted-foreground">
-                🔒 Pagamento seguro via Shareo · Seguro incluso
-              </p>
+              {/* ─── Trust Box ─── */}
+              <div className="mt-4 rounded-lg border border-brand/20 bg-brand/5 p-4">
+                <p className="mb-3 text-xs font-bold text-brand">🔒 Sua locação está protegida</p>
+                <ul className="space-y-2">
+                  {[
+                    "Pagamento liberado só após confirmação da retirada",
+                    "Cancelamento gratuito até 24h antes",
+                    "Item protegido durante a locação",
+                    "Suporte ShareO disponível 7 dias por semana",
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-2 text-xs text-foreground">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#007B3C" strokeWidth="2.5" className="mt-0.5 shrink-0" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
 
