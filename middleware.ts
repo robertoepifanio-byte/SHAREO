@@ -37,6 +37,16 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
+  // Cron/service calls autenticados via CRON_SECRET passam direto no middleware;
+  // a rota de destino valida o secret novamente antes de executar.
+  if (isAdminRoute) {
+    const cronSecret = process.env.CRON_SECRET
+    const authHeader = req.headers.get("authorization")
+    if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+      return NextResponse.next()
+    }
+  }
+
   const isSecure = process.env.NODE_ENV === "production"
   const token = await getToken({
     req,
