@@ -29,8 +29,13 @@ export function AppFooter() {
               Compartilhe. Economize. Sustentável.
             </p>
             <p className="mt-3 text-xs leading-relaxed text-white/50">
-              Marketplace de economia circular para aluguel de itens na sua região.<br />
-              Transforme seus itens parados em renda extra e facilite a vida de quem está ao seu redor.
+              <strong className="text-white/70">Marketplace de economia circular</strong>{" "}
+              para aluguel de itens na sua região.
+            </p>
+            <p className="mt-1 text-xs leading-relaxed text-white/50">
+              Transforme seus itens parados em{" "}
+              <strong className="text-white/70">renda extra</strong>{" "}
+              e facilite a vida de quem está ao seu redor.
             </p>
           </div>
 
