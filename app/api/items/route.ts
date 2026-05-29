@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { CreateItemSchema, ListItemsQuerySchema } from "@/lib/validations/items"
+import { geocodeItem } from "@/lib/geocodeItem"
 
 export async function GET(req: NextRequest) {
   try {
@@ -142,6 +143,12 @@ export async function POST(req: NextRequest) {
         createdAt:   true,
       },
     })
+
+    // Geocodifica em background se o formulário não forneceu coords reais
+    if (!d.latitude || !d.longitude || (d.latitude === 0 && d.longitude === 0)) {
+      geocodeItem(item.id, { neighborhood: d.neighborhood, city: d.city, state: d.state })
+        .catch((e) => console.error("[geocodeItem POST]", e instanceof Error ? e.message : e))
+    }
 
     return NextResponse.json({ data: item }, { status: 201 })
   } catch (e) {
