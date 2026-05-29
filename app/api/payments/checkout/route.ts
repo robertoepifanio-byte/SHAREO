@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
         bookingId,
         userId: session.user.id,
       },
-      success_url: `${appUrl}/reservas/${bookingId}?payment=success`,
+      success_url: `${appUrl}/reservas/sucesso?bookingId=${bookingId}`,
       cancel_url:  `${appUrl}/reservas/${bookingId}?payment=cancelled`,
       expires_at:  Math.floor(Date.now() / 1000) + 30 * 60, // 30 min
     })

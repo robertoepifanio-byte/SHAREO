@@ -4,11 +4,12 @@ import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
-import { BookingActions }  from "./_BookingActions"
-import { ReviewForm }      from "./_ReviewForm"
-import { PayButton }       from "@/components/bookings/PayButton"
-import { ContractBanner }  from "./_ContractBanner"
-import { CheckInOut }      from "./_CheckInOut"
+import { BookingActions }      from "./_BookingActions"
+import { ReviewForm }          from "./_ReviewForm"
+import { PayButton }           from "@/components/bookings/PayButton"
+import { ContractBanner }      from "./_ContractBanner"
+import { CheckInOut }          from "./_CheckInOut"
+import { BookingProgressBar }  from "@/components/booking/BookingProgressBar"
 
 type Props = {
   params:       Promise<{ id: string }>
@@ -107,6 +108,12 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
 
       <main className="container py-8">
         <div className="mx-auto max-w-2xl">
+
+          {/* ─── Progress bar ─── */}
+          <BookingProgressBar
+            status={booking.status as any}
+            paymentStatus={booking.paymentStatus}
+          />
 
           {/* Header do booking */}
           <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
