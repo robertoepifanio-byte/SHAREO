@@ -12,6 +12,15 @@ export const metadata: Metadata = { title: "Dashboard" }
 const fmtCurrency = (cents: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
 
+/** Formato de data seguro para SSR: DD/MM/AAAA — sem depender do ICU do Node.js */
+function fmtDateSafe(d: Date | string): string {
+  const dt   = new Date(d)
+  const day  = String(dt.getUTCDate()).padStart(2, "0")
+  const mon  = String(dt.getUTCMonth() + 1).padStart(2, "0")
+  const year = dt.getUTCFullYear()
+  return `${day}/${mon}/${year}`
+}
+
 const BOOKING_STATUS_LABEL: Record<string, string> = {
   PENDING:   "Pendente",
   CONFIRMED: "Confirmada",
@@ -200,7 +209,7 @@ export default async function DashboardPage() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-foreground">{b.item.title}</p>
                       <p className="text-xs text-muted-foreground">
-                        {new Date(b.startDate).toLocaleDateString("pt-BR")} – {new Date(b.endDate).toLocaleDateString("pt-BR")}
+                        {fmtDateSafe(b.startDate)} – {fmtDateSafe(b.endDate)}
                       </p>
                     </div>
                     <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
