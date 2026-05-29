@@ -80,7 +80,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
     ...(city       && { city: { contains: city, mode: "insensitive" as const } }),
     ...(priceMaxR  && { pricePerDay: { lte: priceMaxR * 100 } }),
     ...(minRating  && {
-      reviews: { some: { reviewType: "ITEM" } },
+      reviews: { some: { reviewType: "ITEM" as const } },
     }),
   }
 
