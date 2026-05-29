@@ -4,30 +4,133 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
+import { SuggestCard } from "@/components/dashboard/SuggestCard"
 
 export const metadata: Metadata = { title: "Dashboard" }
+
+const fmtCurrency = (cents: number) =>
+  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
+
+const BOOKING_STATUS_LABEL: Record<string, string> = {
+  PENDING:   "Pendente",
+  CONFIRMED: "Confirmada",
+  ACTIVE:    "Em uso",
+  RETURNED:  "Devolvida",
+  COMPLETED: "Concluída",
+  CANCELLED: "Cancelada",
+  DISPUTED:  "Em disputa",
+}
 
 export default async function DashboardPage() {
   const session = await auth()
   if (!session) redirect("/login")
 
-  const [itemCount, totalViews, activeBookings] = await Promise.all([
-    prisma.item.count({
-      where: { ownerId: session.user.id, deletedAt: null },
-    }),
+  const now          = new Date()
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  const uid          = session.user.id
+
+  // Queries paralelas — Sprint 2
+  const [
+    itemCount,
+    totalViews,
+    activeBookings,
+    monthEarnings,
+    recentBookings,
+    lastBookingCategories,
+  ] = await Promise.all([
+    // itens anunciados
+    prisma.item.count({ where: { ownerId: uid, deletedAt: null } }),
+
+    // visualizações totais
     prisma.item.aggregate({
-      where:   { ownerId: session.user.id, deletedAt: null },
-      _sum:    { viewCount: true },
+      where: { ownerId: uid, deletedAt: null },
+      _sum:  { viewCount: true },
     }),
+
+    // reservas ativas (como locatário ou locador)
     prisma.booking.count({
       where: {
         status: { in: ["CONFIRMED", "ACTIVE"] },
-        OR: [{ borrowerId: session.user.id }, { ownerId: session.user.id }],
+        OR: [{ borrowerId: uid }, { ownerId: uid }],
       },
     }),
+
+    // ganhos do mês (como locador — bookings PAID no mês atual)
+    prisma.booking.aggregate({
+      where: {
+        ownerId:       uid,
+        paymentStatus: "PAID",
+        status:        { in: ["ACTIVE", "RETURNED", "COMPLETED"] },
+        startDate:     { gte: startOfMonth },
+      },
+      _sum: { totalPrice: true },
+    }).catch(() => ({ _sum: { totalPrice: null } })),
+
+    // últimas 3 reservas (como locatário ou locador)
+    prisma.booking.findMany({
+      where: {
+        OR: [{ borrowerId: uid }, { ownerId: uid }],
+        status: { not: "CANCELLED" },
+      },
+      orderBy: { createdAt: "desc" },
+      take:    3,
+      select: {
+        id: true, status: true, startDate: true, endDate: true, totalPrice: true,
+        item: {
+          select: {
+            title:  true,
+            images: { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
+          },
+        },
+      },
+    }).catch(() => []),
+
+    // categorias das últimas reservas (para sugestões personalizadas)
+    prisma.booking.findMany({
+      where: { borrowerId: uid, status: { not: "CANCELLED" } },
+      orderBy: { createdAt: "desc" },
+      take:    3,
+      select: { item: { select: { categoryId: true } } },
+    }).catch(() => []),
   ])
 
-  const firstName = session.user.name?.split(" ")[0] ?? "você"
+  // Sugestões personalizadas
+  const categoryIds = [...new Set(
+    lastBookingCategories.map((b) => b.item?.categoryId).filter(Boolean) as string[]
+  )]
+  const suggestions = await prisma.item.findMany({
+    where: {
+      isActive:   true,
+      isApproved: true,
+      deletedAt:  null,
+      ownerId:    { not: uid },
+      ...(categoryIds.length > 0 ? { categoryId: { in: categoryIds } } : {}),
+    },
+    take:    8,
+    orderBy: { viewCount: "desc" },
+    select: {
+      id:          true,
+      title:       true,
+      pricePerDay: true,
+      images:      { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
+    },
+  }).catch(() => [])
+
+  // CO₂ calculado: 0.5 kg por dia de aluguel concluído
+  const completedBookings = await prisma.booking.findMany({
+    where:  { borrowerId: uid, status: "COMPLETED" },
+    select: { startDate: true, endDate: true },
+  }).catch(() => [])
+  const totalDays = completedBookings.reduce((acc, b) => {
+    const days = Math.max(1, Math.ceil(
+      (new Date(b.endDate).getTime() - new Date(b.startDate).getTime()) / 86_400_000
+    ))
+    return acc + days
+  }, 0)
+  const co2Kg = +(totalDays * 0.5).toFixed(1)
+
+  const earningsCents = monthEarnings._sum.totalPrice ?? 0
+  const firstName     = session.user.name?.split(" ")[0] ?? "você"
 
   return (
     <div className="min-h-screen bg-background">
@@ -67,16 +170,66 @@ export default async function DashboardPage() {
               <p className="mt-1 text-xs text-muted-foreground">{itemCount === 1 ? "anunciado" : "anunciados"}</p>
             </div>
             <div className="rounded-lg border border-border bg-surface p-5">
-              <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Visualizações</p>
-              <p className="text-2xl font-bold text-brand">{totalViews._sum.viewCount ?? 0}</p>
-              <p className="mt-1 text-xs text-muted-foreground">nos seus anúncios</p>
+              <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Ganhos este mês</p>
+              <p className="text-2xl font-bold text-brand">{fmtCurrency(earningsCents)}</p>
+              <p className="mt-1 text-xs text-muted-foreground">como locador</p>
             </div>
             <div className="rounded-lg border border-border bg-surface p-5">
-              <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Locações ativas</p>
-              <p className="text-2xl font-bold text-primary">{activeBookings}</p>
-              <p className="mt-1 text-xs text-muted-foreground">confirmadas</p>
+              <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Visualizações</p>
+              <p className="text-2xl font-bold text-primary">{totalViews._sum.viewCount ?? 0}</p>
+              <p className="mt-1 text-xs text-muted-foreground">nos seus anúncios</p>
             </div>
           </div>
+
+          {/* Reservas recentes */}
+          {recentBookings.length > 0 && (
+            <div className="mb-8">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="font-semibold text-primary">Minhas Reservas</h2>
+                <Link href="/reservas" className="text-sm font-semibold text-brand hover:underline">Ver histórico →</Link>
+              </div>
+              <div className="flex flex-col divide-y divide-border rounded-xl border border-border bg-surface overflow-hidden">
+                {recentBookings.map((b) => (
+                  <Link key={b.id} href={`/reservas/${b.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-background transition-colors">
+                    <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
+                      {b.item.images[0]?.url && (
+                        <img src={b.item.images[0].url} alt={b.item.title} className="h-full w-full object-cover" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-foreground">{b.item.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(b.startDate).toLocaleDateString("pt-BR")} – {new Date(b.endDate).toLocaleDateString("pt-BR")}
+                      </p>
+                    </div>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                      b.status === "ACTIVE"    ? "bg-success/10 text-success" :
+                      b.status === "CONFIRMED" ? "bg-blue-100 text-blue-700"  :
+                      b.status === "PENDING"   ? "bg-amber-100 text-amber-700" :
+                      "bg-muted text-muted-foreground"
+                    }`}>
+                      {BOOKING_STATUS_LABEL[b.status] ?? b.status}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Sugestões personalizadas */}
+          {suggestions.length > 0 && (
+            <div className="mb-8">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="font-semibold text-primary">Sugestões para Você</h2>
+                <Link href="/itens" className="text-sm font-semibold text-brand hover:underline">Ver mais →</Link>
+              </div>
+              <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                {suggestions.map((item) => (
+                  <SuggestCard key={item.id} item={item} />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Ações rápidas */}
           <h2 className="mb-4 font-semibold text-primary">Ações rápidas</h2>
@@ -172,7 +325,9 @@ export default async function DashboardPage() {
         <div className="mt-4 flex items-center gap-4 rounded-xl bg-[#004d2a] px-6 py-4">
           <span className="text-3xl">🌍</span>
           <div>
-            <p className="text-xl font-extrabold text-white">759 kg CO₂</p>
+            <p className="text-xl font-extrabold text-white">
+              {co2Kg > 0 ? `${co2Kg} kg CO₂` : "Comece a alugar e economize CO₂"}
+            </p>
             <p className="text-sm text-white/65">economizados através de aluguel e reuso em Natal</p>
           </div>
         </div>

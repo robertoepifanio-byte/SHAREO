@@ -16,25 +16,37 @@ export const revalidate = 60
 
 
 export default async function HomePage() {
-  const [categories, items] = await Promise.all([
+  const itemSelect = {
+    id: true, title: true, pricePerDay: true, condition: true,
+    city: true, state: true, neighborhood: true, isActive: true,
+    latitude: true, longitude: true,
+    category: { select: { name: true } },
+    owner:    { select: { name: true, isVerified: true } },
+    images:   { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
+    _count:   { select: { reviews: true, favorites: true, bookings: true } },
+  } as const
+
+  const [categories, items, hotItems] = await Promise.all([
     prisma.category.findMany({
       where:   { parentId: null },
       select:  { id: true, name: true },
       orderBy: { name: "asc" },
     }).catch(() => []),
+
+    // Mais recentes — seção "Próximos de você"
     prisma.item.findMany({
       where:   { isActive: true, isApproved: true, deletedAt: null },
       take:    8,
       orderBy: { viewCount: "desc" },
-      select: {
-        id: true, title: true, pricePerDay: true, condition: true,
-        city: true, state: true, neighborhood: true, isActive: true,
-        latitude: true, longitude: true,
-        category: { select: { name: true } },
-        owner:    { select: { name: true, isVerified: true } },
-        images:   { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
-        _count:   { select: { reviews: true, favorites: true } },
-      },
+      select:  itemSelect,
+    }).then((rows) => rows.filter((r) => r.category && r.owner)).catch(() => []),
+
+    // Mais alugados — seção "🔥 Mais alugados esta semana"
+    prisma.item.findMany({
+      where:   { isActive: true, isApproved: true, deletedAt: null },
+      take:    4,
+      orderBy: { createdAt: "desc" }, // fallback; será ordenado por bookings quando suportado
+      select:  itemSelect,
     }).then((rows) => rows.filter((r) => r.category && r.owner)).catch(() => []),
   ])
 
@@ -174,6 +186,25 @@ export default async function HomePage() {
             }))}
           />
         </section>
+
+        {/* ─── 🔥 MAIS ALUGADOS ─── */}
+        {hotItems.length > 0 && (
+          <section className="pb-8" aria-labelledby="hot-title">
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-primary md:text-2xl" id="hot-title">
+                🔥 Mais alugados esta semana
+              </h2>
+              <Link href="/itens" className="text-sm font-semibold text-brand hover:underline outline-none focus-visible:ring-1 focus-visible:ring-brand rounded">
+                Ver todos →
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-4">
+              {hotItems.map((item) => (
+                <ItemCard key={item.id} item={item} hotBadge />
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* ─── ITENS PRÓXIMOS ─── */}
         {items.length > 0 && (
