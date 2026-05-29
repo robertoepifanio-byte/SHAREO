@@ -84,7 +84,7 @@ export default async function BookingSuccessPage({ searchParams }: Props) {
 
           {/* Progress bar */}
           <BookingProgressBar
-            status={booking.status as any}
+            status={booking.status as Parameters<typeof BookingProgressBar>[0]["status"]}
             paymentStatus={booking.paymentStatus}
           />
 

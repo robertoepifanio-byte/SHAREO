@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
+import Image from "next/image"
 import { SuggestCard } from "@/components/dashboard/SuggestCard"
 
 export const metadata: Metadata = { title: "Dashboard" }
@@ -193,7 +194,7 @@ export default async function DashboardPage() {
                   <Link key={b.id} href={`/reservas/${b.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-background transition-colors">
                     <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
                       {b.item.images[0]?.url && (
-                        <img src={b.item.images[0].url} alt={b.item.title} className="h-full w-full object-cover" />
+                        <Image src={b.item.images[0].url} alt={b.item.title} fill className="object-cover" sizes="48px" />
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
