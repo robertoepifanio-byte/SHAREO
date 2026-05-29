@@ -32,7 +32,7 @@ export function AppFooter() {
               <strong className="text-white/70">Marketplace circular</strong>{" "}
               para aluguel de itens locais.
             </p>
-            <p className="mt-1 text-xs text-white/50">
+            <p className="mt-1 text-xs text-white/50 whitespace-nowrap">
               Transforme itens parados em{" "}
               <strong className="text-white/70">renda</strong>{" "}
               e ajude sua comunidade.
