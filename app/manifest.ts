@@ -9,18 +9,18 @@ export default function manifest(): MetadataRoute.Manifest {
     display:          "standalone",
     orientation:      "portrait",
     background_color: "#F8FAFC",
-    theme_color:      "#0D1B2A",
+    theme_color:      "#003366",
     lang:             "pt-BR",
     categories:       ["shopping", "lifestyle"],
     icons: [
       {
-        src:     "/icons/shareo-logo.png",
+        src:     "/logos/shareo-logo.png",
         sizes:   "192x192",
         type:    "image/png",
         purpose: "any",
       },
       {
-        src:     "/icons/shareo-logo.png",
+        src:     "/logos/shareo-logo.png",
         sizes:   "512x512",
         type:    "image/png",
         purpose: "maskable",
@@ -28,16 +28,18 @@ export default function manifest(): MetadataRoute.Manifest {
     ],
     shortcuts: [
       {
-        name:      "Explorar itens",
+        name:       "Explorar itens",
         short_name: "Explorar",
-        url:       "/itens",
+        url:        "/itens",
         description: "Encontre itens para alugar",
+        icons: [{ src: "/logos/shareo-logo.png", sizes: "96x96" }],
       },
       {
-        name:      "Minhas reservas",
+        name:       "Minhas reservas",
         short_name: "Reservas",
-        url:       "/reservas",
+        url:        "/reservas",
         description: "Ver suas reservas ativas",
+        icons: [{ src: "/logos/shareo-logo.png", sizes: "96x96" }],
       },
     ],
   }
