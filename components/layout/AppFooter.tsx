@@ -29,7 +29,8 @@ export function AppFooter() {
               Compartilhe. Economize. Sustentável.
             </p>
             <p className="mt-3 text-xs leading-relaxed text-white/50">
-              Marketplace de economia circular para aluguel local de itens em Natal/RN e região.
+              Marketplace de economia circular para aluguel de itens na sua região.<br />
+              Transforme seus itens parados em renda extra e facilite a vida de quem está ao seu redor.
             </p>
           </div>
 
