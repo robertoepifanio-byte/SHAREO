@@ -14,7 +14,7 @@ interface ItemCardItem {
   images:       { url: string }[]
   category:     { name: string } | null
   owner:        { name: string; isVerified: boolean } | null
-  _count?:      { reviews: number; favorites: number }
+  _count?:      { reviews: number; favorites: number; bookings?: number }
   avgRating?:   number | null
 }
 
@@ -22,10 +22,11 @@ interface ItemCardProps {
   item:         ItemCardItem
   showActions?: boolean
   isFavorited?: boolean
+  hotBadge?:    boolean
   onDelete?:    (id: string) => void
 }
 
-export function ItemCard({ item, showActions = false, isFavorited = false, onDelete }: ItemCardProps) {
+export function ItemCard({ item, showActions = false, isFavorited = false, hotBadge = false, onDelete }: ItemCardProps) {
   const imageUrl = item.images[0]?.url
   const price    = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" })
                       .format(item.pricePerDay / 100)
@@ -77,6 +78,13 @@ export function ItemCard({ item, showActions = false, isFavorited = false, onDel
             )}
           </div>
 
+          {/* Badge "Mais alugado" */}
+          {hotBadge && (
+            <div className="absolute bottom-2 left-2 rounded-full bg-orange-500 px-2 py-0.5 text-[10px] font-bold text-foreground">
+              🔥 Mais alugado
+            </div>
+          )}
+
           {/* Favorito — apenas em listagens públicas */}
           {!showActions && (
             <FavoriteButton itemId={item.id} initialFavorited={isFavorited} />
@@ -114,7 +122,7 @@ export function ItemCard({ item, showActions = false, isFavorited = false, onDel
             </div>
           )}
 
-          <p className="mb-2 text-base font-extrabold text-foreground">
+          <p className="mb-2 text-xl font-extrabold text-brand">
             {price}<span className="text-xs font-normal text-muted-foreground">/dia</span>
           </p>
 

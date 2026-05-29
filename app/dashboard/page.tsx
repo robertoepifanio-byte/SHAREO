@@ -32,36 +32,49 @@ export default async function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
+      {/* ─── HEADER GRADIENTE ─── */}
+      <section className="bg-gradient-to-br from-primary to-[#144D81] px-4 py-8">
+        <div className="container">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-extrabold text-white">
+                Olá, {firstName}! 👋
+              </h1>
+              <p className="mt-1 text-sm text-white/65">
+                Natal, RN · Bem-vindo de volta ao ShareO
+              </p>
+            </div>
+            <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full border-2 border-white/20 bg-brand text-xl font-extrabold text-white">
+              {firstName[0]?.toUpperCase()}
+            </div>
+          </div>
+        </div>
+      </section>
+
       <main className="container py-8">
         <div className="mx-auto max-w-3xl">
 
-          {/* Saudação */}
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-primary">
-              Olá, {firstName}!
-            </h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Bem-vindo ao ShareO — Use Mais. Possua Menos.
-            </p>
-          </div>
-
-          {/* Stats */}
-          <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-3">
+          {/* Stats — 4 métricas em 2×2 */}
+          <div className="mb-8 grid grid-cols-2 gap-4">
             <div className="rounded-lg border border-border bg-surface p-5">
-              <p className="text-2xl font-bold text-primary">{itemCount}</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {itemCount === 1 ? "Anúncio" : "Anúncios"}
-              </p>
-            </div>
-            <div className="rounded-lg border border-border bg-surface p-5">
-              <p className="text-2xl font-bold text-primary">
-                {totalViews._sum.viewCount ?? 0}
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">Visualizações</p>
-            </div>
-            <div className="col-span-2 rounded-lg border border-border bg-surface p-5 md:col-span-1">
+              <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Reservas ativas</p>
               <p className="text-2xl font-bold text-primary">{activeBookings}</p>
-              <p className="mt-1 text-sm text-muted-foreground">Locações ativas</p>
+              <p className="mt-1 text-xs text-muted-foreground">em andamento</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface p-5">
+              <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Meus itens</p>
+              <p className="text-2xl font-bold text-primary">{itemCount}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{itemCount === 1 ? "anunciado" : "anunciados"}</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface p-5">
+              <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Visualizações</p>
+              <p className="text-2xl font-bold text-brand">{totalViews._sum.viewCount ?? 0}</p>
+              <p className="mt-1 text-xs text-muted-foreground">nos seus anúncios</p>
+            </div>
+            <div className="rounded-lg border border-border bg-surface p-5">
+              <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Locações ativas</p>
+              <p className="text-2xl font-bold text-primary">{activeBookings}</p>
+              <p className="mt-1 text-xs text-muted-foreground">confirmadas</p>
             </div>
           </div>
 
@@ -131,6 +144,39 @@ export default async function DashboardPage() {
             </Link>
           </div>
         </div>
+
+        {/* ─── SHAREO SUSTENTÁVEL ─── */}
+        <section className="mt-10 rounded-xl bg-brand p-6 text-white" aria-label="ShareO Sustentável">
+          <div className="mb-1 flex items-center gap-2">
+            <span className="text-lg">🌿</span>
+            <h2 className="text-lg font-bold">ShareO Sustentável</h2>
+            <span className="ml-auto rounded-full bg-white/15 px-3 py-0.5 text-xs font-semibold">Natal, RN</span>
+          </div>
+          <p className="mb-5 text-sm text-white/70">Iniciativas de economia circular na sua região</p>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            {[
+              { icon: "👕", title: "Troca Circular",  desc: "Troque roupas que não usa com vizinhos da sua região." },
+              { icon: "🔧", title: "Eco Centro",      desc: "Doe ou repare equipamentos. Evite o descarte desnecessário." },
+              { icon: "♻️", title: "Recicla Natal",   desc: "Descubra pontos de coleta seletiva perto de você." },
+            ].map((card) => (
+              <div key={card.title} className="rounded-lg bg-white/10 p-4">
+                <div className="mb-2 text-2xl">{card.icon}</div>
+                <p className="font-semibold text-sm mb-1">{card.title}</p>
+                <p className="text-xs text-white/75 leading-relaxed">{card.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ─── CO₂ BAR ─── */}
+        <div className="mt-4 flex items-center gap-4 rounded-xl bg-[#004d2a] px-6 py-4">
+          <span className="text-3xl">🌍</span>
+          <div>
+            <p className="text-xl font-extrabold text-white">759 kg CO₂</p>
+            <p className="text-sm text-white/65">economizados através de aluguel e reuso em Natal</p>
+          </div>
+        </div>
+
       </main>
     </div>
   )
