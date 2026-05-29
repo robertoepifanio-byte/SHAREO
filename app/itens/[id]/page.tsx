@@ -33,12 +33,33 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params
   const item = await prisma.item.findFirst({
     where:  { id, deletedAt: null },
-    select: { title: true, description: true },
+    select: {
+      title: true, description: true, city: true, state: true,
+      images: { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
+    },
   })
   if (!item) return { title: "Anúncio não encontrado" }
+
+  const description = item.description.slice(0, 160)
+  const location    = [item.city, item.state].filter(Boolean).join(", ")
+  const ogImage     = item.images[0]?.url
+
   return {
-    title:       `${item.title}`,
-    description: item.description.slice(0, 160),
+    title:       item.title,
+    description: `${description}${location ? ` — ${location}` : ""}`,
+    openGraph: {
+      title:       `${item.title} | ShareO`,
+      description,
+      type:        "website",
+      locale:      "pt_BR",
+      ...(ogImage && { images: [{ url: ogImage, width: 800, height: 600, alt: item.title }] }),
+    },
+    twitter: {
+      card:        "summary_large_image",
+      title:       item.title,
+      description,
+      ...(ogImage && { images: [ogImage] }),
+    },
   }
 }
 
@@ -96,7 +117,50 @@ export default async function ItemDetailPage({ params }: Props) {
   const ownerInitial  = item.owner.name[0]?.toUpperCase() ?? "?"
   const ownerLocation = [item.owner.neighborhood, item.owner.city].filter(Boolean).join(", ")
 
+  const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://shareo-rouge.vercel.app"
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type":    "Product",
+    name:       item.title,
+    description: item.description,
+    image:      item.images.map((i) => i.url),
+    category:   item.category.name,
+    url:        `${BASE}/itens/${item.id}`,
+    offers: {
+      "@type":         "Offer",
+      priceCurrency:   "BRL",
+      price:           (item.pricePerDay / 100).toFixed(2),
+      priceSpecification: {
+        "@type":           "UnitPriceSpecification",
+        price:             (item.pricePerDay / 100).toFixed(2),
+        priceCurrency:     "BRL",
+        unitText:          "DAY",
+      },
+      availability:    item.isActive
+        ? "https://schema.org/InStock"
+        : "https://schema.org/OutOfStock",
+      seller: {
+        "@type": "Person",
+        name:    item.owner.name,
+      },
+    },
+    ...(avgRating && item._count.reviews > 0 && {
+      aggregateRating: {
+        "@type":       "AggregateRating",
+        ratingValue:   avgRating.toFixed(1),
+        reviewCount:   item._count.reviews,
+        bestRating:    5,
+        worstRating:   1,
+      },
+    }),
+  }
+
   return (
+    <>
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+    />
     <div className="min-h-screen bg-background">
       <AppHeader />
 
@@ -336,5 +400,6 @@ export default async function ItemDetailPage({ params }: Props) {
         </div>
       </main>
     </div>
+    </>
   )
 }
