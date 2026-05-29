@@ -9,6 +9,7 @@ import { CategoryIcon } from "@/components/ui/CategoryIcon"
 import { SortSelect } from "./_SortSelect"
 import { ItemsMapLoader } from "@/components/items/ItemsMapLoader"
 import type { ItemPin } from "@/components/items/ItemsMap"
+import { DistanceFilter } from "./_DistanceFilter"
 
 export const metadata: Metadata = {
   title:       "Explorar anúncios",
@@ -23,12 +24,24 @@ interface SearchParams {
   priceMax?:  string
   minRating?: string
   page?:      string
+  dist?:      string
+  ulat?:      string
+  ulng?:      string
 }
 
 type Props = { searchParams: Promise<SearchParams> }
 
 const PAGE_SIZE = 20
 
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const R    = 6371
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a    = Math.sin(dLat / 2) ** 2
+    + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
 
 function getOrderBy(sort?: string) {
   switch (sort) {
@@ -47,6 +60,9 @@ export default async function ExplorarPage({ searchParams }: Props) {
   const city       = sp.city?.trim()  || undefined
   const sort       = sp.sort          || undefined
   const priceMaxR  = sp.priceMax ? Number(sp.priceMax) : undefined // reais
+  const dist       = sp.dist   || undefined
+  const userLat    = sp.ulat ? Number(sp.ulat) : undefined
+  const userLng    = sp.ulng ? Number(sp.ulng) : undefined
   const skip       = (page - 1) * PAGE_SIZE
 
   const where = {
@@ -79,11 +95,12 @@ export default async function ExplorarPage({ searchParams }: Props) {
     }
   }
 
-  const [items, total, categories] = await Promise.all([
+  const useDistFilter = !!(dist && userLat !== undefined && userLng !== undefined)
+
+  const [rawItems, total, categories] = await Promise.all([
     prisma.item.findMany({
       where,
-      skip,
-      take:    PAGE_SIZE,
+      ...(useDistFilter ? {} : { skip, take: PAGE_SIZE }),
       orderBy: getOrderBy(sort),
       select: {
         id: true, title: true, pricePerDay: true, pricePerWeek: true,
@@ -103,8 +120,23 @@ export default async function ExplorarPage({ searchParams }: Props) {
     }),
   ])
 
-  const totalPages = Math.ceil(total / PAGE_SIZE)
-  const hasFilters = !!(search || categoryId || city || priceMaxR)
+  // Aplica filtro de distância em JS quando lat/lng do usuário estão disponíveis
+  const items = useDistFilter
+    ? rawItems.filter((i) => {
+        if (!i.latitude || !i.longitude || (i.latitude === 0 && i.longitude === 0)) return false
+        return haversineKm(userLat!, userLng!, i.latitude, i.longitude) <= Number(dist)
+      }).slice(skip, skip + PAGE_SIZE)
+    : rawItems
+
+  const filteredTotal  = useDistFilter
+    ? rawItems.filter((i) => {
+        if (!i.latitude || !i.longitude || (i.latitude === 0 && i.longitude === 0)) return false
+        return haversineKm(userLat!, userLng!, i.latitude, i.longitude) <= Number(dist)
+      }).length
+    : total
+
+  const totalPages = Math.ceil(filteredTotal / PAGE_SIZE)
+  const hasFilters = !!(search || categoryId || city || priceMaxR || dist)
 
   function buildUrl(overrides: {
     search?: string | undefined
@@ -128,6 +160,9 @@ export default async function ExplorarPage({ searchParams }: Props) {
     if (merged.city)       params.set("city",       merged.city)
     if (merged.sort)       params.set("sort",       merged.sort)
     if (merged.priceMax)   params.set("priceMax",   String(merged.priceMax))
+    if (sp.dist)           params.set("dist",       sp.dist)
+    if (sp.ulat)           params.set("ulat",       sp.ulat)
+    if (sp.ulng)           params.set("ulng",       sp.ulng)
     if (merged.page && merged.page > 1) params.set("page", String(merged.page))
     const qs = params.toString()
     return `/itens${qs ? `?${qs}` : ""}`
@@ -231,6 +266,9 @@ export default async function ExplorarPage({ searchParams }: Props) {
               priceMax={sp.priceMax}
               search={search}
               sort={sort}
+              dist={sp.dist}
+              userLat={sp.ulat}
+              userLng={sp.ulng}
             />
           </div>
         </details>
@@ -249,6 +287,9 @@ export default async function ExplorarPage({ searchParams }: Props) {
                 priceMax={sp.priceMax}
                 search={search}
                 sort={sort}
+                dist={sp.dist}
+                userLat={sp.ulat}
+                userLng={sp.ulng}
               />
             </div>
           </aside>
@@ -354,18 +395,25 @@ function FilterForm({
   priceMax,
   search,
   sort,
+  dist,
+  userLat,
+  userLng,
 }: {
   categories: { id: string; name: string }[]
   categoryId?: string
   priceMax?:   string
   search?:     string
   sort?:       string
+  dist?:       string
+  userLat?:    string
+  userLng?:    string
 }) {
   return (
     <form method="GET" action="/itens" className="space-y-5">
-      {/* Preserva busca e ordenação ao aplicar filtros */}
-      {search && <input type="hidden" name="search" value={search} />}
-      {sort   && <input type="hidden" name="sort"   value={sort} />}
+      {search   && <input type="hidden" name="search" value={search} />}
+      {sort     && <input type="hidden" name="sort"   value={sort} />}
+      {userLat  && <input type="hidden" name="ulat"   value={userLat} />}
+      {userLng  && <input type="hidden" name="ulng"   value={userLng} />}
 
       {/* Categoria */}
       <fieldset>
@@ -421,26 +469,10 @@ function FilterForm({
         </div>
       </fieldset>
 
-      {/* Distância */}
-      <fieldset>
-        <legend className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Distância
-        </legend>
-        <div className="space-y-0.5">
-          {(["Até 2 km", "Até 5 km", "Até 10 km", "Qualquer"] as const).map((label, i) => (
-            <label key={label} className="flex cursor-pointer items-center gap-2 py-1 text-sm text-foreground">
-              <input
-                type="radio"
-                name="dist"
-                value={["2", "5", "10", ""][i]}
-                defaultChecked={i === 3}
-                className="accent-brand"
-              />
-              {label}
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      {/* Distância — componente cliente com geolocalização */}
+      <Suspense fallback={null}>
+        <DistanceFilter dist={dist} userLat={userLat} userLng={userLng} />
+      </Suspense>
 
       {/* Avaliação mínima */}
       <fieldset>
