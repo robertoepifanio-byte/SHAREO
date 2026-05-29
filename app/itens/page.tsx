@@ -60,9 +60,10 @@ export default async function ExplorarPage({ searchParams }: Props) {
   const city       = sp.city?.trim()  || undefined
   const sort       = sp.sort          || undefined
   const priceMaxR  = sp.priceMax ? Number(sp.priceMax) : undefined // reais
-  const dist       = sp.dist   || undefined
+  const dist       = sp.dist     || undefined
   const userLat    = sp.ulat ? Number(sp.ulat) : undefined
   const userLng    = sp.ulng ? Number(sp.ulng) : undefined
+  const minRating  = sp.minRating ? Number(sp.minRating) : undefined
   const skip       = (page - 1) * PAGE_SIZE
 
   const where = {
@@ -78,6 +79,9 @@ export default async function ExplorarPage({ searchParams }: Props) {
     ...(categoryId && { categoryId }),
     ...(city       && { city: { contains: city, mode: "insensitive" as const } }),
     ...(priceMaxR  && { pricePerDay: { lte: priceMaxR * 100 } }),
+    ...(minRating  && {
+      reviews: { some: { reviewType: "ITEM" } },
+    }),
   }
 
   // Se o texto de busca bate exatamente com um nome de categoria, redireciona para filtro por categoria
@@ -110,6 +114,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
         owner:    { select: { name: true, isVerified: true } },
         images:   { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
         _count:   { select: { reviews: true, favorites: true } },
+        reviews:  { select: { rating: true }, where: { reviewType: "ITEM" } },
       },
     }),
     prisma.item.count({ where }),
@@ -120,23 +125,29 @@ export default async function ExplorarPage({ searchParams }: Props) {
     }),
   ])
 
-  // Aplica filtro de distância em JS quando lat/lng do usuário estão disponíveis
-  const items = useDistFilter
-    ? rawItems.filter((i) => {
-        if (!i.latitude || !i.longitude || (i.latitude === 0 && i.longitude === 0)) return false
-        return haversineKm(userLat!, userLng!, i.latitude, i.longitude) <= Number(dist)
-      }).slice(skip, skip + PAGE_SIZE)
-    : rawItems
+  // Filtros em JS: distância e avaliação mínima
+  function avgRating(i: { reviews: { rating: number }[] }) {
+    if (!i.reviews.length) return 0
+    return i.reviews.reduce((s, r) => s + r.rating, 0) / i.reviews.length
+  }
 
-  const filteredTotal  = useDistFilter
-    ? rawItems.filter((i) => {
-        if (!i.latitude || !i.longitude || (i.latitude === 0 && i.longitude === 0)) return false
-        return haversineKm(userLat!, userLng!, i.latitude, i.longitude) <= Number(dist)
-      }).length
-    : total
+  function passesJsFilters(i: typeof rawItems[number]) {
+    if (useDistFilter) {
+      if (!i.latitude || !i.longitude || (i.latitude === 0 && i.longitude === 0)) return false
+      if (haversineKm(userLat!, userLng!, i.latitude, i.longitude) > Number(dist)) return false
+    }
+    if (minRating && avgRating(i) < minRating) return false
+    return true
+  }
+
+  const useJsFilter = useDistFilter || !!minRating
+  const jsFiltered  = useJsFilter ? rawItems.filter(passesJsFilters) : rawItems
+
+  const items        = useJsFilter ? jsFiltered.slice(skip, skip + PAGE_SIZE) : rawItems
+  const filteredTotal = useJsFilter ? jsFiltered.length : total
 
   const totalPages = Math.ceil(filteredTotal / PAGE_SIZE)
-  const hasFilters = !!(search || categoryId || city || priceMaxR || dist)
+  const hasFilters = !!(search || categoryId || city || priceMaxR || dist || minRating)
 
   function buildUrl(overrides: {
     search?: string | undefined
@@ -163,6 +174,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
     if (sp.dist)           params.set("dist",       sp.dist)
     if (sp.ulat)           params.set("ulat",       sp.ulat)
     if (sp.ulng)           params.set("ulng",       sp.ulng)
+    if (sp.minRating)      params.set("minRating",  sp.minRating)
     if (merged.page && merged.page > 1) params.set("page", String(merged.page))
     const qs = params.toString()
     return `/itens${qs ? `?${qs}` : ""}`
@@ -260,7 +272,6 @@ export default async function ExplorarPage({ searchParams }: Props) {
           </summary>
           <div className="px-4 pb-4 pt-1">
             <FilterForm
-              key={`mobile-${categoryId ?? "all"}`}
               categories={categories}
               categoryId={categoryId}
               priceMax={sp.priceMax}
@@ -269,6 +280,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
               dist={sp.dist}
               userLat={sp.ulat}
               userLng={sp.ulng}
+              minRating={sp.minRating}
             />
           </div>
         </details>
@@ -407,6 +419,7 @@ function FilterForm({
   dist?:       string
   userLat?:    string
   userLng?:    string
+  minRating?:  string
 }) {
   return (
     <form method="GET" action="/itens" className="space-y-5">
@@ -490,6 +503,7 @@ function FilterForm({
                 type="radio"
                 name="minRating"
                 value={opt.value}
+                defaultChecked={minRating === opt.value}
                 className="accent-brand"
               />
               {opt.label}
