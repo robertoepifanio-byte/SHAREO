@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import Image from "next/image"
 import { prisma } from "@/lib/prisma"
-import { supabaseAdmin } from "@/lib/supabase/admin"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { VerificationActions } from "./_Actions"
 
 export const metadata: Metadata = { title: "Admin — Verificações de Identidade" }
@@ -24,13 +24,12 @@ const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
 
 async function signedUrl(path: string | null): Promise<string | null> {
   if (!path) return null
-  // Extrai o caminho relativo do bucket a partir da URL pública
   const marker = "/id-docs/"
   const idx    = path.indexOf(marker)
   const key    = idx >= 0 ? path.slice(idx + marker.length) : path
-  const { data } = await supabaseAdmin.storage
+  const { data } = await createAdminClient().storage
     .from("id-docs")
-    .createSignedUrl(key, 3600) // 1 hora
+    .createSignedUrl(key, 3600)
   return data?.signedUrl ?? null
 }
 
