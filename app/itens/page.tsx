@@ -10,6 +10,8 @@ import { SortSelect } from "./_SortSelect"
 import { ItemsMapLoader } from "@/components/items/ItemsMapLoader"
 import type { ItemPin } from "@/components/items/ItemsMap"
 import { DistanceFilter } from "./_DistanceFilter"
+import { FilterTrigger } from "./_FilterTrigger"
+import { haversineKm } from "@/lib/haversine"
 
 export const metadata: Metadata = {
   title:       "Explorar anúncios",
@@ -34,14 +36,6 @@ type Props = { searchParams: Promise<SearchParams> }
 const PAGE_SIZE = 20
 
 
-function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number) {
-  const R    = 6371
-  const dLat = (lat2 - lat1) * Math.PI / 180
-  const dLng = (lng2 - lng1) * Math.PI / 180
-  const a    = Math.sin(dLat / 2) ** 2
-    + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-}
 
 function getOrderBy(sort?: string) {
   switch (sort) {
@@ -255,35 +249,20 @@ export default async function ExplorarPage({ searchParams }: Props) {
           </div>
         )}
 
-        {/* ─── FILTROS MOBILE (collapsible) ─── */}
-        <details className="lg:hidden mb-5 rounded-xl border border-border bg-surface">
-          <summary className="flex cursor-pointer select-none items-center gap-2 px-4 py-3 text-sm font-semibold text-foreground">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-              <line x1="4" y1="6" x2="20" y2="6"/>
-              <line x1="8" y1="12" x2="16" y2="12"/>
-              <line x1="11" y1="18" x2="13" y2="18"/>
-            </svg>
-            Filtros
-            {hasFilters && (
-              <span className="ml-auto rounded-full bg-brand px-2 py-0.5 text-xs text-white">
-                Ativos
-              </span>
-            )}
-          </summary>
-          <div className="px-4 pb-4 pt-1">
-            <FilterForm
-              categories={categories}
-              categoryId={categoryId}
-              priceMax={sp.priceMax}
-              search={search}
-              sort={sort}
-              dist={sp.dist}
-              userLat={sp.ulat}
-              userLng={sp.ulng}
-              minRating={sp.minRating}
-            />
-          </div>
-        </details>
+        {/* ─── FILTROS MOBILE (bottom sheet) ─── */}
+        <FilterTrigger hasFilters={hasFilters}>
+          <FilterForm
+            categories={categories}
+            categoryId={categoryId}
+            priceMax={sp.priceMax}
+            search={search}
+            sort={sort}
+            dist={sp.dist}
+            userLat={sp.ulat}
+            userLng={sp.ulng}
+            minRating={sp.minRating}
+          />
+        </FilterTrigger>
 
         {/* ─── LAYOUT: SIDEBAR + RESULTADOS ─── */}
         <div className="flex gap-6 items-start">

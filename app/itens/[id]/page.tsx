@@ -8,6 +8,7 @@ import { FavoriteButton } from "@/components/items/FavoriteButton"
 import { getOwnerResponseBadge } from "@/lib/ownerStats"
 import { Gallery } from "./_Gallery"
 import { PriceCalc } from "./_PriceCalc"
+import { StickyBookingCTA } from "./_StickyBookingCTA"
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -176,6 +177,15 @@ export default async function ItemDetailPage({ params }: Props) {
         </div>
       </div>
 
+      {/* CTA fixo mobile */}
+      {!isOwner && (
+        <StickyBookingCTA
+          pricePerDay={item.pricePerDay}
+          isLoggedIn={!!session}
+          itemId={item.id}
+        />
+      )}
+
       <main className="container py-8">
         <h1 className="sr-only">{item.title}</h1>
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
@@ -341,14 +351,16 @@ export default async function ItemDetailPage({ params }: Props) {
                   ✏️ Editar anúncio
                 </Link>
               ) : (
-                <PriceCalc
-                  pricePerDay={item.pricePerDay}
-                  pricePerWeek={item.pricePerWeek}
-                  pricePerMonth={item.pricePerMonth}
-                  depositAmount={item.depositAmount}
-                  itemId={item.id}
-                  isLoggedIn={!!session}
-                />
+                <div id="price-calc">
+                  <PriceCalc
+                    pricePerDay={item.pricePerDay}
+                    pricePerWeek={item.pricePerWeek}
+                    pricePerMonth={item.pricePerMonth}
+                    depositAmount={item.depositAmount}
+                    itemId={item.id}
+                    isLoggedIn={!!session}
+                  />
+                </div>
               )}
 
               {/* Favoritar */}
