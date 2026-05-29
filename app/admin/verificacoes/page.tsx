@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Image from "next/image"
 import { prisma } from "@/lib/prisma"
+import { supabaseAdmin } from "@/lib/supabase/admin"
 import { VerificationActions } from "./_Actions"
 
 export const metadata: Metadata = { title: "Admin — Verificações de Identidade" }
@@ -21,9 +22,20 @@ const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   UNVERIFIED: { label: "Não enviou", cls: "bg-muted/50 text-muted-foreground border-border" },
 }
 
+async function signedUrl(path: string | null): Promise<string | null> {
+  if (!path) return null
+  // Extrai o caminho relativo do bucket a partir da URL pública
+  const marker = "/id-docs/"
+  const idx    = path.indexOf(marker)
+  const key    = idx >= 0 ? path.slice(idx + marker.length) : path
+  const { data } = await supabaseAdmin.storage
+    .from("id-docs")
+    .createSignedUrl(key, 3600) // 1 hora
+  return data?.signedUrl ?? null
+}
+
 export default async function VerificacoesPage() {
   const [pending, recent] = await Promise.all([
-    // Pendentes — ordenados do mais antigo para o mais novo
     prisma.user.findMany({
       where:   { idVerificationStatus: "PENDING", deletedAt: null },
       orderBy: { idSubmittedAt: "asc" },
@@ -34,7 +46,6 @@ export default async function VerificacoesPage() {
         idSubmittedAt: true,
       },
     }),
-    // Últimas 20 resolvidas (aprovadas ou rejeitadas)
     prisma.user.findMany({
       where:   { idVerificationStatus: { in: ["VERIFIED", "REJECTED"] }, deletedAt: null },
       orderBy: { idVerifiedAt: "desc" },
@@ -48,6 +59,15 @@ export default async function VerificacoesPage() {
     }),
   ])
 
+  // Gera signed URLs para os documentos do bucket privado id-docs
+  const pendingWithUrls = await Promise.all(
+    pending.map(async (u) => ({
+      ...u,
+      idDocumentUrl: await signedUrl(u.idDocumentUrl),
+      idSelfieUrl:   await signedUrl(u.idSelfieUrl),
+    }))
+  )
+
 
   return (
     <div>
@@ -55,21 +75,21 @@ export default async function VerificacoesPage() {
         <div>
           <h1 className="text-xl font-bold text-primary">Verificações de Identidade</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            {pending.length === 0
+            {pendingWithUrls.length === 0
               ? "Nenhuma verificação pendente ✅"
-              : `${pending.length} verificaç${pending.length === 1 ? "ão" : "ões"} aguardando análise`}
+              : `${pendingWithUrls.length} verificaç${pendingWithUrls.length === 1 ? "ão" : "ões"} aguardando análise`}
           </p>
         </div>
       </div>
 
       {/* ─── PENDENTES ──────────────────────────────────────────── */}
-      {pending.length > 0 && (
+      {pendingWithUrls.length > 0 && (
         <section className="mb-8">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-            Pendentes ({pending.length})
+            Pendentes ({pendingWithUrls.length})
           </h2>
           <div className="space-y-4">
-            {pending.map((user) => (
+            {pendingWithUrls.map((user) => (
               <div key={user.id} className="rounded-xl border border-amber-200 bg-amber-50/40 p-4">
                 {/* Cabeçalho do usuário */}
                 <div className="flex items-center gap-3">
@@ -189,7 +209,7 @@ export default async function VerificacoesPage() {
         </section>
       )}
 
-      {pending.length === 0 && recent.length === 0 && (
+      {pendingWithUrls.length === 0 && recent.length === 0 && (
         <div className="rounded-xl border border-border bg-surface p-8 text-center">
           <p className="text-3xl">🆔</p>
           <p className="mt-3 text-sm font-medium text-foreground">Nenhuma verificação ainda</p>
