@@ -1,11 +1,13 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/lib/auth"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { ItemCard } from "@/components/items/ItemCard"
 import { CategoryIcon } from "@/components/ui/CategoryIcon"
 import { ItemsMapLoader } from "@/components/items/ItemsMapLoader"
 import type { ItemPin } from "@/components/items/ItemsMap"
+import { getUserMapLocation } from "@/lib/userLocation"
 
 export const metadata: Metadata = {
   title: "ShareO — Use Mais. Possua Menos.",
@@ -16,6 +18,9 @@ export const revalidate = 60
 
 
 export default async function HomePage() {
+  const session = await auth().catch(() => null)
+  const userLoc = await getUserMapLocation(session?.user?.id)
+
   const itemSelect = {
     id: true, title: true, pricePerDay: true, condition: true,
     city: true, state: true, neighborhood: true, isActive: true,
@@ -177,6 +182,9 @@ export default async function HomePage() {
         <section className="pb-8" aria-label="Mapa de itens próximos">
           <ItemsMapLoader
             height={192}
+            defaultLat={userLoc.lat}
+            defaultLng={userLoc.lng}
+            defaultZoom={userLoc.zoom}
             items={items.map<ItemPin>((i) => ({
               id:          i.id,
               title:       i.title,
