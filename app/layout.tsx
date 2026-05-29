@@ -12,6 +12,8 @@ const montserrat = Montserrat({
   display:  "swap",
 })
 
+const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+
 export const metadata: Metadata = {
   title: {
     default:  "ShareO — Use Mais. Possua Menos.",
@@ -19,11 +21,34 @@ export const metadata: Metadata = {
   },
   description:
     "Marketplace de economia circular para aluguel local de itens entre pessoas e empresas em Natal/RN.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
+  metadataBase: new URL(BASE),
   openGraph: {
     type:     "website",
     locale:   "pt_BR",
     siteName: "ShareO",
+  },
+  twitter: {
+    card: "summary_large_image",
+    site: "@shareo_br",
+  },
+  robots: {
+    index:  true,
+    follow: true,
+  },
+}
+
+const orgJsonLd = {
+  "@context":   "https://schema.org",
+  "@type":      "Organization",
+  name:         "ShareO",
+  url:          BASE,
+  logo:         `${BASE}/shareo-logo.png`,
+  description:  "Marketplace de economia circular para aluguel local de itens em Natal/RN.",
+  sameAs:       [],
+  contactPoint: {
+    "@type":       "ContactPoint",
+    contactType:   "customer service",
+    availableLanguage: "Portuguese",
   },
 }
 
@@ -31,6 +56,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt-BR" className={montserrat.variable}>
       <body className="min-h-screen bg-background font-sans antialiased">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+        />
         {/* Skip link — acessibilidade de teclado */}
         <a
           href="#main-content"
