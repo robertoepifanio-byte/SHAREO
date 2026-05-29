@@ -410,6 +410,7 @@ function FilterForm({
   dist,
   userLat,
   userLng,
+  minRating,
 }: {
   categories: { id: string; name: string }[]
   categoryId?: string
