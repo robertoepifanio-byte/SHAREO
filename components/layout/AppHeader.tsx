@@ -24,9 +24,10 @@ export async function AppHeader() {
               src="/logos/shareo-logo.png"
               alt="ShareO"
               width={120}
-              height={36}
+              height={32}
               sizes="120px"
-              className="object-contain h-8 w-auto"
+              className="object-contain"
+              style={{ width: "auto", height: "32px" }}
               priority
             />
           </div>
