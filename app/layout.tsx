@@ -3,6 +3,7 @@ import { Montserrat } from "next/font/google"
 import { Toaster } from "sonner"
 import { BottomNav } from "@/components/layout/BottomNav"
 import { AppFooter } from "@/components/layout/AppFooter"
+import { ServiceWorkerRegister } from "@/components/layout/ServiceWorkerRegister"
 import "./globals.css"
 
 const montserrat = Montserrat({
@@ -34,6 +35,14 @@ export const metadata: Metadata = {
   robots: {
     index:  true,
     follow: true,
+  },
+  manifest: "/manifest.webmanifest",
+  other: {
+    "mobile-web-app-capable":      "yes",
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "default",
+    "apple-mobile-web-app-title":  "ShareO",
+    "apple-touch-icon":            "/icons/shareo-logo.png",
   },
 }
 
@@ -73,7 +82,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AppFooter />
         </div>
         <BottomNav />
-            <Toaster richColors position="top-right" />
+        <Toaster richColors position="top-right" />
+        <ServiceWorkerRegister />
     </body>
     </html>
   )
