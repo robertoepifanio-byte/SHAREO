@@ -36,13 +36,13 @@ export const metadata: Metadata = {
     index:  true,
     follow: true,
   },
-  manifest: "/manifest.webmanifest",
-  other: {
-    "mobile-web-app-capable":      "yes",
-    "apple-mobile-web-app-capable": "yes",
-    "apple-mobile-web-app-status-bar-style": "default",
-    "apple-mobile-web-app-title":  "ShareO",
-    "apple-touch-icon":            "/icons/shareo-logo.png",
+  appleWebApp: {
+    capable:          true,
+    title:            "ShareO",
+    statusBarStyle:   "default",
+  },
+  icons: {
+    apple: "/icons/shareo-logo.png",
   },
 }
 
