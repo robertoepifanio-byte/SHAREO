@@ -35,6 +35,7 @@ export function MobileMenu({ isLoggedIn }: Props) {
       : [
           { href: "/login",    label: "Entrar" },
         ]),
+    { href: "/ajuda", label: "Ajuda" },
   ]
 
   return (
