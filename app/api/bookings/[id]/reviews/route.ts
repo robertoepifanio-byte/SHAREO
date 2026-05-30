@@ -88,7 +88,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       )
     }
 
-    const { reviewType, rating, comment } = parsed.data
+    const { reviewType, rating, comment, sentiment, itemAsDescribed, punctuality, communication, conservation, photoUrl } = parsed.data
     const userId = session.user.id
 
     const booking = await prisma.booking.findUnique({
@@ -145,15 +145,26 @@ export async function POST(req: NextRequest, { params }: Params) {
 
     const review = await prisma.review.create({
       data: {
-        bookingId:  id,
-        reviewerId: userId,
+        bookingId:       id,
+        reviewerId:      userId,
         revieweeId,
-        itemId:     reviewType === "ITEM" ? booking.itemId : null,
+        itemId:          reviewType === "ITEM" ? booking.itemId : null,
         reviewType,
         rating,
-        comment:    comment?.trim() || null,
+        comment:         comment?.trim() || null,
+        sentiment,
+        itemAsDescribed,
+        punctuality,
+        communication,
+        conservation,
+        photoUrl,
       },
-      select: { id: true, reviewType: true, rating: true, comment: true, createdAt: true },
+      select: {
+        id: true, reviewType: true, rating: true, comment: true,
+        sentiment: true, itemAsDescribed: true, punctuality: true,
+        communication: true, conservation: true, photoUrl: true,
+        createdAt: true,
+      },
     })
 
     // Notifica o avaliado (fire-and-forget)

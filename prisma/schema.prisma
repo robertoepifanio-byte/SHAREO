@@ -26,33 +26,33 @@ enum UserRole {
 }
 
 enum ItemCondition {
-  NEW       // Novo
+  NEW // Novo
   EXCELLENT // Excelente
-  GOOD      // Bom
-  FAIR      // Regular
+  GOOD // Bom
+  FAIR // Regular
 }
 
 enum BookingStatus {
-  PENDING    // Aguardando resposta do locador
-  CONFIRMED  // Locador aceitou
-  ACTIVE     // Aluguel em andamento
-  RETURNED   // Item devolvido, aguardando avaliação
-  COMPLETED  // Concluído (avaliações feitas ou 7 dias após devolução)
-  CANCELLED  // Cancelado por qualquer parte
-  DISPUTED   // Disputa aberta
+  PENDING // Aguardando resposta do locador
+  CONFIRMED // Locador aceitou
+  ACTIVE // Aluguel em andamento
+  RETURNED // Item devolvido, aguardando avaliação
+  COMPLETED // Concluído (avaliações feitas ou 7 dias após devolução)
+  CANCELLED // Cancelado por qualquer parte
+  DISPUTED // Disputa aberta
 }
 
 enum PaymentStatus {
-  PENDING    // Aguardando pagamento
-  PAID       // Pago com sucesso
-  REFUNDED   // Estornado
-  FAILED     // Falhou
+  PENDING // Aguardando pagamento
+  PAID // Pago com sucesso
+  REFUNDED // Estornado
+  FAILED // Falhou
 }
 
 enum ReviewType {
-  ITEM        // Locatário avalia o item
-  BORROWER    // Locador avalia o locatário
-  OWNER       // Locatário avalia o locador
+  ITEM // Locatário avalia o item
+  BORROWER // Locador avalia o locatário
+  OWNER // Locatário avalia o locador
 }
 
 enum NotificationType {
@@ -101,34 +101,34 @@ model User {
 
   // Documentos — armazenados criptografados (ver ADR-004)
   // Nunca expor em respostas de API sem mascaramento
-  cpfHash       String?   @unique // bcrypt hash para verificação de unicidade
-  cpfEncrypted  String?           // AES-256-GCM para exibição mascarada
-  cnpjHash      String?   @unique
+  cpfHash       String? @unique // bcrypt hash para verificação de unicidade
+  cpfEncrypted  String? // AES-256-GCM para exibição mascarada
+  cnpjHash      String? @unique
   cnpjEncrypted String?
 
   // Perfil
-  slug          String?   @unique // URL da vitrine: /loja/[slug] — gerado no cadastro, editável
-  avatarUrl     String?
-  bio           String?   @db.Text
+  slug      String? @unique // URL da vitrine: /loja/[slug] — gerado no cadastro, editável
+  avatarUrl String?
+  bio       String? @db.Text
 
   // Localização (base do usuário — para geo-search de proximidade)
-  city          String?
-  state         String?   @db.Char(2)
-  neighborhood  String?
+  city         String?
+  state        String? @db.Char(2)
+  neighborhood String?
   // PostGIS: requer extensão "postgis" ativa no Supabase
   // lat/lng armazenados separadamente para queries sem PostGIS no dev
-  latitude      Float?
-  longitude     Float?
+  latitude     Float?
+  longitude    Float?
 
   // Programa de indicação
-  referralCode  String?   @unique // código único gerado no cadastro (ex.: "JOAO-X4K2")
-  referredById  String?           // quem indicou este usuário
-  referredBy    User?     @relation("Referrals", fields: [referredById], references: [id])
-  referrals     User[]    @relation("Referrals")
+  referralCode    String?          @unique // código único gerado no cadastro (ex.: "JOAO-X4K2")
+  referredById    String? // quem indicou este usuário
+  referredBy      User?            @relation("Referrals", fields: [referredById], references: [id])
+  referrals       User[]           @relation("Referrals")
   referralCredits ReferralCredit[]
 
-  isVerified    Boolean   @default(false)
-  isActive      Boolean   @default(true)
+  isVerified Boolean @default(false)
+  isActive   Boolean @default(true)
 
   // Verificação de identidade
   idVerificationStatus IdVerificationStatus @default(UNVERIFIED)
@@ -139,29 +139,29 @@ model User {
   idRejectionReason    String?
 
   // LGPD — consentimento explícito no cadastro
-  consentAt     DateTime?
-  consentIp     String?
-  consentVersion String?  // versão da política aceita (ex.: "v1.0")
+  consentAt      DateTime?
+  consentIp      String?
+  consentVersion String? // versão da política aceita (ex.: "v1.0")
 
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  deletedAt     DateTime? // soft delete — nunca delete fisicamente
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // soft delete — nunca delete fisicamente
 
   // Relações
-  items               Item[]
-  bookingsAsBorrower  Booking[]      @relation("BorrowerBookings")
-  bookingsAsOwner     Booking[]      @relation("OwnerBookings")
-  reviewsGiven        Review[]       @relation("ReviewsGiven")
-  reviewsReceived     Review[]       @relation("ReviewsReceived")
-  favorites           Favorite[]
-  messages            Message[]
-  conversations       ConversationParticipant[]
-  notifications       Notification[]
-  adminLogs           AdminLog[]
-  outboundWebhooks    OutboundWebhook[]
+  items              Item[]
+  bookingsAsBorrower Booking[]                 @relation("BorrowerBookings")
+  bookingsAsOwner    Booking[]                 @relation("OwnerBookings")
+  reviewsGiven       Review[]                  @relation("ReviewsGiven")
+  reviewsReceived    Review[]                  @relation("ReviewsReceived")
+  favorites          Favorite[]
+  messages           Message[]
+  conversations      ConversationParticipant[]
+  notifications      Notification[]
+  adminLogs          AdminLog[]
+  outboundWebhooks   OutboundWebhook[]
   // NextAuth.js — @auth/prisma-adapter
-  accounts            Account[]
-  sessions            Session[]
+  accounts           Account[]
+  sessions           Session[]
 
   @@index([email])
   @@index([latitude, longitude])
@@ -172,7 +172,7 @@ model Category {
   id        String     @id @default(cuid())
   slug      String     @unique // ex.: "ferramentas", "eletronicos"
   name      String
-  icon      String?    // nome do SVG em /icones/
+  icon      String? // nome do SVG em /icones/
   parentId  String?
   parent    Category?  @relation("SubCategories", fields: [parentId], references: [id])
   children  Category[] @relation("SubCategories")
@@ -183,11 +183,11 @@ model Category {
 }
 
 model Item {
-  id          String        @id @default(cuid())
-  ownerId     String
-  owner       User          @relation(fields: [ownerId], references: [id])
-  categoryId  String
-  category    Category      @relation(fields: [categoryId], references: [id])
+  id         String   @id @default(cuid())
+  ownerId    String
+  owner      User     @relation(fields: [ownerId], references: [id])
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
 
   title       String
   slug        String?       @unique // ex.: "furadeira-dewalt-em-sao-paulo-sp" — SEO URL
@@ -195,20 +195,20 @@ model Item {
   condition   ItemCondition @default(GOOD)
 
   // Preços — em centavos (evita float rounding issues)
-  pricePerDay          Int          // obrigatório
+  pricePerDay          Int // obrigatório
   pricePerWeek         Int?
   pricePerMonth        Int?
-  depositAmount        Int?         // caução
-  rules                String?      @db.Text  // P2-51 — regras do anunciante (ex.: "Não use na chuva")
-  estimatedRetailPrice Int?         // valor estimado de compra (para calculadora alugar vs comprar)
+  depositAmount        Int? // caução
+  rules                String? @db.Text // P2-51 — regras do anunciante (ex.: "Não use na chuva")
+  estimatedRetailPrice Int? // valor estimado de compra (para calculadora alugar vs comprar)
 
   // Localização do item
-  address       String?
-  city          String
-  state         String      @db.Char(2)
-  neighborhood  String?
-  latitude      Float
-  longitude     Float
+  address      String?
+  city         String
+  state        String  @db.Char(2)
+  neighborhood String?
+  latitude     Float
+  longitude    Float
   // Coluna geográfica PostGIS (Unsupported até Prisma nativo suportar)
   // geom        Unsupported("geometry(Point, 4326)")?
 
@@ -220,15 +220,15 @@ model Item {
   requirePhone          Boolean @default(false) // locatário precisa ter telefone cadastrado
 
   // Status
-  isActive      Boolean     @default(true)
-  isApproved    Boolean     @default(true)  // true = publicação direta (moderação reativa no MVP)
-  approvedAt    DateTime?
-  approvedById  String?
+  isActive     Boolean   @default(true)
+  isApproved   Boolean   @default(true) // true = publicação direta (moderação reativa no MVP)
+  approvedAt   DateTime?
+  approvedById String?
 
-  viewCount     Int         @default(0)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  deletedAt     DateTime?
+  viewCount Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   // Relações
   images    ItemImage[]
@@ -257,61 +257,61 @@ model ItemImage {
 }
 
 model Booking {
-  id          String        @id @default(cuid())
-  itemId      String
-  item        Item          @relation(fields: [itemId], references: [id])
-  borrowerId  String
-  borrower    User          @relation("BorrowerBookings", fields: [borrowerId], references: [id])
-  ownerId     String
-  owner       User          @relation("OwnerBookings", fields: [ownerId], references: [id])
+  id         String @id @default(cuid())
+  itemId     String
+  item       Item   @relation(fields: [itemId], references: [id])
+  borrowerId String
+  borrower   User   @relation("BorrowerBookings", fields: [borrowerId], references: [id])
+  ownerId    String
+  owner      User   @relation("OwnerBookings", fields: [ownerId], references: [id])
 
-  status      BookingStatus @default(PENDING)
+  status BookingStatus @default(PENDING)
 
-  startDate   DateTime
-  endDate     DateTime
-  totalDays   Int
+  startDate DateTime
+  endDate   DateTime
+  totalDays Int
 
   // Snapshot de preço no momento da solicitação (protege contra mudança de preço)
-  dailyPrice      Int
-  totalPrice      Int
-  depositAmount   Int?
+  dailyPrice    Int
+  totalPrice    Int
+  depositAmount Int?
 
-  borrowerNote    String?   @db.Text
-  ownerNote       String?   @db.Text
+  borrowerNote String? @db.Text
+  ownerNote    String? @db.Text
 
   // Pagamento via Stripe
   paymentStatus         PaymentStatus @default(PENDING)
-  stripeSessionId       String?       @unique  // Stripe Checkout Session ID
+  stripeSessionId       String?       @unique // Stripe Checkout Session ID
   stripePaymentIntentId String?
   paidAt                DateTime?
 
-  cancelledAt     DateTime?
-  cancelledById   String?
-  cancelReason    String?
+  cancelledAt   DateTime?
+  cancelledById String?
+  cancelReason  String?
 
   // Política de cancelamento — calculado no momento do cancelamento
-  refundAmount    Int?  // valor a reembolsar em centavos (null = não cancelado)
-  refundPercent   Int?  // 100 | 70 | 50 — percentual aplicado pela política
+  refundAmount  Int? // valor a reembolsar em centavos (null = não cancelado)
+  refundPercent Int? // 100 | 70 | 50 — percentual aplicado pela política
 
   // Resposta do proprietário (para cálculo do badge de responsividade)
-  respondedAt     DateTime? // quando o dono aceitou ou recusou (primeira ação sobre PENDING)
+  respondedAt DateTime? // quando o dono aceitou ou recusou (primeira ação sobre PENDING)
 
   // Devolução e taxa de atraso
-  returnedAt      DateTime? // data real de devolução (pode ser após endDate)
-  lateFeeAmount   Int?      // cents — calculado se returnedAt > endDate
+  returnedAt    DateTime? // data real de devolução (pode ser após endDate)
+  lateFeeAmount Int? // cents — calculado se returnedAt > endDate
 
   // Contrato digital
   contractSignedAt DateTime?
 
   // P1-27 — Extensão de prazo
   extensionRequestedEndDate DateTime? // nova data de devolução solicitada pelo locatário
-  extensionStatus           String?   // "PENDING" | "APPROVED" | "REJECTED"
+  extensionStatus           String? // "PENDING" | "APPROVED" | "REJECTED"
   extensionRequestedAt      DateTime? // quando a solicitação foi feita
   extensionRespondedAt      DateTime? // quando o proprietário respondeu
 
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  deletedAt       DateTime? // soft delete — LGPD obrigatório em dados transacionais
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // soft delete — LGPD obrigatório em dados transacionais
 
   // Relações
   reviews            Review[]
@@ -329,21 +329,31 @@ model Booking {
 }
 
 model Review {
-  id          String     @id @default(cuid())
-  bookingId   String
-  booking     Booking    @relation(fields: [bookingId], references: [id])
-  reviewerId  String
-  reviewer    User       @relation("ReviewsGiven", fields: [reviewerId], references: [id])
-  revieweeId  String
-  reviewee    User       @relation("ReviewsReceived", fields: [revieweeId], references: [id])
-  itemId      String?
-  item        Item?      @relation(fields: [itemId], references: [id])
+  id         String  @id @default(cuid())
+  bookingId  String
+  booking    Booking @relation(fields: [bookingId], references: [id])
+  reviewerId String
+  reviewer   User    @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  revieweeId String
+  reviewee   User    @relation("ReviewsReceived", fields: [revieweeId], references: [id])
+  itemId     String?
+  item       Item?   @relation(fields: [itemId], references: [id])
 
-  reviewType  ReviewType
-  rating      Int        // 1–5
-  comment     String?    @db.Text
+  reviewType ReviewType
+  rating     Int     // 1–5 overall
+  comment    String? @db.Text
 
-  createdAt   DateTime   @default(now())
+  // P3-68: emoji de satisfação (😠1 😕2 😐3 😊4 😍5)
+  sentiment       Int?
+  // P3-67: critérios por tipo de avaliação
+  itemAsDescribed Int? // ITEM: item como descrito
+  punctuality     Int? // OWNER/BORROWER: pontualidade
+  communication   Int? // OWNER/BORROWER: comunicação
+  conservation    Int? // ITEM/BORROWER: conservação/cuidado
+  // P3-69: foto do item em uso
+  photoUrl        String?
+
+  createdAt DateTime @default(now())
 
   // Um revisor só avalia uma vez por booking por tipo
   @@unique([bookingId, reviewerId, reviewType])
@@ -365,14 +375,14 @@ model Favorite {
 }
 
 model Conversation {
-  id            String   @id @default(cuid())
-  bookingId     String?  @unique
-  booking       Booking? @relation(fields: [bookingId], references: [id])
+  id            String    @id @default(cuid())
+  bookingId     String?   @unique
+  booking       Booking?  @relation(fields: [bookingId], references: [id])
   lastMessageAt DateTime?
-  createdAt     DateTime @default(now())
+  createdAt     DateTime  @default(now())
 
-  messages      Message[]
-  participants  ConversationParticipant[]
+  messages     Message[]
+  participants ConversationParticipant[]
 
   @@map("conversations")
 }
@@ -398,7 +408,7 @@ model Message {
   content        String       @db.Text
   readAt         DateTime?
   createdAt      DateTime     @default(now())
-  deletedAt      DateTime?    // soft delete — LGPD obrigatório em mensagens privadas
+  deletedAt      DateTime? // soft delete — LGPD obrigatório em mensagens privadas
 
   @@index([conversationId, createdAt])
   @@index([senderId])
@@ -412,7 +422,7 @@ model Notification {
   type      NotificationType
   title     String
   body      String
-  data      Json?            // dados extras (ex.: bookingId, itemId)
+  data      Json? // dados extras (ex.: bookingId, itemId)
   readAt    DateTime?
   createdAt DateTime         @default(now())
 
@@ -477,19 +487,19 @@ model PasswordResetToken {
 
 // Webhooks de saída para integração PJ com ERPs e sistemas externos
 model OutboundWebhook {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  url       String              // endpoint que receberá os eventos
-  events    String[]            // ex.: ["booking.confirmed", "booking.paid"]
-  secret    String              // HMAC-SHA256 secret (mostrado apenas no momento da criação)
-  isActive  Boolean  @default(true)
+  url      String // endpoint que receberá os eventos
+  events   String[] // ex.: ["booking.confirmed", "booking.paid"]
+  secret   String // HMAC-SHA256 secret (mostrado apenas no momento da criação)
+  isActive Boolean  @default(true)
 
   // Auditoria das últimas entregas
-  lastFiredAt     DateTime?
-  lastStatusCode  Int?
-  failureCount    Int       @default(0)
+  lastFiredAt    DateTime?
+  lastStatusCode Int?
+  failureCount   Int       @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -502,16 +512,16 @@ model OutboundWebhook {
 
 // Créditos do programa de indicação
 model ReferralCredit {
-  id          String    @id @default(cuid())
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  amountCents Int                    // valor em centavos (ex.: 1500 = R$15)
-  reason      String                 // ex.: "Indicação aceita — João Silva", "Primeiro aluguel concluído"
-  usedAt      DateTime?              // null = disponível, não null = já usado
-  expiresAt   DateTime?              // validade opcional
+  amountCents Int // valor em centavos (ex.: 1500 = R$15)
+  reason      String // ex.: "Indicação aceita — João Silva", "Primeiro aluguel concluído"
+  usedAt      DateTime? // null = disponível, não null = já usado
+  expiresAt   DateTime? // validade opcional
 
-  createdAt   DateTime  @default(now())
+  createdAt DateTime @default(now())
 
   @@index([userId])
   @@map("referral_credits")
@@ -521,8 +531,8 @@ model AdminLog {
   id         String   @id @default(cuid())
   adminId    String
   admin      User     @relation(fields: [adminId], references: [id])
-  action     String   // ex.: "APPROVE_ITEM", "BAN_USER", "RESOLVE_DISPUTE"
-  entityType String   // ex.: "Item", "User", "Booking"
+  action     String // ex.: "APPROVE_ITEM", "BAN_USER", "RESOLVE_DISPUTE"
+  entityType String // ex.: "Item", "User", "Booking"
   entityId   String
   metadata   Json?
   createdAt  DateTime @default(now())
@@ -535,14 +545,14 @@ model AdminLog {
 // ─── Fotos de check-in / check-out ───────────────────────────────────────────
 
 model BookingPhoto {
-  id          String     @id @default(cuid())
-  bookingId   String
-  booking     Booking    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  url         String
-  phase       CheckPhase // CHECKIN | CHECKOUT
-  uploadedBy  String     // userId de quem fez o upload
+  id         String     @id @default(cuid())
+  bookingId  String
+  booking    Booking    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  url        String
+  phase      CheckPhase // CHECKIN | CHECKOUT
+  uploadedBy String // userId de quem fez o upload
 
-  createdAt   DateTime   @default(now())
+  createdAt DateTime @default(now())
 
   @@index([bookingId])
   @@map("booking_photos")
@@ -551,9 +561,9 @@ model BookingPhoto {
 // ─── Contrato digital ─────────────────────────────────────────────────────────
 
 model ContractAcceptance {
-  id         String   @id @default(cuid())
-  bookingId  String   @unique
-  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  bookingId String  @unique
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   acceptedAt DateTime @default(now())
   ipAddress  String?
