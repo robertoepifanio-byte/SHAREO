@@ -21,6 +21,7 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
+    "rls": "tsx scripts/apply-rls.ts",
     "postinstall": "prisma generate",
     "prepare": "husky"
   },

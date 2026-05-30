@@ -16,7 +16,7 @@ const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   RETURNED:  { label: "Devolvido",   color: "bg-purple-100 text-purple-700" },
   COMPLETED: { label: "Concluída",   color: "bg-success/10 text-success" },
   CANCELLED: { label: "Cancelada",   color: "bg-red-100 text-red-700" },
-  DISPUTED:  { label: "Em disputa",  color: "bg-orange-100 text-orange-700" },
+  DISPUTED:  { label: "Em disputa",  color: "bg-orange-100 text-[#9A4700]" },
 }
 
 const fmt = (cents: number) =>

@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import Image from "next/image"
 import { SuggestCard } from "@/components/dashboard/SuggestCard"
+import { MonthlyGoalProgress } from "@/components/dashboard/MonthlyGoalProgress"
+import { UpcomingReturns } from "@/components/dashboard/UpcomingReturns"
 
 export const metadata: Metadata = { title: "Dashboard" }
 
@@ -39,7 +41,7 @@ export default async function DashboardPage() {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
   const uid          = session.user.id
 
-  // Queries paralelas — Sprint 2
+  // Queries paralelas — Sprint 2 + P2-58/P2-60
   const [
     itemCount,
     totalViews,
@@ -48,6 +50,7 @@ export default async function DashboardPage() {
     recentBookings,
     lastBookingCategories,
     userProfile,
+    upcomingReturns,
   ] = await Promise.all([
     // itens anunciados
     prisma.item.count({ where: { ownerId: uid, deletedAt: null } }),
@@ -109,6 +112,19 @@ export default async function DashboardPage() {
       where:  { id: uid },
       select: { city: true, state: true },
     }).catch(() => null),
+
+    // P2-58 — Próximas devoluções (proprietário): reservas ACTIVE ordenadas por endDate ASC
+    prisma.booking.findMany({
+      where: { ownerId: uid, status: "ACTIVE" },
+      orderBy: { endDate: "asc" },
+      take: 5,
+      select: {
+        id:       true,
+        endDate:  true,
+        item:     { select: { title: true } },
+        borrower: { select: { name: true } },
+      },
+    }).catch(() => []),
   ])
 
   // Sugestões personalizadas

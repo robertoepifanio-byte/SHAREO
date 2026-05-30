@@ -12,6 +12,7 @@ import { ItemsMapLoader } from "@/components/items/ItemsMapLoader"
 import type { ItemPin } from "@/components/items/ItemsMap"
 import { DistanceFilter } from "./_DistanceFilter"
 import { FilterTrigger } from "./_FilterTrigger"
+import { ActiveFilterChips } from "./_ActiveFilterChips"
 import { haversineKm } from "@/lib/haversine"
 import { getUserMapLocation } from "@/lib/userLocation"
 
@@ -143,8 +144,17 @@ export default async function ExplorarPage({ searchParams }: Props) {
   const useJsFilter = useDistFilter || !!minRating
   const jsFiltered  = useJsFilter ? rawItems.filter(passesJsFilters) : rawItems
 
-  const items        = useJsFilter ? jsFiltered.slice(skip, skip + PAGE_SIZE) : rawItems
+  const pagedItems   = useJsFilter ? jsFiltered.slice(skip, skip + PAGE_SIZE) : rawItems
   const filteredTotal = useJsFilter ? jsFiltered.length : total
+
+  // Attach computed distanceKm to each item for display in ItemCard
+  const items = pagedItems.map((i) => ({
+    ...i,
+    distanceKm:
+      useDistFilter && i.latitude && i.longitude
+        ? haversineKm(userLat!, userLng!, i.latitude, i.longitude)
+        : null,
+  }))
 
   const totalPages = Math.ceil(filteredTotal / PAGE_SIZE)
   const hasFilters = !!(search || categoryId || city || priceMaxR || dist || minRating)
@@ -287,12 +297,18 @@ export default async function ExplorarPage({ searchParams }: Props) {
                 dist={sp.dist}
                 userLat={sp.ulat}
                 userLng={sp.ulng}
+                minRating={sp.minRating}
               />
             </div>
           </aside>
 
           {/* Área de resultados */}
           <div className="min-w-0 flex-1">
+
+            {/* Chips de filtros ativos — Suspense obrigatório: useSearchParams no interior */}
+            <Suspense fallback={null}>
+              <ActiveFilterChips searchParams={sp} categories={categories} />
+            </Suspense>
 
             {/* Resultado count + ordenação */}
             <div className="mb-4 flex items-center justify-between gap-3">

@@ -10,6 +10,9 @@ import { PayButton }           from "@/components/bookings/PayButton"
 import { ContractBanner }      from "./_ContractBanner"
 import { CheckInOut }          from "./_CheckInOut"
 import { BookingProgressBar }  from "@/components/booking/BookingProgressBar"
+import { ReturnCountdown }    from "@/components/booking/ReturnCountdown"
+import { ReturnChecklist }    from "@/components/booking/ReturnChecklist"
+import { ReturnConditionForm } from "@/components/booking/ReturnConditionForm"
 
 type Props = {
   params:       Promise<{ id: string }>
@@ -25,7 +28,7 @@ const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   RETURNED:  { label: "Devolvido",           color: "bg-purple-100 text-purple-700" },
   COMPLETED: { label: "Concluída",           color: "bg-success/10 text-success" },
   CANCELLED: { label: "Cancelada",           color: "bg-red-100 text-red-700" },
-  DISPUTED:  { label: "Em disputa",          color: "bg-orange-100 text-orange-700" },
+  DISPUTED:  { label: "Em disputa",          color: "bg-orange-100 text-[#9A4700]" },
 }
 
 const fmt = (cents: number) =>
@@ -280,6 +283,13 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
             </div>
           )}
 
+          {/* ── P2-47 — Countdown de devolução ── */}
+          {booking.status === "ACTIVE" && (
+            <div className="mb-6">
+              <ReturnCountdown endDateIso={booking.endDate.toISOString()} />
+            </div>
+          )}
+
           {/* ── Contrato digital ── */}
           {isBorrower && (booking.status === "CONFIRMED" || booking.status === "ACTIVE") && (
             <ContractBanner
@@ -327,6 +337,20 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                   <strong>{new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(booking.lateFeeAmount / 100)}</strong>
                 </p>
               </div>
+            </div>
+          )}
+
+          {/* ── P2-49 — Checklist de devolução (borrower em ACTIVE) ── */}
+          {isBorrower && booking.status === "ACTIVE" && (
+            <div className="mb-6">
+              <ReturnChecklist bookingId={booking.id} />
+            </div>
+          )}
+
+          {/* ── P2-50 — Confirmação de estado pelo proprietário (owner em RETURNED) ── */}
+          {isOwner && booking.status === "RETURNED" && (
+            <div className="mb-6">
+              <ReturnConditionForm bookingId={booking.id} />
             </div>
           )}
 

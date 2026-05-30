@@ -9,6 +9,9 @@ import { getOwnerResponseBadge } from "@/lib/ownerStats"
 import { Gallery } from "./_Gallery"
 import { PriceCalc } from "./_PriceCalc"
 import { StickyBookingCTA } from "./_StickyBookingCTA"
+import { CANCELLATION_POLICY_LINES } from "@/lib/cancellationPolicy"
+import { ItemCard } from "@/components/items/ItemCard"
+import { AvailabilityCalendar } from "@/components/items/AvailabilityCalendar"
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -74,10 +77,10 @@ export default async function ItemDetailPage({ params }: Props) {
       select: {
         id: true, title: true, description: true, condition: true,
         pricePerDay: true, pricePerWeek: true, pricePerMonth: true,
-        depositAmount: true, estimatedRetailPrice: true,
+        depositAmount: true, rules: true, estimatedRetailPrice: true,
         city: true, state: true, neighborhood: true,
         isActive: true, ownerId: true, viewCount: true,
-        voltage: true,
+        voltage: true, categoryId: true,
         requireIdVerification: true, requirePhone: true,
         category: { select: { name: true } },
         owner: {
@@ -101,8 +104,53 @@ export default async function ItemDetailPage({ params }: Props) {
 
   if (!item) notFound()
 
-  const [responseBadge] = await Promise.all([
+  const [responseBadge, ownerStats, similarItems] = await Promise.all([
     getOwnerResponseBadge(item.ownerId),
+    // P1-23 — taxa de resposta e locações concluídas do proprietário
+    prisma.booking.aggregate({
+      where: { ownerId: item.ownerId, deletedAt: null },
+      _count: { id: true },
+    }).then(async (total) => {
+      const [completed, responded] = await Promise.all([
+        prisma.booking.count({
+          where: { ownerId: item.ownerId, status: "COMPLETED", deletedAt: null },
+        }),
+        prisma.booking.count({
+          where: {
+            ownerId: item.ownerId,
+            status: { in: ["CONFIRMED", "ACTIVE", "RETURNED", "COMPLETED"] },
+            deletedAt: null,
+          },
+        }),
+      ])
+      const totalCount = total._count.id
+      return {
+        completedCount: completed,
+        responseRate: totalCount > 0 ? Math.round((responded / totalCount) * 100) : null,
+      }
+    }),
+    // P1-31 — itens similares (mesma categoria + cidade, excluindo o atual)
+    prisma.item.findMany({
+      where: {
+        categoryId: item.categoryId,
+        city:       item.city,
+        deletedAt:  null,
+        isActive:   true,
+        isApproved: true,
+        id:         { not: item.id },
+        owner:      { deletedAt: null },
+      },
+      select: {
+        id: true, title: true, pricePerDay: true, condition: true,
+        city: true, state: true, neighborhood: true, isActive: true,
+        images:   { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
+        category: { select: { name: true } },
+        owner:    { select: { name: true, isVerified: true } },
+        _count:   { select: { reviews: true, favorites: true } },
+      },
+      orderBy: { viewCount: "desc" },
+      take: 4,
+    }),
   ])
 
   prisma.item.update({ where: { id }, data: { viewCount: { increment: 1 } } }).catch(() => {})
@@ -119,6 +167,33 @@ export default async function ItemDetailPage({ params }: Props) {
   const ownerLocation = [item.owner.neighborhood, item.owner.city].filter(Boolean).join(", ")
 
   const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://shareo-rouge.vercel.app"
+
+  // P1-30 — BreadcrumbList JSON-LD
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type":    "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type":    "ListItem",
+        position:   1,
+        name:       "Início",
+        item:       `${BASE}/`,
+      },
+      {
+        "@type":    "ListItem",
+        position:   2,
+        name:       item.category.name,
+        item:       `${BASE}/itens?categoria=${encodeURIComponent(item.category.name)}`,
+      },
+      {
+        "@type":    "ListItem",
+        position:   3,
+        name:       item.title,
+        item:       `${BASE}/itens/${item.id}`,
+      },
+    ],
+  }
+
   const productJsonLd = {
     "@context": "https://schema.org",
     "@type":    "Product",
@@ -162,18 +237,43 @@ export default async function ItemDetailPage({ params }: Props) {
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
     />
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+    />
     <div className="min-h-screen bg-background">
       <AppHeader />
 
-      {/* Barra de volta */}
+      {/* P1-33 — Barra de volta + P1-30 Breadcrumb */}
       <div className="border-b border-border bg-surface">
-        <div className="container py-3">
+        <div className="container py-3 flex flex-col gap-1">
           <Link
             href="/itens"
             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             ← Voltar para resultados
           </Link>
+          {/* P1-30 — Breadcrumb acessível */}
+          <nav aria-label="Breadcrumb">
+            <ol className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+              <li>
+                <Link href="/" className="hover:text-foreground transition-colors">Início</Link>
+              </li>
+              <li aria-hidden="true" className="select-none">›</li>
+              <li>
+                <Link
+                  href={`/itens?categoria=${encodeURIComponent(item.category.name)}`}
+                  className="hover:text-foreground transition-colors"
+                >
+                  {item.category.name}
+                </Link>
+              </li>
+              <li aria-hidden="true" className="select-none">›</li>
+              <li className="max-w-[200px] truncate font-medium text-foreground" aria-current="page">
+                {item.title}
+              </li>
+            </ol>
+          </nav>
         </div>
       </div>
 
@@ -221,6 +321,14 @@ export default async function ItemDetailPage({ params }: Props) {
                     📍 {item.neighborhood}
                   </span>
                 )}
+              </div>
+
+              <div className="my-6 h-px bg-border" />
+
+              {/* P1-22 — Calendário de disponibilidade */}
+              <div className="mb-6">
+                <h2 className="mb-4 text-lg font-bold text-primary">Disponibilidade</h2>
+                <AvailabilityCalendar itemId={item.id} />
               </div>
 
               <div className="my-6 h-px bg-border" />
@@ -298,6 +406,23 @@ export default async function ItemDetailPage({ params }: Props) {
                   </svg>
                   <span>
                     <strong>Caução:</strong> {fmt(item.depositAmount)} — retida no aluguel e devolvida após a devolução do item.
+                  </span>
+                </div>
+              )}
+
+              {/* P2-51 — Regras do anunciante */}
+              {item.rules && item.rules.trim().length > 0 && (
+                <div className="mb-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" className="mt-0.5 shrink-0">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10 9 9 9 8 9"/>
+                  </svg>
+                  <span>
+                    <strong>Regras do anunciante:</strong>{" "}
+                    {item.rules}
                   </span>
                 </div>
               )}
@@ -402,6 +527,32 @@ export default async function ItemDetailPage({ params }: Props) {
                 <span className="text-lg text-muted-foreground" aria-hidden="true">›</span>
               </Link>
 
+              {/* P1-23 — Estatísticas do proprietário */}
+              {(ownerStats.completedCount > 0 || ownerStats.responseRate !== null) && (
+                <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg border border-border bg-background px-3 py-2.5">
+                  {ownerStats.completedCount > 0 && (
+                    <div className="flex flex-col items-center">
+                      <span className="text-base font-extrabold text-primary">
+                        {ownerStats.completedCount}
+                      </span>
+                      <span className="text-center text-[10px] leading-tight text-muted-foreground">
+                        locaç{ownerStats.completedCount === 1 ? "ão" : "ões"} concluída{ownerStats.completedCount !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                  )}
+                  {ownerStats.responseRate !== null && (
+                    <div className="flex flex-col items-center">
+                      <span className="text-base font-extrabold text-primary">
+                        {ownerStats.responseRate}%
+                      </span>
+                      <span className="text-center text-[10px] leading-tight text-muted-foreground">
+                        taxa de resposta
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* ─── Trust Box ─── */}
               <div className="mt-4 rounded-lg border border-brand/20 bg-brand/5 p-4">
                 <p className="mb-3 text-xs font-bold text-brand">🔒 Sua locação está protegida</p>
@@ -421,10 +572,53 @@ export default async function ItemDetailPage({ params }: Props) {
                   ))}
                 </ul>
               </div>
+
+              {/* ─── Política de cancelamento ─── */}
+              <div className="mt-4 rounded-lg border border-border bg-background p-4">
+                <p className="mb-3 text-xs font-bold text-primary">
+                  Política de cancelamento
+                </p>
+                <ul className="space-y-2" aria-label="Regras de cancelamento e reembolso">
+                  {CANCELLATION_POLICY_LINES.map((line) => (
+                    <li key={line.label} className="flex items-start gap-2 text-xs text-foreground">
+                      <svg
+                        width="13"
+                        height="13"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        className="mt-0.5 shrink-0 text-muted-foreground"
+                        aria-hidden="true"
+                      >
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                      </svg>
+                      <span>
+                        <strong className="text-foreground">{line.label}:</strong>{" "}
+                        <span className="text-muted-foreground">{line.detail}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
 
         </div>
+        {/* P1-31 — Itens similares */}
+        {similarItems.length > 0 && (
+          <section className="mt-12 border-t border-border pt-10" aria-labelledby="similar-heading">
+            <h2 id="similar-heading" className="mb-6 text-lg font-bold text-primary">
+              Você também pode gostar
+            </h2>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {similarItems.map((si) => (
+                <ItemCard key={si.id} item={si} />
+              ))}
+            </div>
+          </section>
+        )}
       </main>
     </div>
     </>

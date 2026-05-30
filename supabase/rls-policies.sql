@@ -21,6 +21,7 @@
 CREATE OR REPLACE FUNCTION is_admin()
 RETURNS BOOLEAN
 LANGUAGE SQL SECURITY DEFINER STABLE
+SET search_path = public, pg_temp
 AS $$
   SELECT EXISTS (
     SELECT 1 FROM users
@@ -34,6 +35,7 @@ $$;
 CREATE OR REPLACE FUNCTION is_item_owner(p_item_id TEXT)
 RETURNS BOOLEAN
 LANGUAGE SQL SECURITY DEFINER STABLE
+SET search_path = public, pg_temp
 AS $$
   SELECT EXISTS (
     SELECT 1 FROM items
@@ -44,6 +46,7 @@ $$;
 CREATE OR REPLACE FUNCTION is_conversation_participant(conv_id TEXT)
 RETURNS BOOLEAN
 LANGUAGE SQL SECURITY DEFINER STABLE
+SET search_path = public, pg_temp
 AS $$
   SELECT EXISTS (
     SELECT 1 FROM conversation_participants
@@ -55,6 +58,7 @@ $$;
 CREATE OR REPLACE FUNCTION is_booking_party(p_booking_id TEXT)
 RETURNS BOOLEAN
 LANGUAGE SQL SECURITY DEFINER STABLE
+SET search_path = public, pg_temp
 AS $$
   SELECT EXISTS (
     SELECT 1 FROM bookings
@@ -81,6 +85,11 @@ ALTER TABLE conversation_participants ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages                  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications             ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admin_logs                ENABLE ROW LEVEL SECURITY;
+ALTER TABLE password_reset_tokens     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE outbound_webhooks         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE referral_credits          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE booking_photos            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE contract_acceptances      ENABLE ROW LEVEL SECURITY;
 
 
 -- ════════════════════════════════════════════════════════════
@@ -396,6 +405,63 @@ USING (
 CREATE POLICY "admin_logs_select_admin"
 ON admin_logs FOR SELECT
 USING (is_admin());
+
+
+-- ════════════════════════════════════════════════════════════
+-- TABELA: password_reset_tokens (NextAuth-only — sem políticas)
+-- Bloqueio total via anon é intencional. Apenas Prisma superuser acessa.
+-- ════════════════════════════════════════════════════════════
+
+
+-- ════════════════════════════════════════════════════════════
+-- TABELA: outbound_webhooks
+-- ════════════════════════════════════════════════════════════
+CREATE POLICY "outbound_webhooks_select_own"
+ON outbound_webhooks FOR SELECT
+USING ("userId" = auth.uid()::text);
+
+CREATE POLICY "outbound_webhooks_all_admin"
+ON outbound_webhooks FOR ALL
+USING (is_admin());
+
+
+-- ════════════════════════════════════════════════════════════
+-- TABELA: referral_credits
+-- ════════════════════════════════════════════════════════════
+CREATE POLICY "referral_credits_select_own"
+ON referral_credits FOR SELECT
+USING ("userId" = auth.uid()::text);
+
+CREATE POLICY "referral_credits_all_admin"
+ON referral_credits FOR ALL
+USING (is_admin());
+
+
+-- ════════════════════════════════════════════════════════════
+-- TABELA: booking_photos — participantes da reserva veem; uploader insere
+-- ════════════════════════════════════════════════════════════
+CREATE POLICY "booking_photos_select_party"
+ON booking_photos FOR SELECT
+USING (is_booking_party("bookingId") OR is_admin());
+
+CREATE POLICY "booking_photos_insert_party"
+ON booking_photos FOR INSERT
+WITH CHECK (
+  "uploadedBy" = auth.uid()::text
+  AND is_booking_party("bookingId")
+);
+
+CREATE POLICY "booking_photos_delete_admin"
+ON booking_photos FOR DELETE
+USING (is_admin());
+
+
+-- ════════════════════════════════════════════════════════════
+-- TABELA: contract_acceptances — participantes leem; insert via Prisma
+-- ════════════════════════════════════════════════════════════
+CREATE POLICY "contract_acceptances_select_party"
+ON contract_acceptances FOR SELECT
+USING (is_booking_party("bookingId") OR is_admin());
 
 
 -- ════════════════════════════════════════════════════════════
