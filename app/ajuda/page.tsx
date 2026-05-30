@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { AppHeader } from "@/components/layout/AppHeader"
-import { AppFooter } from "@/components/layout/AppFooter"
 
 export const metadata: Metadata = {
   title: "Central de Ajuda — ShareO",
@@ -254,8 +253,6 @@ export default function AjudaPage() {
           </section>
         </div>
       </main>
-
-      <AppFooter />
     </div>
   )
 }
