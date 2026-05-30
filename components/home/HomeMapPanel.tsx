@@ -13,6 +13,8 @@ interface Props {
   userCity?:  string
 }
 
+const KM_TO_ZOOM: Record<number, number> = { 2: 14, 5: 13, 10: 12, 99: 11 }
+
 export function HomeMapPanel({ items, defaultLat, defaultLng, defaultZoom, userCity }: Props) {
   const [maxKm, setMaxKm] = useState(99)
 
@@ -114,6 +116,7 @@ export function HomeMapPanel({ items, defaultLat, defaultLng, defaultZoom, userC
           defaultLat={defaultLat}
           defaultLng={defaultLng}
           defaultZoom={defaultZoom}
+          mapZoom={KM_TO_ZOOM[maxKm] ?? defaultZoom}
         />
       </div>
     </div>

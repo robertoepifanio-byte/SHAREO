@@ -7,8 +7,9 @@
  * Exibe fallback visual quando NEXT_PUBLIC_MAPBOX_TOKEN não estiver configurado.
  */
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Map, { Marker, Popup, NavigationControl } from "react-map-gl"
+import type { MapRef } from "react-map-gl"
 import Link from "next/link"
 import "mapbox-gl/dist/mapbox-gl.css"
 
@@ -26,6 +27,7 @@ interface Props {
   defaultLat?:  number
   defaultLng?:  number
   defaultZoom?: number
+  mapZoom?:     number   // zoom controlado externamente (filtro de distância)
 }
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? ""
@@ -37,10 +39,24 @@ export function ItemsMap({
   defaultLat  = Number(process.env.NEXT_PUBLIC_DEFAULT_LAT  ?? -5.7945),
   defaultLng  = Number(process.env.NEXT_PUBLIC_DEFAULT_LNG  ?? -35.211),
   defaultZoom = 11,
+  mapZoom,
 }: Props) {
   const [popup, setPopup] = useState<ItemPin | null>(null)
+  const mapRef   = useRef<MapRef>(null)
+  const mounted  = useRef(false)
 
   useEffect(() => { setPopup(null) }, [items])
+
+  // Voa para o zoom correto quando o filtro de distância muda
+  useEffect(() => {
+    if (!mounted.current) { mounted.current = true; return }
+    if (mapZoom === undefined) return
+    mapRef.current?.flyTo({
+      center:   [defaultLng, defaultLat],
+      zoom:     mapZoom,
+      duration: 600,
+    })
+  }, [mapZoom, defaultLat, defaultLng])
 
   /* ── Fallback quando token não configurado ─────────────────────────── */
   if (IS_PLACEHOLDER) {
@@ -68,6 +84,7 @@ export function ItemsMap({
   return (
     <div style={{ height }} className="overflow-hidden rounded-lg border border-border">
       <Map
+        ref={mapRef}
         mapboxAccessToken={TOKEN}
         initialViewState={{ latitude: defaultLat, longitude: defaultLng, zoom: defaultZoom }}
         style={{ width: "100%", height: "100%" }}
