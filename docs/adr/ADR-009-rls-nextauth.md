@@ -1,4 +1,4 @@
-# ADR-008 — Estratégia RLS com NextAuth.js v5 (Bloqueador Crítico)
+# ADR-009 — Estratégia RLS com NextAuth.js v5 (Bloqueador Crítico)
 
 **Status**: Aceito  
 **Data**: 2026-05-25  

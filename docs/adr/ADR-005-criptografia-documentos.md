@@ -1,4 +1,4 @@
-# ADR-004 — Criptografia de Documentos Sensíveis (CPF/CNPJ)
+# ADR-005 — Criptografia de Documentos Sensíveis (CPF/CNPJ)
 
 **Status**: Aceito  
 **Data**: 2026-05-22  

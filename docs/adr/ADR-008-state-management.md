@@ -1,4 +1,4 @@
-# ADR-007 — Gestão de Estado
+# ADR-008 — Gestão de Estado
 
 **Status**: Aceito  
 **Data**: 2026-05-25  
