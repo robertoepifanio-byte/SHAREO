@@ -47,6 +47,7 @@ export default async function DashboardPage() {
     monthEarnings,
     recentBookings,
     lastBookingCategories,
+    userProfile,
   ] = await Promise.all([
     // itens anunciados
     prisma.item.count({ where: { ownerId: uid, deletedAt: null } }),
@@ -102,6 +103,12 @@ export default async function DashboardPage() {
       take:    3,
       select: { item: { select: { categoryId: true } } },
     }).catch(() => []),
+
+    // cidade/estado do usuário para personalizar textos
+    prisma.user.findUnique({
+      where:  { id: uid },
+      select: { city: true, state: true },
+    }).catch(() => null),
   ])
 
   // Sugestões personalizadas
@@ -142,6 +149,10 @@ export default async function DashboardPage() {
   const earningsCents = monthEarnings._sum.totalPrice ?? 0
   const firstName     = session.user.name?.split(" ")[0] ?? "você"
 
+  const userCity     = userProfile?.city  ?? "Natal"
+  const userState    = userProfile?.state ?? "RN"
+  const userLocation = userState ? `${userCity}, ${userState}` : userCity
+
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
@@ -154,7 +165,7 @@ export default async function DashboardPage() {
                 Olá, {firstName}! 👋
               </h1>
               <p className="mt-1 text-sm text-white/65">
-                Natal, RN · Bem-vindo de volta ao ShareO
+                {userLocation} · Bem-vindo de volta ao ShareO
               </p>
             </div>
             <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full border-2 border-white/20 bg-brand text-xl font-extrabold text-white">
@@ -313,14 +324,14 @@ export default async function DashboardPage() {
           <div className="mb-1 flex items-center gap-2">
             <span className="text-lg">🌿</span>
             <h2 className="text-lg font-bold">ShareO Sustentável</h2>
-            <span className="ml-auto rounded-full bg-white/15 px-3 py-0.5 text-xs font-semibold">Natal, RN</span>
+            <span className="ml-auto rounded-full bg-white/15 px-3 py-0.5 text-xs font-semibold">{userLocation}</span>
           </div>
           <p className="mb-5 text-sm text-white/70">Iniciativas de economia circular na sua região</p>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             {[
               { icon: "👕", title: "Troca Circular",  desc: "Troque roupas que não usa com vizinhos da sua região." },
               { icon: "🔧", title: "Eco Centro",      desc: "Doe ou repare equipamentos. Evite o descarte desnecessário." },
-              { icon: "♻️", title: "Recicla Natal",   desc: "Descubra pontos de coleta seletiva perto de você." },
+              { icon: "♻️", title: `Recicla ${userCity}`,   desc: "Descubra pontos de coleta seletiva perto de você." },
             ].map((card) => (
               <div key={card.title} className="rounded-lg bg-white/10 p-4">
                 <div className="mb-2 text-2xl">{card.icon}</div>
@@ -338,7 +349,7 @@ export default async function DashboardPage() {
             <p className="text-xl font-extrabold text-white">
               {co2Kg > 0 ? `${co2Kg} kg CO₂` : "Comece a alugar e economize CO₂"}
             </p>
-            <p className="text-sm text-white/65">economizados através de aluguel e reuso em Natal</p>
+            <p className="text-sm text-white/65">economizados através de aluguel e reuso em {userCity}</p>
           </div>
         </div>
 
