@@ -72,6 +72,7 @@ enum NotificationType {
   LATE_FEE_APPLIED
   ID_VERIFIED
   ID_REJECTED
+  RETURN_REMINDER // P2-59 — lembrete manual de devolução enviado pelo proprietário
 }
 
 enum CheckPhase {
@@ -198,6 +199,7 @@ model Item {
   pricePerWeek         Int?
   pricePerMonth        Int?
   depositAmount        Int?         // caução
+  rules                String?      @db.Text  // P2-51 — regras do anunciante (ex.: "Não use na chuva")
   estimatedRetailPrice Int?         // valor estimado de compra (para calculadora alugar vs comprar)
 
   // Localização do item
@@ -287,6 +289,10 @@ model Booking {
   cancelledById   String?
   cancelReason    String?
 
+  // Política de cancelamento — calculado no momento do cancelamento
+  refundAmount    Int?  // valor a reembolsar em centavos (null = não cancelado)
+  refundPercent   Int?  // 100 | 70 | 50 — percentual aplicado pela política
+
   // Resposta do proprietário (para cálculo do badge de responsividade)
   respondedAt     DateTime? // quando o dono aceitou ou recusou (primeira ação sobre PENDING)
 
@@ -296,6 +302,12 @@ model Booking {
 
   // Contrato digital
   contractSignedAt DateTime?
+
+  // P1-27 — Extensão de prazo
+  extensionRequestedEndDate DateTime? // nova data de devolução solicitada pelo locatário
+  extensionStatus           String?   // "PENDING" | "APPROVED" | "REJECTED"
+  extensionRequestedAt      DateTime? // quando a solicitação foi feita
+  extensionRespondedAt      DateTime? // quando o proprietário respondeu
 
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt

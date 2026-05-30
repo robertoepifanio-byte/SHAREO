@@ -33,12 +33,21 @@ const config: Config = {
     "utils/**/*.{ts,tsx}",
     "hooks/**/*.{ts,tsx}",
     "components/**/*.{ts,tsx}",
+    "app/api/**/*.{ts,tsx}",
+    "middleware.ts",
     "!**/*.d.ts",
     "!**/index.ts",
   ],
-  // TODO: aumentar para 70 quando cobertura dos módulos auth/items/bookings/users atingir a meta
+  // Threshold global: mínimo real atingível com a suíte P0 atual.
+  // Valores medidos com `jest --coverage` completo (todos os 5 test suites):
+  //   statements 1.12% | branches 23.52% | functions 11.26% | lines 1.12%
+  // Aumentar gradualmente conforme novos módulos forem cobertos — meta H1: 70% global.
+  // Os três módulos de domínio cobertos pelos testes P0 têm threshold individual de 70%.
   coverageThreshold: {
-    global: { lines: 0, functions: 0, branches: 0, statements: 0 },
+    global: { lines: 1, functions: 11, branches: 23, statements: 1 },
+    "./lib/pricing.ts":              { lines: 70, functions: 70, branches: 70, statements: 70 },
+    "./lib/crypto.ts":               { lines: 70, functions: 70, branches: 70, statements: 70 },
+    "./lib/validations/bookings.ts": { lines: 70, functions: 70, branches: 70, statements: 70 },
   },
 }
 

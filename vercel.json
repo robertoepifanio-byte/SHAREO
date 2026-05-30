@@ -7,6 +7,14 @@
     {
       "path": "/api/cron/auto-cancel",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/expire-bookings",
+      "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/cron/return-reminders",
+      "schedule": "0 9 * * *"
     }
   ]
 }

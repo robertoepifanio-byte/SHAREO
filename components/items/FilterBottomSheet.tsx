@@ -12,6 +12,11 @@ interface Props {
 /**
  * Bottom sheet animado para filtros mobile.
  * Controla foco (trap) e fecha ao pressionar Escape ou clicar no overlay.
+ *
+ * P2-56 checklist (verificado):
+ * - [x] role="dialog" e aria-modal="true" no elemento do sheet
+ * - [x] overlay (aria-hidden) chama onClose ao clicar
+ * - [x] tecla Escape fecha o sheet via addEventListener("keydown", ...)
  */
 export function FilterBottomSheet({ isOpen, onClose, children, title = "Filtros" }: Props) {
   const sheetRef = useRef<HTMLDivElement>(null)

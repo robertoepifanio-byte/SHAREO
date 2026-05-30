@@ -1,38 +1,207 @@
-name: Deploy to Vercel
+name: Deploy - ShareO
 
 on:
+  # Preview deploy: dispara em qualquer PR aberto contra main
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+  # Staging deploy (automático) e Production deploy (com aprovação):
+  # ambos disparam em push na main OU em tags de release
   push:
     branches: [main]
+    tags:
+      - "v*"
+
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "11"
 
 jobs:
-  deploy:
+  # ─────────────────────────────────────────────────────────────────
+  # JOB 1: Preview Deploy — para cada PR
+  # Gera uma URL de preview exclusiva para revisão visual antes do merge
+  # ─────────────────────────────────────────────────────────────────
+  preview:
+    name: Preview Deploy (PR)
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    environment:
+      name: preview
+      url: ${{ steps.deploy.outputs.preview-url }}
+    permissions:
+      pull-requests: write  # para comentar a URL no PR
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
 
       - uses: pnpm/action-setup@v4
 
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
-      - name: Pull Vercel project config
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Pull Vercel project config (preview)
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
         env:
-          VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
-      - name: Build project
+      - name: Build project (preview)
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL_STAGING }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY_STAGING }}
+
+      - name: Deploy preview to Vercel
+        id: deploy
+        run: |
+          PREVIEW_URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "preview-url=$PREVIEW_URL" >> "$GITHUB_OUTPUT"
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Comment preview URL on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const url = '${{ steps.deploy.outputs.preview-url }}';
+            const body = [
+              '### Preview Deploy',
+              '',
+              'URL de preview gerada para este PR:',
+              '',
+              `**${url}**`,
+              '',
+              '_Valide as mudancas antes de aprovar o merge._'
+            ].join('\n');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });
+
+  # ─────────────────────────────────────────────────────────────────
+  # JOB 2: Staging Deploy — automático após merge na main
+  # Deploy no ambiente staging para validação pelo QA e ProductOwner
+  # ─────────────────────────────────────────────────────────────────
+  staging:
+    name: Deploy Staging
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment:
+      name: staging
+      url: ${{ secrets.STAGING_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - uses: pnpm/action-setup@v4
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel project config (preview env = staging)
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Build project (staging)
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL_STAGING }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY_STAGING }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL_STAGING }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+
+      - name: Deploy to staging
+        run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Run DB migrations on staging
+        run: pnpm db:migrate:deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_STAGING }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL_STAGING }}
+
+  # ─────────────────────────────────────────────────────────────────
+  # JOB 3: Production Deploy — manual com aprovação obrigatória
+  # Requer aprovação explícita no ambiente "production" do GitHub
+  # Configurar em: Settings > Environments > production > Required reviewers
+  # ─────────────────────────────────────────────────────────────────
+  production:
+    name: Deploy Production
+    runs-on: ubuntu-latest
+    # Dispara em push na main OU em tags de release (v*)
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    environment:
+      name: production
+      url: https://www.shareo.com.br
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - uses: pnpm/action-setup@v4
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Pull Vercel project config (production)
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Build project (production)
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
         env:
-          VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL_PROD }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY_PROD }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL_PROD }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
 
       - name: Deploy to production
         run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
         env:
-          VERCEL_ORG_ID:     ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Run DB migrations on production
+        run: pnpm db:migrate:deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_PROD }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL_PROD }}
+
+      # Monitorar após deploy — falha dispara rollback manual via Vercel Dashboard
+      - name: Post-deploy health check
+        run: |
+          echo "Aguardando 30s para o deploy propagar..."
+          sleep 30
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://www.shareo.com.br/api/health)
+          if [ "$STATUS" != "200" ]; then
+            echo "Health check falhou com status $STATUS — verifique o Vercel Dashboard para rollback"
+            exit 1
+          fi
+          echo "Health check OK: $STATUS"

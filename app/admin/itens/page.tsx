@@ -42,7 +42,7 @@ export default async function AdminItensPage() {
       </td>
       <td className="px-2 py-3 hidden md:table-cell">
         <div className="flex gap-1">
-          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${item.isApproved ? "bg-success/10 text-success" : "bg-orange-100 text-orange-700"}`}>
+          <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${item.isApproved ? "bg-success/10 text-success" : "bg-orange-100 text-[#9A4700]"}`}>
             {item.isApproved ? "Aprovado" : "Pendente"}
           </span>
           {!item.isActive && (
@@ -69,8 +69,8 @@ export default async function AdminItensPage() {
 
       {pending.length > 0 && (
         <section className="mb-8">
-          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-orange-700">
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-100 text-xs">{pending.length}</span>
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#9A4700]">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-100 text-xs text-[#9A4700]">{pending.length}</span>
             Aguardando aprovação
           </h2>
           <div className="overflow-hidden rounded-xl border border-orange-200 bg-surface">

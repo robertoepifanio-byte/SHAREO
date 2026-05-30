@@ -37,9 +37,9 @@ export default async function AdminOverviewPage() {
 
   const stats = [
     { label: "Usuários",         value: totalUsers,                     sub: `${inactiveUsers} desativados`,   color: "text-primary" },
-    { label: "Itens ativos",     value: totalItems,                     sub: `${pendingItems} aguardando aprovação`, color: pendingItems > 0 ? "text-orange-600" : "text-primary" },
+    { label: "Itens ativos",     value: totalItems,                     sub: `${pendingItems} aguardando aprovação`, color: pendingItems > 0 ? "text-[#9A4700]" : "text-primary" },
     { label: "Reservas ativas",  value: byStatus["ACTIVE"]    ?? 0,     sub: `${byStatus["PENDING"] ?? 0} pendentes`, color: "text-primary" },
-    { label: "Disputas abertas", value: disputes,                       sub: "bookings em disputa",            color: disputes > 0 ? "text-orange-600" : "text-primary" },
+    { label: "Disputas abertas", value: disputes,                       sub: "bookings em disputa",            color: disputes > 0 ? "text-[#9A4700]" : "text-primary" },
     { label: "Concluídas",       value: byStatus["COMPLETED"] ?? 0,     sub: "reservas concluídas",            color: "text-success" },
     { label: "Receita total",    value: fmt(revenueResult._sum.totalPrice ?? 0), sub: "em reservas concluídas", color: "text-success", isString: true },
   ]
@@ -60,10 +60,10 @@ export default async function AdminOverviewPage() {
 
       {pendingItems > 0 && (
         <div className="mt-6 rounded-xl border border-orange-200 bg-orange-50 p-4">
-          <p className="text-sm font-semibold text-orange-700">
+          <p className="text-sm font-semibold text-[#9A4700]">
             ⚠ {pendingItems} {pendingItems === 1 ? "item aguarda" : "itens aguardam"} aprovação
           </p>
-          <a href="/admin/itens" className="mt-1 text-sm text-orange-600 underline hover:no-underline">
+          <a href="/admin/itens" className="mt-1 text-sm text-[#9A4700] underline hover:no-underline">
             Revisar itens →
           </a>
         </div>

@@ -68,7 +68,7 @@ export default async function AdminDisputasPage() {
                   </div>
 
                   {d.cancelReason && (
-                    <div className="mt-3 rounded-lg bg-orange-50 p-2.5 text-xs text-orange-700">
+                    <div className="mt-3 rounded-lg bg-orange-50 p-2.5 text-xs text-[#9A4700]">
                       <span className="font-semibold">Motivo: </span>{d.cancelReason}
                     </div>
                   )}

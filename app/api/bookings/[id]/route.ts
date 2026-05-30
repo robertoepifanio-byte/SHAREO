@@ -8,6 +8,7 @@ import type { BookingStatus } from "@prisma/client"
 import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
 import type { WebhookEvent } from "@/lib/outboundWebhooks"
 import { sendBookingConfirmedEmail, sendBookingCancelledEmail } from "@/lib/email"
+import { calcRefund } from "@/lib/cancellationPolicy"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -126,7 +127,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const booking = await prisma.booking.findUnique({
       where:  { id },
       select: {
-        id: true, status: true, borrowerId: true, ownerId: true, startDate: true, endDate: true,
+        id: true, status: true, borrowerId: true, ownerId: true,
+        startDate: true, endDate: true, totalPrice: true,
         item:     { select: { title: true } },
         borrower: { select: { email: true, name: true } },
         owner:    { select: { email: true, name: true } },
@@ -191,6 +193,19 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       data.cancelledAt   = now
       data.cancelledById = userId
       data.cancelReason  = reason
+
+      // Calcula o reembolso com base na política de cancelamento do ShareO
+      const refund = calcRefund(
+        new Date(booking.startDate),
+        now,
+        booking.totalPrice,
+      )
+      data.refundAmount  = refund.refundAmount
+      data.refundPercent = refund.refundPercent
+      // O motivo do reembolso é registrado internamente — não é exposto ao usuário via API
+      console.info(
+        `[booking.cancel] id=${id} refundPercent=${refund.refundPercent} refundAmount=${refund.refundAmount} reason="${refund.reason}"`,
+      )
     }
 
     // Registra o tempo de resposta do proprietário (para badge de responsividade)
@@ -206,7 +221,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const updated = await prisma.booking.update({
       where:  { id },
       data,
-      select: { id: true, status: true, updatedAt: true },
+      select: {
+        id:        true,
+        status:    true,
+        updatedAt: true,
+      },
     })
 
     // E-mails transacionais (fire-and-forget)

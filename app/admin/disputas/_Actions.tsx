@@ -36,7 +36,7 @@ export function DisputeActions({ bookingId }: Props) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="rounded-md bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700 hover:bg-orange-100 transition-colors"
+        className="rounded-md bg-orange-50 px-3 py-1 text-xs font-semibold text-[#9A4700] hover:bg-orange-100 transition-colors"
       >
         Resolver
       </button>

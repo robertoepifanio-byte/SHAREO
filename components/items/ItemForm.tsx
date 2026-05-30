@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
 import { Select } from "@/components/ui/Select"
 import { Textarea } from "@/components/ui/Textarea"
+import { ListingQualityIndicator } from "./ListingQualityIndicator"
+import { ItemCardPreview } from "./ItemCardPreview"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -103,9 +105,11 @@ function toDisplay(cents: number | null | undefined): string {
 // ─── Price input helper ───────────────────────────────────────────────────────
 
 function PriceInput({
-  id, label, value, onChange, required, helper,
+  id, label, value, onChange, required, helper, onFocus, onBlur,
 }: {
-  id: string; label: string; value: string; onChange: (v: string) => void; required?: boolean; helper?: string
+  id: string; label: string; value: string; onChange: (v: string) => void
+  required?: boolean; helper?: string
+  onFocus?: () => void; onBlur?: () => void
 }) {
   const helperId = helper ? `${id}-helper` : undefined
   return (
@@ -127,6 +131,8 @@ function PriceInput({
             const raw = e.target.value.replace(/[^0-9,]/g, "")
             onChange(raw)
           }}
+          onFocus={onFocus}
+          onBlur={onBlur}
           placeholder="0,00"
           aria-describedby={helperId}
           className={[
@@ -185,6 +191,16 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
   const fileInputRef    = useRef<HTMLInputElement>(null)
   const cameraInputRef  = useRef<HTMLInputElement>(null)
 
+  // P2-52 — Sugestão de preço médio da região
+  const [regionSuggestion, setRegionSuggestion] = useState<{
+    rangeMinCents: number
+    rangeMaxCents: number
+    count:         number
+  } | null>(null)
+
+  // Dica ativa por campo (P2-62)
+  const [activeTip, setActiveTip] = useState<string | null>(null)
+
   // Price suggestion derived from selected category
   const selectedCat       = categories.find((c) => c.id === categoryId)
   const suggestedDayPrice  = selectedCat ? PRICE_SUGGESTIONS[selectedCat.slug] : undefined
@@ -216,6 +232,16 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
       .then(({ data }) => setCategories(data ?? []))
       .catch(() => {})
   }, [])
+
+  // P2-52 — Buscar sugestão de preço da região ao mudar categoria ou cidade
+  useEffect(() => {
+    if (!categoryId || city.trim().length < 2) { setRegionSuggestion(null); return }
+    const params = new URLSearchParams({ city: city.trim(), categoryId })
+    fetch(`/api/items/price-suggestion?${params.toString()}`)
+      .then((r) => r.json())
+      .then(({ data }) => setRegionSuggestion(data ?? null))
+      .catch(() => setRegionSuggestion(null))
+  }, [categoryId, city])
 
   // Cleanup object URLs on unmount
   useEffect(() => {
@@ -449,7 +475,24 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
     (img) => !(img.type === "existing" && deletedImageIds.includes(img.id))
   )
 
+  // P2-62 — dados para preview e indicador de qualidade
+  const selectedCatName  = categories.find((c) => c.id === categoryId)?.name ?? ""
+  const firstPreviewUrl  = visibleImages[0]
+    ? (visibleImages[0].type === "existing" ? visibleImages[0].url : visibleImages[0].previewUrl)
+    : undefined
+
+  // Dicas inline por campo (P2-62)
+  const FIELD_TIPS: Record<string, string> = {
+    title:      "Use palavras que as pessoas buscariam (ex: 'Câmera Sony A6400')",
+    description:"Seja específico: estado de conservação, inclui acessórios, como usar.",
+    photos:     "Anúncios com 3+ fotos recebem 4× mais contatos.",
+    pricePerDay:"Itens com preço justo aluguem 2× mais rápido.",
+  }
+
   return (
+    <div className="lg:grid lg:grid-cols-[1fr_220px] lg:gap-8 lg:items-start">
+      {/* ── Coluna principal ─────────────────────────────────── */}
+      <div>
     <form onSubmit={handleSubmit} noValidate className="space-y-8">
       {errors.form && (
         <div role="alert" className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
@@ -457,33 +500,57 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
         </div>
       )}
 
+      {/* P2-62 — Indicador de qualidade do anúncio */}
+      <ListingQualityIndicator
+        title={title}
+        description={description}
+        photoCount={visibleImages.length}
+        pricePerDay={pricePerDay}
+        categoryId={categoryId}
+        city={city}
+      />
+
       {/* ── Informações básicas ─────────────────────────────────────────────── */}
       <section className="rounded-lg border border-border bg-surface p-6 space-y-4">
         <h2 className="font-semibold text-primary">Informações básicas</h2>
 
-        <Input
-          label="Título do anúncio"
-          type="text"
-          placeholder="Ex: Furadeira Bosch 650W — ideal para reformas"
-          value={title}
-          onChange={(e) => { setTitle(e.target.value); setErrors((p) => ({ ...p, title: undefined! })) }}
-          error={errors.title}
-          required
-          disabled={loading}
-          helper="Seja específico: marca, modelo e destaque principal"
-        />
+        <div>
+          <Input
+            label="Título do anúncio"
+            type="text"
+            placeholder="Ex: Furadeira Bosch 650W — ideal para reformas"
+            value={title}
+            onChange={(e) => { setTitle(e.target.value); setErrors((p) => ({ ...p, title: undefined! })) }}
+            onFocus={() => setActiveTip("title")}
+            onBlur={() => setActiveTip(null)}
+            error={errors.title}
+            required
+            disabled={loading}
+            helper="Seja específico: marca, modelo e destaque principal"
+          />
+          {activeTip === "title" && (
+            <p className="mt-1 text-xs text-brand" role="status">{FIELD_TIPS.title}</p>
+          )}
+        </div>
 
-        <Textarea
-          label="Descrição"
-          placeholder="Descreva o item: características, inclui acessórios, instruções de uso, restrições..."
-          value={description}
-          onChange={(e) => { setDescription(e.target.value); setErrors((p) => ({ ...p, description: undefined! })) }}
-          error={errors.description}
-          required
-          disabled={loading}
-          rows={5}
-          helper={`${description.length}/2000 caracteres`}
-        />
+        <div>
+          <Textarea
+            label="Descrição"
+            placeholder="Descreva o item: características, inclui acessórios, instruções de uso, restrições..."
+            value={description}
+            onChange={(e) => { setDescription(e.target.value); setErrors((p) => ({ ...p, description: undefined! })) }}
+            onFocus={() => setActiveTip("description")}
+            onBlur={() => setActiveTip(null)}
+            error={errors.description}
+            required
+            disabled={loading}
+            rows={5}
+            helper={`${description.length}/2000 caracteres`}
+          />
+          {activeTip === "description" && (
+            <p className="mt-1 text-xs text-brand" role="status">{FIELD_TIPS.description}</p>
+          )}
+        </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Select
@@ -565,10 +632,27 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
               label="Preço por dia"
               value={pricePerDay}
               onChange={(v) => { setPricePerDay(v); setErrors((p) => ({ ...p, pricePerDay: undefined! })) }}
+              onFocus={() => setActiveTip("pricePerDay")}
+              onBlur={() => setActiveTip(null)}
               required
             />
             {errors.pricePerDay && (
               <p role="alert" className="mt-1 text-xs text-destructive">{errors.pricePerDay}</p>
+            )}
+            {/* P2-52 — Preço médio na região */}
+            {regionSuggestion && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Preço médio na sua região:{" "}
+                <span className="font-semibold text-foreground">
+                  R$ {(regionSuggestion.rangeMinCents / 100).toFixed(2).replace(".", ",")}
+                  {" – "}
+                  R$ {(regionSuggestion.rangeMaxCents / 100).toFixed(2).replace(".", ",")}
+                </span>
+                <span className="ml-1 opacity-60">({regionSuggestion.count} anúncios)</span>
+              </p>
+            )}
+            {activeTip === "pricePerDay" && (
+              <p className="mt-1 text-xs text-brand" role="status">{FIELD_TIPS.pricePerDay}</p>
             )}
           </div>
 
@@ -841,6 +925,8 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
         <p className="text-xs text-muted-foreground">
           Máximo 10 MB por foto · JPEG, PNG, WebP ou HEIC
         </p>
+        {/* P2-62 — dica de fotos */}
+        <p className="text-xs text-brand">{FIELD_TIPS.photos}</p>
       </section>
 
       {/* ── Requisitos para reserva ─────────────────────────────────────────── */}
@@ -913,5 +999,34 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
         </Button>
       </div>
     </form>
+    </div>{/* fim coluna principal */}
+
+    {/* ── Sidebar — prévia do card (desktop) + prévia inline (mobile) ── */}
+    <div className="lg:sticky lg:top-24 space-y-4">
+      {/* Prévia — desktop (sidebar) */}
+      <div className="hidden lg:block">
+        <ItemCardPreview
+          title={title}
+          pricePerDay={pricePerDay}
+          categoryName={selectedCatName}
+          city={city}
+          previewUrl={firstPreviewUrl}
+        />
+      </div>
+
+      {/* Prévia — mobile (seção inferior, aparece após preencher algo) */}
+      {(title.trim().length >= 5 || toCents(pricePerDay) > 0) && (
+        <div className="lg:hidden mt-2">
+          <ItemCardPreview
+            title={title}
+            pricePerDay={pricePerDay}
+            categoryName={selectedCatName}
+            city={city}
+            previewUrl={firstPreviewUrl}
+          />
+        </div>
+      )}
+    </div>
+    </div>{/* fim grid */}
   )
 }

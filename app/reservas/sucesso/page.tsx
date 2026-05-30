@@ -39,6 +39,7 @@ export default async function BookingSuccessPage({ searchParams }: Props) {
       totalDays:     true,
       totalPrice:    true,
       paidAt:        true,
+      createdAt:     true,
       item: {
         select: {
           id:     true,
@@ -61,6 +62,14 @@ export default async function BookingSuccessPage({ searchParams }: Props) {
 
   const img = booking.item.images[0]?.url
 
+  // P1-25 — código da reserva: #SHR-{ANO}-{MMDD}-{3 chars do ID}
+  const createdDate = new Date(booking.createdAt)
+  const year        = createdDate.getFullYear()
+  const mm          = String(createdDate.getMonth() + 1).padStart(2, "0")
+  const dd          = String(createdDate.getDate()).padStart(2, "0")
+  const shortId     = booking.id.slice(-3).toUpperCase()
+  const bookingCode = `#SHR-${year}-${mm}${dd}-${shortId}`
+
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
@@ -80,6 +89,44 @@ export default async function BookingSuccessPage({ searchParams }: Props) {
             <p className="mt-2 text-sm text-muted-foreground">
               Seu pagamento foi processado com sucesso. O proprietário foi notificado e entrará em contato para combinar a retirada.
             </p>
+          </div>
+
+          {/* P1-25 — Código da reserva */}
+          <div className="mb-6 rounded-xl border border-brand/20 bg-brand/5 px-5 py-4 text-center">
+            <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-brand">
+              Código da reserva
+            </p>
+            <p className="font-mono text-2xl font-extrabold tracking-wider text-primary">
+              {bookingCode}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Guarde este código para referência em caso de dúvidas com o suporte.
+            </p>
+          </div>
+
+          {/* P1-25 — Próximos passos */}
+          <div className="mb-6 rounded-xl border border-border bg-surface p-5">
+            <p className="mb-3 text-sm font-bold text-foreground">Próximos passos</p>
+            <ol className="space-y-3" aria-label="Próximos passos para sua locação">
+              <li className="flex items-start gap-3 text-sm">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white" aria-hidden="true">1</span>
+                <span className="text-muted-foreground">
+                  <strong className="text-foreground">Aguarde a confirmação</strong> — o proprietário tem até 2h para aceitar sua solicitação.
+                </span>
+              </li>
+              <li className="flex items-start gap-3 text-sm">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white" aria-hidden="true">2</span>
+                <span className="text-muted-foreground">
+                  <strong className="text-foreground">Combine a retirada</strong> — use o chat para acertar o local e horário de entrega com o proprietário.
+                </span>
+              </li>
+              <li className="flex items-start gap-3 text-sm">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white" aria-hidden="true">3</span>
+                <span className="text-muted-foreground">
+                  <strong className="text-foreground">Aproveite e avalie</strong> — após devolver o item, deixe uma avaliação e ajude a comunidade ShareO.
+                </span>
+              </li>
+            </ol>
           </div>
 
           {/* Progress bar */}

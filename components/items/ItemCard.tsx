@@ -16,6 +16,7 @@ interface ItemCardItem {
   owner:        { name: string; isVerified: boolean } | null
   _count?:      { reviews: number; favorites: number; bookings?: number }
   avgRating?:   number | null
+  distanceKm?:  number | null
 }
 
 interface ItemCardProps {
@@ -80,7 +81,7 @@ export function ItemCard({ item, showActions = false, isFavorited = false, hotBa
 
           {/* Badge "Mais alugado" */}
           {hotBadge && (
-            <div className="absolute bottom-2 left-2 rounded-full bg-orange-500 px-2 py-0.5 text-[10px] font-bold text-foreground">
+            <div className="absolute bottom-2 left-2 rounded-full bg-[#C05800] px-2 py-0.5 text-[10px] font-bold text-white">
               🔥 Mais alugado
             </div>
           )}
@@ -132,6 +133,11 @@ export function ItemCard({ item, showActions = false, isFavorited = false, hotBa
               <circle cx="12" cy="10" r="3"/>
             </svg>
             {location}
+            {item.distanceKm != null && item.distanceKm > 0 && (
+              <span aria-label={`a ${item.distanceKm.toFixed(1)} km de você`}>
+                {" "}•{" "}{item.distanceKm.toFixed(1)} km
+              </span>
+            )}
           </div>
         </div>
       </Link>
