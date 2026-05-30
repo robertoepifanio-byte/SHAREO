@@ -107,10 +107,8 @@ export function HomeMapPanel({ items, defaultLat, defaultLng, defaultZoom, userC
         </p>
       </div>
 
-      {/* Mapa — key força remount quando filtro muda */}
       <div className="flex-1 min-w-0 overflow-hidden rounded-xl border border-border">
         <ItemsMapLoader
-          key={maxKm}
           items={filtered}
           height={260}
           defaultLat={defaultLat}

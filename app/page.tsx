@@ -196,13 +196,15 @@ export default async function HomePage() {
             defaultLng={userLoc.lng}
             defaultZoom={userLoc.zoom}
             userCity={userCity}
-            items={items.map<ItemPin>((i) => ({
-              id:          i.id,
-              title:       i.title,
-              pricePerDay: i.pricePerDay,
-              lat:         i.latitude,
-              lng:         i.longitude,
-            }))}
+            items={items
+              .filter((i) => i.latitude != null && i.longitude != null)
+              .map<ItemPin>((i) => ({
+                id:          i.id,
+                title:       i.title,
+                pricePerDay: i.pricePerDay,
+                lat:         i.latitude as number,
+                lng:         i.longitude as number,
+              }))}
           />
         </section>
 
