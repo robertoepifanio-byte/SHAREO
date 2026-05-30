@@ -65,10 +65,10 @@ const config: Config = {
           foreground: "#FFFFFF",
         },
         // Verde claro decorativo — apenas fundos/ícones, NÃO texto em fundo branco (2.1:1)
-        // Em fundo escuro (#003366): ratio 7.4:1 ✅
+        // Em fundo escuro (#0D1B2A): ratio 7.4:1 ✅
         accent: {
           DEFAULT:    "#59C686",
-          foreground: "#003366",   // texto SOBRE fundo accent
+          foreground: "#0D1B2A",   // texto SOBRE fundo accent
         },
         // Laranja — identidade Shareo (via prototipo.html tokens)
         orange: {
