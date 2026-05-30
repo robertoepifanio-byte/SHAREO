@@ -1027,6 +1027,6 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
         </div>
       )}
     </div>
-    </div>{/* fim grid */}
+    </div>
   )
 }

@@ -1,4 +1,8 @@
 /**
+ * @jest-environment node
+ */
+
+/**
  * P2-34 — Testes de integração para /api/bookings/[id]/reviews
  *
  * Arquivo fonte: app/api/bookings/[id]/reviews/route.ts

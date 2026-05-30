@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { checkRateLimit } from "@/lib/rateLimit"
 import { sendReminderReturnTomorrow } from "@/lib/email"
+import type { NotificationType } from "@prisma/client"
 
 /**
  * POST /api/bookings/[id]/reminder
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   await prisma.notification.create({
     data: {
       userId: booking.borrower.id,
-      type:   "RETURN_REMINDER",
+      type:   "RETURN_REMINDER" as NotificationType,
       title:  "Lembrete de devolução",
       body:   `O proprietário lembrou que o item "${booking.item.title}" deve ser devolvido em breve.`,
       data:   { bookingId },
