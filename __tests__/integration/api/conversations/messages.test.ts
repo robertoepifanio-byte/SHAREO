@@ -289,21 +289,10 @@ describe("POST /api/conversations/[id]/messages", () => {
   })
 
   describe("cenário 5 — XSS: tags HTML removidas antes de salvar", () => {
-    /**
-     * A sanitização usa: rawContent = parsed.data.content.replace(/<[^>]*>/g, "").trim()
-     * Esse regex remove apenas os delimitadores de tag (< ... >), mas preserva o
-     * conteúdo entre elas (ex.: "alert(1)" de <script>alert(1)</script>).
-     * A proteção impede execução de HTML/JS no browser — o texto puro nunca
-     * é avaliado como markup. Uma sanitização mais agressiva (ex.: DOMPurify)
-     * poderia remover também o conteúdo interno das tags de script.
-     *
-     * Comportamento documentado e testado conforme implementação atual.
-     */
-    it("tags <script> são removidas; conteúdo interno preservado como texto puro", async () => {
+    it("tags <script> e seu conteúdo interno são completamente removidos", async () => {
       const maliciousInput = "<script>alert(1)</script>Mensagem legítima"
-      // Regex remove <script> e </script>, mas preserva "alert(1)"
-      // Resultado salvo: "alert(1)Mensagem legítima"
-      const sanitizedContent = "alert(1)Mensagem legítima"
+      // stripHtml: remove bloco <script>...</script> inteiro → apenas "Mensagem legítima"
+      const sanitizedContent = "Mensagem legítima"
 
       mockResolveUserId.mockResolvedValue(USER_A_ID)
       mockConversationFindUnique.mockResolvedValue(makeConversation())
@@ -322,11 +311,30 @@ describe("POST /api/conversations/[id]/messages", () => {
       const body = await res.json() as { data: { body: string } }
 
       expect(res.status).toBe(201)
-      // Tags HTML não aparecem no conteúdo salvo
       expect(body.data.body).not.toContain("<script>")
-      expect(body.data.body).not.toContain("</script>")
-      // Conteúdo interno preservado como texto puro (inofensivo fora de contexto HTML)
+      expect(body.data.body).not.toContain("alert(1)")
       expect(body.data.body).toBe(sanitizedContent)
+    })
+
+    it("bloco <svg onload=...> e conteúdo interno são completamente removidos", async () => {
+      const svgXss = '<svg onload="alert(1)"><script>evil()</script></svg>Texto ok'
+
+      mockResolveUserId.mockResolvedValue(USER_A_ID)
+      mockConversationFindUnique.mockResolvedValue(makeConversation())
+      mockMessageCreate.mockImplementation(({ data }: { data: { content: string } }) =>
+        Promise.resolve({
+          id: "msg-xss-svg", conversationId: CONV_ID, senderId: USER_A_ID,
+          content: data.content, readAt: null, createdAt: new Date(),
+        }),
+      )
+
+      const res  = await POST(makePostRequest({ content: svgXss }), makeParams())
+      const body = await res.json() as { data: { body: string } }
+
+      expect(res.status).toBe(201)
+      expect(body.data.body).toBe("Texto ok")
+      expect(body.data.body).not.toContain("alert")
+      expect(body.data.body).not.toContain("evil")
     })
 
     it("tag <img onerror=...> é removida; onerror não aparece na string salva", async () => {
