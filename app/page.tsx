@@ -5,9 +5,9 @@ import { auth } from "@/lib/auth"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { ItemCard } from "@/components/items/ItemCard"
 import { CategoryIcon } from "@/components/ui/CategoryIcon"
-import { ItemsMapLoader } from "@/components/items/ItemsMapLoader"
 import type { ItemPin } from "@/components/items/ItemsMap"
 import { getUserMapLocation } from "@/lib/userLocation"
+import { HomeMapPanel } from "@/components/home/HomeMapPanel"
 
 export const metadata: Metadata = {
   title: "ShareO — Use Mais. Possua Menos.",
@@ -19,7 +19,14 @@ export const revalidate = 60
 
 export default async function HomePage() {
   const session = await auth().catch(() => null)
-  const userLoc = await getUserMapLocation(session?.user?.id)
+  const [userLoc, userCity] = await Promise.all([
+    getUserMapLocation(session?.user?.id),
+    session?.user?.id
+      ? prisma.user.findUnique({ where: { id: session.user.id }, select: { city: true, state: true } })
+          .then((u) => u?.city ? `${u.city}${u.state ? `, ${u.state}` : ""}` : "Natal, RN")
+          .catch(() => "Natal, RN")
+      : Promise.resolve("Natal, RN"),
+  ])
 
   const itemSelect = {
     id: true, title: true, pricePerDay: true, condition: true,
@@ -178,13 +185,17 @@ export default async function HomePage() {
           </section>
         )}
 
-        {/* ─── MAPA ─── */}
+        {/* ─── MAPA + FILTRO DISTÂNCIA ─── */}
         <section className="pb-8" aria-label="Mapa de itens próximos">
-          <ItemsMapLoader
-            height={192}
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xl font-bold text-primary md:text-2xl">📍 Itens próximos de você</h2>
+            <Link href="/itens" className="text-sm font-semibold text-brand hover:underline">Ver todos →</Link>
+          </div>
+          <HomeMapPanel
             defaultLat={userLoc.lat}
             defaultLng={userLoc.lng}
             defaultZoom={userLoc.zoom}
+            userCity={userCity}
             items={items.map<ItemPin>((i) => ({
               id:          i.id,
               title:       i.title,
