@@ -13,8 +13,6 @@ interface Props {
   userCity?:  string
 }
 
-const DISTANCES = [2, 5, 10, 99]
-
 export function HomeMapPanel({ items, defaultLat, defaultLng, defaultZoom, userCity }: Props) {
   const [maxKm, setMaxKm] = useState(99)
 
