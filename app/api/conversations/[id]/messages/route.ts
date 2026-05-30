@@ -11,6 +11,14 @@ const MessageSchema = z.object({
   message: "Mensagem não pode ser vazia",
 })
 
+// Remove dangerous tag blocks entirely (including inner content), then strips remaining tags.
+function stripHtml(input: string): string {
+  return input
+    .replace(/<(script|style|iframe|object|embed|svg|math)\b[^>]*>[\s\S]*?<\/\1>/gi, "")
+    .replace(/<[^>]*>/g, "")
+    .trim()
+}
+
 type Params = { params: Promise<{ id: string }> }
 
 export async function POST(req: NextRequest, { params }: Params) {
@@ -53,7 +61,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       )
     }
 
-    const rawContent = (parsed.data.content ?? parsed.data.body ?? "").replace(/<[^>]*>/g, "").trim()
+    const rawContent = stripHtml(parsed.data.content ?? parsed.data.body ?? "")
 
     const [message] = await Promise.all([
       prisma.message.create({
