@@ -27,21 +27,23 @@ const ItemsMap = dynamic(
 )
 
 interface Props {
-  items:       ItemPin[]
-  height?:     number
-  defaultLat?: number
-  defaultLng?: number
+  items:        ItemPin[]
+  height?:      number
+  defaultLat?:  number
+  defaultLng?:  number
   defaultZoom?: number
+  mapZoom?:     number
 }
 
-export function ItemsMapLoader({ items, height, defaultLat, defaultLng, defaultZoom }: Props) {
+export function ItemsMapLoader({ items, height, defaultLat, defaultLng, defaultZoom, mapZoom }: Props) {
   return (
     <ItemsMap
       items={items}
       height={height}
-      {...(defaultLat !== undefined && { defaultLat })}
-      {...(defaultLng !== undefined && { defaultLng })}
+      {...(defaultLat  !== undefined && { defaultLat })}
+      {...(defaultLng  !== undefined && { defaultLng })}
       {...(defaultZoom !== undefined && { defaultZoom })}
+      {...(mapZoom     !== undefined && { mapZoom })}
     />
   )
 }
