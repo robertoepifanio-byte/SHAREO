@@ -1,4 +1,4 @@
-# ADR-006 — Estratégia de Renderização por Tipo de Página
+# ADR-007 — Estratégia de Renderização por Tipo de Página
 
 **Status**: Aceito  
 **Data**: 2026-05-25  

@@ -41,6 +41,23 @@ The repository contains no production code yet. It holds:
 
 **Security**: Row Level Security (RLS) in Supabase, rate limiting on auth/document-validation endpoints, LGPD compliance (explicit consent, minimal data, account deletion).
 
+## Architecture Decision Records (ADRs)
+
+All ADRs live in **`docs/adr/`** (kebab-case filenames). The legacy `ADRs/` root folder has been consolidated. Current ADRs:
+
+| # | File | Decision |
+|---|---|---|
+| 001 | `ADR-001-autenticacao.md` | Auth — NextAuth.js v5 |
+| 002 | `ADR-002-mapas.md` | Maps — Mapbox + PostGIS |
+| 003 | `ADR-003-chat.md` | Chat — Supabase Realtime |
+| 004 | `ADR-004-paleta-cores-definitiva.md` | Design system — paleta oficial (navy #0D1B2A + laranja CTA) |
+| 005 | `ADR-005-criptografia-documentos.md` | CPF/CNPJ encryption |
+| 006 | `ADR-006-estrutura-pastas.md` | Folder structure |
+| 007 | `ADR-007-rendering-strategy.md` | SSG/SSR/ISR/CSR per page type |
+| 008 | `ADR-008-state-management.md` | State — React Query |
+| 009 | `ADR-009-rls-nextauth.md` | RLS + NextAuth integration |
+| 010 | `ADR-010-upload-imagens.md` | Image upload — Supabase Storage |
+
 ## Subagents System
 
 The `.claude/Agents/` directory contains 9 Claude Code subagents. Each file has YAML frontmatter (`name`, `description`, `model`, `tools`) that enables automatic invocation. The legacy `*_Agente_Shareo.md` files (PascalCase) are kept as reference — the active subagents are the kebab-case files.

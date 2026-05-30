@@ -1,4 +1,4 @@
-# ADR-009 — Upload de Imagens
+# ADR-010 — Upload de Imagens
 
 **Status**: Aceito  
 **Data**: 2026-05-25  

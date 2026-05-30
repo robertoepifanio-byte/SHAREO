@@ -1,4 +1,4 @@
-# ADR-005 — Estrutura de Pastas e Convenções de Componentes
+# ADR-006 — Estrutura de Pastas e Convenções de Componentes
 
 **Status**: Aceito  
 **Data**: 2026-05-25  
