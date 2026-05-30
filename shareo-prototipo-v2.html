@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShareO — Protótipo v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#003366;--green:#007B3C;--green-light:#59C686;--blue-mid:#144D81;
+  --white:#fff;--bg:#F8FAFC;--text:#0F172A;--muted:#64748B;--border:#E2E8F0;
+  --orange:#F97316;--red:#EF4444;--amber:#F59E0B;--radius:12px;
+}
+body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);font-size:16px}
+a{text-decoration:none;color:inherit}
+button{cursor:pointer;font-family:inherit}
+img{max-width:100%}
+
+/* ── UTILS ── */
+.hidden{display:none!important}
+.flex{display:flex}.flex-col{flex-direction:column}.items-center{align-items:center}.justify-between{justify-content:space-between}.justify-center{justify-content:center}.gap-2{gap:8px}.gap-3{gap:12px}.gap-4{gap:16px}.gap-6{gap:24px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.w-full{width:100%}.text-center{text-align:center}
+.rounded{border-radius:var(--radius)}.rounded-full{border-radius:999px}
+.shadow{box-shadow:0 2px 8px rgba(0,0,0,.1)}.shadow-lg{box-shadow:0 8px 24px rgba(0,0,0,.15)}
+.p-4{padding:16px}.p-3{padding:12px}.px-4{padding:0 16px}.py-3{padding:12px 0}.py-2{padding:8px 0}
+.mt-2{margin-top:8px}.mt-3{margin-top:12px}.mt-4{margin-top:16px}.mt-6{margin-top:24px}.mb-2{margin-bottom:8px}.mb-4{margin-bottom:16px}
+.text-sm{font-size:14px}.text-xs{font-size:12px}.text-lg{font-size:18px}.text-xl{font-size:20px}.text-2xl{font-size:24px}.text-3xl{font-size:28px}.text-4xl{font-size:36px}
+.font-bold{font-weight:700}.font-semibold{font-weight:600}.font-medium{font-weight:500}
+.text-white{color:#fff}.text-muted{color:var(--muted)}.text-green{color:var(--green)}.text-navy{color:var(--navy)}.text-orange{color:var(--orange)}
+.bg-white{background:#fff}.bg-navy{background:var(--navy)}.bg-green{background:var(--green)}.bg-green-light{background:#D4EDE1}.bg-amber{background:#FEF3C7}
+.border{border:1px solid var(--border)}.border-green{border:1px solid var(--green)}
+.line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.overflow-hidden{overflow:hidden}
+.relative{position:relative}.absolute{position:absolute}
+.sticky-bottom{position:fixed;bottom:0;left:0;right:0;z-index:100}
+.container{max-width:1200px;margin:0 auto;padding:0 16px}
+
+/* ── BADGE ── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600}
+.badge-green{background:#D4EDE1;color:var(--green)}
+.badge-amber{background:#FEF3C7;color:#92400E}
+.badge-blue{background:#DBEAFE;color:#1E40AF}
+.badge-red{background:#FEE2E2;color:#991B1B}
+.badge-gray{background:#F1F5F9;color:var(--muted)}
+
+/* ── BUTTON ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border-radius:8px;font-weight:600;font-size:15px;border:none;transition:all .2s;min-height:44px}
+.btn-primary{background:var(--green);color:#fff}.btn-primary:hover{background:#005F2E}
+.btn-outline{background:transparent;color:var(--navy);border:2px solid var(--navy)}.btn-outline:hover{background:var(--navy);color:#fff}
+.btn-orange{background:var(--orange);color:#fff}.btn-orange:hover{background:#ea6a00}
+.btn-ghost{background:transparent;color:var(--green);border:1px solid var(--green)}
+.btn-sm{padding:8px 16px;font-size:13px;min-height:36px}
+.btn-lg{padding:14px 32px;font-size:16px}
+
+/* ── HEADER ── */
+.header{background:var(--navy);padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-box{background:#fff;border-radius:8px;padding:4px 10px;font-weight:800;font-size:18px;color:var(--navy)}
+.logo-sub{font-size:11px;color:rgba(255,255,255,.6);margin-top:-2px}
+.nav-links{display:flex;align-items:center;gap:4px}
+.nav-link{color:rgba(255,255,255,.8);padding:8px 12px;border-radius:6px;font-size:14px;font-weight:500;transition:.2s}
+.nav-link:hover,.nav-link.active{color:#fff;background:rgba(255,255,255,.1)}
+.header-actions{display:flex;align-items:center;gap:8px}
+.avatar-btn{width:36px;height:36px;border-radius:50%;background:var(--green);color:#fff;font-weight:700;font-size:14px;border:none;display:flex;align-items:center;justify-content:center}
+.notif-btn{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);color:#fff;border:none;display:flex;align-items:center;justify-content:center;position:relative}
+.notif-dot{position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--orange);border:2px solid var(--navy)}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);z-index:200;padding:0 8px 8px}
+.bottom-nav-items{display:flex;justify-content:space-around}
+.bottom-nav-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 12px;font-size:10px;font-weight:600;color:var(--muted);border:none;background:none;cursor:pointer;flex:1;min-height:44px}
+.bottom-nav-item.active{color:var(--green)}
+.bottom-nav-item svg{width:20px;height:20px}
+
+/* ── HERO ── */
+.hero{background:linear-gradient(135deg,var(--navy) 0%,var(--blue-mid) 100%);padding:64px 24px;position:relative;overflow:hidden;display:flex;justify-content:center}
+.hero::after{content:'';position:absolute;right:-100px;top:-100px;width:500px;height:500px;border-radius:50%;background:rgba(0,123,60,.15)}
+.hero-content{max-width:640px;width:100%;position:relative;z-index:1;text-align:center}
+.hero-eco-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(89,198,134,.2);border:1px solid rgba(89,198,134,.4);color:var(--green-light);padding:6px 14px;border-radius:999px;font-size:12px;font-weight:600;margin-bottom:20px}
+.hero h1{font-size:48px;font-weight:800;color:#fff;line-height:1.1;margin-bottom:16px}
+.hero h1 span{color:var(--green-light)}
+.hero-sub{color:rgba(255,255,255,.75);font-size:17px;margin-bottom:32px;line-height:1.5}
+.hero-search{background:#fff;border-radius:12px;padding:6px 6px 6px 16px;display:flex;align-items:center;gap:8px;max-width:520px;margin:0 auto;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.hero-search input{flex:1;border:none;outline:none;font-family:inherit;font-size:15px;color:var(--text)}
+.hero-search input::placeholder{color:var(--muted)}
+.hero-trust{display:flex;gap:24px;margin-top:28px;flex-wrap:wrap;justify-content:center}
+.trust-item{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.8);font-size:13px}
+.trust-icon{width:32px;height:32px;border-radius:50%;background:rgba(0,123,60,.3);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.hero-stats{display:flex;gap:32px;margin-top:36px;justify-content:center}
+.stat{color:#fff}
+.stat-num{font-size:28px;font-weight:800;color:var(--green-light)}
+.stat-label{font-size:12px;color:rgba(255,255,255,.6);margin-top:2px}
+
+/* ── SECTION ── */
+.section{padding:48px 24px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.section-title{font-size:22px;font-weight:700;color:var(--navy)}
+.section-link{color:var(--green);font-size:14px;font-weight:600}
+
+/* ── CATEGORIES ── */
+.categories-scroll{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;-ms-overflow-style:none;scrollbar-width:none}
+.categories-scroll::-webkit-scrollbar{display:none}
+.cat-chip{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px;min-width:90px;background:#fff;border-radius:12px;border:2px solid var(--border);cursor:pointer;transition:.2s;flex-shrink:0}
+.cat-chip:hover,.cat-chip.active{border-color:var(--green);background:#D4EDE1}
+.cat-icon{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;background:#F1F5F9}
+.cat-chip.active .cat-icon{background:var(--green-light)}
+.cat-icon-img{width:56px;height:56px;display:flex;align-items:center;justify-content:center}
+.cat-icon-img img{width:56px;height:56px;object-fit:contain;transition:transform .2s}
+.cat-chip:hover .cat-icon-img img,.cat-chip.active .cat-icon-img img{transform:scale(1.08)}
+.cat-name{font-size:11px;font-weight:600;color:var(--text);text-align:center}
+/* Filtro distância */
+.dist-option{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;font-weight:500;color:var(--navy);padding:2px 0}
+.dist-option input[type=radio]{accent-color:var(--green);width:16px;height:16px;cursor:pointer;flex-shrink:0}
+.dist-option span{line-height:1}
+/* Leaflet map */
+.map-container{border-radius:12px;overflow:hidden;border:1px solid var(--border);position:relative}
+.map-container .leaflet-container{font-family:'Montserrat',sans-serif}
+.leaflet-popup-content-wrapper{border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.15)}
+.leaflet-popup-content{margin:10px 14px;font-family:'Montserrat',sans-serif}
+.map-link{position:absolute;bottom:10px;right:10px;z-index:1000;background:#fff;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;color:var(--navy);box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer;text-decoration:none;border:none}
+
+/* ── ITEM CARD ── */
+.item-card{background:#fff;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);transition:.2s;cursor:pointer}
+.item-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.item-card-img{aspect-ratio:4/3;background:#E2E8F0;position:relative;overflow:hidden}
+.item-card-img img{width:100%;height:100%;object-fit:cover}
+.item-card-badge{position:absolute;top:8px;left:8px}
+.item-card-fav{position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.9);border:none;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer}
+.item-card-body{padding:12px}
+.item-card-category{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.item-card-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;line-height:1.3}
+.item-card-rating{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--muted);margin-bottom:8px}
+.item-card-price{font-size:20px;font-weight:800;color:var(--green);display:flex;align-items:baseline;gap:4px}
+.item-card-price span{font-size:12px;font-weight:500;color:var(--muted)}
+.item-card-location{font-size:12px;color:var(--muted);margin-top:4px;display:flex;align-items:center;gap:4px}
+.item-card-popular{position:absolute;bottom:8px;left:8px;background:var(--orange);color:#fff;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700}
+
+/* ── COMO FUNCIONA ── */
+.how-it-works{background:#fff;padding:48px 24px}
+.step-card{background:var(--bg);border-radius:var(--radius);padding:24px;text-align:center}
+.step-num{width:48px;height:48px;border-radius:50%;background:var(--green);color:#fff;font-size:20px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.step-icon{font-size:32px;margin-bottom:12px}
+.step-title{font-size:16px;font-weight:700;color:var(--navy);margin-bottom:8px}
+.step-desc{font-size:13px;color:var(--muted);line-height:1.5}
+
+/* ── SOCIAL PROOF ── */
+.proof-bar{background:var(--navy);padding:24px;display:flex;justify-content:center;gap:48px;flex-wrap:wrap}
+.proof-item{text-align:center;color:#fff}
+.proof-num{font-size:28px;font-weight:800;color:var(--green-light)}
+.proof-label{font-size:12px;color:rgba(255,255,255,.6);margin-top:4px}
+
+/* ── TESTIMONIALS ── */
+.testimonial-card{background:var(--blue-mid);border-radius:var(--radius);padding:24px;color:#fff}
+.testimonial-stars{color:var(--green-light);font-size:18px;margin-bottom:12px}
+.testimonial-text{font-size:14px;line-height:1.6;font-style:italic;margin-bottom:16px;color:rgba(255,255,255,.9)}
+.testimonial-author{display:flex;align-items:center;gap:10px}
+.testimonial-avatar{width:40px;height:40px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+.testimonial-name{font-size:14px;font-weight:700}
+.testimonial-role{font-size:12px;color:rgba(255,255,255,.6)}
+
+/* ── CTA FINAL ── */
+.cta-section{background:linear-gradient(135deg,var(--navy),var(--blue-mid));padding:64px 24px;text-align:center}
+.cta-section h2{font-size:32px;font-weight:800;color:#fff;margin-bottom:12px}
+.cta-section p{color:rgba(255,255,255,.7);margin-bottom:32px;font-size:16px}
+
+/* ── FOOTER ── */
+.footer{background:var(--green);padding:40px 24px 24px;color:#fff}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:32px;margin-bottom:32px}
+.footer-brand p{font-size:13px;color:rgba(255,255,255,.7);margin-top:8px;line-height:1.5}
+.footer-col h4{font-size:14px;font-weight:700;margin-bottom:12px}
+.footer-col a{display:block;font-size:13px;color:rgba(255,255,255,.7);margin-bottom:6px}
+.footer-col a:hover{color:#fff}
+.footer-bottom{border-top:1px solid rgba(255,255,255,.2);padding-top:20px;display:flex;justify-content:space-between;align-items:center}
+.footer-bottom p{font-size:12px;color:rgba(255,255,255,.6)}
+.footer-seals{display:flex;gap:12px}
+.seal{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px}
+
+/* ── PAGE SCREENS ── */
+.screen{display:none}
+.screen.active{display:block}
+
+/* ── FILTER BAR ── */
+.filter-bar{background:#fff;border-bottom:1px solid var(--border);padding:12px 24px;display:flex;gap:8px;align-items:center;overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none}
+.filter-bar::-webkit-scrollbar{display:none}
+.filter-chip{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;font-size:13px;font-weight:600;border:1.5px solid var(--border);background:#fff;cursor:pointer;white-space:nowrap;transition:.2s}
+.filter-chip:hover{border-color:var(--green);color:var(--green)}
+.filter-chip.active{background:var(--green);color:#fff;border-color:var(--green)}
+.filter-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;background:var(--navy);color:#fff;border:none;cursor:pointer}
+
+/* ── BOTTOM SHEET ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300}
+.overlay.open{display:block}
+.bottom-sheet{position:fixed;bottom:0;left:0;right:0;background:#fff;border-radius:20px 20px 0 0;padding:24px;z-index:400;transform:translateY(100%);transition:transform .3s ease;max-height:85vh;overflow-y:auto}
+.bottom-sheet.open{transform:translateY(0)}
+.sheet-handle{width:40px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 20px}
+.sheet-title{font-size:18px;font-weight:700;margin-bottom:20px}
+.filter-group{margin-bottom:20px}
+.filter-group label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
+.filter-options{display:flex;flex-wrap:wrap;gap:8px}
+.filter-option{padding:8px 16px;border-radius:999px;border:1.5px solid var(--border);font-size:13px;font-weight:500;cursor:pointer;transition:.2s}
+.filter-option.active{background:var(--green);color:#fff;border-color:var(--green)}
+.range-val{font-size:20px;font-weight:700;color:var(--green);margin-bottom:8px}
+input[type=range]{width:100%;accent-color:var(--green)}
+
+/* ── ITEM DETAIL ── */
+.detail-gallery{background:#000;aspect-ratio:4/3;position:relative;overflow:hidden}
+.detail-gallery img{width:100%;height:100%;object-fit:cover}
+.gallery-counter{position:absolute;bottom:12px;right:12px;background:rgba(0,0,0,.6);color:#fff;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600}
+.gallery-thumbs{display:flex;gap:8px;padding:12px 16px;background:#fff;border-bottom:1px solid var(--border)}
+.thumb{width:60px;height:45px;border-radius:6px;object-fit:cover;border:2px solid transparent;cursor:pointer}
+.thumb.active{border-color:var(--green)}
+.detail-body{padding:20px 16px;background:#fff;border-bottom:1px solid var(--border)}
+.detail-title{font-size:22px;font-weight:800;color:var(--navy);margin-bottom:8px}
+.detail-rating{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.detail-price-big{font-size:32px;font-weight:800;color:var(--green);margin-bottom:4px}
+.detail-price-big span{font-size:16px;font-weight:500;color:var(--muted)}
+.detail-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.detail-tag{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:500;color:var(--muted)}
+.trust-box{background:#D4EDE1;border:1px solid #A7D7BC;border-radius:10px;padding:14px 16px;margin:16px}
+.trust-box-title{font-size:13px;font-weight:700;color:var(--green);margin-bottom:8px}
+.trust-item-row{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);margin-bottom:6px}
+.owner-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px;margin:16px}
+.owner-avatar{width:52px;height:52px;border-radius:50%;background:var(--navy);color:#fff;font-weight:700;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.owner-name{font-size:15px;font-weight:700}
+.owner-rating{font-size:13px;color:var(--muted)}
+.sticky-cta{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;z-index:150;box-shadow:0 -4px 16px rgba(0,0,0,.1)}
+.sticky-price{font-size:20px;font-weight:800;color:var(--green)}
+.sticky-price span{font-size:13px;font-weight:500;color:var(--muted)}
+
+/* ── DASHBOARD ── */
+.dash-header{background:linear-gradient(135deg,var(--navy),var(--blue-mid));padding:32px 20px}
+.dash-welcome{color:#fff;font-size:24px;font-weight:800;margin-bottom:4px}
+.dash-sub{color:rgba(255,255,255,.65);font-size:14px}
+.dash-avatar{width:56px;height:56px;border-radius:50%;background:var(--green);color:#fff;font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:3px solid rgba(255,255,255,.3)}
+.metrics-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:16px;margin-top:-20px}
+.metric-card{background:#fff;border-radius:12px;padding:16px;border:1px solid var(--border);box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.metric-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.metric-value{font-size:26px;font-weight:800;color:var(--navy)}
+.metric-value.green{color:var(--green)}
+.metric-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.dash-section{background:#fff;margin:8px 0;padding:20px 16px}
+.dash-section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.dash-section-title{font-size:16px;font-weight:700;color:var(--navy)}
+.booking-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.booking-item:last-child{border-bottom:none}
+.booking-thumb{width:52px;height:52px;border-radius:8px;object-fit:cover;background:#E2E8F0;flex-shrink:0}
+.booking-info{flex:1;min-width:0}
+.booking-name{font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.booking-date{font-size:12px;color:var(--muted);margin-top:2px}
+.suggest-scroll{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;-ms-overflow-style:none;scrollbar-width:none}
+.suggest-scroll::-webkit-scrollbar{display:none}
+.suggest-card{min-width:140px;background:var(--bg);border-radius:10px;overflow:hidden;border:1px solid var(--border);flex-shrink:0}
+.suggest-img{height:90px;background:#E2E8F0;overflow:hidden}
+.suggest-img img{width:100%;height:100%;object-fit:cover}
+.suggest-body{padding:8px}
+.suggest-name{font-size:12px;font-weight:600;color:var(--text);line-height:1.3}
+.suggest-price{font-size:13px;font-weight:700;color:var(--green);margin-top:4px}
+.my-item-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.my-item-row:last-child{border-bottom:none}
+.my-item-thumb{width:56px;height:42px;border-radius:8px;object-fit:cover;background:#E2E8F0;flex-shrink:0}
+.my-item-info{flex:1;min-width:0}
+.my-item-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.my-item-stats{font-size:11px;color:var(--muted);margin-top:2px}
+.my-item-price{font-size:14px;font-weight:700;color:var(--green);white-space:nowrap}
+
+/* ── SUSTENTÁVEL ── */
+.sustentavel-section{background:var(--green);margin:8px 0;padding:20px 16px;color:#fff}
+.sustentavel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.sustentavel-title{font-size:18px;font-weight:800}
+.sustentavel-sub{font-size:13px;color:rgba(255,255,255,.7);margin-bottom:16px}
+.sustentavel-map{background:rgba(255,255,255,.15);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.map-placeholder{font-size:12px;color:rgba(255,255,255,.7)}
+.sustentavel-cards{display:flex;gap:12px;overflow-x:auto;padding-bottom:4px;-ms-overflow-style:none;scrollbar-width:none}
+.sustentavel-cards::-webkit-scrollbar{display:none}
+.sustent-card{background:rgba(255,255,255,.15);border-radius:10px;padding:14px;min-width:160px;flex-shrink:0}
+.sustent-card-icon{font-size:24px;margin-bottom:8px}
+.sustent-card-title{font-size:14px;font-weight:700;margin-bottom:4px}
+.sustent-card-desc{font-size:11px;color:rgba(255,255,255,.7);line-height:1.4;margin-bottom:10px}
+.sustent-card-btn{display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;padding:6px 12px;border-radius:999px;font-size:11px;font-weight:600;border:none;cursor:pointer}
+
+/* ── CO2 BAR ── */
+.co2-bar{background:#004d2a;padding:16px 20px;display:flex;align-items:center;gap:12px}
+.co2-num{font-size:24px;font-weight:800;color:#fff}
+.co2-num sup{font-size:14px}
+.co2-label{font-size:13px;color:rgba(255,255,255,.7)}
+
+/* ── BOOKING FLOW ── */
+.progress-bar-wrap{background:#fff;padding:16px 20px;border-bottom:1px solid var(--border)}
+.progress-steps{display:flex;align-items:center;justify-content:space-between;position:relative}
+.progress-steps::before{content:'';position:absolute;top:14px;left:14px;right:14px;height:2px;background:var(--border);z-index:0}
+.progress-fill{position:absolute;top:14px;left:14px;height:2px;background:var(--green);z-index:1;transition:.4s}
+.step-dot{width:28px;height:28px;border-radius:50%;background:var(--border);color:var(--muted);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;position:relative;z-index:2;flex-shrink:0;transition:.3s}
+.step-dot.done{background:var(--green);color:#fff}
+.step-dot.current{background:var(--green);color:#fff;box-shadow:0 0 0 4px rgba(0,123,60,.2)}
+.step-labels{display:flex;justify-content:space-between;margin-top:6px}
+.step-label{font-size:10px;font-weight:600;color:var(--muted);text-align:center;width:60px;margin:0 -16px}
+.step-label.current{color:var(--green)}
+.booking-step{display:none;padding:20px 16px}
+.booking-step.active{display:block}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.cal-day{padding:10px 4px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer}
+.cal-day:hover{background:var(--bg)}
+.cal-day.available{color:var(--text)}
+.cal-day.selected{background:var(--green);color:#fff;font-weight:700}
+.cal-day.range{background:#D4EDE1;color:var(--green)}
+.cal-day.unavailable{color:var(--border);cursor:not-allowed}
+.cal-day-name{font-size:11px;font-weight:600;color:var(--muted);padding:4px}
+.price-breakdown{background:var(--bg);border-radius:10px;padding:16px;margin-top:16px}
+.price-row{display:flex;justify-content:space-between;font-size:14px;margin-bottom:8px}
+.price-row.total{font-weight:700;font-size:16px;border-top:1px solid var(--border);padding-top:8px;margin-top:4px}
+
+/* ── PAYMENT STEP ── */
+.security-badge{background:#D4EDE1;border:1px solid #A7D7BC;border-radius:8px;padding:12px 16px;display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.security-badge p{font-size:13px;color:var(--green);font-weight:600}
+.card-brands{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.card-brand{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;color:var(--muted)}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px}
+.form-input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:14px;color:var(--text);transition:.2s}
+.form-input:focus{outline:none;border-color:var(--green)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* ── SUCCESS ── */
+.success-screen{text-align:center;padding:40px 20px}
+.success-icon{width:80px;height:80px;border-radius:50%;background:#D4EDE1;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:36px}
+.success-title{font-size:24px;font-weight:800;color:var(--navy);margin-bottom:8px}
+.success-sub{font-size:15px;color:var(--muted);margin-bottom:32px;line-height:1.5}
+.summary-card{background:var(--bg);border-radius:12px;padding:16px;text-align:left;margin-bottom:24px}
+.summary-row{display:flex;justify-content:space-between;font-size:14px;margin-bottom:8px}
+.summary-row:last-child{margin-bottom:0;font-weight:700;border-top:1px solid var(--border);padding-top:8px}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  .dist-filter-panel{display:none}
+  .header{padding:0 16px}
+  .nav-links{display:none}
+  .bottom-nav{display:block}
+  .hero{padding:40px 16px}
+  .hero h1{font-size:32px}
+  .hero-stats{gap:20px}
+  .stat-num{font-size:22px}
+  .grid-3,.grid-4{grid-template-columns:1fr 1fr}
+  .footer-grid{grid-template-columns:1fr 1fr}
+  .proof-bar{gap:24px}
+  body{padding-bottom:70px}
+  .section{padding:32px 16px}
+  .how-it-works{padding:32px 16px}
+}
+@media(max-width:480px){
+  .grid-3{grid-template-columns:1fr 1fr}
+  .grid-4{grid-template-columns:1fr 1fr}
+  .footer-grid{grid-template-columns:1fr}
+  .hero-trust{gap:12px}
+  .trust-item{font-size:12px}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════ HEADER ══════════════════ -->
+<header class="header">
+  <div class="logo" onclick="showScreen('home')" style="cursor:pointer;flex-direction:column;align-items:flex-start;gap:2px">
+    <img src="public/logos/shareo-logo.png" alt="ShareO" style="height:32px;object-fit:contain;border-radius:8px">
+    <div style="font-size:10px;color:rgba(255,255,255,.6);font-weight:500;white-space:nowrap">Use Mais. Possua Menos.</div>
+  </div>
+  <nav class="nav-links">
+    <a class="nav-link active" onclick="showScreen('home')">Início</a>
+    <a class="nav-link" onclick="showScreen('listing')">Explorar</a>
+    <a class="nav-link" onclick="showScreen('listing')">Anunciar</a>
+    <a class="nav-link">Mensagens</a>
+    <a class="nav-link" onclick="showScreen('reservas')">Reservas</a>
+  </nav>
+  <div class="header-actions">
+    <span style="color:rgba(255,255,255,.85);font-size:13px;font-weight:600;white-space:nowrap">Olá, Lucas!</span>
+    <button class="avatar-btn" onclick="showScreen('dashboard')">L</button>
+    <button class="notif-btn" title="Notificações">
+      🔔<span class="notif-dot"></span>
+    </button>
+    <button class="btn btn-ghost btn-sm" style="color:#fff;border-color:rgba(255,255,255,.4)">Ajuda</button>
+    <button class="btn btn-primary btn-sm" onclick="showScreen('listing')" style="display:none" id="loginBtn">Entrar</button>
+  </div>
+</header>
+
+<!-- ══════════════════ BOTTOM NAV ══════════════════ -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-items">
+    <button class="bottom-nav-item active" onclick="showScreen('home');setActiveNav(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Início
+    </button>
+    <button class="bottom-nav-item" onclick="showScreen('listing');setActiveNav(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Buscar
+    </button>
+    <button class="bottom-nav-item" onclick="showScreen('listing');setActiveNav(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Anunciar
+    </button>
+    <button class="bottom-nav-item" onclick="showScreen('reservas');setActiveNav(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Reservas
+    </button>
+    <button class="bottom-nav-item" onclick="showScreen('dashboard');setActiveNav(this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Perfil
+    </button>
+  </div>
+</nav>
+
+<!-- ════════════════ SCREEN: HOME ════════════════ -->
+<div id="screen-home" class="screen active">
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-eco-badge">🌿 Economia Circular · Natal, RN</div>
+      <h1>Alugue o que precisa.<br><span>Ganhe com o que tem.</span></h1>
+      <p class="hero-sub">O marketplace de aluguel local entre pessoas da sua região. Simples, seguro e sustentável.</p>
+      <div class="hero-search">
+        <span style="font-size:20px">🔍</span>
+        <input type="text" placeholder="O que você precisa alugar?" id="heroSearch">
+        <button class="btn btn-primary" onclick="showScreen('listing')">Buscar</button>
+      </div>
+      <div class="hero-trust">
+        <div class="trust-item"><div class="trust-icon">🔒</div><div><strong>Pagamento seguro</strong><br>Liberado só após confirmação</div></div>
+        <div class="trust-item"><div class="trust-icon">✓</div><div><strong>Usuários verificados</strong><br>Identidade validada</div></div>
+        <div class="trust-item"><div class="trust-icon">💬</div><div><strong>Suporte 7 dias</strong><br>Estamos aqui pra você</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Prova social -->
+  <div class="proof-bar">
+    <div class="proof-item"><div class="proof-num">2.400+</div><div class="proof-label">Itens disponíveis</div></div>
+    <div class="proof-item"><div class="proof-num">890+</div><div class="proof-label">Usuários ativos</div></div>
+    <div class="proof-item"><div class="proof-num">4.8 ★</div><div class="proof-label">Avaliação média</div></div>
+    <div class="proof-item"><div class="proof-num">759 kg</div><div class="proof-label">CO₂ economizados</div></div>
+  </div>
+
+  <!-- Categorias -->
+  <section class="section">
+    <div class="section-header">
+      <h2 class="section-title">Explorar categorias</h2>
+      <a class="section-link" onclick="showScreen('listing')">Ver todas →</a>
+    </div>
+    <div class="categories-scroll">
+      <div class="cat-chip active" onclick="showScreen('listing')"><div class="cat-icon-img"><img src="public/icons/ferramentas.png" alt="Ferramentas"></div><div class="cat-name">Ferramentas</div></div>
+      <div class="cat-chip" onclick="showScreen('listing')"><div class="cat-icon-img"><img src="public/icons/festas.png" alt="Festas"></div><div class="cat-name">Festas</div></div>
+      <div class="cat-chip" onclick="showScreen('listing')"><div class="cat-icon-img"><img src="public/icons/casa-jardim.png" alt="Casa e Jardim"></div><div class="cat-name">Casa & Jardim</div></div>
+      <div class="cat-chip" onclick="showScreen('listing')"><div class="cat-icon-img"><img src="public/icons/eletronicos.png" alt="Eletrônicos"></div><div class="cat-name">Eletrônicos</div></div>
+      <div class="cat-chip" onclick="showScreen('listing')"><div class="cat-icon-img"><img src="public/icons/esporte.png" alt="Esporte"></div><div class="cat-name">Esportes</div></div>
+      <div class="cat-chip" onclick="showScreen('listing')"><div class="cat-icon-img"><img src="public/icons/moda.png" alt="Moda"></div><div class="cat-name">Moda</div></div>
+      <div class="cat-chip" onclick="showScreen('listing')"><div class="cat-icon-img"><img src="public/icons/construcao.png" alt="Construção"></div><div class="cat-name">Construção</div></div>
+    </div>
+  </section>
+
+  <!-- Mapa + Filtro Distância -->
+  <section class="section" style="padding-top:0">
+    <div class="section-header">
+      <h2 class="section-title">📍 Itens próximos de você</h2>
+      <a class="section-link" onclick="showScreen('listing')">Ver todos →</a>
+    </div>
+    <div style="display:flex;gap:16px;align-items:stretch">
+      <!-- Filtro distância -->
+      <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px 20px;min-width:155px;flex-shrink:0;display:flex;flex-direction:column;gap:0">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px">Distância</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <label class="dist-option"><input type="radio" name="dist-home" value="2" onchange="filterMapDist(this.value,'home')"> <span>Até 2 km</span></label>
+          <label class="dist-option"><input type="radio" name="dist-home" value="5" onchange="filterMapDist(this.value,'home')"> <span>Até 5 km</span></label>
+          <label class="dist-option"><input type="radio" name="dist-home" value="10" onchange="filterMapDist(this.value,'home')"> <span>Até 10 km</span></label>
+          <label class="dist-option"><input type="radio" name="dist-home" value="99" onchange="filterMapDist(this.value,'home')" checked> <span>Qualquer</span></label>
+        </div>
+        <div style="margin-top:auto;padding-top:16px;border-top:1px solid var(--border);margin-top:20px">
+          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Sua cidade</div>
+          <div style="display:flex;align-items:center;gap:5px">
+            <span style="font-size:13px">📍</span>
+            <span style="font-size:13px;font-weight:700;color:var(--navy)">Natal, RN</span>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:3px">Baseado na sua conta</div>
+        </div>
+        <div id="mapCount" style="margin-top:12px;font-size:12px;font-weight:600;color:var(--green)">7 itens no mapa</div>
+      </div>
+      <!-- Mapa -->
+      <div class="map-container" style="height:260px;flex:1;min-width:0">
+        <div id="map-home" style="height:260px"></div>
+        <button class="map-link" onclick="showScreen('listing')">Ver todos →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Mais alugados -->
+  <section class="section" style="padding-top:0">
+    <div class="section-header">
+      <h2 class="section-title">🔥 Mais alugados esta semana</h2>
+      <a class="section-link" onclick="showScreen('listing')">Ver todos →</a>
+    </div>
+    <div class="grid-4">
+      <div class="item-card" onclick="showScreen('detail')">
+        <div class="item-card-img" style="background:#C7D2FE">
+          <div class="item-card-badge"><span class="badge badge-green">✓ Disponível</span></div>
+          <div class="item-card-popular">🔥 Mais alugado</div>
+          <button class="item-card-fav">♡</button>
+        </div>
+        <div class="item-card-body">
+          <div class="item-card-category">Ferramentas</div>
+          <div class="item-card-title">Furadeira Profissional Bosch 20V</div>
+          <div class="item-card-rating">⭐ 4.8 <span>(32 avaliações)</span></div>
+          <div class="item-card-price">R$ 45<span>/dia</span></div>
+          <div class="item-card-location">📍 Ponta Negra · 1,2 km</div>
+        </div>
+      </div>
+      <div class="item-card" onclick="showScreen('detail')">
+        <div class="item-card-img" style="background:#FDE68A">
+          <div class="item-card-badge"><span class="badge badge-green">✓ Disponível</span></div>
+          <button class="item-card-fav">♡</button>
+        </div>
+        <div class="item-card-body">
+          <div class="item-card-category">Eletrônicos</div>
+          <div class="item-card-title">Caixa de Som JBL Charge 5</div>
+          <div class="item-card-rating">⭐ 4.9 <span>(18 avaliações)</span></div>
+          <div class="item-card-price">R$ 30<span>/dia</span></div>
+          <div class="item-card-location">📍 Capim Macio · 2,1 km</div>
+        </div>
+      </div>
+      <div class="item-card" onclick="showScreen('detail')">
+        <div class="item-card-img" style="background:#A7F3D0">
+          <div class="item-card-badge"><span class="badge badge-green">✓ Disponível</span></div>
+          <button class="item-card-fav">❤️</button>
+        </div>
+        <div class="item-card-body">
+          <div class="item-card-category">Esportes</div>
+          <div class="item-card-title">Stand Up Paddle completo</div>
+          <div class="item-card-rating">⭐ 4.7 <span>(24 avaliações)</span></div>
+          <div class="item-card-price">R$ 50<span>/dia</span></div>
+          <div class="item-card-location">📍 Via Costeira · 3,5 km</div>
+        </div>
+      </div>
+      <div class="item-card" onclick="showScreen('detail')">
+        <div class="item-card-img" style="background:#FECACA">
+          <div class="item-card-badge"><span class="badge badge-green">✓ Disponível</span></div>
+          <button class="item-card-fav">♡</button>
+        </div>
+        <div class="item-card-body">
+          <div class="item-card-category">Eletrônicos</div>
+          <div class="item-card-title">Projetor Epson Full HD 3000 lumens</div>
+          <div class="item-card-rating">⭐ 4.6 <span>(11 avaliações)</span></div>
+          <div class="item-card-price">R$ 80<span>/dia</span></div>
+          <div class="item-card-location">📍 Tirol · 4,0 km</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Como funciona -->
+  <section class="how-it-works">
+    <div style="max-width:900px;margin:0 auto">
+      <h2 class="section-title text-center mb-4" style="margin-bottom:32px">Como funciona</h2>
+      <div class="grid-3">
+        <div class="step-card">
+          <div class="step-icon">🔍</div>
+          <div class="step-num">1</div>
+          <div class="step-title">Escolha o item</div>
+          <div class="step-desc">Busque por categoria ou localização. Veja fotos, avaliações e preços de itens próximos a você.</div>
+        </div>
+        <div class="step-card">
+          <div class="step-icon">📅</div>
+          <div class="step-num">2</div>
+          <div class="step-title">Reserve online</div>
+          <div class="step-desc">Selecione as datas, confirme os detalhes e pague com segurança. O valor só é liberado após a retirada.</div>
+        </div>
+        <div class="step-card">
+          <div class="step-icon">📦</div>
+          <div class="step-num">3</div>
+          <div class="step-title">Use e devolva</div>
+          <div class="step-desc">Retire com o proprietário, use com tranquilidade e devolva no prazo. Avalie a experiência.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Depoimentos -->
+  <section class="section" style="background:#F1F5F9">
+    <div class="section-header"><h2 class="section-title">O que dizem nossos usuários</h2></div>
+    <div class="grid-3">
+      <div class="testimonial-card">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"Aluguei uma furadeira para o fim de semana e economizei R$400. O processo foi super fácil e o locador foi muito atencioso!"</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">A</div>
+          <div><div class="testimonial-name">Ana Costa</div><div class="testimonial-role">Locatária · Natal, RN</div></div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">"Tenho 8 itens anunciados e já ganhei mais de R$2.000 este mês. O ShareO me ajuda a transformar o que estava parado em renda extra."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">M</div>
+          <div><div class="testimonial-name">Marcos Silva</div><div class="testimonial-role">Proprietário · Ponta Negra</div></div>
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="testimonial-stars">★★★★☆</div>
+        <p class="testimonial-text">"Plataforma segura e confiável. Já realizei 12 aluguéis e nunca tive problemas. O suporte é excelente quando precisei."</p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">C</div>
+          <div><div class="testimonial-name">Carla Mendes</div><div class="testimonial-role">Locatária · Capim Macio</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Final -->
+  <section class="cta-section">
+    <div class="hero-eco-badge" style="margin:0 auto 20px">🌿 Economia Circular</div>
+    <h2>Tem itens parados?<br>Transforme em renda.</h2>
+    <p>Cadastre seus itens gratuitamente e comece a ganhar esta semana.<br>Mais de 890 proprietários já estão ganhando com o ShareO.</p>
+    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
+      <button class="btn btn-primary btn-lg" onclick="showScreen('listing')">Começar a anunciar →</button>
+      <button class="btn btn-outline btn-lg" style="color:#fff;border-color:rgba(255,255,255,.5)" onclick="showScreen('listing')">Explorar itens</button>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div style="margin-bottom:10px">
+            <img src="public/logos/shareo-logo-alt.png" alt="ShareO" style="height:36px;object-fit:contain;border-radius:8px"
+              onerror="this.src='public/logos/shareo-logo.png'">
+          </div>
+          <p style="font-size:14px;font-weight:600;color:rgba(255,255,255,.95);margin-bottom:6px">Compartilhe. Economize. Sustentável.</p>
+          <p><strong style="color:#fff">Marketplace circular</strong> para aluguel de itens locais.<br>Transforme itens parados em <strong style="color:#fff">renda</strong> e ajude sua comunidade.</p>
+        </div>
+        <div class="footer-col"><h4>Plataforma</h4><a>Explorar itens</a><a>Anunciar item</a><a>Como funciona</a><a>Quanto posso ganhar?</a></div>
+        <div class="footer-col"><h4>Conta</h4><a>Entrar</a><a>Cadastrar</a><a>Minhas reservas</a><a>Mensagens</a></div>
+        <div class="footer-col"><h4>Suporte</h4><a>Central de ajuda</a><a>Termos de uso</a><a>Privacidade</a><a>Fale conosco</a></div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2026 ShareO · Todos os direitos reservados</p>
+        <div class="footer-seals">
+          <div class="seal">🔒 SSL</div>
+          <div class="seal">💳 Pagamento seguro</div>
+        </div>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- ════════════════ SCREEN: LISTING ════════════════ -->
+<div id="screen-listing" class="screen">
+  <!-- Search bar -->
+  <div style="background:#fff;border-bottom:1px solid var(--border);padding:12px 16px">
+    <div style="display:flex;gap:8px;align-items:center;background:var(--bg);border-radius:10px;padding:10px 14px;border:1.5px solid var(--border)">
+      <span>🔍</span>
+      <input style="flex:1;border:none;background:transparent;font-family:inherit;font-size:15px;outline:none" placeholder="O que você precisa alugar?">
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <button class="filter-btn" onclick="openSheet()">⚙ Filtros</button>
+    <button class="filter-chip active" onclick="toggleChip(this)">Todos</button>
+    <button class="filter-chip" onclick="toggleChip(this)"><img src="public/icons/ferramentas.png" style="width:20px;height:20px;object-fit:contain"> Ferramentas</button>
+    <button class="filter-chip" onclick="toggleChip(this)"><img src="public/icons/festas.png" style="width:20px;height:20px;object-fit:contain"> Festas</button>
+    <button class="filter-chip" onclick="toggleChip(this)"><img src="public/icons/casa-jardim.png" style="width:20px;height:20px;object-fit:contain"> Casa</button>
+    <button class="filter-chip" onclick="toggleChip(this)"><img src="public/icons/eletronicos.png" style="width:20px;height:20px;object-fit:contain"> Eletrônicos</button>
+    <button class="filter-chip" onclick="toggleChip(this)"><img src="public/icons/esporte.png" style="width:20px;height:20px;object-fit:contain"> Esportes</button>
+    <button class="filter-chip" onclick="toggleChip(this)"><img src="public/icons/moda.png" style="width:20px;height:20px;object-fit:contain"> Moda</button>
+    <button class="filter-chip" onclick="toggleChip(this)"><img src="public/icons/construcao.png" style="width:20px;height:20px;object-fit:contain"> Construção</button>
+  </div>
+
+  <!-- Sort + count -->
+  <div style="background:#fff;padding:10px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+    <span style="font-size:13px;color:var(--muted);font-weight:500">38 anúncios encontrados</span>
+    <select style="font-family:inherit;font-size:13px;border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text)">
+      <option>Mais próximos</option>
+      <option>Menor preço</option>
+      <option>Melhor avaliação</option>
+      <option>Mais alugados</option>
+    </select>
+  </div>
+
+  <!-- Mapa listagem + Filtro Distância -->
+  <div style="padding:12px 16px 0;display:flex;gap:16px;align-items:stretch">
+    <!-- Filtro distância -->
+    <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px 20px;min-width:155px;flex-shrink:0;display:flex;flex-direction:column">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px">Distância</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <label class="dist-option"><input type="radio" name="dist-listing" value="2" onchange="filterMapDist(this.value,'map-listing')"> <span>Até 2 km</span></label>
+        <label class="dist-option"><input type="radio" name="dist-listing" value="5" onchange="filterMapDist(this.value,'map-listing')"> <span>Até 5 km</span></label>
+        <label class="dist-option"><input type="radio" name="dist-listing" value="10" onchange="filterMapDist(this.value,'map-listing')"> <span>Até 10 km</span></label>
+        <label class="dist-option"><input type="radio" name="dist-listing" value="99" onchange="filterMapDist(this.value,'map-listing')" checked> <span>Qualquer</span></label>
+      </div>
+      <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--border)">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Sua cidade</div>
+        <div style="display:flex;align-items:center;gap:5px">
+          <span style="font-size:13px">📍</span>
+          <span style="font-size:13px;font-weight:700;color:var(--navy)">Natal, RN</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px">Baseado na sua conta</div>
+      </div>
+      <div id="mapCountListing" style="margin-top:12px;font-size:12px;font-weight:600;color:var(--green)">7 itens no mapa</div>
+    </div>
+    <!-- Mapa -->
+    <div class="map-container" style="height:260px;flex:1;min-width:0">
+      <div id="map-listing" style="height:260px"></div>
+      <button class="map-link">Ver todos →</button>
+    </div>
+  </div>
+
+  <!-- Grid -->
+  <div style="padding:16px">
+    <div class="grid-2" id="listingGrid" style="gap:12px">
+      <div class="item-card" onclick="showScreen('detail')">
+        <div class="item-card-img" style="background:#C7D2FE">
+          <div class="item-card-badge"><span class="badge badge-green">✓ Disponível</span></div>
+          <div class="item-card-popular">🔥 Top</div>
+          <button class="item-card-fav">♡</button>
+        </div>
+        <div class="item-card-body">
+          <div class="item-card-category">Ferramentas</div>
+          <div class="item-card-title">Furadeira Profissional Bosch 20V</div>
+          <div class="item-card-rating">⭐ 4.8 <span>(32)</span></div>
+          <div class="item-card-price">R$ 45<span>/dia</span></div>
+          <div class="item-card-location">📍 Ponta Negra · 1,2 km</div>
+        </div>
+      </div>
+      <div class="item-card" onclick="showScreen('detail')">
+        <div class="item-card-img" style="background:#FDE68A">
+          <div class="item-card-badge"><span class="badge badge-green">✓ Disponível</span></div>
+          <button class="item-card-fav">♡</button>
+        </div>
+        <div class="item-card-body">
+          <div class="item-card-category">Eletrônicos</div>
+          <div class="item-card-title">Caixa de Som JBL Charge 5</div>
+          <div class="item-card-rating">⭐ 4.9 <span>(18)</span></div>
+          <div class="item-card-price">R$ 30<span>/dia</span></div>
+          <div class="item-card-location">📍 Capim Macio · 2,1 km</div>
+        </div>
+      </div>
+      <div class="item-card" onclick="showScreen('detail')">
+        <div class="item-card-img" style="background:#A7F3D0">
+          <div class="item-card-badge"><span class="badge badge-green">✓ Disponível</span></div>
+          <div class="item-card-popular">🆕 Novo</div>
+          <button class="item-card-fav">♡</button>
+        </div>
+        <div class="item-card-body">
+          <div class="item-card-category">Esportes</div>
+          <div class="item-card-title">Stand Up Paddle + Remo</div>
+          <div class="item-card-rating">⭐ 4.7 <span>(24)</span></div>
+          <div class="item-card-price">R$ 50<span>/dia</span></div>
+          <div class="item-card-location">📍 Via Costeira · 3,5 km</div>
+        </div>
+      </div>
+      <div class="item-card" onclick="showScreen('detail')">
+        <div class="item-card-img" style="background:#FECACA">
+          <div class="item-card-badge"><span class="badge badge-green">✓ Disponível</span></div>
+          <button class="item-card-fav">♡</button>
+        </div>
+        <div class="item-card-body">
+          <div class="item-card-category">Eletrônicos</div>
+          <div class="item-card-title">Projetor Epson Full HD</div>
+          <div class="item-card-rating">⭐ 4.6 <span>(11)</span></div>
+          <div class="item-card-price">R$ 80<span>/dia</span></div>
+          <div class="item-card-location">📍 Tirol · 4,0 km</div>
+        </div>
+      </div>
+      <div class="item-card" onclick="showScreen('detail')">
+        <div class="item-card-img" style="background:#DDD6FE">
+          <div class="item-card-badge"><span class="badge badge-green">✓ Disponível</span></div>
+          <button class="item-card-fav">❤️</button>
+        </div>
+        <div class="item-card-body">
+          <div class="item-card-category">Festas</div>
+          <div class="item-card-title">Kit Iluminação LED para Festas</div>
+          <div class="item-card-rating">⭐ 4.9 <span>(41)</span></div>
+          <div class="item-card-price">R$ 60<span>/dia</span></div>
+          <div class="item-card-location">📍 Lagoa Nova · 2,8 km</div>
+        </div>
+      </div>
+      <div class="item-card" onclick="showScreen('detail')">
+        <div class="item-card-img" style="background:#BAE6FD">
+          <div class="item-card-badge"><span class="badge badge-amber">⏰ Disponível sex</span></div>
+          <button class="item-card-fav">♡</button>
+        </div>
+        <div class="item-card-body">
+          <div class="item-card-category">Esportes</div>
+          <div class="item-card-title">GoPro Hero 9 + acessórios</div>
+          <div class="item-card-rating">⭐ 4.8 <span>(29)</span></div>
+          <div class="item-card-price">R$ 60<span>/dia</span></div>
+          <div class="item-card-location">📍 Petrópolis · 5,2 km</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ SCREEN: DETAIL ════════════════ -->
+<div id="screen-detail" class="screen">
+  <!-- Gallery -->
+  <div class="detail-gallery" style="background:#C7D2FE;display:flex;align-items:center;justify-content:center;font-size:80px">
+    🔧
+    <div class="gallery-counter">1 / 4</div>
+    <button style="position:absolute;top:12px;left:12px;background:rgba(255,255,255,.9);border:none;border-radius:50%;width:36px;height:36px;cursor:pointer;font-size:18px" onclick="showScreen('listing')">←</button>
+    <button style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,.9);border:none;border-radius:50%;width:36px;height:36px;cursor:pointer;font-size:18px">♡</button>
+  </div>
+  <div class="gallery-thumbs">
+    <div class="thumb active" style="background:#C7D2FE;display:flex;align-items:center;justify-content:center;font-size:20px">🔧</div>
+    <div class="thumb" style="background:#D1FAE5;display:flex;align-items:center;justify-content:center;font-size:20px">🔧</div>
+    <div class="thumb" style="background:#FEF3C7;display:flex;align-items:center;justify-content:center;font-size:20px">🔧</div>
+    <div class="thumb" style="background:#E0E7FF;display:flex;align-items:center;justify-content:center;font-size:20px">🔧</div>
+  </div>
+
+  <!-- Body -->
+  <div class="detail-body">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">🔧 Ferramentas</div>
+        <h1 class="detail-title">Furadeira Profissional Bosch 20V sem fio</h1>
+        <div class="detail-rating">
+          <span style="color:#F59E0B">★★★★★</span>
+          <span style="font-size:14px;font-weight:700">4.8</span>
+          <span style="font-size:13px;color:var(--muted)">· 32 avaliações</span>
+          <span class="badge badge-green" style="margin-left:4px">🌿 Eco</span>
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div class="detail-price-big">R$ 45<span>/dia</span></div>
+        <div style="font-size:12px;color:var(--muted)">R$ 270/sem · R$ 810/mês</div>
+      </div>
+    </div>
+    <div class="detail-tags">
+      <div class="detail-tag">📍 Ponta Negra</div>
+      <div class="detail-tag">🟢 Bom estado</div>
+      <div class="detail-tag">⚡ Bivolt</div>
+      <div class="detail-tag">34 aluguéis</div>
+    </div>
+  </div>
+
+  <!-- Comparação alugar vs comprar -->
+  <div style="background:#D4EDE1;border-left:4px solid var(--green);padding:14px 16px;margin:0">
+    <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:4px">💡 Você economiza alugando</div>
+    <div style="font-size:13px;color:var(--text)">Comprar este item custa ~<strong>R$ 600</strong>. Alugar por 1 dia: <strong>R$ 45</strong> — economia de <strong>92%</strong> vs comprar novo.</div>
+  </div>
+
+  <!-- Confiança -->
+  <div class="trust-box" style="margin:16px">
+    <div class="trust-box-title">🔒 Sua locação está protegida</div>
+    <div class="trust-item-row">✅ Pagamento liberado só após confirmação da retirada</div>
+    <div class="trust-item-row">✅ Cancelamento grátis até 24h antes</div>
+    <div class="trust-item-row">✅ Item protegido durante a locação</div>
+    <div class="trust-item-row">✅ Suporte ShareO disponível 7 dias por semana</div>
+  </div>
+
+  <!-- Calculadora -->
+  <div style="background:#fff;border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:16px;margin-bottom:8px">
+    <div style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:12px">Calcular valor</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button class="btn btn-primary btn-sm" style="flex:1" id="tabDay" onclick="setTab('day')">Por dia</button>
+      <button class="btn btn-ghost btn-sm" style="flex:1" id="tabWeek" onclick="setTab('week')">Semana</button>
+      <button class="btn btn-ghost btn-sm" style="flex:1" id="tabMonth" onclick="setTab('month')">Mês</button>
+    </div>
+    <div style="display:flex;gap:12px;margin-bottom:12px">
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px">Data de retirada</div>
+        <input type="date" class="form-input" id="startDate">
+      </div>
+      <div style="flex:1" id="numDaysWrap">
+        <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px">Quantidade de dias</div>
+        <div style="display:flex;align-items:center;gap:8px;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px">
+          <button onclick="changeNum(-1)" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--green);font-weight:700">−</button>
+          <span id="numDays" style="font-size:16px;font-weight:700;flex:1;text-align:center">3</span>
+          <button onclick="changeNum(1)" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--green);font-weight:700">+</button>
+        </div>
+      </div>
+    </div>
+    <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:14px">
+      <div class="price-row"><span>Diárias (3×R$45)</span><span>R$ 135,00</span></div>
+      <div class="price-row"><span>Taxa de serviço</span><span>R$ 13,50</span></div>
+      <div class="price-row total"><span>Total</span><span style="color:var(--green)">R$ 148,50</span></div>
+    </div>
+    <button class="btn btn-primary w-full btn-lg" onclick="showScreen('booking')">Reservar agora</button>
+  </div>
+
+  <!-- Proprietário -->
+  <div class="owner-card">
+    <div style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:12px">Sobre o proprietário</div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+      <div class="owner-avatar">M</div>
+      <div>
+        <div class="owner-name">Marcos Silva <span style="color:var(--green);font-size:14px">✓</span></div>
+        <div class="owner-rating">⭐ 4.9 · Membro desde Jan 2025</div>
+        <div style="margin-top:4px"><span class="badge badge-green">⚡ Responde em &lt;2h</span></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost btn-sm" style="flex:1">💬 Enviar mensagem</button>
+      <button class="btn btn-outline btn-sm" style="flex:1" onclick="showScreen('booking')">Ver perfil</button>
+    </div>
+  </div>
+
+  <!-- Avaliações -->
+  <div style="padding:16px;background:#fff;border-top:1px solid var(--border)">
+    <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:16px">Avaliações (32)</div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="padding-bottom:16px;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--blue-mid);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px">A</div>
+          <div><div style="font-size:14px;font-weight:600">Ana Costa</div><div style="font-size:12px;color:var(--muted)">há 2 dias · ⭐⭐⭐⭐⭐</div></div>
+        </div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.5">"Perfeito! Furadeira em ótimo estado, veio com todos os bits. Proprietário super pontual. Recomendo!"</p>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="width:36px;height:36px;border-radius:50%;background:#F97316;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px">R</div>
+          <div><div style="font-size:14px;font-weight:600">Rafael Moura</div><div style="font-size:12px;color:var(--muted)">há 5 dias · ⭐⭐⭐⭐⭐</div></div>
+        </div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.5">"Excelente experiência! Item exatamente como descrito. Já a terceira vez que alugo do Marcos."</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Itens similares -->
+  <div style="padding:16px;background:var(--bg)">
+    <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:12px">Itens similares</div>
+    <div style="display:flex;gap:12px;overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none">
+      <div class="suggest-card" onclick="showScreen('detail')" style="min-width:140px">
+        <div class="suggest-img" style="background:#D1FAE5;display:flex;align-items:center;justify-content:center;font-size:30px">🔧</div>
+        <div class="suggest-body"><div class="suggest-name">Parafusadeira Makita</div><div class="suggest-price">R$ 35/dia</div></div>
+      </div>
+      <div class="suggest-card" onclick="showScreen('detail')" style="min-width:140px">
+        <div class="suggest-img" style="background:#FEF3C7;display:flex;align-items:center;justify-content:center;font-size:30px">🔨</div>
+        <div class="suggest-body"><div class="suggest-name">Furadeira de Impacto</div><div class="suggest-price">R$ 35/dia</div></div>
+      </div>
+      <div class="suggest-card" onclick="showScreen('detail')" style="min-width:140px">
+        <div class="suggest-img" style="background:#E0E7FF;display:flex;align-items:center;justify-content:center;font-size:30px">⚙️</div>
+        <div class="suggest-body"><div class="suggest-name">Kit Ferramentas + Caixa</div><div class="suggest-price">R$ 55/dia</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sticky CTA -->
+  <div class="sticky-cta">
+    <div>
+      <div class="sticky-price">R$ 45<span>/dia</span></div>
+      <div style="font-size:11px;color:var(--muted)">Total: R$ 148,50 (3 dias)</div>
+    </div>
+    <button class="btn btn-primary" onclick="showScreen('booking')">Reservar agora</button>
+  </div>
+</div>
+
+<!-- ════════════════ SCREEN: BOOKING ════════════════ -->
+<div id="screen-booking" class="screen">
+  <!-- Progress -->
+  <div class="progress-bar-wrap">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <button style="background:none;border:none;color:var(--navy);font-size:14px;font-weight:600;cursor:pointer" onclick="prevStep()">← Voltar</button>
+      <span style="font-size:13px;color:var(--muted);font-weight:500" id="stepLabel">Etapa 1 de 4</span>
+    </div>
+    <div class="progress-steps">
+      <div class="progress-fill" id="progressFill" style="width:0%"></div>
+      <div class="step-dot current" id="dot1">1</div>
+      <div class="step-dot" id="dot2">2</div>
+      <div class="step-dot" id="dot3">3</div>
+      <div class="step-dot" id="dot4">✓</div>
+    </div>
+    <div class="step-labels">
+      <span class="step-label current" id="lbl1">Datas</span>
+      <span class="step-label" id="lbl2">Resumo</span>
+      <span class="step-label" id="lbl3">Pagamento</span>
+      <span class="step-label" id="lbl4">Confirmação</span>
+    </div>
+  </div>
+
+  <!-- Step 1: Datas -->
+  <div class="booking-step active" id="bstep1">
+    <div style="font-size:18px;font-weight:700;color:var(--navy);margin-bottom:4px">Escolha as datas</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:20px">Furadeira Profissional Bosch 20V</div>
+    <!-- Calendário -->
+    <div style="background:#fff;border-radius:12px;padding:16px;border:1px solid var(--border);margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <button style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--navy)">‹</button>
+        <span style="font-weight:700;color:var(--navy)">Junho 2026</span>
+        <button style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--navy)">›</button>
+      </div>
+      <div class="cal-grid">
+        <div class="cal-day-name">D</div><div class="cal-day-name">S</div><div class="cal-day-name">T</div><div class="cal-day-name">Q</div><div class="cal-day-name">Q</div><div class="cal-day-name">S</div><div class="cal-day-name">S</div>
+        <div class="cal-day unavailable">1</div><div class="cal-day unavailable">2</div><div class="cal-day available">3</div><div class="cal-day available">4</div><div class="cal-day available">5</div><div class="cal-day available">6</div><div class="cal-day available">7</div>
+        <div class="cal-day available">8</div><div class="cal-day available">9</div><div class="cal-day selected">10</div><div class="cal-day range">11</div><div class="cal-day range">12</div><div class="cal-day selected">13</div><div class="cal-day available">14</div>
+        <div class="cal-day available">15</div><div class="cal-day available">16</div><div class="cal-day available">17</div><div class="cal-day available">18</div><div class="cal-day available">19</div><div class="cal-day available">20</div><div class="cal-day unavailable">21</div>
+        <div class="cal-day unavailable">22</div><div class="cal-day available">23</div><div class="cal-day available">24</div><div class="cal-day available">25</div><div class="cal-day available">26</div><div class="cal-day available">27</div><div class="cal-day available">28</div>
+        <div class="cal-day available">29</div><div class="cal-day available">30</div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:12px;font-size:12px;color:var(--muted)">
+        <span>🟢 Disponível</span><span style="background:#D4EDE1;padding:2px 6px;border-radius:4px;color:var(--green)">Período</span><span style="background:#E2E8F0;padding:2px 6px;border-radius:4px">Indisponível</span>
+      </div>
+    </div>
+    <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:20px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:13px;color:var(--muted)">Retirada</span><span style="font-size:14px;font-weight:700">10 de junho</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:13px;color:var(--muted)">Devolução</span><span style="font-size:14px;font-weight:700">13 de junho</span>
+      </div>
+      <div style="display:flex;justify-content:space-between">
+        <span style="font-size:13px;color:var(--muted)">Duração</span><span style="font-size:14px;font-weight:700">3 dias</span>
+      </div>
+    </div>
+    <button class="btn btn-primary w-full btn-lg" onclick="nextStep()">Continuar →</button>
+  </div>
+
+  <!-- Step 2: Resumo -->
+  <div class="booking-step" id="bstep2">
+    <div style="font-size:18px;font-weight:700;color:var(--navy);margin-bottom:20px">Resumo da reserva</div>
+    <div style="background:#fff;border-radius:12px;border:1px solid var(--border);overflow:hidden;margin-bottom:16px">
+      <div style="display:flex;gap:12px;padding:14px;border-bottom:1px solid var(--border)">
+        <div style="width:64px;height:64px;border-radius:8px;background:#C7D2FE;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🔧</div>
+        <div>
+          <div style="font-size:15px;font-weight:700">Furadeira Profissional Bosch 20V</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:4px">📅 10 a 13 de junho · 3 dias</div>
+          <div style="font-size:13px;color:var(--muted)">👤 Marcos Silva ✓</div>
+        </div>
+      </div>
+      <div style="padding:14px">
+        <div class="price-row"><span>3 dias × R$ 45,00</span><span>R$ 135,00</span></div>
+        <div class="price-row"><span>Taxa de serviço ShareO</span><span>R$ 13,50</span></div>
+        <div class="price-row total"><span>Total</span><span style="color:var(--green)">R$ 148,50</span></div>
+      </div>
+    </div>
+    <div style="background:#FEF3C7;border:1px solid #F59E0B;border-radius:10px;padding:14px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:700;color:#92400E;margin-bottom:6px">📋 Política de cancelamento</div>
+      <div style="font-size:13px;color:#78350F">Cancelamento gratuito até <strong>9 de junho às 23h59</strong>. Após esse prazo, taxa de 50%.</div>
+    </div>
+    <div style="background:#D4EDE1;border-radius:10px;padding:14px;margin-bottom:20px">
+      <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:4px">🔒 Pagamento protegido</div>
+      <div style="font-size:13px;color:var(--text)">O valor só é liberado ao proprietário após você confirmar a retirada do item.</div>
+    </div>
+    <button class="btn btn-primary w-full btn-lg" onclick="nextStep()">Ir para pagamento →</button>
+  </div>
+
+  <!-- Step 3: Pagamento -->
+  <div class="booking-step" id="bstep3">
+    <div style="font-size:18px;font-weight:700;color:var(--navy);margin-bottom:20px">Pagamento</div>
+    <div class="security-badge">
+      <span style="font-size:24px">🔒</span>
+      <div><div style="font-size:13px;font-weight:700;color:var(--green)">Conexão segura SSL</div><div style="font-size:12px;color:var(--muted)">Seus dados estão protegidos e criptografados</div></div>
+    </div>
+    <div style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:8px">Cartões aceitos</div>
+    <div class="card-brands">
+      <div class="card-brand">VISA</div>
+      <div class="card-brand">Mastercard</div>
+      <div class="card-brand">Elo</div>
+      <div class="card-brand">American Express</div>
+      <div class="card-brand">PIX</div>
+    </div>
+    <div class="form-group">
+      <label>Número do cartão</label>
+      <input class="form-input" placeholder="0000 0000 0000 0000" type="text">
+    </div>
+    <div class="form-group">
+      <label>Nome no cartão</label>
+      <input class="form-input" placeholder="NOME COMO NO CARTÃO" type="text">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Validade</label>
+        <input class="form-input" placeholder="MM/AA" type="text">
+      </div>
+      <div class="form-group">
+        <label>CVV</label>
+        <input class="form-input" placeholder="123" type="text">
+      </div>
+    </div>
+    <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:20px">
+      <div class="price-row total" style="margin-bottom:0;padding-top:0;border-top:none"><span>Total a pagar</span><span style="color:var(--green);font-size:20px">R$ 148,50</span></div>
+    </div>
+    <button class="btn btn-primary w-full btn-lg" onclick="nextStep()">Confirmar pagamento →</button>
+  </div>
+
+  <!-- Step 4: Sucesso -->
+  <div class="booking-step" id="bstep4">
+    <div class="success-screen">
+      <div class="success-icon">✅</div>
+      <h2 class="success-title">Reserva confirmada!</h2>
+      <p class="success-sub">Sua reserva foi confirmada com sucesso. Você receberá um e-mail de confirmação em <strong>lucas@email.com</strong>.</p>
+      <div class="summary-card">
+        <div class="summary-row"><span style="color:var(--muted)">Item</span><span style="font-weight:600">Furadeira Bosch 20V</span></div>
+        <div class="summary-row"><span style="color:var(--muted)">Proprietário</span><span>Marcos Silva</span></div>
+        <div class="summary-row"><span style="color:var(--muted)">Retirada</span><span>10 de junho</span></div>
+        <div class="summary-row"><span style="color:var(--muted)">Devolução</span><span>13 de junho</span></div>
+        <div class="summary-row"><span>Total pago</span><span style="color:var(--green)">R$ 148,50</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <button class="btn btn-primary w-full" onclick="showScreen('reservas')">Ver minha reserva</button>
+        <button class="btn btn-ghost w-full">💬 Enviar mensagem ao proprietário</button>
+        <button class="btn btn-ghost w-full" onclick="showScreen('home')">Explorar mais itens</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ SCREEN: DASHBOARD ════════════════ -->
+<div id="screen-dashboard" class="screen">
+  <!-- Header personalizado -->
+  <div class="dash-header">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div class="dash-welcome">Olá, Lucas! 👋</div>
+        <div class="dash-sub">Natal, RN · Bem-vindo de volta ao ShareO</div>
+        <div style="margin-top:8px"><span class="badge" style="background:rgba(255,255,255,.15);color:rgba(255,255,255,.85);font-size:11px">Seu perfil está 85% completo — <a style="color:var(--green-light);text-decoration:underline">adicione foto</a></span></div>
+      </div>
+      <div class="dash-avatar">L</div>
+    </div>
+  </div>
+
+  <!-- 4 Métricas -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-label">Reservas ativas</div>
+      <div class="metric-value">2</div>
+      <div class="metric-sub">2 aluguéis em andamento</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Meus itens</div>
+      <div class="metric-value">5</div>
+      <div class="metric-sub">5 anunciados ativamente</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Ganhos este mês</div>
+      <div class="metric-value green">R$ 320</div>
+      <div class="metric-sub">↑ 18% vs mês anterior</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Sua avaliação</div>
+      <div class="metric-value">4.8 ⭐</div>
+      <div class="metric-sub">Baseado em 12 avaliações</div>
+    </div>
+  </div>
+
+  <!-- Minhas Reservas -->
+  <div class="dash-section">
+    <div class="dash-section-header">
+      <div class="dash-section-title">Minhas Reservas</div>
+      <a style="font-size:13px;font-weight:600;color:var(--green);cursor:pointer" onclick="showScreen('reservas')">Ver histórico →</a>
+    </div>
+    <div class="booking-item">
+      <div class="booking-thumb" style="background:#C7D2FE;display:flex;align-items:center;justify-content:center;font-size:22px">🔧</div>
+      <div class="booking-info">
+        <div class="booking-name">Furadeira Bosch</div>
+        <div class="booking-date">15 – 17 Mai · Dr. João Silva</div>
+      </div>
+      <span class="badge badge-green">Em Uso</span>
+    </div>
+    <div class="booking-item">
+      <div class="booking-thumb" style="background:#A7F3D0;display:flex;align-items:center;justify-content:center;font-size:22px">🏕️</div>
+      <div class="booking-info">
+        <div class="booking-name">Barraca de Camping</div>
+        <div class="booking-date">20 – 23 Mai · Dra. Maria Souza</div>
+      </div>
+      <span class="badge badge-amber">Aguardando</span>
+    </div>
+  </div>
+
+  <!-- Sugestões para você -->
+  <div class="dash-section">
+    <div class="dash-section-header">
+      <div class="dash-section-title">Sugestões para Você</div>
+      <a style="font-size:13px;font-weight:600;color:var(--green);cursor:pointer" onclick="showScreen('listing')">Ver mais ↓</a>
+    </div>
+    <div class="suggest-scroll">
+      <div class="suggest-card" onclick="showScreen('detail')">
+        <div class="suggest-img" style="background:#A7F3D0;display:flex;align-items:center;justify-content:center;font-size:30px">🏄</div>
+        <div class="suggest-body"><div class="suggest-name">Stand Up Paddle</div><div class="suggest-price">R$ 50/dia</div></div>
+      </div>
+      <div class="suggest-card" onclick="showScreen('detail')">
+        <div class="suggest-img" style="background:#BAE6FD;display:flex;align-items:center;justify-content:center;font-size:30px">📷</div>
+        <div class="suggest-body"><div class="suggest-name">GoPro Hero 9</div><div class="suggest-price">R$ 60/dia</div></div>
+      </div>
+      <div class="suggest-card" onclick="showScreen('detail')">
+        <div class="suggest-img" style="background:#FDE68A;display:flex;align-items:center;justify-content:center;font-size:30px">🔊</div>
+        <div class="suggest-body"><div class="suggest-name">Caixa de Som JBL</div><div class="suggest-price">R$ 30/dia</div></div>
+      </div>
+      <div class="suggest-card" onclick="showScreen('detail')">
+        <div class="suggest-img" style="background:#DDD6FE;display:flex;align-items:center;justify-content:center;font-size:30px">💡</div>
+        <div class="suggest-body"><div class="suggest-name">Kit LED Festa</div><div class="suggest-price">R$ 60/dia</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Meus itens anunciados -->
+  <div class="dash-section">
+    <div class="dash-section-header">
+      <div class="dash-section-title">Meus Itens Anunciados</div>
+      <button class="btn btn-ghost btn-sm">Gerenciar Itens →</button>
+    </div>
+    <div class="my-item-row">
+      <div class="my-item-thumb" style="background:#C7D2FE;display:flex;align-items:center;justify-content:center;font-size:20px">🔧</div>
+      <div class="my-item-info"><div class="my-item-name">Furadeira Profissional Bosch</div><div class="my-item-stats">10 aluguéis · 142 visualizações</div></div>
+      <div class="my-item-price">R$ 45/dia</div>
+    </div>
+    <div class="my-item-row">
+      <div class="my-item-thumb" style="background:#C7D2FE;display:flex;align-items:center;justify-content:center;font-size:20px">📺</div>
+      <div class="my-item-info"><div class="my-item-name">Projetor Multimídia Epson</div><div class="my-item-stats">7 aluguéis · 89 visualizações</div></div>
+      <div class="my-item-price">R$ 80/dia</div>
+    </div>
+    <div class="my-item-row">
+      <div class="my-item-thumb" style="background:#D1FAE5;display:flex;align-items:center;justify-content:center;font-size:20px">🚲</div>
+      <div class="my-item-info"><div class="my-item-name">Bike Elétrica</div><div class="my-item-stats">8 aluguéis · 201 visualizações</div></div>
+      <div class="my-item-price">R$ 60/dia</div>
+    </div>
+  </div>
+
+  <!-- ShareO Sustentável -->
+  <div class="sustentavel-section">
+    <div class="sustentavel-header">
+      <div class="sustentavel-title">🌿 ShareO Sustentável</div>
+      <span class="badge" style="background:rgba(255,255,255,.2);color:#fff">Natal, RN</span>
+    </div>
+    <div class="sustentavel-sub">Iniciativas de economia circular na sua região</div>
+    <div class="sustentavel-map">
+      <span style="font-size:24px">🗺️</span>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:#fff">Natal · RN</div>
+        <div class="map-placeholder">7 iniciativas ativas na sua região</div>
+      </div>
+    </div>
+    <div class="sustentavel-cards">
+      <div class="sustent-card">
+        <div class="sustent-card-icon">👕</div>
+        <div class="sustent-card-title">Troca Circular</div>
+        <div class="sustent-card-desc">Troque roupas que não usa mais com vizinhos da sua região.</div>
+        <button class="sustent-card-btn">♻️ Ver evento</button>
+      </div>
+      <div class="sustent-card">
+        <div class="sustent-card-icon">🔧</div>
+        <div class="sustent-card-title">Eco Centro</div>
+        <div class="sustent-card-desc">Doe ou repare equipamentos. Evite o descarte desnecessário.</div>
+        <button class="sustent-card-btn">♻️ Ver espaço</button>
+      </div>
+      <div class="sustent-card">
+        <div class="sustent-card-icon">♻️</div>
+        <div class="sustent-card-title">Recicla Natal</div>
+        <div class="sustent-card-desc">Descubra pontos de coleta seletiva perto de você.</div>
+        <button class="sustent-card-btn">♻️ Ver mais</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CO2 Bar -->
+  <div class="co2-bar">
+    <div>
+      <div class="co2-num">759 kg CO<sup>2</sup></div>
+      <div class="co2-label">economizados através de aluguel e reuso em Natal</div>
+    </div>
+    <span style="font-size:28px">🌍</span>
+  </div>
+</div>
+
+<!-- ════════════════ SCREEN: RESERVAS ════════════════ -->
+<div id="screen-reservas" class="screen">
+  <div style="padding:20px 16px">
+    <h1 style="font-size:22px;font-weight:800;color:var(--navy);margin-bottom:16px">Minhas Reservas</h1>
+    <!-- Tabs -->
+    <div style="display:flex;gap:0;background:var(--bg);border-radius:10px;padding:4px;margin-bottom:20px">
+      <button style="flex:1;padding:10px;border-radius:8px;border:none;font-family:inherit;font-size:14px;font-weight:700;background:var(--green);color:#fff;cursor:pointer">Como locatário</button>
+      <button style="flex:1;padding:10px;border-radius:8px;border:none;font-family:inherit;font-size:14px;font-weight:600;background:transparent;color:var(--muted);cursor:pointer">Como locador</button>
+    </div>
+    <!-- Cards -->
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.05)">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+          <div style="width:56px;height:56px;border-radius:10px;background:#C7D2FE;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">🔧</div>
+          <div style="flex:1">
+            <div style="font-size:15px;font-weight:700">Furadeira Profissional Bosch</div>
+            <div style="font-size:13px;color:var(--muted)">Dr. João Silva · 15–17 Mai</div>
+            <div style="font-size:13px;color:var(--muted)">Total: R$ 148,50</div>
+          </div>
+          <span class="badge badge-green">Em Uso</span>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" style="flex:1">💬 Chat</button>
+          <button class="btn btn-primary btn-sm" style="flex:1">Ver detalhes</button>
+        </div>
+      </div>
+      <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.05)">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+          <div style="width:56px;height:56px;border-radius:10px;background:#A7F3D0;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">🏕️</div>
+          <div style="flex:1">
+            <div style="font-size:15px;font-weight:700">Barraca de Camping</div>
+            <div style="font-size:13px;color:var(--muted)">Dra. Maria Souza · 20–23 Mai</div>
+            <div style="font-size:13px;color:var(--muted)">Total: R$ 185,00</div>
+          </div>
+          <span class="badge badge-amber">Aguardando</span>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" style="flex:1">💬 Chat</button>
+          <button class="btn btn-primary btn-sm" style="flex:1">Ver detalhes</button>
+        </div>
+      </div>
+      <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:16px;opacity:.7">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:56px;height:56px;border-radius:10px;background:#FDE68A;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">🔊</div>
+          <div style="flex:1">
+            <div style="font-size:15px;font-weight:700">Caixa de Som JBL</div>
+            <div style="font-size:13px;color:var(--muted)">Dr. Pedro Lima · 08–10 Mai</div>
+            <div style="font-size:13px;color:var(--muted)">Total: R$ 30,00</div>
+          </div>
+          <span class="badge badge-gray">Concluída</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM SHEET: FILTROS -->
+<div class="overlay" id="overlay" onclick="closeSheet()"></div>
+<div class="bottom-sheet" id="filterSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">Filtrar itens</div>
+  <div class="filter-group">
+    <label>Categoria</label>
+    <div class="filter-options">
+      <div class="filter-option active" onclick="this.classList.toggle('active')">Todos</div>
+      <div class="filter-option" onclick="this.classList.toggle('active')">Ferramentas</div>
+      <div class="filter-option" onclick="this.classList.toggle('active')">Festas</div>
+      <div class="filter-option" onclick="this.classList.toggle('active')">Eletrônicos</div>
+      <div class="filter-option" onclick="this.classList.toggle('active')">Esportes</div>
+      <div class="filter-option" onclick="this.classList.toggle('active')">Casa</div>
+    </div>
+  </div>
+  <div class="filter-group">
+    <label>Preço máximo por dia</label>
+    <div class="range-val" id="rangeVal">R$ 100</div>
+    <input type="range" min="10" max="500" value="100" oninput="document.getElementById('rangeVal').textContent='R$ '+this.value">
+  </div>
+  <div class="filter-group">
+    <label>Distância máxima</label>
+    <div class="filter-options">
+      <div class="filter-option active" onclick="setDistFilter(this)">1 km</div>
+      <div class="filter-option" onclick="setDistFilter(this)">5 km</div>
+      <div class="filter-option" onclick="setDistFilter(this)">10 km</div>
+      <div class="filter-option" onclick="setDistFilter(this)">+ 10 km</div>
+    </div>
+  </div>
+  <div class="filter-group">
+    <label>Avaliação mínima</label>
+    <div class="filter-options">
+      <div class="filter-option" onclick="setRatingFilter(this)">⭐ 3+</div>
+      <div class="filter-option active" onclick="setRatingFilter(this)">⭐ 4+</div>
+      <div class="filter-option" onclick="setRatingFilter(this)">⭐ 5</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:12px;margin-top:8px">
+    <button class="btn btn-ghost" style="flex:1" onclick="closeSheet()">Limpar</button>
+    <button class="btn btn-primary" style="flex:1" onclick="closeSheet()">Aplicar filtros</button>
+  </div>
+</div>
+
+<script>
+// ── NAVIGATION ──
+function showScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  window.scrollTo(0,0);
+  // Update bottom nav
+  const map={home:0,listing:1,dashboard:4,reservas:3};
+  if(map[name]!==undefined){
+    document.querySelectorAll('.bottom-nav-item').forEach((b,i)=>{
+      b.classList.toggle('active',i===map[name]);
+    });
+  }
+}
+function setActiveNav(el){
+  document.querySelectorAll('.bottom-nav-item').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── BOOKING FLOW ──
+let currentStep=1;
+const totalSteps=4;
+function nextStep(){
+  if(currentStep<totalSteps){
+    document.getElementById('bstep'+currentStep).classList.remove('active');
+    currentStep++;
+    document.getElementById('bstep'+currentStep).classList.add('active');
+    updateProgress();
+  }
+}
+function prevStep(){
+  if(currentStep>1){
+    document.getElementById('bstep'+currentStep).classList.remove('active');
+    currentStep--;
+    document.getElementById('bstep'+currentStep).classList.add('active');
+    updateProgress();
+  } else {
+    showScreen('detail');
+  }
+}
+function updateProgress(){
+  const pct=[(0),(33),(66),(100)][currentStep-1];
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('stepLabel').textContent='Etapa '+currentStep+' de '+totalSteps;
+  const labels=['Datas','Resumo','Pagamento','Confirmação'];
+  for(let i=1;i<=4;i++){
+    const dot=document.getElementById('dot'+i);
+    const lbl=document.getElementById('lbl'+i);
+    dot.classList.remove('done','current');
+    lbl.classList.remove('current');
+    if(i<currentStep){dot.classList.add('done');dot.textContent='✓'}
+    else if(i===currentStep){dot.classList.add('current');dot.textContent=i}
+    else{dot.textContent=i}
+    if(i===currentStep)lbl.classList.add('current');
+  }
+}
+
+// ── PRICE CALC ──
+let numDays=3;
+function changeNum(d){
+  numDays=Math.max(1,Math.min(30,numDays+d));
+  document.getElementById('numDays').textContent=numDays;
+}
+function setTab(t){
+  document.getElementById('tabDay').className='btn btn-ghost btn-sm';
+  document.getElementById('tabWeek').className='btn btn-ghost btn-sm';
+  document.getElementById('tabMonth').className='btn btn-ghost btn-sm';
+  document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).className='btn btn-primary btn-sm';
+  document.getElementById('numDaysWrap').style.display=t==='day'?'block':'none';
+}
+
+// ── BOTTOM SHEET ──
+function openSheet(){
+  document.getElementById('filterSheet').classList.add('open');
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeSheet(){
+  document.getElementById('filterSheet').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+function setDistFilter(el){
+  el.closest('.filter-options').querySelectorAll('.filter-option').forEach(o=>o.classList.remove('active'));
+  el.classList.add('active');
+}
+function setRatingFilter(el){
+  el.closest('.filter-options').querySelectorAll('.filter-option').forEach(o=>o.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── FILTRO DISTÂNCIA NO MAPA ──
+// Centro de Natal, RN
+const NATAL_CENTER = {lat:-5.7945, lng:-35.211};
+
+function haversineKm(lat1,lng1,lat2,lng2){
+  const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLng=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+const mapInstances={};
+const mapMarkers={};
+
+function filterMapDist(km, mapId){
+  const maxKm=parseFloat(km);
+  const m=mapInstances[mapId];
+  if(!m) return;
+  (mapMarkers[mapId]||[]).forEach(mk=>mk.remove());
+  mapMarkers[mapId]=[];
+  let count=0;
+  PINS.forEach(p=>{
+    const dist=haversineKm(NATAL_CENTER.lat,NATAL_CENTER.lng,p.lat,p.lng);
+    if(dist<=maxKm){
+      const mk=L.marker([p.lat,p.lng],{icon:pinIcon}).addTo(m)
+        .bindPopup(`<div style="font-family:Montserrat,sans-serif"><strong style="font-size:13px;color:#003366">${p.title}</strong><br><span style="color:#007B3C;font-weight:700;font-size:13px">${p.price}</span><br><span style="font-size:11px;color:#64748B">${dist.toFixed(1)} km de você</span></div>`,{maxWidth:180});
+      mapMarkers[mapId].push(mk);
+      count++;
+    }
+  });
+  // Atualiza contador do mapa correto
+  const counterId = mapId==='map-listing' ? 'mapCountListing' : 'mapCount';
+  const el=document.getElementById(counterId);
+  if(el) el.textContent=count+' ite'+(count===1?'m':'ns')+' no mapa';
+}
+
+// ── FILTER CHIPS (exclusivo: um ativo por vez) ──
+function toggleChip(el){
+  el.closest('.filter-bar').querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── HERO SEARCH ──
+document.getElementById('heroSearch').addEventListener('keydown',function(e){
+  if(e.key==='Enter')showScreen('listing');
+});
+
+// Set today's date as min for date input
+const today=new Date().toISOString().split('T')[0];
+const dateInput=document.getElementById('startDate');
+if(dateInput){dateInput.min=today;dateInput.value=today;}
+
+// ── LEAFLET MAPS ──
+const NATAL = [-5.7945, -35.211];
+const PINS = [
+  {lat:-5.8700,lng:-35.1939,title:'Furadeira Bosch 20V',price:'R$ 45/dia'},
+  {lat:-5.8350,lng:-35.2050,title:'Caixa de Som JBL',price:'R$ 30/dia'},
+  {lat:-5.8950,lng:-35.2100,title:'Stand Up Paddle',price:'R$ 50/dia'},
+  {lat:-5.8100,lng:-35.2150,title:'Projetor Epson HD',price:'R$ 80/dia'},
+  {lat:-5.8550,lng:-35.1800,title:'Kit LED Festas',price:'R$ 60/dia'},
+  {lat:-5.7980,lng:-35.2000,title:'GoPro Hero 9',price:'R$ 60/dia'},
+  {lat:-5.8750,lng:-35.2300,title:'Bike Elétrica',price:'R$ 60/dia'},
+];
+
+const pinIcon = L.divIcon({
+  className:'',
+  html:`<div style="width:28px;height:28px;border-radius:50%;background:#007B3C;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.35);cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>`,
+  iconSize:[28,28],iconAnchor:[14,28],popupAnchor:[0,-30]
+});
+
+let mapsInitialized={home:false,listing:false};
+
+function initMap(id,zoom){
+  const m=L.map(id,{zoomControl:true,attributionControl:true}).setView(NATAL,zoom);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © Mapbox',
+    maxZoom:18
+  }).addTo(m);
+  mapInstances[id]=m;
+  mapMarkers[id]=[];
+  PINS.forEach(p=>{
+    const dist=haversineKm(NATAL_CENTER.lat,NATAL_CENTER.lng,p.lat,p.lng);
+    const mk=L.marker([p.lat,p.lng],{icon:pinIcon}).addTo(m)
+      .bindPopup(`<div style="font-family:Montserrat,sans-serif"><strong style="font-size:13px;color:#003366">${p.title}</strong><br><span style="color:#007B3C;font-weight:700;font-size:13px">${p.price}</span><br><span style="font-size:11px;color:#64748B">${dist.toFixed(1)} km de você</span></div>`,{maxWidth:180});
+    mapMarkers[id].push(mk);
+  });
+  return m;
+}
+
+// Inicializa mapas quando as telas ficam visíveis
+const origShow=showScreen;
+window.showScreen=function(name){
+  origShow(name);
+  if(name==='home'&&!mapsInitialized.home){
+    setTimeout(()=>{initMap('map-home',12);mapsInitialized.home=true;},100);
+  }
+  if(name==='listing'&&!mapsInitialized.listing){
+    setTimeout(()=>{initMap('map-listing',12);mapsInitialized.listing=true;},100);
+  }
+};
+
+// Inicializa mapa da home na carga inicial
+setTimeout(()=>{initMap('map-home',12);mapsInitialized.home=true;},200);
+</script>
+</body>
+</html>

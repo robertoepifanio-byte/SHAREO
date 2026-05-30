@@ -40,3 +40,10 @@ Thumbs.db
 # Vercel
 .vercel
 tsconfig.tsbuildinfo
+
+# Expo
+apps/mobile/.expo/
+
+# Arquivos temporários Word
+Documentos/giv_temp.docx
+Documentos/giv_unpacked/
