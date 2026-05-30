@@ -135,7 +135,7 @@ a:focus:not(:focus-visible) { outline: none; }
 
 /* ─── BOTTOM NAV ─────────────────────────────────────────── */
 .bottom-nav {
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
   height: 64px; background: var(--surface);
   border-top: 1px solid var(--border);
   display: flex;
@@ -949,6 +949,231 @@ a:focus:not(:focus-visible) { outline: none; }
   transition: opacity .15s; flex-shrink: 0;
 }
 .chat-send-btn:hover { opacity: .88; }
+
+/* ─── DEVOLUÇÃO — Fase 6 ────────────────────────────────────── */
+.devol-wrap { max-width: 560px; margin: 0 auto; padding: 24px 16px 40px; }
+.devol-step { display: none; }
+.devol-step.active { display: block; }
+
+/* Step indicator */
+.step-indicator {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0; margin-bottom: 28px;
+}
+.step-dot {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; flex-shrink: 0;
+  background: var(--border); color: var(--text2);
+  transition: background .2s, color .2s;
+}
+.step-dot.done  { background: var(--green); color: #fff; }
+.step-dot.active { background: var(--orange-cta); color: #fff; }
+.step-line {
+  flex: 1; height: 2px; background: var(--border); max-width: 40px;
+  transition: background .2s;
+}
+.step-line.done { background: var(--green); }
+
+/* Título da etapa */
+.devol-title { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+.devol-sub { font-size: 14px; color: var(--text2); margin-bottom: 24px; line-height: 1.6; }
+
+/* Card de contexto do item */
+.devol-item-card {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--r-card); padding: 12px 14px; margin-bottom: 24px;
+}
+.devol-item-thumb {
+  width: 48px; height: 48px; border-radius: 6px; overflow: hidden;
+  background: linear-gradient(135deg, #e0e7ef 0%, #c8d6e5 100%);
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+}
+.devol-item-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.devol-item-info { flex: 1; min-width: 0; }
+.devol-item-name { font-size: 13px; font-weight: 600; }
+.devol-item-meta { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+/* Checklist */
+.devol-checklist { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+.devol-check-item {
+  display: flex; align-items: flex-start; gap: 12px;
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--r-card); padding: 14px;
+  cursor: pointer; transition: border-color .15s;
+}
+.devol-check-item:has(input:checked) { border-color: var(--green); background: #f0fdf4; }
+.devol-check-item input[type=checkbox] {
+  width: 20px; height: 20px; accent-color: var(--green);
+  cursor: pointer; flex-shrink: 0; margin-top: 1px;
+}
+.devol-check-label { font-size: 14px; font-weight: 500; line-height: 1.4; }
+.devol-check-desc { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+/* Área de foto */
+.devol-photo-area {
+  border: 2px dashed var(--border); border-radius: var(--r-card);
+  padding: 32px 16px; text-align: center; cursor: pointer;
+  transition: border-color .15s, background .15s; margin-bottom: 16px;
+}
+.devol-photo-area:hover { border-color: var(--orange-cta); background: #fff7f0; }
+.devol-photo-area__icon { font-size: 36px; margin-bottom: 8px; }
+.devol-photo-area__text { font-size: 14px; font-weight: 600; color: var(--text); }
+.devol-photo-area__sub  { font-size: 12px; color: var(--text2); margin-top: 4px; }
+.devol-photo-preview {
+  display: none; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;
+}
+.devol-photo-preview.show { display: flex; }
+.devol-photo-thumb {
+  width: 72px; height: 72px; border-radius: 6px; object-fit: cover;
+  background: linear-gradient(135deg, #e0e7ef, #c8d6e5);
+  display: flex; align-items: center; justify-content: center; font-size: 24px;
+  border: 1px solid var(--border);
+}
+
+/* Estado aguardando proprietário */
+.devol-wait { text-align: center; padding: 16px 0; }
+.devol-wait__icon { font-size: 52px; margin-bottom: 12px; }
+.devol-wait__title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+.devol-wait__desc { font-size: 14px; color: var(--text2); line-height: 1.6; max-width: 360px; margin: 0 auto 20px; }
+.devol-wait__code {
+  background: var(--bg); border: 1px solid var(--border); border-radius: var(--r-card);
+  padding: 12px 20px; font-size: 13px; font-weight: 600;
+  display: inline-block; margin-bottom: 20px; color: var(--navy);
+  letter-spacing: 0.05em;
+}
+
+/* Seleção de estado pelo proprietário */
+.devol-state-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+.devol-state-btn {
+  display: flex; align-items: center; gap: 14px;
+  border: 2px solid var(--border); border-radius: var(--r-card);
+  padding: 16px 14px; cursor: pointer; background: var(--surface);
+  text-align: left; font-family: inherit; transition: border-color .15s, box-shadow .15s;
+  width: 100%;
+}
+.devol-state-btn:hover { border-color: var(--orange-cta); box-shadow: var(--shadow); }
+.devol-state-btn.selected-ok     { border-color: var(--green); background: #f0fdf4; }
+.devol-state-btn.selected-wear   { border-color: #f59e0b; background: #fffbeb; }
+.devol-state-btn.selected-damage { border-color: var(--error); background: #fef2f2; }
+.devol-state-icon { font-size: 28px; flex-shrink: 0; }
+.devol-state-label { font-size: 14px; font-weight: 700; }
+.devol-state-desc  { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+/* Formulário de problema */
+.problem-type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+.problem-type-btn {
+  border: 1.5px solid var(--border); border-radius: var(--r-card);
+  padding: 10px 8px; text-align: center; cursor: pointer;
+  background: var(--surface); font-size: 12px; font-weight: 600;
+  font-family: inherit; transition: border-color .15s;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.problem-type-btn:hover { border-color: var(--orange-cta); }
+.problem-type-btn.active { border-color: var(--error); background: #fef2f2; color: var(--error); }
+.problem-type-icon { font-size: 22px; }
+
+/* Tela de conclusão */
+.devol-done { text-align: center; padding: 24px 0; }
+.devol-done__icon { font-size: 56px; margin-bottom: 16px; }
+.devol-done__title { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+.devol-done__desc { font-size: 14px; color: var(--text2); line-height: 1.6; max-width: 340px; margin: 0 auto 24px; }
+.devol-done__deposit {
+  background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--r-card);
+  padding: 14px 20px; margin-bottom: 24px; font-size: 14px; font-weight: 600;
+  color: #15803d;
+}
+
+/* ─── FAB FILTROS (mobile) ─────────────────────────────────── */
+.filter-fab {
+  display: flex; position: fixed; bottom: 80px; right: 16px; z-index: 90;
+  align-items: center; gap: 8px;
+  background: var(--navy); color: #fff;
+  border: none; border-radius: 24px; padding: 10px 18px;
+  font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+  box-shadow: 0 4px 12px rgba(13,27,42,.35); transition: opacity .15s, transform .15s;
+}
+.filter-fab:hover { opacity: .9; transform: translateY(-1px); }
+.filter-fab__count {
+  background: var(--orange-cta); color: #fff;
+  min-width: 20px; height: 20px; border-radius: 10px; padding: 0 5px;
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+/* Esconder FAB quando não está na tela de busca e em desktop */
+.filter-fab { display: none; }
+#screen-search.active ~ .filter-fab,
+#screen-search.active + * .filter-fab { display: flex; }
+@media (min-width: 1024px) { .filter-fab { display: none !important; } }
+
+/* ─── BOTTOM SHEET FILTROS ─────────────────────────────────── */
+.filter-sheet-overlay {
+  display: none; position: fixed; inset: 0; z-index: 400;
+  background: rgba(0,0,0,.45);
+}
+.filter-sheet-overlay.open { display: block; }
+.filter-sheet {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: var(--surface); border-radius: 16px 16px 0 0;
+  max-height: 85vh; overflow-y: auto;
+  transform: translateY(100%);
+  transition: transform .28s cubic-bezier(.4,0,.2,1);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.filter-sheet-overlay.open .filter-sheet { transform: translateY(0); }
+.filter-sheet__handle {
+  width: 40px; height: 4px; background: var(--border);
+  border-radius: 2px; margin: 12px auto 0;
+}
+.filter-sheet__header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+}
+.filter-sheet__title { font-size: 16px; font-weight: 700; }
+.filter-sheet__close {
+  width: 44px; height: 44px; border: none; background: none;
+  font-size: 22px; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; color: var(--text2);
+  border-radius: 8px; font-family: inherit;
+}
+.filter-sheet__close:hover { background: var(--bg); }
+.filter-sheet__body { padding: 16px 20px; }
+.filter-sheet__footer {
+  padding: 12px 20px 16px; border-top: 1px solid var(--border);
+  display: flex; gap: 10px; position: sticky; bottom: 0;
+  background: var(--surface);
+}
+
+/* ─── ESTADO "AGUARDANDO" RESERVA ─────────────────────────── */
+.booking-wait { display: none; text-align: center; padding: 8px 0; }
+.booking-wait.visible { display: block; }
+.booking-wait__icon { font-size: 44px; margin-bottom: 10px; }
+.booking-wait__title { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.booking-wait__desc { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 14px; }
+.booking-wait__timer {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--r-card); padding: 10px 16px;
+  font-size: 13px; font-weight: 600; color: var(--navy); margin-bottom: 14px;
+}
+.booking-wait__alt { font-size: 12px; color: var(--text2); margin-bottom: 8px; }
+.booking-form-area { transition: opacity .2s; }
+.booking-form-area.hidden { display: none; }
+
+/* ─── CHIP ATIVO COM BOTÃO X ───────────────────────────────── */
+.chip { display: inline-flex; align-items: center; }
+.chip-remove {
+  display: none; margin-left: 6px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--orange-cta); color: #fff;
+  font-size: 11px; font-weight: 700; line-height: 1;
+  align-items: center; justify-content: center;
+  border: none; cursor: pointer; font-family: inherit; flex-shrink: 0;
+  padding: 0;
+}
+.chip.active .chip-remove { display: inline-flex; }
+/* Bottom-nav acima de qualquer sticky-cta futuro */
 </style>
 </head>
 <body>
@@ -959,7 +1184,7 @@ a:focus:not(:focus-visible) { outline: none; }
 <!-- ═══ HEADER ═══════════════════════════════════════════════ -->
 <header class="header" role="banner">
   <div class="header__inner">
-    <div onclick="go('home')" role="link" tabindex="0" aria-label="Shareo — página inicial" style="cursor:pointer;flex-shrink:0;display:flex;align-items:center;"><img src="icones/Shareo%20logo%201.jpeg" alt="Shareo" style="height:52px;width:160px;object-fit:cover;object-position:center;border-radius:4px;" /></div>
+    <div onclick="go('home')" role="link" tabindex="0" aria-label="Shareo — página inicial" style="cursor:pointer;flex-shrink:0;display:flex;align-items:center;"><img src="icones/shareo-logo-v4-auth.webp" alt="Shareo" style="height:52px;width:160px;object-fit:cover;object-position:center;border-radius:4px;" /></div>
     <nav class="desktop-nav" aria-label="Navegação principal">
       <button class="dnav-item active" onclick="go('home')" aria-current="page">Início</button>
       <button class="dnav-item" onclick="go('search')">Explorar</button>
@@ -1005,35 +1230,35 @@ a:focus:not(:focus-visible) { outline: none; }
       <div class="cats-wrap">
         <div class="cats" role="list" aria-label="Categorias de itens">
           <div class="cat-chip active" role="listitem button" tabindex="0" onclick="go('search')" aria-label="Ferramentas">
-            <div class="cat-chip__icon"><img src="icones/Ferramentas.png" alt="" aria-hidden="true"></div>
+            <div class="cat-chip__icon"><img src="icones/ferramentas-96.webp" alt="" aria-hidden="true"></div>
             <div class="cat-chip__label">Ferramentas</div>
           </div>
           <div class="cat-chip" role="listitem button" tabindex="0" onclick="go('search')" aria-label="Construção Civil">
-            <div class="cat-chip__icon"><img src="icones/Constru%C3%A7%C3%A3o.png" alt="" aria-hidden="true"></div>
+            <div class="cat-chip__icon"><img src="icones/construcao-96.webp" alt="" aria-hidden="true"></div>
             <div class="cat-chip__label">Construção</div>
           </div>
           <div class="cat-chip" role="listitem button" tabindex="0" onclick="go('search')" aria-label="Moda">
-            <div class="cat-chip__icon"><img src="icones/Moda.png" alt="" aria-hidden="true"></div>
+            <div class="cat-chip__icon"><img src="icones/moda-96.webp" alt="" aria-hidden="true"></div>
             <div class="cat-chip__label">Moda</div>
           </div>
           <div class="cat-chip" role="listitem button" tabindex="0" onclick="go('search')" aria-label="Eletrônicos">
-            <div class="cat-chip__icon"><img src="icones/Eletronicos.png" alt="" aria-hidden="true"></div>
+            <div class="cat-chip__icon"><img src="icones/eletronicos-96.webp" alt="" aria-hidden="true"></div>
             <div class="cat-chip__label">Eletrônicos</div>
           </div>
           <div class="cat-chip" role="listitem button" tabindex="0" onclick="go('search')" aria-label="Casa">
-            <div class="cat-chip__icon"><img src="icones/Casa.png" alt="" aria-hidden="true"></div>
+            <div class="cat-chip__icon"><img src="icones/casa-jardim-96.webp" alt="" aria-hidden="true"></div>
             <div class="cat-chip__label">Casa</div>
           </div>
           <div class="cat-chip" role="listitem button" tabindex="0" onclick="go('search')" aria-label="Esporte e Lazer">
-            <div class="cat-chip__icon"><img src="icones/Esporte.png" alt="" aria-hidden="true"></div>
+            <div class="cat-chip__icon"><img src="icones/esportes-96.webp" alt="" aria-hidden="true"></div>
             <div class="cat-chip__label">Esporte</div>
           </div>
           <div class="cat-chip" role="listitem button" tabindex="0" onclick="go('search')" aria-label="Jardim">
-            <div class="cat-chip__icon"><img src="icones/jardim.png" alt="" aria-hidden="true"></div>
+            <div class="cat-chip__icon"><img src="icones/casa-jardim-96.webp" alt="" aria-hidden="true"></div>
             <div class="cat-chip__label">Jardim</div>
           </div>
           <div class="cat-chip" role="listitem button" tabindex="0" onclick="go('search')" aria-label="Festas e Eventos">
-            <div class="cat-chip__icon"><img src="icones/Festas.png" alt="" aria-hidden="true"></div>
+            <div class="cat-chip__icon"><img src="icones/festas-96.webp" alt="" aria-hidden="true"></div>
             <div class="cat-chip__label">Festas</div>
           </div>
         </div>
@@ -1170,12 +1395,12 @@ a:focus:not(:focus-visible) { outline: none; }
       <button class="filter-btn" aria-label="Raio de busca: 5 km">📍 Raio: 5 km</button>
     </div>
     <div class="chip-row" role="list" aria-label="Filtrar por categoria">
-      <div class="chip active" role="listitem button" tabindex="0">Todos</div>
-      <div class="chip" role="listitem button" tabindex="0">🔧 Ferramentas</div>
-      <div class="chip" role="listitem button" tabindex="0">💻 Eletrônicos</div>
-      <div class="chip" role="listitem button" tabindex="0">🏗️ Construção</div>
-      <div class="chip" role="listitem button" tabindex="0">⚽ Esporte</div>
-      <div class="chip" role="listitem button" tabindex="0">🏠 Casa</div>
+      <div class="chip active" role="listitem button" tabindex="0" data-filter="Todos">Todos</div>
+      <div class="chip" role="listitem button" tabindex="0" data-filter="Ferramentas">🔧 Ferramentas<button class="chip-remove" aria-label="Remover filtro Ferramentas" onclick="removeChip(event,this)">×</button></div>
+      <div class="chip" role="listitem button" tabindex="0" data-filter="Eletrônicos">💻 Eletrônicos<button class="chip-remove" aria-label="Remover filtro Eletrônicos" onclick="removeChip(event,this)">×</button></div>
+      <div class="chip" role="listitem button" tabindex="0" data-filter="Construção">🏗️ Construção<button class="chip-remove" aria-label="Remover filtro Construção" onclick="removeChip(event,this)">×</button></div>
+      <div class="chip" role="listitem button" tabindex="0" data-filter="Esporte">⚽ Esporte<button class="chip-remove" aria-label="Remover filtro Esporte" onclick="removeChip(event,this)">×</button></div>
+      <div class="chip" role="listitem button" tabindex="0" data-filter="Casa">🏠 Casa<button class="chip-remove" aria-label="Remover filtro Casa" onclick="removeChip(event,this)">×</button></div>
     </div>
     <div class="search-layout">
       <aside class="filter-sidebar" aria-label="Painel de filtros">
@@ -1262,6 +1487,64 @@ a:focus:not(:focus-visible) { outline: none; }
   </div>
 </div>
 
+<!-- FAB Filtros — visível apenas no mobile quando tela de busca está ativa -->
+<button class="filter-fab" id="filter-fab" onclick="openFilterSheet()" aria-label="Abrir painel de filtros" aria-expanded="false" aria-haspopup="dialog" style="display:none">
+  ⚙️ Filtros
+  <span class="filter-fab__count" id="filter-fab-count" aria-label="1 filtro ativo">1</span>
+</button>
+
+<!-- Bottom Sheet de Filtros (mobile) -->
+<div class="filter-sheet-overlay" id="filter-sheet-overlay" role="dialog" aria-modal="true" aria-label="Painel de filtros" onclick="handleOverlayClick(event)">
+  <div class="filter-sheet">
+    <div class="filter-sheet__handle" aria-hidden="true"></div>
+    <div class="filter-sheet__header">
+      <span class="filter-sheet__title">Filtros</span>
+      <button class="filter-sheet__close" onclick="closeFilterSheet()" aria-label="Fechar filtros">×</button>
+    </div>
+    <div class="filter-sheet__body">
+      <div class="filter-group">
+        <span class="filter-label" id="fs-cat">Categoria</span>
+        <div role="group" aria-labelledby="fs-cat">
+          <label class="filter-option"><input type="checkbox" checked> Ferramentas</label>
+          <label class="filter-option"><input type="checkbox"> Eletrônicos</label>
+          <label class="filter-option"><input type="checkbox"> Construção</label>
+          <label class="filter-option"><input type="checkbox"> Esporte</label>
+          <label class="filter-option"><input type="checkbox"> Casa &amp; Jardim</label>
+        </div>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label" id="fs-price">Preço/dia</span>
+        <div class="range-slider" role="group" aria-labelledby="fs-price">
+          <span>R$0</span>
+          <input type="range" min="0" max="500" value="200" aria-label="Preço máximo por dia">
+          <span>R$200</span>
+        </div>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label" id="fs-dist">Distância</span>
+        <div role="group" aria-labelledby="fs-dist">
+          <label class="filter-option"><input type="radio" name="fs-dist" checked> Até 2 km</label>
+          <label class="filter-option"><input type="radio" name="fs-dist"> Até 5 km</label>
+          <label class="filter-option"><input type="radio" name="fs-dist"> Até 10 km</label>
+          <label class="filter-option"><input type="radio" name="fs-dist"> Qualquer</label>
+        </div>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label" id="fs-rating">Avaliação</span>
+        <div role="group" aria-labelledby="fs-rating">
+          <label class="filter-option"><input type="checkbox"> ★★★★★ 5 estrelas</label>
+          <label class="filter-option"><input type="checkbox" checked> ★★★★+ 4+</label>
+          <label class="filter-option"><input type="checkbox"> ★★★+ 3+</label>
+        </div>
+      </div>
+    </div>
+    <div class="filter-sheet__footer">
+      <button class="btn-outline btn-outline--full" onclick="clearSheetFilters()">Limpar</button>
+      <button class="btn-primary btn-primary--full" onclick="applySheetFilters()">Aplicar filtros</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ DETALHE DO ITEM ══════════════════════════════════════ -->
 <div id="screen-item-detail" class="screen">
   <div class="back-bar">
@@ -1340,8 +1623,20 @@ a:focus:not(:focus-visible) { outline: none; }
         <div class="price-summary" id="price-summary" aria-live="polite">
           <div class="price-summary-row muted"><span>Selecione as datas acima</span><span>—</span></div>
         </div>
-        <button class="btn-primary btn-primary--lg" style="margin-bottom:10px" onclick="toast('Solicitação enviada ao proprietário! ✅','success')">💬 Solicitar locação</button>
-        <button class="btn-outline btn-outline--full" onclick="toast('Salvo nos favoritos ❤️')">🤍 Salvar nos favoritos</button>
+        <!-- Formulário de reserva -->
+        <div class="booking-form-area" id="booking-form-area">
+          <button class="btn-primary btn-primary--lg" style="margin-bottom:10px" onclick="requestBooking()">💬 Solicitar locação</button>
+          <button class="btn-outline btn-outline--full" onclick="toast('Salvo nos favoritos ❤️')">🤍 Salvar nos favoritos</button>
+        </div>
+        <!-- Estado "Aguardando confirmação" -->
+        <div class="booking-wait" id="booking-wait" aria-live="polite">
+          <div class="booking-wait__icon" aria-hidden="true">⏳</div>
+          <div class="booking-wait__title">Solicitação enviada!</div>
+          <div class="booking-wait__desc">Sua solicitação foi enviada ao proprietário. Você receberá uma notificação assim que ele responder.</div>
+          <div class="booking-wait__timer" id="booking-timer" aria-live="polite">⏱ Aguardando confirmação: <strong id="booking-countdown">1h 59min</strong></div>
+          <div class="booking-wait__alt">Enquanto isso, que tal explorar alternativas?</div>
+          <button class="btn-outline btn-outline--full" onclick="go('search')" style="font-size:13px">🔍 Ver itens similares disponíveis</button>
+        </div>
         <div class="owner-mini" onclick="go('dashboard')" role="button" tabindex="0" aria-label="Ver perfil de João Silva">
           <div class="owner-av" aria-hidden="true">J</div>
           <div class="owner-info">
@@ -1362,7 +1657,7 @@ a:focus:not(:focus-visible) { outline: none; }
 <div id="screen-login" class="screen">
   <div class="auth-wrap">
     <div class="auth-card" role="main" aria-label="Formulário de login">
-      <div class="auth-logo"><img src="icones/ShareO%20v2%20fundo%20transparente.png" alt="Shareo" style="height:44px;width:auto;margin-bottom:8px;" /></div>
+      <div class="auth-logo"><img src="icones/shareo-logo-v4-auth.webp" alt="Shareo" style="height:44px;width:auto;margin-bottom:8px;" /></div>
       <h1 class="auth-title">Bem-vindo de volta</h1>
       <p class="auth-sub">Faça login para continuar</p>
       <button class="social-btn" aria-label="Continuar com Google">
@@ -1392,7 +1687,7 @@ a:focus:not(:focus-visible) { outline: none; }
 <div id="screen-signup" class="screen">
   <div class="auth-wrap">
     <div class="auth-card" style="max-width:480px" role="main" aria-label="Formulário de cadastro">
-      <div class="auth-logo"><img src="icones/ShareO%20v2%20fundo%20transparente.png" alt="Shareo" style="height:44px;width:auto;margin-bottom:8px;" /></div>
+      <div class="auth-logo"><img src="icones/shareo-logo-v4-auth.webp" alt="Shareo" style="height:44px;width:auto;margin-bottom:8px;" /></div>
       <h1 class="auth-title">Criar conta grátis</h1>
       <p class="auth-sub">Use Mais. Possua Menos.</p>
       <div class="type-tabs" role="tablist" aria-label="Tipo de conta">
@@ -1642,7 +1937,7 @@ a:focus:not(:focus-visible) { outline: none; }
               <div style="font-size:12px;color:var(--text2)">⭐ 5.0 · 18 avaliações · Devolução: 22/mai</div>
               <div class="my-item-actions">
                 <button class="my-item-btn" aria-label="Editar Câmera Sony A7 III">✏️ Editar</button>
-                <button class="my-item-btn" aria-label="Abrir chat com locatário">💬 Chat</button>
+                <button class="my-item-btn" onclick="go('devolucao')" aria-label="Confirmar devolução da Câmera Sony">📦 Devolução</button>
               </div>
             </div>
           </div>
@@ -1687,8 +1982,8 @@ a:focus:not(:focus-visible) { outline: none; }
                 <div style="font-size:12px;color:var(--text2);margin-top:2px">💰 R$ 450,00 · Comissão Shareo: R$ 45,00</div>
               </div>
               <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
-                <button class="my-item-btn">💬 Mensagem</button>
-                <button class="my-item-btn">📋 Contrato</button>
+                <button class="my-item-btn" onclick="go('chat')">💬 Mensagem</button>
+                <button class="my-item-btn" onclick="go('devolucao')">📦 Ver devolução</button>
               </div>
             </div>
           </div>
@@ -1699,6 +1994,313 @@ a:focus:not(:focus-visible) { outline: none; }
         </button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ═══ DEVOLUÇÃO — Fase 6 ══════════════════════════════════ -->
+<div id="screen-devolucao" class="screen">
+  <div class="back-bar">
+    <div class="container">
+      <button class="back-btn" onclick="go('dashboard')" aria-label="Voltar ao painel">← Voltar ao painel</button>
+    </div>
+  </div>
+
+  <div class="devol-wrap">
+
+    <!-- Step indicator -->
+    <div class="step-indicator" id="devol-steps" aria-label="Etapas da devolução">
+      <div class="step-dot active" id="sdot-1" aria-label="Etapa 1: Checklist">1</div>
+      <div class="step-line" id="sline-1"></div>
+      <div class="step-dot" id="sdot-2" aria-label="Etapa 2: Foto">2</div>
+      <div class="step-line" id="sline-2"></div>
+      <div class="step-dot" id="sdot-3" aria-label="Etapa 3: Aguardando">3</div>
+      <div class="step-line" id="sline-3"></div>
+      <div class="step-dot" id="sdot-4" aria-label="Etapa 4: Confirmação">4</div>
+    </div>
+
+    <!-- Card do item em devolução -->
+    <div class="devol-item-card" aria-label="Item em devolução">
+      <div class="devol-item-thumb">
+        <img src="imagens/furadeira de impacto Bosch.webp" alt="Furadeira de Impacto Bosch" onerror="this.style.display='none'">
+        <span aria-hidden="true">🔧</span>
+      </div>
+      <div class="devol-item-info">
+        <div class="devol-item-name">Furadeira de Impacto Bosch GSB 13</div>
+        <div class="devol-item-meta">Reserva <strong>#SHR-2605-001</strong> · Proprietário: João Silva</div>
+        <div class="devol-item-meta">📅 19–22 mai 2026 · 3 dias · R$ 105,00</div>
+      </div>
+    </div>
+
+    <!-- ── STEP 1: Checklist do locatário ─────────────────── -->
+    <div class="devol-step active" id="devol-step-1" role="main">
+      <h1 class="devol-title">Checklist de devolução</h1>
+      <p class="devol-sub">Confirme o estado do item antes de devolver. Isso protege você e o proprietário.</p>
+
+      <div class="devol-checklist" role="group" aria-labelledby="checklist-label">
+        <p id="checklist-label" style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Confirmo que o item está:</p>
+
+        <label class="devol-check-item">
+          <input type="checkbox" id="chk-clean" aria-describedby="chk-clean-desc">
+          <div>
+            <div class="devol-check-label">🧹 Limpo e sem sujeira</div>
+            <div class="devol-check-desc" id="chk-clean-desc">No mesmo estado de higiene em que recebi</div>
+          </div>
+        </label>
+
+        <label class="devol-check-item">
+          <input type="checkbox" id="chk-accessories" aria-describedby="chk-acc-desc">
+          <div>
+            <div class="devol-check-label">📦 Com todos os acessórios</div>
+            <div class="devol-check-desc" id="chk-acc-desc">Cabos, manual, carregador e itens que vieram junto</div>
+          </div>
+        </label>
+
+        <label class="devol-check-item">
+          <input type="checkbox" id="chk-working" aria-describedby="chk-work-desc">
+          <div>
+            <div class="devol-check-label">✅ Funcionando normalmente</div>
+            <div class="devol-check-desc" id="chk-work-desc">Testei antes de devolver e está operacional</div>
+          </div>
+        </label>
+
+        <label class="devol-check-item">
+          <input type="checkbox" id="chk-condition" aria-describedby="chk-cond-desc">
+          <div>
+            <div class="devol-check-label">🔍 Sem danos novos visíveis</div>
+            <div class="devol-check-desc" id="chk-cond-desc">Apenas desgaste normal de uso esperado</div>
+          </div>
+        </label>
+      </div>
+
+      <div id="checklist-warning" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:var(--r-card);padding:12px 14px;font-size:13px;color:#dc2626;margin-bottom:16px" role="alert">
+        ⚠️ Confirme todos os itens antes de continuar. Se houver algum problema, você poderá reportar na próxima etapa.
+      </div>
+
+      <button class="btn-primary btn-primary--full" onclick="devolNext(1)">Continuar → Adicionar foto</button>
+      <button class="btn-outline btn-outline--full" style="margin-top:10px" onclick="devolSkipToReport()">⚠️ Há um problema com o item</button>
+    </div>
+
+    <!-- ── STEP 2: Foto da devolução ──────────────────────── -->
+    <div class="devol-step" id="devol-step-2">
+      <h1 class="devol-title">Foto da devolução</h1>
+      <p class="devol-sub">Tire uma foto do item para registrar o estado na devolução. Isso protege você em caso de disputas.</p>
+
+      <div class="devol-photo-area" onclick="simulatePhotoUpload()" role="button" tabindex="0" aria-label="Adicionar foto do item"
+           onkeydown="if(event.key==='Enter')simulatePhotoUpload()">
+        <div class="devol-photo-area__icon" aria-hidden="true">📷</div>
+        <div class="devol-photo-area__text">Tirar foto ou escolher da galeria</div>
+        <div class="devol-photo-area__sub">JPG, PNG ou WebP · máx. 10 MB · até 4 fotos</div>
+      </div>
+
+      <div class="devol-photo-preview" id="devol-photos" aria-label="Fotos adicionadas">
+        <div class="devol-photo-thumb" aria-label="Foto 1" role="img">📷</div>
+      </div>
+
+      <div style="background:var(--bg);border-radius:var(--r-card);border:1px solid var(--border);padding:12px 14px;font-size:13px;color:var(--text2);margin-bottom:24px">
+        💡 <strong>Dica:</strong> fotografe o item inteiro, os acessórios separados e qualquer área com desgaste.
+      </div>
+
+      <button class="btn-primary btn-primary--full" onclick="devolNext(2)">Confirmar devolução</button>
+      <button class="btn-outline btn-outline--full" style="margin-top:10px;font-size:13px" onclick="devolNext(2)">Pular — não quero adicionar foto</button>
+    </div>
+
+    <!-- ── STEP 3: Aguardando proprietário ────────────────── -->
+    <div class="devol-step" id="devol-step-3">
+      <div class="devol-wait" aria-live="polite">
+        <div class="devol-wait__icon" aria-hidden="true">📬</div>
+        <h1 class="devol-wait__title">Devolução registrada!</h1>
+        <p class="devol-wait__desc">O proprietário foi notificado e tem até <strong>24 horas</strong> para confirmar o recebimento e o estado do item.</p>
+        <div class="devol-wait__code" aria-label="Código da reserva: SHR-2605-001">
+          #SHR-2605-001
+        </div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:20px">Você receberá uma notificação quando o proprietário confirmar. Seu depósito de segurança de <strong>R$ 50,00</strong> será liberado após a confirmação.</p>
+
+        <button class="btn-primary btn-primary--full" onclick="devolSimulateOwner()" style="margin-bottom:10px">
+          🔄 Simular confirmação do proprietário
+        </button>
+        <button class="btn-outline btn-outline--full" onclick="go('chat')" style="font-size:13px">
+          💬 Falar com o proprietário
+        </button>
+      </div>
+    </div>
+
+    <!-- ── STEP 4a: Proprietário confirma o estado ─────────── -->
+    <div class="devol-step" id="devol-step-4a">
+      <h1 class="devol-title">Como está o item?</h1>
+      <p class="devol-sub">Ana Luiza devolveu a Furadeira Bosch. Confirme o estado em que recebeu de volta.</p>
+
+      <div class="devol-state-grid" role="radiogroup" aria-label="Estado do item recebido">
+        <button class="devol-state-btn" id="state-ok" onclick="selectState('ok')" role="radio" aria-checked="false">
+          <span class="devol-state-icon" aria-hidden="true">✅</span>
+          <div>
+            <div class="devol-state-label">Perfeito estado</div>
+            <div class="devol-state-desc">Item limpo, completo e sem nenhum dano</div>
+          </div>
+        </button>
+        <button class="devol-state-btn" id="state-wear" onclick="selectState('wear')" role="radio" aria-checked="false">
+          <span class="devol-state-icon" aria-hidden="true">🔄</span>
+          <div>
+            <div class="devol-state-label">Desgaste normal</div>
+            <div class="devol-state-desc">Sinais normais de uso, sem danos significativos</div>
+          </div>
+        </button>
+        <button class="devol-state-btn" id="state-damage" onclick="selectState('damage')" role="radio" aria-checked="false">
+          <span class="devol-state-icon" aria-hidden="true">⚠️</span>
+          <div>
+            <div class="devol-state-label">Com danos</div>
+            <div class="devol-state-desc">Identifico danos além do desgaste esperado</div>
+          </div>
+        </button>
+      </div>
+
+      <button class="btn-primary btn-primary--full" id="btn-confirm-state" onclick="confirmState()" disabled
+              style="opacity:.5" aria-disabled="true">
+        Confirmar recebimento
+      </button>
+    </div>
+
+    <!-- ── STEP 4b: Reportar problema ────────────────────── -->
+    <div class="devol-step" id="devol-step-4b">
+      <h1 class="devol-title">Reportar problema</h1>
+      <p class="devol-sub">Descreva o que aconteceu. Nossa equipe analisará e entrará em contato em até 24h.</p>
+
+      <p style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Tipo de problema</p>
+      <div class="problem-type-grid" role="group" aria-label="Tipo de problema">
+        <button class="problem-type-btn" onclick="selectProblem(this)">
+          <span class="problem-type-icon" aria-hidden="true">🔧</span>Não funciona
+        </button>
+        <button class="problem-type-btn" onclick="selectProblem(this)">
+          <span class="problem-type-icon" aria-hidden="true">💥</span>Veio danificado
+        </button>
+        <button class="problem-type-btn" onclick="selectProblem(this)">
+          <span class="problem-type-icon" aria-hidden="true">📦</span>Faltam acessórios
+        </button>
+        <button class="problem-type-btn" onclick="selectProblem(this)">
+          <span class="problem-type-icon" aria-hidden="true">❓</span>Outro motivo
+        </button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="problem-desc">Descrição do problema</label>
+        <textarea class="form-input" id="problem-desc" rows="4" placeholder="Descreva o que aconteceu com o maior número de detalhes possível…"
+                  style="height:auto;padding:12px 14px;resize:vertical;min-height:100px" aria-required="true"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Fotos do problema <span style="font-weight:400;text-transform:none;color:var(--text2)">(recomendado)</span></label>
+        <div class="devol-photo-area" onclick="toast('Câmera aberta 📷')" role="button" tabindex="0" style="padding:20px">
+          <div class="devol-photo-area__icon" style="font-size:24px;margin-bottom:4px" aria-hidden="true">📷</div>
+          <div class="devol-photo-area__text" style="font-size:13px">Adicionar foto</div>
+        </div>
+      </div>
+
+      <button class="btn-primary btn-primary--full" onclick="submitProblem()" style="margin-bottom:10px">📤 Enviar relatório</button>
+      <button class="btn-outline btn-outline--full" style="font-size:13px" onclick="devolShowStep(4,'a')">← Voltar</button>
+    </div>
+
+    <!-- ── STEP 5: Devolução concluída ────────────────────── -->
+    <div class="devol-step" id="devol-step-5">
+      <div class="devol-done" aria-live="polite">
+        <div class="devol-done__icon" id="devol-done-icon" aria-hidden="true">🎉</div>
+        <h1 class="devol-done__title" id="devol-done-title">Devolução concluída!</h1>
+        <p class="devol-done__desc" id="devol-done-desc">O proprietário confirmou o recebimento em perfeito estado. Obrigado por cuidar bem do item!</p>
+
+        <div class="devol-done__deposit" id="devol-done-deposit" aria-live="polite">
+          💰 Depósito de segurança de R$ 50,00 será estornado em até 5 dias úteis
+        </div>
+
+        <button class="btn-primary btn-primary--full" onclick="go('screen-avaliar')" style="margin-bottom:10px" id="btn-avaliar">
+          ⭐ Avaliar esta locação
+        </button>
+        <button class="btn-outline btn-outline--full" style="font-size:13px" onclick="go('dashboard')">
+          Voltar ao painel
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /devol-wrap -->
+</div><!-- /screen-devolucao -->
+
+<!-- ═══ AVALIAÇÃO PÓS-LOCAÇÃO ════════════════════════════════ -->
+<div id="screen-avaliar" class="screen">
+  <div class="back-bar">
+    <div class="container">
+      <button class="back-btn" onclick="go('devolucao')" aria-label="Voltar">← Voltar</button>
+    </div>
+  </div>
+  <div class="devol-wrap">
+    <h1 class="devol-title">Avaliar locação</h1>
+    <p class="devol-sub">Sua avaliação ajuda a comunidade Shareo a crescer com confiança.</p>
+
+    <div class="devol-item-card">
+      <div class="devol-item-thumb">
+        <img src="imagens/furadeira de impacto Bosch.webp" alt="" onerror="this.style.display='none'">
+        <span aria-hidden="true">🔧</span>
+      </div>
+      <div class="devol-item-info">
+        <div class="devol-item-name">Furadeira de Impacto Bosch GSB 13</div>
+        <div class="devol-item-meta">Proprietário: <strong>João Silva</strong></div>
+      </div>
+    </div>
+
+    <!-- Emoji rápido -->
+    <p style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px">Como foi a experiência geral?</p>
+    <div style="display:flex;justify-content:space-around;margin-bottom:24px" role="radiogroup" aria-label="Satisfação geral">
+      <button class="emoji-rating" onclick="selectEmoji(this,'😍')" aria-label="Adorei" style="font-size:32px;border:2px solid transparent;background:none;border-radius:8px;padding:6px;cursor:pointer;transition:border-color .15s">😍</button>
+      <button class="emoji-rating" onclick="selectEmoji(this,'😊')" aria-label="Gostei" style="font-size:32px;border:2px solid transparent;background:none;border-radius:8px;padding:6px;cursor:pointer;transition:border-color .15s">😊</button>
+      <button class="emoji-rating" onclick="selectEmoji(this,'😐')" aria-label="Neutro" style="font-size:32px;border:2px solid transparent;background:none;border-radius:8px;padding:6px;cursor:pointer;transition:border-color .15s">😐</button>
+      <button class="emoji-rating" onclick="selectEmoji(this,'😕')" aria-label="Não gostei" style="font-size:32px;border:2px solid transparent;background:none;border-radius:8px;padding:6px;cursor:pointer;transition:border-color .15s">😕</button>
+      <button class="emoji-rating" onclick="selectEmoji(this,'😠')" aria-label="Péssimo" style="font-size:32px;border:2px solid transparent;background:none;border-radius:8px;padding:6px;cursor:pointer;transition:border-color .15s">😠</button>
+    </div>
+
+    <!-- Critérios -->
+    <p style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px">Avalie cada critério</p>
+    <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:24px">
+      <div class="rating-criterion" data-label="Item como descrito">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-size:13px;font-weight:600">Item como descrito</span>
+          <div class="star-row" role="group" aria-label="Nota para Item como descrito"></div>
+        </div>
+      </div>
+      <div class="rating-criterion" data-label="Pontualidade">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-size:13px;font-weight:600">Pontualidade</span>
+          <div class="star-row" role="group" aria-label="Nota para Pontualidade"></div>
+        </div>
+      </div>
+      <div class="rating-criterion" data-label="Comunicação">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-size:13px;font-weight:600">Comunicação</span>
+          <div class="star-row" role="group" aria-label="Nota para Comunicação"></div>
+        </div>
+      </div>
+      <div class="rating-criterion" data-label="Conservação">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-size:13px;font-weight:600">Conservação do item</span>
+          <div class="star-row" role="group" aria-label="Nota para Conservação do item"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comentário -->
+    <div class="form-group">
+      <label class="form-label" for="review-text">Comentário <span style="font-weight:400;text-transform:none;color:var(--text2)">(opcional)</span></label>
+      <textarea class="form-input" id="review-text" rows="3" placeholder="Conte como foi alugar este item…"
+                style="height:auto;padding:12px 14px;resize:vertical;min-height:80px"></textarea>
+    </div>
+
+    <!-- Foto em uso -->
+    <div class="form-group">
+      <label class="form-label">Foto usando o item <span style="font-weight:400;text-transform:none;color:var(--text2)">(opcional)</span></label>
+      <div class="devol-photo-area" onclick="toast('Câmera aberta 📷')" role="button" tabindex="0" style="padding:16px">
+        <div class="devol-photo-area__icon" style="font-size:24px;margin-bottom:4px" aria-hidden="true">🤳</div>
+        <div class="devol-photo-area__text" style="font-size:13px">Adicionar foto</div>
+        <div class="devol-photo-area__sub" style="font-size:11px">Mostre o item em uso!</div>
+      </div>
+    </div>
+
+    <button class="btn-primary btn-primary--full" onclick="submitReview()" style="margin-bottom:10px">⭐ Publicar avaliação</button>
+    <button class="btn-outline btn-outline--full" style="font-size:13px" onclick="go('dashboard')">Avaliar depois</button>
   </div>
 </div>
 
@@ -2072,8 +2674,295 @@ function sendChatMsg() {
   input.focus();
 }
 
+// ── Devolução — Fase 6 ───────────────────────────────────────
+let devolCurrentStep = 1;
+let devolSelectedState = null;
+
+function devolShowStep(n, sub) {
+  // Esconder todos os steps
+  document.querySelectorAll('.devol-step').forEach(s => s.classList.remove('active'));
+
+  let targetId = 'devol-step-' + n;
+  if (sub) targetId += sub;
+  const target = document.getElementById(targetId);
+  if (target) target.classList.add('active');
+
+  // Atualizar step indicators (1-4 visíveis, 4a/4b mapeiam para 4)
+  const stepNum = typeof n === 'number' ? n : parseInt(n);
+  for (let i = 1; i <= 4; i++) {
+    const dot  = document.getElementById('sdot-' + i);
+    const line = document.getElementById('sline-' + i);
+    if (dot) {
+      dot.classList.remove('active','done');
+      if (i < stepNum) dot.classList.add('done');
+      else if (i === stepNum) dot.classList.add('active');
+    }
+    if (line && i < 4) {
+      line.classList.toggle('done', i < stepNum);
+    }
+  }
+  devolCurrentStep = stepNum;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function devolNext(from) {
+  if (from === 1) {
+    // Validar checklist — pelo menos 3 de 4 marcados
+    const checks = document.querySelectorAll('#devol-step-1 input[type=checkbox]');
+    const checked = [...checks].filter(c => c.checked).length;
+    if (checked < 3) {
+      document.getElementById('checklist-warning').style.display = 'block';
+      return;
+    }
+    document.getElementById('checklist-warning').style.display = 'none';
+    devolShowStep(2);
+  } else if (from === 2) {
+    devolShowStep(3);
+  }
+}
+
+function devolSkipToReport() {
+  go('devolucao');
+  setTimeout(() => devolShowStep(4, 'b'), 50);
+}
+
+function devolSimulateOwner() {
+  // Simula: proprietário recebeu a notificação e abre a tela de confirmação
+  devolShowStep(4, 'a');
+}
+
+function selectState(state) {
+  devolSelectedState = state;
+  ['ok','wear','damage'].forEach(s => {
+    const btn = document.getElementById('state-' + s);
+    if (btn) {
+      btn.classList.remove('selected-ok','selected-wear','selected-damage');
+      btn.setAttribute('aria-checked', 'false');
+    }
+  });
+  const active = document.getElementById('state-' + state);
+  if (active) {
+    active.classList.add('selected-' + (state === 'ok' ? 'ok' : state === 'wear' ? 'wear' : 'damage'));
+    active.setAttribute('aria-checked', 'true');
+  }
+  const btn = document.getElementById('btn-confirm-state');
+  if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.removeAttribute('aria-disabled'); }
+}
+
+function confirmState() {
+  if (!devolSelectedState) return;
+  if (devolSelectedState === 'damage') {
+    // Abrir formulário de problema
+    devolShowStep(4, 'b');
+    return;
+  }
+  // Perfeito ou desgaste normal → concluir
+  const icon  = document.getElementById('devol-done-icon');
+  const title = document.getElementById('devol-done-title');
+  const desc  = document.getElementById('devol-done-desc');
+  const dep   = document.getElementById('devol-done-deposit');
+
+  if (devolSelectedState === 'ok') {
+    if (icon)  icon.textContent  = '🎉';
+    if (title) title.textContent = 'Devolução concluída!';
+    if (desc)  desc.textContent  = 'O proprietário confirmou o recebimento em perfeito estado. Obrigado por cuidar bem do item!';
+    if (dep)   dep.innerHTML     = '💰 Depósito de segurança de R$ 50,00 será estornado em até 5 dias úteis';
+  } else {
+    if (icon)  icon.textContent  = '✅';
+    if (title) title.textContent = 'Recebimento confirmado';
+    if (desc)  desc.textContent  = 'O proprietário registrou desgaste normal de uso. Isso não afeta sua avaliação.';
+    if (dep)   dep.innerHTML     = '💰 Depósito de R$ 50,00 será estornado em até 5 dias úteis';
+  }
+  devolShowStep(5);
+  toast('Devolução confirmada! ✅', 'success');
+}
+
+function submitProblem() {
+  const desc = document.getElementById('problem-desc');
+  if (!desc || !desc.value.trim()) {
+    toast('Descreva o problema antes de enviar ⚠️');
+    return;
+  }
+  const icon  = document.getElementById('devol-done-icon');
+  const title = document.getElementById('devol-done-title');
+  const dscEl = document.getElementById('devol-done-desc');
+  const dep   = document.getElementById('devol-done-deposit');
+  const btn   = document.getElementById('btn-avaliar');
+
+  if (icon)  icon.textContent  = '📋';
+  if (title) title.textContent = 'Relatório enviado';
+  if (dscEl) dscEl.textContent = 'Nossa equipe analisará o problema e entrará em contato em até 24h. O depósito de segurança ficará retido até a resolução.';
+  if (dep)   dep.innerHTML     = '🔒 Depósito de R$ 50,00 retido até análise do relatório';
+  if (dep)   dep.style.background = '#fef2f2';
+  if (dep)   dep.style.borderColor = '#fecaca';
+  if (dep)   dep.style.color = '#dc2626';
+  if (btn)   btn.textContent  = '⭐ Avaliar mesmo assim';
+  devolShowStep(5);
+  toast('Relatório enviado! Acompanhe em Mensagens.', 'success');
+}
+
+function simulatePhotoUpload() {
+  const preview = document.getElementById('devol-photos');
+  if (!preview) return;
+  preview.classList.add('show');
+  toast('Foto adicionada 📷');
+}
+
+function selectProblem(btn) {
+  document.querySelectorAll('.problem-type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ── Avaliação ─────────────────────────────────────────────────
+function selectEmoji(btn, emoji) {
+  document.querySelectorAll('.emoji-rating').forEach(b => {
+    b.style.borderColor = 'transparent';
+    b.style.background  = 'none';
+  });
+  btn.style.borderColor = 'var(--orange-cta)';
+  btn.style.background  = '#fff7f0';
+  toast(emoji + ' Selecionado!');
+}
+
+function initStarRatings() {
+  document.querySelectorAll('.star-row').forEach(row => {
+    for (let i = 1; i <= 5; i++) {
+      const star = document.createElement('button');
+      star.textContent = '★';
+      star.setAttribute('aria-label', i + ' estrela' + (i > 1 ? 's' : ''));
+      star.style.cssText = 'font-size:22px;border:none;background:none;cursor:pointer;color:var(--border);padding:2px;transition:color .1s;font-family:inherit';
+      star.addEventListener('click', () => {
+        const stars = [...row.querySelectorAll('button')];
+        stars.forEach((s, idx) => { s.style.color = idx < i ? '#f59e0b' : 'var(--border)'; });
+      });
+      star.addEventListener('mouseenter', () => {
+        const stars = [...row.querySelectorAll('button')];
+        stars.forEach((s, idx) => { s.style.color = idx < i ? '#f59e0b' : 'var(--border)'; });
+      });
+      row.appendChild(star);
+    }
+    row.addEventListener('mouseleave', () => {
+      const stars = [...row.querySelectorAll('button')];
+      const selected = stars.findIndex(s => s.style.color === 'rgb(245, 158, 11)');
+      const cut = selected >= 0 ? selected + 1 : 0;
+      // Recalculate based on last click — simplification: keep as-is on mouseleave
+    });
+  });
+}
+
+function submitReview() {
+  toast('Avaliação publicada! Obrigado ⭐', 'success');
+  setTimeout(() => go('dashboard'), 1200);
+}
+
+// ── FAB Filtros (mobile) ──────────────────────────────────────
+function openFilterSheet() {
+  const overlay = document.getElementById('filter-sheet-overlay');
+  const fab = document.getElementById('filter-fab');
+  if (!overlay) return;
+  overlay.classList.add('open');
+  if (fab) fab.setAttribute('aria-expanded', 'true');
+  document.body.style.overflow = 'hidden';
+  // Foco no botão de fechar para acessibilidade
+  setTimeout(() => overlay.querySelector('.filter-sheet__close')?.focus(), 100);
+}
+
+function closeFilterSheet() {
+  const overlay = document.getElementById('filter-sheet-overlay');
+  const fab = document.getElementById('filter-fab');
+  if (!overlay) return;
+  overlay.classList.remove('open');
+  if (fab) { fab.setAttribute('aria-expanded', 'false'); fab.focus(); }
+  document.body.style.overflow = '';
+}
+
+function handleOverlayClick(e) {
+  if (e.target === e.currentTarget) closeFilterSheet();
+}
+
+function applySheetFilters() {
+  closeFilterSheet();
+  updateFabCount();
+  toast('Filtros aplicados ✅', 'success');
+}
+
+function clearSheetFilters() {
+  document.querySelectorAll('.filter-sheet-overlay input').forEach(i => { i.checked = false; });
+  updateFabCount(0);
+  toast('Filtros limpos');
+}
+
+function updateFabCount(count) {
+  const badge = document.getElementById('filter-fab-count');
+  if (!badge) return;
+  const n = count !== undefined ? count : document.querySelectorAll('.filter-sheet-overlay input:checked').length;
+  badge.textContent = n;
+  badge.setAttribute('aria-label', n + ' filtro' + (n !== 1 ? 's' : '') + ' ativo' + (n !== 1 ? 's' : ''));
+  badge.style.display = n > 0 ? 'flex' : 'none';
+}
+
+// Mostrar FAB apenas quando tela de busca está ativa
+const origShowScreen = showScreen;
+function showScreen(screen) {
+  origShowScreen(screen);
+  const fab = document.getElementById('filter-fab');
+  if (fab) {
+    const isMobile = window.innerWidth < 1024;
+    fab.style.display = (screen === 'search' && isMobile) ? 'flex' : 'none';
+  }
+}
+
+// ── Remover chip individual ───────────────────────────────────
+function removeChip(e, btn) {
+  e.stopPropagation();
+  const chip = btn.closest('.chip');
+  if (!chip) return;
+  chip.classList.remove('active');
+  // Ativar "Todos" se nenhum chip estiver ativo
+  const row = chip.closest('.chip-row');
+  const anyActive = row && [...row.querySelectorAll('.chip:not([data-filter="Todos"])')].some(c => c.classList.contains('active'));
+  if (!anyActive && row) {
+    const todosChip = row.querySelector('[data-filter="Todos"]');
+    if (todosChip) todosChip.classList.add('active');
+  }
+  toast('Filtro removido');
+}
+
+// ── Solicitar locação (estado aguardando) ─────────────────────
+let bookingCountdownInterval = null;
+function requestBooking() {
+  const formArea = document.getElementById('booking-form-area');
+  const waitArea = document.getElementById('booking-wait');
+  if (!formArea || !waitArea) { toast('Solicitação enviada ao proprietário! ✅', 'success'); return; }
+  formArea.classList.add('hidden');
+  waitArea.classList.add('visible');
+
+  // Countdown de 2 horas
+  let secondsLeft = 2 * 60 * 60;
+  if (bookingCountdownInterval) clearInterval(bookingCountdownInterval);
+  const countdownEl = document.getElementById('booking-countdown');
+
+  function updateCountdown() {
+    if (secondsLeft <= 0) { clearInterval(bookingCountdownInterval); return; }
+    secondsLeft--;
+    const h = Math.floor(secondsLeft / 3600);
+    const m = Math.floor((secondsLeft % 3600) / 60);
+    if (countdownEl) countdownEl.textContent = h + 'h ' + String(m).padStart(2, '0') + 'min';
+  }
+  updateCountdown();
+  bookingCountdownInterval = setInterval(updateCountdown, 1000);
+}
+
+// Tecla Esc fecha o bottom sheet
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeFilterSheet();
+});
+
 // ── Header search ─────────────────────────────────────────────
 document.querySelector('.header__search')?.addEventListener('click', () => go('search'));
+
+// ── Inicializar estrelas de avaliação ─────────────────────────
+initStarRatings();
 
 // ── Logo keyboard ─────────────────────────────────────────────
 document.querySelector('.logo')?.addEventListener('keydown', e => {
