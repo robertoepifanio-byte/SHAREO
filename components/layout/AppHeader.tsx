@@ -40,7 +40,6 @@ export async function AppHeader() {
           <Link href="/"           className="rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:bg-white/10 hover:text-white transition-colors outline-none focus-visible:ring-1 focus-visible:ring-white">Início</Link>
           <Link href="/itens"      className="rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:bg-white/10 hover:text-white transition-colors outline-none focus-visible:ring-1 focus-visible:ring-white">Explorar</Link>
           <Link href="/itens/novo" className="rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:bg-white/10 hover:text-white transition-colors outline-none focus-visible:ring-1 focus-visible:ring-white">Anunciar</Link>
-          <Link href="/ganhar"    className="rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:bg-white/10 hover:text-white transition-colors outline-none focus-visible:ring-1 focus-visible:ring-white">Quanto ganhar?</Link>
           {session && (
             <>
               <Link href="/reservas"  className="rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:bg-white/10 hover:text-white transition-colors outline-none focus-visible:ring-1 focus-visible:ring-white">Reservas</Link>
@@ -49,20 +48,8 @@ export async function AppHeader() {
           )}
         </nav>
 
-        {/* Busca — desktop apenas */}
-        <Link
-          href="/itens"
-          className="hidden md:flex flex-1 max-w-sm items-center gap-2 h-10 rounded-lg border border-white/20 bg-white/10 px-3 text-sm text-white/55 hover:bg-white/15 transition-colors ml-auto"
-          aria-label="Buscar itens"
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-          Buscar item para alugar…
-        </Link>
-
         {/* Ações de autenticação */}
-        <div className="flex flex-shrink-0 items-center gap-2 ml-auto md:ml-3">
+        <div className="flex flex-shrink-0 items-center gap-2 ml-auto">
           {session ? (
             <>
               {/* Saudação — apenas desktop */}
@@ -90,16 +77,6 @@ export async function AppHeader() {
                 Ajuda
               </Link>
 
-              {/* Anunciar — apenas desktop */}
-              <Link
-                href="/itens/novo"
-                className="hidden md:inline-flex items-center gap-1.5 h-9 px-4 rounded-md text-sm font-bold bg-accent text-[#003366] hover:brightness-105 transition-all outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
-                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-                Anunciar
-              </Link>
             </>
           ) : (
             <>
@@ -108,13 +85,6 @@ export async function AppHeader() {
                 className="inline-flex h-11 items-center px-4 rounded-md text-sm font-medium border border-white/30 text-white hover:bg-white/10 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
               >
                 Entrar
-              </Link>
-              {/* + Anunciar — apenas desktop (no mobile fica no menu hamburguer) */}
-              <Link
-                href="/itens/novo"
-                className="hidden md:inline-flex h-11 items-center gap-1 px-4 rounded-md text-sm font-bold bg-accent text-[#003366] hover:brightness-105 transition-all outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
-              >
-                + Anunciar
               </Link>
             </>
           )}
