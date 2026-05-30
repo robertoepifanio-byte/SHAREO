@@ -218,6 +218,18 @@ export default async function DashboardPage() {
             </div>
           </div>
 
+          {/* P2-60 — Meta mensal */}
+          <div className="mb-8">
+            <MonthlyGoalProgress earnedCents={earningsCents} />
+          </div>
+
+          {/* P2-58/P2-59 — Próximas devoluções (proprietário) */}
+          {upcomingReturns.length > 0 && (
+            <div className="mb-8">
+              <UpcomingReturns bookings={upcomingReturns} />
+            </div>
+          )}
+
           {/* Reservas recentes */}
           {recentBookings.length > 0 && (
             <div className="mb-8">

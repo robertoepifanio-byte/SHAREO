@@ -15,6 +15,8 @@ import { FilterTrigger } from "./_FilterTrigger"
 import { ActiveFilterChips } from "./_ActiveFilterChips"
 import { haversineKm } from "@/lib/haversine"
 import { getUserMapLocation } from "@/lib/userLocation"
+import { MapToggle } from "./_MapToggle"
+import { PullToRefresh } from "@/components/items/PullToRefresh"
 
 export const metadata: Metadata = {
   title:       "Explorar anúncios",
@@ -194,6 +196,8 @@ export default async function ExplorarPage({ searchParams }: Props) {
     <div className="min-h-screen bg-background">
       <AppHeader />
 
+      {/* P2-53 — Pull-to-refresh wrapper (mobile) */}
+      <PullToRefresh>
       <main className="container py-6">
 
         {/* ─── BARRA DE BUSCA ─── */}
@@ -326,8 +330,8 @@ export default async function ExplorarPage({ searchParams }: Props) {
               </Suspense>
             </div>
 
-            {/* Mapa */}
-            {items.length > 0 && (() => {
+            {/* P2-57 — Toggle Mapa / Lista */}
+            {items.length > 0 ? (() => {
               const pins: ItemPin[] = items
                 .filter((i) => i.latitude != null && i.longitude != null && (i.latitude !== 0 || i.longitude !== 0))
                 .map((i) => ({
@@ -337,54 +341,56 @@ export default async function ExplorarPage({ searchParams }: Props) {
                   lat:         i.latitude!,
                   lng:         i.longitude!,
                 }))
-              return pins.length > 0 ? (
-                <div className="mb-4 overflow-hidden rounded-xl border border-border">
-                  <ItemsMapLoader
-                    items={pins}
-                    height={260}
-                    defaultLat={userLoc.lat}
-                    defaultLng={userLoc.lng}
-                    defaultZoom={userLoc.zoom}
-                  />
-                </div>
-              ) : null
-            })()}
 
-            {/* Grade de itens */}
-            {items.length > 0 ? (
-              <>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-                  {items.map((item) => (
-                    <ItemCard key={item.id} item={item} />
-                  ))}
+              const mapView = pins.length > 0 ? (
+                <ItemsMapLoader
+                  items={pins}
+                  height={480}
+                  defaultLat={userLoc.lat}
+                  defaultLng={userLoc.lng}
+                  defaultZoom={userLoc.zoom}
+                />
+              ) : (
+                <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
+                  Nenhum item com localização para exibir no mapa.
                 </div>
+              )
 
-                {/* Paginação */}
-                {totalPages > 1 && (
-                  <div className="mt-8 flex items-center justify-center gap-2">
-                    {page > 1 && (
-                      <Link
-                        href={buildUrl({ page: page - 1 })}
-                        className="inline-flex h-11 items-center rounded-md border border-border px-4 text-sm text-foreground hover:bg-background transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
-                      >
-                        ← Anterior
-                      </Link>
-                    )}
-                    <span className="text-sm text-muted-foreground">
-                      Página {page} de {totalPages}
-                    </span>
-                    {page < totalPages && (
-                      <Link
-                        href={buildUrl({ page: page + 1 })}
-                        className="inline-flex h-11 items-center rounded-md border border-border px-4 text-sm text-foreground hover:bg-background transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
-                      >
-                        Próxima →
-                      </Link>
-                    )}
+              const listView = (
+                <>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+                    {items.map((item) => (
+                      <ItemCard key={item.id} item={item} />
+                    ))}
                   </div>
-                )}
-              </>
-            ) : (
+                  {totalPages > 1 && (
+                    <div className="mt-8 flex items-center justify-center gap-2">
+                      {page > 1 && (
+                        <Link
+                          href={buildUrl({ page: page - 1 })}
+                          className="inline-flex h-11 items-center rounded-md border border-border px-4 text-sm text-foreground hover:bg-background transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+                        >
+                          ← Anterior
+                        </Link>
+                      )}
+                      <span className="text-sm text-muted-foreground">
+                        Página {page} de {totalPages}
+                      </span>
+                      {page < totalPages && (
+                        <Link
+                          href={buildUrl({ page: page + 1 })}
+                          className="inline-flex h-11 items-center rounded-md border border-border px-4 text-sm text-foreground hover:bg-background transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+                        >
+                          Próxima →
+                        </Link>
+                      )}
+                    </div>
+                  )}
+                </>
+              )
+
+              return <MapToggle mapContent={mapView} listContent={listView} />
+            })() : (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground" aria-hidden="true">
@@ -403,6 +409,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
           </div>
         </div>
       </main>
+      </PullToRefresh>
     </div>
   )
 }
