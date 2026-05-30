@@ -53,6 +53,8 @@
 | 30 | Implementar **breadcrumb** na página de detalhe (Início > Categoria > Item) | UX/SEO |
 | 31 | Implementar **seção "Itens similares"** no final da página de detalhe | UX |
 | 32 | Criar backlog inicial de histórias de usuário | Produto |
+| 33 | Preservação de contexto de busca — `useSearchParams` persistente com `router.push` ao filtrar; `<Link href={/itens?${searchParams}}>Voltar</Link>` no componente de detalhe | UX/Fluxo |
+| 34 | Tela "Aguardando Confirmação" após solicitação de reserva — tela dedicada com countdown 2h + carrossel de itens similares + notificação quando proprietário responder (spec UX do estado de espera do P1-#24) | UX/Fluxo |
 
 ---
 
@@ -89,6 +91,7 @@
 | 59 | Adicionar botão **"Enviar lembrete"** ao locatário no dashboard do proprietário | Fluxo |
 | 60 | Implementar **meta mensal com progress bar** no dashboard do proprietário | Fluxo/UX |
 | 61 | Incluir `app/api/**` e `middleware.ts` no `collectCoverageFrom` do `jest.config.ts` | Config |
+| 62 | Onboarding progressivo para o primeiro anúncio — progress indicator de qualidade (0–100%), dicas inline por campo, prévia do ItemCard em tempo real, tooltip "Anúncios com 3+ fotos recebem 4x mais contatos" | UX/Fluxo |
 
 ---
 
@@ -96,29 +99,29 @@
 
 | # | Atividade | Origem |
 |---|---|---|
-| 62 | Auditorias **Lighthouse** em `/`, `/itens`, `/itens/[id]` — LCP < 2,5s, CLS < 0,1, INP < 200ms | Performance |
-| 63 | `e2e/admin.spec.ts` — acesso restrito, aprovação de itens, suspensão de usuários | QA |
-| 64 | `e2e/chat.spec.ts` — envio em tempo real, templates, sanitização XSS | QA |
-| 65 | Implementar **chat com templates de mensagem** pré-prontos (preenchem campo, não enviam sozinhos) | UX/Fluxo |
-| 66 | Implementar **avaliação por critérios múltiplos** — item como descrito, pontualidade, comunicação, conservação | UX/Fluxo |
-| 67 | Implementar **emoji de satisfação rápido** (😍😊😐😕😠) como entrada da avaliação antes dos critérios | UX |
-| 68 | Permitir **foto do item em uso** na avaliação | Fluxo |
-| 69 | Implementar **pontos de reputação** — +10 por avaliação enviada, histórico no perfil | Gamificação |
-| 70 | Implementar **badges de locatário** — Bronze (3 aluguéis), Prata (10), Ouro (25), Diamante (50) | Gamificação |
-| 71 | Implementar **"Avaliador ativo"** badge + cupom 10% off no próximo aluguel ao avaliar | Gamificação |
-| 72 | Exibir equivalência de CO₂ em árvores ("45 kg evitados = 2 árvores plantadas") no dashboard | Gamificação |
-| 73 | Implementar **progress bars de conquistas** no perfil do usuário | Gamificação |
-| 74 | Implementar emails de **reengajamento pós-aluguel** via SendGrid/Resend: 1d (avalie), 7d (itens similares), 30d (favorito disponível) | Retenção |
-| 75 | Implementar **dicas de fotografia inline** no formulário de anúncio | UX |
-| 76 | Implementar **CTA flutuante mobile** "Anunciar item" com tap target >= 44px | UX |
-| 77 | Implementar **banner dinâmico na home** com dados reais da cidade do usuário | UX |
-| 78 | Resolver **duplicata haversine** — `lib/haversine.ts` (km) vs `utils/geo.ts` (metros), definir canônico | Refactor |
-| 79 | Migrar `lib/rateLimit.ts` de `Map` in-memory para **Upstash Redis** | Infra/Segurança |
-| 80 | Teste de carga **k6** — 50 usuários em `GET /api/items`, P95 < 1s | Performance |
-| 81 | Definir e instrumentar **KPIs por fase** — bounce < 40%, CTR cards > 15%, conversão > 8%, NPS > 50 | Produto |
-| 82 | `__tests__/unit/utils/format.test.ts` — `formatPrice`, `formatDistance` | QA |
-| 83 | `__tests__/unit/utils/geo.test.ts` — `buildSlug`, `haversineDistance` | QA |
-| 84 | Validação em **dispositivo Android real** (Samsung Galaxy A13) | QA |
+| 63 | Auditorias **Lighthouse** em `/`, `/itens`, `/itens/[id]` — LCP < 2,5s, CLS < 0,1, INP < 200ms | Performance |
+| 64 | `e2e/admin.spec.ts` — acesso restrito, aprovação de itens, suspensão de usuários | QA |
+| 65 | `e2e/chat.spec.ts` — envio em tempo real, templates, sanitização XSS | QA |
+| 66 | Implementar **chat com templates de mensagem** pré-prontos (preenchem campo, não enviam sozinhos) | UX/Fluxo |
+| 67 | Implementar **avaliação por critérios múltiplos** — item como descrito, pontualidade, comunicação, conservação | UX/Fluxo |
+| 68 | Implementar **emoji de satisfação rápido** (😍😊😐😕😠) como entrada da avaliação antes dos critérios | UX |
+| 69 | Permitir **foto do item em uso** na avaliação | Fluxo |
+| 70 | Implementar **pontos de reputação** — +10 por avaliação enviada, histórico no perfil | Gamificação |
+| 71 | Implementar **badges de locatário** — Bronze (3 aluguéis), Prata (10), Ouro (25), Diamante (50) | Gamificação |
+| 72 | Implementar **"Avaliador ativo"** badge + cupom 10% off no próximo aluguel ao avaliar | Gamificação |
+| 73 | Exibir equivalência de CO₂ em árvores ("45 kg evitados = 2 árvores plantadas") no dashboard | Gamificação |
+| 74 | Implementar **progress bars de conquistas** no perfil do usuário | Gamificação |
+| 75 | Implementar emails de **reengajamento pós-aluguel** via SendGrid/Resend: 1d (avalie), 7d (itens similares), 30d (favorito disponível) | Retenção |
+| 76 | Implementar **dicas de fotografia inline** no formulário de anúncio | UX |
+| 77 | Implementar **CTA flutuante mobile** "Anunciar item" com tap target >= 44px | UX |
+| 78 | Implementar **banner dinâmico na home** com dados reais da cidade do usuário | UX |
+| 79 | Resolver **duplicata haversine** — `lib/haversine.ts` (km) vs `utils/geo.ts` (metros), definir canônico | Refactor |
+| 80 | Migrar `lib/rateLimit.ts` de `Map` in-memory para **Upstash Redis** | Infra/Segurança |
+| 81 | Teste de carga **k6** — 50 usuários em `GET /api/items`, P95 < 1s | Performance |
+| 82 | Definir e instrumentar **KPIs por fase** — bounce < 40%, CTR cards > 15%, conversão > 8%, NPS > 50 | Produto |
+| 83 | `__tests__/unit/utils/format.test.ts` — `formatPrice`, `formatDistance` | QA |
+| 84 | `__tests__/unit/utils/geo.test.ts` — `buildSlug`, `haversineDistance` | QA |
+| 85 | Validação em **dispositivo Android real** (Samsung Galaxy A13) | QA |
 
 ---
 
@@ -127,10 +130,10 @@
 | Prioridade | Qtd | Foco principal |
 |---|---|---|
 | 🔴 P0 | 10 | Testes críticos + infraestrutura + política de cancelamento |
-| 🟠 P1 | 22 | Fluxo completo do aluguel + UX essencial |
-| 🟡 P2 | 29 | Qualidade, acessibilidade, UX mobile e fluxo de devolução |
+| 🟠 P1 | 24 | Fluxo completo do aluguel + UX essencial |
+| 🟡 P2 | 30 | Qualidade, acessibilidade, UX mobile e fluxo de devolução |
 | 🟢 P3 | 23 | Gamificação, reengajamento, performance e diferenciação |
-| **Total** | **84** | |
+| **Total** | **87** | |
 
 ---
 

@@ -36,7 +36,7 @@ const config: Config = {
       colors: {
         // Identidade Shareo (v1.0 — Maio 2026)
         shareo: {
-          navy:          "#003366",   // Azul Marinho oficial
+          navy:          "#0D1B2A",   // Azul Marinho oficial
           "green-dark":  "#007B3C",   // Verde Escuro — botões, ação
           "green-light": "#59C686",   // Verde Claro de Apoio — decorativo
           "blue-medium": "#144D81",   // Azul Médio — seções intermediárias
@@ -54,7 +54,7 @@ const config: Config = {
           link:       "#005F2E",   // verde para texto/link sobre fundo branco
         },
         primary: {
-          DEFAULT:    "#003366",   // azul marinho oficial
+          DEFAULT:    "#0D1B2A",   // azul marinho oficial
           hover:      "#003D7A",   // azul marinho claro
           foreground: "#FFFFFF",
         },
@@ -69,6 +69,14 @@ const config: Config = {
         accent: {
           DEFAULT:    "#59C686",
           foreground: "#003366",   // texto SOBRE fundo accent
+        },
+        // Laranja — identidade Shareo (via prototipo.html tokens)
+        orange: {
+          DEFAULT:  "#F97316", // decorativo apenas — fills, sem texto direto
+          cta:      "#C05800", // botões com texto branco — ratio 4.47:1 WCAG AA ✅
+          link:     "#9A4700", // texto laranja sobre branco — ratio 6.5:1 WCAG AA ✅
+          hover:    "#A34700", // hover do CTA
+          light:    "#FFF7ED", // fundo sutil (backgrounds, chips ativos)
         },
         // Azul médio — seções intermediárias, bordas de ícones
         "blue-medium": {
@@ -123,7 +131,7 @@ const config: Config = {
 
       // ─── Tipografia ─────────────────────────────────────
       fontFamily: {
-        sans: ["var(--font-montserrat)", "system-ui", "sans-serif"],
+        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
       },
       fontSize: {
         // Escala completa alinhada ao Design System
@@ -199,13 +207,13 @@ const config: Config = {
 
       // ─── Sombras ─────────────────────────────────────────
       boxShadow: {
-        sm:    "0 1px 2px 0 rgb(0 51 102 / 0.05)",
-        DEFAULT:"0 1px 3px 0 rgb(0 51 102 / 0.10), 0 1px 2px -1px rgb(0 51 102 / 0.10)",
-        md:    "0 4px 6px -1px rgb(0 51 102 / 0.10), 0 2px 4px -2px rgb(0 51 102 / 0.10)",
-        lg:    "0 10px 15px -3px rgb(0 51 102 / 0.10), 0 4px 6px -4px rgb(0 51 102 / 0.10)",
-        xl:    "0 20px 25px -5px rgb(0 51 102 / 0.10), 0 8px 10px -6px rgb(0 51 102 / 0.10)",
-        card:  "0 2px 8px 0 rgb(0 51 102 / 0.08)",      // sombra padrão de cards
-        modal: "0 25px 50px -12px rgb(0 51 102 / 0.25)",
+        sm:    "0 1px 2px 0 rgb(13 27 42 / 0.05)",
+        DEFAULT:"0 1px 3px 0 rgb(13 27 42 / 0.10), 0 1px 2px -1px rgb(13 27 42 / 0.10)",
+        md:    "0 4px 6px -1px rgb(13 27 42 / 0.10), 0 2px 4px -2px rgb(13 27 42 / 0.10)",
+        lg:    "0 10px 15px -3px rgb(13 27 42 / 0.10), 0 4px 6px -4px rgb(13 27 42 / 0.10)",
+        xl:    "0 20px 25px -5px rgb(13 27 42 / 0.10), 0 8px 10px -6px rgb(13 27 42 / 0.10)",
+        card:  "0 2px 8px 0 rgb(13 27 42 / 0.08)",      // sombra padrão de cards
+        modal: "0 25px 50px -12px rgb(13 27 42 / 0.25)",
         none:  "none",
       },
 
@@ -213,7 +221,8 @@ const config: Config = {
       ringColor: {
         DEFAULT: "#007B3C",
         brand:   "#007B3C",
-        primary: "#003366",
+        primary: "#0D1B2A",
+        orange:  "#9A4700",
       },
       ringOffsetColor: {
         background: "#FFFFFF",
