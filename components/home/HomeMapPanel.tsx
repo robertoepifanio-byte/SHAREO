@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState } from "react"
 import { ItemsMapLoader } from "@/components/items/ItemsMapLoader"
 import { haversineKm } from "@/lib/haversine"
 import type { ItemPin } from "@/components/items/ItemsMap"
