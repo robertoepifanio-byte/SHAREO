@@ -7,7 +7,7 @@
  * Exibe fallback visual quando NEXT_PUBLIC_MAPBOX_TOKEN não estiver configurado.
  */
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Map, { Marker, Popup, NavigationControl } from "react-map-gl"
 import Link from "next/link"
 import "mapbox-gl/dist/mapbox-gl.css"
@@ -40,6 +40,8 @@ export function ItemsMap({
 }: Props) {
   const [popup, setPopup] = useState<ItemPin | null>(null)
 
+  useEffect(() => { setPopup(null) }, [items])
+
   /* ── Fallback quando token não configurado ─────────────────────────── */
   if (IS_PLACEHOLDER) {
     return (
@@ -60,8 +62,8 @@ export function ItemsMap({
     )
   }
 
-  /* ── Filtra itens com coords válidas (descarta 0,0) ────────────────── */
-  const pins = items.filter((i) => i.lat !== 0 || i.lng !== 0)
+  /* ── Filtra itens com coords válidas ───────────────────────────────── */
+  const pins = items.filter((i) => i.lat != null && i.lng != null)
 
   return (
     <div style={{ height }} className="overflow-hidden rounded-lg border border-border">
