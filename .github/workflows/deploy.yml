@@ -163,15 +163,16 @@ jobs:
           echo "Health check OK: $STATUS"
 
   # ─────────────────────────────────────────────────────────────────
-  # JOB 3: Production Deploy — manual com aprovação obrigatória
-  # Requer aprovação explícita no ambiente "production" do GitHub
-  # Configurar em: Settings > Environments > production > Required reviewers
+  # JOB 3: Production Deploy — somente via tag de release (v*)
+  # Staging deve ser validado antes de promover para produção.
+  # Para fazer deploy: git tag v1.0.0 && git push origin v1.0.0
+  # Requer aprovação no ambiente "production" do GitHub (Required reviewers)
   # ─────────────────────────────────────────────────────────────────
   production:
     name: Deploy Production
     runs-on: ubuntu-latest
-    # Dispara em push na main OU em tags de release (v*)
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    # Dispara APENAS em tags de release (v*) — nunca em push direto na main
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     environment:
       name: production
       url: https://www.shareo.com.br
