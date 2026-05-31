@@ -19,6 +19,7 @@
 import fs from 'fs'
 import { test, expect } from "@playwright/test"
 import { SESSION_PATHS } from './fixtures/test-credentials'
+import { TEST_CONV_PATH } from './fixtures/test-paths'
 
 const hasLocatarioSession = fs.existsSync(SESSION_PATHS.locatario)
 
@@ -54,10 +55,14 @@ test.describe("lista de conversas — /mensagens", () => {
 // 3. Janela de conversa — requer session fixture + conversa existente (E2E_CONV_ID)
 // ---------------------------------------------------------------------------
 
-const convId = process.env.E2E_CONV_ID
+const convId: string | undefined =
+  process.env.E2E_CONV_ID ??
+  (fs.existsSync(TEST_CONV_PATH)
+    ? (JSON.parse(fs.readFileSync(TEST_CONV_PATH, 'utf-8')) as { convId: string }).convId
+    : undefined)
 
 test.describe("janela de conversa — /mensagens/[id]", () => {
-  test.skip(!hasLocatarioSession || !convId, "Session fixture ou E2E_CONV_ID não definido")
+  test.skip(!hasLocatarioSession || !convId, "Session fixture ou E2E_CONV_ID não definido — rode: pnpm exec tsx scripts/get-conv-id.ts")
 
   test.use({ storageState: SESSION_PATHS.locatario })
 
@@ -76,11 +81,13 @@ test.describe("janela de conversa — /mensagens/[id]", () => {
 
   test("clique em template preenche o campo sem enviar", async ({ page }) => {
     await page.goto(`/mensagens/${convId}`)
-    const template = page.getByText("Ainda está disponível?")
-    await template.click()
+    // O chip é um <button> dentro do container de templates
+    const templateBtn = page.locator('[aria-label="Templates de mensagem"] button', { hasText: 'Ainda está disponível?' })
+    await templateBtn.click()
     const textarea = page.locator("textarea").first()
     await expect(textarea).toHaveValue("Ainda está disponível?")
-    await expect(template).not.toBeVisible()
+    // O container de templates some quando o campo tem conteúdo
+    await expect(page.locator('[aria-label="Templates de mensagem"]')).not.toBeVisible()
   })
 
   test("mensagem vazia não dispara envio", async ({ page }) => {
