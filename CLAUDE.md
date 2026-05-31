@@ -8,7 +8,8 @@ This is a **project planning and AI agent specification repository** for **Share
 
 The repository contains no production code yet. It holds:
 - `*_Agente_Shareo.md` — Role-based specifications for AI agents (Architect, Full Stack Dev, Product Owner, Designer, QA, DevOps, SEO, Security Analyst, Project Manager)
-- `shareo-prototipo.html` — Interactive UI prototype (single-file, self-contained)
+- `shareo-prototipo-v2.html` — **Active UI prototype** (since 2026-05-29, single-file, self-contained; uses Montserrat + Leaflet map)
+- `shareo-prototipo.html` — Legacy prototype (superseded by v2)
 - `icones/` — SVG category icons used in the prototype
 
 ## Planned Tech Stack
@@ -76,7 +77,7 @@ The `.claude/Agents/` directory contains 9 Claude Code subagents. Each file has 
 
 **Invocation rules:**
 - The `arquiteto-shareo` agent is the authority on structural decisions.
-- The `fullstack-dev-shareo` agent implements features — always consult `shareo-prototipo.html` first.
+- The `fullstack-dev-shareo` agent implements features — always consult `shareo-prototipo-v2.html` first.
 - All agents enforce: LGPD compliance, WCAG 2.1 AA, mobile-first (375px base), tap targets ≥ 44×44px.
 - No `"use client"` in layout components — only on interactive leaf nodes (performance rule).
 
@@ -104,4 +105,6 @@ The `.claude/Agents/` directory contains 9 Claude Code subagents. Each file has 
 
 ## Prototype
 
-`shareo-prototipo.html` is a standalone HTML/CSS/JS prototype covering the full MVP UI. Open it in a browser to review the intended UX before implementing. Category icons referenced in the prototype live in `icones/`.
+`shareo-prototipo-v2.html` is the **active** standalone HTML/CSS/JS prototype covering the full MVP UI (adopted 2026-05-29). Open it in a browser to review the intended UX before implementing. Category icons referenced in the prototype live in `icones/`.
+
+`shareo-prototipo.html` is the legacy prototype — kept for historical reference only.
