@@ -83,6 +83,12 @@ test.describe('Autenticação — cadastro, login, logout e redirect', () => {
     await expect(consentimento).toBeVisible()
     await consentimento.check()
 
+    // Confirmação de idade — também obrigatório
+    const ageConfirmation = page.getByRole('checkbox', { name: /declaro|18 anos/i })
+    if (await ageConfirmation.isVisible()) {
+      await ageConfirmation.check()
+    }
+
     await page.getByRole('button', { name: /cadastrar|criar conta|registrar/i }).click()
 
     // Aguarda redirecionamento ou mensagem de sucesso
