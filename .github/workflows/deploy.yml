@@ -162,9 +162,7 @@ jobs:
     name: Deploy Production
     runs-on: ubuntu-latest
     # Dispara em push na main OU em tags de release (v*)
-    if: |
-      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
     environment:
       name: production
       url: https://www.shareo.com.br
