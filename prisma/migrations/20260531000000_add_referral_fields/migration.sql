@@ -2,11 +2,11 @@
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "referralCode" TEXT;
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "referredById" TEXT;
 
--- Unique constraint on referralCode
+-- Unique constraint on referralCode (check pg_class to catch orphaned indexes)
 DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'users_referralCode_key'
+    SELECT 1 FROM pg_class WHERE relname = 'users_referralCode_key'
   ) THEN
     ALTER TABLE "users" ADD CONSTRAINT "users_referralCode_key" UNIQUE ("referralCode");
   END IF;
