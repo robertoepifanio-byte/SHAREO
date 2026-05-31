@@ -101,23 +101,20 @@ test.describe('Favoritos — autenticado como locatário', () => {
 
     await expect(favBtn).toBeVisible()
 
-    const ariaBefore = await favBtn.getAttribute('aria-pressed')
-    const isAlreadyFavorited = ariaBefore === 'true'
+    // Aguarda resposta da API (toggle — pode ser favoritar ou desfavoritar dependendo do estado atual)
+    const [response] = await Promise.all([
+      page.waitForResponse(
+        (resp) => resp.url().includes('/favorite') && resp.ok(),
+        { timeout: 20000 },
+      ),
+      favBtn.click(),
+    ])
+    expect(response.ok(), `API de favoritar retornou ${response.status()}`).toBe(true)
 
-    if (!isAlreadyFavorited) {
-      // Aguarda a resposta da API de favoritar (cold start Vercel pode ser 8-10s)
-      const [response] = await Promise.all([
-        page.waitForResponse(
-          (resp) => resp.url().includes('/favorite') && (resp.status() === 200 || resp.status() === 201),
-          { timeout: 20000 },
-        ),
-        favBtn.click(),
-      ])
-      expect(response.ok(), `API de favoritar retornou ${response.status()}`).toBe(true)
-    }
-
-    // Após API responder, o botão deve ter aria-pressed="true"
-    await expect(favBtn).toHaveAttribute('aria-pressed', 'true', { timeout: 5000 })
+    // Verifica que aria-pressed reflete o resultado da API (favorited: true ou false)
+    const json = await response.json() as { data: { favorited: boolean } }
+    const expectedAriaPressed = json.data.favorited ? 'true' : 'false'
+    await expect(favBtn).toHaveAttribute('aria-pressed', expectedAriaPressed, { timeout: 8000 })
   })
 
   test('página /favoritos carrega para usuário autenticado (vazia ou com cards)', async ({ page }) => {
@@ -127,12 +124,13 @@ test.describe('Favoritos — autenticado como locatário', () => {
     // O h1 "Favoritos" sempre aparece
     await expect(page.getByRole('heading', { name: /favoritos/i })).toBeVisible()
 
-    // Empty state real: "Nenhum item salvo ainda." ou grid de cards
-    const emptyState = page.getByText(/Nenhum item salvo ainda|Toque no coração/i)
+    // Empty state real: "Nenhum item salvo ainda." (sempre renderizado quando 0 itens)
+    // ou grid de ItemCards — usa waitFor para aguardar renderização SSR
+    const emptyState = page.getByText('Nenhum item salvo ainda.')
     const cards      = page.locator('[data-testid="item-card"], article')
 
-    const hasEmpty = await emptyState.isVisible({ timeout: 5000 }).catch(() => false)
-    const hasCards = await cards.first().isVisible({ timeout: 5000 }).catch(() => false)
+    const hasEmpty = await emptyState.waitFor({ state: 'visible', timeout: 8000 }).then(() => true).catch(() => false)
+    const hasCards = await cards.first().waitFor({ state: 'visible', timeout: 8000 }).then(() => true).catch(() => false)
 
     expect(hasEmpty || hasCards, 'Página /favoritos deve mostrar empty state ou cards').toBe(true)
   })

@@ -22,7 +22,7 @@ import { FIXTURE_LOCATARIO, FIXTURE_PROPRIETARIO, FIXTURE_ADMIN, SESSION_PATHS }
 
 const STAGING_URL =
   process.env.STAGING_URL ??
-  'https://shareo-q7qggoi4m-robertoepifanio-bytes-projects.vercel.app'
+  'https://shareo-git-main-robertoepifanio-bytes-projects.vercel.app'
 
 const SUPABASE_URL = process.env.SUPABASE_URL_STAGING ?? 'https://fflpuoluiqmhpvcxubqi.supabase.co'
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY_STAGING ?? ''

@@ -1,7 +1,7 @@
 import { request } from '@playwright/test'
 
 export default async function globalSetup() {
-  const BASE = 'https://shareo-q7qggoi4m-robertoepifanio-bytes-projects.vercel.app'
+  const BASE = 'https://shareo-git-main-robertoepifanio-bytes-projects.vercel.app'
   const ctx  = await request.newContext()
 
   // Aquece as serverless functions principais antes da suite rodar
