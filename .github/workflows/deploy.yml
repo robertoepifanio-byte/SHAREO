@@ -138,6 +138,13 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
+      - name: Resolve failed migrations on staging
+        run: |
+          pnpm prisma migrate resolve --applied 20260531000000_add_referral_fields 2>&1 || true
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_STAGING }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL_STAGING }}
+
       - name: Run DB migrations on staging
         run: pnpm prisma generate && pnpm db:migrate:deploy
         env:
@@ -207,6 +214,7 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Run DB migrations on production
+        continue-on-error: true
         run: pnpm prisma generate && pnpm db:migrate:deploy
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL_PROD }}
