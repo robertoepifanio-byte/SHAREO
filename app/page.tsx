@@ -38,7 +38,9 @@ export default async function HomePage() {
     _count:   { select: { reviews: true, favorites: true, bookings: true } },
   } as const
 
-  const [categories, items, hotItems] = await Promise.all([
+  const cityName = userCity.split(",")[0].trim()
+
+  const [categories, items, hotItems, cityItemCount] = await Promise.all([
     prisma.category.findMany({
       where:   { parentId: null },
       select:  { id: true, name: true },
@@ -60,6 +62,11 @@ export default async function HomePage() {
       orderBy: { createdAt: "desc" }, // fallback; será ordenado por bookings quando suportado
       select:  itemSelect,
     }).then((rows) => rows.filter((r) => r.category && r.owner)).catch(() => []),
+
+    // P3-78: contagem de itens disponíveis na cidade do usuário
+    prisma.item.count({
+      where: { isActive: true, isApproved: true, deletedAt: null, city: cityName },
+    }).catch(() => 0),
   ])
 
   return (
@@ -77,6 +84,11 @@ export default async function HomePage() {
           aria-hidden="true"
         >
           🌿 Economia Circular
+          {cityItemCount > 0 && (
+            <span className="ml-1 text-white/80">
+              · {cityItemCount} iten{cityItemCount !== 1 ? "s" : ""} em {cityName}
+            </span>
+          )}
         </div>
         <h1 className="mb-3 text-4xl font-extrabold leading-tight text-white md:text-6xl">
           Use Mais.<br />Possua Menos.
