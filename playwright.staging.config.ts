@@ -7,7 +7,7 @@ export default defineConfig({
   retries: 1,
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report-staging' }]],
   use: {
-    baseURL: 'https://shareo-q7qggoi4m-robertoepifanio-bytes-projects.vercel.app',
+    baseURL: 'https://shareo-git-main-robertoepifanio-bytes-projects.vercel.app',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
