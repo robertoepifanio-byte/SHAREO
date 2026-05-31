@@ -1,3 +1,4 @@
+/** @jest-environment node */
 /**
  * P1-11 — Testes de integração para PATCH /api/bookings/[id]
  *
