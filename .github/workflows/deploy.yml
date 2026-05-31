@@ -107,6 +107,9 @@ jobs:
 
       - uses: pnpm/action-setup@v4
 
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
@@ -125,6 +128,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY_STAGING }}
           DATABASE_URL: ${{ secrets.DATABASE_URL_STAGING }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
 
       - name: Deploy to staging
         run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
@@ -133,10 +137,21 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Run DB migrations on staging
-        run: pnpm db:migrate:deploy
+        run: pnpm prisma generate && pnpm db:migrate:deploy
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL_STAGING }}
           DIRECT_URL: ${{ secrets.DIRECT_URL_STAGING }}
+
+      - name: Post-deploy health check (staging)
+        run: |
+          echo "Aguardando 20s para o deploy propagar..."
+          sleep 20
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ secrets.STAGING_URL }}/api/health)
+          if [ "$STATUS" != "200" ]; then
+            echo "Health check falhou com status $STATUS"
+            exit 1
+          fi
+          echo "Health check OK: $STATUS"
 
   # ─────────────────────────────────────────────────────────────────
   # JOB 3: Production Deploy — manual com aprovação obrigatória
@@ -161,6 +176,9 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
@@ -189,7 +207,7 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Run DB migrations on production
-        run: pnpm db:migrate:deploy
+        run: pnpm prisma generate && pnpm db:migrate:deploy
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL_PROD }}
           DIRECT_URL: ${{ secrets.DIRECT_URL_PROD }}
