@@ -28,11 +28,11 @@ const securityHeaders = [
         ].join("; ")
       : [
           "default-src 'self'",
-          "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:",
+          "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob: https://www.googletagmanager.com",
           "worker-src blob:",
           "style-src 'self' 'unsafe-inline'",
-          "img-src 'self' data: blob: *.supabase.co *.mapbox.com",
-          "connect-src 'self' wss://*.supabase.co api.mapbox.com events.mapbox.com *.tiles.mapbox.com *.sentry.io",
+          "img-src 'self' data: blob: *.supabase.co *.mapbox.com https://www.google-analytics.com",
+          "connect-src 'self' wss://*.supabase.co api.mapbox.com events.mapbox.com *.tiles.mapbox.com *.sentry.io https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com",
           "font-src 'self' data:",
           "frame-src 'none'",
         ].join("; "),
