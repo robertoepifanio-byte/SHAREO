@@ -15,13 +15,11 @@
  */
 
 import fs from 'fs'
-import path from 'path'
 import { test, expect } from '@playwright/test'
 import { SESSION_PATHS } from './fixtures/test-credentials'
+import { TEST_ITEM_PATH } from './fixtures/test-paths'
 
 const hasProprietarioSession = fs.existsSync(SESSION_PATHS.proprietario)
-
-export const TEST_ITEM_PATH = path.resolve('e2e/fixtures/test-item-id.json')
 
 // ---------------------------------------------------------------------------
 // 1. Visitante não autenticado
@@ -55,7 +53,6 @@ test.describe('anúncio — proprietário autenticado', () => {
   })
 
   test('cria item via API (proprietário) → 201 e salva ID para smoke #5', async ({ page }) => {
-    // Busca uma categoria válida para o payload
     const catRes = await page.request.get('/api/categories')
     expect(catRes.ok()).toBeTruthy()
     const { data: categories } = await catRes.json() as { data: { id: string; name: string }[] }
@@ -68,7 +65,7 @@ test.describe('anúncio — proprietário autenticado', () => {
         description: 'Item criado pelo smoke test E2E automatizado. Pode ser removido após os testes.',
         categoryId,
         condition:   'GOOD',
-        pricePerDay: 5000,    // R$ 50,00 (valor em centavos)
+        pricePerDay: 5000,
         city:        'Natal',
         state:       'RN',
         latitude:    -5.7945,
@@ -89,6 +86,7 @@ test.describe('anúncio — proprietário autenticado', () => {
 
     await page.goto('/meus-anuncios')
     await expect(page).toHaveURL(/\/meus-anuncios/, { timeout: 15000 })
-    await expect(page.getByText('Câmera Fixture E2E Smoke Test')).toBeVisible({ timeout: 10000 })
+    // .first() evita strict mode quando há múltiplos itens com o mesmo título de runs anteriores
+    await expect(page.getByText('Câmera Fixture E2E Smoke Test').first()).toBeVisible({ timeout: 10000 })
   })
 })
