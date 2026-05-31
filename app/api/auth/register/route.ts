@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
       req.headers.get("x-real-ip") ??
       "unknown"
 
-    const rl = checkRateLimit(`register:${ip}`, 5, 60_000) // 5 por minuto por IP
+    const rl = await checkRateLimit(`register:${ip}`, 5, 60_000) // 5 por minuto por IP
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const body = await req.json()

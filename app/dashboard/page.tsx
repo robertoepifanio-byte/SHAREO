@@ -8,6 +8,7 @@ import Image from "next/image"
 import { SuggestCard } from "@/components/dashboard/SuggestCard"
 import { MonthlyGoalProgress } from "@/components/dashboard/MonthlyGoalProgress"
 import { UpcomingReturns } from "@/components/dashboard/UpcomingReturns"
+import { calcCO2Savings } from "@/lib/co2"
 
 export const metadata: Metadata = { title: "Dashboard" }
 
@@ -160,7 +161,7 @@ export default async function DashboardPage() {
     ))
     return acc + days
   }, 0)
-  const co2Kg = +(totalDays * 0.5).toFixed(1)
+  const { kgCO2: co2Kg, treesEquivalent } = calcCO2Savings(completedBookings.length, totalDays / Math.max(1, completedBookings.length))
 
   const earningsCents = monthEarnings._sum.totalPrice ?? 0
   const firstName     = session.user.name?.split(" ")[0] ?? "você"
@@ -377,7 +378,12 @@ export default async function DashboardPage() {
             <p className="text-xl font-extrabold text-white">
               {co2Kg > 0 ? `${co2Kg} kg CO₂` : "Comece a alugar e economize CO₂"}
             </p>
-            <p className="text-sm text-white/65">economizados através de aluguel e reuso em {userCity}</p>
+            <p className="text-sm text-white/65">
+              economizados em {userCity}
+              {co2Kg > 0 && treesEquivalent >= 0.01 && (
+                <> · equivale a <strong className="text-white">{treesEquivalent >= 1 ? `${Math.floor(treesEquivalent)} árvore${Math.floor(treesEquivalent) !== 1 ? "s" : ""}` : `${(treesEquivalent * 100).toFixed(0)}% de uma árvore`}</strong> plantada</>
+              )}
+            </p>
           </div>
         </div>
 

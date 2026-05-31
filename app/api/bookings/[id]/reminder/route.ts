@@ -34,7 +34,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 
   // Rate limit por booking (1 req / 24h por processo)
   const rlKey = `reminder:${bookingId}`
-  const rl = checkRateLimit(rlKey, 1, REMINDER_COOLDOWN_MS)
+  const rl = await checkRateLimit(rlKey, 1, REMINDER_COOLDOWN_MS)
   if (!rl.allowed) {
     const resetIn = Math.ceil((rl.resetAt - Date.now()) / 60_000)
     return NextResponse.json(

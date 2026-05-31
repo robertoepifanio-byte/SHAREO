@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const rl = checkRateLimit(`upgrade-pj:${session.user.id}`, 5, 60_000)
+    const rl = await checkRateLimit(`upgrade-pj:${session.user.id}`, 5, 60_000)
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     // Apenas contas PF podem fazer upgrade
