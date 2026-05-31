@@ -5,6 +5,7 @@ import { BottomNav } from "@/components/layout/BottomNav"
 import { AppFooter } from "@/components/layout/AppFooter"
 import { ServiceWorkerRegister } from "@/components/layout/ServiceWorkerRegister"
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics"
+import { Providers } from "@/components/layout/Providers"
 import "./globals.css"
 
 const montserrat = Montserrat({
@@ -78,15 +79,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Pular para o conteúdo principal
         </a>
         {/* Padding bottom garante que o BottomNav não tape o conteúdo no mobile */}
-        <div id="main-content" className="pb-16 md:pb-0">
-          {children}
-          <AppFooter />
-        </div>
-        <BottomNav />
-        <Toaster richColors position="top-right" />
-        <ServiceWorkerRegister />
-        {/* P3-82: GA4 — carregado apenas quando NEXT_PUBLIC_GA_MEASUREMENT_ID definido */}
-        <GoogleAnalytics />
+        <Providers>
+          <div id="main-content" className="pb-16 md:pb-0">
+            {children}
+            <AppFooter />
+          </div>
+          <BottomNav />
+          <Toaster richColors position="top-right" />
+          <ServiceWorkerRegister />
+          {/* P3-82: GA4 — carregado apenas quando NEXT_PUBLIC_GA_MEASUREMENT_ID definido */}
+          <GoogleAnalytics />
+        </Providers>
     </body>
     </html>
   )
