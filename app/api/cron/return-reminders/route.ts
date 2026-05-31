@@ -113,7 +113,7 @@ export async function GET(req: NextRequest) {
     sent.push(booking.id)
   }
 
-  console.info(
+  console.warn(
     `[cron/return-reminders] sent=${sent.length} skipped=${skipped.length}`,
     { sent, skipped },
   )

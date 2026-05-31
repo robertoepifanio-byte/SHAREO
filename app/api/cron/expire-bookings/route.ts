@@ -88,6 +88,6 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  console.info(`[cron/expire-bookings] cancelled=${cancelled.length}`, cancelled)
+  console.warn(`[cron/expire-bookings] cancelled=${cancelled.length}`, cancelled)
   return NextResponse.json({ ok: true, cancelled: cancelled.length, ids: cancelled })
 }

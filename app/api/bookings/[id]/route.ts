@@ -203,7 +203,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       data.refundAmount  = refund.refundAmount
       data.refundPercent = refund.refundPercent
       // O motivo do reembolso é registrado internamente — não é exposto ao usuário via API
-      console.info(
+      console.warn(
         `[booking.cancel] id=${id} refundPercent=${refund.refundPercent} refundAmount=${refund.refundAmount} reason="${refund.reason}"`,
       )
     }
