@@ -136,6 +136,7 @@ export function ReturnConditionForm({ bookingId }: Props) {
             <label
               key={opt.value}
               htmlFor={inputId}
+              aria-label={opt.label}
               className={[
                 "flex min-h-[44px] cursor-pointer items-start gap-3 rounded-lg border border-border bg-background px-3 py-3 transition-colors hover:bg-muted/40",
                 opt.color,

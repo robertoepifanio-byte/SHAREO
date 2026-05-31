@@ -2,7 +2,7 @@
 
 import {
   useRef, useState, useCallback,
-  type TouchEvent, type ReactNode,
+  type TouchEvent,
 } from "react"
 import { useRouter } from "next/navigation"
 import { ItemCard } from "./ItemCard"

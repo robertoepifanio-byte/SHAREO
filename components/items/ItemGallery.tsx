@@ -102,7 +102,6 @@ export function ItemGallery({ images, title }: Props) {
             <button
               key={img.url}
               type="button"
-              role="listitem"
               onClick={() => setActive(idx)}
               aria-label={`Ver foto ${idx + 1}`}
               aria-pressed={active === idx}

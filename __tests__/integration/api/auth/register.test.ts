@@ -1,3 +1,4 @@
+/** @jest-environment node */
 /**
  * P1-14 — Testes de integração para POST /api/auth/register
  *

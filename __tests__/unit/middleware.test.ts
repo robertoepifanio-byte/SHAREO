@@ -1,3 +1,4 @@
+/** @jest-environment node */
 /**
  * P1-17 — Testes de unidade para middleware.ts
  *
