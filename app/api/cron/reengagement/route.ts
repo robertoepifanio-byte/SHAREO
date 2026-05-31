@@ -14,8 +14,8 @@ import { Resend } from "resend"
 
 export const dynamic = "force-dynamic"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-const FROM   = "ShareO <noreply@shareo.com.br>"
+const FROM = "ShareO <noreply@shareo.com.br>"
+function getResend() { return new Resend(process.env.RESEND_API_KEY) }
 
 function daysAgo(n: number) {
   const d = new Date()
@@ -49,7 +49,7 @@ async function sendReviewReminders() {
   const results = await Promise.allSettled(
     bookings.map(async (b) => {
       if (!b.borrower.email) return
-      await resend.emails.send({
+      await getResend().emails.send({
         from:    FROM,
         to:      b.borrower.email,
         subject: `Como foi alugar "${b.item.title}"? Deixe sua avaliação`,
@@ -98,7 +98,7 @@ async function sendSimilarItemSuggestions() {
         .map((i) => `<li><a href="${process.env.NEXTAUTH_URL}/itens/${i.slug ?? i.id}">${i.title} — R$ ${(i.pricePerDay / 100).toFixed(2)}/dia</a></li>`)
         .join("")
 
-      await resend.emails.send({
+      await getResend().emails.send({
         from:    FROM,
         to:      b.borrower.email,
         subject: `Você pode gostar: itens similares ao "${b.item.title}"`,
@@ -135,7 +135,7 @@ async function sendFavoriteAvailableReminders() {
   const results = await Promise.allSettled(
     favorites.map(async (f) => {
       if (!f.user.email) return
-      await resend.emails.send({
+      await getResend().emails.send({
         from:    FROM,
         to:      f.user.email,
         subject: `"${f.item.title}" que você salvou está disponível!`,
