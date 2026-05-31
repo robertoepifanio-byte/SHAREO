@@ -111,7 +111,7 @@ test.describe('Páginas de erro — 404, 500 e offline', () => {
     // Clica no link e confirma que a navegação ocorreu para uma rota válida
     await returnLink.first().click()
 
-    await expect(page).toHaveURL(/^\/(itens|$)|^\/itens/, { timeout: 10000 })
+    await expect(page).toHaveURL(/\/(itens)?$/, { timeout: 10000 })
     await expect(page.getByRole('main')).toBeVisible()
   })
 

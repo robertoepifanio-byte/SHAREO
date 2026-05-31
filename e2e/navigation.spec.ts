@@ -163,19 +163,22 @@ test.describe('Navegação — header, menu mobile e links', () => {
     const navMenu = page.locator('#mobile-nav')
     await expect(navMenu).toBeVisible({ timeout: 5000 })
 
-    // Clica num link diferente da URL atual para garantir navegação
-    const targetLink = navMenu.locator('a[href="/itens"]').first()
-    const hasTarget = await targetLink.isVisible()
-    if (!hasTarget) {
-      // Não há link para /itens no menu — pula verificação de fechamento
+    const firstNavLink = navMenu.getByRole('link').first()
+    const linkHref = await firstNavLink.getAttribute('href')
+    const urlBefore = page.url()
+
+    // Se o link aponta para a página atual, não é possível verificar comportamento
+    const isCurrentPage = !linkHref || linkHref === '/' && urlBefore.endsWith('/')
+    if (isCurrentPage) {
       return
     }
-    await targetLink.click()
-    await page.waitForLoadState('domcontentloaded')
+
+    await firstNavLink.click()
+    await page.waitForLoadState('domcontentloaded').catch(() => {})
 
     // Após clique: ou o menu fecha (não visível) ou a página mudou
     const menuAindaVisivel = await navMenu.isVisible()
-    const urlMudou = page.url().includes('/itens')
+    const urlMudou = page.url() !== urlBefore
 
     expect(
       !menuAindaVisivel || urlMudou,

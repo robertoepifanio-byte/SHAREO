@@ -117,7 +117,7 @@ test.describe('Autenticação — cadastro, login, logout e redirect', () => {
 
     // Erro inline deve aparecer próximo ao campo de senha — não redireciona
     await expect(
-      page.getByText(/maiúscula|senha forte|requisito|fraca|caractere/i),
+      page.getByText(/maiúscula|senha forte|requisito|fraca|caractere/i).first(),
     ).toBeVisible({ timeout: 5000 })
 
     // Confirma que não houve redirecionamento
