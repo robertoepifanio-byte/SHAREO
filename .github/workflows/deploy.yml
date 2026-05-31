@@ -95,9 +95,11 @@ jobs:
     name: Deploy Staging
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    env:
+      STAGING_URL: ${{ secrets.STAGING_URL }}
     environment:
       name: staging
-      url: ${{ secrets.STAGING_URL }}
+      url: ${{ env.STAGING_URL }}
     steps:
       - uses: actions/checkout@v4
 
