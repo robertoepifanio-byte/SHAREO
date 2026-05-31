@@ -20,8 +20,10 @@ coverage/
 playwright-report/
 playwright-report-staging/
 test-results/
-# Session fixtures contêm tokens — não commitar
+# Session fixtures e dados de teste — não commitar
 e2e/fixtures/session-*.json
+e2e/fixtures/test-item-id.json
+e2e/fixtures/test-booking-id.json
 
 # Prisma
 prisma/migrations/dev.db

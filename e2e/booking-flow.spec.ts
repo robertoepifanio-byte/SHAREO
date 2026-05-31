@@ -1,12 +1,14 @@
+import fs from 'fs'
+import path from 'path'
 import { test, expect, type Page } from '@playwright/test'
+import { SESSION_PATHS } from './fixtures/test-credentials'
+import { TEST_ITEM_PATH } from './anuncio.spec'
 
-// ---------------------------------------------------------------------------
-// Nota: todos os testes que dependem de usuário autenticado (locatário ou
-// proprietário) estão marcados como test.skip até que fixtures de sessão
-// sejam criadas. O corpo do teste documenta o fluxo esperado completo.
-// TODO: criar fixture de usuário (locatário e proprietário) via storageState
-// ou injeção de cookie de sessão NextAuth para habilitar esses testes.
-// ---------------------------------------------------------------------------
+const TEST_BOOKING_PATH = path.resolve('e2e/fixtures/test-booking-id.json')
+
+const hasLocatarioSession    = fs.existsSync(SESSION_PATHS.locatario)
+const hasProprietarioSession = fs.existsSync(SESSION_PATHS.proprietario)
+const hasTestItem            = fs.existsSync(TEST_ITEM_PATH)
 
 // ---------------------------------------------------------------------------
 // Helper: navega para a lista de itens e retorna o primeiro ItemCard
@@ -21,7 +23,74 @@ async function getFirstItemCard(page: Page) {
 }
 
 // ---------------------------------------------------------------------------
-// Suite
+// Smoke #5 — Fluxo de reserva com session fixtures
+// ---------------------------------------------------------------------------
+
+test.describe('smoke #5 — locatário solicita reserva', () => {
+  test.skip(
+    !hasLocatarioSession || !hasTestItem,
+    'Requer session-locatario.json e test-item-id.json — rode: pnpm tsx scripts/create-staging-fixtures.ts && pnpm playwright test e2e/anuncio.spec.ts',
+  )
+  test.use({ storageState: SESSION_PATHS.locatario })
+
+  test('cria reserva via API e verifica status PENDING em /reservas', async ({ page }) => {
+    const { itemId } = JSON.parse(fs.readFileSync(TEST_ITEM_PATH, 'utf-8')) as { itemId: string }
+
+    const res = await page.request.post('/api/bookings', {
+      data: {
+        itemId,
+        startDate:    '2026-07-01',
+        endDate:      '2026-07-03',
+        borrowerNote: 'Reserva criada pelo smoke test E2E automatizado.',
+      },
+    })
+    expect(res.ok()).toBeTruthy()
+
+    const { data: booking } = await res.json() as { data: { id: string; status: string } }
+    expect(booking.id).toBeTruthy()
+    expect(booking.status).toBe('PENDING')
+
+    fs.writeFileSync(TEST_BOOKING_PATH, JSON.stringify({ bookingId: booking.id }, null, 2))
+    console.log(`  booking criado: ${booking.id}`)
+
+    // Verifica na UI (aba Como locatário)
+    await page.goto('/reservas?tab=borrower')
+    await expect(page).toHaveURL(/\/reservas/, { timeout: 15000 })
+    await expect(page.getByText('Aguardando').first()).toBeVisible({ timeout: 10000 })
+  })
+})
+
+test.describe('smoke #5 — proprietário confirma reserva', () => {
+  test.skip(
+    !hasProprietarioSession || !fs.existsSync(TEST_BOOKING_PATH),
+    'Requer session-proprietario.json e test-booking-id.json — rode o teste anterior primeiro',
+  )
+  test.use({ storageState: SESSION_PATHS.proprietario })
+
+  test('vê reserva PENDING em /reservas e confirma via API → CONFIRMED', async ({ page }) => {
+    const { bookingId } = JSON.parse(fs.readFileSync(TEST_BOOKING_PATH, 'utf-8')) as { bookingId: string }
+
+    // Verifica que a reserva aparece na UI (aba Como locador)
+    await page.goto('/reservas?tab=owner')
+    await expect(page).toHaveURL(/\/reservas/, { timeout: 15000 })
+    await expect(page.getByText('Aguardando').first()).toBeVisible({ timeout: 10000 })
+
+    // Confirma via API
+    const confirmRes = await page.request.patch(`/api/bookings/${bookingId}`, {
+      data: { action: 'confirm' },
+    })
+    expect(confirmRes.ok()).toBeTruthy()
+    const { data: confirmed } = await confirmRes.json() as { data: { status: string } }
+    expect(confirmed.status).toBe('CONFIRMED')
+
+    // Recarrega e verifica que o status mudou para "Confirmada"
+    await page.goto('/reservas?tab=owner')
+    await expect(page.getByText('Confirmada').first()).toBeVisible({ timeout: 10000 })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Suite legada (testes de UI completa — skipped, documentam o fluxo esperado)
 // ---------------------------------------------------------------------------
 
 test.describe('Fluxo de reserva — busca, reserva e avaliação pós-locação', () => {
