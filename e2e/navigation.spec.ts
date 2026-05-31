@@ -59,7 +59,13 @@ test.describe('Navegação — header, menu mobile e links', () => {
   for (const rota of ['/itens', '/login', '/cadastro'] as const) {
     test(`header visível em ${rota}`, async ({ page }) => {
       await page.goto(rota)
-      await expect(getHeader(page)).toBeVisible()
+      // Páginas de auth usam layout simplificado sem <header> — verifica logo
+      const isAuthRoute = rota === '/login' || rota === '/cadastro'
+      if (isAuthRoute) {
+        await expect(page.getByRole('img', { name: /ShareO/i })).toBeVisible()
+      } else {
+        await expect(getHeader(page)).toBeVisible()
+      }
     })
   }
 
@@ -130,7 +136,7 @@ test.describe('Navegação — header, menu mobile e links', () => {
     await hamburguer.click()
 
     // Menu lateral ou drawer deve aparecer com links de navegação
-    const navMenu = page.getByRole('navigation').filter({ hasNot: page.getByRole('banner') })
+    const navMenu = page.locator('#mobile-nav')
     await expect(navMenu).toBeVisible({ timeout: 5000 })
 
     // Deve conter ao menos um link navegável
@@ -154,7 +160,7 @@ test.describe('Navegação — header, menu mobile e links', () => {
 
     await hamburguer.click()
 
-    const navMenu = page.getByRole('navigation').filter({ hasNot: page.getByRole('banner') })
+    const navMenu = page.locator('#mobile-nav')
     await expect(navMenu).toBeVisible({ timeout: 5000 })
 
     // Clica no primeiro link de navegação
@@ -185,7 +191,7 @@ test.describe('Navegação — header, menu mobile e links', () => {
     await expect(
       header.getByRole('link', { name: /ShareO|home|início/i }).or(
         header.getByRole('link').filter({ has: page.getByRole('img', { name: /logo/i }) }),
-      ),
+      ).first(),
     ).toBeVisible()
 
     // Explorar / buscar / itens
@@ -207,15 +213,8 @@ test.describe('Navegação — header, menu mobile e links', () => {
     await page.goto('/')
     await expect(page.getByRole('main')).toBeVisible()
 
-    // Bottom nav pode ser identificado por data-testid, aria-label ou posição
-    const bottomNav = page.locator(
-      '[data-testid="bottom-nav"], [aria-label*="navegação inferior"], [aria-label*="bottom"]',
-    ).or(
-      // Fallback: nav dentro de footer ou com posição fixed/sticky na base
-      page.locator('nav').filter({
-        has: page.locator('a[href="/"], a[href="/itens"], a[href="/anunciar"]'),
-      }),
-    )
+    // Bottom nav identificado pelo aria-label exato e classe Tailwind fixed bottom-0
+    const bottomNav = page.locator('nav[aria-label="Navegação mobile"][class*="bottom-0"]')
 
     const isVisible = await bottomNav.isVisible()
     if (!isVisible) {

@@ -130,15 +130,8 @@ test.describe('Responsividade — grid de itens e layout nos 3 breakpoints', () 
     await page.goto('/itens')
     await expect(page.getByRole('main')).toBeVisible()
 
-    // Bottom navigation — aceita data-testid, aria-label ou nav com links principais
-    const bottomNav = page
-      .locator('[data-testid="bottom-nav"]')
-      .or(page.locator('[aria-label*="navegação inferior"], [aria-label*="bottom"]'))
-      .or(
-        page.locator('nav').filter({
-          has: page.locator('a[href="/"], a[href="/itens"], a[href="/anunciar"]'),
-        }),
-      )
+    // Bottom navigation identificado pelo aria-label exato e classe Tailwind fixed bottom-0
+    const bottomNav = page.locator('nav[aria-label="Navegação mobile"][class*="bottom-0"]')
 
     const hasBottomNav = await bottomNav.isVisible({ timeout: 5000 })
     if (hasBottomNav) {
@@ -197,9 +190,7 @@ test.describe('Responsividade — grid de itens e layout nos 3 breakpoints', () 
     }
 
     // Bottom navigation não deve estar visível no desktop
-    const bottomNav = page
-      .locator('[data-testid="bottom-nav"]')
-      .or(page.locator('[aria-label*="navegação inferior"], [aria-label*="bottom"]'))
+    const bottomNav = page.locator('nav[aria-label="Navegação mobile"][class*="bottom-0"]')
 
     const bottomNavVisible = await bottomNav.isVisible({ timeout: 3000 })
     expect(
