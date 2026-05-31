@@ -1,10 +1,7 @@
 import fs from 'fs'
-import path from 'path'
 import { test, expect, type Page } from '@playwright/test'
 import { SESSION_PATHS } from './fixtures/test-credentials'
-import { TEST_ITEM_PATH } from './anuncio.spec'
-
-const TEST_BOOKING_PATH = path.resolve('e2e/fixtures/test-booking-id.json')
+import { TEST_ITEM_PATH, TEST_BOOKING_PATH } from './fixtures/test-paths'
 
 const hasLocatarioSession    = fs.existsSync(SESSION_PATHS.locatario)
 const hasProprietarioSession = fs.existsSync(SESSION_PATHS.proprietario)
@@ -39,11 +36,15 @@ test.describe('smoke #5 — locatário solicita reserva', () => {
     const res = await page.request.post('/api/bookings', {
       data: {
         itemId,
-        startDate:    '2026-07-01',
-        endDate:      '2026-07-03',
+        startDate:    '2026-07-01T12:00:00.000Z',
+        endDate:      '2026-07-03T12:00:00.000Z',
         borrowerNote: 'Reserva criada pelo smoke test E2E automatizado.',
       },
     })
+    if (!res.ok()) {
+      const err = await res.json().catch(() => ({}))
+      console.error(`  [booking API] ${res.status()}:`, JSON.stringify(err))
+    }
     expect(res.ok()).toBeTruthy()
 
     const { data: booking } = await res.json() as { data: { id: string; status: string } }
@@ -62,12 +63,15 @@ test.describe('smoke #5 — locatário solicita reserva', () => {
 
 test.describe('smoke #5 — proprietário confirma reserva', () => {
   test.skip(
-    !hasProprietarioSession || !fs.existsSync(TEST_BOOKING_PATH),
-    'Requer session-proprietario.json e test-booking-id.json — rode o teste anterior primeiro',
+    !hasProprietarioSession,
+    'Requer session-proprietario.json — rode: pnpm tsx scripts/create-staging-fixtures.ts',
   )
   test.use({ storageState: SESSION_PATHS.proprietario })
 
   test('vê reserva PENDING em /reservas e confirma via API → CONFIRMED', async ({ page }) => {
+    // Avaliado em runtime (após o teste do locatário criar o arquivo)
+    test.skip(!fs.existsSync(TEST_BOOKING_PATH), 'test-booking-id.json não encontrado — rode o teste do locatário primeiro')
+
     const { bookingId } = JSON.parse(fs.readFileSync(TEST_BOOKING_PATH, 'utf-8')) as { bookingId: string }
 
     // Verifica que a reserva aparece na UI (aba Como locador)
