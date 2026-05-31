@@ -32,7 +32,8 @@ async function fillRegisterForm(page: Page, data: RegisterData) {
   }
 
   await page.getByLabel(/CPF/i).fill(data.cpf)
-  await page.getByLabel('Cidade', { exact: true }).fill(data.cidade)
+  // getByRole usa ARIA accessible name (exclui aria-hidden *) — evita "Cidade*" vs "Cidade"
+  await page.getByRole('textbox', { name: /^Cidade/i }).fill(data.cidade)
 
   // Estado pode ser select ou input
   const estadoSelect = page.getByRole('combobox', { name: /estado/i })
@@ -46,7 +47,7 @@ async function fillRegisterForm(page: Page, data: RegisterData) {
 async function login(page: Page, email: string, password: string) {
   await page.goto('/login')
   await page.getByLabel(/e-?mail/i).fill(email)
-  await page.getByLabel('Senha', { exact: true }).fill(password)
+  await page.locator('input[type="password"]').fill(password)
   await page.getByRole('button', { name: /entrar|login|acessar/i }).click()
 }
 
