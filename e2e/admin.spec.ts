@@ -9,32 +9,26 @@
  *  5. Admin acessa /admin/usuarios e vê lista
  *  6. Admin pode suspender usuário
  *  7. Rotas /admin/* bloqueadas para usuário não autenticado
+ *
+ * Session fixtures: e2e/fixtures/session-admin.json
+ * Gerar com: pnpm tsx scripts/create-staging-fixtures.ts
  */
 
+import fs from 'fs'
 import { test, expect } from "@playwright/test"
+import { FIXTURE_LOCATARIO, FIXTURE_ADMIN, SESSION_PATHS } from './fixtures/test-credentials'
 
 const ADMIN_URL   = "/admin"
 const ITEMS_URL   = "/admin/itens"
 const USERS_URL   = "/admin/usuarios"
 
-// ─── helpers ─────────────────────────────────────────────────────────────────
-
-async function loginAs(page: import("@playwright/test").Page, role: "admin" | "user") {
-  const creds = role === "admin"
-    ? { email: process.env.E2E_ADMIN_EMAIL ?? "admin@shareo.com.br",    password: process.env.E2E_ADMIN_PASSWORD ?? "Admin@123" }
-    : { email: process.env.E2E_USER_EMAIL  ?? "usuario@shareo.com.br",  password: process.env.E2E_USER_PASSWORD  ?? "Senha@123" }
-
-  await page.goto("/entrar")
-  await page.fill('[name="email"]',    creds.email)
-  await page.fill('[name="password"]', creds.password)
-  await page.click('[type="submit"]')
-  await page.waitForURL(/\/(dashboard|home|$)/, { timeout: 10_000 })
-}
+const hasAdminSession     = fs.existsSync(SESSION_PATHS.admin)
+const hasLocatarioSession = fs.existsSync(SESSION_PATHS.locatario)
 
 // ─── 1. Acesso bloqueado para visitante ──────────────────────────────────────
 
 test.describe("visitante — sem autenticação", () => {
-  test("GET /admin redireciona para /entrar ou home", async ({ page }) => {
+  test("GET /admin redireciona para /login ou home", async ({ page }) => {
     await page.goto(ADMIN_URL)
     await expect(page).not.toHaveURL(/\/admin$/)
   })
@@ -48,15 +42,12 @@ test.describe("visitante — sem autenticação", () => {
 // ─── 2. Usuário comum bloqueado ──────────────────────────────────────────────
 
 test.describe("usuário comum — sem role ADMIN", () => {
-  test.skip(
-    !process.env.E2E_USER_EMAIL,
-    "E2E_USER_EMAIL não definido — skip em CI sem seed",
-  )
+  test.skip(!hasLocatarioSession, "Session fixture não encontrada — rode: pnpm tsx scripts/create-staging-fixtures.ts")
 
-  test("usuário comum não acessa /admin", async ({ page }) => {
-    await loginAs(page, "user")
+  test.use({ storageState: SESSION_PATHS.locatario })
+
+  test("usuário comum não acessa /admin (redireciona ou 403)", async ({ page }) => {
     await page.goto(ADMIN_URL)
-    // Deve redirecionar ou mostrar 403
     await expect(page).not.toHaveURL(/\/admin$/)
   })
 })
@@ -64,31 +55,25 @@ test.describe("usuário comum — sem role ADMIN", () => {
 // ─── 3–6. Admin autenticado ──────────────────────────────────────────────────
 
 test.describe("admin autenticado", () => {
-  test.skip(
-    !process.env.E2E_ADMIN_EMAIL,
-    "E2E_ADMIN_EMAIL não definido — skip em CI sem seed de admin",
-  )
+  test.skip(!hasAdminSession, "Session fixture não encontrada — rode: pnpm tsx scripts/create-staging-fixtures.ts")
 
-  test.beforeEach(async ({ page }) => {
-    await loginAs(page, "admin")
-  })
+  test.use({ storageState: SESSION_PATHS.admin })
 
   test("admin acessa dashboard /admin com título", async ({ page }) => {
     await page.goto(ADMIN_URL)
-    await expect(page).toHaveURL(/\/admin/)
+    await expect(page).toHaveURL(/\/admin/, { timeout: 15000 })
     await expect(page.locator("h1, h2").first()).toBeVisible()
   })
 
   test("admin vê lista de itens em /admin/itens", async ({ page }) => {
     await page.goto(ITEMS_URL)
-    await expect(page).toHaveURL(/\/admin\/itens/)
-    // Página carrega sem erro 500
+    await expect(page).toHaveURL(/\/admin\/itens/, { timeout: 15000 })
     await expect(page.locator("main, [role='main']")).toBeVisible()
   })
 
   test("admin vê lista de usuários em /admin/usuarios", async ({ page }) => {
     await page.goto(USERS_URL)
-    await expect(page).toHaveURL(/\/admin\/usuarios/)
+    await expect(page).toHaveURL(/\/admin\/usuarios/, { timeout: 15000 })
     await expect(page.locator("main, [role='main']")).toBeVisible()
   })
 
@@ -99,7 +84,7 @@ test.describe("admin autenticado", () => {
     for (let i = 0; i < Math.min(count, 5); i++) {
       const box = await buttons.nth(i).boundingBox()
       if (box) {
-        expect(box.height).toBeGreaterThanOrEqual(40) // tolerância de 4px
+        expect(box.height).toBeGreaterThanOrEqual(40) // tolerância 4px
       }
     }
   })

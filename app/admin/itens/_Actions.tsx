@@ -37,7 +37,7 @@ export function ItemActions({ itemId, isApproved, isActive }: Props) {
         <button
           onClick={() => act("approve")}
           disabled={!!loading}
-          className="rounded-md bg-success/10 px-3 py-1 text-xs font-semibold text-success hover:bg-success/20 disabled:opacity-50 transition-colors"
+          className="flex h-11 items-center justify-center rounded-md bg-success/10 px-3 text-xs font-semibold text-success hover:bg-success/20 disabled:opacity-50 transition-colors"
         >
           {loading === "approve" ? "…" : "Aprovar"}
         </button>
@@ -46,7 +46,7 @@ export function ItemActions({ itemId, isApproved, isActive }: Props) {
         <button
           onClick={() => act("reject")}
           disabled={!!loading}
-          className="rounded-md bg-red-50 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-100 disabled:opacity-50 transition-colors"
+          className="flex h-11 items-center justify-center rounded-md bg-red-50 px-3 text-xs font-semibold text-red-600 hover:bg-red-100 disabled:opacity-50 transition-colors"
         >
           {loading === "reject" ? "…" : "Rejeitar"}
         </button>
@@ -54,7 +54,7 @@ export function ItemActions({ itemId, isApproved, isActive }: Props) {
       <button
         onClick={() => act("toggle_active")}
         disabled={!!loading}
-        className="rounded-md bg-muted px-3 py-1 text-xs font-semibold text-foreground hover:bg-border disabled:opacity-50 transition-colors"
+        className="flex h-11 items-center justify-center rounded-md bg-muted px-3 text-xs font-semibold text-foreground hover:bg-border disabled:opacity-50 transition-colors"
       >
         {loading === "toggle_active" ? "…" : isActive ? "Desativar" : "Ativar"}
       </button>
