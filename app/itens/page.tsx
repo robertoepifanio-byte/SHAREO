@@ -443,8 +443,7 @@ function FilterForm({
     <form method="GET" action="/itens" className="space-y-5">
       {search   && <input type="hidden" name="search" value={search} />}
       {sort     && <input type="hidden" name="sort"   value={sort} />}
-      {userLat  && <input type="hidden" name="ulat"   value={userLat} />}
-      {userLng  && <input type="hidden" name="ulng"   value={userLng} />}
+      {/* ulat/ulng são gerenciados pelo DistanceFilter (client) para suportar geolocalização dinâmica */}
 
       {/* Categoria */}
       <fieldset>
