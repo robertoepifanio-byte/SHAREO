@@ -1,4 +1,5 @@
 import type { NextConfig } from "next"
+import { withSentryConfig } from "@sentry/nextjs"
 
 const isDev = process.env.NODE_ENV === "development"
 
@@ -76,4 +77,12 @@ const config: NextConfig = {
   },
 }
 
-export default config
+export default withSentryConfig(config, {
+  org:     process.env.SENTRY_ORG     ?? "shareo",
+  project: process.env.SENTRY_PROJECT ?? "shareo-web",
+  silent:  !process.env.CI,
+  hideSourceMaps:          true,
+  widenClientFileUpload:   true,
+  disableLogger:           true,
+  automaticVercelMonitors: true,
+})

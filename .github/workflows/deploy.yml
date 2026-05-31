@@ -131,6 +131,8 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL_STAGING }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+          NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
       - name: Deploy to staging
         run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
