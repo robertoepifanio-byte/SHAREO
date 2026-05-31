@@ -32,11 +32,11 @@ export const RegisterSchema = z
     message: "CPF obrigatório para Pessoa Física",
     path: ["cpf"],
   })
-  .refine((d) => d.userType !== "PF" || validateCPF(d.cpf!), {
+  .refine((d) => d.userType !== "PF" || (!!d.cpf && validateCPF(d.cpf)), {
     message: "CPF inválido",
     path: ["cpf"],
   })
-  .refine((d) => d.userType !== "PJ" || validateCNPJ(d.cnpj!), {
+  .refine((d) => d.userType !== "PJ" || (!!d.cnpj && validateCNPJ(d.cnpj)), {
     message: "CNPJ inválido",
     path: ["cnpj"],
   })
