@@ -438,7 +438,7 @@ USING (is_admin());
 
 
 -- ════════════════════════════════════════════════════════════
--- TABELA: booking_photos — participantes da reserva veem; uploader insere
+-- TABELA: booking_photos — participantes da reserva veem, uploader insere
 -- ════════════════════════════════════════════════════════════
 CREATE POLICY "booking_photos_select_party"
 ON booking_photos FOR SELECT
@@ -457,7 +457,7 @@ USING (is_admin());
 
 
 -- ════════════════════════════════════════════════════════════
--- TABELA: contract_acceptances — participantes leem; insert via Prisma
+-- TABELA: contract_acceptances — participantes leem, insert via Prisma
 -- ════════════════════════════════════════════════════════════
 CREATE POLICY "contract_acceptances_select_party"
 ON contract_acceptances FOR SELECT

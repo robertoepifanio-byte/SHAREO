@@ -87,6 +87,8 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY_STAGING }}
       NEXT_PUBLIC_APP_URL: ${{ secrets.STAGING_URL }}
       AUTH_SECRET: "ci-build-secret-placeholder"
+      DATABASE_URL: ${{ secrets.DATABASE_URL_STAGING }}
+      DIRECT_URL: ${{ secrets.DIRECT_URL_STAGING }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
