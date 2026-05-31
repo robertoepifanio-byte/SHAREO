@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { CreateReviewSchema } from "@/lib/validations/reviews"
 import type { ReviewType } from "@prisma/client"
+import { REPUTATION_PER_REVIEW } from "@/lib/badges"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -166,6 +167,12 @@ export async function POST(req: NextRequest, { params }: Params) {
         createdAt: true,
       },
     })
+
+    // P3-70: +10 pontos de reputação para quem avaliou (fire-and-forget)
+    prisma.user.update({
+      where: { id: userId },
+      data:  { reputationPoints: { increment: REPUTATION_PER_REVIEW } },
+    }).catch(() => {})
 
     // Notifica o avaliado (fire-and-forget)
     prisma.notification.create({

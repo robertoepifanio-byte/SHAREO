@@ -4,6 +4,7 @@ import { Toaster } from "sonner"
 import { BottomNav } from "@/components/layout/BottomNav"
 import { AppFooter } from "@/components/layout/AppFooter"
 import { ServiceWorkerRegister } from "@/components/layout/ServiceWorkerRegister"
+import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics"
 import "./globals.css"
 
 const montserrat = Montserrat({
@@ -84,6 +85,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <BottomNav />
         <Toaster richColors position="top-right" />
         <ServiceWorkerRegister />
+        {/* P3-82: GA4 — carregado apenas quando NEXT_PUBLIC_GA_MEASUREMENT_ID definido */}
+        <GoogleAnalytics />
     </body>
     </html>
   )

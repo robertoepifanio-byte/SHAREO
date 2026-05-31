@@ -130,6 +130,9 @@ model User {
   isVerified Boolean @default(false)
   isActive   Boolean @default(true)
 
+  // P3-70: pontos de reputação (+10 por avaliação enviada)
+  reputationPoints Int @default(0)
+
   // Verificação de identidade
   idVerificationStatus IdVerificationStatus @default(UNVERIFIED)
   idDocumentUrl        String?

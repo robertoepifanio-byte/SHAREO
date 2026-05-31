@@ -925,8 +925,21 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
         <p className="text-xs text-muted-foreground">
           Máximo 10 MB por foto · JPEG, PNG, WebP ou HEIC
         </p>
-        {/* P2-62 — dica de fotos */}
+        {/* P2-62 — dica geral */}
         <p className="text-xs text-brand">{FIELD_TIPS.photos}</p>
+        {/* P3-76 — dicas de fotografia inline */}
+        <details className="mt-2">
+          <summary className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-brand transition-colors">
+            Dicas para fotos que convertem mais ▾
+          </summary>
+          <ul className="mt-2 space-y-1 pl-3 text-xs text-muted-foreground list-disc">
+            <li>Use <strong>luz natural</strong> — abra janelas e evite flash direto</li>
+            <li>Fotografe de <strong>múltiplos ângulos</strong>: frente, lateral, detalhe e uso em escala</li>
+            <li>Fundo <strong>neutro ou organizado</strong> transmite mais confiança</li>
+            <li>Inclua <strong>todos os acessórios</strong> que acompanham o item</li>
+            <li>Evite filtros excessivos — o item deve parecer exatamente como é</li>
+          </ul>
+        </details>
       </section>
 
       {/* ── Requisitos para reserva ─────────────────────────────────────────── */}

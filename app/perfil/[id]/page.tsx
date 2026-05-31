@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { ItemCard } from "@/components/items/ItemCard"
 import { getOwnerResponseBadge } from "@/lib/ownerStats"
+import { getBorrowerBadge, getNextBorrowerBadge, isActiveReviewer, ACTIVE_REVIEWER_BADGE } from "@/lib/badges"
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -25,16 +26,17 @@ export default async function PublicProfilePage({ params }: Props) {
     prisma.user.findFirst({
       where:  { id, deletedAt: null, isActive: true },
       select: {
-        id:           true,
-        name:         true,
-        bio:          true,
-        city:         true,
-        state:        true,
-        neighborhood: true,
-        avatarUrl:    true,
-        userType:     true,
-        isVerified:   true,
-        createdAt:    true,
+        id:               true,
+        name:             true,
+        bio:              true,
+        city:             true,
+        state:            true,
+        neighborhood:     true,
+        avatarUrl:        true,
+        userType:         true,
+        isVerified:       true,
+        createdAt:        true,
+        reputationPoints: true,
         _count: {
           select: {
             items:              { where: { isActive: true, deletedAt: null } },
@@ -83,9 +85,18 @@ export default async function PublicProfilePage({ params }: Props) {
 
   if (!user) notFound()
 
-  const [responseBadge] = await Promise.all([
+  const [responseBadge, lastReview] = await Promise.all([
     getOwnerResponseBadge(user.id),
+    prisma.review.findFirst({
+      where:   { reviewerId: user.id },
+      orderBy: { createdAt: "desc" },
+      select:  { createdAt: true },
+    }).catch(() => null),
   ])
+
+  const borrowerBadge  = getBorrowerBadge(user._count.bookingsAsBorrower)
+  const nextBadge      = getNextBorrowerBadge(user._count.bookingsAsBorrower)
+  const activeReviewer = isActiveReviewer(lastReview?.createdAt)
 
   const avgRating   = reviewStats._avg.rating
   const reviewCount = reviewStats._count._all
@@ -193,6 +204,50 @@ export default async function PublicProfilePage({ params }: Props) {
               )}
             </div>
           </div>
+
+          {/* ── P3-70/71/72/74: Reputação, badges e progresso ── */}
+          {(borrowerBadge || activeReviewer || nextBadge || user.reputationPoints > 0) && (
+            <div className="rounded-xl border border-border bg-surface p-6 space-y-4">
+              <h2 className="font-semibold text-foreground">Conquistas</h2>
+
+              {/* Pontos de reputação */}
+              {user.reputationPoints > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  ⭐ <strong className="text-foreground">{user.reputationPoints}</strong> pontos de reputação
+                </p>
+              )}
+
+              {/* Badges ativos */}
+              <div className="flex flex-wrap gap-2">
+                {borrowerBadge && (
+                  <span className={`inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-xs font-semibold ${borrowerBadge.color}`}>
+                    {borrowerBadge.emoji} Locatário {borrowerBadge.label}
+                  </span>
+                )}
+                {activeReviewer && (
+                  <span className={`inline-flex items-center gap-1 rounded-full bg-muted px-3 py-1 text-xs font-semibold ${ACTIVE_REVIEWER_BADGE.color}`}>
+                    {ACTIVE_REVIEWER_BADGE.emoji} {ACTIVE_REVIEWER_BADGE.label}
+                  </span>
+                )}
+              </div>
+
+              {/* P3-74: Progress bar para próximo badge */}
+              {nextBadge && (
+                <div>
+                  <div className="mb-1 flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Próximo: {nextBadge.badge.emoji} {nextBadge.badge.label} ({nextBadge.badge.minBookings} aluguéis)</span>
+                    <span>{nextBadge.progress}%</span>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow={nextBadge.progress} aria-valuemin={0} aria-valuemax={100}>
+                    <div
+                      className="h-full rounded-full bg-brand transition-all duration-500"
+                      style={{ width: `${nextBadge.progress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* ── Anúncios ativos ── */}
           {user.items.length > 0 && (
