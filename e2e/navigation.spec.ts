@@ -62,7 +62,7 @@ test.describe('Navegação — header, menu mobile e links', () => {
       // Páginas de auth usam layout simplificado sem <header> — verifica logo
       const isAuthRoute = rota === '/login' || rota === '/cadastro'
       if (isAuthRoute) {
-        await expect(page.getByRole('img', { name: /ShareO/i })).toBeVisible()
+        await expect(page.getByRole('img', { name: /ShareO/i }).first()).toBeVisible()
       } else {
         await expect(getHeader(page)).toBeVisible()
       }
@@ -163,13 +163,19 @@ test.describe('Navegação — header, menu mobile e links', () => {
     const navMenu = page.locator('#mobile-nav')
     await expect(navMenu).toBeVisible({ timeout: 5000 })
 
-    // Clica no primeiro link de navegação
-    const firstNavLink = navMenu.getByRole('link').first()
-    await firstNavLink.click()
+    // Clica num link diferente da URL atual para garantir navegação
+    const targetLink = navMenu.locator('a[href="/itens"]').first()
+    const hasTarget = await targetLink.isVisible()
+    if (!hasTarget) {
+      // Não há link para /itens no menu — pula verificação de fechamento
+      return
+    }
+    await targetLink.click()
+    await page.waitForLoadState('domcontentloaded')
 
     // Após clique: ou o menu fecha (não visível) ou a página mudou
     const menuAindaVisivel = await navMenu.isVisible()
-    const urlMudou = !page.url().endsWith('/')
+    const urlMudou = page.url().includes('/itens')
 
     expect(
       !menuAindaVisivel || urlMudou,

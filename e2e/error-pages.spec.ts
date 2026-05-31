@@ -30,11 +30,12 @@ test.describe('Páginas de erro — 404, 500 e offline', () => {
         .first(),
     ).toBeVisible()
 
-    // CTA de retorno — botão ou link para home ou /itens
+    // CTA de retorno — botão ou link para home ou /itens (scoped a main)
     await expect(
-      page
+      main
         .getByRole('link', { name: /voltar|início|home|explorar|itens/i })
-        .or(page.getByRole('button', { name: /voltar|início|home|explorar/i })),
+        .or(main.getByRole('button', { name: /voltar|início|home|explorar/i }))
+        .first(),
     ).toBeVisible()
   })
 

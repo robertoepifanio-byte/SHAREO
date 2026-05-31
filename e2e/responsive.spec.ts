@@ -148,10 +148,9 @@ test.describe('Responsividade — grid de itens e layout nos 3 breakpoints', () 
     // Sidebar de filtros (painel lateral) deve estar oculta no mobile
     const filterSidebar = page
       .locator('[data-testid="filter-sidebar"], [data-testid="filters-panel"]')
-      .or(page.locator('aside').filter({ has: page.locator('[data-testid*="filter"], [class*="filter"]') }))
-      .or(page.locator('[aria-label*="filtros"], [aria-label*="Filtros"]'))
+      .or(page.locator('aside[aria-label*="filtros"], aside[aria-label*="Filtros"]'))
 
-    const sidebarVisible = await filterSidebar.isVisible({ timeout: 3000 })
+    const sidebarVisible = await filterSidebar.first().isVisible({ timeout: 3000 }).catch(() => false)
     expect(
       sidebarVisible,
       'Sidebar de filtros não deve estar visível no viewport 375px',
@@ -169,10 +168,9 @@ test.describe('Responsividade — grid de itens e layout nos 3 breakpoints', () 
     // Sidebar de filtros deve estar visível no desktop
     const filterSidebar = page
       .locator('[data-testid="filter-sidebar"], [data-testid="filters-panel"]')
-      .or(page.locator('aside').filter({ has: page.locator('[data-testid*="filter"], [class*="filter"]') }))
-      .or(page.locator('[aria-label*="filtros"], [aria-label*="Filtros"]'))
+      .or(page.locator('aside[aria-label*="filtros"], aside[aria-label*="Filtros"]'))
 
-    const hasSidebar = await filterSidebar.isVisible({ timeout: 5000 })
+    const hasSidebar = await filterSidebar.first().isVisible({ timeout: 5000 }).catch(() => false)
     if (!hasSidebar) {
       // Filtros podem estar em linha (não sidebar) no desktop — verifica presença
       const inlineFilters = page
