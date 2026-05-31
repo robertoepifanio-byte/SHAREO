@@ -18,7 +18,10 @@ dist/
 # Testes
 coverage/
 playwright-report/
+playwright-report-staging/
 test-results/
+# Session fixtures contêm tokens — não commitar
+e2e/fixtures/session-*.json
 
 # Prisma
 prisma/migrations/dev.db
@@ -47,3 +50,4 @@ apps/mobile/.expo/
 # Arquivos temporários Word
 Documentos/giv_temp.docx
 Documentos/giv_unpacked/
+.env*

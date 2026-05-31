@@ -26,6 +26,46 @@ async function getFirstItemCard(page: Page) {
 
 test.describe('Fluxo de reserva — busca, reserva e avaliação pós-locação', () => {
   // -------------------------------------------------------------------------
+  // 0. Smoke #4 — Detalhe do item: título, preço e CTA; não autenticado → /login
+  // -------------------------------------------------------------------------
+  test('detalhe do item — título, preço e CTA visíveis; não autenticado → redireciona para /login', async ({ page }) => {
+    // Carrega o primeiro item real do staging via API (sem depender de ID hardcoded)
+    const apiResp = await page.request.get('/api/items?limit=1')
+    expect(apiResp.status()).toBe(200)
+    const { data } = await apiResp.json()
+    const item = data?.[0]
+
+    if (!item) {
+      test.info().annotations.push({ type: 'skip-reason', description: 'Nenhum item no DB de staging' })
+      return
+    }
+
+    await page.goto(`/itens/${item.id}`)
+    await expect(page.getByRole('main')).toBeVisible({ timeout: 15000 })
+
+    // h1 com título do item (sr-only — presente no DOM para acessibilidade)
+    await expect(page.getByRole('heading', { level: 1 })).toBeAttached()
+
+    // Título visível na página (card lateral, p aria-hidden)
+    await expect(page.getByText(item.title).first()).toBeVisible()
+
+    // Preço com "/dia" visível
+    await expect(page.getByText(/\/dia/).first()).toBeVisible()
+
+    // CTA "Solicitar locação" visível — quando não autenticado é um <Link> (não <button>)
+    const ctaLink = page
+      .getByRole('link', { name: /solicitar locação/i })
+      .or(page.getByRole('link', { name: /reservar agora/i }))
+    await expect(ctaLink.first()).toBeVisible()
+
+    // Clicar no CTA redireciona para /login (usuário não autenticado)
+    await ctaLink.first().click()
+    await expect(page).toHaveURL(/\/login/, { timeout: 10000 })
+    // URL contém callbackUrl apontando para o item (NextAuth flow)
+    await expect(page).toHaveURL(/callbackUrl|next=/, { timeout: 5000 })
+  })
+
+  // -------------------------------------------------------------------------
   // 1. Busca e acessa detalhe do item
   // -------------------------------------------------------------------------
   test('busca por texto e acessa página de detalhe do item', async ({ page }) => {
@@ -52,11 +92,14 @@ test.describe('Fluxo de reserva — busca, reserva e avaliação pós-locação'
     const hasResults = await firstCard.isVisible()
     if (hasResults) {
       await firstCard.click()
-      // Página de detalhe deve ter título, preço e botão de reserva
-      await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 8000 })
-      await expect(page.getByText(/R\$|\/dia|por dia|diária/i)).toBeVisible()
+      // Página de detalhe deve ter título (h1 sr-only), preço e CTA de locação
+      await expect(page.getByRole('heading', { level: 1 })).toBeAttached()
+      await expect(page.getByText(/\/dia/).first()).toBeVisible()
+      // CTA: Link quando não autenticado, botão quando autenticado
       await expect(
-        page.getByRole('button', { name: /solicitar reserva|alugar|reservar/i }),
+        page.getByRole('link', { name: /solicitar locação|reservar agora/i })
+          .or(page.getByRole('button', { name: /solicitar locação|alugar/i }))
+          .first(),
       ).toBeVisible()
     }
   })

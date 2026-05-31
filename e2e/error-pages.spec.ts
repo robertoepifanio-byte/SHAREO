@@ -203,6 +203,31 @@ test.describe('Páginas de erro — 404, 500 e offline', () => {
   // implementado (roadmap H2/H3).
   // TODO: habilitar após configurar next-pwa ou service worker customizado
   // que sirva /offline como fallback de rede.
+  // -------------------------------------------------------------------------
+  // 8–10. Smoke #11 — Páginas institucionais: /termos, /privacidade, /ajuda
+  // -------------------------------------------------------------------------
+  for (const [rota, titulo] of [
+    ['/termos',      /termos|uso|políticas/i],
+    ['/privacidade', /privacidade|dados|lgpd/i],
+    ['/ajuda',       /ajuda|faq|dúvidas|perguntas/i],
+  ] as const) {
+    test(`página ${rota} carrega com título e conteúdo`, async ({ page }) => {
+      await page.goto(rota)
+      await expect(page.getByRole('main')).toBeVisible({ timeout: 10000 })
+
+      // Deve ter um heading principal com o nome da página
+      await expect(
+        page.getByRole('heading', { level: 1 })
+          .or(page.getByRole('heading').filter({ hasText: titulo }))
+          .first(),
+      ).toBeVisible()
+
+      // Deve ter conteúdo substancial (não apenas um esqueleto vazio)
+      const bodyText = await page.locator('main').textContent() ?? ''
+      expect(bodyText.length).toBeGreaterThan(100)
+    })
+  }
+
   test.skip('página /offline está acessível quando service worker está ativo', async ({ page }) => {
     // TODO: habilitar após implementar service worker com fallback /offline
     await page.goto('/offline')
