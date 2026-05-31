@@ -221,7 +221,9 @@ jobs:
           DIRECT_URL: ${{ secrets.DIRECT_URL_PROD }}
 
       # Monitorar após deploy — falha dispara rollback manual via Vercel Dashboard
+      # continue-on-error: remover quando domínio www.shareo.com.br estiver apontado para Vercel
       - name: Post-deploy health check
+        continue-on-error: true
         run: |
           echo "Aguardando 30s para o deploy propagar..."
           sleep 30
