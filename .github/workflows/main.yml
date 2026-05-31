@@ -128,6 +128,7 @@ jobs:
       AUTH_SECRET: "ci-e2e-secret-placeholder-for-testing-only-32b"
       DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/shareo_test"
       DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/shareo_test"
+      ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
     services:
       postgres:
         image: postgis/postgis:15-3.4
