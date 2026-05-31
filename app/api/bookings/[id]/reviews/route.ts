@@ -169,7 +169,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     })
 
     // P3-70: +10 pontos de reputação para quem avaliou (fire-and-forget)
-    prisma.user.update({
+    void prisma.user?.update({
       where: { id: userId },
       data:  { reputationPoints: { increment: REPUTATION_PER_REVIEW } },
     }).catch(() => {})
