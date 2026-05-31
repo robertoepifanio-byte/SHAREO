@@ -23,6 +23,10 @@ const config: Config = {
     "^@mswjs/interceptors(.*)$":
       "<rootDir>/node_modules/.pnpm/@mswjs+interceptors@0.41.9/node_modules/@mswjs/interceptors/lib/node$1/index.cjs",
   },
+  // @upstash/* packages ship ESM-only builds — tell Jest to transform them via ts-jest/Babel
+  transformIgnorePatterns: [
+    "/node_modules/(?!(@upstash)/)",
+  ],
   testPathIgnorePatterns: [
     "<rootDir>/node_modules/",
     "<rootDir>/.next/",

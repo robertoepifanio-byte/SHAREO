@@ -17,6 +17,7 @@ import { haversineKm } from "@/lib/haversine"
 import { getUserMapLocation } from "@/lib/userLocation"
 import { MapToggle } from "./_MapToggle"
 import { PullToRefresh } from "@/components/items/PullToRefresh"
+import { FloatingCTA } from "@/components/items/FloatingCTA"
 
 export const metadata: Metadata = {
   title:       "Explorar anúncios",
@@ -410,6 +411,8 @@ export default async function ExplorarPage({ searchParams }: Props) {
         </div>
       </main>
       </PullToRefresh>
+      {/* P3-77: CTA flutuante mobile */}
+      <FloatingCTA />
     </div>
   )
 }

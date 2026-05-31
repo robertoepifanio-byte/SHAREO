@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       req.headers.get("x-real-ip") ??
       "unknown"
 
-    const rl = checkRateLimit(`mobile-login:${ip}`, 10, 60_000)
+    const rl = await checkRateLimit(`mobile-login:${ip}`, 10, 60_000)
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const body = await req.json()

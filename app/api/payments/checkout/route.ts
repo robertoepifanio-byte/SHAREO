@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const rl = checkRateLimit(`checkout:${session.user.id}`, 10, 60_000)
+    const rl = await checkRateLimit(`checkout:${session.user.id}`, 10, 60_000)
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const body   = await req.json()

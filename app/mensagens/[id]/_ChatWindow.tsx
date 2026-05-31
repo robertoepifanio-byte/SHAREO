@@ -242,6 +242,27 @@ export function ChatWindow({ conversationId, currentUserId, initialMessages, oth
       {/* Input */}
       <div className="border-t border-border bg-surface px-4 py-3">
         <div className="mx-auto max-w-2xl">
+          {/* P3-66: Templates de mensagem */}
+          {!input && (
+            <div className="mb-2 flex flex-wrap gap-1.5" aria-label="Templates de mensagem">
+              {[
+                "Ainda está disponível?",
+                "Qual o prazo mínimo?",
+                "Posso retirar hoje?",
+                "Aceita entrega?",
+                "Tenho uma dúvida…",
+              ].map((tpl) => (
+                <button
+                  key={tpl}
+                  type="button"
+                  onClick={() => { setInput(tpl); inputRef.current?.focus() }}
+                  className="rounded-full border border-input bg-background px-3 py-1 text-xs text-muted-foreground hover:border-brand hover:text-brand transition-colors min-h-[32px]"
+                >
+                  {tpl}
+                </button>
+              ))}
+            </div>
+          )}
           {error && (
             <p className="mb-2 rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-600">{error}</p>
           )}

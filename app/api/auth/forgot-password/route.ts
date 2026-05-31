@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       req.headers.get("x-real-ip") ??
       "unknown"
 
-    const rl = checkRateLimit(`forgot-password:${ip}`, 3, 60_000) // 3 por minuto por IP
+    const rl = await checkRateLimit(`forgot-password:${ip}`, 3, 60_000) // 3 por minuto por IP
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const body   = await req.json()
