@@ -21,10 +21,13 @@ test.describe('Páginas de erro — 404, 500 e offline', () => {
     await expect(page.getByRole('main')).toBeVisible({ timeout: 10000 })
 
     // Logo ShareO deve estar presente (header ou dentro da página de erro)
+    const main = page.locator('main')
     await expect(
-      page
+      main
         .getByText(/ShareO/i)
-        .or(page.getByRole('img', { name: /ShareO|logo/i })),
+        .or(main.getByRole('img', { name: /ShareO|logo/i }))
+        .or(page.getByRole('img', { name: /ShareO/i }))
+        .first(),
     ).toBeVisible()
 
     // CTA de retorno — botão ou link para home ou /itens
@@ -42,7 +45,7 @@ test.describe('Páginas de erro — 404, 500 e offline', () => {
     await page.goto('/pagina-que-nao-existe')
     await expect(page.getByRole('main')).toBeVisible({ timeout: 10000 })
 
-    const bodyText = await page.locator('body').textContent() ?? ''
+    const bodyText = await page.locator('main').textContent() ?? ''
 
     // Stack traces típicos de Node.js/Next.js
     expect(
@@ -96,12 +99,13 @@ test.describe('Páginas de erro — 404, 500 e offline', () => {
     await expect(page.getByRole('main')).toBeVisible({ timeout: 10000 })
 
     // Localiza o link de retorno
-    const returnLink = page
+    const main = page.locator('main')
+    const returnLink = main
       .getByRole('link', { name: /voltar|início|home|explorar|itens/i })
-      .or(page.locator('a[href="/"]'))
-      .or(page.locator('a[href="/itens"]'))
+      .or(main.locator('a[href="/"]'))
+      .or(main.locator('a[href="/itens"]'))
 
-    await expect(returnLink).toBeVisible()
+    await expect(returnLink.first()).toBeVisible()
 
     // Clica no link e confirma que a navegação ocorreu para uma rota válida
     await returnLink.first().click()
@@ -155,9 +159,10 @@ test.describe('Páginas de erro — 404, 500 e offline', () => {
     await expect(page.getByRole('main')).toBeVisible({ timeout: 10000 })
 
     // Coleta todos os links/botões de ação na página de erro
-    const ctaElements = page
+    const main = page.locator('main')
+    const ctaElements = main
       .getByRole('link', { name: /voltar|início|home|explorar|itens/i })
-      .or(page.getByRole('button', { name: /voltar|início|home|tentar novamente/i }))
+      .or(main.getByRole('button', { name: /voltar|início|home|tentar novamente/i }))
 
     const count = await ctaElements.count()
     if (count === 0) {
