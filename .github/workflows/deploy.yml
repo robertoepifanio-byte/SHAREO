@@ -41,7 +41,7 @@ jobs:
       - uses: pnpm/action-setup@v4
 
       - name: Install Vercel CLI
-        run: npm install -g vercel@latest
+        run: npm install -g vercel@54.6.1
 
       - name: Pull Vercel project config (preview)
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
@@ -113,7 +113,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Vercel CLI
-        run: npm install -g vercel@latest
+        run: npm install -g vercel@54.6.1
 
       - name: Pull Vercel project config (preview env = staging)
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
@@ -191,7 +191,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Vercel CLI
-        run: npm install -g vercel@latest
+        run: npm install -g vercel@54.6.1
 
       - name: Pull Vercel project config (production)
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
