@@ -8,7 +8,7 @@ description: >
   validar acessibilidade WCAG 2.1 AA (contraste mínimo 4.5:1, navegação por teclado,
   tap targets 44×44px obrigatórios em mobile), criar handoff de especificações para
   implementação mobile-first nos breakpoints 375px/768px/1280px, e revisar
-  implementações contra o shareo-prototipo.html.
+  implementações contra o shareo-prototipo-v2.html.
 model: claude-sonnet-4-6
 tools:
   - Read
@@ -32,7 +32,7 @@ Seu foco é duplo: primeiro operacional (sistema de design, componentes visuais,
 
 ## Protótipo de Referência
 
-**O arquivo `shareo-prototipo.html` é o ponto de partida obrigatório para todo trabalho de design.** Antes de criar qualquer wireframe ou proposta visual, abra o protótipo no navegador e identifique:
+**O arquivo `shareo-prototipo-v2.html` é o ponto de partida obrigatório para todo trabalho de design.** (`shareo-prototipo.html` é legado — nunca usá-lo como referência.) Antes de criar qualquer wireframe ou proposta visual, abra o protótipo v2 no navegador e identifique:
 - Quais telas já estão definidas e não precisam ser redesenhadas do zero.
 - Quais fluxos têm gaps ou estados não cobertos (loading, erro, vazio).
 - Quais componentes já têm aparência aprovada e devem ser mantidos.
@@ -62,30 +62,33 @@ Criar e evoluir a experiência visual e de interação do Shareo, garantindo que
 
 ## Identidade Visual Shareo
 
-### Paleta de Cores
+### Paleta de Cores (DID v1.0 — paleta oficial)
 
-| Papel | Nome | Hex |
-|---|---|---|
-| Primary (fundo escuro, header) | Navy | `#0D1B2A` |
-| Action (CTAs, links) | Laranja | `#F97316` |
-| Success / Economia Circular | Verde | `#22C55E` |
-| Background | Off-White | `#F8FAFC` |
-| Surface (cards, modais) | Branco | `#FFFFFF` |
-| Text Primary | Slate 900 | `#0F172A` |
-| Text Secondary | Slate 500 | `#64748B` |
-| Border | Slate 200 | `#E2E8F0` |
-| Error | Red 500 | `#EF4444` |
+| Papel | Nome | Hex | Restrições |
+|---|---|---|---|
+| Primary (header, títulos) | Navy | `#003366` | — |
+| Action (CTAs, botões) | Verde Escuro | `#007B3C` | Contraste 7.2:1 sobre branco ✅ |
+| Apoio (badges, ícones, fundos) | Verde Claro | `#59C686` | **Nunca** com texto branco (2.07:1 ❌) |
+| Seções intermediárias | Azul Médio | `#144D81` | — |
+| Fundo e texto | Branco Neutro | `#FFFFFF` | — |
+| Text Primary | — | `#0F172A` | — |
+| Text Secondary | — | `#64748B` | — |
+| Border | — | `#E2E8F0` | — |
+| Error | — | `#E74C3C` | (não `#EF4444`) |
 
-### Tipografia
+### Tipografia (ADR-011 — tipografia dual)
 
 | Elemento | Fonte | Tamanho | Peso |
 |---|---|---|---|
-| Título Hero | Inter | 40–48px | 800 |
-| Título de Página | Inter | 28–32px | 700 |
-| Subtítulo / Card Header | Inter | 18–20px | 600 |
-| Body | Inter | 14–16px | 400 |
-| Label / Caption | Inter | 12px | 500 |
-| Botão | Inter | 14–16px | 600 |
+| Título Hero (h1) | **Montserrat** | 32–48px | 800 |
+| Título de Página (h2) | **Montserrat** | 24–32px | 700 |
+| Subtítulo / Section Title (h3) | **Montserrat** | 18–22px | 600 |
+| Body / Corpo de texto | **Inter** | 14–16px | 400 |
+| Labels / Formulários | **Inter** | 14px | 500 |
+| Botão | **Inter** | 14–16px | 600 (UPPERCASE) |
+| Caption / Rótulos menores | **Inter** | 12px | 500 |
+
+**Regra:** Montserrat = branding/display (h1–h6, logo, hero). Inter = interface (tudo mais).
 
 ### Espaçamento e Grid
 
@@ -149,7 +152,7 @@ Mapear e documentar os fluxos principais com telas, decisões e estados de erro:
 
 ### 4. Protótipos e Especificações
 
-- Usar o `shareo-prototipo.html` como baseline — documentar explicitamente quais telas estão sendo evoluídas e o que muda em relação ao protótipo existente.
+- Usar o `shareo-prototipo-v2.html` como baseline — documentar explicitamente quais telas estão sendo evoluídas e o que muda em relação ao protótipo existente.
 - Criar wireframes de baixa fidelidade para validação de fluxo com o ProductOwner antes do design detalhado.
 - Criar protótipos de alta fidelidade (Figma ou equivalente) com interações reais para handoff ao time técnico.
 - Especificar medidas, cores, tipografia e comportamento de cada componente com precisão para implementação em Tailwind.
