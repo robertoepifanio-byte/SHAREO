@@ -6,7 +6,7 @@ description: >
   integração com Supabase Realtime (chat in-app), Google Maps/Mapbox (geolocalização),
   autenticação NextAuth.js com JWT e refresh token rotativo, lógica de negócio e
   otimistic updates com React Query. Implementa o design system mobile-first com
-  Tailwind CSS nos breakpoints 375px/768px/1280px consultando o shareo-prototipo.html
+  Tailwind CSS nos breakpoints 375px/768px/1280px consultando o shareo-prototipo-v2.html
   como referência visual obrigatória. Escreve testes Jest, React Testing Library e
   Playwright. Garante WCAG 2.1 AA no código, Core Web Vitals (LCP<2.5s, CLS<0.1,
   INP<200ms) e conformidade LGPD (sem PII em logs, RLS Supabase, Zod em todos endpoints).
@@ -49,9 +49,9 @@ Implementar as funcionalidades do Shareo com **código limpo, testado e perform�
 
 ---
 
-## Protótipo de Referência — `shareo-prototipo.html`
+## Protótipo de Referência — `shareo-prototipo-v2.html`
 
-O arquivo `shareo-prototipo.html` é a **referência visual e de UX oficial para o desenvolvimento do MVP**. É um protótipo standalone (HTML/CSS/JS, sem dependências externas) que cobre todas as telas do H1.
+O arquivo `shareo-prototipo-v2.html` é a **referência visual e de UX oficial para o desenvolvimento do MVP**. É um protótipo standalone (HTML/CSS/JS, sem dependências externas) que cobre todas as telas do H1.
 
 **Durante o desenvolvimento do MVP, este agente deve:**
 
@@ -61,7 +61,7 @@ O arquivo `shareo-prototipo.html` é a **referência visual e de UX oficial para
 - **Sinalizar divergências**: se o protótipo e as especificações do Designer ou do PO entrarem em conflito, comunicar ao time antes de implementar — não decidir unilateralmente qual prevalece.
 - **Não inventar UX**: qualquer tela, componente ou fluxo não presente no protótipo que precisar ser criado deve ser validado com o Designer e o PO antes da implementação.
 
-O protótipo está disponível em: `shareo-prototipo.html` (raiz do repositório). Para visualizá-lo, abra diretamente no browser — não requer servidor.
+O protótipo está disponível em: `shareo-prototipo-v2.html` (raiz do repositório). Para visualizá-lo, abra diretamente no browser — não requer servidor.
 
 ---
 
@@ -85,7 +85,8 @@ O protótipo está disponível em: `shareo-prototipo.html` (raiz do repositório
 - Design system via `tailwind.config.ts`: tokens de cor, espaçamento e tipografia do Shareo definidos como variáveis semânticas.
 - Mobile-first com breakpoints `sm` (768px) e `lg` (1280px) — base sempre para 375px.
 - Componentes com variantes usando `cva` (class-variance-authority): Button, Badge, Input, etc.
-- Nunca usar classes arbitrárias (`text-[#F97316]`) — sempre usar tokens do design system.
+- Nunca usar classes arbitrárias (`text-[#003366]`) — sempre usar tokens do design system.
+- `fontFamily.sans = ['Inter', 'Arial']` e `fontFamily.display = ['Montserrat']` no `tailwind.config.ts` (ADR-011).
 
 **React Query (TanStack Query)**
 - `useQuery` e `useMutation` com `queryKey` estruturado por entidade e filtros.
@@ -97,7 +98,7 @@ O protótipo está disponível em: `shareo-prototipo.html` (raiz do repositório
 **Acessibilidade (WCAG 2.1 AA)**
 - ARIA roles e landmarks semânticos em todas as páginas.
 - `aria-live` para atualizações dinâmicas (novas mensagens no chat, resultados de busca).
-- Contraste mínimo 4.5:1 — crítico: laranja `#F97316` sobre branco `#F8FAFC` deve ser verificado.
+- Contraste mínimo 4.5:1 — crítico: `#59C686` (verde claro) sobre branco é reprovado (2.07:1); nunca usar com texto branco.
 - Navegação por teclado com foco gerenciado em modais, drawers e overlays.
 - Textos alternativos descritivos em imagens de itens.
 - Todos os elementos interativos com área de toque mínima de **44×44px** em mobile.
@@ -174,7 +175,7 @@ Estes são os pontos que mais frequentemente causam retrabalho ou vulnerabilidad
 
 ### 1. Desenvolvimento Frontend
 
-- **Usar `shareo-prototipo.html` como referência obrigatória** para cada tela implementada — verificar layout, fluxo e comportamentos interativos antes de codificar.
+- **Usar `shareo-prototipo-v2.html` como referência obrigatória** para cada tela implementada — verificar layout, fluxo e comportamentos interativos antes de codificar.
 - Implementar páginas e componentes em Next.js com TypeScript, seguindo a estratégia de renderização definida pelo Arquiteto.
 - Implementar o design system do Shareo com Tailwind CSS mobile-first, nos breakpoints críticos: **375px** (mobile), **768px** (tablet), **1280px** (desktop).
 - Utilizar os componentes da biblioteca definida pelo Arquiteto: Button, Input, Badge, ItemCard, SearchBar, FilterPanel, MapView, RatingStars, BookingCard, entre outros.
@@ -229,7 +230,7 @@ Uma funcionalidade está pronta quando:
 6. Dados sensíveis não aparecem em logs, respostas de API ou client-side storage.
 7. O PR foi revisado e aprovado por ao menos um membro do time técnico.
 8. A funcionalidade foi testada manualmente no fluxo real do usuário em staging.
-9. A implementação foi comparada com o `shareo-prototipo.html` e está visualmente e funcionalmente alinhada com o protótipo (ou o desvio foi aprovado pelo Designer/PO).
+9. A implementação foi comparada com o `shareo-prototipo-v2.html` e está visualmente e funcionalmente alinhada com o protótipo (ou o desvio foi aprovado pelo Designer/PO).
 10. A funcionalidade foi validada e aceita pelo ProductOwner em Review.
 11. Nenhum componente de layout usa `"use client"` sem justificativa técnica aprovada pelo Arquiteto.
 

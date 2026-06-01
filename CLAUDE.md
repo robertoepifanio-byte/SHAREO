@@ -8,7 +8,7 @@ This is a **project planning and AI agent specification repository** for **Share
 
 The repository contains no production code yet. It holds:
 - `*_Agente_Shareo.md` — Role-based specifications for AI agents (Architect, Full Stack Dev, Product Owner, Designer, QA, DevOps, SEO, Security Analyst, Project Manager)
-- `shareo-prototipo-v2.html` — **Active UI prototype** (since 2026-05-29, single-file, self-contained; uses Montserrat + Leaflet map)
+- `shareo-prototipo-v2.html` — **Active UI prototype** (since 2026-05-29, single-file, self-contained; tipografia dual Inter/Montserrat + Leaflet map, 11 telas completas)
 - `shareo-prototipo.html` — Legacy prototype (superseded by v2)
 - `icones/` — SVG category icons used in the prototype
 
@@ -51,7 +51,7 @@ All ADRs live in **`docs/adr/`** (kebab-case filenames). The legacy `ADRs/` root
 | 001 | `ADR-001-autenticacao.md` | Auth — NextAuth.js v5 |
 | 002 | `ADR-002-mapas.md` | Maps — Mapbox + PostGIS |
 | 003 | `ADR-003-chat.md` | Chat — Supabase Realtime |
-| 004 | `ADR-004-paleta-cores-definitiva.md` | Design system — paleta oficial (navy #0D1B2A + laranja CTA) |
+| 004 | `ADR-004-paleta-cores-definitiva.md` | Design system — paleta oficial (navy #003366 + verde #007B3C) |
 | 005 | `ADR-005-criptografia-documentos.md` | CPF/CNPJ encryption |
 | 006 | `ADR-006-estrutura-pastas.md` | Folder structure |
 | 007 | `ADR-007-rendering-strategy.md` | SSG/SSR/ISR/CSR per page type |
@@ -84,14 +84,21 @@ The `.claude/Agents/` directory contains 9 Claude Code subagents. Each file has 
 
 ## Design System
 
-- **Colors**: Navy `#0D1B2A`, Orange `#F97316`, Green `#22C55E`, Off-white `#F8FAFC`
+- **Colors** (paleta oficial DID v1.0):
+  - Navy `#003366` — header, títulos, fundo escuro
+  - Verde Escuro `#007B3C` — botões CTA, destaques, ação
+  - Verde Claro `#59C686` — badges, ícones, fundos decorativos (**nunca** com texto branco — contraste 2.07:1)
+  - Azul Médio `#144D81` — textos e seções intermediárias
+  - Branco `#FFFFFF` — fundo e texto sobre escuro
+  - Erro `#E74C3C` — feedback de erro
 - **Breakpoints**: 375px (mobile), 768px (tablet), 1280px (desktop)
 - **Spacing**: 4px grid (4, 8, 12, 16, 24, 32, 48, 64px)
-- **Border radius**: 8px cards, 6px inputs, 50% avatars
-- **Font (UI)**: Inter, weights 400–700 — corpo de texto, labels, botões, formulários, menus
-- **Font (Branding)**: Montserrat, weights 600–800 — headings (h1–h6), títulos de seção, logo, hero
+- **Border radius**: 12px cards (`--radius`), 8px inputs, 50% avatars
+- **Font (UI)**: Inter, weights 400–700 — corpo de texto, labels, botões, formulários, menus, navegação
+- **Font (Branding)**: Montserrat, weights 600–800 — h1–h6, títulos de seção, logo, hero
 - **Fallback**: Arial, sans-serif
-- **Accessibility**: WCAG 2.1 AA (minimum 4.5:1 contrast ratio)
+- **Tailwind config**: `fontFamily.sans = ['Inter']` / `fontFamily.display = ['Montserrat']`
+- **Accessibility**: WCAG 2.1 AA (contraste mínimo 4.5:1 — verificar sempre #59C686 sobre branco)
 
 ## Quality Targets (for when code is written)
 
