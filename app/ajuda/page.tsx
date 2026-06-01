@@ -26,8 +26,8 @@ const SECTIONS = [
     id: "locatario",
     title: "Para quem quer alugar",
     icon: "🛒",
-    color: "bg-blue-50 border-blue-200",
-    iconBg: "bg-blue-100",
+    color: "bg-[#144D81]/5 border-[#144D81]/20",
+    iconBg: "bg-[#144D81]/10",
     faqs: [
       { q: "Como encontro um item perto de mim?",
         a: "Acesse 'Explorar' e navegue pelos anúncios disponíveis. Cada item mostra o bairro e a cidade do proprietário, para você saber onde o item está antes de solicitar." },
@@ -49,8 +49,8 @@ const SECTIONS = [
     id: "locador",
     title: "Para quem quer anunciar",
     icon: "📦",
-    color: "bg-green-50 border-green-200",
-    iconBg: "bg-green-100",
+    color: "bg-brand/5 border-brand/20",
+    iconBg: "bg-brand/10",
     faqs: [
       { q: "Como anuncio meu item?",
         a: "Vá em 'Anunciar' no app. Preencha o título, descrição, categoria, estado de conservação (novo, seminovo, bom estado ou regular) e adicione fotos. Informe seu bairro e cidade para que locatários saibam onde o item está. Depois defina o preço e publique." },
@@ -169,7 +169,7 @@ export default function AjudaPage() {
               {/* Locatário */}
               <div>
                 <h3 className="mb-5 flex items-center gap-2 text-lg font-bold text-primary">
-                  <span className="rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-700">Para quem aluga</span>
+                  <span className="rounded-full bg-[#144D81]/10 px-3 py-1 text-sm text-[#144D81]">Para quem aluga</span>
                 </h3>
                 <div className="space-y-5">
                   {HOW_LOCATARIO.map((s) => (

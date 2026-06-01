@@ -89,7 +89,7 @@ export function ReturnCountdown({ endDateIso }: Props) {
       className={[
         "flex items-start gap-3 rounded-xl border px-4 py-4",
         isUrgent
-          ? "border-orange-300 bg-orange-50"
+          ? "border-orange/40 bg-orange-light"
           : "border-brand/30 bg-brand/5",
       ].join(" ")}
     >
@@ -99,7 +99,7 @@ export function ReturnCountdown({ endDateIso }: Props) {
       <div>
         <p className={[
           "text-sm font-semibold",
-          isUrgent ? "text-orange-800" : "text-primary",
+          isUrgent ? "text-orange-link" : "text-primary",
         ].join(" ")}>
           {isUrgent ? "Devolução urgente" : "Devolução em"}
         </p>
