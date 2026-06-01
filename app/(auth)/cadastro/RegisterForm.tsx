@@ -170,9 +170,10 @@ export function RegisterForm() {
       const details = json.error?.details as Record<string, string[]> | undefined
 
       if (code === "VALIDATION_ERROR" && details) {
+        const fieldKeys = new Set(["name", "email", "password", "cpf", "cnpj", "phone", "city", "state", "consent", "ageConfirmed"])
         const mapped: FormErrors = {}
         for (const [k, msgs] of Object.entries(details)) {
-          if (k in ({} as FormErrors)) {
+          if (fieldKeys.has(k)) {
             (mapped as Record<string, string>)[k] = msgs[0]
           } else {
             mapped.form = msgs[0]
@@ -186,6 +187,7 @@ export function RegisterForm() {
         EMAIL_ALREADY_EXISTS: "E-mail já cadastrado. Tente fazer login.",
         CPF_ALREADY_EXISTS:   "CPF já cadastrado.",
         CNPJ_ALREADY_EXISTS:  "CNPJ já cadastrado.",
+        RATE_LIMITED:         "Muitas tentativas. Aguarde um momento e tente novamente.",
       }
       setErrors({ form: MSG[code] ?? "Erro ao criar conta. Tente novamente." })
       return
