@@ -86,7 +86,7 @@ export function BookingActions({ bookingId, status, isOwner, isBorrower, convers
         <div className="rounded-xl border border-border bg-surface p-4">
           <p className="mb-2 text-sm font-semibold text-foreground">
             {showReason === "cancel" ? "Motivo do cancelamento" : "Motivo da disputa"}
-            <span className="text-red-500"> *</span>
+            <span className="text-destructive"> *</span>
           </p>
           <textarea
             value={reason}

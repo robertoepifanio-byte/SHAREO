@@ -133,7 +133,7 @@ export default function AjudaPage() {
         <section className="bg-gradient-to-br from-primary to-[#144D81] px-4 py-14 text-center">
           <div className="mx-auto max-w-xl">
             <div className="mb-4 text-5xl">💬</div>
-            <h1 className="mb-3 text-3xl font-extrabold text-white md:text-4xl">
+            <h1 className="mb-3 font-display text-3xl font-extrabold text-white md:text-4xl">
               Como podemos ajudar?
             </h1>
             <p className="text-base text-white/75">
@@ -162,13 +162,13 @@ export default function AjudaPage() {
         {/* Como funciona */}
         <section className="bg-surface py-12 px-4">
           <div className="container mx-auto max-w-4xl">
-            <h2 className="mb-10 text-center text-2xl font-bold text-primary">
+            <h2 className="mb-10 font-display text-center text-2xl font-bold text-primary">
               Como funciona o ShareO?
             </h2>
             <div className="grid gap-10 md:grid-cols-2">
               {/* Locatário */}
               <div>
-                <h3 className="mb-5 flex items-center gap-2 text-lg font-bold text-primary">
+                <h3 className="mb-5 font-display flex items-center gap-2 text-lg font-bold text-primary">
                   <span className="rounded-full bg-[#144D81]/10 px-3 py-1 text-sm text-[#144D81]">Para quem aluga</span>
                 </h3>
                 <div className="space-y-5">
@@ -187,7 +187,7 @@ export default function AjudaPage() {
               </div>
               {/* Locador */}
               <div>
-                <h3 className="mb-5 flex items-center gap-2 text-lg font-bold text-primary">
+                <h3 className="mb-5 font-display flex items-center gap-2 text-lg font-bold text-primary">
                   <span className="rounded-full bg-green-100 px-3 py-1 text-sm text-green-700">Para quem anuncia</span>
                 </h3>
                 <div className="space-y-5">
@@ -212,7 +212,7 @@ export default function AjudaPage() {
         <div className="container mx-auto max-w-3xl px-4 py-12 space-y-10">
           {SECTIONS.map((sec) => (
             <section key={sec.id} id={sec.id} className={`rounded-2xl border p-6 ${sec.color}`}>
-              <h2 className="mb-6 flex items-center gap-3 text-xl font-bold text-primary">
+              <h2 className="mb-6 font-display flex items-center gap-3 text-xl font-bold text-primary">
                 <span className={`flex h-10 w-10 items-center justify-center rounded-full text-xl ${sec.iconBg}`}>
                   {sec.icon}
                 </span>
@@ -229,7 +229,7 @@ export default function AjudaPage() {
           {/* Contato */}
           <section id="contato" className="rounded-2xl bg-primary p-8 text-center text-white">
             <div className="mb-3 text-4xl">💬</div>
-            <h2 className="mb-2 text-xl font-bold">Ainda precisa de ajuda?</h2>
+            <h2 className="mb-2 font-display text-xl font-bold">Ainda precisa de ajuda?</h2>
             <p className="mb-6 text-sm text-white/75">
               Nossa equipe está disponível 7 dias por semana para te ajudar.
             </p>

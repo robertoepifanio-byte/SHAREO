@@ -217,7 +217,7 @@ export function RegisterForm() {
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-success/10">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#007B3C" strokeWidth="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
-        <h2 className="text-xl font-bold text-primary">Conta criada!</h2>
+        <h2 className="font-display text-xl font-bold text-primary">Conta criada!</h2>
         <p className="mt-2 text-sm text-muted-foreground">Redirecionando para o login…</p>
       </div>
     )
@@ -225,7 +225,7 @@ export function RegisterForm() {
 
   return (
     <div className="rounded-lg border border-border bg-surface p-8 shadow-card">
-      <h1 className="mb-1 text-center text-2xl font-bold text-primary">Criar conta</h1>
+      <h1 className="mb-1 font-display text-center text-2xl font-bold text-primary">Criar conta</h1>
       <p className="mb-6 text-center text-sm text-muted-foreground">É grátis e leva menos de 2 minutos</p>
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
