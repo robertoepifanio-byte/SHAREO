@@ -1,3 +1,7 @@
+/**
+ * @deprecated Removido da homepage em 2026-06-01 (PR-1 homepage redesign).
+ * Manter para eventual reuso em /itens. Não importar em app/page.tsx.
+ */
 "use client"
 
 import { useState } from "react"

@@ -84,7 +84,7 @@ img{max-width:100%}
 .hero::after{content:'';position:absolute;right:-100px;top:-100px;width:500px;height:500px;border-radius:50%;background:rgba(0,123,60,.15)}
 .hero-content{max-width:640px;width:100%;position:relative;z-index:1;text-align:center}
 .hero-eco-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(89,198,134,.2);border:1px solid rgba(89,198,134,.4);color:var(--green-light);padding:6px 14px;border-radius:999px;font-size:12px;font-weight:600;margin-bottom:20px}
-.hero h1{font-size:48px;font-weight:800;color:#fff;line-height:1.1;margin-bottom:16px}
+.hero h1{font-size:40px;font-weight:800;color:#fff;line-height:1.15;margin-bottom:16px}
 .hero h1 span{color:var(--green-light)}
 .hero-sub{color:rgba(255,255,255,.75);font-size:17px;margin-bottom:32px;line-height:1.5}
 .hero-search{background:#fff;border-radius:12px;padding:6px 6px 6px 16px;display:flex;align-items:center;gap:8px;max-width:520px;margin:0 auto;box-shadow:0 4px 20px rgba(0,0,0,.2)}
@@ -351,10 +351,13 @@ input[type=range]{width:100%;accent-color:var(--green)}
   .nav-links{display:none}
   .bottom-nav{display:block}
   .hero{padding:40px 16px}
-  .hero h1{font-size:32px}
+  .hero h1{font-size:24px}
   .hero-stats{gap:20px}
   .stat-num{font-size:22px}
   .grid-3,.grid-4{grid-template-columns:1fr 1fr}
+  .how-it-works .grid-3{grid-template-columns:1fr}
+  #casos-renda .grid-3{grid-template-columns:1fr}
+  #seguranca .grid-3{grid-template-columns:1fr}
   .footer-grid{grid-template-columns:1fr 1fr}
   .proof-bar{gap:24px}
   body{padding-bottom:70px}
@@ -367,6 +370,74 @@ input[type=range]{width:100%;accent-color:var(--green)}
   .footer-grid{grid-template-columns:1fr}
   .hero-trust{gap:12px}
   .trust-item{font-size:12px}
+}
+
+/* ── HOME REDESIGN ── */
+.hero-money-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,215,0,.15);border:1px solid rgba(255,215,0,.35);color:#FFD700;padding:6px 14px;border-radius:999px;font-size:12px;font-weight:600;margin-bottom:20px}
+.hero-dual-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:20px}
+.hero-cta-earn{background:var(--green);color:#fff;text-transform:uppercase;letter-spacing:.4px;min-width:220px}
+.hero-cta-earn:hover{background:#005F2E}
+.hero-cta-rent{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.4px;min-width:200px}
+.hero-cta-rent:hover{background:rgba(255,255,255,.12);border-color:#fff}
+.hero-tagline{font-size:13px;color:rgba(255,255,255,.5);margin-top:12px;font-style:italic;letter-spacing:.3px}
+.simulador-layout{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start}
+.renda-tabela-title{font-family:'Montserrat',sans-serif;font-size:16px;font-weight:700;color:var(--navy);margin-bottom:16px}
+.renda-table{width:100%;border-collapse:collapse;font-size:14px}
+.renda-table thead th{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:0 0 10px;border-bottom:2px solid var(--border)}
+.renda-table tbody tr{border-bottom:1px solid var(--border)}
+.renda-table tbody tr:hover{background:#F8FAFC}
+.renda-table tbody td{padding:12px 4px;color:var(--text);font-weight:500}
+.renda-value{font-weight:800;color:var(--green);font-size:14px;text-align:right}
+.renda-table-highlight{background:#F0FBF5}
+.renda-disclaimer{font-size:11px;color:var(--muted);margin-top:12px;line-height:1.5}
+.simulador-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.simulador-chip{padding:6px 14px;border-radius:999px;border:1.5px solid var(--border);background:#fff;font-size:13px;font-weight:500;color:var(--text);cursor:pointer;transition:.2s;min-height:44px}
+.simulador-chip:hover,.simulador-chip.active{border-color:var(--green);color:var(--green);background:#F0FBF5}
+.simulador-output{background:linear-gradient(135deg,#F0FBF5,#E8F5EE);border:1.5px solid #A7D7BC;border-radius:12px;padding:20px;margin-top:16px;text-align:center}
+.simulador-output-label{font-size:13px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.simulador-output-value{font-family:'Montserrat',sans-serif;font-size:28px;font-weight:800;color:var(--green);margin-bottom:6px}
+.simulador-output-sub{font-size:13px;color:var(--muted)}
+.simulador-empty{text-align:center;padding:24px 0;color:var(--muted);font-size:13px}
+.simulador-empty svg{display:block;margin:0 auto 10px}
+.procurados-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.procurado-card{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 12px;background:#fff;border-radius:12px;border:1.5px solid var(--border);cursor:pointer;transition:.2s;text-align:center;min-height:44px;font-family:'Inter',Arial,sans-serif}
+.procurado-card:hover{border-color:var(--green);background:#F0FBF5;transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,123,60,.12)}
+.procurado-icon{width:40px;height:40px;display:flex;align-items:center;justify-content:center}
+.procurado-name{font-size:13px;font-weight:600;color:var(--text);line-height:1.3}
+.procurado-demand{font-size:10px;margin-top:2px}
+.renda-case-card{background:var(--blue-mid);border-radius:var(--radius);padding:24px;color:#fff;display:flex;flex-direction:column;gap:12px}
+.renda-case-header{display:flex;align-items:center;gap:10px}
+.renda-case-badge{background:rgba(0,123,60,.3);border:1px solid rgba(89,198,134,.4);border-radius:8px;padding:6px 10px;font-family:'Montserrat',sans-serif;font-size:18px;font-weight:800;color:#fff;white-space:nowrap;text-align:right}
+.renda-case-badge span{font-size:12px;font-weight:500;color:rgba(255,255,255,.7)}
+.renda-case-badge-highlight{background:rgba(0,123,60,.5);border-color:rgba(89,198,134,.6)}
+.renda-case-item{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:rgba(255,255,255,.85);background:rgba(255,255,255,.1);border-radius:6px;padding:6px 10px}
+.trust-pillar{display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:24px 16px;background:var(--bg);border-radius:12px;border:1px solid var(--border)}
+.trust-pillar-icon{width:56px;height:56px;border-radius:50%;background:#D4EDE1;display:flex;align-items:center;justify-content:center}
+.trust-pillar-title{font-family:'Montserrat',sans-serif;font-size:15px;font-weight:700;color:var(--navy)}
+.trust-pillar-desc{font-size:13px;color:var(--muted);line-height:1.5}
+.vip-section{background:linear-gradient(135deg,var(--navy) 0%,#001f40 100%);padding:64px 24px;text-align:center;position:relative;overflow:hidden}
+.vip-section::before{content:'';position:absolute;top:-80px;right:-80px;width:400px;height:400px;border-radius:50%;background:rgba(0,123,60,.12);pointer-events:none}
+.vip-urgency-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.4);color:#F59E0B;padding:6px 14px;border-radius:999px;font-size:12px;font-weight:600;margin-bottom:20px}
+.vip-section h2{font-family:'Montserrat',sans-serif;font-size:32px;font-weight:800;color:#fff;margin-bottom:12px;line-height:1.2}
+.vip-section h2 span{color:#59C686}
+.vip-sub{color:rgba(255,255,255,.7);font-size:15px;max-width:520px;margin:0 auto 36px;line-height:1.6}
+.vip-benefits{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;max-width:640px;margin:0 auto 36px;text-align:left}
+.vip-benefit{display:flex;align-items:flex-start;gap:14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:16px}
+.vip-benefit-icon{width:40px;height:40px;border-radius:8px;background:rgba(0,123,60,.3);display:flex;align-items:center;justify-content:center;color:#59C686;flex-shrink:0}
+.vip-benefit-title{font-size:14px;font-weight:700;color:#fff;margin-bottom:4px}
+.vip-benefit-desc{font-size:12px;color:rgba(255,255,255,.6);line-height:1.4}
+.vip-cta{font-size:16px;padding:16px 40px;min-width:260px;background:var(--green);color:#fff;text-transform:uppercase;letter-spacing:.5px}
+.vip-cta:hover{background:#005F2E}
+.vip-social-proof{margin-top:16px;font-size:13px;color:rgba(255,255,255,.55)}
+.vip-social-proof strong{color:rgba(255,255,255,.85)}
+@media(max-width:768px){
+  .hero-dual-cta{flex-direction:column;align-items:stretch}
+  .hero-cta-earn,.hero-cta-rent{min-width:0;width:100%}
+  .simulador-layout{grid-template-columns:1fr;gap:24px}
+  .procurados-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .vip-benefits{grid-template-columns:1fr}
+  .vip-section h2{font-size:24px}
+  .vip-cta{width:100%;min-width:0}
 }
 </style>
 </head>
@@ -424,29 +495,86 @@ input[type=range]{width:100%;accent-color:var(--green)}
   <!-- Hero -->
   <section class="hero">
     <div class="hero-content">
-      <div class="hero-eco-badge"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22c0 0-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg> Economia Circular · Natal, RN</div>
-      <h1>Alugue o que precisa.<br><span>Ganhe com o que tem.</span></h1>
-      <p class="hero-sub">O marketplace de aluguel local entre pessoas da sua região. Simples, seguro e sustentável.</p>
-      <div class="hero-search">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input type="text" placeholder="O que você precisa alugar?" id="heroSearch">
-        <button class="btn btn-primary" onclick="showScreen('listing')">Buscar</button>
+      <div class="hero-money-badge" role="note" aria-label="Proposta de valor">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2M9.5 9.5a2.5 2.5 0 0 1 5 0c0 1.5-2.5 3-2.5 3m0 0v.5"/></svg>
+        Transforme itens parados em renda
       </div>
-      <div class="hero-trust">
-        <div class="trust-item"><div class="trust-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><div><strong>Pagamento seguro</strong><br>Liberado só após confirmação</div></div>
-        <div class="trust-item"><div class="trust-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green-light)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></div><div><strong>Usuários verificados</strong><br>Identidade validada</div></div>
-        <div class="trust-item"><div class="trust-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div><strong>Suporte 7 dias</strong><br>Estamos aqui pra você</div></div>
+      <h1>Ganhe dinheiro com o que<br><span>está parado na sua casa.</span></h1>
+      <p class="hero-sub">Ferramentas, eletrônicos, itens para festas, esportes, casa e jardim.<br>Tudo perto de você.</p>
+      <div class="hero-dual-cta" role="group" aria-label="Ações principais">
+        <button class="btn btn-primary btn-lg hero-cta-earn" onclick="showScreen('add-item')" aria-label="Quero ganhar dinheiro anunciando meus itens">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2M9.5 9.5a2.5 2.5 0 0 1 5 0c0 1.5-2.5 3-2.5 3"/></svg>
+          Quero Ganhar Dinheiro
+        </button>
+        <button class="btn hero-cta-rent btn-lg" onclick="showScreen('listing')" aria-label="Quero alugar um item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Quero Alugar
+        </button>
+      </div>
+      <div class="hero-search" role="search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" placeholder="O que você precisa alugar?" id="heroSearch" aria-label="Buscar item para alugar ou anunciar" autocomplete="off">
+        <button class="btn btn-primary" onclick="showScreen('listing')" aria-label="Buscar">Buscar</button>
+      </div>
+      <p class="hero-tagline"><em>Use Mais. Possua Menos.</em></p>
+      <div class="hero-stats" role="list" aria-label="Números da plataforma">
+        <div class="stat" role="listitem"><div class="stat-num">2.400+</div><div class="stat-label">Itens disponíveis</div></div>
+        <div class="stat" role="listitem"><div class="stat-num">R$2.000</div><div class="stat-label">Renda média/mês</div></div>
+        <div class="stat" role="listitem"><div class="stat-num">4.8 ★</div><div class="stat-label">Avaliação média</div></div>
+        <div class="stat" role="listitem"><div class="stat-num">890+</div><div class="stat-label">Proprietários ativos</div></div>
       </div>
     </div>
   </section>
 
-  <!-- Prova social -->
-  <div class="proof-bar">
-    <div class="proof-item"><div class="proof-num">2.400+</div><div class="proof-label">Itens disponíveis</div></div>
-    <div class="proof-item"><div class="proof-num">890+</div><div class="proof-label">Usuários ativos</div></div>
-    <div class="proof-item"><div class="proof-num">4.8 ★</div><div class="proof-label">Avaliação média</div></div>
-    <div class="proof-item"><div class="proof-num">759 kg</div><div class="proof-label">CO₂ economizados</div></div>
-  </div>
+  <!-- Simulador de Renda -->
+  <section id="simulador-renda" class="section" style="background:#fff">
+    <div style="max-width:800px;margin:0 auto">
+      <div class="text-center" style="margin-bottom:32px">
+        <h2 class="section-title" style="font-size:28px;margin-bottom:8px">Quanto seus itens podem render?</h2>
+        <p style="color:var(--muted);font-size:15px">Descubra o potencial de renda de itens que você já tem em casa.</p>
+      </div>
+      <div class="simulador-layout">
+        <div role="region" aria-labelledby="tabela-renda-title">
+          <h3 id="tabela-renda-title" class="renda-tabela-title">Estimativa por item</h3>
+          <table class="renda-table" aria-label="Tabela de renda mensal estimada por item">
+            <thead><tr><th scope="col">Item</th><th scope="col" style="text-align:right">Renda Mensal Estimada</th></tr></thead>
+            <tbody>
+              <tr><td><span aria-hidden="true">🔧</span> Furadeira</td><td class="renda-value">R$ 90 a R$ 150</td></tr>
+              <tr><td><span aria-hidden="true">🔊</span> Caixa de Som</td><td class="renda-value">R$ 250 a R$ 420</td></tr>
+              <tr><td><span aria-hidden="true">⛺</span> Barraca de Camping</td><td class="renda-value">R$ 120 a R$ 240</td></tr>
+              <tr><td><span aria-hidden="true">🧽</span> Máquina Lava Estofados</td><td class="renda-value">R$ 350 a R$ 550</td></tr>
+              <tr class="renda-table-highlight"><td><span aria-hidden="true">📽️</span> Projetor</td><td class="renda-value">R$ 200 a R$ 350</td></tr>
+            </tbody>
+          </table>
+          <p class="renda-disclaimer" role="note">* Estimativa baseada em média de 3–4 locações/mês. Resultados variam conforme demanda local.</p>
+        </div>
+        <div role="region" aria-labelledby="simulador-title">
+          <h3 id="simulador-title" class="renda-tabela-title">Descubra quanto você pode ganhar</h3>
+          <div style="position:relative">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="position:absolute;left:14px;top:50%;transform:translateY(-50%)"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" id="simulador-input" class="form-input" style="padding-left:40px" placeholder="Ex: Furadeira, Projetor, Caixa de Som..." autocomplete="off" aria-label="Digite o nome do item que você quer anunciar">
+          </div>
+          <div class="simulador-chips" role="group" aria-label="Sugestões de itens">
+            <button class="simulador-chip" type="button" onclick="simularRenda('Furadeira')">Furadeira</button>
+            <button class="simulador-chip" type="button" onclick="simularRenda('Projetor')">Projetor</button>
+            <button class="simulador-chip" type="button" onclick="simularRenda('Caixa de Som')">Caixa de Som</button>
+            <button class="simulador-chip" type="button" onclick="simularRenda('Barraca')">Barraca</button>
+            <button class="simulador-chip" type="button" onclick="simularRenda('Lava Estofados')">Lava Estofados</button>
+          </div>
+          <div id="simulador-output" class="simulador-output hidden" role="status" aria-live="polite" aria-atomic="true">
+            <p class="simulador-output-label">Potencial de renda:</p>
+            <p class="simulador-output-value" id="simulador-value"></p>
+            <p class="simulador-output-sub" id="simulador-sub"></p>
+          </div>
+          <div id="simulador-empty" class="simulador-empty">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2M9.5 9.5a2.5 2.5 0 0 1 5 0c0 1.5-2.5 3-2.5 3"/></svg>
+            <p>Selecione um item acima ou digite o nome</p>
+          </div>
+          <button class="btn btn-primary" style="width:100%;margin-top:20px" onclick="showScreen('add-item')" aria-label="Cadastrar item para anunciar">Cadastrar meu item agora</button>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- Categorias -->
   <section class="section">
@@ -465,102 +593,7 @@ input[type=range]{width:100%;accent-color:var(--green)}
     </div>
   </section>
 
-  <!-- Mapa + Filtro Distância -->
-  <section class="section" style="padding-top:0">
-    <div class="section-header">
-      <h2 class="section-title" style="display:flex;align-items:center;gap:8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="var(--green)"/></svg>Itens próximos de você</h2>
-      <a class="section-link" onclick="showScreen('listing')">Ver todos →</a>
-    </div>
-    <div style="display:flex;gap:16px;align-items:stretch">
-      <!-- Filtro distância -->
-      <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px 20px;min-width:155px;flex-shrink:0;display:flex;flex-direction:column;gap:0">
-        <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px">Distância</div>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <label class="dist-option"><input type="radio" name="dist-home" value="2" onchange="filterMapDist(this.value,'home')"> <span>Até 2 km</span></label>
-          <label class="dist-option"><input type="radio" name="dist-home" value="5" onchange="filterMapDist(this.value,'home')"> <span>Até 5 km</span></label>
-          <label class="dist-option"><input type="radio" name="dist-home" value="10" onchange="filterMapDist(this.value,'home')"> <span>Até 10 km</span></label>
-          <label class="dist-option"><input type="radio" name="dist-home" value="99" onchange="filterMapDist(this.value,'home')" checked> <span>Qualquer</span></label>
-        </div>
-        <div style="margin-top:auto;padding-top:16px;border-top:1px solid var(--border);margin-top:20px">
-          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Sua cidade</div>
-          <div style="display:flex;align-items:center;gap:5px">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="var(--green)" stroke="none" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
-            <span style="font-size:13px;font-weight:700;color:var(--navy)">Natal, RN</span>
-          </div>
-          <div style="font-size:11px;color:var(--muted);margin-top:3px">Baseado na sua conta</div>
-        </div>
-        <div id="mapCount" style="margin-top:12px;font-size:12px;font-weight:600;color:var(--green)">7 itens no mapa</div>
-      </div>
-      <!-- Mapa -->
-      <div class="map-container" style="height:260px;flex:1;min-width:0">
-        <div id="map-home" style="height:260px"></div>
-        <button class="map-link" onclick="showScreen('listing')">Ver todos →</button>
-      </div>
-    </div>
-  </section>
 
-  <!-- Mais alugados -->
-  <section class="section" style="padding-top:0">
-    <div class="section-header">
-      <h2 class="section-title" style="display:flex;align-items:center;gap:8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Mais alugados esta semana</h2>
-      <a class="section-link" onclick="showScreen('listing')">Ver todos →</a>
-    </div>
-    <div class="grid-4">
-      <div class="item-card" onclick="showScreen('detail')">
-        <div class="item-card-img" style="background:#C7D2FE">
-          <div class="item-card-badge"><span class="badge badge-green">✓ Disponível</span></div>
-          <div class="item-card-popular">Mais alugado</div>
-          <button class="item-card-fav" aria-label="Adicionar aos favoritos"><svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
-        </div>
-        <div class="item-card-body">
-          <div class="item-card-category">Ferramentas</div>
-          <div class="item-card-title">Furadeira Profissional Bosch 20V</div>
-          <div class="item-card-rating"><span style="color:#F59E0B">★</span> 4.8 <span>(32 avaliações)</span></div>
-          <div class="item-card-price">R$ 45<span>/dia</span></div>
-          <div class="item-card-location"><svg width="10" height="10" viewBox="0 0 24 24" fill="var(--muted)" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> Ponta Negra · 1,2 km</div>
-        </div>
-      </div>
-      <div class="item-card" onclick="showScreen('detail')">
-        <div class="item-card-img" style="background:#FDE68A">
-          <div class="item-card-badge"><span class="badge badge-green">✓ Disponível</span></div>
-          <button class="item-card-fav" aria-label="Adicionar aos favoritos"><svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
-        </div>
-        <div class="item-card-body">
-          <div class="item-card-category">Eletrônicos</div>
-          <div class="item-card-title">Caixa de Som JBL Charge 5</div>
-          <div class="item-card-rating"><span style="color:#F59E0B">★</span> 4.9 <span>(18 avaliações)</span></div>
-          <div class="item-card-price">R$ 30<span>/dia</span></div>
-          <div class="item-card-location"><svg width="10" height="10" viewBox="0 0 24 24" fill="var(--muted)" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> Capim Macio · 2,1 km</div>
-        </div>
-      </div>
-      <div class="item-card" onclick="showScreen('detail')">
-        <div class="item-card-img" style="background:#A7F3D0">
-          <div class="item-card-badge"><span class="badge badge-green">✓ Disponível</span></div>
-          <button class="item-card-fav fav-active" aria-label="Remover dos favoritos"><svg viewBox="0 0 24 24" fill="var(--red)" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
-        </div>
-        <div class="item-card-body">
-          <div class="item-card-category">Esportes</div>
-          <div class="item-card-title">Stand Up Paddle completo</div>
-          <div class="item-card-rating"><span style="color:#F59E0B">★</span> 4.7 <span>(24 avaliações)</span></div>
-          <div class="item-card-price">R$ 50<span>/dia</span></div>
-          <div class="item-card-location"><svg width="10" height="10" viewBox="0 0 24 24" fill="var(--muted)" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> Via Costeira · 3,5 km</div>
-        </div>
-      </div>
-      <div class="item-card" onclick="showScreen('detail')">
-        <div class="item-card-img" style="background:#FECACA">
-          <div class="item-card-badge"><span class="badge badge-green">✓ Disponível</span></div>
-          <button class="item-card-fav" aria-label="Adicionar aos favoritos"><svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
-        </div>
-        <div class="item-card-body">
-          <div class="item-card-category">Eletrônicos</div>
-          <div class="item-card-title">Projetor Epson Full HD 3000 lumens</div>
-          <div class="item-card-rating"><span style="color:#F59E0B">★</span> 4.6 <span>(11 avaliações)</span></div>
-          <div class="item-card-price">R$ 80<span>/dia</span></div>
-          <div class="item-card-location"><svg width="10" height="10" viewBox="0 0 24 24" fill="var(--muted)" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> Tirol · 4,0 km</div>
-        </div>
-      </div>
-    </div>
-  </section>
 
   <!-- Como funciona -->
   <section class="how-it-works">
@@ -589,46 +622,161 @@ input[type=range]{width:100%;accent-color:var(--green)}
     </div>
   </section>
 
-  <!-- Depoimentos -->
-  <section class="section" style="background:#F1F5F9">
-    <div class="section-header"><h2 class="section-title">O que dizem nossos usuários</h2></div>
+  <!-- Casos de Renda -->
+  <section id="casos-renda" class="section" style="background:#F1F5F9">
+    <div class="section-header"><h2 class="section-title">Quem já está ganhando</h2></div>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:24px">Proprietários reais que transformaram itens parados em renda extra.</p>
     <div class="grid-3">
-      <div class="testimonial-card">
-        <div class="testimonial-stars">★★★★★</div>
-        <p class="testimonial-text">"Aluguei uma furadeira para o fim de semana e economizei R$400. O processo foi super fácil e o locador foi muito atencioso!"</p>
-        <div class="testimonial-author">
-          <div class="testimonial-avatar">A</div>
-          <div><div class="testimonial-name">Ana Costa</div><div class="testimonial-role">Locatária · Natal, RN</div></div>
-        </div>
-      </div>
-      <div class="testimonial-card">
-        <div class="testimonial-stars">★★★★★</div>
-        <p class="testimonial-text">"Tenho 8 itens anunciados e já ganhei mais de R$2.000 este mês. O ShareO me ajuda a transformar o que estava parado em renda extra."</p>
-        <div class="testimonial-author">
-          <div class="testimonial-avatar">M</div>
-          <div><div class="testimonial-name">Marcos Silva</div><div class="testimonial-role">Proprietário · Ponta Negra</div></div>
-        </div>
-      </div>
-      <div class="testimonial-card">
-        <div class="testimonial-stars">★★★★☆</div>
-        <p class="testimonial-text">"Plataforma segura e confiável. Já realizei 12 aluguéis e nunca tive problemas. O suporte é excelente quando precisei."</p>
-        <div class="testimonial-author">
+      <div class="renda-case-card" role="article" aria-label="Caso: Carlos, Furadeira, R$ 135/mês">
+        <div class="renda-case-header">
           <div class="testimonial-avatar">C</div>
-          <div><div class="testimonial-name">Carla Mendes</div><div class="testimonial-role">Locatária · Capim Macio</div></div>
+          <div style="flex:1"><div class="testimonial-name">Carlos Souza</div><div class="testimonial-role">Proprietário · Natal, RN</div></div>
+          <div class="renda-case-badge" aria-label="Renda mensal de R$ 135">R$ 135<span>/mês</span></div>
+        </div>
+        <div class="renda-case-item"><span aria-hidden="true">🔧</span><span>Furadeira Bosch</span></div>
+        <p class="testimonial-text">"Minha furadeira ficava meses parada. Agora ela 'trabalha' por mim todo fim de semana."</p>
+        <div class="testimonial-stars" aria-label="Avaliação 5 estrelas">★★★★★</div>
+      </div>
+      <div class="renda-case-card" role="article" aria-label="Caso: Fernanda, Caixa de Som, R$ 420/mês">
+        <div class="renda-case-header">
+          <div class="testimonial-avatar">F</div>
+          <div style="flex:1"><div class="testimonial-name">Fernanda Lima</div><div class="testimonial-role">Proprietária · Ponta Negra</div></div>
+          <div class="renda-case-badge renda-case-badge-highlight" aria-label="Renda mensal de R$ 420">R$ 420<span>/mês</span></div>
+        </div>
+        <div class="renda-case-item"><span aria-hidden="true">🔊</span><span>Caixa de Som JBL</span></div>
+        <p class="testimonial-text">"Não acreditei quando fiz a primeira locação. Agora é minha renda extra mais consistente."</p>
+        <div class="testimonial-stars" aria-label="Avaliação 5 estrelas">★★★★★</div>
+      </div>
+      <div class="renda-case-card" role="article" aria-label="Caso: Marcos, Projetor, R$ 280/mês">
+        <div class="renda-case-header">
+          <div class="testimonial-avatar">M</div>
+          <div style="flex:1"><div class="testimonial-name">Marcos Silva</div><div class="testimonial-role">Proprietário · Capim Macio</div></div>
+          <div class="renda-case-badge" aria-label="Renda mensal de R$ 280">R$ 280<span>/mês</span></div>
+        </div>
+        <div class="renda-case-item"><span aria-hidden="true">📽️</span><span>Projetor Epson Full HD</span></div>
+        <p class="testimonial-text">"Tenho 8 itens anunciados e já ganhei mais de R$2.000 este mês. O ShareO virou renda real."</p>
+        <div class="testimonial-stars" aria-label="Avaliação 5 estrelas">★★★★★</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Itens Mais Procurados -->
+  <section id="itens-procurados" class="section" style="background:#F8FAFC">
+    <div class="section-header">
+      <h2 class="section-title">Itens mais procurados agora</h2>
+      <a class="section-link" onclick="showScreen('listing')" style="cursor:pointer">Ver todos →</a>
+    </div>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:24px">Itens com alta demanda — ótimas oportunidades para anunciar.</p>
+    <div class="procurados-grid" role="list" aria-label="Itens mais procurados na plataforma">
+      <!-- Furadeira: pistol drill — corpo + chuck + broca + empunhadura -->
+      <button class="procurado-card" onclick="showScreen('listing')" role="listitem" aria-label="Buscar Furadeiras">
+        <span class="procurado-icon"><svg viewBox="0 0 32 32" width="40" height="40" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="12" width="15" height="8" rx="2"/><rect x="18" y="14" width="5" height="4" rx="1"/><line x1="23" y1="16" x2="30" y2="16"/><path d="M9 20 L10 28"/><line x1="8" y1="28" x2="13" y2="28"/><line x1="7" y1="16" x2="8" y2="20"/></svg></span>
+        <span class="procurado-name">Furadeiras</span><span class="badge badge-green procurado-demand">Alta demanda</span>
+      </button>
+      <!-- Escada: dois montantes + 3 degraus -->
+      <button class="procurado-card" onclick="showScreen('listing')" role="listitem" aria-label="Buscar Escadas">
+        <span class="procurado-icon"><svg viewBox="0 0 32 32" width="40" height="40" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="9" y1="3" x2="9" y2="29"/><line x1="23" y1="3" x2="23" y2="29"/><line x1="9" y1="9" x2="23" y2="9"/><line x1="9" y1="16" x2="23" y2="16"/><line x1="9" y1="23" x2="23" y2="23"/></svg></span>
+        <span class="procurado-name">Escadas</span><span class="badge badge-green procurado-demand">Alta demanda</span>
+      </button>
+      <!-- Lavadora de Pressão: tanque + lança + spray -->
+      <button class="procurado-card" onclick="showScreen('listing')" role="listitem" aria-label="Buscar Lavadoras de Pressão">
+        <span class="procurado-icon"><svg viewBox="0 0 32 32" width="40" height="40" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="17" width="11" height="11" rx="2"/><path d="M13 22 L24 9"/><path d="M24 9 l3-1 l0 3 l-3 0"/><line x1="27" y1="7" x2="29" y2="5"/><line x1="28" y1="10" x2="30" y2="10"/><circle cx="5" cy="29" r="2"/><circle cx="9" cy="29" r="2"/></svg></span>
+        <span class="procurado-name">Lavadoras de Pressão</span><span class="badge badge-amber procurado-demand">Demanda moderada</span>
+      </button>
+      <!-- Aspirador vertical: base + corpo + cabo inclinado + pega horizontal -->
+      <button class="procurado-card" onclick="showScreen('listing')" role="listitem" aria-label="Buscar Máquinas de Limpeza">
+        <span class="procurado-icon"><svg viewBox="0 0 32 32" width="40" height="40" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="24" width="18" height="4" rx="2"/><rect x="9" y="14" width="10" height="10" rx="2"/><line x1="14" y1="14" x2="19" y2="4"/><line x1="17" y1="4" x2="23" y2="4"/></svg></span>
+        <span class="procurado-name">Máquinas de Limpeza</span><span class="badge badge-green procurado-demand">Alta demanda</span>
+      </button>
+      <!-- Projetor: corpo + lente + feixe de luz -->
+      <button class="procurado-card" onclick="showScreen('listing')" role="listitem" aria-label="Buscar Projetores">
+        <span class="procurado-icon"><svg viewBox="0 0 32 32" width="40" height="40" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><circle cx="11" cy="16" r="3"/><path d="M20 13 L28 8 L28 24 L20 19"/><line x1="8" y1="21" x2="8" y2="24"/><line x1="12" y1="21" x2="12" y2="24"/></svg></span>
+        <span class="procurado-name">Projetores</span><span class="badge badge-green procurado-demand">Alta demanda</span>
+      </button>
+      <!-- Caixa de Som: gabinete + woofer + tweeter -->
+      <button class="procurado-card" onclick="showScreen('listing')" role="listitem" aria-label="Buscar Caixas de Som">
+        <span class="procurado-icon"><svg viewBox="0 0 32 32" width="40" height="40" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="4" width="18" height="24" rx="2"/><circle cx="16" cy="19" r="6"/><circle cx="16" cy="19" r="2"/><circle cx="16" cy="9" r="2.5"/></svg></span>
+        <span class="procurado-name">Caixas de Som</span><span class="badge badge-green procurado-demand">Alta demanda</span>
+      </button>
+      <!-- Mesa redonda + 4 cadeiras ao redor (vista aérea) -->
+      <button class="procurado-card" onclick="showScreen('listing')" role="listitem" aria-label="Buscar Mesas e Cadeiras para Festas">
+        <span class="procurado-icon"><svg viewBox="0 0 32 32" width="40" height="40" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="16" cy="16" r="8"/><rect x="13" y="3" width="6" height="5" rx="1"/><rect x="13" y="24" width="6" height="5" rx="1"/><rect x="3" y="13" width="5" height="6" rx="1"/><rect x="24" y="13" width="5" height="6" rx="1"/></svg></span>
+        <span class="procurado-name">Mesas e Cadeiras p/ Festas</span><span class="badge badge-amber procurado-demand">Demanda moderada</span>
+      </button>
+      <!-- Barraca: triângulo (tenda A-frame) + porta -->
+      <button class="procurado-card" onclick="showScreen('listing')" role="listitem" aria-label="Buscar Barracas de Camping">
+        <span class="procurado-icon"><svg viewBox="0 0 32 32" width="40" height="40" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 27 L16 5 L30 27 Z"/><line x1="2" y1="27" x2="30" y2="27"/><path d="M12 27 Q12 19 16 19 Q20 19 20 27"/><line x1="16" y1="5" x2="16" y2="19"/></svg></span>
+        <span class="procurado-name">Barracas de Camping</span><span class="badge badge-amber procurado-demand">Demanda moderada</span>
+      </button>
+      <!-- Bicicleta: 2 rodas + quadro + guidão + selim -->
+      <button class="procurado-card" onclick="showScreen('listing')" role="listitem" aria-label="Buscar Bicicletas">
+        <span class="procurado-icon"><svg viewBox="0 0 32 32" width="40" height="40" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7" cy="22" r="6"/><circle cx="25" cy="22" r="6"/><path d="M7 22 L14 14 L25 22"/><line x1="14" y1="14" x2="14" y2="9"/><line x1="12" y1="9" x2="16" y2="9"/><line x1="23" y1="15" x2="27" y2="13"/><line x1="25" y1="13" x2="29" y2="13"/><circle cx="17" cy="22" r="2"/></svg></span>
+        <span class="procurado-name">Bicicletas</span><span class="badge badge-green procurado-demand">Alta demanda</span>
+      </button>
+      <!-- Serra tico-tico: corpo + D-handle em arco + lâmina vertical -->
+      <button class="procurado-card" onclick="showScreen('listing')" role="listitem" aria-label="Buscar Ferramentas Elétricas">
+        <span class="procurado-icon"><svg viewBox="0 0 32 32" width="40" height="40" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="10" width="14" height="12" rx="2"/><path d="M12 10 Q16 5 20 10"/><line x1="13" y1="22" x2="19" y2="22"/><line x1="16" y1="22" x2="16" y2="30"/><path d="M23 14 Q27 14 27 10"/></svg></span>
+        <span class="procurado-name">Ferramentas Elétricas</span><span class="badge badge-green procurado-demand">Alta demanda</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Segurança -->
+  <section id="seguranca" class="section" style="background:#fff;padding:32px 24px">
+    <div style="max-width:900px;margin:0 auto">
+      <h2 class="section-title" style="text-align:center;margin-bottom:8px">Alugue e anuncie com segurança</h2>
+      <p style="text-align:center;color:var(--muted);font-size:14px;margin-bottom:32px">Cada transação é protegida pela plataforma do início ao fim.</p>
+      <div class="grid-3" role="list" aria-label="Pilares de segurança da plataforma">
+        <div class="trust-pillar" role="listitem">
+          <div class="trust-pillar-icon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <div class="trust-pillar-title">Pagamento seguro</div>
+          <div class="trust-pillar-desc">Valor liberado ao proprietário somente após confirmação da retirada pelo locatário.</div>
+        </div>
+        <div class="trust-pillar" role="listitem">
+          <div class="trust-pillar-icon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <div class="trust-pillar-title">Usuários verificados</div>
+          <div class="trust-pillar-desc">Identidade validada com CPF/CNPJ. Você sabe com quem está negociando.</div>
+        </div>
+        <div class="trust-pillar" role="listitem">
+          <div class="trust-pillar-icon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          <div class="trust-pillar-title">Suporte 7 dias</div>
+          <div class="trust-pillar-desc">Nossa equipe está disponível todos os dias para resolver qualquer problema.</div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- CTA Final -->
-  <section class="cta-section">
-    <div class="hero-eco-badge" style="margin:0 auto 20px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22c0 0-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg> Economia Circular</div>
-    <h2>Tem itens parados?<br>Transforme em renda.</h2>
-    <p>Cadastre seus itens gratuitamente e comece a ganhar esta semana.<br>Mais de 890 proprietários já estão ganhando com o ShareO.</p>
-    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
-      <button class="btn btn-primary btn-lg" onclick="showScreen('add-item')">Começar a anunciar →</button>
-      <button class="btn btn-outline btn-lg" style="color:#fff;border-color:rgba(255,255,255,.5)" onclick="showScreen('listing')">Explorar itens</button>
+  <!-- Lista VIP Fundadores -->
+  <section id="lista-vip" class="vip-section" aria-labelledby="vip-title">
+    <div class="vip-urgency-badge" role="note">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Vagas limitadas · Apenas para os primeiros
     </div>
+    <h2 id="vip-title">Cadastre-se agora e faça parte<br><span>dos fundadores SHAREO</span></h2>
+    <p class="vip-sub">Os primeiros proprietários a se cadastrar têm acesso a benefícios exclusivos e permanentes que não estarão disponíveis depois.</p>
+    <div class="vip-benefits" role="list" aria-label="Benefícios exclusivos para fundadores">
+      <div class="vip-benefit" role="listitem">
+        <div class="vip-benefit-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2M9.5 9.5a2.5 2.5 0 0 1 5 0c0 1.5-2.5 3-2.5 3"/></svg></div>
+        <div><div class="vip-benefit-title">Taxa promocional</div><div class="vip-benefit-desc">Comissão reduzida permanentemente para fundadores</div></div>
+      </div>
+      <div class="vip-benefit" role="listitem">
+        <div class="vip-benefit-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+        <div><div class="vip-benefit-title">Perfil verificado gratuito</div><div class="vip-benefit-desc">Sem custo de verificação — credibilidade desde o primeiro dia</div></div>
+      </div>
+      <div class="vip-benefit" role="listitem">
+        <div class="vip-benefit-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+        <div><div class="vip-benefit-title">Destaque nos resultados</div><div class="vip-benefit-desc">Seus anúncios aparecem primeiro nas buscas da sua região</div></div>
+      </div>
+      <div class="vip-benefit" role="listitem">
+        <div class="vip-benefit-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>
+        <div><div class="vip-benefit-title">Benefícios exclusivos</div><div class="vip-benefit-desc">Acesso antecipado a novas funcionalidades e suporte prioritário</div></div>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-lg vip-cta" onclick="showScreen('login')" aria-label="Entrar na lista VIP de fundadores do ShareO">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      Entrar na Lista VIP
+    </button>
+    <p class="vip-social-proof" aria-live="polite"><strong>247 proprietários</strong> já entraram na lista esta semana</p>
   </section>
 
   <!-- Footer -->
@@ -1681,6 +1829,47 @@ function toggleDay(el){
   el.classList.toggle('active');
   el.setAttribute('aria-pressed', el.classList.contains('active')?'true':'false');
 }
+
+// ── SIMULADOR DE RENDA ──
+const SIMULADOR_DATA={
+  'furadeira':{min:90,max:150,label:'Ferramenta muito procurada na região'},
+  'projetor':{min:200,max:350,label:'Alta demanda em eventos e reuniões'},
+  'caixa de som':{min:250,max:420,label:'Pico de demanda em fins de semana'},
+  'barraca':{min:120,max:240,label:'Procurado em feriados e temporadas'},
+  'barraca camping':{min:120,max:240,label:'Procurado em feriados e temporadas'},
+  'lava estofados':{min:350,max:550,label:'Serviço diferenciado, alta margem'},
+  'escada':{min:80,max:160,label:'Item muito requisitado em obras pequenas'},
+  'bicicleta':{min:150,max:300,label:'Demanda crescente em roteiros urbanos'},
+};
+function simularRenda(item){
+  const key=item.toLowerCase().trim();
+  const match=SIMULADOR_DATA[key]||Object.entries(SIMULADOR_DATA).find(([k])=>key.includes(k))?.[1];
+  const output=document.getElementById('simulador-output');
+  const valEl=document.getElementById('simulador-value');
+  const subEl=document.getElementById('simulador-sub');
+  const emptyEl=document.getElementById('simulador-empty');
+  const data=match||{min:80,max:400,label:'Estimativa geral para itens domésticos'};
+  valEl.textContent='R$ '+data.min+' a R$ '+data.max+' por mês';
+  subEl.textContent=data.label;
+  output.classList.remove('hidden');
+  emptyEl.classList.add('hidden');
+  document.querySelectorAll('.simulador-chip').forEach(c=>c.classList.remove('active'));
+  const activeChip=[...document.querySelectorAll('.simulador-chip')].find(c=>c.textContent.trim().toLowerCase()===key);
+  if(activeChip)activeChip.classList.add('active');
+  const inputEl=document.getElementById('simulador-input');
+  if(inputEl)inputEl.value=item;
+}
+document.addEventListener('DOMContentLoaded',function(){
+  const inp=document.getElementById('simulador-input');
+  if(inp)inp.addEventListener('input',function(){if(this.value.length>=3)simularRenda(this.value);});
+  // Placeholder alternante do hero
+  const heroInput=document.getElementById('heroSearch');
+  if(heroInput){
+    const placeholders=['O que você precisa alugar?','O que você tem para alugar?'];
+    let idx=0;
+    setInterval(function(){idx=(idx+1)%placeholders.length;heroInput.setAttribute('placeholder',placeholders[idx]);},3000);
+  }
+});
 </script>
 
 <!-- ════════════════ SCREEN: LOGIN ════════════════ -->
@@ -1912,7 +2101,7 @@ function toggleDay(el){
       <div class="form-group">
         <label style="display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px">Dias disponíveis para retirada</label>
         <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Selecione os dias da semana:</p>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px">
           <button class="add-item-day" onclick="toggleDay(this)" aria-pressed="false">Dom</button>
           <button class="add-item-day active" onclick="toggleDay(this)" aria-pressed="true">Seg</button>
           <button class="add-item-day active" onclick="toggleDay(this)" aria-pressed="true">Ter</button>
@@ -2212,7 +2401,7 @@ function toggleDay(el){
 
 <style>
 /* ── ADD-ITEM DAY BUTTONS ── */
-.add-item-day{padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-family:inherit;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;min-height:44px;transition:.2s}
+.add-item-day{padding:8px 4px;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-family:inherit;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;min-height:44px;text-align:center;transition:.2s}
 .add-item-day.active{background:var(--green);color:#fff;border-color:var(--green)}
 .add-item-day:hover:not(.active){border-color:var(--green);color:var(--green)}
 
