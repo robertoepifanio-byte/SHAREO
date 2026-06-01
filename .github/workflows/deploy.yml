@@ -135,7 +135,12 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
       - name: Deploy to staging
-        run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+        # Vercel auto-deploy via GitHub integration está desabilitado (commandForIgnoringBuildStep=exit 0).
+        # Apenas este step controla o deploy de staging — ambiente Preview com DATABASE_URL.
+        id: deploy
+        run: |
+          DEPLOY_URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          echo "deploy-url=$DEPLOY_URL" >> "$GITHUB_OUTPUT"
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -157,7 +162,12 @@ jobs:
         run: |
           echo "Aguardando 20s para o deploy propagar..."
           sleep 20
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ secrets.STAGING_URL }}/api/health)
+          DEPLOY_URL="${{ steps.deploy.outputs.deploy-url }}"
+          echo "Verificando: $DEPLOY_URL/api/health"
+          RESPONSE=$(curl -s "$DEPLOY_URL/api/health")
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$DEPLOY_URL/api/health")
+          echo "Status HTTP: $STATUS"
+          echo "Response: $RESPONSE"
           if [ "$STATUS" != "200" ]; then
             echo "Health check falhou com status $STATUS"
             exit 1
