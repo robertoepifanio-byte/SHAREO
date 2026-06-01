@@ -78,7 +78,7 @@ const config: NextConfig = {
 }
 
 export default withSentryConfig(config, {
-  org:     process.env.SENTRY_ORG     ?? "shareo",
+  org:     process.env.SENTRY_ORG     ?? "shareo-ow",
   project: process.env.SENTRY_PROJECT ?? "shareo-web",
   silent:  !process.env.CI,
   hideSourceMaps:          true,
