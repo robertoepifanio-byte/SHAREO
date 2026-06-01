@@ -44,11 +44,13 @@ const PAGE_SIZE = 20
 
 
 function getOrderBy(sort?: string) {
+  // id como tiebreaker garante ordenação estável entre queries (evita duplicatas em offset pagination)
+  const id = { id: "asc" as const }
   switch (sort) {
-    case "price_asc":  return { pricePerDay: "asc"  as const }
-    case "price_desc": return { pricePerDay: "desc" as const }
-    case "views":      return { viewCount:   "desc" as const }
-    default:           return { createdAt:   "desc" as const }
+    case "price_asc":  return [{ pricePerDay: "asc"  as const }, id]
+    case "price_desc": return [{ pricePerDay: "desc" as const }, id]
+    case "views":      return [{ viewCount:   "desc" as const }, id]
+    default:           return [{ createdAt:   "desc" as const }, id]
   }
 }
 
@@ -93,7 +95,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
     const cats = await prisma.category.findMany({
       where:   { parentId: null },
       select:  { id: true, name: true },
-    })
+    }).catch(() => [] as { id: string; name: string }[])
     const match = cats.find((c) => c.name.toLowerCase() === search.toLowerCase())
     if (match) {
       const params = new URLSearchParams({ categoryId: match.id })
@@ -104,11 +106,15 @@ export default async function ExplorarPage({ searchParams }: Props) {
   }
 
   const useDistFilter = !!(dist && userLat !== undefined && userLng !== undefined)
+  // useJsFilter calculado antes da query para controlar skip/take no Prisma.
+  // Quando qualquer filtro JS está ativo, Prisma busca todos os itens para que
+  // a paginação JS opere sobre o conjunto completo — evita dupla paginação.
+  const useJsFilter = useDistFilter || !!minRating
 
-  const [rawItems, total, categories] = await Promise.all([
+  const dbResult = await Promise.all([
     prisma.item.findMany({
       where,
-      ...(useDistFilter ? {} : { skip, take: PAGE_SIZE }),
+      ...(useJsFilter ? {} : { skip, take: PAGE_SIZE }),
       orderBy: getOrderBy(sort),
       select: {
         id: true, title: true, pricePerDay: true, pricePerWeek: true,
@@ -127,7 +133,25 @@ export default async function ExplorarPage({ searchParams }: Props) {
       select:  { id: true, name: true },
       orderBy: { name: "asc" },
     }),
-  ])
+  ]).catch(() => null)
+
+  if (!dbResult) {
+    return (
+      <div className="min-h-screen bg-background">
+        <AppHeader />
+        <main className="container flex flex-col items-center justify-center py-20 text-center">
+          <p className="mb-4 text-base text-muted-foreground">
+            Serviço temporariamente indisponível. Tente novamente em instantes.
+          </p>
+          <Link href="/" className="text-sm font-medium text-brand hover:underline">
+            Voltar ao início
+          </Link>
+        </main>
+      </div>
+    )
+  }
+
+  const [rawItems, total, categories] = dbResult
 
   // Filtros em JS: distância e avaliação mínima
   function avgRating(i: { reviews: { rating: number }[] }) {
@@ -144,7 +168,6 @@ export default async function ExplorarPage({ searchParams }: Props) {
     return true
   }
 
-  const useJsFilter = useDistFilter || !!minRating
   const jsFiltered  = useJsFilter ? rawItems.filter(passesJsFilters) : rawItems
 
   const pagedItems   = useJsFilter ? jsFiltered.slice(skip, skip + PAGE_SIZE) : rawItems
