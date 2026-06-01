@@ -36,7 +36,7 @@ const config: Config = {
       colors: {
         // Identidade Shareo (v1.0 — Maio 2026)
         shareo: {
-          navy:          "#0D1B2A",   // Azul Marinho oficial
+          navy:          "#003366",   // Azul Marinho oficial (DID v1.0)
           "green-dark":  "#007B3C",   // Verde Escuro — botões, ação
           "green-light": "#59C686",   // Verde Claro de Apoio — decorativo
           "blue-medium": "#144D81",   // Azul Médio — seções intermediárias
@@ -54,7 +54,7 @@ const config: Config = {
           link:       "#005F2E",   // verde para texto/link sobre fundo branco
         },
         primary: {
-          DEFAULT:    "#0D1B2A",   // azul marinho oficial
+          DEFAULT:    "#003366",   // azul marinho oficial (DID v1.0)
           hover:      "#003D7A",   // azul marinho claro
           foreground: "#FFFFFF",
         },
@@ -65,10 +65,10 @@ const config: Config = {
           foreground: "#FFFFFF",
         },
         // Verde claro decorativo — apenas fundos/ícones, NÃO texto em fundo branco (2.1:1)
-        // Em fundo escuro (#0D1B2A): ratio 7.4:1 ✅
+        // Em fundo escuro (#003366): ratio 8.4:1 ✅
         accent: {
           DEFAULT:    "#59C686",
-          foreground: "#0D1B2A",   // texto SOBRE fundo accent
+          foreground: "#003366",   // texto SOBRE fundo accent (8.4:1 ✅)
         },
         // Laranja — identidade Shareo (via prototipo.html tokens)
         orange: {
@@ -105,13 +105,13 @@ const config: Config = {
 
         // Status de booking
         booking: {
-          pending: "#F59E0B",     // amber — aguardando
-          confirmed: "#3B82F6",   // blue — confirmado
-          active: "#22C55E",      // green — em andamento
-          returned: "#8B5CF6",    // violet — devolvido
+          pending:   "#F59E0B",   // amber — aguardando
+          confirmed: "#144D81",   // azul médio DID v1.0 — confirmado
+          active:    "#007B3C",   // verde escuro DID v1.0 — em andamento
+          returned:  "#8B5CF6",   // violet — devolvido
           completed: "#64748B",   // slate — concluído
-          cancelled: "#EF4444",   // red — cancelado
-          disputed: "#F97316",    // orange — em disputa
+          cancelled: "#E74C3C",   // vermelho DID v1.0 — cancelado
+          disputed:  "#C05800",   // laranja WCAG AA — em disputa
         },
 
         // Status de item
@@ -131,7 +131,8 @@ const config: Config = {
 
       // ─── Tipografia ─────────────────────────────────────
       fontFamily: {
-        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+        sans:    ["var(--font-inter)", "system-ui", "sans-serif"],
+        display: ["var(--font-montserrat)", "Montserrat", "system-ui", "sans-serif"],
       },
       fontSize: {
         // Escala completa alinhada ao Design System
@@ -207,13 +208,13 @@ const config: Config = {
 
       // ─── Sombras ─────────────────────────────────────────
       boxShadow: {
-        sm:    "0 1px 2px 0 rgb(13 27 42 / 0.05)",
-        DEFAULT:"0 1px 3px 0 rgb(13 27 42 / 0.10), 0 1px 2px -1px rgb(13 27 42 / 0.10)",
-        md:    "0 4px 6px -1px rgb(13 27 42 / 0.10), 0 2px 4px -2px rgb(13 27 42 / 0.10)",
-        lg:    "0 10px 15px -3px rgb(13 27 42 / 0.10), 0 4px 6px -4px rgb(13 27 42 / 0.10)",
-        xl:    "0 20px 25px -5px rgb(13 27 42 / 0.10), 0 8px 10px -6px rgb(13 27 42 / 0.10)",
-        card:  "0 2px 8px 0 rgb(13 27 42 / 0.08)",      // sombra padrão de cards
-        modal: "0 25px 50px -12px rgb(13 27 42 / 0.25)",
+        sm:    "0 1px 2px 0 rgb(0 51 102 / 0.05)",
+        DEFAULT:"0 1px 3px 0 rgb(0 51 102 / 0.10), 0 1px 2px -1px rgb(0 51 102 / 0.10)",
+        md:    "0 4px 6px -1px rgb(0 51 102 / 0.10), 0 2px 4px -2px rgb(0 51 102 / 0.10)",
+        lg:    "0 10px 15px -3px rgb(0 51 102 / 0.10), 0 4px 6px -4px rgb(0 51 102 / 0.10)",
+        xl:    "0 20px 25px -5px rgb(0 51 102 / 0.10), 0 8px 10px -6px rgb(0 51 102 / 0.10)",
+        card:  "0 2px 8px 0 rgb(0 51 102 / 0.08)",      // sombra padrão de cards
+        modal: "0 25px 50px -12px rgb(0 51 102 / 0.25)",
         none:  "none",
       },
 
@@ -221,7 +222,7 @@ const config: Config = {
       ringColor: {
         DEFAULT: "#007B3C",
         brand:   "#007B3C",
-        primary: "#0D1B2A",
+        primary: "#003366",
         orange:  "#9A4700",
       },
       ringOffsetColor: {
