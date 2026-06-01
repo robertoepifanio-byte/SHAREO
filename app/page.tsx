@@ -90,7 +90,7 @@ export default async function HomePage() {
             </span>
           )}
         </div>
-        <h1 className="mb-3 text-4xl font-extrabold leading-tight text-white md:text-6xl">
+        <h1 className="mb-3 font-display text-4xl font-extrabold leading-tight text-white md:text-6xl">
           Use Mais.<br />Possua Menos.
         </h1>
         <p className="mx-auto mb-8 max-w-lg text-base text-white/75">
@@ -200,7 +200,7 @@ export default async function HomePage() {
         {/* ─── MAPA + FILTRO DISTÂNCIA ─── */}
         <section className="pb-8" aria-label="Mapa de itens próximos">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-bold text-primary md:text-2xl">📍 Itens próximos de você</h2>
+            <h2 className="font-display text-xl font-bold text-primary md:text-2xl">📍 Itens próximos de você</h2>
             <Link href="/itens" className="text-sm font-semibold text-brand hover:underline">Ver todos →</Link>
           </div>
           <HomeMapPanel
@@ -224,7 +224,7 @@ export default async function HomePage() {
         {hotItems.length > 0 && (
           <section className="pb-8" aria-labelledby="hot-title">
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-primary md:text-2xl" id="hot-title">
+              <h2 className="font-display text-xl font-bold text-primary md:text-2xl" id="hot-title">
                 🔥 Mais alugados esta semana
               </h2>
               <Link href="/itens" className="text-sm font-semibold text-brand hover:underline outline-none focus-visible:ring-1 focus-visible:ring-brand rounded">
@@ -243,7 +243,7 @@ export default async function HomePage() {
         {items.length > 0 && (
           <section className="pb-8" aria-labelledby="nearby-title">
             <div className="mb-5 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-primary md:text-2xl" id="nearby-title">
+              <h2 className="font-display text-xl font-bold text-primary md:text-2xl" id="nearby-title">
                 Próximos de você
               </h2>
               <Link
@@ -291,7 +291,7 @@ export default async function HomePage() {
                 >
                   {step.num}
                 </div>
-                <h3 className="mb-2 text-base font-bold text-primary">{step.title}</h3>
+                <h3 className="mb-2 font-display text-base font-bold text-primary">{step.title}</h3>
                 <p className="text-sm leading-relaxed text-muted-foreground">{step.desc}</p>
               </div>
             ))}
@@ -365,7 +365,7 @@ export default async function HomePage() {
             <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/15 px-3 py-1 text-xs font-semibold text-accent">
               🌿 Economia circular
             </div>
-            <h2 className="mb-3 text-2xl font-extrabold leading-snug text-white">
+            <h2 className="mb-3 font-display text-2xl font-extrabold leading-snug text-white">
               Tem itens parados?<br />Transforme em renda.
             </h2>
             <p className="mb-6 max-w-lg text-sm text-white/75 leading-relaxed">

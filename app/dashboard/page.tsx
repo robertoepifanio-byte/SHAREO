@@ -178,7 +178,7 @@ export default async function DashboardPage() {
         <div className="container">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-extrabold text-white">
+              <h1 className="font-display text-2xl font-extrabold text-white">
                 Olá, {firstName}! 👋
               </h1>
               <p className="mt-1 text-sm text-white/65">
@@ -235,7 +235,7 @@ export default async function DashboardPage() {
           {recentBookings.length > 0 && (
             <div className="mb-8">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-semibold text-primary">Minhas Reservas</h2>
+                <h2 className="font-display font-semibold text-primary">Minhas Reservas</h2>
                 <Link href="/reservas" className="text-sm font-semibold text-brand hover:underline">Ver histórico →</Link>
               </div>
               <div className="flex flex-col divide-y divide-border rounded-xl border border-border bg-surface overflow-hidden">
@@ -270,7 +270,7 @@ export default async function DashboardPage() {
           {suggestions.length > 0 && (
             <div className="mb-8">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-semibold text-primary">Sugestões para Você</h2>
+                <h2 className="font-display font-semibold text-primary">Sugestões para Você</h2>
                 <Link href="/itens" className="text-sm font-semibold text-brand hover:underline">Ver mais →</Link>
               </div>
               <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
@@ -352,7 +352,7 @@ export default async function DashboardPage() {
         <section className="mt-10 rounded-xl bg-brand p-6 text-white" aria-label="ShareO Sustentável">
           <div className="mb-1 flex items-center gap-2">
             <span className="text-lg">🌿</span>
-            <h2 className="text-lg font-bold">ShareO Sustentável</h2>
+            <h2 className="font-display text-lg font-bold">ShareO Sustentável</h2>
             <span className="ml-auto rounded-full bg-white/15 px-3 py-0.5 text-xs font-semibold">{userLocation}</span>
           </div>
           <p className="mb-5 text-sm text-white/70">Iniciativas de economia circular na sua região</p>
