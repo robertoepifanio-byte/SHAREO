@@ -12,7 +12,7 @@
 :root{
   --navy:#003366;--green:#007B3C;--green-light:#59C686;--blue-mid:#144D81;
   --white:#fff;--bg:#F8FAFC;--text:#0F172A;--muted:#64748B;--border:#E2E8F0;
-  --orange:#F97316;--red:#EF4444;--amber:#F59E0B;--radius:12px;
+  --orange:#F97316;--red:#E74C3C;--amber:#F59E0B;--radius:12px;
 }
 body{font-family:'Montserrat',sans-serif;background:var(--bg);color:var(--text);font-size:16px}
 a{text-decoration:none;color:inherit}
@@ -51,7 +51,7 @@ img{max-width:100%}
 
 /* ── BUTTON ── */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 24px;border-radius:8px;font-weight:600;font-size:15px;border:none;transition:all .2s;min-height:44px}
-.btn-primary{background:var(--green);color:#fff}.btn-primary:hover{background:#005F2E}
+.btn-primary{background:var(--green);color:#fff;text-transform:uppercase;letter-spacing:.4px}.btn-primary:hover{background:#005F2E}
 .btn-outline{background:transparent;color:var(--navy);border:2px solid var(--navy)}.btn-outline:hover{background:var(--navy);color:#fff}
 .btn-orange{background:var(--orange);color:#fff}.btn-orange:hover{background:#ea6a00}
 .btn-ghost{background:transparent;color:var(--green);border:1px solid var(--green)}
@@ -91,7 +91,7 @@ img{max-width:100%}
 .hero-search input::placeholder{color:var(--muted)}
 .hero-trust{display:flex;gap:24px;margin-top:28px;flex-wrap:wrap;justify-content:center}
 .trust-item{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.8);font-size:13px}
-.trust-icon{width:32px;height:32px;border-radius:50%;background:rgba(0,123,60,.3);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.trust-icon{width:32px;height:32px;border-radius:50%;background:rgba(0,123,60,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .hero-stats{display:flex;gap:32px;margin-top:36px;justify-content:center}
 .stat{color:#fff}
 .stat-num{font-size:28px;font-weight:800;color:var(--green-light)}
@@ -131,7 +131,10 @@ img{max-width:100%}
 .item-card-img{aspect-ratio:4/3;background:#E2E8F0;position:relative;overflow:hidden}
 .item-card-img img{width:100%;height:100%;object-fit:cover}
 .item-card-badge{position:absolute;top:8px;left:8px}
-.item-card-fav{position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.9);border:none;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer}
+/* Tap target mínimo 44×44px WCAG 2.5.5 */
+.item-card-fav{position:absolute;top:0;right:0;width:44px;height:44px;background:transparent;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:6px}
+.item-card-fav svg{width:28px;height:28px;background:rgba(255,255,255,.9);border-radius:50%;padding:5px;filter:drop-shadow(0 1px 3px rgba(0,0,0,.15))}
+.item-card-fav.fav-active svg{fill:var(--red);stroke:var(--red)}
 .item-card-body{padding:12px}
 .item-card-category{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
 .item-card-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;line-height:1.3}
@@ -145,7 +148,7 @@ img{max-width:100%}
 .how-it-works{background:#fff;padding:48px 24px}
 .step-card{background:var(--bg);border-radius:var(--radius);padding:24px;text-align:center}
 .step-num{width:48px;height:48px;border-radius:50%;background:var(--green);color:#fff;font-size:20px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
-.step-icon{font-size:32px;margin-bottom:12px}
+.step-icon{display:flex;align-items:center;justify-content:center;margin-bottom:12px}
 .step-title{font-size:16px;font-weight:700;color:var(--navy);margin-bottom:8px}
 .step-desc{font-size:13px;color:var(--muted);line-height:1.5}
 
@@ -188,7 +191,7 @@ img{max-width:100%}
 /* ── FILTER BAR ── */
 .filter-bar{background:#fff;border-bottom:1px solid var(--border);padding:12px 24px;display:flex;gap:8px;align-items:center;overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none}
 .filter-bar::-webkit-scrollbar{display:none}
-.filter-chip{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;font-size:13px;font-weight:600;border:1.5px solid var(--border);background:#fff;cursor:pointer;white-space:nowrap;transition:.2s}
+.filter-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;font-size:13px;font-weight:600;border:1.5px solid var(--border);background:#fff;cursor:pointer;white-space:nowrap;transition:.2s}
 .filter-chip:hover{border-color:var(--green);color:var(--green)}
 .filter-chip.active{background:var(--green);color:#fff;border-color:var(--green)}
 .filter-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;background:var(--navy);color:#fff;border:none;cursor:pointer}
@@ -201,7 +204,8 @@ img{max-width:100%}
 .sheet-handle{width:40px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 20px}
 .sheet-title{font-size:18px;font-weight:700;margin-bottom:20px}
 .filter-group{margin-bottom:20px}
-.filter-group label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
+/* Opção 3: labels de filtro com contraste navy */
+.filter-group label{display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
 .filter-options{display:flex;flex-wrap:wrap;gap:8px}
 .filter-option{padding:8px 16px;border-radius:999px;border:1.5px solid var(--border);font-size:13px;font-weight:500;cursor:pointer;transition:.2s}
 .filter-option.active{background:var(--green);color:#fff;border-color:var(--green)}
@@ -212,6 +216,8 @@ input[type=range]{width:100%;accent-color:var(--green)}
 .detail-gallery{background:#000;aspect-ratio:4/3;position:relative;overflow:hidden}
 .detail-gallery img{width:100%;height:100%;object-fit:cover}
 .gallery-counter{position:absolute;bottom:12px;right:12px;background:rgba(0,0,0,.6);color:#fff;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600}
+/* Gallery nav buttons — tap target 44×44px */
+.gallery-btn{position:absolute;background:rgba(255,255,255,.92);border:none;border-radius:50%;width:44px;height:44px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10}
 .gallery-thumbs{display:flex;gap:8px;padding:12px 16px;background:#fff;border-bottom:1px solid var(--border)}
 .thumb{width:60px;height:45px;border-radius:6px;object-fit:cover;border:2px solid transparent;cursor:pointer}
 .thumb.active{border-color:var(--green)}
@@ -321,9 +327,11 @@ input[type=range]{width:100%;accent-color:var(--green)}
 .card-brands{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
 .card-brand{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;color:var(--muted)}
 .form-group{margin-bottom:16px}
-.form-group label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:6px}
+/* Opção 3 — labels de formulário com contraste AAA: navy sobre branco = 14.7:1 */
+.form-group label{display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px}
 .form-input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:14px;color:var(--text);transition:.2s}
-.form-input:focus{outline:none;border-color:var(--green)}
+/* Opção 3 "Boa Legibilidade": foco visível e alto contraste em formulários (WCAG 2.4.7) */
+.form-input:focus{outline:2px solid var(--green);outline-offset:1px;border-color:var(--green)}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 
 /* ── SUCCESS ── */
@@ -372,18 +380,19 @@ input[type=range]{width:100%;accent-color:var(--green)}
   <nav class="nav-links">
     <a class="nav-link active" onclick="showScreen('home')">Início</a>
     <a class="nav-link" onclick="showScreen('listing')">Explorar</a>
-    <a class="nav-link" onclick="showScreen('listing')">Anunciar</a>
-    <a class="nav-link">Mensagens</a>
+    <a class="nav-link" onclick="showScreen('add-item')">Anunciar</a>
+    <a class="nav-link" onclick="showScreen('chat')">Mensagens</a>
     <a class="nav-link" onclick="showScreen('reservas')">Reservas</a>
   </nav>
   <div class="header-actions">
     <span style="color:rgba(255,255,255,.85);font-size:13px;font-weight:600;white-space:nowrap">Olá, Lucas!</span>
     <button class="avatar-btn" onclick="showScreen('dashboard')">L</button>
-    <button class="notif-btn" title="Notificações">
-      🔔<span class="notif-dot"></span>
+    <button class="notif-btn" aria-label="Notificações">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span class="notif-dot"></span>
     </button>
     <button class="btn btn-ghost btn-sm" style="color:#fff;border-color:rgba(255,255,255,.4)">Ajuda</button>
-    <button class="btn btn-primary btn-sm" onclick="showScreen('listing')" style="display:none" id="loginBtn">Entrar</button>
+    <button class="btn btn-primary btn-sm" onclick="showScreen('login')" id="loginBtn">Entrar</button>
   </div>
 </header>
 
@@ -396,7 +405,7 @@ input[type=range]{width:100%;accent-color:var(--green)}
     <button class="bottom-nav-item" onclick="showScreen('listing');setActiveNav(this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>Buscar
     </button>
-    <button class="bottom-nav-item" onclick="showScreen('listing');setActiveNav(this)">
+    <button class="bottom-nav-item" onclick="showScreen('add-item');setActiveNav(this)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Anunciar
     </button>
     <button class="bottom-nav-item" onclick="showScreen('reservas');setActiveNav(this)">
@@ -414,18 +423,18 @@ input[type=range]{width:100%;accent-color:var(--green)}
   <!-- Hero -->
   <section class="hero">
     <div class="hero-content">
-      <div class="hero-eco-badge">🌿 Economia Circular · Natal, RN</div>
+      <div class="hero-eco-badge"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22c0 0-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg> Economia Circular · Natal, RN</div>
       <h1>Alugue o que precisa.<br><span>Ganhe com o que tem.</span></h1>
       <p class="hero-sub">O marketplace de aluguel local entre pessoas da sua região. Simples, seguro e sustentável.</p>
       <div class="hero-search">
-        <span style="font-size:20px">🔍</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         <input type="text" placeholder="O que você precisa alugar?" id="heroSearch">
         <button class="btn btn-primary" onclick="showScreen('listing')">Buscar</button>
       </div>
       <div class="hero-trust">
-        <div class="trust-item"><div class="trust-icon">🔒</div><div><strong>Pagamento seguro</strong><br>Liberado só após confirmação</div></div>
-        <div class="trust-item"><div class="trust-icon">✓</div><div><strong>Usuários verificados</strong><br>Identidade validada</div></div>
-        <div class="trust-item"><div class="trust-icon">💬</div><div><strong>Suporte 7 dias</strong><br>Estamos aqui pra você</div></div>
+        <div class="trust-item"><div class="trust-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><div><strong>Pagamento seguro</strong><br>Liberado só após confirmação</div></div>
+        <div class="trust-item"><div class="trust-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green-light)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></div><div><strong>Usuários verificados</strong><br>Identidade validada</div></div>
+        <div class="trust-item"><div class="trust-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div><div><strong>Suporte 7 dias</strong><br>Estamos aqui pra você</div></div>
       </div>
     </div>
   </section>
@@ -458,7 +467,7 @@ input[type=range]{width:100%;accent-color:var(--green)}
   <!-- Mapa + Filtro Distância -->
   <section class="section" style="padding-top:0">
     <div class="section-header">
-      <h2 class="section-title">📍 Itens próximos de você</h2>
+      <h2 class="section-title" style="display:flex;align-items:center;gap:8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="var(--green)"/></svg>Itens próximos de você</h2>
       <a class="section-link" onclick="showScreen('listing')">Ver todos →</a>
     </div>
     <div style="display:flex;gap:16px;align-items:stretch">
@@ -474,7 +483,7 @@ input[type=range]{width:100%;accent-color:var(--green)}
         <div style="margin-top:auto;padding-top:16px;border-top:1px solid var(--border);margin-top:20px">
           <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Sua cidade</div>
           <div style="display:flex;align-items:center;gap:5px">
-            <span style="font-size:13px">📍</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="var(--green)" stroke="none" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
             <span style="font-size:13px;font-weight:700;color:var(--navy)">Natal, RN</span>
           </div>
           <div style="font-size:11px;color:var(--muted);margin-top:3px">Baseado na sua conta</div>
@@ -492,61 +501,61 @@ input[type=range]{width:100%;accent-color:var(--green)}
   <!-- Mais alugados -->
   <section class="section" style="padding-top:0">
     <div class="section-header">
-      <h2 class="section-title">🔥 Mais alugados esta semana</h2>
+      <h2 class="section-title" style="display:flex;align-items:center;gap:8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Mais alugados esta semana</h2>
       <a class="section-link" onclick="showScreen('listing')">Ver todos →</a>
     </div>
     <div class="grid-4">
       <div class="item-card" onclick="showScreen('detail')">
         <div class="item-card-img" style="background:#C7D2FE">
           <div class="item-card-badge"><span class="badge badge-green">✓ Disponível</span></div>
-          <div class="item-card-popular">🔥 Mais alugado</div>
-          <button class="item-card-fav">♡</button>
+          <div class="item-card-popular">Mais alugado</div>
+          <button class="item-card-fav" aria-label="Adicionar aos favoritos"><svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
         </div>
         <div class="item-card-body">
           <div class="item-card-category">Ferramentas</div>
           <div class="item-card-title">Furadeira Profissional Bosch 20V</div>
-          <div class="item-card-rating">⭐ 4.8 <span>(32 avaliações)</span></div>
+          <div class="item-card-rating"><span style="color:#F59E0B">★</span> 4.8 <span>(32 avaliações)</span></div>
           <div class="item-card-price">R$ 45<span>/dia</span></div>
-          <div class="item-card-location">📍 Ponta Negra · 1,2 km</div>
+          <div class="item-card-location"><svg width="10" height="10" viewBox="0 0 24 24" fill="var(--muted)" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> Ponta Negra · 1,2 km</div>
         </div>
       </div>
       <div class="item-card" onclick="showScreen('detail')">
         <div class="item-card-img" style="background:#FDE68A">
           <div class="item-card-badge"><span class="badge badge-green">✓ Disponível</span></div>
-          <button class="item-card-fav">♡</button>
+          <button class="item-card-fav" aria-label="Adicionar aos favoritos"><svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
         </div>
         <div class="item-card-body">
           <div class="item-card-category">Eletrônicos</div>
           <div class="item-card-title">Caixa de Som JBL Charge 5</div>
-          <div class="item-card-rating">⭐ 4.9 <span>(18 avaliações)</span></div>
+          <div class="item-card-rating"><span style="color:#F59E0B">★</span> 4.9 <span>(18 avaliações)</span></div>
           <div class="item-card-price">R$ 30<span>/dia</span></div>
-          <div class="item-card-location">📍 Capim Macio · 2,1 km</div>
+          <div class="item-card-location"><svg width="10" height="10" viewBox="0 0 24 24" fill="var(--muted)" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> Capim Macio · 2,1 km</div>
         </div>
       </div>
       <div class="item-card" onclick="showScreen('detail')">
         <div class="item-card-img" style="background:#A7F3D0">
           <div class="item-card-badge"><span class="badge badge-green">✓ Disponível</span></div>
-          <button class="item-card-fav">❤️</button>
+          <button class="item-card-fav fav-active" aria-label="Remover dos favoritos"><svg viewBox="0 0 24 24" fill="var(--red)" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
         </div>
         <div class="item-card-body">
           <div class="item-card-category">Esportes</div>
           <div class="item-card-title">Stand Up Paddle completo</div>
-          <div class="item-card-rating">⭐ 4.7 <span>(24 avaliações)</span></div>
+          <div class="item-card-rating"><span style="color:#F59E0B">★</span> 4.7 <span>(24 avaliações)</span></div>
           <div class="item-card-price">R$ 50<span>/dia</span></div>
-          <div class="item-card-location">📍 Via Costeira · 3,5 km</div>
+          <div class="item-card-location"><svg width="10" height="10" viewBox="0 0 24 24" fill="var(--muted)" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> Via Costeira · 3,5 km</div>
         </div>
       </div>
       <div class="item-card" onclick="showScreen('detail')">
         <div class="item-card-img" style="background:#FECACA">
           <div class="item-card-badge"><span class="badge badge-green">✓ Disponível</span></div>
-          <button class="item-card-fav">♡</button>
+          <button class="item-card-fav" aria-label="Adicionar aos favoritos"><svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
         </div>
         <div class="item-card-body">
           <div class="item-card-category">Eletrônicos</div>
           <div class="item-card-title">Projetor Epson Full HD 3000 lumens</div>
-          <div class="item-card-rating">⭐ 4.6 <span>(11 avaliações)</span></div>
+          <div class="item-card-rating"><span style="color:#F59E0B">★</span> 4.6 <span>(11 avaliações)</span></div>
           <div class="item-card-price">R$ 80<span>/dia</span></div>
-          <div class="item-card-location">📍 Tirol · 4,0 km</div>
+          <div class="item-card-location"><svg width="10" height="10" viewBox="0 0 24 24" fill="var(--muted)" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> Tirol · 4,0 km</div>
         </div>
       </div>
     </div>
@@ -558,19 +567,19 @@ input[type=range]{width:100%;accent-color:var(--green)}
       <h2 class="section-title text-center mb-4" style="margin-bottom:32px">Como funciona</h2>
       <div class="grid-3">
         <div class="step-card">
-          <div class="step-icon">🔍</div>
+          <div class="step-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
           <div class="step-num">1</div>
           <div class="step-title">Escolha o item</div>
           <div class="step-desc">Busque por categoria ou localização. Veja fotos, avaliações e preços de itens próximos a você.</div>
         </div>
         <div class="step-card">
-          <div class="step-icon">📅</div>
+          <div class="step-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--blue-mid)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
           <div class="step-num">2</div>
           <div class="step-title">Reserve online</div>
           <div class="step-desc">Selecione as datas, confirme os detalhes e pague com segurança. O valor só é liberado após a retirada.</div>
         </div>
         <div class="step-card">
-          <div class="step-icon">📦</div>
+          <div class="step-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
           <div class="step-num">3</div>
           <div class="step-title">Use e devolva</div>
           <div class="step-desc">Retire com o proprietário, use com tranquilidade e devolva no prazo. Avalie a experiência.</div>
@@ -612,11 +621,11 @@ input[type=range]{width:100%;accent-color:var(--green)}
 
   <!-- CTA Final -->
   <section class="cta-section">
-    <div class="hero-eco-badge" style="margin:0 auto 20px">🌿 Economia Circular</div>
+    <div class="hero-eco-badge" style="margin:0 auto 20px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22c0 0-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/><path d="M12 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/></svg> Economia Circular</div>
     <h2>Tem itens parados?<br>Transforme em renda.</h2>
     <p>Cadastre seus itens gratuitamente e comece a ganhar esta semana.<br>Mais de 890 proprietários já estão ganhando com o ShareO.</p>
     <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
-      <button class="btn btn-primary btn-lg" onclick="showScreen('listing')">Começar a anunciar →</button>
+      <button class="btn btn-primary btn-lg" onclick="showScreen('add-item')">Começar a anunciar →</button>
       <button class="btn btn-outline btn-lg" style="color:#fff;border-color:rgba(255,255,255,.5)" onclick="showScreen('listing')">Explorar itens</button>
     </div>
   </section>
@@ -640,8 +649,8 @@ input[type=range]{width:100%;accent-color:var(--green)}
       <div class="footer-bottom">
         <p>© 2026 ShareO · Todos os direitos reservados</p>
         <div class="footer-seals">
-          <div class="seal">🔒 SSL</div>
-          <div class="seal">💳 Pagamento seguro</div>
+          <div class="seal"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> SSL</div>
+          <div class="seal"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> Pagamento seguro</div>
         </div>
       </div>
     </div>
@@ -653,22 +662,25 @@ input[type=range]{width:100%;accent-color:var(--green)}
   <!-- Search bar -->
   <div style="background:#fff;border-bottom:1px solid var(--border);padding:12px 16px">
     <div style="display:flex;gap:8px;align-items:center;background:var(--bg);border-radius:10px;padding:10px 14px;border:1.5px solid var(--border)">
-      <span>🔍</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
       <input style="flex:1;border:none;background:transparent;font-family:inherit;font-size:15px;outline:none" placeholder="O que você precisa alugar?">
     </div>
   </div>
 
   <!-- Filter bar -->
   <div class="filter-bar">
-    <button class="filter-btn" onclick="openSheet()">⚙ Filtros</button>
+    <button class="filter-btn" onclick="openSheet()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+      Filtros
+    </button>
     <button class="filter-chip active" onclick="toggleChip(this)">Todos</button>
-    <button class="filter-chip" onclick="toggleChip(this)"><img src="public/icons/ferramentas.png" style="width:20px;height:20px;object-fit:contain"> Ferramentas</button>
-    <button class="filter-chip" onclick="toggleChip(this)"><img src="public/icons/festas.png" style="width:20px;height:20px;object-fit:contain"> Festas</button>
-    <button class="filter-chip" onclick="toggleChip(this)"><img src="public/icons/casa-jardim.png" style="width:20px;height:20px;object-fit:contain"> Casa</button>
-    <button class="filter-chip" onclick="toggleChip(this)"><img src="public/icons/eletronicos.png" style="width:20px;height:20px;object-fit:contain"> Eletrônicos</button>
-    <button class="filter-chip" onclick="toggleChip(this)"><img src="public/icons/esporte.png" style="width:20px;height:20px;object-fit:contain"> Esportes</button>
-    <button class="filter-chip" onclick="toggleChip(this)"><img src="public/icons/moda.png" style="width:20px;height:20px;object-fit:contain"> Moda</button>
-    <button class="filter-chip" onclick="toggleChip(this)"><img src="public/icons/construcao.png" style="width:20px;height:20px;object-fit:contain"> Construção</button>
+    <button class="filter-chip" onclick="toggleChip(this)"><img src="public/icons/ferramentas.png" style="width:36px;height:36px;object-fit:contain;vertical-align:middle"> Ferramentas</button>
+    <button class="filter-chip" onclick="toggleChip(this)"><img src="public/icons/festas.png" style="width:36px;height:36px;object-fit:contain;vertical-align:middle"> Festas</button>
+    <button class="filter-chip" onclick="toggleChip(this)"><img src="public/icons/casa-jardim.png" style="width:36px;height:36px;object-fit:contain;vertical-align:middle"> Casa</button>
+    <button class="filter-chip" onclick="toggleChip(this)"><img src="public/icons/eletronicos.png" style="width:36px;height:36px;object-fit:contain;vertical-align:middle"> Eletrônicos</button>
+    <button class="filter-chip" onclick="toggleChip(this)"><img src="public/icons/esporte.png" style="width:36px;height:36px;object-fit:contain;vertical-align:middle"> Esportes</button>
+    <button class="filter-chip" onclick="toggleChip(this)"><img src="public/icons/moda.png" style="width:36px;height:36px;object-fit:contain;vertical-align:middle"> Moda</button>
+    <button class="filter-chip" onclick="toggleChip(this)"><img src="public/icons/construcao.png" style="width:36px;height:36px;object-fit:contain;vertical-align:middle"> Construção</button>
   </div>
 
   <!-- Sort + count -->
@@ -696,7 +708,7 @@ input[type=range]{width:100%;accent-color:var(--green)}
       <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--border)">
         <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Sua cidade</div>
         <div style="display:flex;align-items:center;gap:5px">
-          <span style="font-size:13px">📍</span>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="var(--green)" stroke="none" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
           <span style="font-size:13px;font-weight:700;color:var(--navy)">Natal, RN</span>
         </div>
         <div style="font-size:11px;color:var(--muted);margin-top:3px">Baseado na sua conta</div>
@@ -716,81 +728,81 @@ input[type=range]{width:100%;accent-color:var(--green)}
       <div class="item-card" onclick="showScreen('detail')">
         <div class="item-card-img" style="background:#C7D2FE">
           <div class="item-card-badge"><span class="badge badge-green">✓ Disponível</span></div>
-          <div class="item-card-popular">🔥 Top</div>
-          <button class="item-card-fav">♡</button>
+          <div class="item-card-popular">Top</div>
+          <button class="item-card-fav" aria-label="Adicionar aos favoritos"><svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
         </div>
         <div class="item-card-body">
           <div class="item-card-category">Ferramentas</div>
           <div class="item-card-title">Furadeira Profissional Bosch 20V</div>
-          <div class="item-card-rating">⭐ 4.8 <span>(32)</span></div>
+          <div class="item-card-rating"><span style="color:#F59E0B">★</span> 4.8 <span>(32)</span></div>
           <div class="item-card-price">R$ 45<span>/dia</span></div>
-          <div class="item-card-location">📍 Ponta Negra · 1,2 km</div>
+          <div class="item-card-location"><svg width="10" height="10" viewBox="0 0 24 24" fill="var(--muted)" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> Ponta Negra · 1,2 km</div>
         </div>
       </div>
       <div class="item-card" onclick="showScreen('detail')">
         <div class="item-card-img" style="background:#FDE68A">
           <div class="item-card-badge"><span class="badge badge-green">✓ Disponível</span></div>
-          <button class="item-card-fav">♡</button>
+          <button class="item-card-fav" aria-label="Adicionar aos favoritos"><svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
         </div>
         <div class="item-card-body">
           <div class="item-card-category">Eletrônicos</div>
           <div class="item-card-title">Caixa de Som JBL Charge 5</div>
-          <div class="item-card-rating">⭐ 4.9 <span>(18)</span></div>
+          <div class="item-card-rating"><span style="color:#F59E0B">★</span> 4.9 <span>(18)</span></div>
           <div class="item-card-price">R$ 30<span>/dia</span></div>
-          <div class="item-card-location">📍 Capim Macio · 2,1 km</div>
+          <div class="item-card-location"><svg width="10" height="10" viewBox="0 0 24 24" fill="var(--muted)" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> Capim Macio · 2,1 km</div>
         </div>
       </div>
       <div class="item-card" onclick="showScreen('detail')">
         <div class="item-card-img" style="background:#A7F3D0">
           <div class="item-card-badge"><span class="badge badge-green">✓ Disponível</span></div>
-          <div class="item-card-popular">🆕 Novo</div>
-          <button class="item-card-fav">♡</button>
+          <div class="item-card-popular">Novo</div>
+          <button class="item-card-fav" aria-label="Adicionar aos favoritos"><svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
         </div>
         <div class="item-card-body">
           <div class="item-card-category">Esportes</div>
           <div class="item-card-title">Stand Up Paddle + Remo</div>
-          <div class="item-card-rating">⭐ 4.7 <span>(24)</span></div>
+          <div class="item-card-rating"><span style="color:#F59E0B">★</span> 4.7 <span>(24)</span></div>
           <div class="item-card-price">R$ 50<span>/dia</span></div>
-          <div class="item-card-location">📍 Via Costeira · 3,5 km</div>
+          <div class="item-card-location"><svg width="10" height="10" viewBox="0 0 24 24" fill="var(--muted)" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> Via Costeira · 3,5 km</div>
         </div>
       </div>
       <div class="item-card" onclick="showScreen('detail')">
         <div class="item-card-img" style="background:#FECACA">
           <div class="item-card-badge"><span class="badge badge-green">✓ Disponível</span></div>
-          <button class="item-card-fav">♡</button>
+          <button class="item-card-fav" aria-label="Adicionar aos favoritos"><svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
         </div>
         <div class="item-card-body">
           <div class="item-card-category">Eletrônicos</div>
           <div class="item-card-title">Projetor Epson Full HD</div>
-          <div class="item-card-rating">⭐ 4.6 <span>(11)</span></div>
+          <div class="item-card-rating"><span style="color:#F59E0B">★</span> 4.6 <span>(11)</span></div>
           <div class="item-card-price">R$ 80<span>/dia</span></div>
-          <div class="item-card-location">📍 Tirol · 4,0 km</div>
+          <div class="item-card-location"><svg width="10" height="10" viewBox="0 0 24 24" fill="var(--muted)" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> Tirol · 4,0 km</div>
         </div>
       </div>
       <div class="item-card" onclick="showScreen('detail')">
         <div class="item-card-img" style="background:#DDD6FE">
           <div class="item-card-badge"><span class="badge badge-green">✓ Disponível</span></div>
-          <button class="item-card-fav">❤️</button>
+          <button class="item-card-fav fav-active" aria-label="Remover dos favoritos"><svg viewBox="0 0 24 24" fill="var(--red)" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
         </div>
         <div class="item-card-body">
           <div class="item-card-category">Festas</div>
           <div class="item-card-title">Kit Iluminação LED para Festas</div>
-          <div class="item-card-rating">⭐ 4.9 <span>(41)</span></div>
+          <div class="item-card-rating"><span style="color:#F59E0B">★</span> 4.9 <span>(41)</span></div>
           <div class="item-card-price">R$ 60<span>/dia</span></div>
-          <div class="item-card-location">📍 Lagoa Nova · 2,8 km</div>
+          <div class="item-card-location"><svg width="10" height="10" viewBox="0 0 24 24" fill="var(--muted)" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> Lagoa Nova · 2,8 km</div>
         </div>
       </div>
       <div class="item-card" onclick="showScreen('detail')">
         <div class="item-card-img" style="background:#BAE6FD">
-          <div class="item-card-badge"><span class="badge badge-amber">⏰ Disponível sex</span></div>
-          <button class="item-card-fav">♡</button>
+          <div class="item-card-badge"><span class="badge badge-amber">Disponível sex</span></div>
+          <button class="item-card-fav" aria-label="Adicionar aos favoritos"><svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
         </div>
         <div class="item-card-body">
           <div class="item-card-category">Esportes</div>
           <div class="item-card-title">GoPro Hero 9 + acessórios</div>
-          <div class="item-card-rating">⭐ 4.8 <span>(29)</span></div>
+          <div class="item-card-rating"><span style="color:#F59E0B">★</span> 4.8 <span>(29)</span></div>
           <div class="item-card-price">R$ 60<span>/dia</span></div>
-          <div class="item-card-location">📍 Petrópolis · 5,2 km</div>
+          <div class="item-card-location"><svg width="10" height="10" viewBox="0 0 24 24" fill="var(--muted)" aria-hidden="true"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> Petrópolis · 5,2 km</div>
         </div>
       </div>
     </div>
@@ -800,30 +812,34 @@ input[type=range]{width:100%;accent-color:var(--green)}
 <!-- ════════════════ SCREEN: DETAIL ════════════════ -->
 <div id="screen-detail" class="screen">
   <!-- Gallery -->
-  <div class="detail-gallery" style="background:#C7D2FE;display:flex;align-items:center;justify-content:center;font-size:80px">
-    🔧
+  <div class="detail-gallery" style="background:#C7D2FE;display:flex;align-items:center;justify-content:center">
+    <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="12" y1="8" x2="12" y2="16"/></svg>
     <div class="gallery-counter">1 / 4</div>
-    <button style="position:absolute;top:12px;left:12px;background:rgba(255,255,255,.9);border:none;border-radius:50%;width:36px;height:36px;cursor:pointer;font-size:18px" onclick="showScreen('listing')">←</button>
-    <button style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,.9);border:none;border-radius:50%;width:36px;height:36px;cursor:pointer;font-size:18px">♡</button>
+    <button class="gallery-btn" style="top:10px;left:10px" onclick="showScreen('listing')" aria-label="Voltar à listagem">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <button class="gallery-btn" style="top:10px;right:10px" aria-label="Adicionar aos favoritos">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    </button>
   </div>
   <div class="gallery-thumbs">
-    <div class="thumb active" style="background:#C7D2FE;display:flex;align-items:center;justify-content:center;font-size:20px">🔧</div>
-    <div class="thumb" style="background:#D1FAE5;display:flex;align-items:center;justify-content:center;font-size:20px">🔧</div>
-    <div class="thumb" style="background:#FEF3C7;display:flex;align-items:center;justify-content:center;font-size:20px">🔧</div>
-    <div class="thumb" style="background:#E0E7FF;display:flex;align-items:center;justify-content:center;font-size:20px">🔧</div>
+    <div class="thumb active" style="background:#C7D2FE" role="img" aria-label="Foto 1 do item"></div>
+    <div class="thumb" style="background:#D1FAE5" role="img" aria-label="Foto 2 do item"></div>
+    <div class="thumb" style="background:#FEF3C7" role="img" aria-label="Foto 3 do item"></div>
+    <div class="thumb" style="background:#E0E7FF" role="img" aria-label="Foto 4 do item"></div>
   </div>
 
   <!-- Body -->
   <div class="detail-body">
     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
       <div>
-        <div style="font-size:12px;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">🔧 Ferramentas</div>
+        <div style="font-size:12px;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Ferramentas</div>
         <h1 class="detail-title">Furadeira Profissional Bosch 20V sem fio</h1>
         <div class="detail-rating">
           <span style="color:#F59E0B">★★★★★</span>
           <span style="font-size:14px;font-weight:700">4.8</span>
           <span style="font-size:13px;color:var(--muted)">· 32 avaliações</span>
-          <span class="badge badge-green" style="margin-left:4px">🌿 Eco</span>
+          <span class="badge badge-green" style="margin-left:4px">Eco</span>
         </div>
       </div>
       <div style="text-align:right;flex-shrink:0">
@@ -832,26 +848,41 @@ input[type=range]{width:100%;accent-color:var(--green)}
       </div>
     </div>
     <div class="detail-tags">
-      <div class="detail-tag">📍 Ponta Negra</div>
-      <div class="detail-tag">🟢 Bom estado</div>
-      <div class="detail-tag">⚡ Bivolt</div>
+      <div class="detail-tag">Ponta Negra</div>
+      <div class="detail-tag">Bom estado</div>
+      <div class="detail-tag">Bivolt</div>
       <div class="detail-tag">34 aluguéis</div>
     </div>
   </div>
 
   <!-- Comparação alugar vs comprar -->
   <div style="background:#D4EDE1;border-left:4px solid var(--green);padding:14px 16px;margin:0">
-    <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:4px">💡 Você economiza alugando</div>
+    <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:4px">Você economiza alugando</div>
     <div style="font-size:13px;color:var(--text)">Comprar este item custa ~<strong>R$ 600</strong>. Alugar por 1 dia: <strong>R$ 45</strong> — economia de <strong>92%</strong> vs comprar novo.</div>
   </div>
 
   <!-- Confiança -->
   <div class="trust-box" style="margin:16px">
-    <div class="trust-box-title">🔒 Sua locação está protegida</div>
-    <div class="trust-item-row">✅ Pagamento liberado só após confirmação da retirada</div>
-    <div class="trust-item-row">✅ Cancelamento grátis até 24h antes</div>
-    <div class="trust-item-row">✅ Item protegido durante a locação</div>
-    <div class="trust-item-row">✅ Suporte ShareO disponível 7 dias por semana</div>
+    <div class="trust-box-title" style="display:flex;align-items:center;gap:8px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Sua locação está protegida
+    </div>
+    <div class="trust-item-row">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--green)" stroke="var(--green)" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+      Pagamento liberado só após confirmação da retirada
+    </div>
+    <div class="trust-item-row">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--green)" stroke="var(--green)" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+      Cancelamento grátis até 24h antes
+    </div>
+    <div class="trust-item-row">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--green)" stroke="var(--green)" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+      Item protegido durante a locação
+    </div>
+    <div class="trust-item-row">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--green)" stroke="var(--green)" stroke-width="2" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+      Suporte ShareO disponível 7 dias por semana
+    </div>
   </div>
 
   <!-- Calculadora -->
@@ -864,11 +895,11 @@ input[type=range]{width:100%;accent-color:var(--green)}
     </div>
     <div style="display:flex;gap:12px;margin-bottom:12px">
       <div style="flex:1">
-        <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px">Data de retirada</div>
+        <div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:6px">Data de retirada</div>
         <input type="date" class="form-input" id="startDate">
       </div>
       <div style="flex:1" id="numDaysWrap">
-        <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px">Quantidade de dias</div>
+        <div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:6px">Quantidade de dias</div>
         <div style="display:flex;align-items:center;gap:8px;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px">
           <button onclick="changeNum(-1)" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--green);font-weight:700">−</button>
           <span id="numDays" style="font-size:16px;font-weight:700;flex:1;text-align:center">3</span>
@@ -891,13 +922,16 @@ input[type=range]{width:100%;accent-color:var(--green)}
       <div class="owner-avatar">M</div>
       <div>
         <div class="owner-name">Marcos Silva <span style="color:var(--green);font-size:14px">✓</span></div>
-        <div class="owner-rating">⭐ 4.9 · Membro desde Jan 2025</div>
-        <div style="margin-top:4px"><span class="badge badge-green">⚡ Responde em &lt;2h</span></div>
+        <div class="owner-rating"><span style="color:#F59E0B">★</span> 4.9 · Membro desde Jan 2025</div>
+        <div style="margin-top:4px"><span class="badge badge-green">Responde em &lt;2h</span></div>
       </div>
     </div>
     <div style="display:flex;gap:8px">
-      <button class="btn btn-ghost btn-sm" style="flex:1">💬 Enviar mensagem</button>
-      <button class="btn btn-outline btn-sm" style="flex:1" onclick="showScreen('booking')">Ver perfil</button>
+      <button class="btn btn-ghost btn-sm" style="flex:1;min-height:44px" onclick="showScreen('chat')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Enviar mensagem
+      </button>
+      <button class="btn btn-outline btn-sm" style="flex:1;min-height:44px" onclick="showScreen('booking')">Ver perfil</button>
     </div>
   </div>
 
@@ -908,14 +942,14 @@ input[type=range]{width:100%;accent-color:var(--green)}
       <div style="padding-bottom:16px;border-bottom:1px solid var(--border)">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
           <div style="width:36px;height:36px;border-radius:50%;background:var(--blue-mid);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px">A</div>
-          <div><div style="font-size:14px;font-weight:600">Ana Costa</div><div style="font-size:12px;color:var(--muted)">há 2 dias · ⭐⭐⭐⭐⭐</div></div>
+          <div><div style="font-size:14px;font-weight:600">Ana Costa</div><div style="font-size:12px;color:var(--muted)">há 2 dias · <span style="color:#F59E0B">★★★★★</span></div></div>
         </div>
         <p style="font-size:13px;color:var(--muted);line-height:1.5">"Perfeito! Furadeira em ótimo estado, veio com todos os bits. Proprietário super pontual. Recomendo!"</p>
       </div>
       <div>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
           <div style="width:36px;height:36px;border-radius:50%;background:#F97316;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px">R</div>
-          <div><div style="font-size:14px;font-weight:600">Rafael Moura</div><div style="font-size:12px;color:var(--muted)">há 5 dias · ⭐⭐⭐⭐⭐</div></div>
+          <div><div style="font-size:14px;font-weight:600">Rafael Moura</div><div style="font-size:12px;color:var(--muted)">há 5 dias · <span style="color:#F59E0B">★★★★★</span></div></div>
         </div>
         <p style="font-size:13px;color:var(--muted);line-height:1.5">"Excelente experiência! Item exatamente como descrito. Já a terceira vez que alugo do Marcos."</p>
       </div>
@@ -927,15 +961,15 @@ input[type=range]{width:100%;accent-color:var(--green)}
     <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:12px">Itens similares</div>
     <div style="display:flex;gap:12px;overflow-x:auto;-ms-overflow-style:none;scrollbar-width:none">
       <div class="suggest-card" onclick="showScreen('detail')" style="min-width:140px">
-        <div class="suggest-img" style="background:#D1FAE5;display:flex;align-items:center;justify-content:center;font-size:30px">🔧</div>
+        <div class="suggest-img" style="background:#D1FAE5" role="img" aria-label="Parafusadeira Makita"></div>
         <div class="suggest-body"><div class="suggest-name">Parafusadeira Makita</div><div class="suggest-price">R$ 35/dia</div></div>
       </div>
       <div class="suggest-card" onclick="showScreen('detail')" style="min-width:140px">
-        <div class="suggest-img" style="background:#FEF3C7;display:flex;align-items:center;justify-content:center;font-size:30px">🔨</div>
+        <div class="suggest-img" style="background:#FEF3C7" role="img" aria-label="Furadeira de Impacto"></div>
         <div class="suggest-body"><div class="suggest-name">Furadeira de Impacto</div><div class="suggest-price">R$ 35/dia</div></div>
       </div>
       <div class="suggest-card" onclick="showScreen('detail')" style="min-width:140px">
-        <div class="suggest-img" style="background:#E0E7FF;display:flex;align-items:center;justify-content:center;font-size:30px">⚙️</div>
+        <div class="suggest-img" style="background:#E0E7FF" role="img" aria-label="Kit Ferramentas + Caixa"></div>
         <div class="suggest-body"><div class="suggest-name">Kit Ferramentas + Caixa</div><div class="suggest-price">R$ 55/dia</div></div>
       </div>
     </div>
@@ -956,7 +990,10 @@ input[type=range]{width:100%;accent-color:var(--green)}
   <!-- Progress -->
   <div class="progress-bar-wrap">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-      <button style="background:none;border:none;color:var(--navy);font-size:14px;font-weight:600;cursor:pointer" onclick="prevStep()">← Voltar</button>
+      <button style="background:none;border:none;color:var(--navy);font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;min-height:44px;min-width:44px" onclick="prevStep()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>
+        Voltar
+      </button>
       <span style="font-size:13px;color:var(--muted);font-weight:500" id="stepLabel">Etapa 1 de 4</span>
     </div>
     <div class="progress-steps">
@@ -994,7 +1031,9 @@ input[type=range]{width:100%;accent-color:var(--green)}
         <div class="cal-day available">29</div><div class="cal-day available">30</div>
       </div>
       <div style="display:flex;gap:12px;margin-top:12px;font-size:12px;color:var(--muted)">
-        <span>🟢 Disponível</span><span style="background:#D4EDE1;padding:2px 6px;border-radius:4px;color:var(--green)">Período</span><span style="background:#E2E8F0;padding:2px 6px;border-radius:4px">Indisponível</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:var(--green);display:inline-block" aria-hidden="true"></span> Disponível</span>
+        <span style="background:#D4EDE1;padding:2px 6px;border-radius:4px;color:var(--green)">Período</span>
+        <span style="background:#E2E8F0;padding:2px 6px;border-radius:4px">Indisponível</span>
       </div>
     </div>
     <div style="background:var(--bg);border-radius:10px;padding:14px;margin-bottom:20px">
@@ -1016,11 +1055,11 @@ input[type=range]{width:100%;accent-color:var(--green)}
     <div style="font-size:18px;font-weight:700;color:var(--navy);margin-bottom:20px">Resumo da reserva</div>
     <div style="background:#fff;border-radius:12px;border:1px solid var(--border);overflow:hidden;margin-bottom:16px">
       <div style="display:flex;gap:12px;padding:14px;border-bottom:1px solid var(--border)">
-        <div style="width:64px;height:64px;border-radius:8px;background:#C7D2FE;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">🔧</div>
+        <div style="width:64px;height:64px;border-radius:8px;background:#C7D2FE;flex-shrink:0" role="img" aria-label="Furadeira Profissional Bosch 20V"></div>
         <div>
           <div style="font-size:15px;font-weight:700">Furadeira Profissional Bosch 20V</div>
-          <div style="font-size:13px;color:var(--muted);margin-top:4px">📅 10 a 13 de junho · 3 dias</div>
-          <div style="font-size:13px;color:var(--muted)">👤 Marcos Silva ✓</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:4px">10 a 13 de junho · 3 dias</div>
+          <div style="font-size:13px;color:var(--muted)">Marcos Silva <span style="color:var(--green);font-weight:700">✓</span></div>
         </div>
       </div>
       <div style="padding:14px">
@@ -1030,11 +1069,14 @@ input[type=range]{width:100%;accent-color:var(--green)}
       </div>
     </div>
     <div style="background:#FEF3C7;border:1px solid #F59E0B;border-radius:10px;padding:14px;margin-bottom:16px">
-      <div style="font-size:13px;font-weight:700;color:#92400E;margin-bottom:6px">📋 Política de cancelamento</div>
+      <div style="font-size:13px;font-weight:700;color:#92400E;margin-bottom:6px">Política de cancelamento</div>
       <div style="font-size:13px;color:#78350F">Cancelamento gratuito até <strong>9 de junho às 23h59</strong>. Após esse prazo, taxa de 50%.</div>
     </div>
     <div style="background:#D4EDE1;border-radius:10px;padding:14px;margin-bottom:20px">
-      <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:4px">🔒 Pagamento protegido</div>
+      <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:4px;display:flex;align-items:center;gap:6px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Pagamento protegido
+      </div>
       <div style="font-size:13px;color:var(--text)">O valor só é liberado ao proprietário após você confirmar a retirada do item.</div>
     </div>
     <button class="btn btn-primary w-full btn-lg" onclick="nextStep()">Ir para pagamento →</button>
@@ -1044,7 +1086,7 @@ input[type=range]{width:100%;accent-color:var(--green)}
   <div class="booking-step" id="bstep3">
     <div style="font-size:18px;font-weight:700;color:var(--navy);margin-bottom:20px">Pagamento</div>
     <div class="security-badge">
-      <span style="font-size:24px">🔒</span>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       <div><div style="font-size:13px;font-weight:700;color:var(--green)">Conexão segura SSL</div><div style="font-size:12px;color:var(--muted)">Seus dados estão protegidos e criptografados</div></div>
     </div>
     <div style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:8px">Cartões aceitos</div>
@@ -1082,7 +1124,9 @@ input[type=range]{width:100%;accent-color:var(--green)}
   <!-- Step 4: Sucesso -->
   <div class="booking-step" id="bstep4">
     <div class="success-screen">
-      <div class="success-icon">✅</div>
+      <div class="success-icon">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
       <h2 class="success-title">Reserva confirmada!</h2>
       <p class="success-sub">Sua reserva foi confirmada com sucesso. Você receberá um e-mail de confirmação em <strong>lucas@email.com</strong>.</p>
       <div class="summary-card">
@@ -1094,7 +1138,10 @@ input[type=range]{width:100%;accent-color:var(--green)}
       </div>
       <div style="display:flex;flex-direction:column;gap:12px">
         <button class="btn btn-primary w-full" onclick="showScreen('reservas')">Ver minha reserva</button>
-        <button class="btn btn-ghost w-full">💬 Enviar mensagem ao proprietário</button>
+        <button class="btn btn-ghost w-full" onclick="showScreen('chat')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Enviar mensagem ao proprietário
+        </button>
         <button class="btn btn-ghost w-full" onclick="showScreen('home')">Explorar mais itens</button>
       </div>
     </div>
@@ -1107,7 +1154,7 @@ input[type=range]{width:100%;accent-color:var(--green)}
   <div class="dash-header">
     <div style="display:flex;align-items:center;justify-content:space-between">
       <div>
-        <div class="dash-welcome">Olá, Lucas! 👋</div>
+        <div class="dash-welcome">Olá, Lucas!</div>
         <div class="dash-sub">Natal, RN · Bem-vindo de volta ao ShareO</div>
         <div style="margin-top:8px"><span class="badge" style="background:rgba(255,255,255,.15);color:rgba(255,255,255,.85);font-size:11px">Seu perfil está 85% completo — <a style="color:var(--green-light);text-decoration:underline">adicione foto</a></span></div>
       </div>
@@ -1134,7 +1181,9 @@ input[type=range]{width:100%;accent-color:var(--green)}
     </div>
     <div class="metric-card">
       <div class="metric-label">Sua avaliação</div>
-      <div class="metric-value">4.8 ⭐</div>
+      <div class="metric-value" style="display:flex;align-items:center;gap:6px">4.8
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#F59E0B" stroke="#F59E0B" stroke-width="1" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      </div>
       <div class="metric-sub">Baseado em 12 avaliações</div>
     </div>
   </div>
@@ -1146,7 +1195,7 @@ input[type=range]{width:100%;accent-color:var(--green)}
       <a style="font-size:13px;font-weight:600;color:var(--green);cursor:pointer" onclick="showScreen('reservas')">Ver histórico →</a>
     </div>
     <div class="booking-item">
-      <div class="booking-thumb" style="background:#C7D2FE;display:flex;align-items:center;justify-content:center;font-size:22px">🔧</div>
+      <div class="booking-thumb" style="background:#C7D2FE" role="img" aria-label="Furadeira Bosch"></div>
       <div class="booking-info">
         <div class="booking-name">Furadeira Bosch</div>
         <div class="booking-date">15 – 17 Mai · Dr. João Silva</div>
@@ -1154,7 +1203,7 @@ input[type=range]{width:100%;accent-color:var(--green)}
       <span class="badge badge-green">Em Uso</span>
     </div>
     <div class="booking-item">
-      <div class="booking-thumb" style="background:#A7F3D0;display:flex;align-items:center;justify-content:center;font-size:22px">🏕️</div>
+      <div class="booking-thumb" style="background:#A7F3D0" role="img" aria-label="Barraca de Camping"></div>
       <div class="booking-info">
         <div class="booking-name">Barraca de Camping</div>
         <div class="booking-date">20 – 23 Mai · Dra. Maria Souza</div>
@@ -1171,19 +1220,19 @@ input[type=range]{width:100%;accent-color:var(--green)}
     </div>
     <div class="suggest-scroll">
       <div class="suggest-card" onclick="showScreen('detail')">
-        <div class="suggest-img" style="background:#A7F3D0;display:flex;align-items:center;justify-content:center;font-size:30px">🏄</div>
+        <div class="suggest-img" style="background:#A7F3D0" role="img" aria-label="Stand Up Paddle"></div>
         <div class="suggest-body"><div class="suggest-name">Stand Up Paddle</div><div class="suggest-price">R$ 50/dia</div></div>
       </div>
       <div class="suggest-card" onclick="showScreen('detail')">
-        <div class="suggest-img" style="background:#BAE6FD;display:flex;align-items:center;justify-content:center;font-size:30px">📷</div>
+        <div class="suggest-img" style="background:#BAE6FD" role="img" aria-label="GoPro Hero 9"></div>
         <div class="suggest-body"><div class="suggest-name">GoPro Hero 9</div><div class="suggest-price">R$ 60/dia</div></div>
       </div>
       <div class="suggest-card" onclick="showScreen('detail')">
-        <div class="suggest-img" style="background:#FDE68A;display:flex;align-items:center;justify-content:center;font-size:30px">🔊</div>
+        <div class="suggest-img" style="background:#FDE68A" role="img" aria-label="Caixa de Som JBL"></div>
         <div class="suggest-body"><div class="suggest-name">Caixa de Som JBL</div><div class="suggest-price">R$ 30/dia</div></div>
       </div>
       <div class="suggest-card" onclick="showScreen('detail')">
-        <div class="suggest-img" style="background:#DDD6FE;display:flex;align-items:center;justify-content:center;font-size:30px">💡</div>
+        <div class="suggest-img" style="background:#DDD6FE" role="img" aria-label="Kit LED Festa"></div>
         <div class="suggest-body"><div class="suggest-name">Kit LED Festa</div><div class="suggest-price">R$ 60/dia</div></div>
       </div>
     </div>
@@ -1196,17 +1245,17 @@ input[type=range]{width:100%;accent-color:var(--green)}
       <button class="btn btn-ghost btn-sm">Gerenciar Itens →</button>
     </div>
     <div class="my-item-row">
-      <div class="my-item-thumb" style="background:#C7D2FE;display:flex;align-items:center;justify-content:center;font-size:20px">🔧</div>
+      <div class="my-item-thumb" style="background:#C7D2FE" role="img" aria-label="Furadeira Profissional Bosch"></div>
       <div class="my-item-info"><div class="my-item-name">Furadeira Profissional Bosch</div><div class="my-item-stats">10 aluguéis · 142 visualizações</div></div>
       <div class="my-item-price">R$ 45/dia</div>
     </div>
     <div class="my-item-row">
-      <div class="my-item-thumb" style="background:#C7D2FE;display:flex;align-items:center;justify-content:center;font-size:20px">📺</div>
+      <div class="my-item-thumb" style="background:#C7D2FE" role="img" aria-label="Projetor Multimídia Epson"></div>
       <div class="my-item-info"><div class="my-item-name">Projetor Multimídia Epson</div><div class="my-item-stats">7 aluguéis · 89 visualizações</div></div>
       <div class="my-item-price">R$ 80/dia</div>
     </div>
     <div class="my-item-row">
-      <div class="my-item-thumb" style="background:#D1FAE5;display:flex;align-items:center;justify-content:center;font-size:20px">🚲</div>
+      <div class="my-item-thumb" style="background:#D1FAE5" role="img" aria-label="Bike Elétrica"></div>
       <div class="my-item-info"><div class="my-item-name">Bike Elétrica</div><div class="my-item-stats">8 aluguéis · 201 visualizações</div></div>
       <div class="my-item-price">R$ 60/dia</div>
     </div>
@@ -1215,12 +1264,12 @@ input[type=range]{width:100%;accent-color:var(--green)}
   <!-- ShareO Sustentável -->
   <div class="sustentavel-section">
     <div class="sustentavel-header">
-      <div class="sustentavel-title">🌿 ShareO Sustentável</div>
+      <div class="sustentavel-title">ShareO Sustentável</div>
       <span class="badge" style="background:rgba(255,255,255,.2);color:#fff">Natal, RN</span>
     </div>
     <div class="sustentavel-sub">Iniciativas de economia circular na sua região</div>
     <div class="sustentavel-map">
-      <span style="font-size:24px">🗺️</span>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
       <div>
         <div style="font-size:13px;font-weight:700;color:#fff">Natal · RN</div>
         <div class="map-placeholder">7 iniciativas ativas na sua região</div>
@@ -1228,22 +1277,28 @@ input[type=range]{width:100%;accent-color:var(--green)}
     </div>
     <div class="sustentavel-cards">
       <div class="sustent-card">
-        <div class="sustent-card-icon">👕</div>
+        <div class="sustent-card-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+        </div>
         <div class="sustent-card-title">Troca Circular</div>
         <div class="sustent-card-desc">Troque roupas que não usa mais com vizinhos da sua região.</div>
-        <button class="sustent-card-btn">♻️ Ver evento</button>
+        <button class="sustent-card-btn" style="min-height:36px">Ver evento</button>
       </div>
       <div class="sustent-card">
-        <div class="sustent-card-icon">🔧</div>
+        <div class="sustent-card-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+        </div>
         <div class="sustent-card-title">Eco Centro</div>
         <div class="sustent-card-desc">Doe ou repare equipamentos. Evite o descarte desnecessário.</div>
-        <button class="sustent-card-btn">♻️ Ver espaço</button>
+        <button class="sustent-card-btn" style="min-height:36px">Ver espaço</button>
       </div>
       <div class="sustent-card">
-        <div class="sustent-card-icon">♻️</div>
+        <div class="sustent-card-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3"/></svg>
+        </div>
         <div class="sustent-card-title">Recicla Natal</div>
         <div class="sustent-card-desc">Descubra pontos de coleta seletiva perto de você.</div>
-        <button class="sustent-card-btn">♻️ Ver mais</button>
+        <button class="sustent-card-btn" style="min-height:36px">Ver mais</button>
       </div>
     </div>
   </div>
@@ -1254,13 +1309,13 @@ input[type=range]{width:100%;accent-color:var(--green)}
       <div class="co2-num">759 kg CO<sup>2</sup></div>
       <div class="co2-label">economizados através de aluguel e reuso em Natal</div>
     </div>
-    <span style="font-size:28px">🌍</span>
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
   </div>
 </div>
 
 <!-- ════════════════ SCREEN: RESERVAS ════════════════ -->
 <div id="screen-reservas" class="screen">
-  <div style="padding:20px 16px">
+  <div style="padding:20px 16px 80px">
     <h1 style="font-size:22px;font-weight:800;color:var(--navy);margin-bottom:16px">Minhas Reservas</h1>
     <!-- Tabs -->
     <div style="display:flex;gap:0;background:var(--bg);border-radius:10px;padding:4px;margin-bottom:20px">
@@ -1271,7 +1326,7 @@ input[type=range]{width:100%;accent-color:var(--green)}
     <div style="display:flex;flex-direction:column;gap:12px">
       <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.05)">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-          <div style="width:56px;height:56px;border-radius:10px;background:#C7D2FE;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">🔧</div>
+          <div style="width:56px;height:56px;border-radius:10px;background:#C7D2FE;flex-shrink:0" role="img" aria-label="Furadeira Profissional Bosch"></div>
           <div style="flex:1">
             <div style="font-size:15px;font-weight:700">Furadeira Profissional Bosch</div>
             <div style="font-size:13px;color:var(--muted)">Dr. João Silva · 15–17 Mai</div>
@@ -1280,13 +1335,16 @@ input[type=range]{width:100%;accent-color:var(--green)}
           <span class="badge badge-green">Em Uso</span>
         </div>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-ghost btn-sm" style="flex:1">💬 Chat</button>
-          <button class="btn btn-primary btn-sm" style="flex:1">Ver detalhes</button>
+          <button class="btn btn-ghost btn-sm" style="flex:1;min-height:44px" onclick="showScreen('chat')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Chat
+          </button>
+          <button class="btn btn-primary btn-sm" style="flex:1;min-height:44px">Ver detalhes</button>
         </div>
       </div>
       <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.05)">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-          <div style="width:56px;height:56px;border-radius:10px;background:#A7F3D0;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">🏕️</div>
+          <div style="width:56px;height:56px;border-radius:10px;background:#A7F3D0;flex-shrink:0" role="img" aria-label="Barraca de Camping"></div>
           <div style="flex:1">
             <div style="font-size:15px;font-weight:700">Barraca de Camping</div>
             <div style="font-size:13px;color:var(--muted)">Dra. Maria Souza · 20–23 Mai</div>
@@ -1295,13 +1353,16 @@ input[type=range]{width:100%;accent-color:var(--green)}
           <span class="badge badge-amber">Aguardando</span>
         </div>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-ghost btn-sm" style="flex:1">💬 Chat</button>
-          <button class="btn btn-primary btn-sm" style="flex:1">Ver detalhes</button>
+          <button class="btn btn-ghost btn-sm" style="flex:1;min-height:44px" onclick="showScreen('chat')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Chat
+          </button>
+          <button class="btn btn-primary btn-sm" style="flex:1;min-height:44px">Ver detalhes</button>
         </div>
       </div>
       <div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:16px;opacity:.7">
         <div style="display:flex;align-items:center;gap:12px">
-          <div style="width:56px;height:56px;border-radius:10px;background:#FDE68A;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">🔊</div>
+          <div style="width:56px;height:56px;border-radius:10px;background:#FDE68A;flex-shrink:0" role="img" aria-label="Caixa de Som JBL"></div>
           <div style="flex:1">
             <div style="font-size:15px;font-weight:700">Caixa de Som JBL</div>
             <div style="font-size:13px;color:var(--muted)">Dr. Pedro Lima · 08–10 Mai</div>
@@ -1347,9 +1408,9 @@ input[type=range]{width:100%;accent-color:var(--green)}
   <div class="filter-group">
     <label>Avaliação mínima</label>
     <div class="filter-options">
-      <div class="filter-option" onclick="setRatingFilter(this)">⭐ 3+</div>
-      <div class="filter-option active" onclick="setRatingFilter(this)">⭐ 4+</div>
-      <div class="filter-option" onclick="setRatingFilter(this)">⭐ 5</div>
+      <div class="filter-option" onclick="setRatingFilter(this)"><span style="color:#F59E0B">★</span> 3+</div>
+      <div class="filter-option active" onclick="setRatingFilter(this)"><span style="color:#F59E0B">★</span> 4+</div>
+      <div class="filter-option" onclick="setRatingFilter(this)"><span style="color:#F59E0B">★</span> 5</div>
     </div>
   </div>
   <div style="display:flex;gap:12px;margin-top:8px">
@@ -1551,6 +1612,623 @@ window.showScreen=function(name){
 
 // Inicializa mapa da home na carga inicial
 setTimeout(()=>{initMap('map-home',12);mapsInitialized.home=true;},200);
+
+// ── DEVOLUÇÃO FLOW ──
+let devolStep=1;
+function showDevolStep(n){
+  document.querySelectorAll('.devol-step-panel').forEach(p=>p.classList.remove('active'));
+  const panel=document.getElementById('devol-panel-'+n);
+  if(panel)panel.classList.add('active');
+  devolStep=n;
+  // update progress dots
+  for(let i=1;i<=4;i++){
+    const dot=document.getElementById('devol-dot-'+i);
+    const line=document.getElementById('devol-line-'+i);
+    if(!dot)continue;
+    dot.classList.remove('done','current');
+    if(i<n){dot.classList.add('done');dot.textContent='✓';}
+    else if(i===n){dot.classList.add('current');dot.textContent=i;}
+    else{dot.textContent=i;}
+    if(line){line.classList.toggle('done',i<n);}
+  }
+}
+function devolNext(){
+  if(devolStep<4)showDevolStep(devolStep+1);
+}
+
+// ── CHAT ──
+function openChatThread(name,initial,item,color){
+  document.getElementById('chat-inbox-v2').style.display='none';
+  const thread=document.getElementById('chat-thread-v2');
+  thread.style.display='flex';
+  document.getElementById('thread-name-v2').textContent=name;
+  document.getElementById('thread-item-v2').textContent=item;
+  const av=document.getElementById('thread-av-v2');
+  av.textContent=initial;
+  av.style.background=color||'var(--navy)';
+}
+function closeChatThread(){
+  document.getElementById('chat-thread-v2').style.display='none';
+  document.getElementById('chat-inbox-v2').style.display='block';
+}
+function sendChatMsgV2(){
+  const input=document.getElementById('chat-input-v2');
+  const msg=input.value.trim();
+  if(!msg)return;
+  const msgs=document.getElementById('chat-messages-v2');
+  const div=document.createElement('div');
+  div.className='chat-msg chat-msg-me';
+  div.innerHTML='<div class="chat-bubble chat-bubble-me">'+msg+'</div><div class="chat-time">agora</div>';
+  msgs.appendChild(div);
+  input.value='';
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+// ── LOGIN SIMULATION ──
+function doLoginV2(){
+  showScreen('home');
+}
+
+// ── SIGNUP TABS ──
+function setSignupTab(el){
+  el.closest('.signup-tabs').querySelectorAll('.signup-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── DAY BUTTONS (add-item) ──
+function toggleDay(el){
+  el.classList.toggle('active');
+  el.setAttribute('aria-pressed', el.classList.contains('active')?'true':'false');
+}
 </script>
+
+<!-- ════════════════ SCREEN: LOGIN ════════════════ -->
+<div id="screen-login" class="screen">
+  <div style="min-height:calc(100vh - 64px);display:flex;align-items:center;justify-content:center;padding:32px 16px;background:var(--bg)">
+    <div style="background:#fff;border-radius:var(--radius);border:1px solid var(--border);padding:36px 32px;width:100%;max-width:400px;box-shadow:0 8px 32px rgba(0,0,0,.08)">
+      <!-- Logo -->
+      <div style="text-align:center;margin-bottom:28px">
+        <img src="public/logos/shareo-logo.png" alt="ShareO" style="height:36px;object-fit:contain;border-radius:8px" onerror="this.src='public/logos/shareo-logo-alt.png'">
+        <div style="margin-top:16px">
+          <h1 style="font-size:22px;font-weight:800;color:var(--navy);margin-bottom:4px">Bem-vindo de volta</h1>
+          <p style="font-size:14px;color:var(--muted)">Faça login para continuar</p>
+        </div>
+      </div>
+      <!-- Google -->
+      <button style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px 16px;border:1.5px solid var(--border);border-radius:8px;background:#fff;font-family:inherit;font-size:14px;font-weight:600;color:var(--text);cursor:pointer;min-height:44px;margin-bottom:20px" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='#fff'">
+        <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z"/></svg>
+        Continuar com Google
+      </button>
+      <!-- Divider -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+        <span style="font-size:12px;color:var(--muted);font-weight:500">ou entre com e-mail</span>
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+      </div>
+      <!-- Campos -->
+      <div class="form-group">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px">E-mail</label>
+        <input class="form-input" type="email" placeholder="seu@email.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px">Senha</label>
+        <input class="form-input" type="password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <div style="text-align:right;margin-top:-8px;margin-bottom:16px">
+        <button style="background:none;border:none;font-size:13px;font-family:inherit;cursor:pointer;color:var(--green);font-weight:600">Esqueci minha senha</button>
+      </div>
+      <button class="btn btn-primary w-full btn-lg" onclick="doLoginV2()">Entrar</button>
+      <div style="text-align:center;margin-top:20px;font-size:14px;color:var(--muted)">
+        Não tem conta? <button style="background:none;border:none;font-size:14px;font-weight:700;color:var(--green);cursor:pointer;font-family:inherit" onclick="showScreen('signup')">Criar conta grátis</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ SCREEN: SIGNUP ════════════════ -->
+<div id="screen-signup" class="screen">
+  <div style="min-height:calc(100vh - 64px);display:flex;align-items:center;justify-content:center;padding:32px 16px;background:var(--bg)">
+    <div style="background:#fff;border-radius:var(--radius);border:1px solid var(--border);padding:36px 32px;width:100%;max-width:480px;box-shadow:0 8px 32px rgba(0,0,0,.08)">
+      <!-- Logo -->
+      <div style="text-align:center;margin-bottom:24px">
+        <img src="public/logos/shareo-logo.png" alt="ShareO" style="height:36px;object-fit:contain;border-radius:8px" onerror="this.src='public/logos/shareo-logo-alt.png'">
+        <div style="margin-top:16px">
+          <h1 style="font-size:22px;font-weight:800;color:var(--navy);margin-bottom:4px">Criar conta grátis</h1>
+          <p style="font-size:14px;color:var(--muted)">Use Mais. Possua Menos.</p>
+        </div>
+      </div>
+      <!-- Tabs PF / PJ -->
+      <div class="signup-tabs" style="display:flex;gap:0;background:var(--bg);border-radius:10px;padding:4px;margin-bottom:20px">
+        <button class="signup-tab active" onclick="setSignupTab(this)" style="flex:1;padding:10px;border-radius:8px;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;background:var(--green);color:#fff;transition:.2s">
+          Pessoa Física
+        </button>
+        <button class="signup-tab" onclick="setSignupTab(this)" style="flex:1;padding:10px;border-radius:8px;border:none;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;background:transparent;color:var(--muted);transition:.2s">
+          Empresa (PJ)
+        </button>
+      </div>
+      <!-- Nome -->
+      <div class="form-row">
+        <div class="form-group">
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px">Nome</label>
+          <input class="form-input" type="text" placeholder="Roberto" autocomplete="given-name">
+        </div>
+        <div class="form-group">
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px">Sobrenome</label>
+          <input class="form-input" type="text" placeholder="Silva" autocomplete="family-name">
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px">E-mail</label>
+        <input class="form-input" type="email" placeholder="seu@email.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px">Telefone</label>
+        <input class="form-input" type="tel" placeholder="(84) 9 9999-9999" autocomplete="tel">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px">Senha</label>
+          <input class="form-input" type="password" placeholder="Mín. 8 caracteres" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px">Confirmar senha</label>
+          <input class="form-input" type="password" placeholder="Repetir senha" autocomplete="new-password">
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px">CPF</label>
+        <input class="form-input" type="text" placeholder="000.000.000-00" autocomplete="off">
+      </div>
+      <!-- Consentimento LGPD -->
+      <label style="display:flex;align-items:flex-start;gap:10px;margin-bottom:20px;cursor:pointer">
+        <input type="checkbox" style="margin-top:3px;accent-color:var(--green);width:16px;height:16px;flex-shrink:0">
+        <span style="font-size:13px;color:var(--muted);line-height:1.5">
+          Ao criar sua conta você concorda com os
+          <span style="color:var(--green);font-weight:600;cursor:pointer">Termos de Uso</span>
+          e a <span style="color:var(--green);font-weight:600;cursor:pointer">Política de Privacidade</span>.
+          Seus dados são protegidos conforme a LGPD.
+        </span>
+      </label>
+      <button class="btn btn-primary w-full btn-lg" onclick="doLoginV2()">Criar minha conta</button>
+      <div style="text-align:center;margin-top:20px;font-size:14px;color:var(--muted)">
+        Já tem conta? <button style="background:none;border:none;font-size:14px;font-weight:700;color:var(--green);cursor:pointer;font-family:inherit" onclick="showScreen('login')">Entrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ SCREEN: ADD-ITEM ════════════════ -->
+<div id="screen-add-item" class="screen">
+  <!-- Back bar -->
+  <div style="background:#fff;border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:8px">
+    <button style="background:none;border:none;color:var(--navy);cursor:pointer;display:flex;align-items:center;justify-content:center;min-height:44px;min-width:44px" onclick="showScreen('dashboard')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <span style="font-size:15px;font-weight:700;color:var(--navy)">Novo anúncio</span>
+  </div>
+
+  <div style="max-width:720px;margin:0 auto;padding:24px 16px 48px">
+    <h1 style="font-size:24px;font-weight:800;color:var(--navy);margin-bottom:4px">Cadastrar novo item</h1>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:24px">Preencha as informações do item que deseja colocar para alugar.</p>
+
+    <!-- Info note -->
+    <div style="background:#D4EDE1;border:1px solid #A7D7BC;border-radius:10px;padding:12px 16px;margin-bottom:24px;display:flex;align-items:flex-start;gap:10px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span style="font-size:13px;color:var(--text)">Preencha todas as seções abaixo e clique em <strong>Publicar anúncio</strong> ao final.</span>
+    </div>
+
+    <!-- Fotos -->
+    <div style="background:#fff;border-radius:var(--radius);border:1px solid var(--border);padding:20px;margin-bottom:16px">
+      <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:16px">Fotos do item</div>
+      <div style="border:2px dashed var(--border);border-radius:10px;padding:32px 16px;text-align:center;cursor:pointer;transition:.2s" onmouseover="this.style.borderColor='var(--green)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="margin-bottom:8px;display:flex;justify-content:center">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+        </div>
+        <div style="font-size:14px;font-weight:600;color:var(--text)"><strong>Clique para enviar</strong> ou arraste as fotos aqui</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">JPG, PNG ou WEBP · Mín. 800×600px · Até 10 fotos</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <div style="width:72px;height:54px;border-radius:8px;background:#C7D2FE;border:2px solid var(--green);flex-shrink:0" role="img" aria-label="Foto 1 — principal"></div>
+        <div style="width:72px;height:54px;border-radius:8px;background:#D1FAE5;flex-shrink:0" role="img" aria-label="Foto 2"></div>
+        <div style="width:72px;height:54px;border-radius:8px;background:#FEF3C7;flex-shrink:0" role="img" aria-label="Foto 3"></div>
+        <button style="width:72px;height:54px;border-radius:8px;border:2px dashed var(--border);background:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;min-height:44px" aria-label="Adicionar foto">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Informações do item -->
+    <div style="background:#fff;border-radius:var(--radius);border:1px solid var(--border);padding:20px;margin-bottom:16px">
+      <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:16px">Informações do item</div>
+      <div class="form-group">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px">Categoria</label>
+        <select class="form-input" style="cursor:pointer">
+          <option>Selecione a categoria…</option>
+          <option selected>Ferramentas</option>
+          <option>Construção</option>
+          <option>Eletrônicos</option>
+          <option>Moda</option>
+          <option>Casa e Jardim</option>
+          <option>Esporte e Lazer</option>
+          <option>Festas</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px">Título do anúncio</label>
+        <input class="form-input" type="text" value="Furadeira de Impacto Bosch GSB 13 RE" placeholder="Ex.: Furadeira de Impacto Bosch 650W">
+      </div>
+      <div class="form-group">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px">Descrição</label>
+        <textarea class="form-input" rows="4" style="resize:vertical;min-height:100px">Furadeira profissional em ótimo estado. Acompanha maleta original, 10 brocas e manual. Ideal para obra e reformas domésticas.</textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px">Marca</label>
+          <input class="form-input" type="text" value="Bosch">
+        </div>
+        <div class="form-group">
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px">Modelo</label>
+          <input class="form-input" type="text" value="GSB 13 RE">
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px">Condição</label>
+        <select class="form-input" style="cursor:pointer">
+          <option selected>Seminovo — excelente estado</option>
+          <option>Usado — bom estado</option>
+          <option>Novo — nunca usado</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Preço e disponibilidade -->
+    <div style="background:#fff;border-radius:var(--radius);border:1px solid var(--border);padding:20px;margin-bottom:16px">
+      <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:16px">Preço e disponibilidade</div>
+      <div class="form-row" style="grid-template-columns:1fr 1fr 1fr">
+        <div class="form-group">
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px">Preço por dia</label>
+          <div style="position:relative">
+            <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;font-weight:600;color:var(--muted)">R$</span>
+            <input class="form-input" type="number" value="35" style="padding-left:36px">
+          </div>
+        </div>
+        <div class="form-group">
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px">Preço por semana</label>
+          <div style="position:relative">
+            <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;font-weight:600;color:var(--muted)">R$</span>
+            <input class="form-input" type="number" value="180" style="padding-left:36px">
+          </div>
+        </div>
+        <div class="form-group">
+          <label style="display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px">Preço por mês</label>
+          <div style="position:relative">
+            <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;font-weight:600;color:var(--muted)">R$</span>
+            <input class="form-input" type="number" value="480" style="padding-left:36px">
+          </div>
+        </div>
+      </div>
+      <!-- Dias disponíveis -->
+      <div class="form-group">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px">Dias disponíveis para retirada</label>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:10px">Selecione os dias da semana:</p>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="add-item-day" onclick="toggleDay(this)" aria-pressed="false">Dom</button>
+          <button class="add-item-day active" onclick="toggleDay(this)" aria-pressed="true">Seg</button>
+          <button class="add-item-day active" onclick="toggleDay(this)" aria-pressed="true">Ter</button>
+          <button class="add-item-day active" onclick="toggleDay(this)" aria-pressed="true">Qua</button>
+          <button class="add-item-day active" onclick="toggleDay(this)" aria-pressed="true">Qui</button>
+          <button class="add-item-day active" onclick="toggleDay(this)" aria-pressed="true">Sex</button>
+          <button class="add-item-day" onclick="toggleDay(this)" aria-pressed="false">Sáb</button>
+        </div>
+      </div>
+      <!-- Local de retirada -->
+      <div class="form-group" style="margin-bottom:0">
+        <label style="display:block;font-size:13px;font-weight:600;color:var(--navy);margin-bottom:6px">Local de retirada</label>
+        <input class="form-input" type="text" value="Ponta Negra, Natal-RN" placeholder="Bairro / Ponto de referência">
+      </div>
+    </div>
+
+    <!-- Ações -->
+    <div style="display:flex;gap:12px">
+      <button class="btn btn-ghost w-full" onclick="showScreen('dashboard')">Salvar rascunho</button>
+      <button class="btn btn-primary w-full" onclick="showScreen('dashboard')">Publicar anúncio</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ SCREEN: DEVOLUCAO ════════════════ -->
+<div id="screen-devolucao" class="screen">
+  <!-- Back bar -->
+  <div style="background:#fff;border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:8px">
+    <button style="background:none;border:none;color:var(--navy);cursor:pointer;display:flex;align-items:center;justify-content:center;min-height:44px;min-width:44px" onclick="showScreen('dashboard')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <span style="font-size:15px;font-weight:700;color:var(--navy)">Devolução</span>
+  </div>
+
+  <div style="max-width:540px;margin:0 auto;padding:24px 16px 48px">
+
+    <!-- Progress bar 4 etapas -->
+    <div style="margin-bottom:28px">
+      <div style="display:flex;align-items:center;justify-content:space-between;position:relative">
+        <div style="position:absolute;top:14px;left:14px;right:14px;height:2px;background:var(--border);z-index:0"></div>
+        <div class="devol-progress-fill" id="devol-progress-fill"></div>
+        <div class="devol-dot current" id="devol-dot-1">1</div>
+        <div class="devol-line" id="devol-line-1"></div>
+        <div class="devol-dot" id="devol-dot-2">2</div>
+        <div class="devol-line" id="devol-line-2"></div>
+        <div class="devol-dot" id="devol-dot-3">3</div>
+        <div class="devol-line" id="devol-line-3"></div>
+        <div class="devol-dot" id="devol-dot-4">4</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px">
+        <span style="font-size:10px;font-weight:600;color:var(--green);width:60px;text-align:center;margin:0 -16px">Checklist</span>
+        <span style="font-size:10px;font-weight:600;color:var(--muted);width:60px;text-align:center;margin:0 -16px">Foto</span>
+        <span style="font-size:10px;font-weight:600;color:var(--muted);width:60px;text-align:center;margin:0 -16px">Aguardando</span>
+        <span style="font-size:10px;font-weight:600;color:var(--muted);width:60px;text-align:center;margin:0 -16px">Concluído</span>
+      </div>
+    </div>
+
+    <!-- Item em devolução -->
+    <div style="background:#fff;border-radius:var(--radius);border:1px solid var(--border);padding:14px 16px;margin-bottom:20px;display:flex;align-items:center;gap:12px">
+      <div style="width:56px;height:56px;border-radius:10px;background:#C7D2FE;flex-shrink:0" role="img" aria-label="Furadeira de Impacto Bosch GSB 13"></div>
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--navy)">Furadeira de Impacto Bosch GSB 13</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">Reserva <strong>#SHR-2605-001</strong> · Proprietário: João Silva</div>
+        <div style="font-size:12px;color:var(--muted)">19–22 mai 2026 · 3 dias · R$ 105,00</div>
+      </div>
+    </div>
+
+    <!-- Painel 1: Checklist -->
+    <div class="devol-step-panel active" id="devol-panel-1">
+      <h2 style="font-size:20px;font-weight:800;color:var(--navy);margin-bottom:6px">Checklist de devolução</h2>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:20px">Confirme o estado do item antes de devolver. Isso protege você e o proprietário.</p>
+      <div style="background:#fff;border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;margin-bottom:20px">
+        <label style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer">
+          <input type="checkbox" style="margin-top:2px;accent-color:var(--green);width:18px;height:18px;flex-shrink:0">
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--text)">Limpo e sem sujeira</div>
+            <div style="font-size:12px;color:var(--muted)">No mesmo estado de higiene em que recebi</div>
+          </div>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer">
+          <input type="checkbox" style="margin-top:2px;accent-color:var(--green);width:18px;height:18px;flex-shrink:0">
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--text)">Com todos os acessórios</div>
+            <div style="font-size:12px;color:var(--muted)">Cabos, manual, carregador e itens que vieram junto</div>
+          </div>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer">
+          <input type="checkbox" style="margin-top:2px;accent-color:var(--green);width:18px;height:18px;flex-shrink:0">
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--text)">Funcionando normalmente</div>
+            <div style="font-size:12px;color:var(--muted)">Testei antes de devolver e está operacional</div>
+          </div>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;cursor:pointer">
+          <input type="checkbox" style="margin-top:2px;accent-color:var(--green);width:18px;height:18px;flex-shrink:0">
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--text)">Sem danos novos visíveis</div>
+            <div style="font-size:12px;color:var(--muted)">Apenas desgaste normal de uso esperado</div>
+          </div>
+        </label>
+      </div>
+      <button class="btn btn-primary w-full btn-lg" onclick="showDevolStep(2)">Continuar → Adicionar foto</button>
+      <button class="btn btn-outline w-full" style="margin-top:10px;font-size:13px;min-height:44px;display:flex;align-items:center;justify-content:center;gap:8px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Há um problema com o item
+      </button>
+    </div>
+
+    <!-- Painel 2: Foto -->
+    <div class="devol-step-panel" id="devol-panel-2">
+      <h2 style="font-size:20px;font-weight:800;color:var(--navy);margin-bottom:6px">Foto da devolução</h2>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:20px">Tire uma foto do item para registrar o estado na devolução. Isso protege você em caso de disputas.</p>
+      <div style="border:2px dashed var(--border);border-radius:12px;padding:40px 20px;text-align:center;cursor:pointer;margin-bottom:16px;transition:.2s" onmouseover="this.style.borderColor='var(--green)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="margin-bottom:8px;display:flex;justify-content:center">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </div>
+        <div style="font-size:14px;font-weight:600;color:var(--text)">Tirar foto ou escolher da galeria</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">JPG, PNG ou WebP · máx. 10 MB · até 4 fotos</div>
+      </div>
+      <div style="background:var(--bg);border-radius:10px;border:1px solid var(--border);padding:12px 14px;font-size:13px;color:var(--muted);margin-bottom:24px;display:flex;align-items:flex-start;gap:8px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span><strong>Dica:</strong> fotografe o item inteiro, os acessórios separados e qualquer área com desgaste.</span>
+      </div>
+      <button class="btn btn-primary w-full btn-lg" onclick="showDevolStep(3)">Confirmar devolução</button>
+      <button class="btn btn-ghost w-full" style="margin-top:10px;font-size:13px" onclick="showDevolStep(3)">Pular — não quero adicionar foto</button>
+    </div>
+
+    <!-- Painel 3: Aguardando proprietário -->
+    <div class="devol-step-panel" id="devol-panel-3">
+      <div style="text-align:center;padding:20px 0 32px">
+        <div style="width:72px;height:72px;border-radius:50%;background:#D4EDE1;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </div>
+        <h2 style="font-size:22px;font-weight:800;color:var(--navy);margin-bottom:10px">Devolução registrada!</h2>
+        <p style="font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:20px">
+          O proprietário foi notificado e tem até <strong>24 horas</strong> para confirmar o recebimento e o estado do item.
+        </p>
+        <div style="display:inline-block;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 20px;font-size:16px;font-weight:700;color:var(--navy);margin-bottom:20px">
+          #SHR-2605-001
+        </div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:28px">
+          Você receberá uma notificação quando o proprietário confirmar.<br>
+          Seu depósito de segurança de <strong>R$ 50,00</strong> será liberado após a confirmação.
+        </p>
+        <button class="btn btn-primary w-full btn-lg" onclick="showDevolStep(4)" style="margin-bottom:10px">Simular confirmação do proprietário</button>
+        <button class="btn btn-ghost w-full" onclick="showScreen('chat')" style="display:flex;align-items:center;justify-content:center;gap:8px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Falar com o proprietário
+        </button>
+      </div>
+    </div>
+
+    <!-- Painel 4: Concluído -->
+    <div class="devol-step-panel" id="devol-panel-4">
+      <div style="text-align:center;padding:20px 0 32px">
+        <div style="width:80px;height:80px;border-radius:50%;background:#D4EDE1;display:flex;align-items:center;justify-content:center;margin:0 auto 20px">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h2 style="font-size:22px;font-weight:800;color:var(--navy);margin-bottom:10px">Devolução concluída!</h2>
+        <p style="font-size:14px;color:var(--muted);line-height:1.6;margin-bottom:20px">
+          O proprietário confirmou o recebimento em perfeito estado.<br>Obrigado por cuidar bem do item!
+        </p>
+        <div style="background:#D4EDE1;border:1px solid #A7D7BC;border-radius:10px;padding:14px 16px;margin-bottom:28px;font-size:14px;font-weight:600;color:var(--green);text-align:center">
+          Depósito de segurança de R$ 50,00 será estornado em até 5 dias úteis
+        </div>
+        <button class="btn btn-primary w-full btn-lg" style="margin-bottom:10px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff" stroke="#fff" stroke-width="1" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Avaliar esta locação
+        </button>
+        <button class="btn btn-ghost w-full" onclick="showScreen('dashboard')">Voltar ao painel</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════════ SCREEN: CHAT ════════════════ -->
+<div id="screen-chat" class="screen" style="min-height:calc(100vh - 64px)">
+
+  <!-- INBOX -->
+  <div id="chat-inbox-v2">
+    <div style="padding:20px 16px 8px">
+      <h1 style="font-size:22px;font-weight:800;color:var(--navy);margin-bottom:4px">Mensagens</h1>
+      <p style="font-size:14px;color:var(--muted)">Conversas com proprietários e locatários</p>
+    </div>
+    <div style="display:flex;flex-direction:column">
+
+      <!-- Conversa 1 -->
+      <div onclick="openChatThread('João Silva','J','Furadeira de Impacto Bosch','var(--navy)')" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:.15s" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='#fff'">
+        <div style="width:48px;height:48px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0">J</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+            <span style="font-size:15px;font-weight:700;color:var(--text)">João Silva</span>
+            <span style="font-size:12px;color:var(--muted)">14:32</span>
+          </div>
+          <div style="font-size:13px;font-weight:600;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Beleza! Pode retirar amanhã das 9h…</div>
+        </div>
+        <div style="min-width:22px;height:22px;border-radius:50%;background:var(--green);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
+      </div>
+
+      <!-- Conversa 2 -->
+      <div onclick="openChatThread('Ana Luiza M.','A','Câmera Sony A7 III','#ea580c')" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:.15s" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='#fff'">
+        <div style="width:48px;height:48px;border-radius:50%;background:#ea580c;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0">A</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+            <span style="font-size:15px;font-weight:700;color:var(--text)">Ana Luiza M.</span>
+            <span style="font-size:12px;color:var(--muted)">Ontem</span>
+          </div>
+          <div style="font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Obrigada! Foi ótimo, vou avaliar agora 😊</div>
+        </div>
+      </div>
+
+      <!-- Conversa 3 -->
+      <div onclick="openChatThread('Pedro Alves','P','Barraca de Camping 4p','#7c3aed')" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:.15s" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='#fff'">
+        <div style="width:48px;height:48px;border-radius:50%;background:#7c3aed;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0">P</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+            <span style="font-size:15px;font-weight:700;color:var(--text)">Pedro Alves</span>
+            <span style="font-size:12px;color:var(--muted)">22 mai</span>
+          </div>
+          <div style="font-size:13px;font-weight:600;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Você aceita devolução no domingo?</div>
+        </div>
+        <div style="min-width:22px;height:22px;border-radius:50%;background:var(--green);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
+      </div>
+
+      <!-- Conversa 4 -->
+      <div onclick="openChatThread('Mariana Costa','M','Conjunto de Halteres','#0891b2')" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:.15s" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='#fff'">
+        <div style="width:48px;height:48px;border-radius:50%;background:#0891b2;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0">M</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+            <span style="font-size:15px;font-weight:700;color:var(--text)">Mariana Costa</span>
+            <span style="font-size:12px;color:var(--muted)">20 mai</span>
+          </div>
+          <div style="font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Tudo certo! Item em perfeito estado 👍</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- THREAD -->
+  <div id="chat-thread-v2" style="display:none;flex-direction:column;height:calc(100vh - 64px)">
+    <!-- Thread header -->
+    <div style="background:var(--navy);padding:12px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0">
+      <button style="background:none;border:none;color:rgba(255,255,255,.8);cursor:pointer;display:flex;align-items:center;justify-content:center;min-height:44px;min-width:44px" onclick="closeChatThread()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <div id="thread-av-v2" style="width:40px;height:40px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex-shrink:0">J</div>
+      <div>
+        <div id="thread-name-v2" style="font-size:15px;font-weight:700;color:#fff">João Silva</div>
+        <div id="thread-item-v2" style="font-size:12px;color:rgba(255,255,255,.65)">Furadeira de Impacto Bosch</div>
+      </div>
+    </div>
+    <!-- Messages -->
+    <div id="chat-messages-v2" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;background:var(--bg)">
+      <div style="display:flex;justify-content:flex-start">
+        <div>
+          <div style="background:#fff;border-radius:12px 12px 12px 2px;border:1px solid var(--border);padding:10px 14px;font-size:14px;color:var(--text);max-width:280px">Oi! Vi seu anúncio, ainda está disponível para essa semana?</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;padding-left:2px">Seg, 13:15</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end">
+        <div>
+          <div style="background:var(--green);border-radius:12px 12px 2px 12px;padding:10px 14px;font-size:14px;color:#fff;max-width:280px">Oi! Sim, está disponível. Quais datas você precisa?</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;text-align:right;padding-right:2px">Seg, 13:22</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-start">
+        <div>
+          <div style="background:#fff;border-radius:12px 12px 12px 2px;border:1px solid var(--border);padding:10px 14px;font-size:14px;color:var(--text);max-width:280px">Seria de amanhã até sexta — 4 dias no total.</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;padding-left:2px">Seg, 13:25</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end">
+        <div>
+          <div style="background:var(--green);border-radius:12px 12px 2px 12px;padding:10px 14px;font-size:14px;color:#fff;max-width:280px">Perfeito! R$ 35/dia × 4 dias = R$ 140. Pode retirar às 9h?</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;text-align:right;padding-right:2px">Seg, 13:30</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-start">
+        <div>
+          <div style="background:#fff;border-radius:12px 12px 12px 2px;border:1px solid var(--border);padding:10px 14px;font-size:14px;color:var(--text);max-width:280px">Beleza! Pode retirar amanhã das 9h. Endereço é Ponta Negra, certo?</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px;padding-left:2px">14:32</div>
+        </div>
+      </div>
+    </div>
+    <!-- Input bar -->
+    <div style="background:#fff;border-top:1px solid var(--border);padding:10px 12px;display:flex;align-items:center;gap:8px;flex-shrink:0">
+      <input id="chat-input-v2" class="form-input" type="text" placeholder="Escrever mensagem…" style="flex:1;margin:0" onkeydown="if(event.key==='Enter')sendChatMsgV2()">
+      <button class="btn btn-primary" style="min-width:44px;padding:10px 14px;flex-shrink:0" onclick="sendChatMsgV2()" aria-label="Enviar mensagem">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<style>
+/* ── ADD-ITEM DAY BUTTONS ── */
+.add-item-day{padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-family:inherit;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;min-height:36px;transition:.2s}
+.add-item-day.active{background:var(--green);color:#fff;border-color:var(--green)}
+.add-item-day:hover:not(.active){border-color:var(--green);color:var(--green)}
+
+/* ── SIGNUP TABS ── */
+.signup-tab{transition:.2s}
+.signup-tab.active{background:var(--green)!important;color:#fff!important}
+.signup-tab:not(.active){background:transparent!important;color:var(--muted)!important}
+
+/* ── DEVOLUCAO PROGRESS ── */
+.devol-dot{width:28px;height:28px;border-radius:50%;background:var(--border);color:var(--muted);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;position:relative;z-index:2;flex-shrink:0;transition:.3s}
+.devol-dot.done{background:var(--green);color:#fff}
+.devol-dot.current{background:var(--green);color:#fff;box-shadow:0 0 0 4px rgba(0,123,60,.2)}
+.devol-line{flex:1;height:2px;background:var(--border);z-index:0;transition:.3s}
+.devol-line.done{background:var(--green)}
+.devol-progress-fill{position:absolute;top:14px;left:14px;height:2px;background:var(--green);z-index:1;transition:.4s;width:0%}
+.devol-step-panel{display:none}
+.devol-step-panel.active{display:block}
+</style>
 </body>
 </html>
