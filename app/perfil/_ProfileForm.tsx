@@ -183,6 +183,7 @@ export function ProfileForm({ user }: { user: UserData }) {
           <input
             id="profile-neighborhood"
             type="text"
+            placeholder="Ex: Ponta Negra"
             value={neighborhood}
             onChange={(e) => setNeighborhood(e.target.value)}
             maxLength={100}

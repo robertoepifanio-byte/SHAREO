@@ -402,7 +402,7 @@ export function RegisterForm() {
           label="Bairro"
           type="text"
           autoComplete="address-level3"
-          placeholder="Ponta Negra"
+          placeholder="Ex: Ponta Negra"
           value={neighborhood}
           onChange={(e) => setNeighborhood(e.target.value)}
           helper="Opcional"
