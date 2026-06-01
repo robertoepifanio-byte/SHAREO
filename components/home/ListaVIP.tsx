@@ -17,7 +17,7 @@ export function ListaVIP() {
         {/* Urgency badge */}
         <div
           role="note"
-          className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-[rgba(245,158,11,0.4)] bg-[rgba(245,158,11,0.15)] px-3.5 py-1.5 text-xs font-semibold text-[#92400E]"
+          className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-amber-400/50 bg-amber-400/20 px-3.5 py-1.5 text-xs font-semibold text-amber-200"
         >
           <svg
             width="14"

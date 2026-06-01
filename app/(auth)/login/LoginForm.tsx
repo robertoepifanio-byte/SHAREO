@@ -50,6 +50,18 @@ export function LoginForm() {
 
   return (
     <div className="rounded-lg border border-border bg-surface p-8 shadow-card">
+      <div className="mb-4">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground outline-none focus-visible:ring-1 focus-visible:ring-brand rounded transition-colors"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M19 12H5M12 5l-7 7 7 7"/>
+          </svg>
+          Voltar para o início
+        </Link>
+      </div>
+
       <h1 className="mb-1 font-display text-center text-2xl font-bold text-primary">Entrar na sua conta</h1>
       <p className="mb-6 text-center text-sm text-muted-foreground">
         Bem-vindo de volta ao ShareO
