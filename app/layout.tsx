@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { Montserrat } from "next/font/google"
+import { Montserrat, Inter } from "next/font/google"
 import { Toaster } from "sonner"
 import { BottomNav } from "@/components/layout/BottomNav"
 import { AppFooter } from "@/components/layout/AppFooter"
@@ -11,7 +11,14 @@ import "./globals.css"
 const montserrat = Montserrat({
   subsets:  ["latin"],
   variable: "--font-montserrat",
-  weight:   ["400", "500", "600", "700", "800"],
+  weight:   ["600", "700", "800"],
+  display:  "swap",
+})
+
+const inter = Inter({
+  subsets:  ["latin"],
+  variable: "--font-inter",
+  weight:   ["400", "500", "600", "700"],
   display:  "swap",
 })
 
@@ -65,7 +72,7 @@ const orgJsonLd = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={montserrat.variable}>
+    <html lang="pt-BR" className={`${montserrat.variable} ${inter.variable}`}>
       <body className="min-h-screen bg-background font-sans antialiased">
         <script
           type="application/ld+json"
