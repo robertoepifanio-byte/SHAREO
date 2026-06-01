@@ -3,11 +3,12 @@ import Link from "next/link"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { AppHeader } from "@/components/layout/AppHeader"
-import { ItemCard } from "@/components/items/ItemCard"
 import { CategoryIcon } from "@/components/ui/CategoryIcon"
-import type { ItemPin } from "@/components/items/ItemsMap"
-import { getUserMapLocation } from "@/lib/userLocation"
-import { HomeMapPanel } from "@/components/home/HomeMapPanel"
+import { SimuladorRenda } from "@/components/home/SimuladorRenda"
+import { ItensProcurados } from "@/components/home/ItensProcurados"
+import { CasosRenda } from "@/components/home/CasosRenda"
+import { Seguranca } from "@/components/home/Seguranca"
+import { ListaVIP } from "@/components/home/ListaVIP"
 
 export const metadata: Metadata = {
   title: "ShareO — Use Mais. Possua Menos.",
@@ -16,170 +17,294 @@ export const metadata: Metadata = {
 
 export const revalidate = 60
 
+const steps = [
+  {
+    num: "1",
+    title: "Busque o que precisa",
+    desc: "Pesquise por categoria, localização ou nome. Veja itens disponíveis perto de você no mapa.",
+    icon: (
+      <svg
+        width="32"
+        height="32"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="#007B3C"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.35-4.35" />
+      </svg>
+    ),
+  },
+  {
+    num: "2",
+    title: "Combine com o proprietário",
+    desc: "Envie mensagem pelo chat do ShareO, combine as datas e a retirada do item com segurança.",
+    icon: (
+      <svg
+        width="32"
+        height="32"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="#144D81"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <line x1="16" y1="2" x2="16" y2="6" />
+        <line x1="8" y1="2" x2="8" y2="6" />
+        <line x1="3" y1="10" x2="21" y2="10" />
+      </svg>
+    ),
+  },
+  {
+    num: "3",
+    title: "Use e devolva",
+    desc: "Retire, use pelo período combinado e devolva. Avalie a experiência e construa sua reputação.",
+    icon: (
+      <svg
+        width="32"
+        height="32"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="#007B3C"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M5 12h14" />
+        <path d="m12 5 7 7-7 7" />
+      </svg>
+    ),
+  },
+]
 
 export default async function HomePage() {
   const session = await auth().catch(() => null)
-  const [userLoc, userCity] = await Promise.all([
-    getUserMapLocation(session?.user?.id),
-    session?.user?.id
-      ? prisma.user.findUnique({ where: { id: session.user.id }, select: { city: true, state: true } })
-          .then((u) => u?.city ? `${u.city}${u.state ? `, ${u.state}` : ""}` : "Natal, RN")
-          .catch(() => "Natal, RN")
-      : Promise.resolve("Natal, RN"),
-  ])
 
-  const itemSelect = {
-    id: true, title: true, pricePerDay: true, condition: true,
-    city: true, state: true, neighborhood: true, isActive: true,
-    latitude: true, longitude: true,
-    category: { select: { name: true } },
-    owner:    { select: { name: true, isVerified: true } },
-    images:   { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
-    _count:   { select: { reviews: true, favorites: true, bookings: true } },
-  } as const
+  const cityName = session?.user?.id
+    ? await prisma.user
+        .findUnique({ where: { id: session.user.id }, select: { city: true } })
+        .then((u) => u?.city ?? "Natal")
+        .catch(() => "Natal")
+    : "Natal"
 
-  const cityName = userCity.split(",")[0].trim()
+  const [categories, cityItemCount] = await Promise.all([
+    prisma.category
+      .findMany({
+        where: { parentId: null },
+        select: { id: true, name: true },
+        orderBy: { name: "asc" },
+      })
+      .catch(() => []),
 
-  const [categories, items, hotItems, cityItemCount] = await Promise.all([
-    prisma.category.findMany({
-      where:   { parentId: null },
-      select:  { id: true, name: true },
-      orderBy: { name: "asc" },
-    }).catch(() => []),
-
-    // Mais recentes — seção "Próximos de você"
-    prisma.item.findMany({
-      where:   { isActive: true, isApproved: true, deletedAt: null },
-      take:    8,
-      orderBy: { viewCount: "desc" },
-      select:  itemSelect,
-    }).then((rows) => rows.filter((r) => r.category && r.owner)).catch(() => []),
-
-    // Mais alugados — seção "🔥 Mais alugados esta semana"
-    prisma.item.findMany({
-      where:   { isActive: true, isApproved: true, deletedAt: null },
-      take:    4,
-      orderBy: { createdAt: "desc" }, // fallback; será ordenado por bookings quando suportado
-      select:  itemSelect,
-    }).then((rows) => rows.filter((r) => r.category && r.owner)).catch(() => []),
-
-    // P3-78: contagem de itens disponíveis na cidade do usuário
-    prisma.item.count({
-      where: { isActive: true, isApproved: true, deletedAt: null, city: cityName },
-    }).catch(() => 0),
+    prisma.item
+      .count({
+        where: { isActive: true, isApproved: true, deletedAt: null, city: cityName },
+      })
+      .catch(() => 0),
   ])
 
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
-
       <main>
-      {/* ─── HERO ─── */}
-      <section
-        className="bg-gradient-to-br from-primary to-[#144D81] px-4 py-12 text-center md:py-20"
-        aria-label="Seção principal"
-      >
-        <div
-          className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/15 px-3 py-1 text-xs font-semibold text-accent"
-          aria-hidden="true"
+        {/* ─── HERO ─── */}
+        <section
+          className="relative overflow-hidden bg-gradient-to-br from-primary to-[#144D81] px-4 py-10 md:px-8 md:py-16 xl:px-16"
+          aria-label="Seção principal"
         >
-          🌿 Economia Circular
-          {cityItemCount > 0 && (
-            <span className="ml-1 text-white/80">
-              · {cityItemCount} iten{cityItemCount !== 1 ? "s" : ""} em {cityName}
-            </span>
-          )}
-        </div>
-        <h1 className="mb-3 font-display text-4xl font-extrabold leading-tight text-white md:text-6xl">
-          Use Mais.<br />Possua Menos.
-        </h1>
-        <p className="mx-auto mb-8 max-w-lg text-base text-white/75">
-          Alugue o que precisa de quem já tem. Próximo de você, rápido e seguro.
-        </p>
-
-        {/* Search box */}
-        <form
-          action="/itens"
-          method="GET"
-          className="mx-auto flex max-w-xl overflow-hidden rounded-xl bg-white shadow-2xl"
-          role="search"
-        >
-          <label htmlFor="hero-search" className="sr-only">Buscar item para alugar</label>
-          <input
-            id="hero-search"
-            name="search"
-            type="text"
-            placeholder="O que você precisa alugar?"
-            className="flex-1 border-none px-5 py-4 text-base text-foreground outline-none placeholder:text-muted-foreground"
+          {/* orbe decorativo */}
+          <div
+            className="pointer-events-none absolute -right-24 -top-24 h-[300px] w-[300px] rounded-full bg-brand/15 xl:h-[500px] xl:w-[500px]"
+            aria-hidden="true"
           />
-          <button
-            type="submit"
-            className="bg-brand px-6 text-sm font-semibold text-white hover:opacity-90 transition-opacity whitespace-nowrap"
-          >
-            Buscar 🔍
-          </button>
-        </form>
 
-        {/* Trust seals */}
-        <div className="mt-8 flex flex-wrap justify-center gap-6" aria-label="Garantias da plataforma">
-          <div className="flex items-center gap-2 text-white/80 text-sm">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-base flex-shrink-0">🔒</span>
-            <div className="text-left">
-              <strong className="block text-white text-xs font-semibold">Pagamento seguro</strong>
-              <span className="text-white/60 text-xs">Liberado só após confirmação</span>
+          <div className="relative z-10 mx-auto max-w-[640px] text-center">
+            {/* Badge dourado */}
+            <div
+              role="note"
+              aria-label="Proposta de valor"
+              className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-[rgba(255,215,0,0.35)] bg-[rgba(255,215,0,0.15)] px-3.5 py-1.5 text-xs font-semibold text-gold"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 6v2m0 8v2M9.5 9.5a2.5 2.5 0 0 1 5 0c0 1.5-2.5 3-2.5 3m0 0v.5" />
+              </svg>
+              Transforme itens parados em renda
+            </div>
+
+            {/* H1 */}
+            <h1 className="mb-4 font-display text-[24px] font-extrabold leading-[1.15] text-white xl:text-5xl">
+              Ganhe dinheiro com o que
+              <br />
+              <span className="text-accent">está parado na sua casa.</span>
+            </h1>
+
+            {/* Subtítulo */}
+            <p className="mb-8 text-base leading-relaxed text-white/75 md:text-[17px]">
+              Ferramentas, eletrônicos, itens para festas, esportes, casa e jardim.
+              <br />
+              Tudo perto de você.
+            </p>
+
+            {/* Dual CTA */}
+            <div
+              role="group"
+              aria-label="Ações principais"
+              className="mb-5 flex flex-col items-stretch gap-3 md:flex-row md:flex-wrap md:items-center md:justify-center"
+            >
+              <Link
+                href="/itens/novo"
+                className="inline-flex min-h-tap w-full items-center justify-center gap-2 rounded-lg bg-brand px-6 py-3 text-sm font-semibold uppercase tracking-[0.4px] text-white transition-colors hover:bg-brand-hover md:w-auto md:min-w-[220px]"
+                aria-label="Quero ganhar dinheiro anunciando meus itens"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 6v2m0 8v2M9.5 9.5a2.5 2.5 0 0 1 5 0c0 1.5-2.5 3-2.5 3" />
+                </svg>
+                Quero Ganhar Dinheiro
+              </Link>
+              <Link
+                href="/itens"
+                className="inline-flex min-h-tap w-full items-center justify-center gap-2 rounded-lg border-2 border-white/60 bg-transparent px-6 py-3 text-sm font-semibold uppercase tracking-[0.4px] text-white transition-all hover:border-white hover:bg-white/10 md:w-auto md:min-w-[200px]"
+                aria-label="Quero alugar um item"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.35-4.35" />
+                </svg>
+                Quero Alugar
+              </Link>
+            </div>
+
+            {/* Campo de busca */}
+            <form
+              action="/itens"
+              method="GET"
+              role="search"
+              className="mx-auto flex w-full max-w-[520px] items-center gap-2 overflow-hidden rounded-xl bg-white px-4 py-1.5 shadow-[0_4px_20px_rgba(0,0,0,0.2)]"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="shrink-0 text-muted-foreground"
+                aria-hidden="true"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+              <label htmlFor="hero-search" className="sr-only">
+                Buscar item para alugar ou anunciar
+              </label>
+              <input
+                id="hero-search"
+                name="search"
+                type="text"
+                placeholder="O que você precisa alugar?"
+                autoComplete="off"
+                className="min-h-tap flex-1 border-none bg-transparent text-[15px] text-foreground outline-none placeholder:text-muted-foreground"
+                aria-label="Buscar item para alugar ou anunciar"
+              />
+              <button
+                type="submit"
+                className="min-h-tap min-w-tap rounded-lg bg-brand px-4 py-2 text-sm font-semibold uppercase text-white hover:bg-brand-hover"
+                aria-label="Buscar"
+              >
+                Buscar
+              </button>
+            </form>
+
+            {/* Tagline */}
+            <p className="mt-3 text-xs italic tracking-[0.3px] text-white/50">
+              <em>Use Mais. Possua Menos.</em>
+            </p>
+
+            {/* Stats integradas (substituem proof bar separado) */}
+            <div
+              role="list"
+              aria-label="Números da plataforma"
+              className="mt-9 flex flex-wrap justify-center gap-5 xl:gap-8"
+            >
+              {[
+                { num: "2.400+", label: "Itens disponíveis" },
+                { num: "R$2.000", label: "Renda média/mês" },
+                { num: "4,8 ★", label: "Avaliação média" },
+                {
+                  num: cityItemCount > 0 ? `${cityItemCount}` : "890+",
+                  label: cityItemCount > 0 ? `Itens em ${cityName}` : "Proprietários ativos",
+                },
+              ].map((stat) => (
+                <div key={stat.label} role="listitem" className="text-center text-white">
+                  <div className="text-[22px] font-extrabold leading-none text-accent xl:text-[28px]">
+                    {stat.num}
+                  </div>
+                  <div className="mt-0.5 text-[12px] text-white/60">{stat.label}</div>
+                </div>
+              ))}
             </div>
           </div>
-          <div className="flex items-center gap-2 text-white/80 text-sm">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-base flex-shrink-0">✓</span>
-            <div className="text-left">
-              <strong className="block text-white text-xs font-semibold">Usuários verificados</strong>
-              <span className="text-white/60 text-xs">Identidade validada</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 text-white/80 text-sm">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-base flex-shrink-0">💬</span>
-            <div className="text-left">
-              <strong className="block text-white text-xs font-semibold">Suporte 7 dias</strong>
-              <span className="text-white/60 text-xs">Estamos aqui pra você</span>
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ─── PROOF BAR ─── */}
-      <section className="bg-primary py-6" aria-label="Números da plataforma">
-        <div className="container flex flex-wrap justify-center gap-8 md:gap-16">
-          <div className="text-center">
-            <strong className="block text-2xl font-extrabold text-accent">2.400+</strong>
-            <span className="text-xs text-white/60">Itens disponíveis</span>
-          </div>
-          <div className="text-center">
-            <strong className="block text-2xl font-extrabold text-accent">890+</strong>
-            <span className="text-xs text-white/60">Usuários ativos</span>
-          </div>
-          <div className="text-center">
-            <strong className="block text-2xl font-extrabold text-accent">4,8 ★</strong>
-            <span className="text-xs text-white/60">Avaliação média</span>
-          </div>
-          <div className="text-center">
-            <strong className="block text-2xl font-extrabold text-accent">759 kg</strong>
-            <span className="text-xs text-white/60">CO₂ economizados</span>
-          </div>
-        </div>
-      </section>
-
-      <div className="container">
+        {/* ─── SIMULADOR DE RENDA ─── */}
+        <SimuladorRenda />
 
         {/* ─── CATEGORIAS ─── */}
         {categories.length > 0 && (
-          <section className="py-8" aria-labelledby="cats-title">
+          <section className="container py-8" aria-labelledby="cats-title">
             <h2 className="mb-5 text-xl font-bold text-primary md:text-2xl" id="cats-title">
               Explorar por categoria
             </h2>
             <div className="relative">
               {/* fade lateral para indicar scroll */}
-              <div className="pointer-events-none absolute right-0 top-0 bottom-1 w-12 bg-gradient-to-r from-transparent to-background z-10" aria-hidden="true" />
-              <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1" role="list" aria-label="Categorias de itens">
+              <div
+                className="pointer-events-none absolute bottom-1 right-0 top-0 z-10 w-12 bg-gradient-to-r from-transparent to-background"
+                aria-hidden="true"
+              />
+              <div
+                className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                role="list"
+                aria-label="Categorias de itens"
+              >
                 {categories.map((cat) => (
                   <Link
                     key={cat.id}
@@ -197,190 +322,50 @@ export default async function HomePage() {
           </section>
         )}
 
-        {/* ─── MAPA + FILTRO DISTÂNCIA ─── */}
-        <section className="pb-8" aria-label="Mapa de itens próximos">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display text-xl font-bold text-primary md:text-2xl">📍 Itens próximos de você</h2>
-            <Link href="/itens" className="text-sm font-semibold text-brand hover:underline">Ver todos →</Link>
-          </div>
-          <HomeMapPanel
-            defaultLat={userLoc.lat}
-            defaultLng={userLoc.lng}
-            defaultZoom={userLoc.zoom}
-            userCity={userCity}
-            items={items
-              .filter((i) => i.latitude != null && i.longitude != null)
-              .map<ItemPin>((i) => ({
-                id:          i.id,
-                title:       i.title,
-                pricePerDay: i.pricePerDay,
-                lat:         i.latitude as number,
-                lng:         i.longitude as number,
-              }))}
-          />
-        </section>
-
-        {/* ─── 🔥 MAIS ALUGADOS ─── */}
-        {hotItems.length > 0 && (
-          <section className="pb-8" aria-labelledby="hot-title">
-            <div className="mb-5 flex items-center justify-between">
-              <h2 className="font-display text-xl font-bold text-primary md:text-2xl" id="hot-title">
-                🔥 Mais alugados esta semana
-              </h2>
-              <Link href="/itens" className="text-sm font-semibold text-brand hover:underline outline-none focus-visible:ring-1 focus-visible:ring-brand rounded">
-                Ver todos →
-              </Link>
-            </div>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-4">
-              {hotItems.map((item) => (
-                <ItemCard key={item.id} item={item} hotBadge />
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* ─── ITENS PRÓXIMOS ─── */}
-        {items.length > 0 && (
-          <section className="pb-8" aria-labelledby="nearby-title">
-            <div className="mb-5 flex items-center justify-between">
-              <h2 className="font-display text-xl font-bold text-primary md:text-2xl" id="nearby-title">
-                Próximos de você
-              </h2>
-              <Link
-                href="/itens"
-                className="text-sm font-semibold text-brand hover:underline outline-none focus-visible:ring-1 focus-visible:ring-brand rounded"
-              >
-                Ver todos →
-              </Link>
-            </div>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-4">
-              {items.map((item) => (
-                <ItemCard key={item.id} item={item} />
-              ))}
-            </div>
-          </section>
-        )}
-
         {/* ─── COMO FUNCIONA ─── */}
-        <section className="py-8" aria-labelledby="how-title">
-          <h2 className="mb-5 text-xl font-bold text-primary md:text-2xl" id="how-title">
+        <section className="container py-8" aria-labelledby="how-title">
+          <h2
+            className="mb-5 font-display text-xl font-bold text-primary md:text-2xl"
+            id="how-title"
+          >
             Como funciona
           </h2>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            {[
-              {
-                num: "1",
-                title: "Busque o que precisa",
-                desc: "Pesquise por categoria, localização ou nome. Veja itens disponíveis perto de você no mapa.",
-              },
-              {
-                num: "2",
-                title: "Combine com o proprietário",
-                desc: "Envie mensagem pelo chat do ShareO, combine as datas e a retirada do item com segurança.",
-              },
-              {
-                num: "3",
-                title: "Use e devolva",
-                desc: "Retire, use pelo período combinado e devolva. Avalie a experiência e construa sua reputação.",
-              },
-            ].map((step) => (
-              <div key={step.num} className="rounded-lg border border-border bg-surface p-6 text-center">
+            {steps.map((step) => (
+              <div
+                key={step.num}
+                className="rounded-lg border border-border bg-surface p-6 text-center"
+              >
+                {/* step-icon — SVG específico por step */}
+                <div className="mb-3 flex items-center justify-center" aria-hidden="true">
+                  {step.icon}
+                </div>
                 <div
                   className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-brand text-lg font-extrabold text-white"
                   aria-hidden="true"
                 >
                   {step.num}
                 </div>
-                <h3 className="mb-2 font-display text-base font-bold text-primary">{step.title}</h3>
+                <h3 className="mb-2 font-display text-base font-bold text-primary">
+                  {step.title}
+                </h3>
                 <p className="text-sm leading-relaxed text-muted-foreground">{step.desc}</p>
               </div>
             ))}
           </div>
         </section>
 
-        {/* ─── DEPOIMENTOS ─── */}
-        <section className="py-8" aria-labelledby="testimonials-title">
-          <h2 className="mb-6 text-xl font-bold text-primary md:text-2xl" id="testimonials-title">
-            O que dizem nossos usuários
-          </h2>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            {[
-              {
-                name: "Ana Beatriz S.",
-                role: "Locatária",
-                text: "Aluguei uma furadeira para uma reforma e ficou ótimo. Paguei menos de R$ 20 por 3 dias e o proprietário foi super atencioso.",
-                rating: 5,
-                initial: "A",
-              },
-              {
-                name: "Carlos M.",
-                role: "Proprietário",
-                text: "Tenho equipamentos de camping parados há anos. Já gerei mais de R$ 400 em renda extra esse mês. Vale muito a pena anunciar!",
-                rating: 5,
-                initial: "C",
-              },
-              {
-                name: "Fernanda L.",
-                role: "Locatária",
-                text: "Precisava de uma câmera para um evento e encontrei exatamente o que queria a 2 km de casa. Processo fácil e seguro.",
-                rating: 5,
-                initial: "F",
-              },
-            ].map((t) => (
-              <div
-                key={t.name}
-                className="rounded-xl bg-[#144D81] p-6 flex flex-col gap-4"
-              >
-                {/* Estrelas */}
-                <div className="flex gap-0.5" aria-label={`${t.rating} estrelas`}>
-                  {Array.from({ length: t.rating }).map((_, i) => (
-                    <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill="#59C686" aria-hidden="true">
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                    </svg>
-                  ))}
-                </div>
-                {/* Texto */}
-                <p className="flex-1 text-sm leading-relaxed text-white/85">&ldquo;{t.text}&rdquo;</p>
-                {/* Autor */}
-                <div className="flex items-center gap-3">
-                  <div
-                    className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-[#003366]"
-                    aria-hidden="true"
-                  >
-                    {t.initial}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-white">{t.name}</p>
-                    <p className="text-xs text-white/55">{t.role}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
+        {/* ─── QUEM JÁ ESTÁ GANHANDO ─── */}
+        <CasosRenda />
 
-        {/* ─── CTA ─── */}
-        <section className="pb-12">
-          <div className="rounded-xl bg-gradient-to-br from-primary to-[#144D81] px-8 py-10">
-            <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-accent/15 px-3 py-1 text-xs font-semibold text-accent">
-              🌿 Economia circular
-            </div>
-            <h2 className="mb-3 font-display text-2xl font-extrabold leading-snug text-white">
-              Tem itens parados?<br />Transforme em renda.
-            </h2>
-            <p className="mb-6 max-w-lg text-sm text-white/75 leading-relaxed">
-              Cadastre seus itens gratuitamente e comece a alugar para pessoas próximas. Sem mensalidade, sem complicação.
-            </p>
-            <Link
-              href="/itens/novo"
-              className="inline-flex h-12 items-center rounded-lg bg-accent px-6 text-base font-bold text-[#003366] hover:brightness-105 transition-all outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
-            >
-              Começar a anunciar →
-            </Link>
-          </div>
-        </section>
+        {/* ─── ITENS MAIS PROCURADOS ─── */}
+        <ItensProcurados />
 
-      </div>
+        {/* ─── SEGURANÇA ─── */}
+        <Seguranca />
+
+        {/* ─── LISTA VIP ─── */}
+        <ListaVIP />
       </main>
     </div>
   )

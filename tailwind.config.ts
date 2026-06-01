@@ -127,6 +127,18 @@ const config: Config = {
           text: "#94A3B8",
           border: "#CBD5E1",
         },
+
+        // Hero badge dourado
+        gold: "#FFD700",
+
+        // VIP section deep navy (gradiente)
+        "navy-deep": "#001f40",
+
+        // Simulador output border (usado no PR-2)
+        "sim-border": "#A7D7BC",
+
+        // Background sutil de seções alternadas
+        "surface-muted": "#F8FAFC",
       },
 
       // ─── Tipografia ─────────────────────────────────────
