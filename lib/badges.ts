@@ -46,7 +46,7 @@ export const ACTIVE_REVIEWER_BADGE: Badge = {
   key:   "active-reviewer",
   label: "Avaliador Ativo",
   emoji: "⭐",
-  color: "text-orange-500",
+  color: "text-orange-link",
 }
 
 export function isActiveReviewer(lastReviewDate: Date | null | undefined): boolean {

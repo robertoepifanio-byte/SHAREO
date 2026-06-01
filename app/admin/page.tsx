@@ -59,7 +59,7 @@ export default async function AdminOverviewPage() {
       </div>
 
       {pendingItems > 0 && (
-        <div className="mt-6 rounded-xl border border-orange-200 bg-orange-50 p-4">
+        <div className="mt-6 rounded-xl border border-orange/20 bg-orange-light p-4">
           <p className="text-sm font-semibold text-[#9A4700]">
             ⚠ {pendingItems} {pendingItems === 1 ? "item aguarda" : "itens aguardam"} aprovação
           </p>
@@ -70,11 +70,11 @@ export default async function AdminOverviewPage() {
       )}
 
       {disputes > 0 && (
-        <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-4">
-          <p className="text-sm font-semibold text-red-700">
+        <div className="mt-3 rounded-xl border border-destructive/20 bg-destructive/10 p-4">
+          <p className="text-sm font-semibold text-destructive">
             🔴 {disputes} {disputes === 1 ? "disputa aberta" : "disputas abertas"}
           </p>
-          <a href="/admin/disputas" className="mt-1 text-sm text-red-600 underline hover:no-underline">
+          <a href="/admin/disputas" className="mt-1 text-sm text-destructive underline hover:no-underline">
             Resolver disputas →
           </a>
         </div>

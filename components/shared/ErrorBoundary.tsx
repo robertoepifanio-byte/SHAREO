@@ -22,7 +22,7 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return this.props.fallback ?? (
-        <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div className="rounded-md border border-destructive/20 bg-destructive/10 p-4 text-sm text-destructive">
           Erro inesperado: {this.state.error?.message}
         </div>
       )
