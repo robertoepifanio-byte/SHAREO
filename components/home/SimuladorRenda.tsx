@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react"
 import Link from "next/link"
+import { ProcuradoIcon, type ProcuradoIconName } from "@/components/home/icons/ProcuradoIcon"
 
 // ─── Tipos ──────────────────────────────────────────────────────────────────
 
@@ -51,13 +52,13 @@ function simularRenda(query: string, data: SimuladorItem[]): SimuladorItem | nul
 
 // ─── Tabela de itens estáticos para coluna esquerda ─────────────────────────
 
-const TABLE_ROWS = [
-  { emoji: "🔧", name: "Furadeira",             range: "R$ 90 a R$ 150",  highlight: false },
-  { emoji: "🔊", name: "Caixa de Som",           range: "R$ 250 a R$ 420", highlight: false },
-  { emoji: "⛺", name: "Barraca de Camping",     range: "R$ 120 a R$ 240", highlight: false },
-  { emoji: "🧽", name: "Máquina Lava Estofados", range: "R$ 350 a R$ 550", highlight: false },
-  { emoji: "📽️", name: "Projetor",               range: "R$ 200 a R$ 350", highlight: true  },
-] as const
+const TABLE_ROWS: { icon: ProcuradoIconName; name: string; range: string; highlight: boolean }[] = [
+  { icon: "furadeira", name: "Furadeira",             range: "R$ 90 a R$ 150",  highlight: false },
+  { icon: "som",       name: "Caixa de Som",           range: "R$ 250 a R$ 420", highlight: false },
+  { icon: "barraca",   name: "Barraca de Camping",     range: "R$ 120 a R$ 240", highlight: false },
+  { icon: "lavadora",  name: "Máquina Lava Estofados", range: "R$ 350 a R$ 550", highlight: false },
+  { icon: "projetor",  name: "Projetor",               range: "R$ 200 a R$ 350", highlight: true  },
+]
 
 // ─── Componente ─────────────────────────────────────────────────────────────
 
@@ -125,7 +126,10 @@ export function SimuladorRenda({ data = DEFAULT_DATA }: { data?: SimuladorItem[]
                     className={`border-b border-border hover:bg-surface-muted ${row.highlight ? "bg-[#F0FBF5]" : ""}`}
                   >
                     <td className="px-1 py-3 font-medium text-foreground">
-                      <span aria-hidden="true">{row.emoji}</span> {row.name}
+                      <span className="inline-flex items-center gap-2">
+                        <ProcuradoIcon name={row.icon} size={20} className="shrink-0 text-brand" aria-hidden />
+                        {row.name}
+                      </span>
                     </td>
                     <td className="px-1 py-3 text-right text-sm font-extrabold text-brand">
                       {row.range}
