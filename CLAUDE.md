@@ -58,6 +58,7 @@ All ADRs live in **`docs/adr/`** (kebab-case filenames). The legacy `ADRs/` root
 | 008 | `ADR-008-state-management.md` | State — React Query |
 | 009 | `ADR-009-rls-nextauth.md` | RLS + NextAuth integration |
 | 010 | `ADR-010-upload-imagens.md` | Image upload — Supabase Storage |
+| 011 | `ADR-011-tipografia-dual.md` | Tipografia dual — Inter (UI) + Montserrat (branding) |
 
 ## Subagents System
 
@@ -87,7 +88,9 @@ The `.claude/Agents/` directory contains 9 Claude Code subagents. Each file has 
 - **Breakpoints**: 375px (mobile), 768px (tablet), 1280px (desktop)
 - **Spacing**: 4px grid (4, 8, 12, 16, 24, 32, 48, 64px)
 - **Border radius**: 8px cards, 6px inputs, 50% avatars
-- **Font**: Inter, weights 400–800, sizes 12–48px
+- **Font (UI)**: Inter, weights 400–700 — corpo de texto, labels, botões, formulários, menus
+- **Font (Branding)**: Montserrat, weights 600–800 — headings (h1–h6), títulos de seção, logo, hero
+- **Fallback**: Arial, sans-serif
 - **Accessibility**: WCAG 2.1 AA (minimum 4.5:1 contrast ratio)
 
 ## Quality Targets (for when code is written)
