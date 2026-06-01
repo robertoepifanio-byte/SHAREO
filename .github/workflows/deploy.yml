@@ -137,6 +137,8 @@ jobs:
       - name: Deploy to staging
         # Vercel auto-deploy via GitHub integration está desabilitado (commandForIgnoringBuildStep=exit 0).
         # Apenas este step controla o deploy de staging — ambiente Preview com DATABASE_URL.
+        # VERCEL_GIT_COMMIT_REF=main faz o CLI vincular o deploy ao branch main,
+        # atualizando a URL estável shareo-git-main-* com este deployment.
         id: deploy
         run: |
           DEPLOY_URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
@@ -144,6 +146,10 @@ jobs:
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_GIT_COMMIT_REF: ${{ github.ref_name }}
+          VERCEL_GIT_COMMIT_SHA: ${{ github.sha }}
+          VERCEL_GIT_REPO_OWNER: ${{ github.repository_owner }}
+          VERCEL_GIT_REPO_SLUG: ${{ github.event.repository.name }}
 
       - name: Resolve failed migrations on staging
         run: |
