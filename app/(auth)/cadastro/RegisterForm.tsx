@@ -192,23 +192,29 @@ export function RegisterForm() {
     }
 
     // Conta criada — auto-login
-    const loginResult = await signIn("credentials", {
-      email: body.email,
-      password,
-      redirect: false,
-    })
+    try {
+      const loginResult = await signIn("credentials", {
+        email: body.email,
+        password,
+        redirect: false,
+      })
 
-    setLoading(false)
+      setLoading(false)
 
-    if (loginResult?.error) {
-      // Conta criada mas login falhou — redireciona para login manual
+      if (loginResult?.error) {
+        setSuccess(true)
+        setTimeout(() => router.push("/login"), 2500)
+        return
+      }
+
+      router.push("/dashboard")
+      router.refresh()
+    } catch {
+      // signIn lançou exceção — conta foi criada, mas sessão falhou
+      setLoading(false)
       setSuccess(true)
       setTimeout(() => router.push("/login"), 2500)
-      return
     }
-
-    router.push("/dashboard")
-    router.refresh()
   }
 
   if (success) {
