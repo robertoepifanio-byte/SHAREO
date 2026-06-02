@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import type { ReactNode } from "react"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { HelpSearch } from "@/components/ajuda/HelpSearch"
 
@@ -7,28 +8,105 @@ export const metadata: Metadata = {
   description: "Tudo o que você precisa saber para alugar ou anunciar no ShareO. Guia completo para locatários, locadores, taxas, disputas e segurança.",
 }
 
-/* ── Dados de conteúdo ──────────────────────────────────────────── */
+/* ── Tipos ──────────────────────────────────────────────────────── */
 
-const HOW_LOCATARIO = [
-  { step: 1, icon: "🔍", title: "Encontre o que precisa",   desc: "Procure itens disponíveis perto de você. Veja fotos, preços por dia, semana ou mês e o perfil do proprietário antes de decidir." },
-  { step: 2, icon: "📅", title: "Solicite a reserva",        desc: "Escolha a data de retirada e a duração. O app calcula automaticamente a data de devolução e o valor total." },
-  { step: 3, icon: "✅", title: "Pague e retire o item",     desc: "Quando o proprietário confirmar, pague com segurança via cartão. Combine a retirada pelo chat do app e aproveite!" },
+interface Step {
+  step:     number
+  icon:     string
+  title:    string
+  desc:     string
+  tip?:     string
+  example?: string
+  warning?: string
+}
+
+/* ── Dados — Primeiros Passos ───────────────────────────────────── */
+
+const LOCATARIO_STEPS: Step[] = [
+  {
+    step: 1, icon: "📧", title: "Criar sua conta",
+    desc: "Acesse shareo.com.br e clique em 'Criar conta'. Informe nome, email e uma senha segura. Confirme o email pelo link enviado para sua caixa de entrada — verifique também a pasta de spam.",
+    tip: "Você pode navegar pelos anúncios sem cadastro. A conta só é necessária para solicitar reservas.",
+  },
+  {
+    step: 2, icon: "🪪", title: "Verificar sua identidade",
+    desc: "Acesse Meu Perfil → Privacidade e dados → Verificar identidade. Informe seu CPF e tire uma selfie segurando o documento. A análise leva até 24 horas úteis. Após aprovada, o selo 'Verificado' aparece no seu perfil.",
+    warning: "Reservas de alto valor exigem verificação completa. Proprietários tendem a aceitar mais rapidamente locatários verificados.",
+  },
+  {
+    step: 3, icon: "🔍", title: "Buscar o equipamento",
+    desc: "Use a barra de busca na tela inicial ou acesse 'Explorar'. Filtre por categoria, cidade e faixa de preço. Cada anúncio mostra fotos, avaliações do proprietário, localização (bairro/cidade) e o preço por dia, semana ou mês.",
+    tip: "O ShareO mostra a diferença entre alugar e comprar novo — útil para tomar a decisão certa.",
+  },
+  {
+    step: 4, icon: "📅", title: "Solicitar a reserva",
+    desc: "Abra o anúncio e use a calculadora de locação. Selecione a modalidade (diário, semanal ou mensal), a data de retirada e a duração. O valor total — incluindo a taxa de serviço de 10% e a caução, se houver — aparece antes de você confirmar. Escreva uma mensagem apresentando-se ao proprietário e clique em 'Solicitar locação'. Você ainda não paga nada nesta etapa.",
+    example: "Item: R$ 80/dia. Aluguel de 3 dias = R$ 240,00. Taxa de serviço (10%) = R$ 24,00. Caução definida pelo proprietário = R$ 150,00. Total que será cobrado no cartão ao confirmar: R$ 414,00.",
+  },
+  {
+    step: 5, icon: "💳", title: "Aguardar confirmação e pagar",
+    desc: "O proprietário tem até 24 horas para confirmar ou recusar. Se ele confirmar, você recebe uma notificação e pode clicar em 'Pagar agora'. O pagamento é feito por cartão de crédito (Visa, Mastercard, Elo, Amex) via Stripe — seus dados de cartão nunca passam pelos servidores do ShareO. O dinheiro fica retido na plataforma e só é liberado ao proprietário após a entrega.",
+    tip: "Se o proprietário não responder em 24h, a reserva é cancelada automaticamente e nenhum valor é cobrado.",
+  },
+  {
+    step: 6, icon: "🤝", title: "Combinar a retirada e receber o item",
+    desc: "Use o chat da reserva para combinar local e horário de retirada com o proprietário. Na entrega, verifique se ele registrou as fotos de check-in (estado inicial do item documentado). Se o item estiver diferente do anúncio ou tiver danos não fotografados, mencione isso no chat antes de confirmar a retirada.",
+    warning: "Não confirme a retirada se houver danos não registrados. Use o chat para documentar tudo — é a sua proteção em caso de disputa.",
+  },
+  {
+    step: 7, icon: "📦", title: "Usar, devolver no prazo e avaliar",
+    desc: "Cuide bem do item durante toda a locação. Você recebe um aviso no app 24 horas antes do prazo de devolução. Devolva no local e horário combinados pelo chat. Aguarde o proprietário registrar o check-out e confirmar a devolução. Após isso, avalie o proprietário com uma nota de 1 a 5 estrelas.",
+    example: "Atraso de 1 dia em item de R$ 80/dia = R$ 80 de multa cobrada automaticamente. Atraso de 3 dias = R$ 240. Para evitar: solicite uma extensão de prazo antes do vencimento — nunca depois.",
+  },
 ]
 
-const HOW_LOCADOR = [
-  { step: 1, icon: "📸", title: "Crie seu anúncio",          desc: "Adicione fotos, título, descrição e o estado do item. Defina o preço por dia — e, se quiser, por semana e mês com desconto." },
-  { step: 2, icon: "🔔", title: "Confirme solicitações",      desc: "Quando alguém solicitar seu item, você recebe uma notificação. Leia a mensagem, aceite e combine a entrega pelo chat." },
-  { step: 3, icon: "💰", title: "Receba seu dinheiro",        desc: "O pagamento é liberado depois que você confirma a entrega do item. Tudo protegido pela ShareO." },
+const LOCADOR_STEPS: Step[] = [
+  {
+    step: 1, icon: "📧", title: "Criar conta e verificar identidade",
+    desc: "Acesse shareo.com.br e clique em 'Criar conta'. Após confirmar o email, vá em Meu Perfil → Privacidade e dados → Verificar identidade. Informe CPF (pessoa física) ou CNPJ (empresa). O processo leva até 24 horas úteis.",
+    tip: "Anunciantes verificados recebem muito mais solicitações. O selo 'Verificado' é o principal fator de confiança para novos locatários.",
+  },
+  {
+    step: 2, icon: "📸", title: "Criar seu primeiro anúncio",
+    desc: "Clique em 'Anunciar' no menu. Adicione pelo menos 3 fotos nítidas em boa iluminação, de diferentes ângulos. Preencha: título claro e descritivo, categoria, estado de conservação (novo, seminovo, bom estado ou regular) e uma descrição detalhada mencionando dimensões, capacidade e cuidados necessários. Defina o preço por dia (obrigatório), e opcionalmente por semana e mês com desconto. Publique — o anúncio aparece na busca em minutos.",
+    example: "Anúncio: 'Tenda Gazebo 3×3m branca para festas'. Preço: R$ 120/dia, R$ 600/semana (desconto de 16%), R$ 1.800/mês. Categoria: Festas e Eventos. Estado: Bom estado.",
+  },
+  {
+    step: 3, icon: "🛡️", title: "Definir a caução",
+    desc: "A caução é um valor cobrado junto com o aluguel e devolvido ao locatário após a devolução sem danos. É opcional — você define o valor ou deixa em R$ 0. Para itens que possam sofrer danos, a caução é fortemente recomendada.",
+    example: "Item avaliado em R$ 2.000: recomenda-se caução entre R$ 300 e R$ 600 (15-30% do valor). Item avaliado em R$ 500: caução de R$ 100 a R$ 150. Item simples sem risco de dano: R$ 0.",
+    tip: "Itens sem caução têm mais solicitações, mas com maior risco. Itens de alto valor devem sempre ter caução definida.",
+  },
+  {
+    step: 4, icon: "🔔", title: "Gerenciar solicitações de reserva",
+    desc: "Você tem até 24 horas para confirmar ou recusar cada solicitação. Ative as notificações do app para não perder pedidos. Leia a mensagem do locatário, analise o perfil dele (verificado? avaliações?) e use o chat para combinar detalhes antes de confirmar. Ao confirmar, o locatário recebe a notificação para pagar.",
+    warning: "Cancelamentos frequentes reduzem sua visibilidade na busca e prejudicam sua reputação. Só recuse se realmente necessário — e sempre informe o motivo ao locatário.",
+  },
+  {
+    step: 5, icon: "📷", title: "Entregar o item e registrar o check-in",
+    desc: "Combine local e horário de entrega pelo chat da reserva. Na hora da entrega, use a opção 'Registrar fotos de check-in' na página da reserva — fotografe todos os ângulos do item, incluindo marcas e desgastes já existentes. Após a entrega física, clique em 'Marcar como ativo' no app. O pagamento é liberado para você nesse exato momento.",
+    warning: "Sem fotos de check-in, você perde proteção em disputas por danos. Nunca pule essa etapa, mesmo que o locatário pareça confiável.",
+  },
+  {
+    step: 6, icon: "💰", title: "Receber a devolução e o pagamento",
+    desc: "Na data combinada, receba o item de volta. Use a opção 'Registrar fotos de check-out' e compare com as fotos do check-in. Se tudo estiver ok, confirme a devolução — a caução é liberada ao locatário automaticamente. Para a 2ª locação e seguintes: o processo é idêntico ao da 1ª. Avalie o locatário após cada devolução.",
+    example: "1ª locação: R$ 120/dia × 2 dias = R$ 240. Valor liberado ao confirmar entrega. 2ª locação: mesmo fluxo — confirmar solicitação → pagar → entregar com check-in → receber com check-out → avaliar.",
+    tip: "Quanto mais avaliações positivas você tiver, mais alto o seu anúncio aparece nos resultados de busca.",
+  },
 ]
+
+/* ── Dados — Taxas ──────────────────────────────────────────────── */
 
 const FEE_TABLE = [
-  { label: "Taxa de serviço (cobrada do locatário)", value: "10% do total", when: "Na confirmação do pagamento" },
-  { label: "Anunciar na plataforma (locador)",        value: "Gratuito",    when: "Sempre, sem mensalidade" },
+  { label: "Taxa de serviço (cobrada do locatário)", value: "10% do total",                  when: "Na confirmação do pagamento" },
+  { label: "Anunciar na plataforma (locador)",        value: "Gratuito",                      when: "Sempre, sem mensalidade" },
   { label: "Multa por atraso na devolução",           value: "1× preço diário por dia extra", when: "Por cada dia além do prazo" },
   { label: "Caução*",                                  value: "Definida pelo anunciante",      when: "Junto com o pagamento" },
-  { label: "Cancelamento com +24h de antecedência",   value: "Gratuito",    when: "Reembolso integral" },
-  { label: "Cancelamento com menos de 24h",           value: "30% do valor da locação", when: "Descontado do reembolso" },
+  { label: "Cancelamento com +24h de antecedência",   value: "Gratuito",                      when: "Reembolso integral" },
+  { label: "Cancelamento com menos de 24h",           value: "30% do valor da locação",       when: "Descontado do reembolso" },
 ]
+
+/* ── Dados — FAQ ────────────────────────────────────────────────── */
 
 const SECTIONS = [
   {
@@ -132,14 +210,14 @@ const SECTIONS = [
       { q: "Qual é a taxa de serviço do ShareO?",
         a: "O ShareO cobra 10% sobre o valor total da locação — cobrado do locatário. Essa taxa cobre o sistema de pagamento seguro, suporte ao cliente, proteção financeira da plataforma e manutenção do serviço. O valor exato aparece no resumo de pagamento antes de você confirmar. Sem surpresas." },
       { q: "Existe algum custo para anunciar?",
-        a: "Não. Anunciar no ShareO é 100% gratuito. Você não paga nada para criar anúncios, receber reservas ou usar o chat. O ShareO só cobra comissão (do locatário) quando uma locação é concluída com sucesso. Se a reserva for cancelada antes da entrega, nenhuma taxa é cobrada." },
+        a: "Não. Anunciar no ShareO é 100% gratuito. Você não paga nada para criar anúncios, receber reservas ou usar o chat. O ShareO só cobra a taxa de serviço (do locatário) quando uma locação é concluída com sucesso. Se a reserva for cancelada antes da entrega, nenhuma taxa é cobrada." },
       { q: "Como funciona a multa por atraso na devolução?",
         a: "Para cada dia além da data combinada, o app registra automaticamente uma cobrança equivalente ao preço diário do item. Exemplo: se o aluguel é R$ 50/dia e você atrasou 2 dias, serão cobrados R$ 100 extras. Você recebe uma notificação de aviso 1 dia antes do prazo vencer. Para evitar multa, solicite uma extensão antes do prazo — e não depois." },
       { q: "Quando a caução é cobrada e quando é devolvida?",
         a: "A caução é definida pelo proprietário (pode ser R$ 0) e cobrada junto com o aluguel. Após a devolução do item em bom estado, o proprietário confirma a ausência de danos e a caução é devolvida automaticamente no mesmo cartão em até 7 dias úteis. Se houver dano, o proprietário pode reter parte ou todo o valor — a equipe ShareO medeia em caso de desacordo." },
       { q: "Existe taxa de cancelamento?",
         a: "O cancelamento é gratuito se feito com mais de 24 horas de antecedência em relação à data de retirada. Cancelamentos com menos de 24 horas de antecedência geram uma taxa de 30% do valor total para cobrir custos operacionais. Proprietários que cancelam com frequência podem ter as contas suspensas temporariamente." },
-      { q: "Recebo nota fiscal das transações?",
+      { q: "Recebo comprovante das transações?",
         a: "Sim. O ShareO emite comprovante eletrônico para todas as transações concluídas na plataforma. O comprovante é enviado automaticamente para o email cadastrado após o encerramento da reserva. Você também pode acessar o histórico completo em 'Meu Perfil > Histórico financeiro'." },
     ],
   },
@@ -191,7 +269,7 @@ const SECTIONS = [
     iconBg: "bg-purple-100",
     faqs: [
       { q: "Como verifico minha identidade?",
-        a: "Acesse 'Meu Perfil' e role até 'Privacidade e dados'. Lá você encontra a opção de verificação de identidade. Envie os documentos solicitados (CPF e foto com o documento). Quando aprovada, um selo de verificado aparece no seu perfil — aumentando a confiança de outros usuários. O processo leva até 24 horas úteis." },
+        a: "Acesse 'Meu Perfil' e role até 'Privacidade e dados'. Lá você encontra a opção de verificação de identidade. Envie os documentos solicitados (CPF e selfie com o documento). Quando aprovada, um selo de verificado aparece no seu perfil. O processo leva até 24 horas úteis." },
       { q: "Como edito meu perfil?",
         a: "Vá em 'Meu Perfil'. Você pode atualizar nome, bio, telefone, cidade, bairro e foto de perfil. Manter seu perfil completo ajuda outros usuários a confiar mais em você." },
       { q: "Como me torno PJ Premium?",
@@ -223,6 +301,44 @@ const SECTIONS = [
   },
 ]
 
+/* ── Helpers — Server Components ────────────────────────────────── */
+
+function Callout({ type, children }: { type: "tip" | "example" | "warning"; children: ReactNode }) {
+  const map = {
+    tip:     { cls: "bg-sky-50 border-sky-200 text-sky-800",         label: "💡 Dica",             lc: "text-sky-700 font-bold" },
+    example: { cls: "bg-emerald-50 border-emerald-200 text-emerald-800", label: "📊 Exemplo prático", lc: "text-emerald-700 font-bold" },
+    warning: { cls: "bg-amber-50 border-amber-200 text-amber-800",   label: "⚠️ Atenção",          lc: "text-amber-700 font-bold" },
+  }[type]
+  return (
+    <div className={`mt-3 rounded-lg border px-4 py-3 text-sm leading-relaxed ${map.cls}`}>
+      <span className={map.lc}>{map.label}:</span>{" "}{children}
+    </div>
+  )
+}
+
+function StepItem({ s }: { s: Step }) {
+  return (
+    <div className="flex gap-4">
+      <div className="flex-shrink-0 flex flex-col items-center gap-1.5">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand text-white text-sm font-bold">
+          {s.step}
+        </div>
+        <div className="w-px flex-1 bg-border" aria-hidden="true" />
+      </div>
+      <div className="pb-8">
+        <p className="mb-1 font-semibold text-primary">
+          <span className="mr-1.5" aria-hidden="true">{s.icon}</span>
+          {s.title}
+        </p>
+        <p className="text-sm leading-relaxed text-muted-foreground">{s.desc}</p>
+        {s.tip     && <Callout type="tip">{s.tip}</Callout>}
+        {s.example && <Callout type="example">{s.example}</Callout>}
+        {s.warning && <Callout type="warning">{s.warning}</Callout>}
+      </div>
+    </div>
+  )
+}
+
 /* ── Página ─────────────────────────────────────────────────────── */
 export default function AjudaPage() {
   return (
@@ -230,7 +346,7 @@ export default function AjudaPage() {
       <AppHeader />
 
       <main>
-        {/* Hero estático — Server Component puro */}
+        {/* Hero */}
         <section className="bg-gradient-to-br from-primary to-[#144D81] px-4 py-14 text-center">
           <div className="mx-auto max-w-xl">
             <div className="mb-4 text-5xl" aria-hidden="true">💬</div>
@@ -238,19 +354,18 @@ export default function AjudaPage() {
               Como podemos ajudar?
             </h1>
             <p className="text-base text-white/75">
-              Tudo o que você precisa saber para alugar ou anunciar no ShareO.
+              Tudo o que você precisa saber para alugar ou anunciar no ShareO — do zero ao primeiro aluguel.
             </p>
-            {/* Navegação rápida por âncora */}
             <div className="mt-8 flex flex-wrap justify-center gap-2">
               {[
-                { href: "#locatario", label: "🛒 Quero alugar" },
-                { href: "#locador",   label: "📦 Quero anunciar" },
-                { href: "#taxas",     label: "🧾 Taxas" },
-                { href: "#disputas",  label: "⚖️ Disputas" },
-                { href: "#suporte",   label: "🎧 Suporte" },
-                { href: "#pagamento", label: "🔒 Pagamento" },
-                { href: "#conta",     label: "👤 Minha conta" },
-                { href: "#legal",     label: "📋 Legal e Fiscal" },
+                { href: "#primeiros-passos", label: "🚀 Primeiros passos" },
+                { href: "#locatario",        label: "🛒 Quero alugar" },
+                { href: "#locador",          label: "📦 Quero anunciar" },
+                { href: "#taxas-secao",      label: "🧾 Taxas" },
+                { href: "#disputas",         label: "⚖️ Disputas" },
+                { href: "#suporte",          label: "🎧 Suporte" },
+                { href: "#pagamento",        label: "🔒 Pagamento" },
+                { href: "#legal",            label: "📋 Legal e Fiscal" },
               ].map((link) => (
                 <a
                   key={link.href}
@@ -264,47 +379,63 @@ export default function AjudaPage() {
           </div>
         </section>
 
-        {/* Como funciona */}
-        <section className="bg-surface py-12 px-4">
-          <div className="container mx-auto max-w-4xl">
-            <h2 className="mb-10 font-display text-center text-2xl font-bold text-primary">
-              Como funciona o ShareO?
-            </h2>
-            <div className="grid gap-10 md:grid-cols-2">
+        {/* Primeiros Passos */}
+        <section id="primeiros-passos" className="bg-surface px-4 py-16 border-b border-border">
+          <div className="container mx-auto max-w-5xl">
+            <div className="mb-12 text-center">
+              <span className="rounded-full bg-brand/10 px-4 py-1 text-xs font-bold text-brand uppercase tracking-wide">
+                Novo por aqui?
+              </span>
+              <h2 className="mt-3 font-display text-2xl font-bold text-primary">
+                Primeiros Passos
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
+                Escolha o seu perfil e siga o guia completo — do cadastro à conclusão do seu primeiro aluguel.
+              </p>
+            </div>
+
+            <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
               {/* Locatário */}
               <div>
-                <h3 className="mb-5 font-display flex items-center gap-2 text-lg font-bold text-primary">
-                  <span className="rounded-full bg-[#144D81]/10 px-3 py-1 text-sm text-[#144D81]">Para quem aluga</span>
-                </h3>
-                <div className="space-y-5">
-                  {HOW_LOCATARIO.map((s) => (
-                    <div key={s.step} className="flex gap-4">
-                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-brand text-white font-bold text-sm">
-                        {s.step}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-primary">{s.icon} {s.title}</p>
-                        <p className="mt-1 text-sm text-muted-foreground">{s.desc}</p>
-                      </div>
+                <div className="mb-8 rounded-xl bg-[#144D81]/8 border border-[#144D81]/20 px-5 py-4">
+                  <h3 className="font-display text-lg font-bold text-[#144D81] flex items-center gap-2">
+                    <span className="text-2xl" aria-hidden="true">🛒</span>
+                    Quero alugar um item
+                  </h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Do cadastro à devolução — tudo que você precisa saber.
+                  </p>
+                </div>
+                <div>
+                  {LOCATARIO_STEPS.map((s, i) => (
+                    <div
+                      key={s.step}
+                      className={i === LOCATARIO_STEPS.length - 1 ? "[&>div>div:first-child>div:last-child]:hidden" : ""}
+                    >
+                      <StepItem s={s} />
                     </div>
                   ))}
                 </div>
               </div>
+
               {/* Locador */}
               <div>
-                <h3 className="mb-5 font-display flex items-center gap-2 text-lg font-bold text-primary">
-                  <span className="rounded-full bg-green-100 px-3 py-1 text-sm text-green-700">Para quem anuncia</span>
-                </h3>
-                <div className="space-y-5">
-                  {HOW_LOCADOR.map((s) => (
-                    <div key={s.step} className="flex gap-4">
-                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-brand text-white font-bold text-sm">
-                        {s.step}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-primary">{s.icon} {s.title}</p>
-                        <p className="mt-1 text-sm text-muted-foreground">{s.desc}</p>
-                      </div>
+                <div className="mb-8 rounded-xl bg-brand/8 border border-brand/20 px-5 py-4">
+                  <h3 className="font-display text-lg font-bold text-brand flex items-center gap-2">
+                    <span className="text-2xl" aria-hidden="true">📦</span>
+                    Quero anunciar meus itens
+                  </h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Cadastre, anuncie e conclua as primeiras locações com segurança.
+                  </p>
+                </div>
+                <div>
+                  {LOCADOR_STEPS.map((s, i) => (
+                    <div
+                      key={s.step}
+                      className={i === LOCADOR_STEPS.length - 1 ? "[&>div>div:first-child>div:last-child]:hidden" : ""}
+                    >
+                      <StepItem s={s} />
                     </div>
                   ))}
                 </div>
@@ -313,8 +444,8 @@ export default function AjudaPage() {
           </div>
         </section>
 
-        {/* Tabela de taxas — transparência financeira */}
-        <section className="bg-background px-4 py-12 border-t border-border">
+        {/* Tabela de taxas */}
+        <section id="taxas-secao" className="bg-background px-4 py-12 border-b border-border">
           <div className="container mx-auto max-w-3xl">
             <div className="mb-8 text-center">
               <span className="rounded-full bg-amber-100 px-4 py-1 text-xs font-bold text-amber-700 uppercase tracking-wide">
