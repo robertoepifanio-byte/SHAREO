@@ -136,6 +136,7 @@ jobs:
           ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
           NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SKIP_RATE_LIMIT: "true"
 
       - name: Deploy to staging (--prod → atualiza shareo-rouge.vercel.app)
         id: deploy
@@ -158,6 +159,13 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL_STAGING }}
           DIRECT_URL: ${{ secrets.DIRECT_URL_STAGING }}
+
+      - name: Seed staging DB (categorias + dados base)
+        run: pnpm db:seed
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL_STAGING }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL_STAGING }}
+          NODE_ENV: staging
 
       - name: Post-deploy health check (staging)
         run: |

@@ -71,6 +71,9 @@ export async function checkRateLimit(
   limit: number,
   windowMs: number,
 ): Promise<RateLimitResult> {
+  if (process.env.SKIP_RATE_LIMIT === "true") {
+    return { allowed: true, remaining: limit, resetAt: Date.now() + windowMs }
+  }
   if (!hasUpstash) return inMemoryCheck(key, limit, windowMs)
 
   try {
