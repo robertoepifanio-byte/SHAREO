@@ -359,7 +359,7 @@ test('Plano E2E Acessibilidade — Contraste · Teclado · ARIA · Formulários'
 
       // Axe sobre o estado de erro
       await injectAxe(page)
-      const errorStateViolations = await runAxe(page, ['label', 'aria-required-attr'])
+      const errorStateViolations = await runAxe(page, { runOnly: ['label', 'aria-required-attr'] })
       const errorBlocking = errorStateViolations.filter(
         (v) => v.impact === 'critical' || v.impact === 'serious',
       )
@@ -374,7 +374,7 @@ test('Plano E2E Acessibilidade — Contraste · Teclado · ARIA · Formulários'
       await injectAxe(page)
 
       // Checa que os inputs no cadastro têm label associado antes de qualquer erro
-      const cadastroViolations = await runAxe(page, ['label', 'aria-required-attr'])
+      const cadastroViolations = await runAxe(page, { runOnly: ['label', 'aria-required-attr'] })
       const cadastroBlocking = cadastroViolations.filter(
         (v) => v.impact === 'critical' || v.impact === 'serious',
       )

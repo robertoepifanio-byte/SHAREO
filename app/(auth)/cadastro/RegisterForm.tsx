@@ -250,7 +250,7 @@ export function RegisterForm() {
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
         {errors.form && (
-          <div role="alert" className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          <div role="alert" className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive-hover">
             {errors.form}
           </div>
         )}
