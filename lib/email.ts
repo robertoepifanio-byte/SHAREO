@@ -1,8 +1,13 @@
 import { Resend } from "resend"
 
+const hasResendKey =
+  typeof process.env.RESEND_API_KEY === "string" &&
+  process.env.RESEND_API_KEY.length > 0
+
 // Inicialização lazy: evita erro de build quando RESEND_API_KEY não está no ambiente de CI
 let _resend: Resend | null = null
-function getResend(): Resend {
+function getResend(): Resend | null {
+  if (!hasResendKey) return null
   if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY)
   return _resend
 }
@@ -216,10 +221,13 @@ export async function sendPasswordResetEmail(
   name: string,
   token: string,
 ): Promise<void> {
+  const resend = getResend()
+  if (!resend) return
+
   const firstName = name.split(" ")[0]
   const resetUrl  = `${APP_URL}/esqueci-senha/${token}`
 
-  const { error } = await getResend().emails.send({
+  const { error } = await resend.emails.send({
     from:    `ShareO <${FROM}>`,
     to,
     subject: "Redefinir sua senha — ShareO",
@@ -230,9 +238,12 @@ export async function sendPasswordResetEmail(
 }
 
 export async function sendWelcomeEmail(to: string, name: string): Promise<void> {
+  const resend = getResend()
+  if (!resend) return
+
   const firstName = name.split(" ")[0]
 
-  const { error } = await getResend().emails.send({
+  const { error } = await resend.emails.send({
     from:    `ShareO <${FROM}>`,
     to,
     subject: `Bem-vindo ao ShareO, ${firstName}!`,
@@ -270,13 +281,15 @@ export async function sendReminderStartTomorrow(
     <div style="text-align:center;">${ctaButton(url, "Ver reserva")}</div>
   `)
 
+  const resend = getResend()
+  if (!resend) return
   await Promise.all([
-    getResend().emails.send({
+    resend.emails.send({
       from: `ShareO <${FROM}>`, to: borrowerEmail,
       subject: `Lembrete: "${itemTitle}" começa amanhã — ShareO`,
       html: html(borrowerName.split(" ")[0], "borrower"),
     }),
-    getResend().emails.send({
+    resend.emails.send({
       from: `ShareO <${FROM}>`, to: ownerEmail,
       subject: `Lembrete: entrega de "${itemTitle}" amanhã — ShareO`,
       html: html(ownerName.split(" ")[0], "owner"),
@@ -307,7 +320,9 @@ export async function sendReminderReturnTomorrow(
     </p>
   `)
 
-  await getResend().emails.send({
+  const resend = getResend()
+  if (!resend) return
+  await resend.emails.send({
     from: `ShareO <${FROM}>`, to: borrowerEmail,
     subject: `⏰ Devolua "${itemTitle}" amanhã — ShareO`,
     html,
@@ -319,9 +334,11 @@ export async function sendBookingConfirmedEmail(
   itemTitle: string, bookingId: string,
   startDate: Date, endDate: Date,
 ): Promise<void> {
+  const resend = getResend()
+  if (!resend) return
   const firstName  = name.split(" ")[0]
   const bookingUrl = `${APP_URL}/reservas/${bookingId}`
-  const { error } = await getResend().emails.send({
+  const { error } = await resend.emails.send({
     from:    `ShareO <${FROM}>`,
     to,
     subject: `✅ Reserva confirmada — ${itemTitle}`,
@@ -336,9 +353,11 @@ export async function sendBookingCancelledEmail(
   itemTitle: string, bookingId: string,
   reason?: string,
 ): Promise<void> {
+  const resend = getResend()
+  if (!resend) return
   const firstName  = name.split(" ")[0]
   const bookingUrl = `${APP_URL}/reservas/${bookingId}`
-  const { error } = await getResend().emails.send({
+  const { error } = await resend.emails.send({
     from:    `ShareO <${FROM}>`,
     to,
     subject: `❌ Reserva cancelada — ${itemTitle}`,
@@ -352,11 +371,13 @@ export async function sendLateFeeEmail(
   itemTitle: string, bookingId: string,
   lateFeeAmountCents: number, paymentUrl: string,
 ): Promise<void> {
+  const resend = getResend()
+  if (!resend) return
   const firstName       = name.split(" ")[0]
   const lateFeeFormatted = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" })
     .format(lateFeeAmountCents / 100)
   const bookingUrl = `${APP_URL}/reservas/${bookingId}`
-  const { error } = await getResend().emails.send({
+  const { error } = await resend.emails.send({
     from:    `ShareO <${FROM}>`,
     to,
     subject: `🚨 Taxa de atraso — ${itemTitle} — ShareO`,
@@ -390,13 +411,15 @@ export async function sendReminderOverdue(
     <div style="text-align:center;">${ctaButton(url, "Ver reserva")}</div>
   `)
 
+  const resend = getResend()
+  if (!resend) return
   await Promise.all([
-    getResend().emails.send({
+    resend.emails.send({
       from: `ShareO <${FROM}>`, to: borrowerEmail,
       subject: `🚨 "${itemTitle}" em atraso — devolva agora — ShareO`,
       html: html(borrowerName.split(" ")[0], "borrower"),
     }),
-    getResend().emails.send({
+    resend.emails.send({
       from: `ShareO <${FROM}>`, to: ownerEmail,
       subject: `🚨 Item "${itemTitle}" não devolvido (${daysLate}d de atraso) — ShareO`,
       html: html(ownerName.split(" ")[0], "owner"),
