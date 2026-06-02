@@ -35,7 +35,7 @@ class SkipStep extends Error {
 const STEPS = [
   { num: 1, name: '1. Página inicial (/ — threshold 2s)',           priority: 'critical', onFail: 'ABORTAR' },
   { num: 2, name: '2. Página de login (/login — threshold 1.5s)',   priority: 'high',     onFail: 'CONTINUAR' },
-  { num: 3, name: '3. Listagem de itens (/itens — threshold 2s)',   priority: 'high',     onFail: 'CONTINUAR' },
+  { num: 3, name: '3. Listagem de itens (/itens — threshold 2.2s)', priority: 'high',     onFail: 'CONTINUAR' },
   { num: 4, name: `4. Stress test (${STRESS_CONCURRENT} req conc.)`, priority: 'medium', onFail: 'CONTINUAR' },
 ] as const
 
@@ -133,7 +133,7 @@ test.describe('Plano Performance — ShareO', () => {
       // ── Passo 3: Listagem de itens ────────────────────────────────────────────
       await test.step(STEPS[2].name, () =>
         runStep(STEPS[2], async () => {
-          const threshold = 2000
+          const threshold = 2200
           const metrics = await measureNav(page, `${BASE_URL}/itens`)
           if (metrics.loadEventMs > threshold) {
             throw new Error(

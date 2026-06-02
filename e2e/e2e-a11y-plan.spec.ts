@@ -344,11 +344,15 @@ test('Plano E2E Acessibilidade — Contraste · Teclado · ARIA · Formulários'
       await page.locator('input[type="password"]').fill('SenhaErrada999!')
 
       await Promise.all([
-        page.waitForResponse((r) => r.url().includes('/api/auth'), { timeout: 15_000 }),
+        page.waitForResponse(
+          (r) => r.url().includes('/api/auth/callback/credentials'),
+          { timeout: 15_000 },
+        ),
         page.getByRole('button', { name: /entrar/i }).click(),
       ])
 
-      const alertEl = page.locator('[role="alert"]')
+      // Usa seletor dentro do <form> para evitar pegar o container vazio do Sonner Toaster
+      const alertEl = page.locator('form [role="alert"]')
       await expect(alertEl).toBeVisible({ timeout: 10_000 })
       const alertText = await alertEl.textContent()
       expect(alertText?.trim().length, 'Mensagem de erro deve ter conteúdo').toBeGreaterThan(0)
