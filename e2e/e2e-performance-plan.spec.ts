@@ -100,6 +100,10 @@ test.describe('Plano Performance — ShareO', () => {
     }
 
     try {
+      // Warm-up: acorda a instância serverless antes de medir (elimina cold start)
+      await page.goto(BASE_URL, { waitUntil: 'commit', timeout: 30_000 }).catch(() => null)
+      await page.waitForTimeout(800)
+
       // ── Passo 1: Página inicial ───────────────────────────────────────────────
       await test.step(STEPS[0].name, () =>
         runStep(STEPS[0], async () => {
