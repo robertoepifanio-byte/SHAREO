@@ -62,7 +62,7 @@ export function ItensProcurados() {
               <span
                 className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                   item.demand === "alta"
-                    ? "bg-brand-light text-brand"
+                    ? "bg-brand-light text-brand-link"
                     : "bg-[#FEF3C7] text-[#92400E]"
                 }`}
               >
