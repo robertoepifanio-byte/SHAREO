@@ -265,7 +265,7 @@
     <h1>Relatório Executivo</h1>
     <div class="subtitle">— Testes E2E ShareO —</div>
     <div class="divider-line"></div>
-    <div class="meta">Ambiente: Staging &nbsp;|&nbsp; shareo-rouge.vercel.app &nbsp;|&nbsp; 2026-06-02 &nbsp;|&nbsp; Playwright + Chromium</div>
+    <div class="meta">Ambiente: Staging &nbsp;|&nbsp; shareo-rouge.vercel.app &nbsp;|&nbsp; 2026-06-02 &nbsp;|&nbsp; Playwright · Chromium · Firefox · WebKit · Edge</div>
   </div>
 
   <!-- ── OBJETIVO ── -->
@@ -298,11 +298,11 @@
         <div class="label">Falhas</div>
       </div>
       <div class="kpi">
-        <div class="num amber">1</div>
-        <div class="label">Flaky (retry)</div>
+        <div class="num green">0</div>
+        <div class="label">Flaky</div>
       </div>
       <div class="kpi">
-        <div class="num">4m48s</div>
+        <div class="num">5.1m</div>
         <div class="label">Duração</div>
       </div>
     </div>
@@ -319,16 +319,16 @@
         <div class="icon-wrap" style="background:#dcfce7">📋</div>
         <div class="area-label">Funcionais</div>
       </div>
-      <div class="area-chip warn">
-        <div class="icon-wrap" style="background:#fef3c7">⚡</div>
+      <div class="area-chip ok">
+        <div class="icon-wrap" style="background:#dcfce7">⚡</div>
         <div class="area-label">Performance</div>
       </div>
       <div class="area-chip ok">
         <div class="icon-wrap" style="background:#dcfce7">♿</div>
         <div class="area-label">Acessibi­lidade</div>
       </div>
-      <div class="area-chip warn">
-        <div class="icon-wrap" style="background:#fef3c7">🌐</div>
+      <div class="area-chip ok">
+        <div class="icon-wrap" style="background:#dcfce7">🌐</div>
         <div class="area-label">Cross-Browser</div>
       </div>
       <div class="area-chip ok">
@@ -378,12 +378,12 @@
         <tr>
           <td>Performance</td>
           <td>
-            <span class="badge warn">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-              Aprovado c/ ressalva
+            <span class="badge ok">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+              Aprovado
             </span>
           </td>
-          <td>1 flaky (cold start 3054ms &gt; 2000ms) — passou no retry. TTFB estável.</td>
+          <td>Warm-up de instância implementado — cold start eliminado. 4/4 steps sem flaky.</td>
         </tr>
         <tr>
           <td>Acessibilidade</td>
@@ -398,12 +398,12 @@
         <tr>
           <td>Cross-Browser</td>
           <td>
-            <span class="badge warn">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-              Parcial
+            <span class="badge ok">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+              Aprovado
             </span>
           </td>
-          <td>Chrome + Edge OK. Firefox + WebKit não instalados localmente (skipped).</td>
+          <td>Chrome · Firefox 150 · Edge · WebKit 26.4 — 4/4 passando. iOS Safari: julho/2026.</td>
         </tr>
         <tr>
           <td>Segurança</td>
@@ -458,12 +458,12 @@
           Conclusões
         </div>
         <ul>
-          <li><span class="bullet">●</span>20/20 testes aprovados — suite completa e estável</li>
+          <li><span class="bullet">●</span>20/20 testes aprovados — zero falhas, zero flaky</li>
           <li><span class="bullet">●</span>8 categorias cobertas em 12 specs Playwright</li>
           <li><span class="bullet">●</span>WCAG 2.1 AA e LGPD validados programaticamente</li>
-          <li><span class="bullet">●</span>1 flaky de performance (cold start) controlado por retry</li>
-          <li><span class="bullet">●</span>Cross-browser validação iOS Safari pendente para julho</li>
-          <li><span class="bullet">●</span>Staging pronto para sign-off formal em julho/2026</li>
+          <li><span class="bullet">●</span>Cross-browser 4/4: Chrome, Firefox, Edge, WebKit</li>
+          <li><span class="bullet">●</span>CI regressão contínua ativo após cada deploy na main</li>
+          <li><span class="bullet">●</span>iOS Safari e validação manual pendentes — julho/2026</li>
         </ul>
       </div>
       <div class="box recomendacoes">
@@ -474,23 +474,23 @@
         <ul>
           <li>
             <svg class="bullet" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-            Instalar Firefox + WebKit para cobertura cross-browser completa
+            <s style="opacity:.5">Firefox + WebKit</s>&nbsp;<strong style="color:#166534">✅ Concluído</strong> — 4/4 browsers passando
           </li>
           <li>
             <svg class="bullet" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-            Validar iOS Safari via BrowserStack (julho/2026)
+            <s style="opacity:.5">Warm-up de instância</s>&nbsp;<strong style="color:#166534">✅ Concluído</strong> — cold start eliminado
           </li>
           <li>
             <svg class="bullet" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-            Configurar warm-up de instância para eliminar flaky de cold start
+            <s style="opacity:.5">CI regressão contínua</s>&nbsp;<strong style="color:#166534">✅ Concluído</strong> — job e2e-staging ativo
           </li>
           <li>
-            <svg class="bullet" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-            Executar validação manual dos fluxos Locatário e Proprietário
+            <svg class="bullet" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="3"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span style="color:#92400e">iOS Safari BrowserStack — pendente julho/2026</span>
           </li>
           <li>
-            <svg class="bullet" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-            Manter suite E2E em CI a cada push na main (regressão contínua)
+            <svg class="bullet" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="3"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span style="color:#92400e">Validação manual Locatário/Proprietário — pendente julho/2026</span>
           </li>
         </ul>
       </div>
@@ -500,7 +500,7 @@
   <!-- ── STATUS GERAL ── -->
   <div class="footer-status">
     ✅ &nbsp;STATUS GERAL: STAGING APROVADO — SIGN-OFF PREVISTO JULHO/2026
-    <div class="sub">12 specs · 20/20 passando · 8 categorias · shareo-rouge.vercel.app · 2026-06-02</div>
+    <div class="sub">12 specs · 20/20 · zero flaky · 4 browsers · CI regressão ativo · shareo-rouge.vercel.app · 2026-06-02 · commit 10a3eb9</div>
   </div>
 
 </div>
