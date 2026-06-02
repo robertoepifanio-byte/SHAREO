@@ -20,14 +20,16 @@ interface ItemCardItem {
 }
 
 interface ItemCardProps {
-  item:         ItemCardItem
-  showActions?: boolean
-  isFavorited?: boolean
-  hotBadge?:    boolean
-  onDelete?:    (id: string) => void
+  item:             ItemCardItem
+  showActions?:     boolean
+  isFavorited?:     boolean
+  hotBadge?:        boolean
+  toggling?:        boolean
+  onDelete?:        (id: string) => void
+  onToggleActive?:  (id: string, currentIsActive: boolean) => void
 }
 
-export function ItemCard({ item, showActions = false, isFavorited = false, hotBadge = false, onDelete }: ItemCardProps) {
+export function ItemCard({ item, showActions = false, isFavorited = false, hotBadge = false, toggling = false, onDelete, onToggleActive }: ItemCardProps) {
   const imageUrl = item.images[0]?.url
   const price    = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" })
                       .format(item.pricePerDay / 100)
@@ -144,17 +146,33 @@ export function ItemCard({ item, showActions = false, isFavorited = false, hotBa
 
       {/* Ações do proprietário */}
       {showActions && (
-        <div className="flex gap-2 border-t border-border p-3">
-          <Link
-            href={`/itens/${item.id}/editar`}
-            className="flex-1 rounded-md border border-border py-1.5 text-center text-xs font-medium text-foreground hover:bg-background transition-colors"
-          >
-            Editar
-          </Link>
+        <div className="flex flex-col gap-1.5 border-t border-border p-3">
+          <div className="flex gap-2">
+            <Link
+              href={`/itens/${item.id}/editar`}
+              className="flex-1 rounded-md border border-border py-1.5 text-center text-xs font-medium text-foreground hover:bg-background transition-colors"
+            >
+              Editar
+            </Link>
+            {onToggleActive && (
+              <button
+                onClick={() => onToggleActive(item.id, isActive)}
+                disabled={toggling}
+                className={[
+                  "flex-1 rounded-md border py-1.5 text-xs font-medium transition-colors disabled:opacity-50",
+                  isActive
+                    ? "border-amber-300 text-amber-700 hover:bg-amber-50"
+                    : "border-success/40 text-success hover:bg-success/5",
+                ].join(" ")}
+              >
+                {toggling ? "…" : isActive ? "Pausar" : "Reativar"}
+              </button>
+            )}
+          </div>
           {onDelete && (
             <button
               onClick={() => onDelete(item.id)}
-              className="flex-1 rounded-md border border-destructive/30 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/5 transition-colors"
+              className="w-full rounded-md border border-destructive/30 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/5 transition-colors"
             >
               Remover
             </button>

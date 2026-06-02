@@ -24,9 +24,10 @@ interface MyItemsGridProps {
 }
 
 export function MyItemsGrid({ initialItems }: MyItemsGridProps) {
-  const [items,   setItems]   = useState(initialItems)
+  const [items,    setItems]    = useState(initialItems)
   const [deleting, setDeleting] = useState<string | null>(null)
-  const [error,   setError]   = useState<string | null>(null)
+  const [toggling, setToggling] = useState<string | null>(null)
+  const [error,    setError]    = useState<string | null>(null)
 
   async function handleDelete(id: string) {
     if (!confirm("Remover este anúncio? Esta ação não pode ser desfeita.")) return
@@ -46,6 +47,32 @@ export function MyItemsGrid({ initialItems }: MyItemsGridProps) {
       setError("Erro inesperado. Tente novamente.")
     } finally {
       setDeleting(null)
+    }
+  }
+
+  async function handleToggleActive(id: string, currentIsActive: boolean) {
+    setToggling(id)
+    setError(null)
+
+    try {
+      const res = await fetch(`/api/items/${id}`, {
+        method:  "PUT",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ isActive: !currentIsActive }),
+      })
+
+      if (res.ok) {
+        setItems((prev) =>
+          prev.map((item) => item.id === id ? { ...item, isActive: !currentIsActive } : item)
+        )
+      } else {
+        const json = await res.json()
+        setError(json.error?.message ?? "Erro ao atualizar anúncio.")
+      }
+    } catch {
+      setError("Erro inesperado. Tente novamente.")
+    } finally {
+      setToggling(null)
     }
   }
 
@@ -89,7 +116,9 @@ export function MyItemsGrid({ initialItems }: MyItemsGridProps) {
             <ItemCard
               item={item}
               showActions
+              toggling={toggling === item.id}
               onDelete={handleDelete}
+              onToggleActive={handleToggleActive}
             />
           </div>
         ))}
