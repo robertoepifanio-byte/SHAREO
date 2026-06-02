@@ -31,7 +31,7 @@ export async function AppHeader() {
               priority
             />
           </div>
-          <span className="hidden md:block mt-0.5 text-[10px] text-white/70 font-medium leading-none">
+          <span className="hidden md:block mt-0.5 text-[10px] text-white/85 font-medium leading-none">
             Use Mais. Possua Menos.
           </span>
         </Link>

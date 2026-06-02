@@ -49,7 +49,7 @@ export default function Error({
       </div>
 
       {/* Mensagem genérica — nunca expor error.message */}
-      <p className="mb-1 text-sm font-semibold uppercase tracking-widest text-red-500">
+      <p className="mb-1 text-sm font-semibold uppercase tracking-widest text-red-700">
         Algo deu errado
       </p>
       <h1 className="mb-3 text-3xl font-extrabold text-primary">
