@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
-import Link from "next/link"
 import { AppHeader } from "@/components/layout/AppHeader"
+import { HelpSearch } from "@/components/ajuda/HelpSearch"
 
 export const metadata: Metadata = {
   title: "Central de Ajuda — ShareO",
@@ -43,6 +43,18 @@ const SECTIONS = [
         a: "Se houver algum problema, você pode abrir uma disputa na página da reserva enquanto ela estiver ativa ou após a devolução. Descreva o que aconteceu e a equipe ShareO vai analisar o caso. Estamos disponíveis 7 dias por semana." },
       { q: "Como avalio o proprietário?",
         a: "Após devolver o item, a opção de avaliação aparece na página da reserva. Você pode dar uma nota de 1 a 5 estrelas e deixar um comentário. Avaliações ajudam toda a comunidade ShareO." },
+      { q: "O proprietário tem um prazo para confirmar minha reserva?",
+        a: "Sim. Após você solicitar uma reserva, o proprietário tem até 24 horas para confirmar ou recusar. Se ele não responder nesse prazo, a reserva é cancelada automaticamente e nenhum valor é cobrado. Você recebe uma notificação assim que isso acontecer e pode buscar outro item disponível." },
+      { q: "Posso pedir para estender o prazo de um aluguel que já está em andamento?",
+        a: "Sim, enquanto a reserva estiver com status 'Ativo' você pode solicitar uma extensão diretamente na página da reserva. O proprietário precisa aceitar a extensão. Se ele confirmar, o novo período e o valor adicional são calculados automaticamente e o pagamento é processado na hora. Só solicite se ainda tiver o item em mãos e com tempo hábil para o proprietário responder." },
+      { q: "O que acontece se eu devolver o item com atraso?",
+        a: "Uma taxa de atraso é gerada automaticamente para cada dia extra além da data de devolução combinada. O valor é proporcional ao preço diário do item. Você recebe um aviso no app quando a data de devolução se aproxima. Para evitar cobranças extras, solicite uma extensão antes do prazo vencer — e não depois." },
+      { q: "Como funciona o chat com o proprietário?",
+        a: "Assim que você solicita uma reserva, um chat exclusivo entre você e o proprietário é aberto na página da reserva. As mensagens chegam em tempo real. Use o chat para combinar local e horário de entrega, tirar dúvidas sobre o item ou enviar qualquer informação necessária. O chat fica disponível durante toda a locação, inclusive no período de devolução." },
+      { q: "Como salvo itens para ver depois?",
+        a: "Toque no ícone de coração em qualquer anúncio para adicioná-lo aos seus favoritos. Acesse todos os seus itens salvos na aba 'Favoritos' do menu. É uma forma prática de guardar opções enquanto você compara preços ou ainda não está pronto para reservar." },
+      { q: "O que são as fotos de check-in e check-out?",
+        a: "São registros fotográficos do estado do item feitos pelo proprietário no momento da entrega (check-in) e da devolução (check-out). Essas fotos ficam vinculadas à reserva e servem como evidência caso haja alguma disputa sobre danos. Ao retirar o item, confira se o proprietário registrou as fotos. Se você notar algum dano que não foi fotografado, mencione isso no chat antes de assinar a entrega." },
     ],
   },
   {
@@ -66,6 +78,16 @@ const SECTIONS = [
         a: "Você pode cancelar enquanto ela estiver 'Aguardando' ou 'Confirmada'. Na página da reserva, clique em 'Cancelar reserva' e informe o motivo. Evite cancelamentos frequentes — eles afetam sua reputação na plataforma." },
       { q: "Meu item está protegido?",
         a: "A ShareO oferece proteção durante a locação. Você pode solicitar uma caução ao criar o anúncio — um valor retido no pagamento e devolvido ao locatário após a devolução sem danos. Se houver problemas, abra uma disputa com as fotos de check-in e check-out como evidência." },
+      { q: "Posso pausar meu anúncio temporariamente?",
+        a: "Sim. Em 'Meus Anúncios', clique em 'Pausar' no card do item. O anúncio sai da busca e não recebe novas solicitações, mas continua salvo com todas as suas informações, fotos e histórico. Quando quiser voltar a anunciar, clique em 'Reativar'. Use esse recurso quando o item estiver em uso, em manutenção ou você precisar de uma pausa — é melhor do que remover e recriar o anúncio." },
+      { q: "Tenho um prazo para confirmar uma solicitação?",
+        a: "Sim. Você tem até 24 horas para confirmar ou recusar qualquer solicitação. Se não responder dentro desse prazo, a reserva é cancelada automaticamente. Cancelamentos automáticos por falta de resposta afetam sua reputação na plataforma. Ative as notificações do app para não perder solicitações." },
+      { q: "O que acontece se o locatário não devolver o item no prazo?",
+        a: "Uma taxa de atraso é gerada automaticamente para cada dia além da data combinada. Você é notificado no app assim que o atraso é registrado. Se o locatário não entrar em contato, use o chat da reserva para cobrar a devolução. Em casos de atraso prolongado ou sem resposta, abra uma disputa na página da reserva para acionar a equipe ShareO." },
+      { q: "Como avalio o locatário após a locação?",
+        a: "Após a devolução do item, a opção de avaliar o locatário aparece na página da reserva. Você pode dar uma nota de 1 a 5 estrelas e deixar um comentário sobre pontualidade, cuidado com o item e comunicação. A avaliação fica visível no perfil do locatário e ajuda outros proprietários a decidir com quem alugar." },
+      { q: "Como funciona o check-in e check-out fotográfico?",
+        a: "Na entrega do item, use a opção 'Registrar fotos de check-in' na página da reserva. Fotografe o item de todos os ângulos, incluindo possíveis marcas ou desgastes que já existiam antes. Na devolução, registre as fotos de check-out da mesma forma. Essas imagens ficam salvas na reserva e são a principal evidência em caso de disputa por danos. Não pule essa etapa — ela protege você." },
     ],
   },
   {
@@ -98,29 +120,11 @@ const SECTIONS = [
         a: "Vá em 'Meu Perfil'. Você pode atualizar nome, bio, telefone, cidade, bairro e foto de perfil. Manter seu perfil completo ajuda outros usuários a confiar mais em você." },
       { q: "Como me torno PJ Premium?",
         a: "No seu perfil, encontre o bloco de upgrade para Pessoa Jurídica (PJ). Como PJ, você ganha uma vitrine personalizada com link próprio, acesso a analytics avançado dos seus anúncios e recursos para importar itens em massa — ideal para quem aluga profissionalmente." },
+      { q: "O que é a Vitrine PJ e como ela funciona?",
+        a: "A Vitrine PJ é uma página personalizada para locadores pessoa jurídica, acessível pelo link shareo.com.br/loja/[seu-slug]. Ela reúne todos os seus itens ativos em um layout de loja, com logo, descrição do negócio e avaliação geral. Você pode compartilhar esse link com clientes, redes sociais ou materiais de divulgação. Para ativar, faça o upgrade para PJ Premium no seu perfil e configure seu slug único." },
     ],
   },
 ]
-
-/* ── Componente FAQ accordion (client não necessário — HTML details) ── */
-function FaqItem({ q, a }: { q: string; a: string }) {
-  return (
-    <details className="group border-b border-border last:border-0">
-      <summary className="flex cursor-pointer select-none items-center justify-between gap-4 py-4 text-sm font-semibold text-primary hover:text-brand transition-colors">
-        <span>{q}</span>
-        <svg
-          className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180"
-          viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"
-        >
-          <polyline points="6 9 12 15 18 9"/>
-        </svg>
-      </summary>
-      <div className="pb-4 pr-8 text-sm leading-relaxed text-muted-foreground">
-        {a}
-      </div>
-    </details>
-  )
-}
 
 /* ── Página ─────────────────────────────────────────────────────── */
 export default function AjudaPage() {
@@ -129,17 +133,17 @@ export default function AjudaPage() {
       <AppHeader />
 
       <main>
-        {/* Hero */}
+        {/* Hero estático — Server Component puro */}
         <section className="bg-gradient-to-br from-primary to-[#144D81] px-4 py-14 text-center">
           <div className="mx-auto max-w-xl">
-            <div className="mb-4 text-5xl">💬</div>
+            <div className="mb-4 text-5xl" aria-hidden="true">💬</div>
             <h1 className="mb-3 font-display text-3xl font-extrabold text-white md:text-4xl">
               Como podemos ajudar?
             </h1>
             <p className="text-base text-white/75">
               Tudo o que você precisa saber para alugar ou anunciar no ShareO.
             </p>
-            {/* Navegação rápida */}
+            {/* Navegação rápida por âncora */}
             <div className="mt-8 flex flex-wrap justify-center gap-2">
               {[
                 { href: "#locatario", label: "🛒 Quero alugar" },
@@ -157,6 +161,7 @@ export default function AjudaPage() {
               ))}
             </div>
           </div>
+
         </section>
 
         {/* Como funciona */}
@@ -208,50 +213,9 @@ export default function AjudaPage() {
           </div>
         </section>
 
-        {/* FAQs por seção */}
-        <div className="container mx-auto max-w-3xl px-4 py-12 space-y-10">
-          {SECTIONS.map((sec) => (
-            <section key={sec.id} id={sec.id} className={`rounded-2xl border p-6 ${sec.color}`}>
-              <h2 className="mb-6 font-display flex items-center gap-3 text-xl font-bold text-primary">
-                <span className={`flex h-10 w-10 items-center justify-center rounded-full text-xl ${sec.iconBg}`}>
-                  {sec.icon}
-                </span>
-                {sec.title}
-              </h2>
-              <div className="rounded-xl bg-white px-4 py-2 shadow-sm">
-                {sec.faqs.map((faq) => (
-                  <FaqItem key={faq.q} q={faq.q} a={faq.a} />
-                ))}
-              </div>
-            </section>
-          ))}
+        {/* Busca + FAQs filtradas — Client Component */}
+        <HelpSearch sections={SECTIONS} />
 
-          {/* Contato */}
-          <section id="contato" className="rounded-2xl bg-primary p-8 text-center text-white">
-            <div className="mb-3 text-4xl">💬</div>
-            <h2 className="mb-2 font-display text-xl font-bold">Ainda precisa de ajuda?</h2>
-            <p className="mb-6 text-sm text-white/75">
-              Nossa equipe está disponível 7 dias por semana para te ajudar.
-            </p>
-            <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-              <a
-                href="mailto:suporte@shareo.com.br"
-                className="inline-flex h-11 items-center gap-2 rounded-lg bg-brand px-6 text-sm font-bold text-white hover:opacity-90 transition-opacity"
-              >
-                ✉️ suporte@shareo.com.br
-              </a>
-              <Link
-                href="/reservas"
-                className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/30 bg-white/10 px-6 text-sm font-semibold text-white hover:bg-white/20 transition-colors"
-              >
-                📋 Ver minhas reservas
-              </Link>
-            </div>
-            <p className="mt-4 text-xs text-white/50">
-              Para problemas com uma reserva ativa, use a opção &ldquo;Abrir disputa&rdquo; na página da reserva — é mais rápido.
-            </p>
-          </section>
-        </div>
       </main>
     </div>
   )
