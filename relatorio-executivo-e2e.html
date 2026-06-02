@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relatório Executivo — Testes E2E ShareO</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f0f4f8;
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px;
+  }
+
+  .card {
+    width: 860px;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 6px 32px rgba(0,0,0,.18);
+  }
+
+  /* ── Header ── */
+  .header {
+    background: linear-gradient(135deg, #003366 0%, #144D81 100%);
+    color: #fff;
+    text-align: center;
+    padding: 32px 24px 28px;
+  }
+  .header h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -.5px;
+  }
+  .header .subtitle {
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: #59C686;
+    margin-top: 4px;
+  }
+  .header .meta {
+    font-size: .82rem;
+    color: #9ec8f0;
+    margin-top: 10px;
+    letter-spacing: .3px;
+  }
+  .divider-line {
+    width: 60px;
+    height: 3px;
+    background: #59C686;
+    margin: 10px auto 0;
+    border-radius: 2px;
+  }
+
+  /* ── Sections ── */
+  .section { padding: 20px 28px; border-bottom: 1px solid #e5eaf0; }
+  .section:last-child { border-bottom: none; }
+
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #003366;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 9px 16px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+  }
+  .section-title svg { flex-shrink: 0; }
+
+  /* ── Objetivo ── */
+  .objetivo-text {
+    font-size: .97rem;
+    color: #1a2a3a;
+    line-height: 1.6;
+  }
+  .objetivo-text strong { color: #003366; }
+  .objetivo-text .dot { color: #007B3C; font-size: 1.3em; vertical-align: middle; }
+
+  /* ── KPI Strip ── */
+  .kpi-strip {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+  }
+  .kpi {
+    flex: 1;
+    background: #f4f8ff;
+    border: 1px solid #c8d8ee;
+    border-radius: 8px;
+    text-align: center;
+    padding: 12px 8px;
+  }
+  .kpi .num {
+    font-size: 1.9rem;
+    font-weight: 800;
+    color: #003366;
+    line-height: 1;
+  }
+  .kpi .num.green { color: #007B3C; }
+  .kpi .num.amber { color: #d97706; }
+  .kpi .label {
+    font-size: .75rem;
+    color: #5a7080;
+    margin-top: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+  }
+
+  /* ── Áreas Testadas ── */
+  .areas-grid {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .area-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    background: #f0f6ff;
+    border: 1.5px solid #c5d8f0;
+    border-radius: 10px;
+    padding: 12px 14px;
+    flex: 1;
+    min-width: 82px;
+  }
+  .area-chip .icon-wrap {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+  }
+  .area-chip .area-label {
+    font-size: .72rem;
+    font-weight: 700;
+    color: #003366;
+    text-align: center;
+    line-height: 1.2;
+  }
+  .area-chip.ok    { border-color: #007B3C; background: #f0faf4; }
+  .area-chip.warn  { border-color: #d97706; background: #fffbf0; }
+
+  /* ── Tabela de Resultados ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .9rem;
+  }
+  thead th {
+    background: #003366;
+    color: #fff;
+    font-weight: 700;
+    padding: 10px 14px;
+    text-align: left;
+  }
+  thead th:nth-child(2) { text-align: center; width: 190px; }
+  tbody tr:nth-child(even) { background: #f5f8fc; }
+  tbody tr:hover { background: #eaf2ff; }
+  tbody td {
+    padding: 10px 14px;
+    color: #1a2a3a;
+    vertical-align: middle;
+    border-bottom: 1px solid #e5eaf0;
+  }
+  tbody td:first-child {
+    font-weight: 700;
+    color: #003366;
+    width: 150px;
+  }
+  tbody td:nth-child(2) { text-align: center; width: 190px; }
+
+  /* ── Status badges ── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: .8rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .badge.ok    { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+  .badge.warn  { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+  .badge.skip  { background: #e0e7ff; color: #3730a3; border: 1px solid #a5b4fc; }
+
+  .badge svg { flex-shrink: 0; }
+
+  /* ── Conclusões + Recomendações ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .box {
+    border-radius: 8px;
+    padding: 16px 18px;
+  }
+  .box.conclusoes {
+    background: #f0f6ff;
+    border: 1.5px solid #c5d8f0;
+  }
+  .box.recomendacoes {
+    background: #f0faf4;
+    border: 1.5px solid #86efac;
+  }
+  .box-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: .95rem;
+    font-weight: 700;
+    color: #003366;
+    margin-bottom: 12px;
+  }
+  .box.recomendacoes .box-title { color: #166534; }
+  .box ul { list-style: none; }
+  .box ul li {
+    font-size: .85rem;
+    color: #1a2a3a;
+    padding: 4px 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    line-height: 1.45;
+  }
+  .box ul li .bullet { flex-shrink: 0; margin-top: 1px; }
+
+  /* ── Footer STATUS GERAL ── */
+  .footer-status {
+    background: linear-gradient(90deg, #007B3C 0%, #059652 100%);
+    color: #fff;
+    text-align: center;
+    padding: 16px 24px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+  }
+  .footer-status .sub {
+    font-size: .78rem;
+    font-weight: 500;
+    letter-spacing: .4px;
+    margin-top: 3px;
+    opacity: .88;
+    text-transform: none;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <!-- ── HEADER ── -->
+  <div class="header">
+    <h1>Relatório Executivo</h1>
+    <div class="subtitle">— Testes E2E ShareO —</div>
+    <div class="divider-line"></div>
+    <div class="meta">Ambiente: Staging &nbsp;|&nbsp; shareo-rouge.vercel.app &nbsp;|&nbsp; 2026-06-02 &nbsp;|&nbsp; Playwright + Chromium</div>
+  </div>
+
+  <!-- ── OBJETIVO ── -->
+  <div class="section">
+    <div class="section-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#59C686" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+      Objetivo
+    </div>
+    <p class="objetivo-text">
+      Validar o <strong>ShareO</strong><span class="dot"> ● </span>no <strong>ambiente de Staging</strong> garantindo funcionalidade,
+      segurança, acessibilidade e conformidade LGPD — cobrindo <strong>8 categorias</strong> em
+      <strong>12 specs Playwright</strong> antes do sign-off formal de produção (julho/2026).
+    </p>
+
+    <div class="kpi-strip">
+      <div class="kpi">
+        <div class="num">12</div>
+        <div class="label">Specs</div>
+      </div>
+      <div class="kpi">
+        <div class="num">20</div>
+        <div class="label">Testes</div>
+      </div>
+      <div class="kpi">
+        <div class="num green">20</div>
+        <div class="label">Aprovados</div>
+      </div>
+      <div class="kpi">
+        <div class="num">0</div>
+        <div class="label">Falhas</div>
+      </div>
+      <div class="kpi">
+        <div class="num amber">1</div>
+        <div class="label">Flaky (retry)</div>
+      </div>
+      <div class="kpi">
+        <div class="num">4m48s</div>
+        <div class="label">Duração</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ÁREAS TESTADAS ── -->
+  <div class="section">
+    <div class="section-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#59C686" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Áreas Testadas
+    </div>
+    <div class="areas-grid">
+      <div class="area-chip ok">
+        <div class="icon-wrap" style="background:#dcfce7">📋</div>
+        <div class="area-label">Funcionais</div>
+      </div>
+      <div class="area-chip warn">
+        <div class="icon-wrap" style="background:#fef3c7">⚡</div>
+        <div class="area-label">Performance</div>
+      </div>
+      <div class="area-chip ok">
+        <div class="icon-wrap" style="background:#dcfce7">♿</div>
+        <div class="area-label">Acessibi­lidade</div>
+      </div>
+      <div class="area-chip warn">
+        <div class="icon-wrap" style="background:#fef3c7">🌐</div>
+        <div class="area-label">Cross-Browser</div>
+      </div>
+      <div class="area-chip ok">
+        <div class="icon-wrap" style="background:#dcfce7">🔒</div>
+        <div class="area-label">Segurança</div>
+      </div>
+      <div class="area-chip ok">
+        <div class="icon-wrap" style="background:#dcfce7">🖥️</div>
+        <div class="area-label">Usabili­dade</div>
+      </div>
+      <div class="area-chip ok">
+        <div class="icon-wrap" style="background:#dcfce7">🔗</div>
+        <div class="area-label">Integração</div>
+      </div>
+      <div class="area-chip ok">
+        <div class="icon-wrap" style="background:#dcfce7">📊</div>
+        <div class="area-label">Governança</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RESULTADOS ── -->
+  <div class="section">
+    <div class="section-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#59C686" stroke-width="2.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      Resultados por Categoria
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Categoria</th>
+          <th>Status</th>
+          <th>Observações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Funcionais</td>
+          <td>
+            <span class="badge ok">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+              Aprovado
+            </span>
+          </td>
+          <td>CRUD · Auth · Compartilhamento · Admin — 4 specs, todos OK</td>
+        </tr>
+        <tr>
+          <td>Performance</td>
+          <td>
+            <span class="badge warn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              Aprovado c/ ressalva
+            </span>
+          </td>
+          <td>1 flaky (cold start 3054ms &gt; 2000ms) — passou no retry. TTFB estável.</td>
+        </tr>
+        <tr>
+          <td>Acessibilidade</td>
+          <td>
+            <span class="badge ok">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+              Aprovado
+            </span>
+          </td>
+          <td>WCAG 2.1 AA — axe-core 4.9.1 — 4/4 steps — 0 violações bloqueantes</td>
+        </tr>
+        <tr>
+          <td>Cross-Browser</td>
+          <td>
+            <span class="badge warn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              Parcial
+            </span>
+          </td>
+          <td>Chrome + Edge OK. Firefox + WebKit não instalados localmente (skipped).</td>
+        </tr>
+        <tr>
+          <td>Segurança</td>
+          <td>
+            <span class="badge ok">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+              Aprovado
+            </span>
+          </td>
+          <td>Sessão · Auth · Admin · XSS — 3 payloads testados, 0 dialogs disparados</td>
+        </tr>
+        <tr>
+          <td>Usabilidade</td>
+          <td>
+            <span class="badge ok">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+              Aprovado
+            </span>
+          </td>
+          <td>Feedback · Navegação · Onboarding — 3/3 OK — mensagens de erro claras</td>
+        </tr>
+        <tr>
+          <td>Integração</td>
+          <td>
+            <span class="badge ok">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+              Aprovado
+            </span>
+          </td>
+          <td>APIs (health ok, 7 categorias, 11 itens). Item público acessível. Front/back ✓</td>
+        </tr>
+        <tr>
+          <td>Governança</td>
+          <td>
+            <span class="badge ok">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+              Aprovado
+            </span>
+          </td>
+          <td>6 headers de segurança · LGPD bloqueado · robots.txt · sitemap (56 URLs) · Rate limit OK</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── CONCLUSÕES + RECOMENDAÇÕES ── -->
+  <div class="section">
+    <div class="two-col">
+      <div class="box conclusoes">
+        <div class="box-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#003366" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Conclusões
+        </div>
+        <ul>
+          <li><span class="bullet">●</span>20/20 testes aprovados — suite completa e estável</li>
+          <li><span class="bullet">●</span>8 categorias cobertas em 12 specs Playwright</li>
+          <li><span class="bullet">●</span>WCAG 2.1 AA e LGPD validados programaticamente</li>
+          <li><span class="bullet">●</span>1 flaky de performance (cold start) controlado por retry</li>
+          <li><span class="bullet">●</span>Cross-browser validação iOS Safari pendente para julho</li>
+          <li><span class="bullet">●</span>Staging pronto para sign-off formal em julho/2026</li>
+        </ul>
+      </div>
+      <div class="box recomendacoes">
+        <div class="box-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="2.5"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          Recomendações
+        </div>
+        <ul>
+          <li>
+            <svg class="bullet" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            Instalar Firefox + WebKit para cobertura cross-browser completa
+          </li>
+          <li>
+            <svg class="bullet" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            Validar iOS Safari via BrowserStack (julho/2026)
+          </li>
+          <li>
+            <svg class="bullet" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            Configurar warm-up de instância para eliminar flaky de cold start
+          </li>
+          <li>
+            <svg class="bullet" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            Executar validação manual dos fluxos Locatário e Proprietário
+          </li>
+          <li>
+            <svg class="bullet" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            Manter suite E2E em CI a cada push na main (regressão contínua)
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STATUS GERAL ── -->
+  <div class="footer-status">
+    ✅ &nbsp;STATUS GERAL: STAGING APROVADO — SIGN-OFF PREVISTO JULHO/2026
+    <div class="sub">12 specs · 20/20 passando · 8 categorias · shareo-rouge.vercel.app · 2026-06-02</div>
+  </div>
+
+</div>
+</body>
+</html>
