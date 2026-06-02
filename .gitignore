@@ -54,3 +54,4 @@ Documentos/giv_temp.docx
 Documentos/giv_unpacked/
 .env*
 e2e-plan-report.json
+e2e-auth-plan-report.json
