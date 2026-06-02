@@ -216,7 +216,7 @@ export default async function HomePage() {
             <HeroSearch />
 
             {/* Tagline */}
-            <p className="mt-3 text-xs italic tracking-[0.3px] text-white/70">
+            <p className="mt-3 text-xs italic tracking-[0.3px] text-white/85">
               <em>Use Mais. Possua Menos.</em>
             </p>
 

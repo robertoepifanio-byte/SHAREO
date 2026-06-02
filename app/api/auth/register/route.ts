@@ -120,8 +120,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ data: user }, { status: 201 })
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "unknown"
-    console.error("[POST /api/auth/register]", msg)
+    const msg   = e instanceof Error ? e.message  : String(e)
+    const stack = e instanceof Error ? e.stack     : undefined
+    console.error("[POST /api/auth/register] INTERNAL_ERROR:", msg, stack)
     return NextResponse.json(
       { error: { code: "INTERNAL_ERROR", message: "Erro interno. Tente novamente." } },
       { status: 500 },
