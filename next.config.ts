@@ -64,6 +64,11 @@ const config: NextConfig = {
         hostname: "*.supabase.co",
         pathname: "/storage/v1/object/sign/**",
       },
+      // Unsplash — imagens de seed para staging
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
     ],
     formats: ["image/avif", "image/webp"],
   },
