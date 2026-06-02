@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0D1B2A"
+      "backgroundColor": "#003366"
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
@@ -20,7 +20,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0D1B2A"
+        "backgroundColor": "#003366"
       },
       "package": "com.shareo.app"
     },
