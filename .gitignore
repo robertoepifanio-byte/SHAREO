@@ -61,3 +61,6 @@ e2e-a11y-report.json
 e2e-crossbrowser-report.json
 e2e-performance-report.json
 e2e-home-report.json
+e2e-security-report.json
+e2e-usability-report.json
+e2e-integration-report.json
