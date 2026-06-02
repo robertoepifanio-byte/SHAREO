@@ -2,7 +2,7 @@ import { request } from '@playwright/test'
 
 export default async function globalSetup() {
   const BASE = process.env.STAGING_URL
-    ?? 'https://shareo-git-main-robertoepifanio-bytes-projects.vercel.app'
+    ?? 'https://shareo-rouge.vercel.app'
 
   const ctx = await request.newContext()
 

@@ -115,14 +115,17 @@ jobs:
       - name: Install Vercel CLI
         run: npm install -g vercel@54.6.1
 
-      - name: Pull Vercel project config (preview env = staging)
-        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Pull Vercel project config (production = staging estável)
+        # shareo-rouge.vercel.app é a URL estável usada pelos testers.
+        # Deploy com --prod atualiza essa URL a cada push na main.
+        # Produção real será um projeto/domínio separado quando necessário.
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Build project (staging)
-        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -134,14 +137,10 @@ jobs:
           NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
-      - name: Deploy to staging
-        # Vercel auto-deploy via GitHub integration está desabilitado (commandForIgnoringBuildStep=exit 0).
-        # Apenas este step controla o deploy de staging — ambiente Preview com DATABASE_URL.
-        # A URL estável git-main não é atualizada por deploys Preview — usar a URL
-        # retornada por este step (deploy-url) para smoke tests e fixtures.
+      - name: Deploy to staging (--prod → atualiza shareo-rouge.vercel.app)
         id: deploy
         run: |
-          DEPLOY_URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          DEPLOY_URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
           echo "deploy-url=$DEPLOY_URL" >> "$GITHUB_OUTPUT"
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -164,7 +163,8 @@ jobs:
         run: |
           echo "Aguardando 20s para o deploy propagar..."
           sleep 20
-          DEPLOY_URL="${{ steps.deploy.outputs.deploy-url }}"
+          # URL estável — atualizada pelo --prod acima
+          DEPLOY_URL="https://shareo-rouge.vercel.app"
           echo "Verificando: $DEPLOY_URL/api/health"
           RESPONSE=$(curl -s "$DEPLOY_URL/api/health")
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$DEPLOY_URL/api/health")
