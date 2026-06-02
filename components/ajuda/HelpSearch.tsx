@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useId } from "react"
+import Link from "next/link"
 
 /* ── Tipos ─────────────────────────────────────────────────────────── */
 
@@ -185,7 +186,6 @@ export function HelpSearch({ sections }: HelpSearchProps) {
             spellCheck={false}
             aria-label="Pesquisar perguntas frequentes"
             aria-controls="faq-results"
-            aria-expanded={trimmed.length > 0}
             className={[
               "h-12 w-full rounded-xl border border-input bg-background",
               "pl-12 pr-12 text-sm text-foreground placeholder:text-muted-foreground",
@@ -315,12 +315,12 @@ export function HelpSearch({ sections }: HelpSearchProps) {
             >
               ✉️ suporte@shareo.com.br
             </a>
-            <a
+            <Link
               href="/reservas"
               className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/30 bg-white/10 px-6 text-sm font-semibold text-white hover:bg-white/20 transition-colors"
             >
               📋 Ver minhas reservas
-            </a>
+            </Link>
           </div>
           <p className="mt-4 text-xs text-white/50">
             Para problemas com uma reserva ativa, use a opção &ldquo;Abrir
