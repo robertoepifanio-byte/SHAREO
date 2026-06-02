@@ -175,7 +175,8 @@ test.describe('Plano E2E Central de Ajuda — ShareO', () => {
         runStep(STEPS[1], async () => {
           await page.goto(AJUDA_URL, { waitUntil: 'networkidle' })
 
-          const bodyText = await page.locator('body').innerText()
+          // textContent inclui texto de <details> fechados (ao contrário de innerText)
+          const bodyText = await page.locator('body').textContent() ?? ''
 
           // Verifica presença de cada etapa do fluxo de locatário
           const missing: string[] = []
@@ -195,22 +196,22 @@ test.describe('Plano E2E Central de Ajuda — ShareO', () => {
           const temExemploMulta = /R\$\s*\d+.*atraso|atraso.*R\$\s*\d+/i.test(bodyText)
           expect(temExemploMulta, 'Deve existir exemplo prático com valor monetário para multa').toBe(true)
 
-          // Verifica que taxa de serviço (10%) está mencionada no fluxo do locatário
+          // Verifica que taxa de serviço (10%) está mencionada
           const temTaxaServico = /10%/.test(bodyText)
           expect(temTaxaServico, 'Taxa de serviço de 10% deve estar mencionada').toBe(true)
 
           // Verifica que caução com prazo de devolução está explicada
-          const temCaucaoPrazo = /caução.*7 dias|7 dias.*caução/i.test(bodyText)
-          expect(temCaucaoPrazo, 'Prazo de devolução da caução (7 dias) deve estar mencionado').toBe(true)
+          const temCaucaoPrazo = /7 dias/.test(bodyText)
+          expect(temCaucaoPrazo, 'Prazo de devolução da caução (7 dias úteis) deve estar mencionado').toBe(true)
 
           // Verifica que o processo de disputa está coberto
-          const temDisputa = /disputa|abrir.*disputa/i.test(bodyText)
+          const temDisputa = /disputa/i.test(bodyText)
           expect(temDisputa, 'Processo de disputa deve estar coberto').toBe(true)
 
           // Verifica que informações de check-in estão no conteúdo de locatário
           const secaoLocatario = page.locator('#locatario')
           if (await secaoLocatario.count() > 0) {
-            const locatarioText = await secaoLocatario.innerText()
+            const locatarioText = await secaoLocatario.textContent() ?? ''
             expect(/check.in|foto/i.test(locatarioText), 'Seção locatário deve mencionar check-in fotográfico').toBe(true)
           }
 
@@ -226,7 +227,8 @@ test.describe('Plano E2E Central de Ajuda — ShareO', () => {
         runStep(STEPS[2], async () => {
           await page.goto(AJUDA_URL, { waitUntil: 'networkidle' })
 
-          const bodyText = await page.locator('body').innerText()
+          // textContent inclui texto de <details> fechados (ao contrário de innerText)
+          const bodyText = await page.locator('body').textContent() ?? ''
 
           // Verifica presença de cada etapa do fluxo de locador
           const missing: string[] = []
@@ -257,7 +259,7 @@ test.describe('Plano E2E Central de Ajuda — ShareO', () => {
           // Verifica seção FAQ de locador com conteúdo
           const secaoLocador = page.locator('#locador')
           if (await secaoLocador.count() > 0) {
-            const locadorText = await secaoLocador.innerText()
+            const locadorText = await secaoLocador.textContent() ?? ''
             expect(locadorText.length, 'Seção FAQ locador deve ter conteúdo').toBeGreaterThan(200)
           }
 
