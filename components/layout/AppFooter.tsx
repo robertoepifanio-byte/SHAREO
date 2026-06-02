@@ -81,13 +81,13 @@ export function AppFooter() {
             © {year} ShareO · Todos os direitos reservados.
           </p>
           <div className="flex flex-wrap gap-3">
-            <span className="flex items-center gap-1.5 rounded-md border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white">
+            <span className="flex items-center gap-1.5 rounded-md border border-white/20 px-3 py-1 text-xs font-semibold text-white">
               🔒 Pagamento seguro
             </span>
-            <span className="flex items-center gap-1.5 rounded-md border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white">
+            <span className="flex items-center gap-1.5 rounded-md border border-white/20 px-3 py-1 text-xs font-semibold text-white">
               ✓ Usuários verificados
             </span>
-            <span className="flex items-center gap-1.5 rounded-md border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white">
+            <span className="flex items-center gap-1.5 rounded-md border border-white/20 px-3 py-1 text-xs font-semibold text-white">
               🌿 Economia circular
             </span>
           </div>
