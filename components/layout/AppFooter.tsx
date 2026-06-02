@@ -25,16 +25,16 @@ export function AppFooter() {
                 className="object-contain h-7 w-auto"
               />
             </div>
-            <p className="mt-3 text-sm text-white/70">
+            <p className="mt-3 text-sm text-white">
               Compartilhe. Economize. Sustentável.
             </p>
-            <p className="mt-3 text-xs text-white/50">
-              <strong className="text-white/70">Marketplace circular</strong>{" "}
+            <p className="mt-3 text-xs text-white/90">
+              <strong className="text-white">Marketplace circular</strong>{" "}
               para aluguel de itens locais.
             </p>
-            <p className="mt-1 text-xs text-white/50 whitespace-nowrap">
+            <p className="mt-1 text-xs text-white/90 whitespace-nowrap">
               Transforme itens parados em{" "}
-              <strong className="text-white/70">renda</strong>{" "}
+              <strong className="text-white">renda</strong>{" "}
               e ajude sua comunidade.
             </p>
           </div>
@@ -45,49 +45,49 @@ export function AppFooter() {
             className="grid grid-cols-2 gap-8 md:flex md:gap-12"
           >
             <div className="flex flex-col gap-2">
-              <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-white/40">
+              <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-white/90">
                 Plataforma
               </p>
-              <Link href="/itens"      className="text-sm text-white/75 hover:text-white transition-colors">Explorar itens</Link>
-              <Link href="/itens/novo" className="text-sm text-white/75 hover:text-white transition-colors">Anunciar item</Link>
-              <Link href="/reservas"   className="text-sm text-white/75 hover:text-white transition-colors">Minhas reservas</Link>
-              <Link href="/mensagens"  className="text-sm text-white/75 hover:text-white transition-colors">Mensagens</Link>
+              <Link href="/itens"      className="text-sm text-white/90 hover:text-white transition-colors">Explorar itens</Link>
+              <Link href="/itens/novo" className="text-sm text-white/90 hover:text-white transition-colors">Anunciar item</Link>
+              <Link href="/reservas"   className="text-sm text-white/90 hover:text-white transition-colors">Minhas reservas</Link>
+              <Link href="/mensagens"  className="text-sm text-white/90 hover:text-white transition-colors">Mensagens</Link>
             </div>
 
             <div className="flex flex-col gap-2">
-              <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-white/40">
+              <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-white/90">
                 Conta
               </p>
-              <Link href="/login"    className="text-sm text-white/75 hover:text-white transition-colors">Entrar</Link>
-              <Link href="/cadastro" className="text-sm text-white/75 hover:text-white transition-colors">Criar conta</Link>
-              <Link href="/perfil"   className="text-sm text-white/75 hover:text-white transition-colors">Meu perfil</Link>
+              <Link href="/login"    className="text-sm text-white/90 hover:text-white transition-colors">Entrar</Link>
+              <Link href="/cadastro" className="text-sm text-white/90 hover:text-white transition-colors">Criar conta</Link>
+              <Link href="/perfil"   className="text-sm text-white/90 hover:text-white transition-colors">Meu perfil</Link>
             </div>
 
             <div className="flex flex-col gap-2">
-              <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-white/40">
+              <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-white/90">
                 Suporte
               </p>
-              <Link href="/ajuda"           className="text-sm text-white/75 hover:text-white transition-colors">Central de ajuda</Link>
-              <Link href="/ganhar"          className="text-sm text-white/75 hover:text-white transition-colors">Como ganhar</Link>
-              <Link href="/termos"          className="text-sm text-white/75 hover:text-white transition-colors">Termos de uso</Link>
-              <Link href="/privacidade"     className="text-sm text-white/75 hover:text-white transition-colors">Privacidade</Link>
+              <Link href="/ajuda"           className="text-sm text-white/90 hover:text-white transition-colors">Central de ajuda</Link>
+              <Link href="/ganhar"          className="text-sm text-white/90 hover:text-white transition-colors">Como ganhar</Link>
+              <Link href="/termos"          className="text-sm text-white/90 hover:text-white transition-colors">Termos de uso</Link>
+              <Link href="/privacidade"     className="text-sm text-white/90 hover:text-white transition-colors">Privacidade</Link>
             </div>
           </nav>
         </div>
 
         {/* Bottom bar */}
         <div className="mt-8 flex flex-col gap-3 border-t border-white/20 pt-6 md:flex-row md:items-center md:justify-between">
-          <p className="text-xs text-white/40">
+          <p className="text-xs text-white/90">
             © {year} ShareO · Todos os direitos reservados.
           </p>
           <div className="flex flex-wrap gap-3">
-            <span className="flex items-center gap-1.5 rounded-md border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
+            <span className="flex items-center gap-1.5 rounded-md border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white">
               🔒 Pagamento seguro
             </span>
-            <span className="flex items-center gap-1.5 rounded-md border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
+            <span className="flex items-center gap-1.5 rounded-md border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white">
               ✓ Usuários verificados
             </span>
-            <span className="flex items-center gap-1.5 rounded-md border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white/70">
+            <span className="flex items-center gap-1.5 rounded-md border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-white">
               🌿 Economia circular
             </span>
           </div>

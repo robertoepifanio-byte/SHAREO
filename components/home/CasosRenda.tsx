@@ -50,7 +50,7 @@ export function CasosRenda() {
             Quem já está ganhando
           </h2>
         </div>
-        <p className="mb-6 text-sm text-muted-foreground">
+        <p className="mb-6 text-sm text-slate-600">
           Proprietários reais que transformaram itens parados em renda extra.
         </p>
 
@@ -71,7 +71,7 @@ export function CasosRenda() {
                 </div>
                 <div className="flex-1">
                   <div className="text-sm font-bold text-white">{c.name}</div>
-                  <div className="text-xs text-white/60">{c.role}</div>
+                  <div className="text-xs text-white/80">{c.role}</div>
                 </div>
                 <div
                   className={`rounded-lg px-2.5 py-1.5 font-display text-lg font-extrabold text-white ${
@@ -82,7 +82,7 @@ export function CasosRenda() {
                   aria-label={`Renda mensal de ${c.renda}`}
                 >
                   {c.renda}
-                  <span className="text-xs font-medium text-white/70">/mês</span>
+                  <span className="text-xs font-medium text-white/90">/mês</span>
                 </div>
               </div>
 

@@ -255,7 +255,7 @@ export default async function HomePage() {
             </form>
 
             {/* Tagline */}
-            <p className="mt-3 text-xs italic tracking-[0.3px] text-white/50">
+            <p className="mt-3 text-xs italic tracking-[0.3px] text-white/70">
               <em>Use Mais. Possua Menos.</em>
             </p>
 
