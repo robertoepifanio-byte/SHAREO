@@ -28,9 +28,13 @@ export function MobileMenu({ isLoggedIn }: Props) {
     { href: "/itens/novo", label: "Anunciar",   cta: true },
     ...(isLoggedIn
       ? [
-          { href: "/reservas",  label: "Reservas" },
-          { href: "/mensagens", label: "Mensagens" },
-          { href: "/dashboard", label: "Meu perfil" },
+          { href: "/reservas",          label: "Reservas" },
+          { href: "/mensagens",          label: "Mensagens" },
+          { href: "/perfil",             label: "Meu Perfil" },
+          { href: "/perfil/editar",      label: "Editar Perfil" },
+          { href: "/perfil/endereco",    label: "Endereço" },
+          { href: "/perfil/seguranca",   label: "Segurança" },
+          { href: "/dashboard",          label: "Dashboard" },
         ]
       : [
           { href: "/login",    label: "Entrar" },
