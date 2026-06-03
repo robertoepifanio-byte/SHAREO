@@ -4,14 +4,10 @@
  *
  * Arquivo fonte: app/api/items/route.ts
  *
- * Regra de negócio:
- *   - Item cadastrado SEM imagens → status = "DRAFT"
- *   - Item cadastrado COM ao menos 1 imagem no payload → status = "AVAILABLE"
- *
- * Nota: a rota atual não recebe imagens no POST (upload separado via
- * POST /api/items/[id]/images). O campo `imageUrls` no payload é a forma
- * planejada de suportar upload simultâneo. Os testes refletem o comportamento
- * esperado após a implementação — podem falhar até que o dev implemente a regra.
+ * Regra de negócio implementada:
+ *   - Todo item cadastrado via POST começa com status="DRAFT" (sem fotos).
+ *   - A promoção para AVAILABLE ocorre separadamente via POST /api/items/[id]/images.
+ *   - O campo `imageUrls` no payload NÃO é suportado nesta rota — upload é sempre separado.
  */
 
 import { NextRequest } from "next/server"
@@ -90,18 +86,17 @@ beforeEach(() => {
 describe("POST /api/items — regra de status por presença de fotos", () => {
 
   // --------------------------------------------------------------------------
-  // Sem imagens → DRAFT
+  // Todo item começa como DRAFT — fotos são carregadas separadamente
   // --------------------------------------------------------------------------
-  describe("sem imagens no cadastro", () => {
-    it("cria o item com status=DRAFT quando nenhuma imagem é fornecida", async () => {
-      // Item criado pelo Prisma sem fotos → status DRAFT
+  describe("novo item sempre começa como DRAFT", () => {
+    it("cria o item com status=DRAFT (sem fotos)", async () => {
       const createdItem = {
         id:          "item-id-001",
         title:       BASE_ITEM_PAYLOAD.title,
         city:        BASE_ITEM_PAYLOAD.city,
         state:       BASE_ITEM_PAYLOAD.state,
         pricePerDay: BASE_ITEM_PAYLOAD.pricePerDay,
-        status:      "DRAFT", // sem fotos
+        status:      "DRAFT",
         createdAt:   new Date("2026-06-03T00:00:00Z"),
       }
       mockItemCreate.mockResolvedValue(createdItem)
@@ -113,7 +108,7 @@ describe("POST /api/items — regra de status por presença de fotos", () => {
       expect(body.data.status).toBe("DRAFT")
     })
 
-    it("prisma.item.create é chamado com status=DRAFT quando payload não contém imageUrls", async () => {
+    it("prisma.item.create é chamado com status=DRAFT independente do payload", async () => {
       mockItemCreate.mockResolvedValue({
         id: "item-id-001", title: BASE_ITEM_PAYLOAD.title,
         city: "Natal", state: "RN", pricePerDay: 5000,
@@ -122,65 +117,32 @@ describe("POST /api/items — regra de status por presença de fotos", () => {
 
       await POST(makeRequest(BASE_ITEM_PAYLOAD))
 
-      // Garante que a rota passou status: "DRAFT" para o Prisma
       expect(mockItemCreate).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ status: "DRAFT" }),
         })
       )
     })
-  })
 
-  // --------------------------------------------------------------------------
-  // Com imagens → AVAILABLE
-  // --------------------------------------------------------------------------
-  describe("com ao menos 1 imagem no payload", () => {
-    it("cria o item com status=AVAILABLE quando imageUrls contém ao menos 1 URL", async () => {
+    it("retorna status=DRAFT mesmo quando payload contém imageUrls (campo ignorado pela rota)", async () => {
+      // O POST /api/items não processa imageUrls — upload é sempre via rota separada
       const payloadComFotos = {
         ...BASE_ITEM_PAYLOAD,
         imageUrls: ["https://storage.exemplo.com/item-id-001/foto1.jpg"],
       }
 
-      const createdItem = {
-        id:          "item-id-002",
-        title:       BASE_ITEM_PAYLOAD.title,
-        city:        BASE_ITEM_PAYLOAD.city,
-        state:       BASE_ITEM_PAYLOAD.state,
-        pricePerDay: BASE_ITEM_PAYLOAD.pricePerDay,
-        status:      "AVAILABLE", // tem foto
-        createdAt:   new Date("2026-06-03T00:00:00Z"),
-      }
-      mockItemCreate.mockResolvedValue(createdItem)
+      mockItemCreate.mockResolvedValue({
+        id: "item-id-002", title: BASE_ITEM_PAYLOAD.title,
+        city: "Natal", state: "RN", pricePerDay: 5000,
+        status: "DRAFT", createdAt: new Date(),
+      })
 
       const res  = await POST(makeRequest(payloadComFotos))
       const body = await res.json() as { data: Record<string, unknown> }
 
       expect(res.status).toBe(201)
-      expect(body.data.status).toBe("AVAILABLE")
-    })
-
-    it("prisma.item.create é chamado com status=AVAILABLE quando imageUrls é não-vazio", async () => {
-      const payloadComFotos = {
-        ...BASE_ITEM_PAYLOAD,
-        imageUrls: [
-          "https://storage.exemplo.com/item-id-002/foto1.jpg",
-          "https://storage.exemplo.com/item-id-002/foto2.jpg",
-        ],
-      }
-
-      mockItemCreate.mockResolvedValue({
-        id: "item-id-002", title: BASE_ITEM_PAYLOAD.title,
-        city: "Natal", state: "RN", pricePerDay: 5000,
-        status: "AVAILABLE", createdAt: new Date(),
-      })
-
-      await POST(makeRequest(payloadComFotos))
-
-      expect(mockItemCreate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          data: expect.objectContaining({ status: "AVAILABLE" }),
-        })
-      )
+      // Sempre DRAFT — promoção para AVAILABLE ocorre via POST /api/items/[id]/images
+      expect(body.data.status).toBe("DRAFT")
     })
   })
 
