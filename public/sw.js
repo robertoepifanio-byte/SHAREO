@@ -4,7 +4,7 @@ const STATIC_ASSETS = [
   "/",
   "/itens",
   "/offline",
-  "/icons/shareo-logo.png",
+  "/logos/shareo-logo.png",
 ]
 
 // Instala e pré-cacheia assets estáticos
