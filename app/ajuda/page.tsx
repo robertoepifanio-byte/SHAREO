@@ -58,6 +58,11 @@ const LOCATARIO_STEPS: Step[] = [
     desc: "Cuide bem do item durante toda a locação. Você recebe um aviso no app 24 horas antes do prazo de devolução. Devolva no local e horário combinados pelo chat. Aguarde o proprietário registrar o check-out e confirmar a devolução. Após isso, avalie o proprietário com uma nota de 1 a 5 estrelas.",
     example: "Atraso de 1 dia em item de R$ 80/dia = R$ 80 de multa cobrada automaticamente. Atraso de 3 dias = R$ 240. Para evitar: solicite uma extensão de prazo antes do vencimento — nunca depois.",
   },
+  {
+    step: 8, icon: "✅", title: "Confirme a devolução",
+    desc: "Quando devolver o item, toque em 'Confirmar devolução'. Isso avisa o proprietário que o item foi entregue.",
+    tip: "Confirme apenas quando o item já estiver nas mãos do proprietário.",
+  },
 ]
 
 const LOCADOR_STEPS: Step[] = [
@@ -92,6 +97,11 @@ const LOCADOR_STEPS: Step[] = [
     desc: "Na data combinada, receba o item de volta. Use a opção 'Registrar fotos de check-out' e compare com as fotos do check-in. Se tudo estiver ok, confirme a devolução — a caução é liberada ao locatário automaticamente. Para a 2ª locação e seguintes: o processo é idêntico ao da 1ª. Avalie o locatário após cada devolução.",
     example: "1ª locação: R$ 120/dia × 2 dias = R$ 240. Valor liberado ao confirmar entrega. 2ª locação: mesmo fluxo — confirmar solicitação → pagar → entregar com check-in → receber com check-out → avaliar.",
     tip: "Quanto mais avaliações positivas você tiver, mais alto o seu anúncio aparece nos resultados de busca.",
+  },
+  {
+    step: 7, icon: "✅", title: "Confirme o recebimento",
+    desc: "Após o locatário devolver, toque em 'Confirmar recebimento' e informe o estado do item. O pagamento é liberado para você nesse momento.",
+    warning: "Se o item voltar danificado, selecione 'Danificado'. Uma disputa será aberta automaticamente.",
   },
 ]
 
@@ -175,6 +185,16 @@ const SECTIONS = [
         a: "Após a devolução do item, a opção de avaliar o locatário aparece na página da reserva. Você pode dar uma nota de 1 a 5 estrelas e deixar um comentário sobre pontualidade, cuidado com o item e comunicação. A avaliação fica visível no perfil do locatário e ajuda outros proprietários a decidir com quem alugar." },
       { q: "Como funciona o check-in e check-out fotográfico?",
         a: "Na entrega do item, use a opção 'Registrar fotos de check-in' na página da reserva. Fotografe o item de todos os ângulos, incluindo possíveis marcas ou desgastes que já existiam antes. Na devolução, registre as fotos de check-out da mesma forma. Essas imagens ficam salvas na reserva e são a principal evidência em caso de disputa por danos. Não pule essa etapa — ela protege você." },
+      { q: "Quando recebo o pagamento da locação?",
+        a: "O valor é liberado assim que você confirmar o recebimento do item. Enquanto isso, o dinheiro fica retido com segurança." },
+      { q: "O que faço se o item voltou danificado?",
+        a: "Na tela de confirmação de recebimento, selecione 'Danificado' e descreva o problema. Uma disputa é aberta automaticamente e o pagamento fica pausado até a resolução." },
+      { q: "Por que meu item não aparece na busca?",
+        a: "Itens sem foto ficam como Rascunho e não aparecem para outros usuários. Adicione pelo menos 1 foto para publicar automaticamente." },
+      { q: "O que é um item Rascunho?",
+        a: "Um Rascunho é um item salvo mas invisível na busca. Ele aparece com badge amarelo em Meus anúncios. Basta adicionar uma foto para publicar." },
+      { q: "Se eu remover todas as fotos, o item some da busca?",
+        a: "Sim. Ao remover todas as fotos, o item volta automaticamente para Rascunho e some dos resultados de busca. Adicione uma nova foto para reativar." },
     ],
   },
   {
