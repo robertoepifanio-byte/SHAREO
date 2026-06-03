@@ -6,16 +6,18 @@ import Link from "next/link"
 import type { BookingStatus } from "@prisma/client"
 
 interface Props {
-  bookingId:      string
-  status:         BookingStatus
-  isOwner:        boolean
-  isBorrower:     boolean
-  conversationId?: string
+  bookingId:         string
+  status:            BookingStatus
+  isOwner:           boolean
+  isBorrower:        boolean
+  conversationId?:   string
+  /** Suprimir botões de devolução quando ReturnChecklist/ReturnConditionForm já os exibe */
+  hideReturnActions?: boolean
 }
 
 type Action = "confirm" | "cancel" | "mark_active" | "mark_returned" | "confirm_return" | "open_dispute"
 
-export function BookingActions({ bookingId, status, isOwner, isBorrower, conversationId }: Props) {
+export function BookingActions({ bookingId, status, isOwner, isBorrower, conversationId, hideReturnActions }: Props) {
   const router          = useRouter()
   const [pending, startTransition] = useTransition()
   const [loading,  setLoading]  = useState(false)
@@ -61,12 +63,16 @@ export function BookingActions({ bookingId, status, isOwner, isBorrower, convers
   const actions: { action: Action; label: string; variant: "primary" | "danger" | "ghost" }[] = []
 
   if (isOwner) {
-    if (status === "PENDING")    actions.push({ action: "confirm",        label: "✅ Confirmar reserva",    variant: "primary" })
-    if (status === "CONFIRMED")  actions.push({ action: "mark_active",    label: "▶️ Marcar como ativo",     variant: "primary" })
-    if (status === "RETURNED")   actions.push({ action: "confirm_return", label: "📦 Confirmar recebimento", variant: "primary" })
+    if (status === "PENDING")   actions.push({ action: "confirm",        label: "✅ Confirmar reserva",    variant: "primary" })
+    if (status === "CONFIRMED") actions.push({ action: "mark_active",    label: "▶️ Marcar como ativo",    variant: "primary" })
+    // confirm_return é exibido pelo ReturnConditionForm quando hideReturnActions=true
+    if (status === "RETURNED" && !hideReturnActions)
+      actions.push({ action: "confirm_return", label: "📦 Confirmar recebimento", variant: "primary" })
   }
   if (isBorrower) {
-    if (status === "ACTIVE") actions.push({ action: "mark_returned", label: "📦 Confirmar devolução", variant: "primary" })
+    // mark_returned é exibido pelo ReturnChecklist quando hideReturnActions=true
+    if (status === "ACTIVE" && !hideReturnActions)
+      actions.push({ action: "mark_returned", label: "📦 Confirmar devolução", variant: "primary" })
   }
   if (status === "PENDING" || status === "CONFIRMED") {
     actions.push({ action: "cancel", label: "Cancelar reserva", variant: "danger" })

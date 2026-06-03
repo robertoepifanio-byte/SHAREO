@@ -354,13 +354,17 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
             </div>
           )}
 
-          {/* Ações */}
+          {/* Ações — hideReturnActions=true quando ReturnChecklist/ReturnConditionForm já exibe o botão */}
           <BookingActions
             bookingId={booking.id}
             status={booking.status}
             isOwner={isOwner}
             isBorrower={isBorrower}
             conversationId={booking.conversation?.id}
+            hideReturnActions={
+              (isBorrower && booking.status === "ACTIVE") ||
+              (isOwner    && booking.status === "RETURNED")
+            }
           />
 
           {/* Avaliações — disponíveis após devolução */}

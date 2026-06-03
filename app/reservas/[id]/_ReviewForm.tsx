@@ -114,7 +114,7 @@ export function ReviewForm({ bookingId, reviewType, targetName, existing }: Prop
     try {
       const form = new FormData()
       form.append("file", file)
-      form.append("bucket", "reviews")
+      form.append("bucket", "booking-photos")
       const res  = await fetch("/api/upload", { method: "POST", body: form })
       const json = await res.json() as { url?: string; error?: { message: string } }
       if (!res.ok) throw new Error(json.error?.message ?? "Erro no upload.")
@@ -141,9 +141,11 @@ export function ReviewForm({ bookingId, reviewType, targetName, existing }: Prop
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       })
-      const json = await res.json()
-      if (!res.ok) { setError(json.error?.message ?? "Erro ao enviar avaliação."); return }
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) { setError((json as { error?: { message?: string } }).error?.message ?? "Erro ao enviar avaliação."); return }
       setDone(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao enviar avaliação.")
     } finally {
       setLoading(false)
     }
