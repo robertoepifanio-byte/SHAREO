@@ -214,15 +214,15 @@ describe("Regra de status DRAFT/AVAILABLE por fotos", () => {
   // --------------------------------------------------------------------------
   describe("DELETE /api/items/[id]/images — remover última foto", () => {
     it("ao remover a última foto de item AVAILABLE, item volta para status=DRAFT", async () => {
-      // Imagem que será deletada
+      // Imagem que será deletada — inclui status e _count que a rota lê via include
       mockImageFindFirst.mockResolvedValue({
         id:    IMAGE_ID,
         url:   `https://storage.exemplo.com/${ITEM_ID}/foto.jpg`,
         itemId: ITEM_ID,
-        item:  { ownerId: OWNER_ID },
+        item:  { ownerId: OWNER_ID, status: "AVAILABLE", _count: { images: 1 } },
       })
 
-      // Após deletar, o item não tem mais imagens
+      // mockImageCount não é usado pela rota DELETE (usa _count embutido no findFirst)
       mockImageCount.mockResolvedValue(0)
 
       mockImageDelete.mockResolvedValue({})
@@ -242,14 +242,15 @@ describe("Regra de status DRAFT/AVAILABLE por fotos", () => {
     })
 
     it("ao remover uma foto (não a última), item permanece status=AVAILABLE", async () => {
+      // Item tem 3 fotos — após remover 1, ainda sobram 2
       mockImageFindFirst.mockResolvedValue({
         id:    IMAGE_ID,
         url:   `https://storage.exemplo.com/${ITEM_ID}/foto1.jpg`,
         itemId: ITEM_ID,
-        item:  { ownerId: OWNER_ID },
+        item:  { ownerId: OWNER_ID, status: "AVAILABLE", _count: { images: 3 } },
       })
 
-      // Ainda restam imagens após a deleção
+      // mockImageCount não é usado pela rota DELETE (usa _count embutido no findFirst)
       mockImageCount.mockResolvedValue(2)
 
       mockImageDelete.mockResolvedValue({})
