@@ -21,6 +21,8 @@ export async function GET(req: NextRequest) {
     const skip = (page - 1) * limit
 
     const where = {
+      // Public listings: only AVAILABLE items; owner queries see all statuses
+      ...(ownerId ? {} : { status: "AVAILABLE" as const }),
       isActive: ownerId ? undefined : true,
       isApproved: true,
       deletedAt: null,
@@ -111,6 +113,8 @@ export async function POST(req: NextRequest) {
 
     const d = parsed.data
 
+    // Items always start as DRAFT — photos are uploaded separately via POST /api/items/[id]/images.
+    // The images endpoint promotes DRAFT → AVAILABLE when the first photo is added.
     const item = await prisma.item.create({
       data: {
         ownerId:       session.user.id,
@@ -132,6 +136,7 @@ export async function POST(req: NextRequest) {
         voltage:                d.voltage               ?? null,
         requireIdVerification:  d.requireIdVerification ?? false,
         requirePhone:           d.requirePhone          ?? false,
+        status:        "DRAFT",
       },
       select: {
         id:          true,
@@ -140,6 +145,7 @@ export async function POST(req: NextRequest) {
         state:       true,
         pricePerDay: true,
         isActive:    true,
+        status:      true,
         createdAt:   true,
       },
     })
