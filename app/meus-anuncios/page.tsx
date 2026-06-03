@@ -24,6 +24,7 @@ export default async function MeusAnunciosPage() {
       state:        true,
       neighborhood: true,
       isActive:     true,
+      status:       true,
       category:     { select: { name: true } },
       owner:        { select: { name: true, isVerified: true } },
       images:       { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
