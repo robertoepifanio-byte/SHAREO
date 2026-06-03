@@ -3,7 +3,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { NotificationBell } from "@/components/ui/NotificationBell"
 import { MobileMenu } from "@/components/layout/MobileMenu"
-import { SignOutButton } from "@/components/layout/SignOutButton"
+import { UserDropdown } from "@/components/layout/UserDropdown"
 
 export async function AppHeader() {
   const session = await auth().catch(() => null)
@@ -58,27 +58,15 @@ export async function AppHeader() {
                 Olá, {session.user.name?.split(" ")[0] ?? "você"}!
               </span>
 
-              {/* Avatar / perfil */}
-              <Link
-                href="/dashboard"
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-brand border-2 border-white/30 text-sm font-bold text-white hover:opacity-90 transition-opacity outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
-                title={session?.user?.name ?? "Meu perfil"}
-                aria-label="Meu perfil"
-              >
-                {initial}
-              </Link>
-
               <NotificationBell />
 
-              {/* Ajuda */}
-              <Link
-                href="/ajuda"
-                className="hidden md:inline-flex h-9 items-center px-3 rounded-md text-sm font-medium border border-white/30 text-white hover:bg-white/10 transition-colors outline-none focus-visible:ring-1 focus-visible:ring-white"
-              >
-                Ajuda
-              </Link>
-
-              <SignOutButton />
+              {/* Avatar com dropdown — desktop */}
+              <div className="hidden md:block">
+                <UserDropdown
+                  name={session.user.name ?? "Usuário"}
+                  avatarUrl={session.user.image ?? null}
+                />
+              </div>
 
 </>
           ) : (

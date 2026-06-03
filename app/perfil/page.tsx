@@ -3,7 +3,6 @@ import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
-import { ProfileForm } from "./_ProfileForm"
 import { DeleteAccountButton } from "./_DeleteAccountButton"
 import { UpgradePjForm } from "./_UpgradePjForm"
 import { ReferralSection } from "./_ReferralSection"
@@ -181,18 +180,13 @@ export default async function ProfilePage() {
               </div>
             )}
 
-            <div className="mt-5 border-t border-border pt-5">
-              <ProfileForm
-                user={{
-                  name:         user.name,
-                  bio:          user.bio,
-                  phone:        user.phone,
-                  city:         user.city,
-                  state:        user.state,
-                  neighborhood: user.neighborhood,
-                  avatarUrl:    user.avatarUrl,
-                }}
-              />
+            <div className="mt-4">
+              <Link
+                href="/perfil/editar"
+                className="inline-flex h-9 items-center gap-2 rounded-lg border border-border px-4 text-sm font-semibold text-foreground hover:bg-background transition-colors"
+              >
+                ✏️ Editar perfil
+              </Link>
             </div>
           </div>
 

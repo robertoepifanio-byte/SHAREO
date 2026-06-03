@@ -19,7 +19,7 @@ interface UserData {
   avatarUrl:    string | null
 }
 
-export function ProfileForm({ user }: { user: UserData }) {
+export function ProfileForm({ user, redirectOnSave }: { user: UserData; redirectOnSave?: string }) {
   const router = useRouter()
   const [, startTransition] = useTransition()
 
@@ -70,7 +70,10 @@ export function ProfileForm({ user }: { user: UserData }) {
       }
       setSuccess(true)
       setEditing(false)
-      startTransition(() => router.refresh())
+      startTransition(() => {
+        if (redirectOnSave) router.push(redirectOnSave)
+        else router.refresh()
+      })
     } finally {
       setLoading(false)
     }
