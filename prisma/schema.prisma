@@ -32,6 +32,12 @@ enum ItemCondition {
   FAIR // Regular
 }
 
+enum ItemStatus {
+  DRAFT     // Rascunho — sem fotos; não aparece em listagens públicas
+  AVAILABLE // Publicado e disponível para reserva
+  PAUSED    // Pausado pelo proprietário (isActive=false)
+}
+
 enum BookingStatus {
   PENDING // Aguardando resposta do locador
   CONFIRMED // Locador aceitou
@@ -223,8 +229,9 @@ model Item {
   requirePhone          Boolean @default(false) // locatário precisa ter telefone cadastrado
 
   // Status
-  isActive     Boolean   @default(true)
-  isApproved   Boolean   @default(true) // true = publicação direta (moderação reativa no MVP)
+  status       ItemStatus @default(AVAILABLE) // DRAFT quando sem fotos; AVAILABLE quando tem ≥1 foto
+  isActive     Boolean    @default(true)
+  isApproved   Boolean    @default(true) // true = publicação direta (moderação reativa no MVP)
   approvedAt   DateTime?
   approvedById String?
 
@@ -242,7 +249,7 @@ model Item {
   @@index([ownerId])
   @@index([categoryId])
   @@index([latitude, longitude])
-  @@index([isActive, isApproved, deletedAt])
+  @@index([status, isActive, isApproved, deletedAt])
   @@index([slug])
   @@map("items")
 }
