@@ -44,7 +44,7 @@ export async function GET() {
           condition:   true,
           city:        true,
           state:       true,
-          isActive:    true,
+          status:      true,
           createdAt:   true,
           category:    { select: { name: true } },
         },
