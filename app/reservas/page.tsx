@@ -184,22 +184,53 @@ export default async function ReservasPage({ searchParams }: Props) {
                   </div>
 
                   {/* Ações */}
-                  <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
-                    <Link
-                      href={`/reservas/${b.id}`}
-                      className="inline-flex h-11 items-center rounded-lg border border-border px-4 text-sm font-semibold text-foreground hover:bg-background transition-colors"
-                    >
-                      Ver detalhes
-                    </Link>
-                    {b.conversation && (
-                      <Link
-                        href={`/mensagens/${b.conversation.id}`}
-                        className="inline-flex h-11 items-center rounded-lg bg-brand px-4 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
-                      >
-                        💬 Mensagens
-                      </Link>
-                    )}
-                  </div>
+                  {(() => {
+                    // CTA primário contextual por status + papel
+                    const isBorrower = b.borrower.id === userId
+                    const isOwner    = b.owner.id    === userId
+                    let primaryLabel = "Ver detalhes"
+                    let primaryStyle = "border border-border text-foreground hover:bg-background"
+                    if (isBorrower && b.status === "ACTIVE") {
+                      primaryLabel = "📦 Confirmar devolução"
+                      primaryStyle = "bg-brand text-white hover:opacity-90"
+                    } else if (isOwner && b.status === "PENDING") {
+                      primaryLabel = "✅ Aprovar solicitação"
+                      primaryStyle = "bg-brand text-white hover:opacity-90"
+                    } else if (isOwner && b.status === "RETURNED") {
+                      primaryLabel = "📦 Confirmar recebimento"
+                      primaryStyle = "bg-brand text-white hover:opacity-90"
+                    } else if (b.status === "CONFIRMED") {
+                      primaryLabel = "💳 Ver pagamento"
+                      primaryStyle = "bg-brand text-white hover:opacity-90"
+                    }
+                    return (
+                      <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
+                        <Link
+                          href={`/reservas/${b.id}`}
+                          className={`inline-flex h-11 items-center rounded-lg px-4 text-sm font-semibold transition-all ${primaryStyle}`}
+                        >
+                          {primaryLabel}
+                        </Link>
+                        {/* Botão "Ver detalhes" secundário quando o primário já é uma ação */}
+                        {primaryLabel !== "Ver detalhes" && (
+                          <Link
+                            href={`/reservas/${b.id}`}
+                            className="inline-flex h-11 items-center rounded-lg border border-border px-4 text-sm font-semibold text-foreground hover:bg-background transition-colors"
+                          >
+                            Ver detalhes
+                          </Link>
+                        )}
+                        {b.conversation && (
+                          <Link
+                            href={`/mensagens/${b.conversation.id}`}
+                            className="inline-flex h-11 items-center rounded-lg border border-border px-4 text-sm font-semibold text-foreground hover:bg-background transition-colors"
+                          >
+                            💬 Mensagens
+                          </Link>
+                        )}
+                      </div>
+                    )
+                  })()}
                 </div>
               )
             })}
