@@ -11,12 +11,14 @@ interface Props {
 }
 
 const MENU_ITEMS = [
-  { href: "/perfil",         label: "Meu Perfil",    icon: "👤" },
-  { href: "/perfil/editar",  label: "Editar Perfil", icon: "✏️" },
-  { href: "/perfil/endereco",label: "Endereço",      icon: "📍" },
-  { href: "/perfil/seguranca",label: "Segurança",    icon: "🔒" },
-  { href: "/dashboard",      label: "Dashboard",     icon: "📊" },
-  { href: "/ajuda",          label: "Ajuda",         icon: "❓" },
+  { href: "/perfil",            label: "Meu Perfil",    icon: "👤" },
+  { href: "/perfil/editar",     label: "Editar Perfil", icon: "✏️" },
+  { href: "/perfil/endereco",   label: "Endereço",      icon: "📍" },
+  { href: "/perfil/seguranca",  label: "Segurança",     icon: "🔒" },
+  { href: "/perfil/documentos", label: "Documentos",    icon: "🪪" },
+  { href: "/perfil/indicacoes", label: "Indicações",    icon: "🎁" },
+  { href: "/dashboard",         label: "Dashboard",     icon: "📊" },
+  { href: "/ajuda",             label: "Ajuda",         icon: "❓" },
 ]
 
 export function UserDropdown({ name, avatarUrl }: Props) {
