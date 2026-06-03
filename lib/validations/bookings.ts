@@ -38,7 +38,7 @@ export type ListBookingsQuery = z.infer<typeof ListBookingsQuerySchema>
 
 export const PatchBookingSchema = z
   .object({
-    action: z.enum(["confirm", "cancel", "mark_active", "mark_returned", "open_dispute"]),
+    action: z.enum(["confirm", "cancel", "mark_active", "mark_returned", "confirm_return", "open_dispute"]),
     reason: z.string().max(500).optional(),
   })
   .superRefine((data, ctx) => {
