@@ -3,10 +3,8 @@ import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
-import { DeleteAccountButton } from "./_DeleteAccountButton"
 import { UpgradePjForm } from "./_UpgradePjForm"
 import { ReferralSection } from "./_ReferralSection"
-import { IdVerification }  from "./_IdVerification"
 import { getReferralStats } from "@/lib/referral"
 import Link from "next/link"
 
@@ -40,8 +38,6 @@ export default async function ProfilePage() {
         slug:                 true,
         userType:             true,
         isVerified:           true,
-        idVerificationStatus: true,
-        idRejectionReason:    true,
         createdAt:            true,
         _count: {
           select: {
@@ -270,38 +266,33 @@ export default async function ProfilePage() {
           {/* ── Programa de Indicação ── */}
           <ReferralSection stats={referralStats} />
 
-          {/* ── Privacidade & dados (LGPD) ── */}
-          <div className="rounded-xl border border-border bg-surface p-6">
-            <h2 className="mb-4 font-semibold text-foreground">Privacidade e dados</h2>
-
-            {/* Verificação de identidade */}
-            <IdVerification
-              status={user.idVerificationStatus}
-              rejectionReason={user.idRejectionReason}
-            />
-
-            <div className="h-px bg-border my-4" />
-
-
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-foreground">Exportar meus dados</p>
-                <p className="text-xs text-muted-foreground">
-                  Baixe um arquivo JSON com todos os seus dados (LGPD art. 20).
-                </p>
-              </div>
-              <a
-                href="/api/users/me/export"
-                download
-                className="inline-flex h-11 items-center rounded-lg border border-border px-4 text-sm font-semibold text-foreground hover:bg-background transition-colors"
-              >
-                Exportar
-              </a>
+          {/* ── Links rápidos para sub-páginas ── */}
+          <div className="rounded-xl border border-border bg-surface p-5">
+            <h2 className="mb-4 font-semibold text-foreground">Configurações</h2>
+            <div className="space-y-1">
+              {[
+                { href: "/perfil/editar",   icon: "✏️", label: "Editar perfil",    desc: "Nome, bio, telefone, avatar" },
+                { href: "/perfil/endereco", icon: "📍", label: "Endereço",         desc: "Cidade, estado, bairro" },
+                { href: "/perfil/seguranca",icon: "🔒", label: "Login e segurança",desc: "E-mail, senha, excluir conta" },
+              ].map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="flex items-center justify-between rounded-lg px-3 py-3 hover:bg-background transition-colors group"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg" aria-hidden="true">{item.icon}</span>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground group-hover:text-brand transition-colors">{item.label}</p>
+                      <p className="text-xs text-muted-foreground">{item.desc}</p>
+                    </div>
+                  </div>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground flex-shrink-0" aria-hidden="true">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </Link>
+              ))}
             </div>
-
-            <div className="h-px bg-border my-4" />
-
-            <DeleteAccountButton />
           </div>
 
         </div>
