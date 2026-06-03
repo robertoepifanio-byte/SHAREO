@@ -47,7 +47,7 @@ export function ListaVIP() {
         </h2>
 
         {/* Sub */}
-        <p className="mx-auto mb-9 max-w-[520px] text-[15px] leading-relaxed text-white/70">
+        <p className="mx-auto mb-9 max-w-[520px] text-[15px] leading-relaxed text-white/85">
           Os primeiros proprietários a se cadastrar têm acesso a benefícios exclusivos e
           permanentes que não estarão disponíveis depois.
         </p>
