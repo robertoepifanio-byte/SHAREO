@@ -134,7 +134,10 @@ export default async function ExplorarPage({ searchParams }: Props) {
       select:  { id: true, name: true },
       orderBy: { name: "asc" },
     }),
-  ]).catch(() => null)
+  ]).catch((err) => {
+    console.error("[/itens] DB query failed:", err instanceof Error ? err.message : String(err))
+    return null
+  })
 
   if (!dbResult) {
     return (
