@@ -213,7 +213,20 @@ describe("PATCH /api/bookings/[id]", () => {
       expect(body.data.status).toBe("DISPUTED")
     })
 
-    // 7. RETURNED + open_dispute (owner) → 200, status DISPUTED
+    // 7. RETURNED + confirm_return (owner) → 200, status COMPLETED
+    it("RETURNED + confirm_return pelo owner → 200, status COMPLETED", async () => {
+      mockAuth.mockResolvedValue(makeSession(OWNER_ID))
+      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "RETURNED" }))
+      mockBookingUpdate.mockResolvedValue(makeUpdatedBooking("COMPLETED"))
+
+      const res  = await PATCH(makeReq({ action: "confirm_return" }), makeParams())
+      const body = await res.json() as { data: { status: string } }
+
+      expect(res.status).toBe(200)
+      expect(body.data.status).toBe("COMPLETED")
+    })
+
+    // 8. RETURNED + open_dispute (owner) → 200, status DISPUTED
     // open_dispute aceita RETURNED como status de origem (requiredStatus inclui "RETURNED").
     // Nota: a rota não expõe uma ação "complete" explícita — a conclusão de locação
     // pode ser tratada via lógica de negócio ou webhook externo.
@@ -227,6 +240,33 @@ describe("PATCH /api/bookings/[id]", () => {
 
       expect(res.status).toBe(200)
       expect(body.data.status).toBe("DISPUTED")
+    })
+  })
+
+  // --------------------------------------------------------------------------
+  // confirm_return — status errado e idempotência
+  // --------------------------------------------------------------------------
+  describe("confirm_return — transições inválidas", () => {
+    it("ACTIVE + confirm_return pelo owner → 422 INVALID_TRANSITION", async () => {
+      mockAuth.mockResolvedValue(makeSession(OWNER_ID))
+      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "ACTIVE" }))
+
+      const res  = await PATCH(makeReq({ action: "confirm_return" }), makeParams())
+      const body = await res.json() as { error: { code: string } }
+
+      expect([400, 422]).toContain(res.status)
+      expect(body.error.code).toBe("INVALID_TRANSITION")
+    })
+
+    it("COMPLETED + confirm_return pelo owner → 422 INVALID_TRANSITION (idempotência)", async () => {
+      mockAuth.mockResolvedValue(makeSession(OWNER_ID))
+      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "COMPLETED" }))
+
+      const res  = await PATCH(makeReq({ action: "confirm_return" }), makeParams())
+      const body = await res.json() as { error: { code: string } }
+
+      expect([400, 422]).toContain(res.status)
+      expect(body.error.code).toBe("INVALID_TRANSITION")
     })
   })
 
@@ -272,7 +312,19 @@ describe("PATCH /api/bookings/[id]", () => {
       expect(body.error.code).toBe("FORBIDDEN")
     })
 
-    // 11. Owner tenta mark_returned (somente borrower pode) → 403
+    // 11. Borrower tenta confirm_return (somente owner pode) → 403
+    it("borrower tenta confirm_return → 403 FORBIDDEN", async () => {
+      mockAuth.mockResolvedValue(makeSession(BORROWER_ID))
+      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "RETURNED" }))
+
+      const res  = await PATCH(makeReq({ action: "confirm_return" }), makeParams())
+      const body = await res.json() as { error: { code: string } }
+
+      expect(res.status).toBe(403)
+      expect(body.error.code).toBe("FORBIDDEN")
+    })
+
+    // 12. Owner tenta mark_returned (somente borrower pode) → 403
     it("owner tenta mark_returned → 403 FORBIDDEN", async () => {
       mockAuth.mockResolvedValue(makeSession(OWNER_ID))
       mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "ACTIVE" }))
