@@ -9,7 +9,7 @@ export function FloatingCTA() {
 
   return (
     <Link
-      href="/meus-anuncios/novo"
+      href="/itens/novo"
       className={[
         "fixed bottom-6 right-4 z-40 md:hidden",
         "flex items-center gap-2 rounded-full shadow-lg",
