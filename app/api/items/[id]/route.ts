@@ -46,9 +46,9 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
       )
     }
 
-    // Itens não aprovados/inativos só visíveis para o dono ou admin
+    // Itens não aprovados ou não disponíveis só visíveis para o dono ou admin
     const isOwner = userId === item.owner.id
-    if ((!item.isApproved || !item.isActive) && !isOwner && !isAdmin) {
+    if ((!item.isApproved || item.status !== "AVAILABLE") && !isOwner && !isAdmin) {
       return NextResponse.json(
         { error: { code: "NOT_FOUND", message: "Anúncio não encontrado." } },
         { status: 404 }
@@ -132,12 +132,15 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
         ...(d.neighborhood  !== undefined && { neighborhood:  d.neighborhood }),
         ...(d.latitude      !== undefined && { latitude:      d.latitude }),
         ...(d.longitude     !== undefined && { longitude:     d.longitude }),
-        ...(d.isActive      !== undefined && { isActive:      d.isActive }),
+        // Retrocompatibilidade: isActive no payload mapeado para status
+        ...(d.isActive === false && { status: "PAUSED" as const }),
+        ...(d.isActive === true  && { status: "AVAILABLE" as const }),
+        ...(d.status   !== undefined && { status: d.status }),
         ...(d.voltage               !== undefined && { voltage:               d.voltage }),
         ...(d.requireIdVerification !== undefined && { requireIdVerification: d.requireIdVerification }),
         ...(d.requirePhone          !== undefined && { requirePhone:          d.requirePhone }),
       },
-      select: { id: true, title: true, isActive: true, updatedAt: true, pricePerDay: true },
+      select: { id: true, title: true, status: true, updatedAt: true, pricePerDay: true },
     })
 
     // Regeocodifica em background quando endereço muda
@@ -191,7 +194,7 @@ export async function DELETE(_req: NextRequest, { params }: RouteContext) {
 
     await prisma.item.update({
       where: { id },
-      data: { deletedAt: new Date(), isActive: false },
+      data: { deletedAt: new Date(), status: "DELETED" },
     })
 
     return new NextResponse(null, { status: 204 })

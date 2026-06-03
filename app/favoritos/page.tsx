@@ -26,7 +26,7 @@ export default async function FavoritosPage() {
           city:         true,
           state:        true,
           neighborhood: true,
-          isActive:     true,
+          status:       true,
           isApproved:   true,
           deletedAt:    true,
           images:   { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
@@ -39,7 +39,7 @@ export default async function FavoritosPage() {
   })
 
   const items = favorites
-    .filter((f) => f.item.isActive && f.item.isApproved && !f.item.deletedAt)
+    .filter((f) => f.item.status === "AVAILABLE" && f.item.isApproved && !f.item.deletedAt)
     .map((f) => f.item)
 
   return (

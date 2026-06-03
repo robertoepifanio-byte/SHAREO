@@ -197,7 +197,8 @@ export async function POST(req: Request) {
           city:          d.cidade  || "",
           state:         d.estado  || "",
           neighborhood:  d.bairro  || undefined,
-          isActive:      true,
+          // Itens importados ficam DRAFT até receberem foto
+          status:        "DRAFT" as const,
         }
 
         if (existing) {

@@ -17,7 +17,7 @@ export default async function AdminOverviewPage() {
     revenueResult,
   ] = await Promise.all([
     prisma.user.count({ where: { deletedAt: null } }),
-    prisma.item.count({ where: { isActive: true, isApproved: true, deletedAt: null } }),
+    prisma.item.count({ where: { status: "AVAILABLE", isApproved: true, deletedAt: null } }),
     prisma.item.count({ where: { isApproved: false, deletedAt: null } }),
     prisma.user.count({ where: { isActive: false, deletedAt: null } }),
     prisma.booking.groupBy({

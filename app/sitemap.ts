@@ -8,7 +8,7 @@ const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://shareo-rouge.vercel.app
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [items, categories, lojas] = await Promise.all([
     prisma.item.findMany({
-      where:   { isActive: true, isApproved: true, deletedAt: null },
+      where:   { status: "AVAILABLE", isApproved: true, deletedAt: null },
       select:  { id: true, updatedAt: true },
       orderBy: { updatedAt: "desc" },
       take:    1000,

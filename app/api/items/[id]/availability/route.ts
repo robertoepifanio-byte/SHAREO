@@ -15,7 +15,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
     // Confirmar que o item existe e está ativo
     const item = await prisma.item.findFirst({
-      where: { id, deletedAt: null, isActive: true, isApproved: true },
+      where: { id, deletedAt: null, status: "AVAILABLE", isApproved: true },
       select: { id: true },
     })
 

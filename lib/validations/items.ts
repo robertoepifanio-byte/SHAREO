@@ -32,7 +32,9 @@ export const CreateItemSchema = z.object({
 export type CreateItemInput = z.infer<typeof CreateItemSchema>
 
 export const UpdateItemSchema = CreateItemSchema.partial().extend({
+  // isActive mantido por retrocompatibilidade — mapeado para status na API
   isActive: z.boolean().optional(),
+  status: z.enum(["AVAILABLE", "PAUSED"]).optional(),
 })
 
 export type UpdateItemInput = z.infer<typeof UpdateItemSchema>

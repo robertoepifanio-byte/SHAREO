@@ -21,9 +21,10 @@ export async function GET(req: NextRequest) {
     const skip = (page - 1) * limit
 
     const where = {
-      // Public listings: only AVAILABLE items; owner queries see all statuses
-      ...(ownerId ? {} : { status: "AVAILABLE" as const }),
-      isActive: ownerId ? undefined : true,
+      // Public listings: only AVAILABLE items; owner queries exclude DELETED
+      ...(ownerId
+        ? { status: { notIn: ["DELETED" as const] } }
+        : { status: "AVAILABLE" as const }),
       isApproved: true,
       deletedAt: null,
       ...(search && {
@@ -61,7 +62,7 @@ export async function GET(req: NextRequest) {
           neighborhood: true,
           latitude: true,
           longitude: true,
-          isActive: true,
+          status: true,
           viewCount: true,
           createdAt: true,
           category: { select: { id: true, name: true, slug: true } },
@@ -144,7 +145,6 @@ export async function POST(req: NextRequest) {
         city:        true,
         state:       true,
         pricePerDay: true,
-        isActive:    true,
         status:      true,
         createdAt:   true,
       },
