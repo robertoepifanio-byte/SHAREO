@@ -106,13 +106,14 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       select: { id: true, url: true, order: true },
     })
 
-    // Promote DRAFT → AVAILABLE when the first photo is added
+    // Promote DRAFT → AVAILABLE when the first photo is added (síncrono)
+    let finalStatus: string = item.status
     if (item.status === "DRAFT" && item._count.images === 0) {
-      prisma.item.update({ where: { id }, data: { status: "AVAILABLE" } })
-        .catch((e) => console.error("[images/promote-draft]", e instanceof Error ? e.message : e))
+      await prisma.item.update({ where: { id }, data: { status: "AVAILABLE" } })
+      finalStatus = "AVAILABLE"
     }
 
-    return NextResponse.json({ data: image }, { status: 201 })
+    return NextResponse.json({ data: { ...image, itemStatus: finalStatus } }, { status: 201 })
   } catch (e) {
     console.error("[POST /api/items/[id]/images]", e instanceof Error ? e.message : e)
     return NextResponse.json(

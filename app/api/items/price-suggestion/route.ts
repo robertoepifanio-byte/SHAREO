@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   try {
     const result = await prisma.item.aggregate({
       where: {
-        isActive:   true,
+        status:     "AVAILABLE",
         isApproved: true,
         deletedAt:  null,
         categoryId,

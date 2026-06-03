@@ -23,7 +23,7 @@ interface ItemDetail {
   city:        string
   state:       string
   neighborhood: string | null
-  isActive:    boolean
+  status:      string
   ownerId:     string
   category:    { name: string }
   owner:       { id: string; name: string; isVerified: boolean; city: string | null }

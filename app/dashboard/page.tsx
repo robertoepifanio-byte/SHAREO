@@ -134,7 +134,7 @@ export default async function DashboardPage() {
   )]
   const suggestions = await prisma.item.findMany({
     where: {
-      isActive:   true,
+      status:     "AVAILABLE",
       isApproved: true,
       deletedAt:  null,
       ownerId:    { not: uid },

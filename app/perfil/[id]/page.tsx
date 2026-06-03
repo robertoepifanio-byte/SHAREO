@@ -39,13 +39,13 @@ export default async function PublicProfilePage({ params }: Props) {
         reputationPoints: true,
         _count: {
           select: {
-            items:              { where: { isActive: true, deletedAt: null } },
+            items:              { where: { status: { in: ["AVAILABLE", "PAUSED", "DRAFT"] }, deletedAt: null } },
             bookingsAsOwner:    { where: { status: { in: ["RETURNED", "COMPLETED"] } } },
             bookingsAsBorrower: { where: { status: { in: ["RETURNED", "COMPLETED"] } } },
           },
         },
         items: {
-          where:   { isActive: true, isApproved: true, deletedAt: null },
+          where:   { status: "AVAILABLE", isApproved: true, deletedAt: null },
           orderBy: { createdAt: "desc" },
           take:    6,
           select: {
@@ -56,7 +56,7 @@ export default async function PublicProfilePage({ params }: Props) {
             city:         true,
             state:        true,
             neighborhood: true,
-            isActive:     true,
+            status:       true,
             images:       { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
             category:     { select: { name: true } },
             owner:        { select: { name: true, isVerified: true } },

@@ -208,7 +208,7 @@ async function main() {
         neighborhood:  item.neighborhood,
         latitude:      item.latitude,
         longitude:     item.longitude,
-        isActive:      true,
+        status:        "AVAILABLE" as const,
         isApproved:    true,
         approvedAt:    new Date(),
         viewCount:     Math.floor(Math.random() * 50),

@@ -46,7 +46,7 @@ export default async function ProfilePage() {
         createdAt:            true,
         _count: {
           select: {
-            items:              { where: { isActive: true, deletedAt: null } },
+            items:              { where: { status: { in: ["AVAILABLE", "PAUSED", "DRAFT"] }, deletedAt: null } },
             bookingsAsBorrower: { where: { status: { in: ["RETURNED", "COMPLETED"] } } },
             bookingsAsOwner:    { where: { status: { in: ["RETURNED", "COMPLETED"] } } },
           },

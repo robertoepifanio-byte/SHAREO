@@ -44,7 +44,7 @@ async function getOwner(slug: string) {
       createdAt:    true,
       _count: {
         select: {
-          items:    { where: { isActive: true, deletedAt: null } },
+          items:    { where: { status: { in: ["AVAILABLE", "PAUSED", "DRAFT"] }, deletedAt: null } },
           reviewsReceived: true,
         },
       },
@@ -64,7 +64,7 @@ export default async function LojaPage({ params }: Props) {
     prisma.item.findMany({
       where: {
         ownerId:  owner.id,
-        isActive: true,
+        status:   { in: ["AVAILABLE", "PAUSED", "DRAFT"] },
         deletedAt: null,
       },
       orderBy: { createdAt: "desc" },
@@ -76,7 +76,7 @@ export default async function LojaPage({ params }: Props) {
         city:         true,
         state:        true,
         neighborhood: true,
-        isActive:     true,
+        status:       true,
         images:       { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
         category:     { select: { name: true } },
         owner:        { select: { name: true, isVerified: true } },

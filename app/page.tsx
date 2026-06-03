@@ -104,7 +104,7 @@ export default async function HomePage() {
 
     prisma.item
       .count({
-        where: { isActive: true, isApproved: true, deletedAt: null, city: cityName },
+        where: { status: "AVAILABLE", isApproved: true, deletedAt: null, city: cityName },
       })
       .catch(() => 0),
   ])

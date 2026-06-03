@@ -32,7 +32,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     const item = await prisma.item.findFirst({
       where:  { id, deletedAt: null },
-      select: { id: true, isActive: true, isApproved: true },
+      select: { id: true, status: true, isApproved: true },
     })
 
     if (!item) {
@@ -49,17 +49,18 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     let data: Record<string, unknown>
 
     if (action === "approve") {
-      data = { isApproved: true, isActive: true, approvedAt: now, approvedById: adminId }
+      data = { isApproved: true, status: "AVAILABLE", approvedAt: now, approvedById: adminId }
     } else if (action === "reject") {
-      data = { isApproved: false, isActive: false }
+      data = { isApproved: false, status: "PAUSED" }
     } else {
-      data = { isActive: !item.isActive }
+      // toggle_active: AVAILABLE ↔ PAUSED
+      data = { status: item.status === "AVAILABLE" ? "PAUSED" : "AVAILABLE" }
     }
 
     const updated = await prisma.item.update({
       where:  { id },
       data,
-      select: { id: true, isApproved: true, isActive: true, updatedAt: true },
+      select: { id: true, isApproved: true, status: true, updatedAt: true },
     })
 
     // Log admin action (fire-and-forget)

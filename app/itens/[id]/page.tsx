@@ -79,7 +79,7 @@ export default async function ItemDetailPage({ params }: Props) {
         pricePerDay: true, pricePerWeek: true, pricePerMonth: true,
         depositAmount: true, rules: true, estimatedRetailPrice: true,
         city: true, state: true, neighborhood: true,
-        isActive: true, ownerId: true, viewCount: true,
+        status: true, ownerId: true, viewCount: true,
         voltage: true, categoryId: true,
         requireIdVerification: true, requirePhone: true,
         category: { select: { name: true } },
@@ -135,14 +135,14 @@ export default async function ItemDetailPage({ params }: Props) {
         categoryId: item.categoryId,
         city:       item.city,
         deletedAt:  null,
-        isActive:   true,
+        status:     "AVAILABLE",
         isApproved: true,
         id:         { not: item.id },
         owner:      { deletedAt: null },
       },
       select: {
         id: true, title: true, pricePerDay: true, condition: true,
-        city: true, state: true, neighborhood: true, isActive: true,
+        city: true, state: true, neighborhood: true, status: true,
         images:   { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
         category: { select: { name: true } },
         owner:    { select: { name: true, isVerified: true } },
@@ -212,7 +212,7 @@ export default async function ItemDetailPage({ params }: Props) {
         priceCurrency:     "BRL",
         unitText:          "DAY",
       },
-      availability:    item.isActive
+      availability:    item.status === "AVAILABLE"
         ? "https://schema.org/InStock"
         : "https://schema.org/OutOfStock",
       seller: {

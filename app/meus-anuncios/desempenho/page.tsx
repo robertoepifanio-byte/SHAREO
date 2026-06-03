@@ -84,7 +84,7 @@ export default async function DesempenhoPage() {
     select: {
       id:        true,
       title:     true,
-      isActive:  true,
+      status:    true,
       viewCount: true,
       images:    { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
       _count:    { select: { favorites: true } },
@@ -263,8 +263,8 @@ export default async function DesempenhoPage() {
                                 >
                                   {item.title}
                                 </Link>
-                                <span className={`text-xs ${item.isActive ? "text-success" : "text-muted-foreground"}`}>
-                                  {item.isActive ? "Ativo" : "Pausado"}
+                                <span className={`text-xs ${item.status === "AVAILABLE" ? "text-success" : "text-muted-foreground"}`}>
+                                  {item.status === "AVAILABLE" ? "Ativo" : "Pausado"}
                                 </span>
                               </div>
                             </div>
@@ -329,8 +329,8 @@ export default async function DesempenhoPage() {
                           >
                             {item.title}
                           </Link>
-                          <span className={`text-xs ${item.isActive ? "text-success" : "text-muted-foreground"}`}>
-                            {item.isActive ? "Ativo" : "Pausado"}
+                          <span className={`text-xs ${item.status === "AVAILABLE" ? "text-success" : "text-muted-foreground"}`}>
+                            {item.status === "AVAILABLE" ? "Ativo" : "Pausado"}
                           </span>
                         </div>
                       </div>

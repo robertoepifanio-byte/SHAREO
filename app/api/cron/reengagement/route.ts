@@ -86,7 +86,7 @@ async function sendSimilarItemSuggestions() {
       if (!b.borrower.email) return
 
       const similar = await prisma.item.findMany({
-        where:   { categoryId: b.item.categoryId, city: b.item.city, isActive: true },
+        where:   { categoryId: b.item.categoryId, city: b.item.city, status: "AVAILABLE" },
         take:    3,
         select:  { id: true, title: true, pricePerDay: true, slug: true },
         orderBy: { viewCount: "desc" },
@@ -123,7 +123,7 @@ async function sendFavoriteAvailableReminders() {
   const favorites = await prisma.favorite.findMany({
     where: {
       createdAt: { lte: cutoff },
-      item:      { isActive: true },
+      item:      { status: "AVAILABLE" },
     },
     select: {
       user: { select: { email: true, name: true } },

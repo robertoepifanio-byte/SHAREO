@@ -74,7 +74,6 @@ export default async function ExplorarPage({ searchParams }: Props) {
 
   const where = {
     status:     "AVAILABLE" as const,
-    isActive:   true,
     isApproved: true,
     deletedAt:  null,
     images:     { some: {} },
@@ -120,7 +119,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
       orderBy: getOrderBy(sort),
       select: {
         id: true, title: true, pricePerDay: true, pricePerWeek: true,
-        condition: true, city: true, state: true, neighborhood: true, isActive: true,
+        condition: true, city: true, state: true, neighborhood: true, status: true,
         latitude: true, longitude: true,
         category: { select: { name: true } },
         owner:    { select: { name: true, isVerified: true } },
