@@ -1,29 +1,36 @@
 "use client"
 
-import { useState, type ReactNode } from "react"
+import { useRouter, useSearchParams, usePathname } from "next/navigation"
+import { useCallback, type ReactNode } from "react"
 
 interface Props {
-  /** Conteúdo da view de mapa (ex.: <ItemsMapLoader ...>) */
   mapContent:  ReactNode
-  /** Conteúdo da view de lista (grade de ItemCard) */
   listContent: ReactNode
+  initialView: "map" | "list"
 }
 
-/**
- * P2-57 — Toggle Map/Lista para a página /itens.
- * Mantém o estado de visibilidade no cliente.
- * O Server Component pai (ExplorarPage) passa os dois conteúdos como slots.
- */
-export function MapToggle({ mapContent, listContent }: Props) {
-  const [showMap, setShowMap] = useState(false)
+export function MapToggle({ mapContent, listContent, initialView }: Props) {
+  const showMap   = initialView === "map"
+  const router    = useRouter()
+  const pathname  = usePathname()
+  const params    = useSearchParams()
+
+  const toggle = useCallback(() => {
+    const next = new URLSearchParams(params.toString())
+    if (showMap) {
+      next.delete("view")
+    } else {
+      next.set("view", "map")
+    }
+    router.replace(`${pathname}?${next.toString()}`, { scroll: false })
+  }, [showMap, router, pathname, params])
 
   return (
     <>
-      {/* Botão de alternância — visível em todos os breakpoints */}
       <div className="mb-4 flex justify-end">
         <button
           type="button"
-          onClick={() => setShowMap((v) => !v)}
+          onClick={toggle}
           aria-pressed={showMap}
           className="inline-flex h-11 min-w-[44px] items-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-semibold text-foreground hover:border-brand/40 hover:bg-brand/5 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
         >

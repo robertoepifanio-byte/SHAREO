@@ -35,6 +35,7 @@ interface SearchParams {
   dist?:      string
   ulat?:      string
   ulng?:      string
+  view?:      string
 }
 
 type Props = { searchParams: Promise<SearchParams> }
@@ -215,6 +216,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
     if (sp.ulat)           params.set("ulat",       sp.ulat)
     if (sp.ulng)           params.set("ulng",       sp.ulng)
     if (sp.minRating)      params.set("minRating",  sp.minRating)
+    if (sp.view)           params.set("view",       sp.view)
     if (merged.page && merged.page > 1) params.set("page", String(merged.page))
     const qs = params.toString()
     return `/itens${qs ? `?${qs}` : ""}`
@@ -309,6 +311,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
             userLat={sp.ulat}
             userLng={sp.ulng}
             minRating={sp.minRating}
+            view={sp.view}
           />
         </FilterTrigger>
 
@@ -330,6 +333,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
                 userLat={sp.ulat}
                 userLng={sp.ulng}
                 minRating={sp.minRating}
+                view={sp.view}
               />
             </div>
           </aside>
@@ -417,7 +421,11 @@ export default async function ExplorarPage({ searchParams }: Props) {
                 </>
               )
 
-              return <MapToggle mapContent={mapView} listContent={listView} />
+              return (
+                <Suspense fallback={listView}>
+                  <MapToggle mapContent={mapView} listContent={listView} initialView={sp.view === "map" ? "map" : "list"} />
+                </Suspense>
+              )
             })() : (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
@@ -455,6 +463,7 @@ function FilterForm({
   userLat,
   userLng,
   minRating,
+  view,
 }: {
   categories: { id: string; name: string }[]
   categoryId?: string
@@ -465,11 +474,13 @@ function FilterForm({
   userLat?:    string
   userLng?:    string
   minRating?:  string
+  view?:       string
 }) {
   return (
     <form method="GET" action="/itens" className="space-y-5">
       {search   && <input type="hidden" name="search" value={search} />}
       {sort     && <input type="hidden" name="sort"   value={sort} />}
+      {view     && <input type="hidden" name="view"   value={view} />}
       {/* ulat/ulng são gerenciados pelo DistanceFilter (client) para suportar geolocalização dinâmica */}
 
       {/* Categoria */}
