@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
     // Carrega item e valida disponibilidade
     const [item, borrower] = await Promise.all([
       prisma.item.findFirst({
-        where:  { id: itemId, isActive: true, isApproved: true, deletedAt: null },
+        where:  { id: itemId, status: "AVAILABLE", isApproved: true, deletedAt: null },
         select: {
           id: true, ownerId: true, title: true,
           pricePerDay: true, pricePerWeek: true, pricePerMonth: true, depositAmount: true,
