@@ -178,6 +178,9 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
   )
   const [deletedImageIds, setDeletedImageIds] = useState<string[]>([])
 
+  // Prevents double-submit: ref is synchronous (no re-render delay)
+  const submittingRef = useRef(false)
+
   // UI state
   const [categories,    setCategories]    = useState<Category[]>([])
   const [errors,        setErrors]        = useState<Record<string, string>>({})
@@ -357,11 +360,14 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
+    if (submittingRef.current) return
+    submittingRef.current = true
 
     const clientErrors = validate()
     if (Object.keys(clientErrors).length > 0) {
       setErrors(clientErrors)
       window.scrollTo({ top: 0, behavior: "smooth" })
+      submittingRef.current = false
       return
     }
 
@@ -466,6 +472,7 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
     } catch {
       setErrors({ form: "Erro inesperado. Tente novamente." })
       setLoading(false)
+      submittingRef.current = false
     }
   }
 
