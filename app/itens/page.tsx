@@ -123,7 +123,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
         category: { select: { name: true } },
         owner:    { select: { name: true, isVerified: true } },
         images:   { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
-        _count:   { select: { reviews: true, favorites: true } },
+        _count:   { select: { reviews: true, favorites: true, bookings: { where: { status: { in: ["CONFIRMED", "ACTIVE"] } } } } },
         reviews:  { select: { rating: true }, where: { reviewType: "ITEM" } },
       },
     }),

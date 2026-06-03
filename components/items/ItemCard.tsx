@@ -14,7 +14,7 @@ interface ItemCardItem {
   images:       { url: string }[]
   category:     { name: string } | null
   owner:        { name: string; isVerified: boolean } | null
-  _count?:      { reviews: number; favorites: number; bookings?: number }
+  _count?:      { reviews: number; favorites: number; bookings?: number | null }
   avgRating?:   number | null
   distanceKm?:  number | null
 }
@@ -37,7 +37,8 @@ export function ItemCard({ item, showActions = false, isFavorited = false, hotBa
     ? `${item.neighborhood}, ${item.city}`
     : item.city
 
-  const isActive = item.isActive !== false
+  const isActive  = item.isActive !== false
+  const isBooked  = (item._count?.bookings ?? 0) > 0
 
   return (
     <article
@@ -70,13 +71,17 @@ export function ItemCard({ item, showActions = false, isFavorited = false, hotBa
 
           {/* Badge de disponibilidade */}
           <div className="absolute left-2 top-2">
-            {isActive ? (
-              <span className="rounded-full bg-success px-2 py-0.5 text-xs font-bold text-white">
-                Disponível
-              </span>
-            ) : (
+            {!isActive ? (
               <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
                 Pausado
+              </span>
+            ) : isBooked ? (
+              <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-bold text-white">
+                Reservado
+              </span>
+            ) : (
+              <span className="rounded-full bg-success px-2 py-0.5 text-xs font-bold text-white">
+                Disponível
               </span>
             )}
           </div>
