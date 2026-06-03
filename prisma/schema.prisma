@@ -35,7 +35,8 @@ enum ItemCondition {
 enum ItemStatus {
   DRAFT     // Rascunho — sem fotos; não aparece em listagens públicas
   AVAILABLE // Publicado e disponível para reserva
-  PAUSED    // Pausado pelo proprietário (isActive=false)
+  PAUSED    // Pausado pelo proprietário
+  DELETED   // Soft-delete — fonte de verdade para exclusão lógica
 }
 
 enum BookingStatus {
@@ -228,9 +229,9 @@ model Item {
   requireIdVerification Boolean @default(false) // locatário precisa ter identidade verificada
   requirePhone          Boolean @default(false) // locatário precisa ter telefone cadastrado
 
-  // Status
-  status       ItemStatus @default(AVAILABLE) // DRAFT quando sem fotos; AVAILABLE quando tem ≥1 foto
-  isActive     Boolean    @default(true)
+  // Status — fonte de verdade única para visibilidade e soft-delete
+  // DRAFT: sem fotos; AVAILABLE: publicado; PAUSED: pausado pelo dono; DELETED: soft-delete
+  status       ItemStatus @default(DRAFT)
   isApproved   Boolean    @default(true) // true = publicação direta (moderação reativa no MVP)
   approvedAt   DateTime?
   approvedById String?
@@ -249,7 +250,7 @@ model Item {
   @@index([ownerId])
   @@index([categoryId])
   @@index([latitude, longitude])
-  @@index([status, isActive, isApproved, deletedAt])
+  @@index([status, isApproved, deletedAt])
   @@index([slug])
   @@map("items")
 }
