@@ -15,13 +15,10 @@ export default async function EditarPerfilPage() {
   const user = await prisma.user.findUnique({
     where:  { id: session.user.id },
     select: {
-      name:         true,
-      bio:          true,
-      phone:        true,
-      city:         true,
-      state:        true,
-      neighborhood: true,
-      avatarUrl:    true,
+      name:      true,
+      bio:       true,
+      phone:     true,
+      avatarUrl: true,
     },
   })
 
