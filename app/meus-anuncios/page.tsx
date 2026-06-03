@@ -23,7 +23,6 @@ export default async function MeusAnunciosPage() {
       city:         true,
       state:        true,
       neighborhood: true,
-      isActive:     true,
       status:       true,
       category:     { select: { name: true } },
       owner:        { select: { name: true, isVerified: true } },

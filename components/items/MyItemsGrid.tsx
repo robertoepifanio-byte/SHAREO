@@ -12,7 +12,6 @@ interface ItemSummary {
   city:         string
   state:        string
   neighborhood?: string | null
-  isActive:     boolean
   status:       string
   images:       { url: string }[]
   category:     { name: string }
@@ -51,20 +50,22 @@ export function MyItemsGrid({ initialItems }: MyItemsGridProps) {
     }
   }
 
-  async function handleToggleActive(id: string, currentIsActive: boolean) {
+  async function handleToggleActive(id: string, currentStatus: string) {
     setToggling(id)
     setError(null)
+
+    const newStatus = currentStatus === "AVAILABLE" ? "PAUSED" : "AVAILABLE"
 
     try {
       const res = await fetch(`/api/items/${id}`, {
         method:  "PUT",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ isActive: !currentIsActive }),
+        body:    JSON.stringify({ status: newStatus }),
       })
 
       if (res.ok) {
         setItems((prev) =>
-          prev.map((item) => item.id === id ? { ...item, isActive: !currentIsActive } : item)
+          prev.map((item) => item.id === id ? { ...item, status: newStatus } : item)
         )
       } else {
         const json = await res.json()
@@ -122,6 +123,23 @@ export function MyItemsGrid({ initialItems }: MyItemsGridProps) {
                 <p className="text-sm text-muted-foreground">
                   Adicione pelo menos 1 foto para publicar
                 </p>
+              </div>
+            )}
+            {item.status === "PAUSED" && (
+              <div className="mb-2 flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2.5 min-h-[44px]">
+                <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground border border-border">
+                  Pausado
+                </span>
+                <p className="text-sm text-muted-foreground">
+                  Anúncio oculto das listagens públicas
+                </p>
+              </div>
+            )}
+            {item.status === "AVAILABLE" && (
+              <div className="mb-2 flex items-center gap-2 rounded-lg border border-success/30 bg-success/5 px-3 py-2.5 min-h-[44px]">
+                <span className="inline-flex items-center rounded-full bg-success/10 px-2.5 py-0.5 text-xs font-semibold text-success border border-success/30">
+                  Disponível
+                </span>
               </div>
             )}
             <ItemCard
