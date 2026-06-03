@@ -4,8 +4,6 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { UpgradePjForm } from "./_UpgradePjForm"
-import { ReferralSection } from "./_ReferralSection"
-import { getReferralStats } from "@/lib/referral"
 import Link from "next/link"
 
 export const metadata: Metadata = { title: "Meu Perfil" }
@@ -22,7 +20,7 @@ export default async function ProfilePage() {
 
   const userId = session.user.id
 
-  const [user, reviewStats, referralStats] = await Promise.all([
+  const [user, reviewStats] = await Promise.all([
     prisma.user.findUnique({
       where:  { id: userId },
       select: {
@@ -64,7 +62,6 @@ export default async function ProfilePage() {
       _avg:  { rating: true },
       _count: { _all: true },
     }),
-    getReferralStats(userId),
   ])
 
   if (!user) redirect("/login")
@@ -263,17 +260,17 @@ export default async function ProfilePage() {
             </div>
           )}
 
-          {/* ── Programa de Indicação ── */}
-          <ReferralSection stats={referralStats} />
-
           {/* ── Links rápidos para sub-páginas ── */}
           <div className="rounded-xl border border-border bg-surface p-5">
             <h2 className="mb-4 font-semibold text-foreground">Configurações</h2>
             <div className="space-y-1">
               {[
-                { href: "/perfil/editar",   icon: "✏️", label: "Editar perfil",    desc: "Nome, bio, telefone, avatar" },
-                { href: "/perfil/endereco", icon: "📍", label: "Endereço",         desc: "Cidade, estado, bairro" },
-                { href: "/perfil/seguranca",icon: "🔒", label: "Login e segurança",desc: "E-mail, senha, excluir conta" },
+                { href: "/perfil/editar",     icon: "✏️", label: "Editar perfil",         desc: "Nome, bio, telefone, avatar" },
+                { href: "/perfil/endereco",   icon: "📍", label: "Endereço",               desc: "Cidade, estado, bairro" },
+                { href: "/perfil/seguranca",  icon: "🔒", label: "Login e segurança",      desc: "E-mail, senha, excluir conta" },
+                { href: "/perfil/documentos", icon: "🪪", label: "Documentos",             desc: "CPF/CNPJ e verificação de identidade" },
+                { href: "/perfil/indicacoes", icon: "🎁", label: "Indicações",             desc: "Programa de indicação e créditos" },
+                { href: "/perfil/dados",      icon: "📂", label: "Privacidade e dados",    desc: "Exportar dados, política de retenção" },
               ].map((item) => (
                 <Link
                   key={item.href}
