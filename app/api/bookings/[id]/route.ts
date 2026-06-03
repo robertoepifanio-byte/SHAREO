@@ -97,8 +97,9 @@ const TRANSITIONS: Record<
   confirm:       { requiredStatus: ["PENDING"],              allowedRole: "owner",    nextStatus: "CONFIRMED" },
   cancel:        { requiredStatus: ["PENDING", "CONFIRMED"], allowedRole: "both",     nextStatus: "CANCELLED", requiresReason: true },
   mark_active:   { requiredStatus: ["CONFIRMED"],            allowedRole: "owner",    nextStatus: "ACTIVE" },
-  mark_returned: { requiredStatus: ["ACTIVE"],               allowedRole: "borrower", nextStatus: "RETURNED" },
-  open_dispute:  { requiredStatus: ["ACTIVE", "RETURNED"],   allowedRole: "both",     nextStatus: "DISPUTED",  requiresReason: true },
+  mark_returned:  { requiredStatus: ["ACTIVE"],               allowedRole: "borrower", nextStatus: "RETURNED"  },
+  confirm_return: { requiredStatus: ["RETURNED"],             allowedRole: "owner",    nextStatus: "COMPLETED" },
+  open_dispute:   { requiredStatus: ["ACTIVE", "RETURNED"],  allowedRole: "both",     nextStatus: "DISPUTED",  requiresReason: true },
 }
 
 export async function PATCH(req: NextRequest, { params }: Params) {
@@ -248,10 +249,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     // Webhooks de saída (fire-and-forget)
     const webhookEventMap: Partial<Record<typeof action, WebhookEvent>> = {
-      confirm:       "booking.confirmed",
-      cancel:        "booking.cancelled",
-      mark_active:   "booking.active",
-      mark_returned: "booking.returned",
+      confirm:        "booking.confirmed",
+      cancel:         "booking.cancelled",
+      mark_active:    "booking.active",
+      mark_returned:  "booking.returned",
+      confirm_return: "booking.completed",
     }
     const webhookEvent = webhookEventMap[action]
     if (webhookEvent) {
@@ -266,9 +268,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     // Notificações (fire-and-forget)
     const notifyUserId = isOwner ? booking.borrowerId : booking.ownerId
     const notifMap: Partial<Record<typeof action, { type: string; title: string; body: string }>> = {
-      confirm:       { type: "BOOKING_CONFIRMED",  title: "Reserva confirmada!",     body: `Sua reserva de "${booking.item.title}" foi confirmada.` },
-      cancel:        { type: "BOOKING_CANCELLED",  title: "Reserva cancelada",       body: `A reserva de "${booking.item.title}" foi cancelada.` },
-      mark_returned: { type: "BOOKING_RETURNED",   title: "Devolução registrada",    body: `"${booking.item.title}" foi devolvido. Avalie a experiência!` },
+      confirm:        { type: "BOOKING_CONFIRMED",  title: "Reserva confirmada!",        body: `Sua reserva de "${booking.item.title}" foi confirmada.` },
+      cancel:         { type: "BOOKING_CANCELLED",  title: "Reserva cancelada",          body: `A reserva de "${booking.item.title}" foi cancelada.` },
+      mark_returned:  { type: "BOOKING_RETURNED",   title: "Devolução registrada",       body: `"${booking.item.title}" foi devolvido. Avalie a experiência!` },
+      confirm_return: { type: "BOOKING_RETURNED",   title: "Devolução confirmada!",      body: `O proprietário confirmou a devolução de "${booking.item.title}". A reserva está concluída.` },
     }
     const notif = notifMap[action]
     if (notif) {

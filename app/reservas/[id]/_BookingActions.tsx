@@ -13,7 +13,7 @@ interface Props {
   conversationId?: string
 }
 
-type Action = "confirm" | "cancel" | "mark_active" | "mark_returned" | "open_dispute"
+type Action = "confirm" | "cancel" | "mark_active" | "mark_returned" | "confirm_return" | "open_dispute"
 
 export function BookingActions({ bookingId, status, isOwner, isBorrower, conversationId }: Props) {
   const router          = useRouter()
@@ -61,8 +61,9 @@ export function BookingActions({ bookingId, status, isOwner, isBorrower, convers
   const actions: { action: Action; label: string; variant: "primary" | "danger" | "ghost" }[] = []
 
   if (isOwner) {
-    if (status === "PENDING")    actions.push({ action: "confirm",     label: "✅ Confirmar reserva",  variant: "primary" })
-    if (status === "CONFIRMED")  actions.push({ action: "mark_active", label: "▶️ Marcar como ativo",   variant: "primary" })
+    if (status === "PENDING")    actions.push({ action: "confirm",        label: "✅ Confirmar reserva",    variant: "primary" })
+    if (status === "CONFIRMED")  actions.push({ action: "mark_active",    label: "▶️ Marcar como ativo",     variant: "primary" })
+    if (status === "RETURNED")   actions.push({ action: "confirm_return", label: "📦 Confirmar devolução",   variant: "primary" })
   }
   if (isBorrower) {
     if (status === "ACTIVE") actions.push({ action: "mark_returned", label: "📦 Confirmar devolução", variant: "primary" })

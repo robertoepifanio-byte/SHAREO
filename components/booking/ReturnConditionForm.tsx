@@ -82,24 +82,15 @@ export function ReturnConditionForm({ bookingId }: Props) {
           throw new Error(json?.error?.message ?? "Erro ao abrir disputa.")
         }
       } else {
-        // Perfeito ou desgaste normal: confirma condição via ownerNote
+        // Perfeito ou desgaste normal: confirma devolução → COMPLETED
         const res = await fetch(`/api/bookings/${bookingId}`, {
           method:  "PATCH",
           headers: { "Content-Type": "application/json" },
-          body:    JSON.stringify({
-            action:    "confirm_condition",
-            condition: condition,
-          }),
+          body:    JSON.stringify({ action: "confirm_return" }),
         })
-        // confirm_condition pode não estar no backend ainda — tolera 422 (ação não mapeada)
-        // A transição principal já foi mark_returned; este passo registra a nota do dono.
         if (!res.ok) {
           const json = await res.json().catch(() => ({}))
-          const code = json?.error?.code
-          // Se a ação não existe no backend, apenas silencia (será adicionada futuramente)
-          if (code !== "INVALID_ACTION") {
-            throw new Error(json?.error?.message ?? "Erro ao confirmar condição.")
-          }
+          throw new Error(json?.error?.message ?? "Erro ao confirmar devolução.")
         }
       }
 
