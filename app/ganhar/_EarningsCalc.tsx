@@ -155,7 +155,7 @@ export function EarningsCalc() {
       {/* ── CTA ── */}
       <div className="flex flex-col gap-3 sm:flex-row">
         <Link
-          href="/meus-anuncios/novo"
+          href="/itens/novo"
           className="flex-1 rounded-xl bg-brand py-3.5 text-center text-sm font-bold text-white hover:opacity-90 transition-opacity"
         >
           Anunciar meu item
