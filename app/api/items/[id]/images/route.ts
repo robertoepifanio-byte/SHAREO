@@ -28,7 +28,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     const { id } = await params
     const item = await prisma.item.findFirst({
       where: { id, deletedAt: null },
-      select: { ownerId: true, _count: { select: { images: true } } },
+      select: { ownerId: true, status: true, _count: { select: { images: true } } },
     })
 
     if (!item) {
@@ -106,6 +106,12 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       select: { id: true, url: true, order: true },
     })
 
+    // Promote DRAFT → AVAILABLE when the first photo is added
+    if (item.status === "DRAFT" && item._count.images === 0) {
+      prisma.item.update({ where: { id }, data: { status: "AVAILABLE" } })
+        .catch((e) => console.error("[images/promote-draft]", e instanceof Error ? e.message : e))
+    }
+
     return NextResponse.json({ data: image }, { status: 201 })
   } catch (e) {
     console.error("[POST /api/items/[id]/images]", e instanceof Error ? e.message : e)
@@ -138,7 +144,7 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
 
     const image = await prisma.itemImage.findFirst({
       where: { id: imageId, itemId: id },
-      include: { item: { select: { ownerId: true } } },
+      include: { item: { select: { ownerId: true, status: true, _count: { select: { images: true } } } } },
     })
 
     if (!image) {
@@ -165,6 +171,12 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
     }
 
     await prisma.itemImage.delete({ where: { id: imageId } })
+
+    // Demote AVAILABLE → DRAFT when the last photo is removed
+    if (image.item.status === "AVAILABLE" && image.item._count.images === 1) {
+      prisma.item.update({ where: { id }, data: { status: "DRAFT" } })
+        .catch((e) => console.error("[images/demote-to-draft]", e instanceof Error ? e.message : e))
+    }
 
     return new NextResponse(null, { status: 204 })
   } catch (e) {
