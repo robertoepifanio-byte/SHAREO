@@ -6,10 +6,10 @@ import { useRouter } from "next/navigation"
 interface Props {
   itemId:     string
   isApproved: boolean
-  isActive:   boolean
+  status:     string
 }
 
-export function ItemActions({ itemId, isApproved, isActive }: Props) {
+export function ItemActions({ itemId, isApproved, status }: Props) {
   const router                 = useRouter()
   const [, startTransition]    = useTransition()
   const [loading, setLoading]  = useState<string | null>(null)
@@ -56,7 +56,7 @@ export function ItemActions({ itemId, isApproved, isActive }: Props) {
         disabled={!!loading}
         className="flex h-11 items-center justify-center rounded-md bg-muted px-3 text-xs font-semibold text-foreground hover:bg-border disabled:opacity-50 transition-colors"
       >
-        {loading === "toggle_active" ? "…" : isActive ? "Desativar" : "Ativar"}
+        {loading === "toggle_active" ? "…" : status === "AVAILABLE" ? "Pausar" : "Ativar"}
       </button>
       {error && <p className="text-[10px] text-red-600">{error}</p>}
     </div>

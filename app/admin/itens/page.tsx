@@ -17,7 +17,7 @@ export default async function AdminItensPage() {
       title:       true,
       pricePerDay: true,
       isApproved:  true,
-      isActive:    true,
+      status:      true,
       createdAt:   true,
       category:    { select: { name: true } },
       owner:       { select: { name: true, email: true } },
@@ -45,15 +45,20 @@ export default async function AdminItensPage() {
           <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${item.isApproved ? "bg-success/10 text-success" : "bg-orange-100 text-[#9A4700]"}`}>
             {item.isApproved ? "Aprovado" : "Pendente"}
           </span>
-          {!item.isActive && (
-            <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-600">
-              Inativo
+          {item.status === "PAUSED" && (
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+              Pausado
+            </span>
+          )}
+          {item.status === "DRAFT" && (
+            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+              Rascunho
             </span>
           )}
         </div>
       </td>
       <td className="py-3 pl-2">
-        <ItemActions itemId={item.id} isApproved={item.isApproved} isActive={item.isActive} />
+        <ItemActions itemId={item.id} isApproved={item.isApproved} status={item.status} />
       </td>
     </tr>
   )

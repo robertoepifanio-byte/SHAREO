@@ -10,7 +10,7 @@ interface ItemCardItem {
   city:         string
   state:        string
   neighborhood?: string | null
-  isActive?:    boolean
+  status?:      string
   images:       { url: string }[]
   category:     { name: string } | null
   owner:        { name: string; isVerified: boolean } | null
@@ -26,7 +26,7 @@ interface ItemCardProps {
   hotBadge?:        boolean
   toggling?:        boolean
   onDelete?:        (id: string) => void
-  onToggleActive?:  (id: string, currentIsActive: boolean) => void
+  onToggleActive?:  (id: string, currentStatus: string) => void
 }
 
 export function ItemCard({ item, showActions = false, isFavorited = false, hotBadge = false, toggling = false, onDelete, onToggleActive }: ItemCardProps) {
@@ -37,15 +37,15 @@ export function ItemCard({ item, showActions = false, isFavorited = false, hotBa
     ? `${item.neighborhood}, ${item.city}`
     : item.city
 
-  const isActive  = item.isActive !== false
-  const isBooked  = (item._count?.bookings ?? 0) > 0
+  const isAvailable = item.status === "AVAILABLE" || item.status === undefined
+  const isBooked    = (item._count?.bookings ?? 0) > 0
 
   return (
     <article
       className={[
         "group flex flex-col rounded-lg border border-border bg-surface",
         "shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200",
-        !isActive ? "opacity-60" : "",
+        !isAvailable ? "opacity-60" : "",
       ].join(" ")}
     >
       <Link href={`/itens/${item.id}`} className="block flex-1 rounded-t-lg outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface">
@@ -71,9 +71,9 @@ export function ItemCard({ item, showActions = false, isFavorited = false, hotBa
 
           {/* Badge de disponibilidade */}
           <div className="absolute left-2 top-2">
-            {!isActive ? (
+            {!isAvailable ? (
               <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                Pausado
+                {item.status === "DRAFT" ? "Rascunho" : "Pausado"}
               </span>
             ) : isBooked ? (
               <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-bold text-white">
@@ -159,18 +159,18 @@ export function ItemCard({ item, showActions = false, isFavorited = false, hotBa
             >
               Editar
             </Link>
-            {onToggleActive && (
+            {onToggleActive && item.status !== "DRAFT" && (
               <button
-                onClick={() => onToggleActive(item.id, isActive)}
+                onClick={() => onToggleActive(item.id, item.status ?? "AVAILABLE")}
                 disabled={toggling}
                 className={[
                   "flex-1 rounded-md border py-1.5 text-xs font-medium transition-colors disabled:opacity-50",
-                  isActive
+                  isAvailable
                     ? "border-amber-300 text-amber-700 hover:bg-amber-50"
                     : "border-success/40 text-success hover:bg-success/5",
                 ].join(" ")}
               >
-                {toggling ? "…" : isActive ? "Pausar" : "Reativar"}
+                {toggling ? "…" : isAvailable ? "Pausar" : "Reativar"}
               </button>
             )}
           </div>
