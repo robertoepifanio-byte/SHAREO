@@ -5,6 +5,27 @@ import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
 import { UpdateProfileSchema } from "@/lib/validations/users"
 
+/** Geocodifica cidade+estado do usuário e salva lat/lng no perfil (fire-and-forget) */
+async function geocodeUserLocation(userId: string, city: string, state: string) {
+  try {
+    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+    if (!token) return
+    const query = `${city.trim()}, ${state.trim()}, Brasil`
+    const url   = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${token}&country=BR&language=pt&limit=1&types=place,locality`
+    const res   = await fetch(url)
+    const data  = await res.json() as { features?: { center: [number, number] }[] }
+    const feat  = data.features?.[0]
+    if (!feat) return
+    const [lng, lat] = feat.center
+    await prisma.user.update({
+      where: { id: userId },
+      data:  { latitude: lat, longitude: lng },
+    })
+  } catch (e) {
+    console.error("[geocodeUserLocation]", userId, e instanceof Error ? e.message : e)
+  }
+}
+
 // LGPD art. 18 — direito ao esquecimento
 export async function DELETE() {
   try {
@@ -179,6 +200,17 @@ export async function PATCH(req: NextRequest) {
         updatedAt:    true,
       },
     })
+
+    // Geocodificar cidade/estado do perfil (fire-and-forget) para centrar o mapa corretamente
+    const cityChanged  = d.city  !== undefined
+    const stateChanged = d.state !== undefined
+    if (cityChanged || stateChanged) {
+      const city  = d.city  ?? updated.city
+      const state = d.state ?? updated.state
+      if (city && state) {
+        void geocodeUserLocation(session.user.id, city, state)
+      }
+    }
 
     return NextResponse.json({ data: updated })
   } catch (e) {
