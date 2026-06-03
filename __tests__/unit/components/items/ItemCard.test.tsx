@@ -5,13 +5,16 @@
  *  - Renderização de título, preço BRL, localização
  *  - Rating presente / ausente
  *  - distanceKm formatado
- *  - Badges de disponibilidade (Disponível / Pausado)
+ *  - Badges de disponibilidade (Disponível / Pausado / Rascunho)
  *  - Alt da imagem contém o título
  *  - Ausência do FavoriteButton quando showActions=true
  *  - Acessibilidade com jest-axe (WCAG 2.1 AA)
  *
  * Nota: jest-axe já está instalado (jest-axe ^9.0.0 em devDependencies)
  * e toHaveNoViolations já está registrado globalmente em jest.setup.ts.
+ *
+ * Migração P2-isActive→status: campo isActive removido; usa ItemStatus enum
+ * (AVAILABLE, PAUSED, DRAFT, DELETED). Mocks atualizados em 2026-06-03.
  */
 
 import React from "react"
@@ -57,7 +60,7 @@ function makeItem(overrides: Partial<Parameters<typeof ItemCard>[0]["item"]> = {
     city:        "Recife",
     state:       "PE",
     neighborhood: "Boa Viagem",
-    isActive:    true,
+    status:      "AVAILABLE",
     images:      [{ url: "https://example.com/foto.jpg" }],
     category:    { name: "Ferramentas" },
     owner:       { name: "João Silva", isVerified: false },
@@ -140,22 +143,24 @@ describe("ItemCard", () => {
   })
 
   describe("badges de disponibilidade", () => {
-    it("exibe badge 'Disponível' quando isActive=true", () => {
-      render(<ItemCard item={makeItem({ isActive: true })} />)
+    it("exibe badge 'Disponível' quando status=AVAILABLE", () => {
+      render(<ItemCard item={makeItem({ status: "AVAILABLE" })} />)
       expect(screen.getByText("Disponível")).toBeInTheDocument()
     })
 
-    it("exibe badge 'Pausado' quando isActive=false", () => {
-      render(<ItemCard item={makeItem({ isActive: false })} />)
+    it("exibe badge 'Pausado' quando status=PAUSED", () => {
+      render(<ItemCard item={makeItem({ status: "PAUSED" })} />)
       expect(screen.getByText("Pausado")).toBeInTheDocument()
     })
 
-    it("exibe badge 'Disponível' quando isActive é undefined (padrão)", () => {
-      // O componente trata `isActive !== false` como true
-      const item = makeItem()
-      // @ts-expect-error — testando comportamento sem isActive
-      delete item.isActive
-      render(<ItemCard item={item} />)
+    it("exibe badge 'Rascunho' quando status=DRAFT", () => {
+      render(<ItemCard item={makeItem({ status: "DRAFT" })} />)
+      expect(screen.getByText("Rascunho")).toBeInTheDocument()
+    })
+
+    it("exibe badge 'Disponível' quando status é undefined (padrão)", () => {
+      // O componente trata `status === undefined` como AVAILABLE
+      render(<ItemCard item={makeItem({ status: undefined })} />)
       expect(screen.getByText("Disponível")).toBeInTheDocument()
     })
   })
@@ -195,13 +200,13 @@ describe("ItemCard", () => {
   })
 
   describe("acessibilidade (jest-axe)", () => {
-    it("não tem violações WCAG no estado padrão (isActive=true, com rating e distância)", async () => {
+    it("não tem violações WCAG no estado padrão (status=AVAILABLE, com rating e distância)", async () => {
       const { container } = render(<ItemCard item={makeItem()} />)
       expect(await axe(container)).toHaveNoViolations()
     })
 
-    it("não tem violações WCAG quando isActive=false", async () => {
-      const { container } = render(<ItemCard item={makeItem({ isActive: false })} />)
+    it("não tem violações WCAG quando status=PAUSED", async () => {
+      const { container } = render(<ItemCard item={makeItem({ status: "PAUSED" })} />)
       expect(await axe(container)).toHaveNoViolations()
     })
 
