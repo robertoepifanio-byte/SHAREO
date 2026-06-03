@@ -73,9 +73,11 @@ export default async function ExplorarPage({ searchParams }: Props) {
   const skip       = (page - 1) * PAGE_SIZE
 
   const where = {
+    status:     "AVAILABLE" as const,
     isActive:   true,
     isApproved: true,
     deletedAt:  null,
+    images:     { some: {} },
     ...(search && {
       OR: [
         { title:       { contains: search, mode: "insensitive" as const } },
