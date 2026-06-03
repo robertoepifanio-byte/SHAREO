@@ -13,6 +13,7 @@ interface ItemSummary {
   state:        string
   neighborhood?: string | null
   isActive:     boolean
+  status:       string
   images:       { url: string }[]
   category:     { name: string }
   owner:        { name: string; isVerified: boolean }
@@ -113,6 +114,16 @@ export function MyItemsGrid({ initialItems }: MyItemsGridProps) {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {items.map((item) => (
           <div key={item.id} className={deleting === item.id ? "pointer-events-none opacity-50" : ""}>
+            {item.status === "DRAFT" && (
+              <div className="mb-2 flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2.5 min-h-[44px]">
+                <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 border border-amber-300">
+                  Rascunho
+                </span>
+                <p className="text-sm text-muted-foreground">
+                  Adicione pelo menos 1 foto para publicar
+                </p>
+              </div>
+            )}
             <ItemCard
               item={item}
               showActions
