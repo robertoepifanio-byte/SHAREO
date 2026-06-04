@@ -5,6 +5,44 @@ import { NotificationBell } from "@/components/ui/NotificationBell"
 import { MobileMenu } from "@/components/layout/MobileMenu"
 import { UserDropdown } from "@/components/layout/UserDropdown"
 import { HelpButton } from "@/components/layout/HelpButton"
+import { NavDropdown } from "@/components/layout/NavDropdown"
+
+const NAV_SECTIONS = [
+  {
+    label: "Explorar Itens",
+    items: [
+      { href: "/itens",              label: "Categorias"      },
+      { href: "/itens?view=map",     label: "Busca no Mapa"   },
+      { href: "/itens",              label: "Filtros de Busca" },
+      { href: "/itens?sort=popular", label: "Itens Populares" },
+    ],
+  },
+  {
+    label: "Anunciar Item",
+    items: [
+      { href: "/itens/novo",             label: "Cadastre seu Item"     },
+      { href: "/anunciar/estimativa",    label: "Estimativa de Ganhos"  },
+      { href: "/anunciar/dicas",         label: "Dicas para Anfitriões" },
+    ],
+  },
+  {
+    label: "Experiências Locais",
+    items: [
+      { href: "/comunidade/destaques", label: "Destaques Locais"    },
+      { href: "/comunidade/historias", label: "Histórias de Usuários" },
+      { href: "/comunidade",           label: "Comunidade"          },
+    ],
+  },
+  {
+    label: "Ajuda e Segurança",
+    items: [
+      { href: "/ajuda",               label: "Central de Ajuda"         },
+      { href: "/perfil/documentos",   label: "Verificação de Identidade" },
+      { href: "/politicas",           label: "Políticas e Regras"        },
+      { href: "/suporte",             label: "Suporte 24/7"              },
+    ],
+  },
+] as const
 
 export async function AppHeader() {
   const session = await auth().catch(() => null)
@@ -38,15 +76,13 @@ export async function AppHeader() {
 
         {/* Nav desktop — oculta em mobile */}
         <nav className="hidden md:flex items-center gap-1 ml-6" aria-label="Navegação principal">
-          <Link href="/"           className="rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:bg-white/10 hover:text-white transition-colors outline-none focus-visible:ring-1 focus-visible:ring-white">Início</Link>
-          <Link href="/itens"      className="rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:bg-white/10 hover:text-white transition-colors outline-none focus-visible:ring-1 focus-visible:ring-white">Explorar</Link>
-          <Link href="/itens/novo" className="rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:bg-white/10 hover:text-white transition-colors outline-none focus-visible:ring-1 focus-visible:ring-white">Anunciar</Link>
-          {session && (
-            <>
-              <Link href="/reservas"  className="rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:bg-white/10 hover:text-white transition-colors outline-none focus-visible:ring-1 focus-visible:ring-white">Reservas</Link>
-              <Link href="/mensagens" className="rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:bg-white/10 hover:text-white transition-colors outline-none focus-visible:ring-1 focus-visible:ring-white">Mensagens</Link>
-            </>
-          )}
+          {NAV_SECTIONS.map((section) => (
+            <NavDropdown
+              key={section.label}
+              label={section.label}
+              items={section.items as unknown as { href: string; label: string }[]}
+            />
+          ))}
         </nav>
 
         {/* Ações de autenticação */}
