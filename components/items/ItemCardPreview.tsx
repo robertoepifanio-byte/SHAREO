@@ -54,10 +54,6 @@ export function ItemCardPreview({ title, pricePerDay, categoryName, city, previe
               </svg>
             </div>
           )}
-          {/* Badge disponível */}
-          <span className="absolute left-2 top-2 rounded-full bg-success px-2 py-0.5 text-[10px] font-bold text-white">
-            Disponível
-          </span>
         </div>
 
         {/* Conteúdo */}
