@@ -1,8 +1,8 @@
 # ShareO — Status do Projeto
 
-**Atualizado em**: 2026-06-06  
+**Atualizado em**: 2026-06-04  
 **Ambiente staging**: https://shareo-rouge.vercel.app (branch `main`, deploy automático)  
-**Último commit**: `a7d0933`
+**Último commit**: `c447e9b`
 
 ---
 
