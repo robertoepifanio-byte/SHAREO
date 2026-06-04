@@ -1,14 +1,14 @@
 # ShareO — Status do Projeto
 
-**Atualizado em**: 2026-06-04  
+**Atualizado em**: 2026-06-06  
 **Ambiente staging**: https://shareo-rouge.vercel.app (branch `main`, deploy automático)  
-**Último commit**: `ee506a0`
+**Último commit**: `a7d0933`
 
 ---
 
 ## Resumo Executivo
 
-Produto completo em staging. Todas as fases H1→H3 + pós-H3 + v2 UX + pós-v2 foram concluídas. Fluxo ponta-a-ponta funcional: auth → anúncio → busca/mapa → reserva → chat → devolução bilateral → avaliação → pagamento Stripe. Próximo passo: itens de polimento listados abaixo antes de abrir produção.
+**Pronto para validação final de staging.** P0 + P1 + P2 concluídos. Fluxo ponta-a-ponta funcional: auth → anúncio → busca/mapa → reserva → chat → devolução bilateral → avaliação → pagamento Stripe. PWA instalável, Sentry monitorando, rate limiting Upstash ativo, CSP com nonces. Após aprovação de staging: criar Supabase production e deploy via `git tag v1.0.0`.
 
 ---
 
@@ -36,8 +36,10 @@ Produto completo em staging. Todas as fases H1→H3 + pós-H3 + v2 UX + pós-v2 
 | CI/CD GitHub Actions (lint → test → build → deploy) | ✅ Ativo |
 | UptimeRobot em `/api/health` (5min) | ✅ Ativo |
 | Vercel Cron (`/api/cron/reminders`, 08h BRT) | ✅ Ativo |
-| Sentry (`sentry.client/server/edge.config.ts`) | ✅ Configurado |
-| Supabase **production** | ❌ Não criado — aguarda validação final em staging |
+| Sentry (`sentry.client/server/edge.config.ts`) | ✅ Source maps + alertas ativos |
+| Upstash Redis (rate limiting) | ✅ Env vars no Vercel — ativo em produção |
+| PWA | ✅ Ícones + screenshots + service worker validados |
+| Supabase **production** | ⏳ Aguarda validação final de staging |
 
 ---
 
@@ -49,7 +51,7 @@ Produto completo em staging. Todas as fases H1→H3 + pós-H3 + v2 UX + pós-v2 
 | Integration — `bookings/patch`, `bookings/reviews`, `auth/register`, `conversations/messages`, `items/get/post/patch` | ✅ Escritos |
 | E2E Playwright — `auth`, `booking-flow`, `navigation`, `search-filter`, `admin`, `chat`, `favorites`, `responsive`, `error-pages`, `anuncio`, `review` | ✅ Escritos |
 | `coverageThreshold` — 70% para `pricing`, `crypto`, `bookings` (módulos P0) | ✅ Configurado |
-| Jest `transformIgnorePatterns` para `next-auth@5` | ❌ Config global pendente (mock local em `get.test.ts`) |
+| Jest `transformIgnorePatterns` para `next-auth@5` | ✅ Corrigido — cobre `@upstash`, `next-auth`, `@auth` |
 
 ---
 
@@ -57,25 +59,23 @@ Produto completo em staging. Todas as fases H1→H3 + pós-H3 + v2 UX + pós-v2 
 
 > Fonte de verdade completa: `docs/backlog-atividades-priorizadas.md`
 
-### 🔴 P0 — Bloqueia produção
+### ✅ P0, P1, P2 — Todos concluídos
 
-| Item | Status | Detalhe |
-|---|---|---|
-| **CSP com nonces** | ✅ | `unsafe-inline` removido; nonce por request em `middleware.ts` |
-| **Rate limiting Upstash** | ✅ (código) / ⚙️ (env vars) | Código pronto; adicionar `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` no Vercel |
-| **Supabase production** | ⏳ | Aguarda validação 100% de staging |
+| Grupo | Itens |
+|---|---|
+| **P0** | CSP nonces ✅ · Upstash Redis ✅ · Sentry ✅ |
+| **P1** | Contexto de busca ✅ · Extensão de prazo UI ✅ · Relatório estruturado ✅ |
+| **P2** | PWA ✅ · /sobre ✅ · stubs ✅ · Jest ✅ · Sentry alertas ✅ · Countdown ✅ · Onboarding ✅ |
 
-### 🟠 P1 — Fluxo incompleto (3 itens)
+### ⏳ Único pendente antes de produção
 
 | Item | Detalhe |
 |---|---|
-| **Preservação de contexto de busca** | Link "← Voltar para resultados" em `app/itens/[id]/page.tsx:251` aponta fixo para `/itens` — deve preservar filtros da URL |
-| **Extensão de prazo — UI** | API `extend` completa; falta botão no `_BookingActions.tsx` para locatário solicitar e proprietário responder |
-| **Relatório de problema estruturado** | "Abrir disputa" com textarea existe; falta formulário categorizado (item não funciona / danificado / faltam acessórios / outro) + foto |
+| **Supabase production** | Criar 3º projeto Supabase isolado + GitHub environment `production` com Required Reviewers. Deploy via `git tag v1.0.0 && git push origin v1.0.0` |
 
-### 🟡 P2 — Polimento (8 itens) · 🟢 P3 — Pós-produção (10 itens)
+### 🟢 P3 — Pós-produção (10 itens)
 
-Ver `docs/backlog-atividades-priorizadas.md`.
+Ver `docs/backlog-atividades-priorizadas.md` — Lighthouse, k6, gamificação, Expo, CO₂, etc.
 
 ---
 
