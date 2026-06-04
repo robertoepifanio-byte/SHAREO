@@ -1,151 +1,121 @@
 # Backlog de Atividades Priorizadas — ShareO
 
-**Versão:** 2.0  
-**Data:** 2026-05-30  
-**Base:** Plano de Teste QA (v2.0) + Análise UX/UI externa + Fluxo de Usuário Completo  
+**Versão:** 3.1  
+**Atualizado em:** 2026-06-04 (verificação completa do código)  
 **Responsável:** Roberto Epifânio
 
-> Sugestões descartadas por conflito com decisões do projeto:
-> WhatsApp (explícito), pagamento integrado (H3), push FCM (fora do sprint), vídeo (H3), aluguel recorrente (H2).
+> Verificação feita diretamente no código — cada item foi confirmado por arquivo/componente.
 
 ---
 
-## 🔴 P0 — Bloqueante para qualquer release
+## ✅ Concluídos (confirmados no código)
 
-| # | Atividade | Origem |
+| Item | Evidência no código |
+|---|---|
+| `coverageThreshold` 70% nos módulos críticos | `jest.config.ts:50` |
+| Testes unitários: `bookings`, `pricing`, `crypto`, `auth`, `rateLimit`, `middleware`, `haversine`, `co2`, `format`, `geo` | `__tests__/unit/` |
+| Testes de integração: `bookings/patch`, `bookings/reviews`, `auth/register`, `conversations/messages`, `items/get/post/patch` | `__tests__/integration/` |
+| Testes E2E: `auth`, `booking-flow`, `navigation`, `search-filter`, `admin`, `chat`, `favorites`, `responsive`, `error-pages`, `anuncio`, `review` | `e2e/` |
+| Páginas 404 e 500 com design ShareO | `app/not-found.tsx`, `app/error.tsx` |
+| Empty states em todas as páginas (inline com ícone + mensagem + CTA) | `/itens`, `/reservas`, `/mensagens`, `MyItemsGrid` |
+| Política de cancelamento (lógica + exibição na UI) | `lib/cancellationPolicy.ts`, `app/itens/[id]/page.tsx` |
+| Calendário de disponibilidade na página do item | `components/items/AvailabilityCalendar` + `app/itens/[id]/page.tsx:331` |
+| Código da reserva + tela "Aguardando Confirmação" com countdown | `app/reservas/[id]/aguardando/`, `app/reservas/sucesso/` |
+| Chips de filtros ativos com X para remover | `app/itens/_ActiveFilterChips.tsx` |
+| `sitemap.ts` e `robots.ts` | `app/sitemap.ts`, `app/robots.ts` |
+| Recuperação de senha | `app/(auth)/esqueci-senha/` |
+| Exclusão de conta (LGPD) | `app/perfil/seguranca/` |
+| Área de perfil completa (7 sub-páginas) | `app/perfil/*` |
+| Filtro bottom sheet (mobile) | `components/items/FilterBottomSheet.tsx` |
+| Pull to refresh (mobile) | `components/items/PullToRefresh.tsx` |
+| CI/CD GitHub Actions | `.github/workflows/ci.yml` |
+| Sentry configurado | `sentry.client.config.ts`, `sentry.server.config.ts`, `sentry.edge.config.ts` |
+| Rate limiting in-memory | `lib/rateLimit.ts` |
+| Nav reestruturada (Início/Explorar/Anunciar dropdowns + MobileMenu expansível) | `components/layout/` |
+| Taxa de resposta do proprietário + contagem de locações na página do item | `app/itens/[id]/page.tsx:109–129, 531–549` |
+| Breadcrumb visual + JSON-LD na página do item | `app/itens/[id]/page.tsx:172, 257` |
+| Seção "Itens similares" na página do item | `app/itens/[id]/page.tsx:132, 609` |
+| Timeout automático de reserva (PENDING → cancelado em 2h via cron) | `app/api/cron/expire-bookings/route.ts` |
+| E-mails de reengajamento pós-aluguel (1d, 7d, 30d) | `app/api/cron/reengagement/route.ts` |
+| Extensão de prazo — API completa (locatário solicita / proprietário aprova ou recusa) | `app/api/bookings/[id]/extend/route.ts` |
+| Abertura de disputa com motivo em texto | `_BookingActions.tsx` — botão "Abrir disputa" + textarea |
+
+---
+
+## 🔴 P0 — Bloqueia abertura para produção
+
+| # | Atividade | Detalhe |
 |---|---|---|
-| 1 | Ativar `coverageThreshold` no `jest.config.ts` (hoje zerado — CI sem guarda de qualidade) | QA |
-| 2 | `__tests__/unit/validations/bookings.test.ts` — máquina de 7 estados | QA |
-| 3 | `__tests__/unit/lib/pricing.test.ts` — cálculo financeiro | QA |
-| 4 | `__tests__/unit/lib/crypto.test.ts` — CPF/CNPJ criptografados | QA |
-| 5 | Implementar **empty states** em `/itens`, `/reservas`, `/mensagens`, `/meus-anuncios` com mensagem amigável + CTA | UX |
-| 6 | Implementar **páginas de erro 404 e 500** com design ShareO — sem stack trace exposto | UX |
-| 7 | Implementar **política de cancelamento transparente** na reserva: até 24h = 100%, 24h–6h = 70%, < 6h = 50% | Fluxo |
-| 8 | Configurar **3 instâncias Supabase** (dev / staging / prod) | Infra |
-| 9 | Criar `.github/workflows/ci.yml` (lint → testes → build → deploy preview) | Infra |
-| 10 | Implementar **políticas RLS** no Supabase | Segurança |
+| 1 | ✅ **CSP com nonces** | `unsafe-inline` removido do `script-src`; nonce gerado por request em `middleware.ts`; aplicado em layout JSON-LD e GA4 |
+| 2 | ✅ **Rate limiting Upstash** | Código já suportava Upstash via `@upstash/ratelimit` — só precisa das env vars no Vercel: `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` |
+| 3 | ⏳ **Supabase production** | **Aguarda validação 100% de staging** — criar apenas após aprovação final; GitHub environment `production` com Required Reviewers |
 
 ---
 
 ## 🟠 P1 — Necessário antes do MVP público
 
-| # | Atividade | Origem |
+| # | Atividade | Detalhe |
 |---|---|---|
-| 11 | `__tests__/integration/api/bookings/patch.test.ts` — 14 transições de estado | QA |
-| 12 | `e2e/booking-flow.spec.ts` — jornada completa locatário→proprietário→COMPLETED | QA |
-| 13 | `e2e/auth.spec.ts` — cadastro, login, logout, redirect | QA |
-| 14 | `__tests__/integration/api/auth/register.test.ts` — CPF duplicado, rate limit, PII | QA |
-| 15 | `__tests__/unit/validations/auth.test.ts` — 14 cenários | QA |
-| 16 | `__tests__/unit/lib/rateLimit.test.ts` | QA |
-| 17 | `__tests__/unit/middleware.test.ts` — 8 cenários de proteção de rotas | QA |
-| 18 | `e2e/navigation.spec.ts` — header visível e sticky em todas as páginas, menu mobile | QA/UX |
-| 19 | `e2e/search-filter.spec.ts` — busca, filtros, deep link com URL params | QA/UX |
-| 20 | Verificar e corrigir **filtro de distância mobile** — `hidden md:flex` sem alternativa (implementar bottom sheet) | Bug/UX |
-| 21 | Verificar e ajustar `ItemCard` para exibir **rating, distância em km e badge de disponibilidade** | UX |
-| 22 | Implementar **calendário de disponibilidade** na página de detalhe do item — verde = livre, vermelho = ocupado | Fluxo |
-| 23 | Exibir **taxa de resposta do proprietário** e número de aluguéis na página de detalhe | Fluxo |
-| 24 | Implementar **timeout automático de reserva** — após 2h sem resposta: sugerir itens similares; após 4h: cancelar automaticamente | Fluxo |
-| 25 | Exibir **código da reserva** (`#SHR-AAAA-MMDD-NNN`) e **"Próximos passos"** na tela de confirmação | Fluxo |
-| 26 | Implementar formulário estruturado de **"Reportar problema"** (não funciona / veio danificado / faltam acessórios / outro + foto) | Fluxo |
-| 27 | Implementar **extensão de prazo** — locatário solicita nova data, proprietário aprova/recusa via app | Fluxo |
-| 28 | Exibir **política de cancelamento** visível na página de detalhe e no checkout | Fluxo |
-| 29 | Implementar **chips de filtros ativos** com X para remover individualmente ("Ferramentas ✕ • Até R$50 ✕") | UX |
-| 30 | Implementar **breadcrumb** na página de detalhe (Início > Categoria > Item) | UX/SEO |
-| 31 | Implementar **seção "Itens similares"** no final da página de detalhe | UX |
-| 32 | Criar backlog inicial de histórias de usuário | Produto |
-| 33 | Preservação de contexto de busca — `useSearchParams` persistente com `router.push` ao filtrar; `<Link href={/itens?${searchParams}}>Voltar</Link>` no componente de detalhe | UX/Fluxo |
-| 34 | Tela "Aguardando Confirmação" após solicitação de reserva — tela dedicada com countdown 2h + carrossel de itens similares + notificação quando proprietário responder (spec UX do estado de espera do P1-#24) | UX/Fluxo |
+| 4 | **Preservação de contexto de busca** | `app/itens/[id]/page.tsx:251` — link "← Voltar para resultados" aponta fixo para `/itens`; deve preservar os filtros da URL original |
+| 5 | **Extensão de prazo — botão na UI** | API `extend` completa mas `_BookingActions.tsx` não tem botão para o locatário solicitar; também falta botão de aprovar/recusar para o proprietário |
+| 6 | **Relatório de problema estruturado** | `_BookingActions.tsx` tem "Abrir disputa" com textarea livre; o backlog original pede formulário com categorias (não funciona / veio danificado / faltam acessórios / outro) + foto opcional |
 
 ---
 
-## 🟡 P2 — Qualidade antes do lançamento
+## 🟡 P2 — Polimento pré-lançamento
 
-| # | Atividade | Origem |
+| # | Atividade | Detalhe |
 |---|---|---|
-| 33 | Adicionar `jest-axe` em todos os componentes UI: `Button`, `Input`, `ItemCard`, `HomeMapPanel`, `ItemForm`, `BookingProgressBar`, `SearchBar`, `EmptyState`, `Skeleton` | QA/A11y |
-| 34 | `__tests__/integration/api/bookings/reviews.test.ts` — 11 cenários | QA |
-| 35 | `__tests__/integration/api/conversations/messages.test.ts` — sanitização XSS, autorização | QA |
-| 36 | `e2e/favorites.spec.ts` — salvar/remover, tap target 44px | QA/UX |
-| 37 | `e2e/responsive.spec.ts` — grid 1/2/4 colunas nos três breakpoints | QA |
-| 38 | `e2e/error-pages.spec.ts` — 404, 500, offline state | QA/UX |
-| 39 | Adicionar **projeto tablet (768px)** ao `playwright.config.ts` | Config |
-| 40 | Configurar **Sentry** com `beforeSend` mascarando PII | Infra/Segurança |
-| 41 | Auditar **dados sensíveis em respostas de API** — CPF/CNPJ/passwordHash nunca vazam | Segurança |
-| 42 | `__tests__/unit/lib/haversine.test.ts` | QA |
-| 43 | `__tests__/unit/components/items/ItemCard.test.tsx` — rating, distância, alt, axe | QA |
-| 44 | `__tests__/unit/lib/co2.test.ts` — cálculo de CO₂ por reservas concluídas | QA |
-| 45 | Verificar e corrigir **contraste de cor** — laranja `#F97316` em fundo branco (risco WCAG 4.5:1) | A11y |
-| 46 | Implementar e testar **skeleton screens** com `aria-busy="true"` nas listagens | UX/A11y |
-| 47 | Implementar **countdown timer** na reserva ativa ("Devolução em 1 dia, 4h e 23min") | Fluxo |
-| 48 | Implementar **lembrete de devolução** por notificação in-app/email no dia do prazo | Fluxo |
-| 49 | Implementar **checklist de devolução** no app — item limpo? acessórios? mesmo estado? + foto | Fluxo |
-| 50 | Implementar **confirmação de estado na devolução** pelo proprietário — perfeito / desgaste normal / com danos | Fluxo |
-| 51 | Exibir **depósito de segurança e regras do anunciante** de forma destacada no detalhe do item | Fluxo |
-| 52 | Exibir **sugestão de preço médio da região** no formulário de anúncio ("Preço médio perto de você: R$30–40") | UX |
-| 53 | Implementar **pull to refresh** na listagem de itens (mobile) | UX |
-| 54 | Implementar **pinch para zoom** na galeria de fotos (mobile) | UX |
-| 55 | Implementar **swipe left no card** para salvar favorito (mobile gesture) | UX |
-| 56 | Implementar **bottom sheet** para filtros no mobile (em vez de sidebar oculta) | UX |
-| 57 | Adicionar **"Ver no mapa"** como opção na listagem `/itens` | UX |
-| 58 | Exibir **próximas devoluções** com countdown no dashboard do proprietário | Fluxo |
-| 59 | Adicionar botão **"Enviar lembrete"** ao locatário no dashboard do proprietário | Fluxo |
-| 60 | Implementar **meta mensal com progress bar** no dashboard do proprietário | Fluxo/UX |
-| 61 | Incluir `app/api/**` e `middleware.ts` no `collectCoverageFrom` do `jest.config.ts` | Config |
-| 62 | Onboarding progressivo para o primeiro anúncio — progress indicator de qualidade (0–100%), dicas inline por campo, prévia do ItemCard em tempo real, tooltip "Anúncios com 3+ fotos recebem 4x mais contatos" | UX/Fluxo |
+| 7 | **PWA ícones** | `pwa-icon-192.png` e `pwa-icon-512.png` — substituir por assets finais (1024×1024 ideal); dependem do Roberto |
+| 8 | **PWA screenshots** | `manifest.ts` pede `wide` + `mobile`; dependem do Roberto |
+| 9 | **Página `/sobre`** | Prioritária entre os stubs — missão, história, equipe do ShareO |
+| 10 | **Stubs com conteúdo** | `/politicas`, `/suporte`, `/comunidade` — páginas existem sem conteúdo real |
+| 11 | **Jest global `next-auth@5`** | `jest.config.ts` — `transformIgnorePatterns` não cobre `next-auth@5`; mock local em `get.test.ts` como workaround |
+| 12 | **Sentry source maps + alertas** | Arquivos de config existem — confirmar source maps no build Vercel e definir alertas de erro crítico |
+| 13 | **Countdown devolução** | "Devolução em 1 dia, 4h e 23min" na reserva ativa |
+| 14 | **Onboarding do primeiro anúncio** | Progress indicator de qualidade 0–100%, dicas inline por campo, prévia do ItemCard em tempo real |
 
 ---
 
-## 🟢 P3 — Diferenciação e escala
+## 🟢 P3 — Pós-produção
 
-| # | Atividade | Origem |
+| # | Atividade | Detalhe |
 |---|---|---|
-| 63 | Auditorias **Lighthouse** em `/`, `/itens`, `/itens/[id]` — LCP < 2,5s, CLS < 0,1, INP < 200ms | Performance |
-| 64 | `e2e/admin.spec.ts` — acesso restrito, aprovação de itens, suspensão de usuários | QA |
-| 65 | `e2e/chat.spec.ts` — envio em tempo real, templates, sanitização XSS | QA |
-| 66 | Implementar **chat com templates de mensagem** pré-prontos (preenchem campo, não enviam sozinhos) | UX/Fluxo |
-| 67 | Implementar **avaliação por critérios múltiplos** — item como descrito, pontualidade, comunicação, conservação | UX/Fluxo |
-| 68 | Implementar **emoji de satisfação rápido** (😍😊😐😕😠) como entrada da avaliação antes dos critérios | UX |
-| 69 | Permitir **foto do item em uso** na avaliação | Fluxo |
-| 70 | Implementar **pontos de reputação** — +10 por avaliação enviada, histórico no perfil | Gamificação |
-| 71 | Implementar **badges de locatário** — Bronze (3 aluguéis), Prata (10), Ouro (25), Diamante (50) | Gamificação |
-| 72 | Implementar **"Avaliador ativo"** badge + cupom 10% off no próximo aluguel ao avaliar | Gamificação |
-| 73 | Exibir equivalência de CO₂ em árvores ("45 kg evitados = 2 árvores plantadas") no dashboard | Gamificação |
-| 74 | Implementar **progress bars de conquistas** no perfil do usuário | Gamificação |
-| 75 | Implementar emails de **reengajamento pós-aluguel** via SendGrid/Resend: 1d (avalie), 7d (itens similares), 30d (favorito disponível) | Retenção |
-| 76 | Implementar **dicas de fotografia inline** no formulário de anúncio | UX |
-| 77 | Implementar **CTA flutuante mobile** "Anunciar item" com tap target >= 44px | UX |
-| 78 | Implementar **banner dinâmico na home** com dados reais da cidade do usuário | UX |
-| 79 | Resolver **duplicata haversine** — `lib/haversine.ts` (km) vs `utils/geo.ts` (metros), definir canônico | Refactor |
-| 80 | Migrar `lib/rateLimit.ts` de `Map` in-memory para **Upstash Redis** | Infra/Segurança |
-| 81 | Teste de carga **k6** — 50 usuários em `GET /api/items`, P95 < 1s | Performance |
-| 82 | Definir e instrumentar **KPIs por fase** — bounce < 40%, CTR cards > 15%, conversão > 8%, NPS > 50 | Produto |
-| 83 | `__tests__/unit/utils/format.test.ts` — `formatPrice`, `formatDistance` | QA |
-| 84 | `__tests__/unit/utils/geo.test.ts` — `buildSlug`, `haversineDistance` | QA |
-| 85 | Validação em **dispositivo Android real** (Samsung Galaxy A13) | QA |
+| 15 | **Lighthouse CI** | LCP < 2,5s, CLS < 0,1, INP < 200ms — medir no CI após preview URL estável |
+| 16 | **k6 load test** | 50 usuários em `GET /api/items`, P95 < 1s |
+| 17 | **Expo Go — teste mobile** | `cd apps/mobile && npx expo start --tunnel --clear` |
+| 18 | **Chat com templates** | Mensagens pré-prontas que preenchem o campo (não enviam sozinhas) |
+| 19 | **Avaliação por critérios** | Item como descrito / pontualidade / comunicação / conservação |
+| 20 | **Gamificação** | Badges Bronze/Prata/Ouro, pontos de reputação, cupom 10% off por avaliar |
+| 21 | **CO₂ por categoria** | Campo no schema Prisma — adiado (risco de migration) |
+| 22 | **Duplicata haversine** | `lib/haversine.ts` (km) vs `utils/geo.ts` (metros) — definir canônico e remover o outro |
+| 23 | **KPIs instrumentados** | Bounce < 40%, CTR cards > 15%, conversão > 8%, NPS > 50 |
+| 24 | **Validação Android real** | Samsung Galaxy A13 com Expo Go |
 
 ---
 
 ## Resumo executivo
 
-| Prioridade | Qtd | Foco principal |
+| Prioridade | Qtd | Foco |
 |---|---|---|
-| 🔴 P0 | 10 | Testes críticos + infraestrutura + política de cancelamento |
-| 🟠 P1 | 24 | Fluxo completo do aluguel + UX essencial |
-| 🟡 P2 | 30 | Qualidade, acessibilidade, UX mobile e fluxo de devolução |
-| 🟢 P3 | 23 | Gamificação, reengajamento, performance e diferenciação |
-| **Total** | **87** | |
+| ✅ Concluídos | 27 | Verificados diretamente no código |
+| 🔴 P0 | 3 | Bloqueia produção |
+| 🟠 P1 | 3 | Fluxo incompleto (UI faltando para features com API pronta) |
+| 🟡 P2 | 8 | Polimento e assets |
+| 🟢 P3 | 10 | Pós-produção |
 
 ---
 
-## Sugestões descartadas (com justificativa)
+## Fora de escopo (decisões fechadas)
 
-| Sugestão | Documento | Motivo |
-|---|---|---|
-| WhatsApp (botão, chat, Business API) | Fluxo usuário | Conflito explícito com decisão do projeto |
-| Pagamento integrado (Stripe/Pix/Boleto) | Fluxo usuário | H3 — fora do escopo MVP |
-| Push notifications Firebase FCM | Fluxo usuário | Não planejado para sprint atual |
-| Verificação em vídeo | Fluxo usuário + UX | H3 — fora do escopo MVP |
-| Aluguel recorrente/assinatura | Fluxo usuário + UX | H2 — fora do escopo MVP |
-| Seguro contra danos automático | UX | H2 — fora do escopo MVP |
-| Cor primária verde `#2ECC71` | UX | Conflita com design system (Navy + Orange) |
-| Busca por voz | UX | Não está nos requisitos MVP |
+| Item | Motivo |
+|---|---|
+| WhatsApp (chat, Business API) | Decisão explícita do produto |
+| Pagamento Pix/Boleto | Stripe já implementado — outros métodos são H2+ |
+| Push notifications FCM | Não planejado para H1 |
+| Vídeo de verificação | H3 |
+| Aluguel recorrente/assinatura | H2 |
+| Seguro contra danos automático | H2 |
+| Dark mode | Fora do escopo H1 — documentado |
+| Busca por voz | Fora dos requisitos MVP |
+| RLS Supabase | Desabilitado — incompatível com PgBouncer; segurança via `ownerId !== session.user.id → 403` |

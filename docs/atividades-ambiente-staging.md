@@ -1,8 +1,12 @@
 # Atividades — Ambiente Staging
 
-**Data**: 26/05/2026  
-**Objetivo**: Tudo que precisa estar pronto antes do primeiro deploy em staging e do início do Sprint 1  
-**Referência**: `revisao-pre-sprint1.md` — itens ❌ bloqueadores e checklist Sprint 0
+**Data**: 26/05/2026 (histórico — todas as atividades concluídas)  
+**Status**: ✅ CONCLUÍDO — staging deployado em 03/06/2026 em https://shareo-rouge.vercel.app  
+**Próximo passo**: ver `docs/backlog-atividades-priorizadas.md` para pendências antes de produção
+
+---
+
+> ⚠️ **Nota histórica**: este documento foi gerado antes do deploy. Todos os itens abaixo foram concluídos. Mantido para referência de setup.
 
 ---
 

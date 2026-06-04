@@ -1,7 +1,8 @@
 # Checklist — Colocar o Projeto em Staging
 
-**Atualizado em**: 25/05/2026  
-**Objetivo**: Deploy funcional no ambiente de staging (homologação) — produção será configurada após validação.
+**Atualizado em**: 25/05/2026 (histórico — staging deployado em produção desde 03/06/2026)  
+**Status**: ✅ CONCLUÍDO — https://shareo-rouge.vercel.app está no ar  
+**Próximo passo**: ver `docs/backlog-atividades-priorizadas.md` para pendências antes de produção
 
 > **Estado atual do codebase**: A base do código já existe (`app/`, `components/`, `lib/`, migrations, `node_modules`, `.env.local`). O que falta é principalmente infraestrutura de CI/CD e verificação de integridade do build.
 
