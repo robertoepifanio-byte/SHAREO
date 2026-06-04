@@ -4,6 +4,7 @@ import Link from "next/link"
 import { NotificationBell } from "@/components/ui/NotificationBell"
 import { MobileMenu } from "@/components/layout/MobileMenu"
 import { UserDropdown } from "@/components/layout/UserDropdown"
+import { HelpButton } from "@/components/layout/HelpButton"
 
 export async function AppHeader() {
   const session = await auth().catch(() => null)
@@ -50,6 +51,11 @@ export async function AppHeader() {
 
         {/* Ações de autenticação */}
         <div className="flex flex-shrink-0 items-center gap-2 ml-auto">
+          {/* HelpButton — desktop only, logado ou não */}
+          <div className="hidden md:block">
+            <HelpButton />
+          </div>
+
           {session ? (
             <>
               {/* Saudação — apenas desktop */}
