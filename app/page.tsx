@@ -247,11 +247,11 @@ export default async function HomePage() {
         </section>
 
         {/* ─── SIMULADOR DE RENDA ─── */}
-        <SimuladorRenda />
+        <div id="simulador"><SimuladorRenda /></div>
 
         {/* ─── CATEGORIAS ─── */}
         {categories.length > 0 && (
-          <section className="container py-8" aria-labelledby="cats-title">
+          <section id="categorias" className="container py-8" aria-labelledby="cats-title">
             <h2 className="mb-5 text-xl font-bold text-primary md:text-2xl" id="cats-title">
               Explorar por categoria
             </h2>
@@ -284,7 +284,7 @@ export default async function HomePage() {
         )}
 
         {/* ─── COMO FUNCIONA ─── */}
-        <section className="container py-8" aria-labelledby="how-title">
+        <section id="como-funciona" className="container py-8" aria-labelledby="how-title">
           <h2
             className="mb-5 font-display text-xl font-bold text-primary md:text-2xl"
             id="how-title"
@@ -317,13 +317,13 @@ export default async function HomePage() {
         </section>
 
         {/* ─── QUEM JÁ ESTÁ GANHANDO ─── */}
-        <CasosRenda />
+        <div id="casos-renda"><CasosRenda /></div>
 
         {/* ─── ITENS MAIS PROCURADOS ─── */}
-        <ItensProcurados />
+        <div id="itens-procurados"><ItensProcurados /></div>
 
         {/* ─── SEGURANÇA ─── */}
-        <Seguranca />
+        <div id="seguranca"><Seguranca /></div>
 
         {/* ─── LISTA VIP ─── */}
         <ListaVIP />
