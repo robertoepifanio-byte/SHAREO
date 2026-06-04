@@ -69,22 +69,14 @@ export function ItemCard({ item, showActions = false, isFavorited = false, hotBa
             </div>
           )}
 
-          {/* Badge de disponibilidade */}
-          <div className="absolute left-2 top-2">
-            {!isAvailable ? (
+          {/* Badge de status — só para o proprietário (showActions) */}
+          {showActions && !isAvailable && (
+            <div className="absolute left-2 top-2">
               <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
                 {item.status === "DRAFT" ? "Rascunho" : "Pausado"}
               </span>
-            ) : isBooked ? (
-              <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-bold text-white">
-                Reservado
-              </span>
-            ) : (
-              <span className="rounded-full bg-success px-2 py-0.5 text-xs font-bold text-white">
-                Disponível
-              </span>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Badge "Mais alugado" */}
           {hotBadge && (
