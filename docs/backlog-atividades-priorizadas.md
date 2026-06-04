@@ -70,7 +70,7 @@
 | 8 | **PWA screenshots** | `manifest.ts` pede `wide` + `mobile`; dependem do Roberto |
 | 9 | **Página `/sobre`** | Prioritária entre os stubs — missão, história, equipe do ShareO |
 | 10 | **Stubs com conteúdo** | `/politicas`, `/suporte`, `/comunidade` — páginas existem sem conteúdo real |
-| 11 | **Jest global `next-auth@5`** | `jest.config.ts` — `transformIgnorePatterns` não cobre `next-auth@5`; mock local em `get.test.ts` como workaround |
+| 11 | ✅ **Jest global `next-auth@5`** | `transformIgnorePatterns` atualizado para `@upstash\|next-auth\|@auth`; testes de badge corrigidos; 21 suítes / 355 testes / 0 falhas |
 | 12 | **Sentry source maps + alertas** | Arquivos de config existem — confirmar source maps no build Vercel e definir alertas de erro crítico |
 | 13 | ✅ **Countdown devolução** | `components/booking/ReturnCountdown.tsx` — já wired em `app/reservas/[id]/page.tsx` |
 | 14 | ✅ **Onboarding do primeiro anúncio** | `ListingQualityIndicator` + `ItemCardPreview` + dicas inline já no `ItemForm.tsx` |
