@@ -66,7 +66,7 @@ export function ImportForm() {
           <li>Colunas obrigatórias: <code className="rounded bg-muted px-1 text-xs">titulo</code>, <code className="rounded bg-muted px-1 text-xs">categoria</code>, <code className="rounded bg-muted px-1 text-xs">preco_dia</code>, <code className="rounded bg-muted px-1 text-xs">condicao</code></li>
           <li>Preço em Reais com ponto ou vírgula — ex: <code className="rounded bg-muted px-1 text-xs">25.00</code></li>
           <li>Condições aceitas: <code className="rounded bg-muted px-1 text-xs">NOVO</code> · <code className="rounded bg-muted px-1 text-xs">EXCELENTE</code> · <code className="rounded bg-muted px-1 text-xs">BOM</code> · <code className="rounded bg-muted px-1 text-xs">REGULAR</code></li>
-          <li>Categorias: Ferramentas · Eletrônicos · Construção · Esporte · Moda · Festas · Casa e Jardim</li>
+          <li>Categorias: Ferramentas · Eletrônicos · Construção · Esporte · Moda · Festas · Casa e Cozinha</li>
           <li>Máximo 100 linhas por arquivo. Se o título já existe, o item é <strong>atualizado</strong></li>
         </ol>
 
