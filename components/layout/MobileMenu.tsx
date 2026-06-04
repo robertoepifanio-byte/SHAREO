@@ -9,10 +9,18 @@ interface Props {
   isLoggedIn: boolean
 }
 
-const NAV_LINKS = [
-  { href: "/",           label: "Início" },
-  { href: "/itens",      label: "Explorar" },
-  { href: "/itens/novo", label: "Anunciar", cta: true },
+const EXPLORAR_LINKS = [
+  { href: "/itens?intent=rent", icon: "🛒", label: "Quero alugar algo" },
+  { href: "/itens",             icon: "📋", label: "Ver todos os itens" },
+  { href: "/itens?view=map",    icon: "🗺️", label: "Buscar no mapa" },
+  { href: "/itens?sort=views",  icon: "🔥", label: "Mais alugados" },
+  { href: "/itens?minRating=4", icon: "⭐", label: "Mais bem avaliados" },
+]
+
+const ANUNCIAR_LINKS = [
+  { href: "/itens/novo",           icon: "📦", label: "Cadastre seu item" },
+  { href: "/anunciar/estimativa",  icon: "💰", label: "Estimativa de ganhos" },
+  { href: "/anunciar/dicas",       icon: "💡", label: "Dicas para anfitriões" },
 ]
 
 const ATIVIDADE_LINKS = [
@@ -42,12 +50,30 @@ const ACCOUNT_LINKS = [
   { href: "/perfil/dados",       label: "Privacidade e dados", icon: "📂" },
 ]
 
+const Chevron = ({ open }: { open: boolean }) => (
+  <svg
+    width="16" height="16" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" strokeWidth="2.5"
+    className={`transition-transform flex-shrink-0 ${open ? "rotate-180" : ""}`}
+    aria-hidden="true"
+  >
+    <polyline points="6 9 12 15 18 9"/>
+  </svg>
+)
+
 export function MobileMenu({ isLoggedIn }: Props) {
-  const [open,         setOpen]         = useState(false)
-  const [accountOpen,  setAccountOpen]  = useState(false)
+  const [open,          setOpen]          = useState(false)
+  const [explorarOpen,  setExplorarOpen]  = useState(false)
+  const [anunciarOpen,  setAnunciarOpen]  = useState(false)
+  const [accountOpen,   setAccountOpen]   = useState(false)
   const pathname = usePathname()
 
-  useEffect(() => { setOpen(false); setAccountOpen(false) }, [pathname])
+  useEffect(() => {
+    setOpen(false)
+    setExplorarOpen(false)
+    setAnunciarOpen(false)
+    setAccountOpen(false)
+  }, [pathname])
 
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : ""
@@ -90,17 +116,59 @@ export function MobileMenu({ isLoggedIn }: Props) {
           >
             <ul className="container py-3 flex flex-col gap-1">
 
-              {/* Links principais */}
-              {NAV_LINKS.map((link) => (
+              {/* Início */}
+              <li>
+                <Link
+                  href="/"
+                  className="flex h-12 items-center rounded-lg px-4 text-base font-medium text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+                >
+                  Início
+                </Link>
+              </li>
+
+              {/* Explorar — expansível */}
+              <li>
+                <button
+                  type="button"
+                  onClick={() => setExplorarOpen((v) => !v)}
+                  aria-expanded={explorarOpen}
+                  className="flex h-12 w-full items-center justify-between rounded-lg px-4 text-base font-medium text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+                >
+                  <span>Explorar</span>
+                  <Chevron open={explorarOpen} />
+                </button>
+              </li>
+              {explorarOpen && EXPLORAR_LINKS.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className={`flex h-12 items-center rounded-lg px-4 text-base font-medium transition-colors ${
-                      link.cta
-                        ? "bg-accent text-[#003366] font-bold hover:brightness-105"
-                        : "text-white/80 hover:bg-white/10 hover:text-white"
-                    }`}
+                    className="flex h-11 items-center gap-3 rounded-lg pl-8 pr-4 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white transition-colors"
                   >
+                    <span aria-hidden="true">{link.icon}</span>
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+
+              {/* Anunciar — expansível */}
+              <li>
+                <button
+                  type="button"
+                  onClick={() => setAnunciarOpen((v) => !v)}
+                  aria-expanded={anunciarOpen}
+                  className="flex h-12 w-full items-center justify-between rounded-lg px-4 text-base font-medium bg-accent text-[#003366] font-bold hover:brightness-105 transition-colors"
+                >
+                  <span>Anunciar</span>
+                  <Chevron open={anunciarOpen} />
+                </button>
+              </li>
+              {anunciarOpen && ANUNCIAR_LINKS.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="flex h-11 items-center gap-3 rounded-lg pl-8 pr-4 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+                  >
+                    <span aria-hidden="true">{link.icon}</span>
                     {link.label}
                   </Link>
                 </li>
@@ -137,17 +205,9 @@ export function MobileMenu({ isLoggedIn }: Props) {
                       className="flex h-12 w-full items-center justify-between rounded-lg px-4 text-base font-semibold text-white/90 hover:bg-white/10 transition-colors"
                     >
                       <span>Minha Conta</span>
-                      <svg
-                        width="16" height="16" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" strokeWidth="2.5"
-                        className={`transition-transform ${accountOpen ? "rotate-180" : ""}`}
-                        aria-hidden="true"
-                      >
-                        <polyline points="6 9 12 15 18 9"/>
-                      </svg>
+                      <Chevron open={accountOpen} />
                     </button>
                   </li>
-
                   {accountOpen && ACCOUNT_LINKS.map((link) => (
                     <li key={link.href}>
                       <Link
