@@ -13,7 +13,7 @@ import { CANCELLATION_POLICY_LINES } from "@/lib/cancellationPolicy"
 import { ItemCard } from "@/components/items/ItemCard"
 import { AvailabilityCalendar } from "@/components/items/AvailabilityCalendar"
 
-type Props = { params: Promise<{ id: string }> }
+type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ back?: string }> }
 
 const CONDITION_LABEL: Record<string, string> = {
   NEW:       "Novo",
@@ -67,8 +67,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function ItemDetailPage({ params }: Props) {
-  const { id } = await params
+export default async function ItemDetailPage({ params, searchParams }: Props) {
+  const [{ id }, sp] = await Promise.all([params, searchParams])
+  const backHref = sp.back ? decodeURIComponent(sp.back) : "/itens"
 
   const [item, session] = await Promise.all([
     prisma.item.findFirst({
@@ -248,7 +249,7 @@ export default async function ItemDetailPage({ params }: Props) {
       <div className="border-b border-border bg-surface">
         <div className="container py-3 flex flex-col gap-1">
           <Link
-            href="/itens"
+            href={backHref}
             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             ← Voltar para resultados

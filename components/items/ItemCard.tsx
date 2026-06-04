@@ -25,11 +25,12 @@ interface ItemCardProps {
   isFavorited?:     boolean
   hotBadge?:        boolean
   toggling?:        boolean
+  backHref?:        string
   onDelete?:        (id: string) => void
   onToggleActive?:  (id: string, currentStatus: string) => void
 }
 
-export function ItemCard({ item, showActions = false, isFavorited = false, hotBadge = false, toggling = false, onDelete, onToggleActive }: ItemCardProps) {
+export function ItemCard({ item, showActions = false, isFavorited = false, hotBadge = false, toggling = false, backHref, onDelete, onToggleActive }: ItemCardProps) {
   const imageUrl = item.images[0]?.url
   const price    = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" })
                       .format(item.pricePerDay / 100)
@@ -48,7 +49,10 @@ export function ItemCard({ item, showActions = false, isFavorited = false, hotBa
         !isAvailable ? "opacity-60" : "",
       ].join(" ")}
     >
-      <Link href={`/itens/${item.id}`} className="block flex-1 rounded-t-lg outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface">
+      <Link
+        href={`/itens/${item.id}${backHref ? `?back=${encodeURIComponent(backHref)}` : ""}`}
+        className="block flex-1 rounded-t-lg outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+      >
         {/* Imagem */}
         <div className="relative aspect-[4/3] w-full overflow-hidden rounded-t-lg bg-muted">
           {imageUrl ? (
