@@ -15,7 +15,8 @@ import path from 'path'
 import { test, expect, type Page } from '@playwright/test'
 
 // ---------------------------------------------------------------------------
-// axe-core — caminho local (transitivo via jest-axe, não requer instalação extra)
+// axe-core — injetado via page.evaluate() para bypassar o CSP (nonce-based).
+// page.addScriptTag() é bloqueado pelo CSP; page.evaluate() usa CDP e não é afetado.
 // ---------------------------------------------------------------------------
 const AXE_PATH = path.resolve(
   'node_modules/.pnpm/jest-axe@9.0.0/node_modules/axe-core/axe.min.js',
@@ -24,6 +25,8 @@ const AXE_PATH = path.resolve(
 if (!fs.existsSync(AXE_PATH)) {
   throw new Error(`axe-core não encontrado em: ${AXE_PATH}`)
 }
+
+const AXE_CONTENT = fs.readFileSync(AXE_PATH, 'utf-8')
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -67,7 +70,7 @@ class SkipStep extends Error {
 // ---------------------------------------------------------------------------
 
 async function injectAxe(page: Page) {
-  await page.addScriptTag({ path: AXE_PATH })
+  await page.evaluate(AXE_CONTENT)
 }
 
 async function runAxe(

@@ -33,11 +33,15 @@ test.describe('smoke #5 — locatário solicita reserva', () => {
   test('cria reserva via API e verifica status PENDING em /reservas', async ({ page }) => {
     const { itemId } = JSON.parse(fs.readFileSync(TEST_ITEM_PATH, 'utf-8')) as { itemId: string }
 
+    // Datas dinâmicas: 60+ dias no futuro para evitar conflito com runs anteriores
+    const start = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)
+    const end   = new Date(start.getTime() + 2 * 24 * 60 * 60 * 1000)
+
     const res = await page.request.post('/api/bookings', {
       data: {
         itemId,
-        startDate:    '2026-07-01T12:00:00.000Z',
-        endDate:      '2026-07-03T12:00:00.000Z',
+        startDate:    start.toISOString(),
+        endDate:      end.toISOString(),
         borrowerNote: 'Reserva criada pelo smoke test E2E automatizado.',
       },
     })

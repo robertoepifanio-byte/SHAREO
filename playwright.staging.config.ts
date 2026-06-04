@@ -4,6 +4,7 @@ export default defineConfig({
   globalSetup: './e2e/staging-setup.ts',
   testDir: './e2e',
   fullyParallel: false,
+  workers: 1, // staging usa estado compartilhado (fixtures, DB) — serial obrigatório
   retries: 1,
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report-staging' }]],
   use: {

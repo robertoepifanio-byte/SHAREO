@@ -77,7 +77,8 @@ test.describe('anúncio — proprietário autenticado', () => {
     const { data: item } = await res.json() as { data: { id: string; title: string } }
     expect(item.id).toBeTruthy()
 
-    fs.writeFileSync(TEST_ITEM_PATH, JSON.stringify({ itemId: item.id }, null, 2))
+    // Não sobrescreve test-item-id.json — ele é gerido pelo seed-staging-full.ts
+    // e compartilhado com booking-flow.spec.ts que depende de um item AVAILABLE com foto.
     console.log(`  item criado: ${item.id}`)
   })
 
