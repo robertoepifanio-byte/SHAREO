@@ -18,6 +18,7 @@ import { getUserMapLocation } from "@/lib/userLocation"
 import { MapToggle } from "./_MapToggle"
 import { PullToRefresh } from "@/components/items/PullToRefresh"
 import { FloatingCTA } from "@/components/items/FloatingCTA"
+import { RentBanner } from "./_RentBanner"
 
 export const metadata: Metadata = {
   title:       "Explorar anúncios",
@@ -36,6 +37,7 @@ interface SearchParams {
   ulat?:      string
   ulng?:      string
   view?:      string
+  intent?:    string
 }
 
 type Props = { searchParams: Promise<SearchParams> }
@@ -229,6 +231,9 @@ export default async function ExplorarPage({ searchParams }: Props) {
       {/* P2-53 — Pull-to-refresh wrapper (mobile) */}
       <PullToRefresh>
       <main className="container py-6">
+
+        {/* ─── BANNER "COMO ALUGAR" (intent=rent) ─── */}
+        {sp.intent === "rent" && <RentBanner />}
 
         {/* ─── BARRA DE BUSCA ─── */}
         <form method="GET" action="/itens" className="mb-4 flex gap-2" role="search">
