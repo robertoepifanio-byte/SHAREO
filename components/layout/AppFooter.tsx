@@ -12,7 +12,7 @@ export function AppFooter() {
   return (
     <footer className="bg-[#007B3C]" aria-label="Rodapé ShareO">
       <div className="container py-10">
-        <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
+        <div className="flex flex-col gap-8">
 
           {/* Brand + tagline */}
           <div className="max-w-xs">
@@ -39,38 +39,36 @@ export function AppFooter() {
             </p>
           </div>
 
-          {/* Links */}
+          {/* Links — 3 colunas */}
           <nav
             aria-label="Links do rodapé"
-            className="grid grid-cols-2 gap-8 md:flex md:gap-12"
+            className="grid grid-cols-1 md:grid-cols-3 gap-8"
           >
             <div className="flex flex-col gap-2">
               <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-white/90">
                 Plataforma
               </p>
-              <Link href="/itens"      className="text-sm text-white/90 hover:text-white transition-colors">Explorar itens</Link>
-              <Link href="/itens/novo" className="text-sm text-white/90 hover:text-white transition-colors">Anunciar item</Link>
-              <Link href="/reservas"   className="text-sm text-white/90 hover:text-white transition-colors">Minhas reservas</Link>
-              <Link href="/mensagens"  className="text-sm text-white/90 hover:text-white transition-colors">Mensagens</Link>
+              <Link href="/sobre"         className="text-sm text-white/90 hover:text-white transition-colors">Sobre Nós</Link>
+              <Link href="/sobre#missao"  className="text-sm text-white/90 hover:text-white transition-colors">Nossa Missão</Link>
+              <Link href="/contato"       className="text-sm text-white/90 hover:text-white transition-colors">Contato</Link>
             </div>
 
             <div className="flex flex-col gap-2">
               <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-white/90">
-                Conta
+                Legal
               </p>
-              <Link href="/login"    className="text-sm text-white/90 hover:text-white transition-colors">Entrar</Link>
-              <Link href="/cadastro" className="text-sm text-white/90 hover:text-white transition-colors">Criar conta</Link>
-              <Link href="/perfil"   className="text-sm text-white/90 hover:text-white transition-colors">Meu perfil</Link>
+              <Link href="/privacidade" className="text-sm text-white/90 hover:text-white transition-colors">Privacidade</Link>
+              <Link href="/termos"      className="text-sm text-white/90 hover:text-white transition-colors">Termos</Link>
+              <Link href="/politicas"   className="text-sm text-white/90 hover:text-white transition-colors">Políticas e Regras</Link>
             </div>
 
             <div className="flex flex-col gap-2">
               <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-white/90">
                 Suporte
               </p>
-              <Link href="/ajuda"           className="text-sm text-white/90 hover:text-white transition-colors">Central de ajuda</Link>
-              <Link href="/ganhar"          className="text-sm text-white/90 hover:text-white transition-colors">Como ganhar</Link>
-              <Link href="/termos"          className="text-sm text-white/90 hover:text-white transition-colors">Termos de uso</Link>
-              <Link href="/privacidade"     className="text-sm text-white/90 hover:text-white transition-colors">Privacidade</Link>
+              <Link href="/ajuda"             className="text-sm text-white/90 hover:text-white transition-colors">Central de Ajuda</Link>
+              <Link href="/suporte"           className="text-sm text-white/90 hover:text-white transition-colors">Suporte 24/7</Link>
+              <Link href="/perfil/documentos" className="text-sm text-white/90 hover:text-white transition-colors">Verificação de Identidade</Link>
             </div>
           </nav>
         </div>
