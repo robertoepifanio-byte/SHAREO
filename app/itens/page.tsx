@@ -295,14 +295,27 @@ export default async function ExplorarPage({ searchParams }: Props) {
                 key={cat.id}
                 href={buildUrl({ categoryId: cat.id, page: 1 })}
                 role="listitem"
-                className={`inline-flex flex-shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all ${
+                className={`inline-flex flex-shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all ${
                   categoryId === cat.id
                     ? "border-brand bg-brand/10 text-brand"
                     : "border-border bg-surface text-muted-foreground hover:border-brand/40 hover:text-foreground"
                 }`}
               >
                 <CategoryIcon name={cat.name} size={52} />
-                {cat.name}
+                <span className="flex flex-col items-center leading-tight text-center max-w-[72px]">
+                  {cat.name.split(" ").length > 1
+                    ? (() => {
+                        const words = cat.name.split(" ")
+                        const mid = Math.ceil(words.length / 2)
+                        return (
+                          <>
+                            <span>{words.slice(0, mid).join(" ")}</span>
+                            <span>{words.slice(mid).join(" ")}</span>
+                          </>
+                        )
+                      })()
+                    : cat.name}
+                </span>
               </Link>
             ))}
           </div>
