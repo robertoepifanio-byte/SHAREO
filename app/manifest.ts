@@ -32,6 +32,22 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: "maskable",
       },
     ],
+    screenshots: [
+      {
+        src:         "/logos/pwa-screenshot-mobile.png",
+        sizes:       "390x844",
+        type:        "image/png",
+        form_factor: "narrow",
+        label:       "ShareO — Tela inicial mobile",
+      },
+      {
+        src:         "/logos/pwa-screenshot-wide.png",
+        sizes:       "1280x800",
+        type:        "image/png",
+        form_factor: "wide",
+        label:       "ShareO — Tela inicial desktop",
+      },
+    ],
     shortcuts: [
       {
         name:        "Explorar itens",
