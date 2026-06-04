@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ShareO — Mockup Navegação v2</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:   #003366;
+      --green:  #007B3C;
+      --green2: #005e2d;
+      --light:  #59C686;
+      --bg:     #F8FAFC;
+      --border: #E2E8F0;
+      --text:   #0F172A;
+      --muted:  #64748B;
+    }
+
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); }
+    a { text-decoration: none; color: inherit; }
+
+    /* ── HEADER ── */
+    header {
+      position: sticky; top: 0; z-index: 200;
+      background: var(--navy);
+      height: 64px;
+      display: flex; align-items: center;
+    }
+    .container { width: 100%; max-width: 1280px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; gap: 8px; }
+
+    /* Logo */
+    .logo-wrap { flex-shrink: 0; display: flex; flex-direction: column; align-items: center; }
+    .logo-box { background: white; border-radius: 8px; padding: 4px 10px; display: flex; align-items: center; gap: 6px; }
+    .logo-box svg { width: 22px; height: 22px; }
+    .logo-box span { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 17px; color: var(--navy); }
+    .logo-tagline { font-size: 9px; color: rgba(255,255,255,.8); margin-top: 2px; font-weight: 500; letter-spacing: .3px; }
+
+    /* Desktop Nav */
+    nav.desktop { display: flex; align-items: center; gap: 2px; margin-left: 24px; position: relative; }
+    .nav-trigger {
+      position: relative;
+      display: flex; align-items: center; gap: 5px;
+      padding: 6px 12px; height: 44px;
+      border-radius: 6px; border: none; background: transparent;
+      font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 500;
+      color: rgba(255,255,255,.75); cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+    .nav-trigger:hover, .nav-trigger.open { background: rgba(255,255,255,.12); color: white; }
+    .nav-trigger.cta { background: var(--green); color: white; font-weight: 600; }
+    .nav-trigger.cta:hover { background: var(--green2); }
+    .chevron { width: 12px; height: 12px; transition: transform .2s; }
+    .nav-trigger.open .chevron { transform: rotate(180deg); }
+
+    /* Dropdown panel */
+    .dropdown {
+      display: none; position: absolute; top: calc(100% + 8px); left: 0;
+      min-width: 230px; background: white; border-radius: 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.14); border: 1px solid var(--border);
+      z-index: 210; overflow: hidden;
+    }
+    .dropdown.right { left: auto; right: 0; }
+    .nav-trigger.open + .dropdown { display: block; animation: fadeDown .15s ease; }
+
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .dropdown-header {
+      padding: 10px 16px 8px;
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .8px; color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .dropdown a {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px; min-height: 44px;
+      font-size: 13.5px; font-weight: 500; color: #374151;
+      transition: background .12s, color .12s;
+    }
+    .dropdown a:hover { background: #f3f4f6; color: var(--navy); }
+    .dropdown a .icon { font-size: 16px; width: 22px; text-align: center; flex-shrink: 0; }
+    .dropdown a span { flex: 1; }
+    .dropdown a .badge {
+      font-size: 10px; font-weight: 600; padding: 2px 7px;
+      border-radius: 99px; background: #dcfce7; color: var(--green);
+    }
+
+    /* Header right */
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .greeting { font-size: 13px; font-weight: 600; color: rgba(255,255,255,.85); white-space: nowrap; }
+    .icon-btn {
+      width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.3);
+      background: rgba(255,255,255,.12); color: white; font-size: 13px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+      transition: background .15s;
+    }
+    .icon-btn:hover { background: rgba(255,255,255,.22); }
+    .avatar { background: var(--green); font-size: 13px; }
+
+    /* Mobile toggle */
+    .mobile-toggle { display: none; background: none; border: none; cursor: pointer; padding: 4px; }
+    .mobile-toggle span { display: block; width: 22px; height: 2px; background: white; margin: 4px 0; border-radius: 2px; transition: .3s; }
+
+    /* ── MOBILE MENU ── */
+    .mobile-overlay {
+      display: none; position: fixed; inset: 0; z-index: 300;
+    }
+    .mobile-overlay.open { display: flex; }
+    .mobile-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.5); }
+    .mobile-drawer {
+      position: relative; z-index: 1;
+      width: min(320px, 92vw); margin-left: auto;
+      background: var(--navy); height: 100vh;
+      overflow-y: auto; display: flex; flex-direction: column;
+      padding: 16px 12px 24px;
+    }
+    .drawer-close {
+      align-self: flex-end; background: rgba(255,255,255,.12); border: none;
+      color: white; font-size: 20px; width: 36px; height: 36px;
+      border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      margin-bottom: 12px;
+    }
+    .drawer-cta {
+      display: flex; align-items: center; gap: 10px;
+      height: 48px; padding: 0 16px; margin-bottom: 8px;
+      border-radius: 10px; background: var(--green); color: white;
+      font-size: 15px; font-weight: 700; border: none; cursor: pointer; width: 100%;
+      transition: background .15s;
+    }
+    .drawer-cta:hover { background: var(--green2); }
+    .drawer-sep { height: 1px; background: rgba(255,255,255,.1); margin: 6px 0; }
+
+    /* Accordion group */
+    .acc-trigger {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 48px; width: 100%; padding: 0 16px; border-radius: 10px;
+      background: none; border: none; color: rgba(255,255,255,.9);
+      font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: background .15s;
+    }
+    .acc-trigger:hover { background: rgba(255,255,255,.08); }
+    .acc-trigger .acc-chevron { font-size: 10px; transition: transform .2s; color: rgba(255,255,255,.5); }
+    .acc-trigger.expanded .acc-chevron { transform: rotate(180deg); }
+    .acc-content { display: none; padding: 4px 0 4px 8px; }
+    .acc-trigger.expanded + .acc-content { display: block; }
+    .acc-link {
+      display: flex; align-items: center; gap: 10px;
+      height: 44px; padding: 0 16px 0 20px; border-radius: 8px;
+      font-size: 13px; font-weight: 500; color: rgba(255,255,255,.7);
+      transition: background .12s, color .12s; width: 100%;
+    }
+    .acc-link:hover { background: rgba(255,255,255,.08); color: white; }
+    .acc-link .icon { font-size: 15px; width: 20px; text-align: center; }
+
+    /* Drawer auth section */
+    .drawer-auth { margin-top: 12px; }
+    .drawer-label { padding: 8px 16px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: rgba(255,255,255,.4); }
+    .drawer-link {
+      display: flex; align-items: center; gap: 10px;
+      height: 44px; padding: 0 16px; border-radius: 8px;
+      font-size: 13.5px; font-weight: 500; color: rgba(255,255,255,.8);
+      transition: background .12s, color .12s;
+    }
+    .drawer-link:hover { background: rgba(255,255,255,.08); color: white; }
+    .drawer-link.red { color: #f87171; }
+    .drawer-link.red:hover { background: rgba(248,113,113,.1); }
+
+    /* ── FOOTER ── */
+    footer { background: var(--green); color: white; margin-top: 80px; }
+    .footer-inner { max-width: 1280px; margin: 0 auto; padding: 48px 24px 24px; }
+    .footer-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; }
+    .footer-brand .logo-box { background: rgba(255,255,255,.15); border-radius: 8px; padding: 4px 10px; }
+    .footer-brand .logo-box span { color: white; font-size: 16px; }
+    .footer-brand .logo-box svg path { fill: white; }
+    .footer-tagline { font-size: 12px; color: rgba(255,255,255,.7); font-weight: 500; }
+    .footer-grid { display: grid; grid-template-columns: 1fr; gap: 32px; margin-bottom: 40px; }
+    @media (min-width: 640px) { .footer-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 1024px) { .footer-grid { grid-template-columns: repeat(3, 1fr); } }
+    .footer-col h3 {
+      font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .9px; color: rgba(255,255,255,.9);
+      margin-bottom: 12px;
+    }
+    .footer-col a {
+      display: block; padding: 4px 0;
+      font-size: 13.5px; color: rgba(255,255,255,.8);
+      transition: color .12s;
+    }
+    .footer-col a:hover { color: white; }
+    .footer-bottom {
+      border-top: 1px solid rgba(255,255,255,.2); padding-top: 20px;
+      display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center;
+    }
+    .footer-bottom p { font-size: 12px; color: rgba(255,255,255,.6); }
+
+    /* ── DEMO CONTENT ── */
+    .demo-section { max-width: 900px; margin: 60px auto; padding: 0 24px; }
+    .demo-title { font-family: 'Montserrat', sans-serif; font-size: 28px; font-weight: 800; color: var(--navy); margin-bottom: 8px; }
+    .demo-sub { color: var(--muted); font-size: 15px; margin-bottom: 40px; }
+    .legend { background: white; border-radius: 14px; border: 1px solid var(--border); padding: 24px; margin-bottom: 32px; }
+    .legend h2 { font-family: 'Montserrat', sans-serif; font-size: 15px; font-weight: 700; color: var(--navy); margin-bottom: 16px; }
+    .legend-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+    .legend-item { padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border); }
+    .legend-item .tag { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-bottom: 4px; }
+    .legend-item .val { font-size: 13px; font-weight: 600; color: var(--text); }
+    .legend-item .sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* Chips */
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+    .chip {
+      padding: 6px 14px; border-radius: 99px; font-size: 12px; font-weight: 600;
+      border: 1.5px solid var(--border); background: white; color: var(--text); cursor: pointer;
+      transition: .15s;
+    }
+    .chip:hover { background: var(--navy); color: white; border-color: var(--navy); }
+    .chip.active { background: var(--navy); color: white; border-color: var(--navy); }
+
+    /* Responsive: ocultar nav desktop e mostrar toggle em mobile */
+    @media (max-width: 767px) {
+      nav.desktop { display: none; }
+      .greeting { display: none; }
+      .mobile-toggle { display: block; }
+    }
+    @media (min-width: 768px) {
+      .mobile-toggle { display: none; }
+      .mobile-overlay { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════ HEADER ══ -->
+<header>
+  <div class="container">
+
+    <!-- Logo -->
+    <a href="#" class="logo-wrap">
+      <div class="logo-box">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" fill="#003366"/><path d="M9 21V12h6v9" fill="#007B3C"/></svg>
+        <span>ShareO</span>
+      </div>
+      <span class="logo-tagline">Use Mais. Possua Menos.</span>
+    </a>
+
+    <!-- Nav desktop -->
+    <nav class="desktop" id="desktopNav">
+
+      <!-- Explorar Itens -->
+      <div style="position:relative">
+        <button class="nav-trigger" onclick="toggleNav(this)">
+          Explorar Itens
+          <svg class="chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 4l4 4 4-4"/></svg>
+        </button>
+        <div class="dropdown">
+          <div class="dropdown-header">Explorar</div>
+          <a href="#"><span class="icon">🏷️</span><span>Categorias</span></a>
+          <a href="#"><span class="icon">🗺️</span><span>Busca no Mapa</span></a>
+          <a href="#"><span class="icon">🎛️</span><span>Filtros de Busca</span></a>
+          <a href="#"><span class="icon">🔥</span><span>Itens Populares</span><span class="badge">Novo</span></a>
+        </div>
+      </div>
+
+      <!-- Anunciar Item (CTA) -->
+      <div style="position:relative">
+        <button class="nav-trigger cta" onclick="toggleNav(this)">
+          Anunciar Item
+          <svg class="chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 4l4 4 4-4"/></svg>
+        </button>
+        <div class="dropdown">
+          <div class="dropdown-header">Para Anfitriões</div>
+          <a href="#"><span class="icon">➕</span><span>Cadastre seu Item</span></a>
+          <a href="#"><span class="icon">🧮</span><span>Estimativa de Ganhos</span></a>
+          <a href="#"><span class="icon">💡</span><span>Dicas para Anfitriões</span></a>
+        </div>
+      </div>
+
+      <!-- Experiências Locais -->
+      <div style="position:relative">
+        <button class="nav-trigger" onclick="toggleNav(this)">
+          Experiências Locais
+          <svg class="chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 4l4 4 4-4"/></svg>
+        </button>
+        <div class="dropdown">
+          <div class="dropdown-header">Comunidade</div>
+          <a href="#"><span class="icon">✨</span><span>Destaques Locais</span></a>
+          <a href="#"><span class="icon">📖</span><span>Histórias de Usuários</span></a>
+          <a href="#"><span class="icon">👥</span><span>Comunidade</span></a>
+        </div>
+      </div>
+
+      <!-- Ajuda e Segurança -->
+      <div style="position:relative">
+        <button class="nav-trigger" onclick="toggleNav(this)">
+          Ajuda e Segurança
+          <svg class="chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 4l4 4 4-4"/></svg>
+        </button>
+        <div class="dropdown right">
+          <div class="dropdown-header">Suporte</div>
+          <a href="#"><span class="icon">🎧</span><span>Central de Ajuda</span></a>
+          <a href="#"><span class="icon">🪪</span><span>Verificação de Identidade</span></a>
+          <a href="#"><span class="icon">📋</span><span>Políticas e Regras</span></a>
+          <a href="#"><span class="icon">🔔</span><span>Suporte 24/7</span></a>
+        </div>
+      </div>
+
+    </nav>
+
+    <!-- Direita -->
+    <div class="header-right">
+      <span class="greeting">Olá, Roberto!</span>
+      <div class="icon-btn" title="Notificações">🔔</div>
+      <div class="icon-btn avatar" title="Perfil">R</div>
+      <!-- Mobile toggle -->
+      <button class="mobile-toggle" onclick="openMobile()" aria-label="Abrir menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════ MOBILE MENU ══ -->
+<div class="mobile-overlay" id="mobileOverlay">
+  <div class="mobile-backdrop" onclick="closeMobile()"></div>
+  <div class="mobile-drawer">
+
+    <button class="drawer-close" onclick="closeMobile()">✕</button>
+
+    <!-- CTA destaque -->
+    <button class="drawer-cta">➕ &nbsp;Anunciar Item</button>
+
+    <div class="drawer-sep"></div>
+
+    <!-- Explorar -->
+    <button class="acc-trigger" onclick="toggleAcc(this)">
+      🏷️ &nbsp;Explorar Itens
+      <span class="acc-chevron">▼</span>
+    </button>
+    <div class="acc-content">
+      <a class="acc-link" href="#"><span class="icon">🏷️</span>Categorias</a>
+      <a class="acc-link" href="#"><span class="icon">🗺️</span>Busca no Mapa</a>
+      <a class="acc-link" href="#"><span class="icon">🎛️</span>Filtros de Busca</a>
+      <a class="acc-link" href="#"><span class="icon">🔥</span>Itens Populares</a>
+    </div>
+
+    <!-- Experiências -->
+    <button class="acc-trigger" onclick="toggleAcc(this)">
+      ✨ &nbsp;Experiências Locais
+      <span class="acc-chevron">▼</span>
+    </button>
+    <div class="acc-content">
+      <a class="acc-link" href="#"><span class="icon">✨</span>Destaques Locais</a>
+      <a class="acc-link" href="#"><span class="icon">📖</span>Histórias de Usuários</a>
+      <a class="acc-link" href="#"><span class="icon">👥</span>Comunidade</a>
+    </div>
+
+    <!-- Ajuda -->
+    <button class="acc-trigger" onclick="toggleAcc(this)">
+      🎧 &nbsp;Ajuda e Segurança
+      <span class="acc-chevron">▼</span>
+    </button>
+    <div class="acc-content">
+      <a class="acc-link" href="#"><span class="icon">🎧</span>Central de Ajuda</a>
+      <a class="acc-link" href="#"><span class="icon">🪪</span>Verificação de Identidade</a>
+      <a class="acc-link" href="#"><span class="icon">📋</span>Políticas e Regras</a>
+      <a class="acc-link" href="#"><span class="icon">🔔</span>Suporte 24/7</a>
+    </div>
+
+    <div class="drawer-sep"></div>
+
+    <!-- Conta -->
+    <div class="drawer-auth">
+      <div class="drawer-label">Minha Conta</div>
+      <a class="drawer-link" href="#">👤 &nbsp;Ver Perfil</a>
+      <a class="drawer-link" href="#">📅 &nbsp;Reservas</a>
+      <a class="drawer-link" href="#">💬 &nbsp;Mensagens</a>
+      <a class="drawer-link" href="#">📊 &nbsp;Dashboard</a>
+      <div class="drawer-sep"></div>
+      <a class="drawer-link red" href="#">↩ &nbsp;Sair</a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ CONTENT ══ -->
+<div class="demo-section">
+  <p class="demo-title">Mockup — Nova Navegação ShareO</p>
+  <p class="demo-sub">Clique nos itens do menu para ver os dropdowns. Reduza a janela para ver o menu mobile.</p>
+
+  <div class="legend">
+    <h2>Design System aplicado</h2>
+    <div class="legend-grid">
+      <div class="legend-item">
+        <div class="tag">Primary</div>
+        <div class="val" style="color:#003366">■ Navy #003366</div>
+        <div class="sub">Header, títulos</div>
+      </div>
+      <div class="legend-item">
+        <div class="tag">Brand / CTA</div>
+        <div class="val" style="color:#007B3C">■ Verde #007B3C</div>
+        <div class="sub">Botão Anunciar, footer</div>
+      </div>
+      <div class="legend-item">
+        <div class="tag">Background</div>
+        <div class="val" style="color:#64748B">■ Off-white #F8FAFC</div>
+        <div class="sub">Fundo geral</div>
+      </div>
+      <div class="legend-item">
+        <div class="tag">Tipografia</div>
+        <div class="val">Montserrat + Inter</div>
+        <div class="sub">Display + UI</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chips">
+    <span class="chip active">Desktop nav</span>
+    <span class="chip" onclick="openMobile()">Mobile menu →</span>
+  </div>
+
+  <div style="background:white;border-radius:14px;border:1px solid var(--border);padding:24px">
+    <p style="font-size:13px;color:var(--muted);line-height:1.7">
+      <strong style="color:var(--navy)">Nav desktop:</strong> 4 seções com dropdown ao clicar. "Anunciar Item" em verde destaca-se como CTA. "Ajuda e Segurança" alinha o painel à direita para evitar overflow.<br><br>
+      <strong style="color:var(--navy)">Mobile:</strong> Gaveta lateral com CTA "Anunciar" sempre visível no topo, seguida de 3 grupos colapsáveis (Explorar, Experiências, Ajuda) e seção de conta no final.<br><br>
+      <strong style="color:var(--navy)">Footer:</strong> 3 colunas — Plataforma | Legal | Suporte. Grid responsivo: 1 coluna em mobile, 2 em tablet, 3 em desktop.
+    </p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ FOOTER ══ -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="logo-box">
+        <svg viewBox="0 0 24 24" fill="none" style="width:20px;height:20px"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" fill="rgba(255,255,255,.9)"/><path d="M9 21V12h6v9" fill="rgba(255,255,255,.5)"/></svg>
+        <span>ShareO</span>
+      </div>
+      <div>
+        <div style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:15px;color:white">ShareO</div>
+        <div class="footer-tagline">Use Mais. Possua Menos.</div>
+      </div>
+    </div>
+
+    <div class="footer-grid">
+      <!-- Plataforma -->
+      <div class="footer-col">
+        <h3>Plataforma</h3>
+        <a href="#">Início</a>
+        <a href="#">Explorar Itens</a>
+        <a href="#">Anunciar Item</a>
+        <a href="#">Sobre Nós</a>
+        <a href="#">Nossa Missão</a>
+        <a href="#">Contato</a>
+      </div>
+      <!-- Legal -->
+      <div class="footer-col">
+        <h3>Legal</h3>
+        <a href="#">Privacidade</a>
+        <a href="#">Termos de Uso</a>
+        <a href="#">Políticas e Regras</a>
+      </div>
+      <!-- Suporte -->
+      <div class="footer-col">
+        <h3>Suporte</h3>
+        <a href="#">Central de Ajuda</a>
+        <a href="#">Suporte 24/7</a>
+        <a href="#">Verificação de Identidade</a>
+        <a href="#">Comunidade</a>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>© 2026 ShareO. Todos os direitos reservados.</p>
+      <p>Feito com ♻️ em Natal, RN</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ── Desktop nav dropdowns ──
+  function toggleNav(btn) {
+    const isOpen = btn.classList.contains('open')
+    // fecha todos
+    document.querySelectorAll('.nav-trigger').forEach(b => b.classList.remove('open'))
+    if (!isOpen) btn.classList.add('open')
+  }
+  // fecha ao clicar fora
+  document.addEventListener('click', e => {
+    if (!e.target.closest('nav.desktop')) {
+      document.querySelectorAll('.nav-trigger').forEach(b => b.classList.remove('open'))
+    }
+  })
+  // fecha com Esc
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      document.querySelectorAll('.nav-trigger').forEach(b => b.classList.remove('open'))
+      closeMobile()
+    }
+  })
+
+  // ── Mobile menu ──
+  function openMobile() {
+    document.getElementById('mobileOverlay').classList.add('open')
+    document.body.style.overflow = 'hidden'
+  }
+  function closeMobile() {
+    document.getElementById('mobileOverlay').classList.remove('open')
+    document.body.style.overflow = ''
+  }
+
+  // ── Accordion mobile ──
+  function toggleAcc(btn) {
+    btn.classList.toggle('expanded')
+  }
+</script>
+</body>
+</html>
