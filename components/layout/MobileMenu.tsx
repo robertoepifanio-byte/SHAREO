@@ -15,10 +15,10 @@ const NAV_LINKS = [
   { href: "/itens/novo", label: "Anunciar", cta: true },
 ]
 
-const AUTH_LINKS = [
-  { href: "/reservas",  label: "Reservas" },
-  { href: "/mensagens", label: "Mensagens" },
-  { href: "/dashboard", label: "Dashboard" },
+const ATIVIDADE_LINKS = [
+  { href: "/reservas",  label: "Reservas",  icon: "📅" },
+  { href: "/mensagens", label: "Mensagens", icon: "💬" },
+  { href: "/dashboard", label: "Dashboard", icon: "📊" },
 ]
 
 const HELP_LINKS = [
@@ -110,13 +110,17 @@ export function MobileMenu({ isLoggedIn }: Props) {
                 <>
                   <li><div className="my-1 h-px bg-white/10" /></li>
 
-                  {/* Links autenticados */}
-                  {AUTH_LINKS.map((link) => (
+                  {/* Seção Atividade */}
+                  <li>
+                    <p className="px-4 pt-2 pb-1 text-xs font-semibold text-white/50 uppercase tracking-wider">Atividade</p>
+                  </li>
+                  {ATIVIDADE_LINKS.map((link) => (
                     <li key={link.href}>
                       <Link
                         href={link.href}
-                        className="flex h-12 items-center rounded-lg px-4 text-base font-medium text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+                        className="flex h-11 items-center gap-3 rounded-lg px-4 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white transition-colors"
                       >
+                        <span aria-hidden="true">{link.icon}</span>
                         {link.label}
                       </Link>
                     </li>
@@ -159,7 +163,6 @@ export function MobileMenu({ isLoggedIn }: Props) {
                   <li><div className="my-1 h-px bg-white/10" /></li>
 
                   {/* Central de Ajuda */}
-                  <li><div className="my-1 h-px bg-white/10" /></li>
                   <li>
                     <p className="px-4 pt-2 pb-1 text-xs font-semibold text-white/50 uppercase tracking-wider">Central de Ajuda</p>
                   </li>
