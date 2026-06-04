@@ -1,8 +1,9 @@
 import type { NextConfig } from "next"
 import { withSentryConfig } from "@sentry/nextjs"
 
-const isDev = process.env.NODE_ENV === "development"
 
+// CSP é gerado por request no middleware.ts (com nonce em produção).
+// Aqui ficam apenas os headers estáticos que não dependem de nonce.
 const securityHeaders = [
   { key: "X-DNS-Prefetch-Control",    value: "on" },
   { key: "X-Frame-Options",           value: "SAMEORIGIN" },
@@ -12,31 +13,6 @@ const securityHeaders = [
   {
     key: "Strict-Transport-Security",
     value: "max-age=63072000; includeSubDomains; preload",
-  },
-  // CSP mais permissiva em dev (Next.js Fast Refresh + mapbox-gl WebAssembly exigem unsafe-eval)
-  {
-    key: "Content-Security-Policy",
-    value: isDev
-      ? [
-          "default-src 'self'",
-          "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:",
-          "worker-src blob: 'self'",
-          "style-src 'self' 'unsafe-inline'",
-          "img-src 'self' data: blob: *.supabase.co *.mapbox.com",
-          "connect-src 'self' ws: wss: *.supabase.co api.mapbox.com events.mapbox.com *.tiles.mapbox.com",
-          "font-src 'self' data:",
-          "frame-src 'none'",
-        ].join("; ")
-      : [
-          "default-src 'self'",
-          "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob: https://www.googletagmanager.com",
-          "worker-src blob: 'self'",
-          "style-src 'self' 'unsafe-inline'",
-          "img-src 'self' data: blob: *.supabase.co *.mapbox.com https://www.google-analytics.com",
-          "connect-src 'self' wss://*.supabase.co api.mapbox.com events.mapbox.com *.tiles.mapbox.com *.sentry.io https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com",
-          "font-src 'self' data:",
-          "frame-src 'none'",
-        ].join("; "),
   },
 ]
 
@@ -78,7 +54,7 @@ const config: NextConfig = {
 
   // Logs de build mais limpos
   logging: {
-    fetches: { fullUrl: isDev },
+    fetches: { fullUrl: process.env.NODE_ENV === "development" },
   },
 }
 
