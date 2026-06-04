@@ -2,13 +2,14 @@
 
 **Atualizado em**: 2026-06-04  
 **Ambiente staging**: https://shareo-rouge.vercel.app (branch `main`, deploy automático)  
-**Último commit**: `c447e9b`
+**Último commit**: `40d1a2b`  
+**Release estável**: [`v1.0.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.0.0)
 
 ---
 
 ## Resumo Executivo
 
-**Pronto para validação final de staging.** P0 + P1 + P2 concluídos. Fluxo ponta-a-ponta funcional: auth → anúncio → busca/mapa → reserva → chat → devolução bilateral → avaliação → pagamento Stripe. PWA instalável, Sentry monitorando, rate limiting Upstash ativo, CSP com nonces. Após aprovação de staging: criar Supabase production e deploy via `git tag v1.0.0`.
+**✅ Staging validado. Tag v1.0.0 publicada.** Fluxo ponta-a-ponta funcional: auth → anúncio → busca/mapa → reserva → chat → devolução bilateral → avaliação → pagamento Stripe. PWA instalável, Sentry monitorando, rate limiting Upstash ativo, CSP com nonces. Suite Playwright: **87 passed / 0 failed**. Próximo passo: criar Supabase production e fazer deploy via tag existente.
 
 ---
 
@@ -22,7 +23,7 @@
 | **Pós-H3** | SEO (sitemap/robots), PWA (manifest/service worker), geocoding automático, mapa Mapbox |
 | **v2 UX** | Paleta Navy/Verde, BookingProgressBar (5 etapas), FilterBottomSheet, StickyBookingCTA |
 | **Pós-v2** | Confirmação devolução bilateral, status DRAFT p/ itens sem foto, área de perfil (7 sub-páginas) |
-| **Sessões jun/04** | Nav reestruturada (Início/Explorar/Anunciar dropdowns), HelpButton, MobileMenu expansível, categoria "Casa e Cozinha" |
+| **Sessões jun/04** | Nav reestruturada (dropdowns), HelpButton, MobileMenu expansível, pills de categoria 2 linhas |
 
 ---
 
@@ -39,7 +40,7 @@
 | Sentry (`sentry.client/server/edge.config.ts`) | ✅ Source maps + alertas ativos |
 | Upstash Redis (rate limiting) | ✅ Env vars no Vercel — ativo em produção |
 | PWA | ✅ Ícones + screenshots + service worker validados |
-| Supabase **production** | ⏳ Aguarda validação final de staging |
+| Supabase **production** | ⏳ Aguarda criação manual (tag v1.0.0 pronta) |
 
 ---
 
@@ -49,9 +50,19 @@
 |---|---|
 | Unit — `bookings`, `pricing`, `crypto`, `auth`, `rateLimit`, `middleware`, `haversine`, `co2`, `format`, `geo` | ✅ Escritos |
 | Integration — `bookings/patch`, `bookings/reviews`, `auth/register`, `conversations/messages`, `items/get/post/patch` | ✅ Escritos |
-| E2E Playwright — `auth`, `booking-flow`, `navigation`, `search-filter`, `admin`, `chat`, `favorites`, `responsive`, `error-pages`, `anuncio`, `review` | ✅ Escritos |
+| E2E Playwright staging — 107 testes, `workers: 1` (serial) | ✅ **87 passed / 0 failed / 20 skipped** |
 | `coverageThreshold` — 70% para `pricing`, `crypto`, `bookings` (módulos P0) | ✅ Configurado |
 | Jest `transformIgnorePatterns` para `next-auth@5` | ✅ Corrigido — cobre `@upstash`, `next-auth`, `@auth` |
+| Isolamento dos specs E2E (CPF dinâmico, datas +60d, workers=1, axe via CDP) | ✅ Corrigido em 2026-06-04 |
+
+---
+
+## Releases
+
+| Tag | Commit | Data | Descrição |
+|---|---|---|---|
+| `v1.0` | — | pré-v2 | Estado antes da v2 UX |
+| `v1.0.0` | `40d1a2b` | 2026-06-04 | Staging validado — ponto de recuperação estável |
 
 ---
 
@@ -71,7 +82,7 @@
 
 | Item | Detalhe |
 |---|---|
-| **Supabase production** | Criar 3º projeto Supabase isolado + GitHub environment `production` com Required Reviewers. Deploy via `git tag v1.0.0 && git push origin v1.0.0` |
+| **Supabase production** | Criar 3º projeto Supabase isolado + GitHub environment `production` com Required Reviewers. Deploy via push da tag `v1.0.0` existente. |
 
 ### 🟢 P3 — Pós-produção (10 itens)
 
@@ -92,3 +103,4 @@ Ver `docs/backlog-atividades-priorizadas.md` — Lighthouse, k6, gamificação, 
 | Dark mode | Fora do escopo — não planejado para H1 |
 | WhatsApp | Fora do escopo — decisão explícita do produto |
 | Caução | Informativo — combinado fora da plataforma no MVP |
+| Testes E2E staging | `workers: 1` obrigatório — estado compartilhado entre specs (fixtures JSON, DB) |
