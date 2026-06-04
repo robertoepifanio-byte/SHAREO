@@ -285,7 +285,10 @@ export default async function ExplorarPage({ searchParams }: Props) {
               }`}
             >
               <CategoryIcon name="Todos" size={52} />
-              Todos
+              <span className="flex flex-col items-center leading-tight">
+                <span>Todas</span>
+                <span>Categorias</span>
+              </span>
             </Link>
             {categories.map((cat) => (
               <Link
