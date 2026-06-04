@@ -56,9 +56,9 @@
 
 | # | Atividade | Detalhe |
 |---|---|---|
-| 4 | **Preservação de contexto de busca** | `app/itens/[id]/page.tsx:251` — link "← Voltar para resultados" aponta fixo para `/itens`; deve preservar os filtros da URL original |
-| 5 | **Extensão de prazo — botão na UI** | API `extend` completa mas `_BookingActions.tsx` não tem botão para o locatário solicitar; também falta botão de aprovar/recusar para o proprietário |
-| 6 | **Relatório de problema estruturado** | `_BookingActions.tsx` tem "Abrir disputa" com textarea livre; o backlog original pede formulário com categorias (não funciona / veio danificado / faltam acessórios / outro) + foto opcional |
+| 4 | ✅ **Preservação de contexto de busca** | `ItemCard` passa `?back=` com filtros; detalhe do item usa no link "← Voltar" |
+| 5 | ✅ **Extensão de prazo — UI** | Locatário solicita nova data; proprietário aprova/recusa via banner; chama `POST/PATCH /extend` |
+| 6 | ✅ **Relatório de problema estruturado** | 4 categorias + descrição obrigatória + foto opcional; abre disputa com reason formatada |
 
 ---
 
