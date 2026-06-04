@@ -18,7 +18,6 @@ const MENU_ITEMS = [
   { href: "/perfil/documentos", label: "Documentos",    icon: "🪪" },
   { href: "/perfil/indicacoes", label: "Indicações",    icon: "🎁" },
   { href: "/dashboard",         label: "Dashboard",     icon: "📊" },
-  { href: "/ajuda",             label: "Ajuda",         icon: "❓" },
 ]
 
 export function UserDropdown({ name, avatarUrl }: Props) {
