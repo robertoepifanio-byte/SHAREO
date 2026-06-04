@@ -28,6 +28,18 @@ const OPCOES = [
     label: "Mais alugados",
     desc:  "Os favoritos da comunidade",
   },
+  {
+    href:  "/itens?categoryId=all",
+    icon:  "🏷️",
+    label: "Por categoria",
+    desc:  "Filtre pelo tipo de item que precisa",
+  },
+  {
+    href:  "/itens?minRating=4",
+    icon:  "⭐",
+    label: "Mais bem avaliados",
+    desc:  "Itens com as melhores avaliações",
+  },
 ]
 
 export function ExplorarDropdown() {
