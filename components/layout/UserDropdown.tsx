@@ -10,14 +10,19 @@ interface Props {
   avatarUrl?: string | null
 }
 
-const MENU_ITEMS = [
-  { href: "/perfil",            label: "Ver Perfil",    icon: "👤" },
-  { href: "/perfil/editar",     label: "Editar dados",  icon: "✏️" },
-  { href: "/perfil/endereco",   label: "Endereço",      icon: "📍" },
-  { href: "/perfil/seguranca",  label: "Segurança",     icon: "🔒" },
-  { href: "/perfil/documentos", label: "Documentos",    icon: "🪪" },
-  { href: "/perfil/indicacoes", label: "Indicações",    icon: "🎁" },
-  { href: "/dashboard",         label: "Dashboard",     icon: "📊" },
+const ATIVIDADE = [
+  { href: "/reservas",   label: "Reservas",   icon: "📅" },
+  { href: "/mensagens",  label: "Mensagens",  icon: "💬" },
+  { href: "/dashboard",  label: "Dashboard",  icon: "📊" },
+]
+
+const CONTA = [
+  { href: "/perfil",            label: "Ver Perfil",   icon: "👤" },
+  { href: "/perfil/editar",     label: "Editar dados", icon: "✏️" },
+  { href: "/perfil/endereco",   label: "Endereço",     icon: "📍" },
+  { href: "/perfil/seguranca",  label: "Segurança",    icon: "🔒" },
+  { href: "/perfil/documentos", label: "Documentos",   icon: "🪪" },
+  { href: "/perfil/indicacoes", label: "Indicações",   icon: "🎁" },
 ]
 
 export function UserDropdown({ name, avatarUrl }: Props) {
@@ -81,9 +86,31 @@ export function UserDropdown({ name, avatarUrl }: Props) {
             <p className="truncate text-sm font-semibold text-foreground">{name}</p>
           </div>
 
-          {/* Links */}
-          <ul className="py-1">
-            {MENU_ITEMS.map((item) => (
+          {/* Seção: Atividade */}
+          <div className="px-4 pt-2.5 pb-1">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Atividade</p>
+          </div>
+          <ul className="pb-1">
+            {ATIVIDADE.map((item) => (
+              <li key={item.href} role="none">
+                <Link
+                  href={item.href}
+                  role="menuitem"
+                  className="flex h-10 items-center gap-3 px-4 text-sm text-foreground hover:bg-brand/5 hover:text-brand transition-colors outline-none focus-visible:bg-brand/5"
+                >
+                  <span aria-hidden="true">{item.icon}</span>
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+
+          {/* Seção: Minha conta */}
+          <div className="border-t border-border px-4 pt-2.5 pb-1">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Minha conta</p>
+          </div>
+          <ul className="pb-1">
+            {CONTA.map((item) => (
               <li key={item.href} role="none">
                 <Link
                   href={item.href}
