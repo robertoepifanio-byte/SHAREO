@@ -51,7 +51,7 @@ const HAS_PNG = new Set<string>([
 
 const SLUG_MAP: Record<string, string> = {
   "Todos":         "todas",
-  "Casa e Jardim": "casa-jardim",
+  "Casa e Cozinha": "casa-jardim",
   "Construção":    "construcao",
   "Eletrônicos":   "eletronicos",
   "Esporte":       "esporte",
@@ -61,7 +61,7 @@ const SLUG_MAP: Record<string, string> = {
 }
 
 const LUCIDE_MAP: Record<string, LucideIcon> = {
-  "Casa e Jardim": Home,
+  "Casa e Cozinha": Home,
   "Construção":    Hammer,
   "Eletrônicos":   Smartphone,
   "Esporte":       Dumbbell,

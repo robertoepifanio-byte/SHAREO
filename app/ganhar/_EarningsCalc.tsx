@@ -7,7 +7,7 @@ import Link from "next/link"
 const CATEGORY_DATA: Record<string, { name: string; avgRetailPrice: number; dailyRate: number }> = {
   ferramentas:  { name: "Ferramentas",       avgRetailPrice: 700,   dailyRate: 35  },
   eletronicos:  { name: "Eletrônicos",        avgRetailPrice: 2000,  dailyRate: 100 },
-  "casa-jardim":{ name: "Casa & Jardim",      avgRetailPrice: 600,   dailyRate: 30  },
+  "casa-jardim":{ name: "Casa & Cozinha",      avgRetailPrice: 600,   dailyRate: 30  },
   construcao:   { name: "Construção",         avgRetailPrice: 900,   dailyRate: 45  },
   esporte:      { name: "Esporte & Lazer",    avgRetailPrice: 1200,  dailyRate: 60  },
   moda:         { name: "Moda & Acessórios",  avgRetailPrice: 1000,  dailyRate: 50  },
