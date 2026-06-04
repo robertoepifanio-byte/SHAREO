@@ -38,7 +38,7 @@ export function ItemCard({ item, showActions = false, isFavorited = false, hotBa
     : item.city
 
   const isAvailable = item.status === "AVAILABLE" || item.status === undefined
-  const isBooked    = (item._count?.bookings ?? 0) > 0
+  const _isBooked   = (item._count?.bookings ?? 0) > 0
 
   return (
     <article
