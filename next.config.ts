@@ -59,9 +59,10 @@ const config: NextConfig = {
 }
 
 export default withSentryConfig(config, {
-  org:     process.env.SENTRY_ORG     ?? "shareo-ow",
-  project: process.env.SENTRY_PROJECT ?? "shareo-web",
-  silent:  !process.env.CI,
+  org:       process.env.SENTRY_ORG       ?? "shareo-ow",
+  project:   process.env.SENTRY_PROJECT   ?? "shareo-web",
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  silent:    !process.env.CI,
   hideSourceMaps:          true,
   widenClientFileUpload:   true,
   disableLogger:           true,
