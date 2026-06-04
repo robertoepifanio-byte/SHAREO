@@ -7,7 +7,6 @@ import { UserDropdown } from "@/components/layout/UserDropdown"
 
 export async function AppHeader() {
   const session = await auth().catch(() => null)
-  const initial = session?.user?.name?.[0]?.toUpperCase() ?? "U"
 
   return (
     <header className="sticky top-0 z-[200] bg-primary" role="banner">
