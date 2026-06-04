@@ -18,7 +18,7 @@ export async function AppHeader() {
 
         {/* Logo + tagline */}
         <Link
-          href={session ? "/dashboard" : "/"}
+          href="/"
           className="flex-shrink-0 flex flex-col outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary rounded-lg"
           aria-label="ShareO — página inicial"
         >
