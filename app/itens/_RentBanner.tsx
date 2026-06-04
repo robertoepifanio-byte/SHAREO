@@ -21,7 +21,7 @@ export function RentBanner() {
         <ol className="mt-2 space-y-1 text-sm text-muted-foreground list-none">
           <li className="flex items-center gap-2">
             <span className="inline-flex w-5 h-5 rounded-full bg-brand text-white text-[10px] font-bold items-center justify-center flex-shrink-0">1</span>
-            Escolha um item e clique em <strong className="text-foreground">"Reservar"</strong>
+            Escolha um item e clique em <strong className="text-foreground">&ldquo;Reservar&rdquo;</strong>
           </li>
           <li className="flex items-center gap-2">
             <span className="inline-flex w-5 h-5 rounded-full bg-brand text-white text-[10px] font-bold items-center justify-center flex-shrink-0">2</span>
