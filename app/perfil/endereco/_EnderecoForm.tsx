@@ -51,7 +51,9 @@ export function EnderecoForm({ city, state, neighborhood }: Props) {
         return
       }
       setSuccess(true)
-      startTransition(() => router.refresh())
+      startTransition(() => {
+        setTimeout(() => router.push("/perfil"), 1000)
+      })
     } finally {
       setLoading(false)
     }
