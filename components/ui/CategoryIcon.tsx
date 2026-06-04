@@ -37,6 +37,7 @@ import {
  * Os PNGs já têm o círculo embutido — o componente não adiciona borda extra.
  */
 const HAS_PNG = new Set<string>([
+  "todas",
   "casa-jardim",
   "construcao",
   "eletronicos",
@@ -49,6 +50,7 @@ const HAS_PNG = new Set<string>([
 /* ── Mapeamentos ────────────────────────────────────────────────── */
 
 const SLUG_MAP: Record<string, string> = {
+  "Todos":         "todas",
   "Casa e Jardim": "casa-jardim",
   "Construção":    "construcao",
   "Eletrônicos":   "eletronicos",
@@ -66,6 +68,7 @@ const LUCIDE_MAP: Record<string, LucideIcon> = {
   "Ferramentas":   Wrench,
   "Festas":        Gift,
   "Moda":          ShoppingBag,
+  "Todos":         Home, // fallback — PNG sempre disponível
 }
 
 interface CategoryIconProps {
