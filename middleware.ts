@@ -21,7 +21,62 @@ const ADMIN_PREFIXES = ["/admin", "/api/admin"]
 const AUTH_ROUTES = ["/login", "/cadastro"]
 const AUTH_EXACT  = ["/esqueci-senha"]   // só a raiz, não sub-rotas com token
 
+const isDev = process.env.NODE_ENV === "development"
+
+// ─── CSP com nonce ────────────────────────────────────────────────────────────
+
+function generateNonce(): string {
+  const bytes = new Uint8Array(16)
+  crypto.getRandomValues(bytes)
+  return Buffer.from(bytes).toString("base64")
+}
+
+function buildCsp(nonce: string): string {
+  if (isDev) {
+    // Dev: unsafe-inline + unsafe-eval para Next.js Fast Refresh e Mapbox WASM
+    return [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:",
+      "worker-src blob: 'self'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: *.supabase.co *.mapbox.com",
+      "connect-src 'self' ws: wss: *.supabase.co api.mapbox.com events.mapbox.com *.tiles.mapbox.com",
+      "font-src 'self' data:",
+      "frame-src 'none'",
+    ].join("; ")
+  }
+  return [
+    "default-src 'self'",
+    // nonce cobre scripts inline do Next.js, JSON-LD e GA4; wasm-unsafe-eval é exigido pelo Mapbox GL
+    `script-src 'self' 'nonce-${nonce}' 'wasm-unsafe-eval' blob: https://www.googletagmanager.com`,
+    "worker-src blob: 'self'",
+    // unsafe-inline para styles permanece — Tailwind e Mapbox GL injetam estilos inline
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: *.supabase.co *.mapbox.com https://www.google-analytics.com",
+    "connect-src 'self' wss://*.supabase.co api.mapbox.com events.mapbox.com *.tiles.mapbox.com *.sentry.io https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com",
+    "font-src 'self' data:",
+    "frame-src 'none'",
+  ].join("; ")
+}
+
+// ─── Middleware ───────────────────────────────────────────────────────────────
+
 export async function middleware(req: NextRequest) {
+  const nonce = generateNonce()
+  const csp   = buildCsp(nonce)
+
+  // Propaga o nonce no request para que o Next.js App Router o aplique
+  // automaticamente nos seus próprios scripts de hidratação
+  const requestHeaders = new Headers(req.headers)
+  requestHeaders.set("x-nonce", nonce)
+
+  // Helper: NextResponse.next() com nonce forwarded e CSP no response
+  function nextWithCsp(): NextResponse {
+    const res = NextResponse.next({ request: { headers: requestHeaders } })
+    res.headers.set("Content-Security-Policy", csp)
+    return res
+  }
+
   const { pathname } = req.nextUrl
 
   const isAdminRoute     = ADMIN_PREFIXES.some((p) => pathname.startsWith(p))
@@ -34,7 +89,7 @@ export async function middleware(req: NextRequest) {
     AUTH_EXACT.some((p)  => pathname === p || pathname === p + "/")
 
   if (!isAdminRoute && !isProtectedRoute && !isAuthRoute) {
-    return NextResponse.next()
+    return nextWithCsp()
   }
 
   // Cron/service calls autenticados via CRON_SECRET passam direto no middleware;
@@ -43,7 +98,7 @@ export async function middleware(req: NextRequest) {
     const cronSecret = process.env.CRON_SECRET
     const authHeader = req.headers.get("authorization")
     if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
-      return NextResponse.next()
+      return nextWithCsp()
     }
   }
 
@@ -71,7 +126,7 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  return NextResponse.next()
+  return nextWithCsp()
 }
 
 export const config = {

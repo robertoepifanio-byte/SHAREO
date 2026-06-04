@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { headers } from "next/headers"
 import { Montserrat, Inter } from "next/font/google"
 import { Toaster } from "sonner"
 import { BottomNav } from "@/components/layout/BottomNav"
@@ -70,12 +71,16 @@ const orgJsonLd = {
   },
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const headersList = await headers()
+  const nonce = headersList.get("x-nonce") ?? undefined
+
   return (
     <html lang="pt-BR" className={`${montserrat.variable} ${inter.variable}`}>
       <body className="min-h-screen bg-background font-sans antialiased">
         <script
           type="application/ld+json"
+          nonce={nonce}
           dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
         />
         {/* Skip link — acessibilidade de teclado */}
@@ -95,7 +100,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Toaster richColors position="top-right" />
           <ServiceWorkerRegister />
           {/* P3-82: GA4 — carregado apenas quando NEXT_PUBLIC_GA_MEASUREMENT_ID definido */}
-          <GoogleAnalytics />
+          <GoogleAnalytics nonce={nonce} />
         </Providers>
     </body>
     </html>
