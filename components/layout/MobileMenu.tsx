@@ -22,8 +22,8 @@ const AUTH_LINKS = [
 ]
 
 const ACCOUNT_LINKS = [
-  { href: "/perfil",             label: "Meu Perfil",          icon: "👤" },
-  { href: "/perfil/editar",      label: "Editar Perfil",       icon: "✏️" },
+  { href: "/perfil",             label: "Ver Perfil",           icon: "👤" },
+  { href: "/perfil/editar",      label: "Editar dados",        icon: "✏️" },
   { href: "/perfil/endereco",    label: "Endereço",            icon: "📍" },
   { href: "/perfil/seguranca",   label: "Segurança",           icon: "🔒" },
   { href: "/perfil/documentos",  label: "Documentos",          icon: "🪪" },
