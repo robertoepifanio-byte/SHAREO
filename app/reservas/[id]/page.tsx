@@ -77,6 +77,8 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
           images: { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
         },
       },
+      extensionStatus:           true,
+      extensionRequestedEndDate: true,
       borrower:     { select: { id: true, name: true } },
       owner:        { select: { id: true, name: true } },
       conversation: { select: { id: true } },
@@ -361,6 +363,8 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
             isOwner={isOwner}
             isBorrower={isBorrower}
             conversationId={booking.conversation?.id}
+            extensionStatus={booking.extensionStatus ?? null}
+            extensionRequestedEndDate={booking.extensionRequestedEndDate?.toISOString() ?? null}
             hideReturnActions={
               (isBorrower && booking.status === "ACTIVE") ||
               (isOwner    && booking.status === "RETURNED")

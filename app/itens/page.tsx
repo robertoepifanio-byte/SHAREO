@@ -398,7 +398,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
                 <>
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
                     {items.map((item) => (
-                      <ItemCard key={item.id} item={item} />
+                      <ItemCard key={item.id} item={item} backHref={buildUrl({ page })} />
                     ))}
                   </div>
                   {totalPages > 1 && (
