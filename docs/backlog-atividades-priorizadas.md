@@ -72,8 +72,8 @@
 | 10 | **Stubs com conteúdo** | `/politicas`, `/suporte`, `/comunidade` — páginas existem sem conteúdo real |
 | 11 | **Jest global `next-auth@5`** | `jest.config.ts` — `transformIgnorePatterns` não cobre `next-auth@5`; mock local em `get.test.ts` como workaround |
 | 12 | **Sentry source maps + alertas** | Arquivos de config existem — confirmar source maps no build Vercel e definir alertas de erro crítico |
-| 13 | **Countdown devolução** | "Devolução em 1 dia, 4h e 23min" na reserva ativa |
-| 14 | **Onboarding do primeiro anúncio** | Progress indicator de qualidade 0–100%, dicas inline por campo, prévia do ItemCard em tempo real |
+| 13 | ✅ **Countdown devolução** | `components/booking/ReturnCountdown.tsx` — já wired em `app/reservas/[id]/page.tsx` |
+| 14 | ✅ **Onboarding do primeiro anúncio** | `ListingQualityIndicator` + `ItemCardPreview` + dicas inline já no `ItemForm.tsx` |
 
 ---
 
