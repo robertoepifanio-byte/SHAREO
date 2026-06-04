@@ -23,9 +23,11 @@ const config: Config = {
     "^@mswjs/interceptors(.*)$":
       "<rootDir>/node_modules/.pnpm/@mswjs+interceptors@0.41.9/node_modules/@mswjs/interceptors/lib/node$1/index.cjs",
   },
-  // @upstash/* packages ship ESM-only builds — tell Jest to transform them via ts-jest/Babel
+  // Pacotes ESM-only que o Jest precisa transpilar (não são CJS).
+  // @upstash/*: Redis/Ratelimit — ESM-only
+  // next-auth@5: exports ESM por padrão
   transformIgnorePatterns: [
-    "/node_modules/(?!(@upstash)/)",
+    "/node_modules/(?!(@upstash|next-auth|@auth)/)",
   ],
   testPathIgnorePatterns: [
     "<rootDir>/node_modules/",

@@ -143,25 +143,29 @@ describe("ItemCard", () => {
   })
 
   describe("badges de disponibilidade", () => {
-    it("exibe badge 'Disponível' quando status=AVAILABLE", () => {
+    // Decisão de produto (commit 455a5cc): badges de status só aparecem na
+    // visão do proprietário (showActions=true). Na listagem pública não há badge.
+
+    it("não exibe nenhum badge na listagem pública (showActions=false, padrão)", () => {
       render(<ItemCard item={makeItem({ status: "AVAILABLE" })} />)
-      expect(screen.getByText("Disponível")).toBeInTheDocument()
+      expect(screen.queryByText("Disponível")).not.toBeInTheDocument()
+      expect(screen.queryByText("Pausado")).not.toBeInTheDocument()
+      expect(screen.queryByText("Rascunho")).not.toBeInTheDocument()
     })
 
-    it("exibe badge 'Pausado' quando status=PAUSED", () => {
-      render(<ItemCard item={makeItem({ status: "PAUSED" })} />)
+    it("exibe badge 'Pausado' na visão do proprietário (showActions=true)", () => {
+      render(<ItemCard item={makeItem({ status: "PAUSED" })} showActions={true} />)
       expect(screen.getByText("Pausado")).toBeInTheDocument()
     })
 
-    it("exibe badge 'Rascunho' quando status=DRAFT", () => {
-      render(<ItemCard item={makeItem({ status: "DRAFT" })} />)
+    it("exibe badge 'Rascunho' na visão do proprietário (showActions=true)", () => {
+      render(<ItemCard item={makeItem({ status: "DRAFT" })} showActions={true} />)
       expect(screen.getByText("Rascunho")).toBeInTheDocument()
     })
 
-    it("exibe badge 'Disponível' quando status é undefined (padrão)", () => {
-      // O componente trata `status === undefined` como AVAILABLE
-      render(<ItemCard item={makeItem({ status: undefined })} />)
-      expect(screen.getByText("Disponível")).toBeInTheDocument()
+    it("não exibe badge para AVAILABLE mesmo na visão do proprietário", () => {
+      render(<ItemCard item={makeItem({ status: "AVAILABLE" })} showActions={true} />)
+      expect(screen.queryByText("Disponível")).not.toBeInTheDocument()
     })
   })
 
