@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
     try {
       // MVP: apenas registra como PROCESSING para execução manual pelo admin
       // V1+: chamar EFI Bank / Pagar.me aqui e atualizar para COMPLETED
-      console.info(
+      console.warn(
         `[cron/payout] PROCESSING id=${payout.id} amount=${payout.amount} ` +
         `booking=${payout.booking.id} pix=${payout.ownerPaymentAccount.pixKey}`,
       )

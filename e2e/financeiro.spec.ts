@@ -291,6 +291,83 @@ test.describe('FIN-7 — chargebacks e disputas', () => {
   })
 })
 
+// ─── FIN-8. Exportações CSV ───────────────────────────────────────────────────
+
+test.describe('FIN-8 — exportação financeira CSV', () => {
+  test.skip(!hasAdminSession, 'Requer session-admin.json')
+  test.use({ storageState: SESSION_PATHS.admin })
+
+  test('19. admin acessa /admin/financeiro/exportar', async ({ page }) => {
+    await page.goto('/admin/financeiro/exportar')
+    await expect(page).toHaveURL(/\/exportar/, { timeout: 15000 })
+    await expect(page.locator('h1')).toContainText('Exportar')
+  })
+
+  test('20. painel financeiro exibe botão "Exportar CSV"', async ({ page }) => {
+    await page.goto('/admin/financeiro')
+    await expect(page.getByRole('link', { name: /Exportar CSV/i })).toBeVisible()
+  })
+
+  test('21. POST /api/admin/export retorna CSV para período ≤ 90 dias', async ({ page }) => {
+    const end   = new Date().toISOString().slice(0, 10)
+    const start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+
+    const res = await page.request.post('/api/admin/export', {
+      data: { start, end },
+    })
+    expect(res.status()).toBe(200)
+    expect(res.headers()['content-type']).toContain('text/csv')
+    const body = await res.text()
+    // Deve ter cabeçalho CSV
+    expect(body).toContain('id,data,status')
+  })
+
+  test('22. POST /api/admin/export retorna 202 para período > 90 dias', async ({ page }) => {
+    const end   = new Date().toISOString().slice(0, 10)
+    const start = new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+
+    const res = await page.request.post('/api/admin/export', {
+      data: { start, end },
+    })
+    expect(res.status()).toBe(202)
+    const body = await res.json() as { jobId: string; status: string }
+    expect(typeof body.jobId).toBe('string')
+    expect(body.status).toBe('PENDING')
+  })
+
+  test('23. GET /api/admin/export/[jobId] retorna status do job', async ({ page }) => {
+    // Cria job assíncrono e verifica status
+    const end   = new Date().toISOString().slice(0, 10)
+    const start = new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+
+    const createRes = await page.request.post('/api/admin/export', {
+      data: { start, end },
+    })
+    const { jobId } = await createRes.json() as { jobId: string }
+
+    const statusRes = await page.request.get(`/api/admin/export/${jobId}`)
+    expect(statusRes.status()).toBe(200)
+    const data = await statusRes.json() as { id: string; status: string }
+    expect(data.id).toBe(jobId)
+    expect(['PENDING', 'PROCESSING', 'COMPLETED']).toContain(data.status)
+  })
+
+  test('24. POST /api/admin/export retorna 400 sem parâmetros', async ({ page }) => {
+    const res = await page.request.post('/api/admin/export', { data: {} })
+    expect(res.status()).toBe(400)
+  })
+
+  test('25. POST /api/admin/export retorna 422 para período > 5 anos', async ({ page }) => {
+    const end   = new Date().toISOString().slice(0, 10)
+    const start = new Date(Date.now() - 6 * 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+
+    const res = await page.request.post('/api/admin/export', {
+      data: { start, end },
+    })
+    expect(res.status()).toBe(422)
+  })
+})
+
 // ─── Admin — API de pagamentos com role correto ───────────────────────────────
 
 test.describe('admin — APIs financeiras protegidas', () => {

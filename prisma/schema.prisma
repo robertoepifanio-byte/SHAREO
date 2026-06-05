@@ -137,6 +137,13 @@ enum PayoutStatus {
   BLOCKED
 }
 
+enum ExportJobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 enum EventQueueStatus {
   PENDING
   PROCESSING
@@ -219,6 +226,7 @@ model User {
   conversations      ConversationParticipant[]
   notifications      Notification[]
   adminLogs          AdminLog[]
+  exportJobs         ExportJob[]
   outboundWebhooks   OutboundWebhook[]
   // NextAuth.js — @auth/prisma-adapter
   accounts            Account[]
@@ -706,6 +714,23 @@ model PlatformConfig {
   updatedAt   DateTime @updatedAt
 
   @@map("platform_configs")
+}
+
+model ExportJob {
+  id          String          @id @default(cuid())
+  requestedBy String
+  admin       User            @relation(fields: [requestedBy], references: [id])
+  periodStart DateTime
+  periodEnd   DateTime
+  status      ExportJobStatus @default(PENDING)
+  fileUrl     String?         // URL assinada do Supabase Storage (validade 48h)
+  errorMessage String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([requestedBy, createdAt])
+  @@index([status])
+  @@map("export_jobs")
 }
 
 model StripeEventQueue {
