@@ -171,6 +171,7 @@ async function main() {
       name:           "Admin ShareO",
       userType:       "PF",
       role:           "ADMIN",
+      adminRole:      "ADMIN_SUPERADMIN",
       isVerified:     true,
       city:           "Natal",
       state:          "RN",

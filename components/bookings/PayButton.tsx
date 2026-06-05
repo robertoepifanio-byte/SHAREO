@@ -2,13 +2,18 @@
 
 import { useState } from "react"
 
+const CHECKOUT_MAX_CENTS = 50_000 // R$ 500,00 — teto MVP (D2)
+
 interface PayButtonProps {
-  bookingId: string
+  bookingId:  string
+  totalPrice: number
 }
 
-export function PayButton({ bookingId }: PayButtonProps) {
+export function PayButton({ bookingId, totalPrice }: PayButtonProps) {
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState<string | null>(null)
+
+  const exceedsLimit = totalPrice > CHECKOUT_MAX_CENTS
 
   async function handlePay() {
     setLoading(true)
@@ -28,12 +33,28 @@ export function PayButton({ bookingId }: PayButtonProps) {
         return
       }
 
-      // Redirecionar para o Stripe Checkout
       window.location.href = json.data.url
     } catch {
       setError("Erro de conexão. Tente novamente.")
       setLoading(false)
     }
+  }
+
+  if (exceedsLimit) {
+    return (
+      <div className="space-y-2">
+        <button
+          disabled
+          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-muted text-sm font-semibold text-muted-foreground cursor-not-allowed"
+        >
+          Pagamento indisponível
+        </button>
+        <p className="rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-2 text-xs text-yellow-700">
+          Locações acima de R$&nbsp;500 não estão disponíveis nesta versão.
+          Entre em contato com o suporte para mais informações.
+        </p>
+      </div>
+    )
   }
 
   return (

@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { stripe } from "@/lib/stripe"
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
+import { getPlatformFeeRate, calcSplit, CHECKOUT_MAX_CENTS } from "@/lib/platform-config"
 
 const Schema = z.object({
   bookingId: z.string().min(1),
@@ -80,6 +81,18 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // FIN-MVP-TETO (D2): teto de R$ 500 por locação no MVP
+    if (booking.totalPrice > CHECKOUT_MAX_CENTS) {
+      return NextResponse.json(
+        { error: { code: "EXCEEDS_MVP_LIMIT", message: "Locações acima de R$ 500 não estão disponíveis nesta versão. Entre em contato com o suporte." } },
+        { status: 422 },
+      )
+    }
+
+    // FIN-2.2: calcular split da plataforma antes de criar a Checkout Session
+    const feeRate = await getPlatformFeeRate()
+    const split   = calcSplit(booking.totalPrice, feeRate)
+
     const appUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000"
 
     const fmtDate = (d: Date) =>
@@ -112,10 +125,15 @@ export async function POST(req: NextRequest) {
       expires_at:  Math.floor(Date.now() / 1000) + 30 * 60, // 30 min
     })
 
-    // Salva o Session ID para idempotência (não usar antes do pagamento confirmado)
+    // Salva Session ID + valores financeiros do split (FIN-2.2)
     await prisma.booking.update({
       where: { id: bookingId },
-      data:  { stripeSessionId: checkoutSession.id },
+      data:  {
+        stripeSessionId:  checkoutSession.id,
+        platformFeeRate:  split.platformFeeRate,
+        platformFeeAmount: split.platformFeeAmount,
+        ownerNetAmount:   split.ownerNetAmount,
+      },
     })
 
     return NextResponse.json({ data: { url: checkoutSession.url } })

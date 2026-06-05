@@ -223,11 +223,33 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       where:  { id },
       data,
       select: {
-        id:        true,
-        status:    true,
-        updatedAt: true,
+        id:               true,
+        status:           true,
+        updatedAt:        true,
+        ownerNetAmount:   true,
+        ownerId:          true,
       },
     })
+
+    // FIN-3.3 — criar Payout elegível 3 dias após devolução confirmada
+    if (action === "confirm_return") {
+      const eligibleAfter = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
+      const ownerAccount  = await prisma.ownerPaymentAccount.findUnique({
+        where:  { userId: booking.ownerId },
+        select: { id: true },
+      })
+      if (ownerAccount && updated.ownerNetAmount) {
+        prisma.payout.create({
+          data: {
+            ownerPaymentAccountId: ownerAccount.id,
+            bookingId:             id,
+            amount:                updated.ownerNetAmount,
+            status:                "PENDING",
+            eligibleAfter,
+          },
+        }).catch((e) => console.error("[FIN-3.3] payout.create:", e instanceof Error ? e.message : e))
+      }
+    }
 
     // E-mails transacionais (fire-and-forget)
     if (action === "confirm") {

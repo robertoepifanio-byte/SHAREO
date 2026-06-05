@@ -248,7 +248,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                     <span className="text-muted-foreground">Valor a pagar</span>
                     <span className="font-bold text-foreground">{fmt(booking.totalPrice)}</span>
                   </div>
-                  <PayButton bookingId={booking.id} />
+                  <PayButton bookingId={booking.id} totalPrice={booking.totalPrice} />
                 </>
               )}
             </div>

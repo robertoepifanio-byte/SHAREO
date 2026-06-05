@@ -19,6 +19,10 @@
     {
       "path": "/api/cron/reengagement",
       "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/payout",
+      "schedule": "0 13 * * *"
     }
   ]
 }

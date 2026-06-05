@@ -19,8 +19,10 @@ const CONFIG_LINKS = [
   { href: "/perfil/endereco",   icon: "📍", label: "Endereço",            desc: "Cidade, estado, bairro" },
   { href: "/perfil/seguranca",  icon: "🔒", label: "Login e segurança",   desc: "E-mail, senha, excluir conta" },
   { href: "/perfil/documentos", icon: "🪪", label: "Documentos",          desc: "CPF/CNPJ e verificação de identidade" },
-  { href: "/perfil/indicacoes", icon: "🎁", label: "Indicações",          desc: "Programa de indicação e créditos" },
-  { href: "/perfil/dados",      icon: "📂", label: "Privacidade e dados", desc: "Exportar dados, política de retenção" },
+  { href: "/perfil/recebimentos", icon: "💸", label: "Conta de recebimento", desc: "Chave PIX para repasse das locações" },
+  { href: "/perfil/repasses",     icon: "📊", label: "Meus repasses",        desc: "Histórico e status dos repasses recebidos" },
+  { href: "/perfil/indicacoes",  icon: "🎁", label: "Indicações",           desc: "Programa de indicação e créditos" },
+  { href: "/perfil/dados",       icon: "📂", label: "Privacidade e dados",  desc: "Exportar dados, política de retenção" },
 ]
 
 export default async function ProfilePage() {

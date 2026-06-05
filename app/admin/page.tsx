@@ -14,7 +14,8 @@ export default async function AdminOverviewPage() {
     inactiveUsers,
     bookingStats,
     disputes,
-    revenueResult,
+    gmvResult,
+    feeResult,
   ] = await Promise.all([
     prisma.user.count({ where: { deletedAt: null } }),
     prisma.item.count({ where: { status: "AVAILABLE", isApproved: true, deletedAt: null } }),
@@ -29,6 +30,10 @@ export default async function AdminOverviewPage() {
       where: { status: "COMPLETED" },
       _sum:  { totalPrice: true },
     }),
+    prisma.booking.aggregate({
+      where: { status: "COMPLETED", platformFeeAmount: { not: null } },
+      _sum:  { platformFeeAmount: true },
+    }),
   ])
 
   const byStatus = Object.fromEntries(
@@ -40,8 +45,9 @@ export default async function AdminOverviewPage() {
     { label: "Itens ativos",     value: totalItems,                     sub: `${pendingItems} aguardando aprovação`, color: pendingItems > 0 ? "text-[#9A4700]" : "text-primary" },
     { label: "Reservas ativas",  value: byStatus["ACTIVE"]    ?? 0,     sub: `${byStatus["PENDING"] ?? 0} pendentes`, color: "text-primary" },
     { label: "Disputas abertas", value: disputes,                       sub: "bookings em disputa",            color: disputes > 0 ? "text-[#9A4700]" : "text-primary" },
-    { label: "Concluídas",       value: byStatus["COMPLETED"] ?? 0,     sub: "reservas concluídas",            color: "text-success" },
-    { label: "Receita total",    value: fmt(revenueResult._sum.totalPrice ?? 0), sub: "em reservas concluídas", color: "text-success", isString: true },
+    { label: "Concluídas",     value: byStatus["COMPLETED"] ?? 0,                    sub: "reservas concluídas",        color: "text-success" },
+    { label: "GMV",            value: fmt(gmvResult._sum.totalPrice ?? 0),        sub: "volume total de aluguéis",   color: "text-success", isString: true },
+    { label: "Receita ShareO", value: fmt(feeResult._sum.platformFeeAmount ?? 0), sub: "taxa 15% sobre locações",    color: "text-success", isString: true },
   ]
 
   return (

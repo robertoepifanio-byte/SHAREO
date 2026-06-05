@@ -48,18 +48,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     jwt({ token, user }) {
       if (user) {
-        const u = user as typeof user & { role: "USER" | "ADMIN"; userType: "PF" | "PJ" }
-        token.id       = u.id as string
-        token.role     = u.role
-        token.userType = u.userType
+        const u = user as typeof user & { role: "USER" | "ADMIN"; userType: "PF" | "PJ"; adminRole?: string }
+        token.id        = u.id as string
+        token.role      = u.role
+        token.userType  = u.userType
+        token.adminRole = u.adminRole ?? undefined
       }
       return token
     },
     session({ session, token }) {
       if (session.user) {
-        session.user.id       = token.id as string
-        session.user.role     = token.role as "USER" | "ADMIN"
-        session.user.userType = token.userType as "PF" | "PJ"
+        session.user.id        = token.id as string
+        session.user.role      = token.role as "USER" | "ADMIN"
+        session.user.userType  = token.userType as "PF" | "PJ"
+        session.user.adminRole = token.adminRole as "ADMIN_SUPERADMIN" | "ADMIN_FINANCEIRO" | "ADMIN_OPERACIONAL" | undefined
       }
       return session
     },

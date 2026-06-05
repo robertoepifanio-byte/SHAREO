@@ -25,6 +25,12 @@ enum UserRole {
   ADMIN
 }
 
+enum AdminRole {
+  ADMIN_SUPERADMIN
+  ADMIN_FINANCEIRO
+  ADMIN_OPERACIONAL
+}
+
 enum ItemCondition {
   NEW // Novo
   EXCELLENT // Excelente
@@ -94,6 +100,50 @@ enum IdVerificationStatus {
   REJECTED
 }
 
+enum DepositStatus {
+  NONE
+  HELD
+  RELEASED
+  RETAINED
+}
+
+enum PixKeyType {
+  CPF
+  CNPJ
+  EMAIL
+  PHONE
+  RANDOM
+}
+
+enum PixAccountStatus {
+  PENDING_VERIFICATION
+  VERIFIED
+  REJECTED
+}
+
+enum TransactionType {
+  PAYMENT_RECEIVED
+  PLATFORM_FEE
+  OWNER_PAYOUT
+  REFUND
+  DISPUTE_HOLD
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  BLOCKED
+}
+
+enum EventQueueStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 // ─── Models ──────────────────────────────────────────────
 
 model User {
@@ -105,6 +155,7 @@ model User {
   phone         String?
   userType      UserType  @default(PF)
   role          UserRole  @default(USER)
+  adminRole     AdminRole? // só presente em usuários com role=ADMIN; define o escopo de permissões
 
   // Documentos — armazenados criptografados (ver ADR-004)
   // Nunca expor em respostas de API sem mascaramento
@@ -170,8 +221,9 @@ model User {
   adminLogs          AdminLog[]
   outboundWebhooks   OutboundWebhook[]
   // NextAuth.js — @auth/prisma-adapter
-  accounts           Account[]
-  sessions           Session[]
+  accounts            Account[]
+  sessions            Session[]
+  ownerPaymentAccount OwnerPaymentAccount?
 
   @@index([email])
   @@index([latitude, longitude])
@@ -320,15 +372,25 @@ model Booking {
   extensionRequestedAt      DateTime? // quando a solicitação foi feita
   extensionRespondedAt      DateTime? // quando o proprietário respondeu
 
+  // Financeiro — FIN-1.1
+  platformFeeRate      Int?
+  platformFeeAmount    Int?
+  ownerNetAmount       Int?
+  stripeFee            Int?
+  depositStatus        DepositStatus @default(NONE)
+  stripeDisputeId      String?
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime? // soft delete — LGPD obrigatório em dados transacionais
 
   // Relações
-  reviews            Review[]
-  conversation       Conversation?
-  photos             BookingPhoto[]
-  contractAcceptance ContractAcceptance?
+  reviews              Review[]
+  conversation         Conversation?
+  photos               BookingPhoto[]
+  contractAcceptance   ContractAcceptance?
+  platformTransactions PlatformTransaction[]
+  payouts              Payout[]
 
   @@index([borrowerId])
   @@index([ownerId])
@@ -336,6 +398,7 @@ model Booking {
   @@index([status])
   @@index([deletedAt])
   @@index([itemId, status, startDate, endDate])
+  @@index([ownerId, paymentStatus, paidAt])
   @@map("bookings")
 }
 
@@ -581,4 +644,81 @@ model ContractAcceptance {
   userAgent  String?
 
   @@map("contract_acceptances")
+}
+
+// ─── Módulo Financeiro — FIN-1.1 ─────────────────────────────────────────────
+
+model OwnerPaymentAccount {
+  id          String           @id @default(cuid())
+  userId      String           @unique
+  user        User             @relation(fields: [userId], references: [id])
+  pixKeyType  PixKeyType
+  pixKey      String
+  holderName  String
+  bankName    String?
+  status      PixAccountStatus @default(PENDING_VERIFICATION)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  payouts     Payout[]
+
+  @@map("owner_payment_accounts")
+}
+
+model PlatformTransaction {
+  id          String          @id @default(cuid())
+  bookingId   String
+  booking     Booking         @relation(fields: [bookingId], references: [id])
+  type        TransactionType
+  amount      Int
+  description String?
+  metadata    Json?
+  createdAt   DateTime        @default(now())
+
+  @@index([bookingId])
+  @@map("platform_transactions")
+}
+
+model Payout {
+  id                    String              @id @default(cuid())
+  ownerPaymentAccountId String
+  ownerPaymentAccount   OwnerPaymentAccount @relation(fields: [ownerPaymentAccountId], references: [id])
+  bookingId             String
+  booking               Booking             @relation(fields: [bookingId], references: [id])
+  amount                Int
+  status                PayoutStatus        @default(PENDING)
+  eligibleAfter         DateTime
+  processedAt           DateTime?
+  failureReason         String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  @@index([eligibleAfter, status])
+  @@index([ownerPaymentAccountId, status])
+  @@map("payouts")
+}
+
+model PlatformConfig {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedBy   String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("platform_configs")
+}
+
+model StripeEventQueue {
+  id            String           @id @default(cuid())
+  stripeEventId String           @unique
+  type          String
+  payload       Json
+  status        EventQueueStatus @default(PENDING)
+  attempts      Int              @default(0)
+  lastError     String?
+  processedAt   DateTime?
+  createdAt     DateTime         @default(now())
+
+  @@index([status, createdAt])
+  @@map("stripe_event_queue")
 }
