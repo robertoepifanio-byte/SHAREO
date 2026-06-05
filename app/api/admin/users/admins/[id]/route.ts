@@ -4,6 +4,7 @@ import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { requireAdminRole } from "@/lib/auth/admin-guards"
+import { blockAdminToken, unblockAdminToken } from "@/lib/redis-admin-blocklist"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -56,6 +57,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       data,
       select: { id: true, adminRole: true, isActive: true },
     })
+
+    // Revogar JWT imediatamente se rebaixado ou desativado; limpar se reativado
+    if ("adminRole" in parsed.data || parsed.data.action === "deactivate") {
+      await blockAdminToken(id)
+    } else if (parsed.data.action === "activate") {
+      await unblockAdminToken(id)
+    }
 
     prisma.adminLog.create({
       data: {

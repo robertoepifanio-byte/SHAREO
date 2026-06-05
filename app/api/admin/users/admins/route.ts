@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { requireAdminRole } from "@/lib/auth/admin-guards"
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
+import { unblockAdminToken } from "@/lib/redis-admin-blocklist"
 
 const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*]).{10,}$/
 
@@ -52,6 +53,8 @@ export async function POST(req: NextRequest) {
       data: { name, email, passwordHash, role: "ADMIN", adminRole },
       select: { id: true, name: true, email: true, adminRole: true, isActive: true, createdAt: true },
     })
+
+    await unblockAdminToken(user.id)
 
     prisma.adminLog.create({
       data: {
