@@ -69,11 +69,19 @@ export default async function RepassesPage() {
       <main className="container py-8">
         <div className="mx-auto max-w-2xl space-y-6">
 
-          <div>
-            <h1 className="text-xl font-bold text-primary">Meus Repasses</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Histórico de repasses das suas locações. Liberados 3 dias após a devolução confirmada.
-            </p>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h1 className="text-xl font-bold text-primary">Meus Repasses</h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Histórico de repasses das suas locações. Liberados 3 dias após a devolução confirmada.
+              </p>
+            </div>
+            <Link
+              href="/perfil/repasses/informe"
+              className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+            >
+              📄 Informe IR
+            </Link>
           </div>
 
           {/* Conta PIX cadastrada */}

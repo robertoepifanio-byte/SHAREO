@@ -230,6 +230,21 @@ export default async function AdminFinanceiroPage() {
           Nenhum repasse pendente no momento.
         </div>
       )}
+
+      {/* ── Reavaliação Stripe Connect (D1) ── */}
+      <div className="rounded-xl border border-border bg-surface p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-foreground">🔄 Reavaliação: Stripe Connect Brasil</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Decisão D1 (05/06/2026): PIX centralizado no MVP. Stripe Connect BR será reavaliado ~6 meses após o lançamento.
+            </p>
+          </div>
+          <span className="rounded-full border border-border px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+            Previsto: dez/2026
+          </span>
+        </div>
+      </div>
     </div>
   )
 }

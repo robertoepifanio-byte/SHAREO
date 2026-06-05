@@ -23,6 +23,10 @@
     {
       "path": "/api/cron/payout",
       "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/monthly-report",
+      "schedule": "0 12 1 * *"
     }
   ]
 }

@@ -20,8 +20,9 @@ const CONFIG_LINKS = [
   { href: "/perfil/seguranca",  icon: "🔒", label: "Login e segurança",   desc: "E-mail, senha, excluir conta" },
   { href: "/perfil/documentos", icon: "🪪", label: "Documentos",          desc: "CPF/CNPJ e verificação de identidade" },
   { href: "/perfil/recebimentos", icon: "💸", label: "Conta de recebimento", desc: "Chave PIX para repasse das locações" },
-  { href: "/perfil/repasses",     icon: "📊", label: "Meus repasses",        desc: "Histórico e status dos repasses recebidos" },
-  { href: "/perfil/indicacoes",  icon: "🎁", label: "Indicações",           desc: "Programa de indicação e créditos" },
+  { href: "/perfil/repasses",         icon: "📊", label: "Meus repasses",          desc: "Histórico e status dos repasses recebidos" },
+  { href: "/perfil/repasses/informe", icon: "📄", label: "Informe de Rendimentos", desc: "Total anual recebido para declaração de IR" },
+  { href: "/perfil/indicacoes",       icon: "🎁", label: "Indicações",              desc: "Programa de indicação e créditos" },
   { href: "/perfil/dados",       icon: "📂", label: "Privacidade e dados",  desc: "Exportar dados, política de retenção" },
 ]
 

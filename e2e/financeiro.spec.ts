@@ -368,6 +368,72 @@ test.describe('FIN-8 — exportação financeira CSV', () => {
   })
 })
 
+// ─── Fase 4 — IR + Relatório mensal ──────────────────────────────────────────
+
+test.describe('Fase 4 — Informe de Rendimentos (IR)', () => {
+  test.skip(!hasProprietarioSession, 'Requer session-proprietario.json')
+  test.use({ storageState: SESSION_PATHS.proprietario })
+
+  test('26. proprietário acessa /perfil/repasses/informe', async ({ page }) => {
+    await page.goto('/perfil/repasses/informe')
+    await expect(page).toHaveURL(/\/informe/, { timeout: 15000 })
+    await expect(page.locator('h1')).toContainText('Informe de Rendimentos')
+  })
+
+  test('27. página de repasses exibe botão "Informe IR"', async ({ page }) => {
+    await page.goto('/perfil/repasses')
+    await expect(page.getByRole('link', { name: /Informe IR/i })).toBeVisible()
+  })
+
+  test('28. GET /api/user/informe-rendimentos retorna estrutura correta', async ({ page }) => {
+    const res = await page.request.get('/api/user/informe-rendimentos')
+    expect(res.status()).toBe(200)
+    const body = await res.json() as { year: number; totalPaidCents: number; payoutCount: number }
+    expect(typeof body.year).toBe('number')
+    expect(typeof body.totalPaidCents).toBe('number')
+    expect(typeof body.payoutCount).toBe('number')
+  })
+
+  test('29. GET /api/user/informe-rendimentos aceita parâmetro year', async ({ page }) => {
+    const res = await page.request.get('/api/user/informe-rendimentos?year=2025')
+    expect(res.status()).toBe(200)
+    const body = await res.json() as { year: number }
+    expect(body.year).toBe(2025)
+  })
+
+  test('30. GET /api/user/informe-rendimentos rejeita ano inválido', async ({ page }) => {
+    const res = await page.request.get('/api/user/informe-rendimentos?year=2020')
+    expect(res.status()).toBe(400)
+  })
+})
+
+test.describe('Fase 4 — Relatório mensal admin', () => {
+  test.skip(!hasAdminSession, 'Requer session-admin.json')
+  test.use({ storageState: SESSION_PATHS.admin })
+
+  test('31. painel financeiro exibe card de reavaliação Stripe Connect', async ({ page }) => {
+    await page.goto('/admin/financeiro')
+    const body = await page.locator('body').textContent()
+    expect(body).toContain('Stripe Connect')
+    expect(body).toContain('dez/2026')
+  })
+
+  test('32. GET /api/cron/monthly-report sem CRON_SECRET retorna 401', async ({ page }) => {
+    const res = await page.request.get('/api/cron/monthly-report')
+    expect(res.status()).toBe(401)
+  })
+
+  test('33. GET /api/cron/monthly-report com CRON_SECRET retorna relatório', async ({ page }) => {
+    const res = await page.request.get('/api/cron/monthly-report', {
+      headers: { Authorization: 'Bearer shareo-cron-2026' },
+    })
+    expect(res.status()).toBe(200)
+    const body = await res.json() as { ok: boolean; report: { gmvCents: number } }
+    expect(body.ok).toBe(true)
+    expect(typeof body.report.gmvCents).toBe('number')
+  })
+})
+
 // ─── Admin — API de pagamentos com role correto ───────────────────────────────
 
 test.describe('admin — APIs financeiras protegidas', () => {
