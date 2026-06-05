@@ -40,12 +40,12 @@ const LOCATARIO_STEPS: Step[] = [
   },
   {
     step: 4, icon: "📅", title: "Solicitar a reserva",
-    desc: "Abra o anúncio e use a calculadora de locação. Selecione a modalidade (diário, semanal ou mensal), a data de retirada e a duração. O valor total — incluindo a taxa de serviço de 10% e a caução, se houver — aparece antes de você confirmar. Escreva uma mensagem apresentando-se ao proprietário e clique em 'Solicitar locação'. Você ainda não paga nada nesta etapa.",
-    example: "Item: R$ 80/dia. Aluguel de 3 dias = R$ 240,00. Taxa de serviço (10%) = R$ 24,00. Caução definida pelo proprietário = R$ 150,00. Total que será cobrado no cartão ao confirmar: R$ 414,00.",
+    desc: "Abra o anúncio e use a calculadora de locação. Selecione a modalidade (diário, semanal ou mensal), a data de retirada e a duração. O valor total — incluindo a taxa de serviço de 15% — aparece antes de você confirmar. Escreva uma mensagem apresentando-se ao proprietário e clique em 'Solicitar locação'. Você ainda não paga nada nesta etapa. O valor máximo por locação é R$ 500.",
+    example: "Item: R$ 80/dia. Aluguel de 3 dias = R$ 240,00. Taxa de serviço (10%) = R$ 24,00. Total cobrado no cartão ao confirmar: R$ 264,00.",
   },
   {
     step: 5, icon: "💳", title: "Aguardar confirmação e pagar",
-    desc: "O proprietário tem até 24 horas para confirmar ou recusar. Se ele confirmar, você recebe uma notificação e pode clicar em 'Pagar agora'. O pagamento é feito por cartão de crédito (Visa, Mastercard, Elo, Amex) via Stripe — seus dados de cartão nunca passam pelos servidores do ShareO. O dinheiro fica retido na plataforma e só é liberado ao proprietário após a entrega.",
+    desc: "O proprietário tem até 24 horas para confirmar ou recusar. Se ele confirmar, você recebe uma notificação e pode clicar em 'Pagar agora'. O pagamento é feito por cartão de crédito (Visa, Mastercard, Elo, Amex) via Stripe — seus dados de cartão nunca passam pelos servidores do ShareO. O valor máximo por locação é R$ 500. O dinheiro fica retido na plataforma e só é repassado ao proprietário após a devolução confirmada.",
     tip: "Se o proprietário não responder em 24h, a reserva é cancelada automaticamente e nenhum valor é cobrado.",
   },
   {
@@ -77,10 +77,9 @@ const LOCADOR_STEPS: Step[] = [
     example: "Anúncio: 'Tenda Gazebo 3×3m branca para festas'. Preço: R$ 120/dia, R$ 600/semana (desconto de 16%), R$ 1.800/mês. Categoria: Festas e Eventos. Estado: Bom estado.",
   },
   {
-    step: 3, icon: "🛡️", title: "Definir a caução",
-    desc: "A caução é um valor cobrado junto com o aluguel e devolvido ao locatário após a devolução sem danos. É opcional — você define o valor ou deixa em R$ 0. Para itens que possam sofrer danos, a caução é fortemente recomendada.",
-    example: "Item avaliado em R$ 2.000: recomenda-se caução entre R$ 300 e R$ 600 (15-30% do valor). Item avaliado em R$ 500: caução de R$ 100 a R$ 150. Item simples sem risco de dano: R$ 0.",
-    tip: "Itens sem caução têm mais solicitações, mas com maior risco. Itens de alto valor devem sempre ter caução definida.",
+    step: 3, icon: "💳", title: "Cadastrar sua chave PIX",
+    desc: "Antes de receber qualquer pagamento, cadastre sua chave PIX em Meu Perfil → Recebimentos. Você pode usar CPF, CNPJ, e-mail, telefone ou chave aleatória. Sem a chave PIX cadastrada, os repasses ficam em espera e não são processados.",
+    tip: "Faça isso antes de publicar o primeiro anúncio para não atrasar nenhum recebimento.",
   },
   {
     step: 4, icon: "🔔", title: "Gerenciar solicitações de reserva",
@@ -94,24 +93,25 @@ const LOCADOR_STEPS: Step[] = [
   },
   {
     step: 6, icon: "💰", title: "Receber a devolução e o pagamento",
-    desc: "Na data combinada, receba o item de volta. Use a opção 'Registrar fotos de check-out' e compare com as fotos do check-in. Se tudo estiver ok, confirme a devolução — a caução é liberada ao locatário automaticamente. Para a 2ª locação e seguintes: o processo é idêntico ao da 1ª. Avalie o locatário após cada devolução.",
-    example: "1ª locação: R$ 120/dia × 2 dias = R$ 240. Valor liberado ao confirmar entrega. 2ª locação: mesmo fluxo — confirmar solicitação → pagar → entregar com check-in → receber com check-out → avaliar.",
+    desc: "Na data combinada, receba o item de volta. Use a opção 'Registrar fotos de check-out' e compare com as fotos do check-in. Se tudo estiver ok, confirme a devolução. Após 3 dias úteis de hold (proteção contra chargebacks), o repasse é enviado automaticamente para sua chave PIX. Avalie o locatário após cada devolução.",
+    example: "Locação: R$ 120/dia × 2 dias = R$ 240. Taxa de plataforma (15%) = R$ 36. Você recebe R$ 204 via PIX 3 dias após a confirmação de devolução.",
     tip: "Quanto mais avaliações positivas você tiver, mais alto o seu anúncio aparece nos resultados de busca.",
   },
   {
     step: 7, icon: "✅", title: "Confirme o recebimento",
-    desc: "Após o locatário devolver, toque em 'Confirmar recebimento' e informe o estado do item. O pagamento é liberado para você nesse momento.",
-    warning: "Se o item voltar danificado, selecione 'Danificado'. Uma disputa será aberta automaticamente.",
+    desc: "Após o locatário devolver, toque em 'Confirmar recebimento' e informe o estado do item. O repasse entra na fila e é enviado via PIX em até 3 dias úteis para a chave cadastrada em Meu Perfil → Recebimentos.",
+    warning: "Se o item voltar danificado, selecione 'Danificado'. Uma disputa será aberta automaticamente e o repasse fica suspenso até a resolução.",
   },
 ]
 
 /* ── Dados — Taxas ──────────────────────────────────────────────── */
 
 const FEE_TABLE = [
-  { label: "Taxa de serviço (cobrada do locatário)", value: "10% do total",                  when: "Na confirmação do pagamento" },
+  { label: "Taxa de serviço (cobrada do locatário)", value: "15% do total",                  when: "Na confirmação do pagamento" },
   { label: "Anunciar na plataforma (locador)",        value: "Gratuito",                      when: "Sempre, sem mensalidade" },
+  { label: "Repasse ao locador",                      value: "Via PIX — valor líquido",       when: "3 dias úteis após devolução confirmada" },
+  { label: "Limite por locação",                      value: "R$ 500 por transação",          when: "Validado no checkout" },
   { label: "Multa por atraso na devolução",           value: "1× preço diário por dia extra", when: "Por cada dia além do prazo" },
-  { label: "Caução*",                                  value: "Definida pelo anunciante",      when: "Junto com o pagamento" },
   { label: "Cancelamento com +24h de antecedência",   value: "Gratuito",                      when: "Reembolso integral" },
   { label: "Cancelamento com menos de 24h",           value: "30% do valor da locação",       when: "Descontado do reembolso" },
 ]
@@ -168,13 +168,13 @@ const SECTIONS = [
       { q: "Como confirmo uma reserva?",
         a: "Quando alguém solicitar seu item, você recebe uma notificação. Em 'Minhas Reservas', clique na aba 'Como locador'. Abra a reserva, leia a mensagem do locatário e clique em 'Confirmar reserva'. Se não quiser aceitar, pode cancelar informando o motivo." },
       { q: "Quando recebo o pagamento?",
-        a: "O pagamento é liberado depois que você marca a reserva como 'Ativo', confirmando que entregou o item. Antes disso o valor fica retido com segurança pela ShareO — isso protege você e o locatário." },
+        a: "Após você confirmar o recebimento do item devolvido, o repasse entra na fila automática. Em até 3 dias úteis, o valor líquido (aluguel menos a taxa da plataforma) é transferido para a sua chave PIX cadastrada em Meu Perfil → Recebimentos. O período de hold existe para proteger contra eventuais contestações de pagamento." },
       { q: "O que faço na entrega do item?",
         a: "Combine o local e horário de entrega pelo chat. Na hora da entrega, você pode registrar fotos do estado do item (check-in). Quando entregar, clique em 'Marcar como ativo'. Na devolução, registre fotos de check-out para documentar o estado do item ao retornar." },
       { q: "Como cancelo uma reserva?",
         a: "Você pode cancelar enquanto ela estiver 'Aguardando' ou 'Confirmada'. Na página da reserva, clique em 'Cancelar reserva' e informe o motivo. Evite cancelamentos frequentes — eles afetam sua reputação na plataforma." },
       { q: "Meu item está protegido?",
-        a: "A ShareO oferece proteção durante a locação. Você pode solicitar uma caução ao criar o anúncio — um valor retido no pagamento e devolvido ao locatário após a devolução sem danos. Se houver problemas, abra uma disputa com as fotos de check-in e check-out como evidência." },
+        a: "A ShareO oferece proteção durante a locação via fotos de check-in e check-out vinculadas à reserva, além do período de hold de 3 dias antes do repasse (para resguardar em caso de contestação). Em caso de danos, abra uma disputa com as fotos como evidência — o repasse fica suspenso até a resolução." },
       { q: "Posso pausar meu anúncio temporariamente?",
         a: "Sim. Em 'Meus Anúncios', clique em 'Pausar' no card do item. O anúncio sai da busca e não recebe novas solicitações, mas continua salvo com todas as suas informações, fotos e histórico. Quando quiser voltar a anunciar, clique em 'Reativar'. Use esse recurso quando o item estiver em uso, em manutenção ou você precisar de uma pausa — é melhor do que remover e recriar o anúncio." },
       { q: "Tenho um prazo para confirmar uma solicitação?",
@@ -186,7 +186,7 @@ const SECTIONS = [
       { q: "Como funciona o check-in e check-out fotográfico?",
         a: "Na entrega do item, use a opção 'Registrar fotos de check-in' na página da reserva. Fotografe o item de todos os ângulos, incluindo possíveis marcas ou desgastes que já existiam antes. Na devolução, registre as fotos de check-out da mesma forma. Essas imagens ficam salvas na reserva e são a principal evidência em caso de disputa por danos. Não pule essa etapa — ela protege você." },
       { q: "Quando recebo o pagamento da locação?",
-        a: "O valor é liberado assim que você confirmar o recebimento do item. Enquanto isso, o dinheiro fica retido com segurança." },
+        a: "Após confirmar o recebimento do item, o repasse entra na fila. Em até 3 dias úteis, o valor líquido é transferido via PIX para a chave cadastrada em Meu Perfil → Recebimentos. Enquanto isso, o dinheiro fica retido com segurança na plataforma." },
       { q: "O que faço se o item voltou danificado?",
         a: "Na tela de confirmação de recebimento, selecione 'Danificado' e descreva o problema. Uma disputa é aberta automaticamente e o pagamento fica pausado até a resolução." },
       { q: "Por que meu item não aparece na busca?",
@@ -205,15 +205,17 @@ const SECTIONS = [
     iconBg: "bg-amber-100",
     faqs: [
       { q: "Como o pagamento funciona no ShareO?",
-        a: "O pagamento segue três etapas: 1) O locatário solicita a reserva. 2) O proprietário confirma. 3) O locatário paga via cartão pelo app. O dinheiro fica retido e só é liberado ao proprietário quando ele confirma que entregou o item. Isso garante segurança para os dois lados." },
+        a: "O pagamento segue quatro etapas: 1) O locatário solicita a reserva. 2) O proprietário confirma. 3) O locatário paga via cartão pelo app — o dinheiro fica retido na plataforma. 4) Após a devolução confirmada e um período de hold de 3 dias úteis, o valor líquido é repassado ao proprietário via PIX para a chave cadastrada em Meu Perfil → Recebimentos. Isso garante segurança para os dois lados." },
       { q: "Meu dinheiro está protegido?",
         a: "Sim. O pagamento não vai direto para o proprietário — ele fica retido na plataforma até a confirmação da entrega. Se algo der errado antes disso, o valor pode ser devolvido. Em caso de disputa, nossa equipe analisa o caso e decide o destino do pagamento." },
-      { q: "O que é caução?",
-        a: "Caução é um valor adicional cobrado pelo proprietário como garantia. Ele aparece no resumo do pagamento e é cobrado junto com o aluguel. Depois que você devolve o item em bom estado, a caução é devolvida automaticamente no mesmo cartão em até 7 dias úteis. Ela existe para proteger o proprietário caso o item seja danificado." },
-      { q: "Como funciona o Stripe?",
-        a: "O Stripe é a plataforma de pagamentos que o ShareO usa — a mesma tecnologia usada por grandes empresas no mundo todo. Seus dados de cartão nunca passam pelos servidores do ShareO. Você é redirecionado para a página segura do Stripe ao clicar em 'Pagar agora'." },
+      { q: "Como os proprietários recebem o pagamento?",
+        a: "Os proprietários recebem via PIX. Após a devolução confirmada, o valor líquido (aluguel menos a taxa da plataforma) entra na fila automática de repasse e é transferido para a chave PIX cadastrada em até 3 dias úteis. Para cadastrar ou atualizar sua chave PIX, acesse Meu Perfil → Recebimentos." },
+      { q: "Como funciona o pagamento do locatário?",
+        a: "O locatário paga com cartão de crédito via Stripe — a mesma tecnologia usada por grandes empresas no mundo todo. Seus dados de cartão nunca passam pelos servidores do ShareO. O valor é cobrado à vista (sem parcelamento na versão atual) e fica retido até a devolução confirmada." },
       { q: "Quais bandeiras de cartão são aceitas?",
-        a: "São aceitos cartões de crédito Visa, Mastercard, Elo e American Express. O parcelamento não está disponível na versão atual — o valor total é cobrado à vista no cartão." },
+        a: "São aceitos cartões de crédito Visa, Mastercard, Elo e American Express. O parcelamento não está disponível na versão atual — o valor total é cobrado à vista. O valor máximo por locação é R$ 500." },
+      { q: "Existe caução no ShareO?",
+        a: "A caução ainda não está disponível nesta versão do ShareO. A proteção ao proprietário é feita via fotos de check-in e check-out vinculadas à reserva e pelo canal de disputas, onde a equipe ShareO medeia casos de danos. A caução estará disponível em uma versão futura da plataforma." },
       { q: "Como funciona a verificação de identidade?",
         a: "Para criar uma conta e fazer reservas, você precisa confirmar seu email. Para desbloquear reservas de alto valor e acessar recursos avançados, a verificação de CPF é solicitada. O documento é criptografado e armazenado com segurança — nunca aparece em tela ou logs. O selo 'Verificado' no seu perfil aumenta a confiança de outros usuários." },
       { q: "Como a ShareO protege contra fraudes?",
@@ -228,13 +230,15 @@ const SECTIONS = [
     iconBg: "bg-emerald-100",
     faqs: [
       { q: "Qual é a taxa de serviço do ShareO?",
-        a: "O ShareO cobra 10% sobre o valor total da locação — cobrado do locatário. Essa taxa cobre o sistema de pagamento seguro, suporte ao cliente, proteção financeira da plataforma e manutenção do serviço. O valor exato aparece no resumo de pagamento antes de você confirmar. Sem surpresas." },
+        a: "O ShareO cobra 15% sobre o valor total da locação — cobrado do locatário. Essa taxa cobre o sistema de pagamento seguro, suporte ao cliente, proteção financeira da plataforma e manutenção do serviço. O valor exato aparece no resumo de pagamento antes de você confirmar. Sem surpresas." },
       { q: "Existe algum custo para anunciar?",
         a: "Não. Anunciar no ShareO é 100% gratuito. Você não paga nada para criar anúncios, receber reservas ou usar o chat. O ShareO só cobra a taxa de serviço (do locatário) quando uma locação é concluída com sucesso. Se a reserva for cancelada antes da entrega, nenhuma taxa é cobrada." },
       { q: "Como funciona a multa por atraso na devolução?",
         a: "Para cada dia além da data combinada, o app registra automaticamente uma cobrança equivalente ao preço diário do item. Exemplo: se o aluguel é R$ 50/dia e você atrasou 2 dias, serão cobrados R$ 100 extras. Você recebe uma notificação de aviso 1 dia antes do prazo vencer. Para evitar multa, solicite uma extensão antes do prazo — e não depois." },
-      { q: "Quando a caução é cobrada e quando é devolvida?",
-        a: "A caução é definida pelo proprietário (pode ser R$ 0) e cobrada junto com o aluguel. Após a devolução do item em bom estado, o proprietário confirma a ausência de danos e a caução é devolvida automaticamente no mesmo cartão em até 7 dias úteis. Se houver dano, o proprietário pode reter parte ou todo o valor — a equipe ShareO medeia em caso de desacordo." },
+      { q: "Existe caução nesta versão do ShareO?",
+        a: "Não. A caução não está disponível nesta versão do ShareO. A proteção ao proprietário é garantida pelas fotos de check-in e check-out e pelo canal de disputas. A caução estará disponível em uma versão futura da plataforma." },
+      { q: "Existe limite de valor por locação?",
+        a: "Sim. O valor máximo por transação é R$ 500 nesta versão do ShareO. Se o valor calculado ultrapassar esse limite, o sistema bloqueia o checkout e exibe uma mensagem orientando o locatário. Este limite existe para proteger os usuários enquanto o sistema de pagamentos está em fase inicial." },
       { q: "Existe taxa de cancelamento?",
         a: "O cancelamento é gratuito se feito com mais de 24 horas de antecedência em relação à data de retirada. Cancelamentos com menos de 24 horas de antecedência geram uma taxa de 30% do valor total para cobrir custos operacionais. Proprietários que cancelam com frequência podem ter as contas suspensas temporariamente." },
       { q: "Recebo comprovante das transações?",
@@ -254,8 +258,8 @@ const SECTIONS = [
         a: "As principais evidências são as fotos de check-in e check-out registradas na plataforma. Você também pode enviar: capturas de tela do chat, fotos adicionais com data e hora visíveis, orçamentos de reparo e qualquer comunicação relevante. Quanto mais evidências você fornecer, mais rápida e precisa será a análise." },
       { q: "Como a equipe ShareO decide em uma disputa?",
         a: "Nossa equipe analisa todas as evidências fornecidas pelas duas partes: fotos de check-in vs. check-out, conversas no chat, histórico de transações e avaliações anteriores. Respondemos em até 3 dias úteis. A decisão leva em conta o estado documentado do item antes e depois, o comportamento das partes e a política de uso do ShareO." },
-      { q: "O que acontece com a caução em caso de dano?",
-        a: "Se houver dano comprovado, o proprietário informa o valor do prejuízo com orçamento de reparo. A caução pode ser parcialmente ou totalmente retida para cobrir os custos. Se o prejuízo for maior que a caução, o locatário é notificado para complementar o pagamento. A equipe ShareO medeia o processo em caso de desacordo entre as partes." },
+      { q: "O que acontece com o repasse em caso de dano?",
+        a: "Se houver dano comprovado, o proprietário abre uma disputa antes de confirmar o recebimento. O repasse via PIX fica suspenso automaticamente durante a análise. A equipe ShareO avalia as fotos de check-in e check-out e, em até 3 dias úteis, decide se o repasse é liberado, parcialmente retido ou cancelado conforme o prejuízo apurado." },
       { q: "O que acontece se meu item for roubado ou desaparecer?",
         a: "Em caso de furto ou desaparecimento durante a locação, abra imediatamente uma disputa na plataforma e registre um boletim de ocorrência (BO). Envie o BO como evidência na disputa. A ShareO analisa o caso e aciona os mecanismos de proteção disponíveis. Para maior cobertura, contrate um seguro externo para itens de alto valor antes de anunciar." },
       { q: "Posso apelar de uma decisão de disputa?",
@@ -310,7 +314,7 @@ const SECTIONS = [
       { q: "O ShareO emite nota fiscal?",
         a: "O ShareO emite comprovante eletrônico de transação para todas as locações concluídas na plataforma. O comprovante é enviado automaticamente para o email cadastrado após o encerramento da reserva. Você também pode baixar o histórico de comprovantes em 'Meu Perfil > Histórico financeiro'." },
       { q: "Como declaro os rendimentos de aluguel no Imposto de Renda?",
-        a: "Rendimentos de aluguel de bens móveis são tributáveis e devem ser declarados como 'Rendimentos Tributáveis Recebidos de Pessoa Física ou Jurídica' na declaração anual do IR. O ShareO fornece um relatório anual de rendimentos em 'Meu Perfil > Histórico financeiro' com o resumo de todos os valores recebidos. Consulte seu contador para orientações sobre alíquotas e deduções específicas para o seu caso." },
+        a: "Rendimentos de aluguel de bens móveis são tributáveis e devem ser declarados como 'Rendimentos Tributáveis Recebidos de Pessoa Física ou Jurídica' na declaração anual do IR. O ShareO fornece um informe de rendimentos anual em Meu Perfil → Repasses → Informe de Rendimentos — basta selecionar o ano e baixar o resumo com todos os valores recebidos. Consulte seu contador para orientações sobre alíquotas e deduções específicas para o seu caso." },
       { q: "Quais as regras para empresas (PJ) anunciarem na plataforma?",
         a: "Pessoas jurídicas podem usar o ShareO com o plano PJ Premium. As regras incluem: CNPJ ativo e regular; emissão de nota fiscal para todas as locações (conforme legislação vigente); cumprimento das regras do CDC (Código de Defesa do Consumidor) na relação com locatários. PJs têm acesso a ferramentas avançadas como importação em massa, analytics e vitrine personalizada." },
       { q: "Meus dados estão protegidos? Como funciona a LGPD no ShareO?",
@@ -499,7 +503,7 @@ export default function AjudaPage() {
               </table>
             </div>
             <p className="mt-4 text-center text-xs text-muted-foreground">
-              * A caução é definida pelo proprietário em cada anúncio (pode ser R$ 0). Verifique o valor antes de confirmar a reserva.
+              O repasse via PIX é processado automaticamente pelo sistema — nenhuma ação manual é necessária após a confirmação da devolução.
             </p>
           </div>
         </section>

@@ -54,7 +54,7 @@ export default function EarningsPage() {
             {[
               {
                 q: "O ShareO cobra alguma taxa?",
-                a: "Sim, uma pequena taxa de serviço sobre cada transação. O valor exibido é uma estimativa bruta — a plataforma divulgará a taxa exata antes do lançamento.",
+                a: "Sim, uma taxa de serviço de 15% sobre o valor da locação, cobrada do locatário. Você recebe o valor líquido diretamente via PIX, sem nenhuma mensalidade ou custo para anunciar.",
               },
               {
                 q: "Preciso estar disponível para entregas?",
@@ -62,7 +62,7 @@ export default function EarningsPage() {
               },
               {
                 q: "E se o item for danificado?",
-                a: "Cada reserva pode incluir caução (valor de garantia). Além disso, a verificação de identidade do locatário aumenta a segurança.",
+                a: "O locatário passa por verificação de identidade antes de alugar. Caso haja dano, você abre uma disputa na plataforma com as fotos de check-in e check-out como evidência. A equipe ShareO medeia o caso em até 3 dias úteis.",
               },
             ].map(({ q, a }) => (
               <details key={q} className="group rounded-lg border border-border bg-surface">

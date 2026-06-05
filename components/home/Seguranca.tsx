@@ -1,7 +1,7 @@
 const PILLARS = [
   {
     title: "Pagamento seguro",
-    desc: "Valor liberado ao proprietário somente após confirmação da retirada pelo locatário.",
+    desc: "Repasse via PIX ao proprietário 3 dias após a devolução confirmada — proteção para os dois lados.",
     icon: (
       <svg
         width="28"

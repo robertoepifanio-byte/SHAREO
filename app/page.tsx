@@ -157,7 +157,7 @@ export default async function HomePage() {
 
             {/* Subtítulo */}
             <p className="mb-8 text-base leading-relaxed text-white/75 md:text-[17px]">
-              Ferramentas, eletrônicos, itens para festas, esportes, casa e jardim.
+              Ferramentas, eletrônicos, itens para festas, esportes, casa e cozinha.
               <br />
               Tudo perto de você.
             </p>

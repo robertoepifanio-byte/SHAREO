@@ -1,10 +1,14 @@
 import type { Metadata } from "next"
+import Link from "next/link"
+import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { hasAdminRole } from "@/lib/auth/admin-guards"
 import { UserActions } from "./_Actions"
 
 export const metadata: Metadata = { title: "Admin — Usuários" }
 
 export default async function AdminUsuariosPage() {
+  const session = await auth()
   const users = await prisma.user.findMany({
     where:   { deletedAt: null },
     orderBy: { createdAt: "desc" },
@@ -33,12 +37,22 @@ export default async function AdminUsuariosPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-xl font-bold text-primary">
-        Usuários
-        <span className="ml-2 text-sm font-normal text-muted-foreground">
-          ({users.length} total)
-        </span>
-      </h1>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-xl font-bold text-primary">
+          Usuários
+          <span className="ml-2 text-sm font-normal text-muted-foreground">
+            ({users.length} total)
+          </span>
+        </h1>
+        {hasAdminRole(session, "ADMIN_SUPERADMIN") && (
+          <Link
+            href="/admin/usuarios/admins"
+            className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold text-foreground hover:border-primary hover:text-primary transition-colors"
+          >
+            🔑 Gerenciar admins
+          </Link>
+        )}
+      </div>
 
       <div className="overflow-hidden rounded-xl border border-border bg-surface">
         <table className="w-full">
