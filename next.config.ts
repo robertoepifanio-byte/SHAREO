@@ -62,7 +62,8 @@ export default withSentryConfig(config, {
   org:       process.env.SENTRY_ORG       ?? "shareo-ow",
   project:   process.env.SENTRY_PROJECT   ?? "shareo-web",
   authToken: process.env.SENTRY_AUTH_TOKEN,
-  // source maps: escondidos do bundle público, enviados ao Sentry no build
+  // source maps: upload só quando SENTRY_AUTH_TOKEN estiver presente e válido
+  sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
   hideSourceMaps:        true,
   widenClientFileUpload: true,
   // telemetria e logs de build
