@@ -41,8 +41,9 @@ export function ChangePasswordForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <div>
-        <label className="mb-1 block text-xs font-medium text-muted-foreground">Senha atual</label>
+        <label htmlFor="pwd-current" className="mb-1 block text-xs font-medium text-muted-foreground">Senha atual</label>
         <input
+          id="pwd-current"
           type="password"
           value={current}
           onChange={(e) => setCurrent(e.target.value)}
@@ -52,8 +53,9 @@ export function ChangePasswordForm() {
         />
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-muted-foreground">Nova senha</label>
+        <label htmlFor="pwd-new" className="mb-1 block text-xs font-medium text-muted-foreground">Nova senha</label>
         <input
+          id="pwd-new"
           type="password"
           value={next}
           onChange={(e) => setNext(e.target.value)}
@@ -64,8 +66,9 @@ export function ChangePasswordForm() {
         />
       </div>
       <div>
-        <label className="mb-1 block text-xs font-medium text-muted-foreground">Confirmar nova senha</label>
+        <label htmlFor="pwd-confirm" className="mb-1 block text-xs font-medium text-muted-foreground">Confirmar nova senha</label>
         <input
+          id="pwd-confirm"
           type="password"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
