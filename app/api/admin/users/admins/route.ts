@@ -6,10 +6,15 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { requireAdminRole } from "@/lib/auth/admin-guards"
 
+const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*]).{10,}$/
+
 const CreateSchema = z.object({
   name:      z.string().min(2).max(100),
-  email:     z.string().email(),
-  password:  z.string().min(8).max(100),
+  email:     z.string().email().transform((e) => e.toLowerCase()),
+  password:  z.string()
+    .min(10, "Mínimo 10 caracteres.")
+    .max(100)
+    .regex(PASSWORD_REGEX, "Senha deve conter maiúscula, número e caractere especial (!@#$%^&*)."),
   adminRole: z.enum(["ADMIN_SUPERADMIN", "ADMIN_FINANCEIRO", "ADMIN_OPERACIONAL"]),
 })
 

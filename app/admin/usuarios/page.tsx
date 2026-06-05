@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { redirect } from "next/navigation"
 import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
@@ -9,6 +10,9 @@ export const metadata: Metadata = { title: "Admin — Usuários" }
 
 export default async function AdminUsuariosPage() {
   const session = await auth()
+  if (!session || session.user.role !== "ADMIN") redirect("/dashboard")
+  if (!hasAdminRole(session, "ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL", "ADMIN_FINANCEIRO")) redirect("/admin")
+
   const users = await prisma.user.findMany({
     where:   { deletedAt: null },
     orderBy: { createdAt: "desc" },

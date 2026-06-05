@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useRef } from "react"
 import { useRouter } from "next/navigation"
 
 type AdminRole = "ADMIN_SUPERADMIN" | "ADMIN_FINANCEIRO" | "ADMIN_OPERACIONAL"
@@ -22,9 +22,11 @@ export function AdminActions({ userId, adminRole, isActive }: Props) {
   const [, startTransition]   = useTransition()
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState("")
+  const inflight              = useRef(false)
 
   async function patch(body: object) {
-    setError(""); setLoading(true)
+    if (inflight.current) return
+    setError(""); setLoading(true); inflight.current = true
     try {
       const res  = await fetch(`/api/admin/users/admins/${userId}`, {
         method:  "PATCH",
@@ -32,15 +34,20 @@ export function AdminActions({ userId, adminRole, isActive }: Props) {
         body:    JSON.stringify(body),
       })
       const json = await res.json()
-      if (!res.ok) { setError(json.error?.message ?? "Erro."); return }
+      if (!res.ok) { setError(json.error?.message ?? "Erro ao salvar."); return }
       startTransition(() => router.refresh())
     } finally {
-      setLoading(false)
+      setLoading(false); inflight.current = false
     }
   }
 
+  function handleToggle() {
+    if (isActive && !confirm(`Desativar este admin? Ele perderá acesso imediatamente.`)) return
+    patch({ action: isActive ? "deactivate" : "activate" })
+  }
+
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <select
         defaultValue={adminRole}
         disabled={loading}
@@ -54,7 +61,7 @@ export function AdminActions({ userId, adminRole, isActive }: Props) {
       </select>
 
       <button
-        onClick={() => patch({ action: isActive ? "deactivate" : "activate" })}
+        onClick={handleToggle}
         disabled={loading}
         className={`rounded-md px-3 py-1 text-xs font-semibold disabled:opacity-50 transition-colors ${
           isActive
@@ -65,7 +72,7 @@ export function AdminActions({ userId, adminRole, isActive }: Props) {
         {loading ? "…" : isActive ? "Desativar" : "Ativar"}
       </button>
 
-      {error && <p className="text-[10px] text-red-600">{error}</p>}
+      {error && <p className="mt-0.5 text-xs text-red-600">{error}</p>}
     </div>
   )
 }

@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { hasAdminRole } from "@/lib/auth/admin-guards"
 import { z } from "zod"
 
 type Params = { params: Promise<{ id: string }> }
@@ -16,6 +17,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (!session || session.user.role !== "ADMIN") {
       return NextResponse.json(
         { error: { code: "FORBIDDEN", message: "Acesso restrito a administradores." } },
+        { status: 403 },
+      )
+    }
+    if (!hasAdminRole(session, "ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL")) {
+      return NextResponse.json(
+        { error: { code: "FORBIDDEN", message: "Sem permissão para gerenciar usuários." } },
         { status: 403 },
       )
     }

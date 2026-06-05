@@ -64,7 +64,7 @@ export default async function AdminsPage() {
           <tbody>
             {admins.map((admin) => {
               const badge  = admin.adminRole ? ROLE_BADGE[admin.adminRole] : null
-              const isSelf = admin.email === session.user.email
+              const isSelf = admin.id === session.user.id
               return (
                 <tr key={admin.id} className="border-b border-border last:border-0">
                   <td className="py-3 pr-3">
