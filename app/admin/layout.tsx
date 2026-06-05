@@ -2,10 +2,13 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { auth } from "@/lib/auth"
 
-const NAV = [
+type AdminRole = "ADMIN_SUPERADMIN" | "ADMIN_FINANCEIRO" | "ADMIN_OPERACIONAL"
+
+const NAV: { href: string; label: string; roles: AdminRole[]; icon: React.ReactNode }[] = [
   {
     href:  "/admin",
     label: "Visão Geral",
+    roles: ["ADMIN_SUPERADMIN", "ADMIN_FINANCEIRO", "ADMIN_OPERACIONAL"],
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
         <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
@@ -16,6 +19,7 @@ const NAV = [
   {
     href:  "/admin/itens",
     label: "Itens",
+    roles: ["ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL"],
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
         <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
@@ -26,6 +30,7 @@ const NAV = [
   {
     href:  "/admin/usuarios",
     label: "Usuários",
+    roles: ["ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL", "ADMIN_FINANCEIRO"],
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -37,6 +42,7 @@ const NAV = [
   {
     href:  "/admin/disputas",
     label: "Disputas",
+    roles: ["ADMIN_SUPERADMIN", "ADMIN_FINANCEIRO", "ADMIN_OPERACIONAL"],
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
         <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
@@ -47,6 +53,7 @@ const NAV = [
   {
     href:  "/admin/verificacoes",
     label: "Verificações",
+    roles: ["ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL"],
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
         <rect x="2" y="5" width="20" height="14" rx="2"/>
@@ -58,6 +65,7 @@ const NAV = [
   {
     href:  "/admin/financeiro",
     label: "Financeiro",
+    roles: ["ADMIN_SUPERADMIN", "ADMIN_FINANCEIRO"],
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
         <line x1="12" y1="1" x2="12" y2="23"/>
@@ -73,6 +81,9 @@ const linkCls =
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
   if (!session || session.user.role !== "ADMIN") redirect("/dashboard")
+
+  const adminRole = ((session.user as { adminRole?: string }).adminRole ?? "") as AdminRole
+  const visibleNav = NAV.filter((item) => item.roles.includes(adminRole))
 
   return (
     <div className="min-h-screen bg-background">
@@ -92,7 +103,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
       {/* Mobile nav */}
       <nav className="flex gap-1 overflow-x-auto border-b border-border bg-surface px-4 py-2 md:hidden" aria-label="Admin nav">
-        {NAV.map((item) => (
+        {visibleNav.map((item) => (
           <Link key={item.href} href={item.href} className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-foreground/70 hover:bg-background hover:text-foreground whitespace-nowrap transition-colors">
             {item.icon}
             {item.label}
@@ -105,7 +116,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           {/* Sidebar — desktop */}
           <aside className="hidden w-44 flex-shrink-0 md:block">
             <nav className="space-y-0.5" aria-label="Admin nav">
-              {NAV.map((item) => (
+              {visibleNav.map((item) => (
                 <Link key={item.href} href={item.href} className={linkCls}>
                   {item.icon}
                   {item.label}

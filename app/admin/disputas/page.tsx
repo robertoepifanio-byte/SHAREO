@@ -1,4 +1,6 @@
 import type { Metadata } from "next"
+import { redirect } from "next/navigation"
+import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { DisputeActions } from "./_Actions"
 
@@ -8,6 +10,9 @@ const fmt = (cents: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
 
 export default async function AdminDisputasPage() {
+  const session = await auth()
+  if (!session || session.user.role !== "ADMIN") redirect("/dashboard")
+
   const disputes = await prisma.booking.findMany({
     where:   { status: "DISPUTED" },
     orderBy: { updatedAt: "desc" },

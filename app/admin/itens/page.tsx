@@ -1,4 +1,7 @@
 import type { Metadata } from "next"
+import { redirect } from "next/navigation"
+import { auth } from "@/lib/auth"
+import { hasAdminRole } from "@/lib/auth/admin-guards"
 import { prisma } from "@/lib/prisma"
 import { ItemActions } from "./_Actions"
 
@@ -8,6 +11,10 @@ const fmt = (cents: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
 
 export default async function AdminItensPage() {
+  const session = await auth()
+  if (!session || session.user.role !== "ADMIN") redirect("/dashboard")
+  if (!hasAdminRole(session, "ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL")) redirect("/admin")
+
   const items = await prisma.item.findMany({
     where:   { deletedAt: null },
     orderBy: [{ isApproved: "asc" }, { createdAt: "desc" }],

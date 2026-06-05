@@ -1,5 +1,8 @@
 import type { Metadata } from "next"
+import { redirect } from "next/navigation"
 import Image from "next/image"
+import { auth } from "@/lib/auth"
+import { hasAdminRole } from "@/lib/auth/admin-guards"
 import { prisma } from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { VerificationActions } from "./_Actions"
@@ -34,6 +37,10 @@ async function signedUrl(path: string | null): Promise<string | null> {
 }
 
 export default async function VerificacoesPage() {
+  const session = await auth()
+  if (!session || session.user.role !== "ADMIN") redirect("/dashboard")
+  if (!hasAdminRole(session, "ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL")) redirect("/admin")
+
   const [pending, recent] = await Promise.all([
     prisma.user.findMany({
       where:   { idVerificationStatus: "PENDING", deletedAt: null },

@@ -97,7 +97,7 @@ export default async function AdminUsuariosPage() {
                   {fmtDate(user.createdAt)}
                 </td>
                 <td className="py-3 pl-2">
-                  {user.role === "ADMIN" ? (
+                  {user.role === "ADMIN" || !hasAdminRole(session, "ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL") ? (
                     <span className="text-xs text-muted-foreground">—</span>
                   ) : (
                     <UserActions userId={user.id} isActive={user.isActive} />
