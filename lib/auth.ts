@@ -36,11 +36,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!valid) return null
 
         return {
-          id:       user.id,
-          email:    user.email,
-          name:     user.name,
-          role:     user.role,
-          userType: user.userType,
+          id:        user.id,
+          email:     user.email,
+          name:      user.name,
+          role:      user.role,
+          userType:  user.userType,
+          adminRole: user.adminRole ?? undefined,
         }
       },
     }),
