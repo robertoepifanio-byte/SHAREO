@@ -58,17 +58,20 @@ const config: NextConfig = {
   },
 }
 
-export default withSentryConfig(config, {
-  org:       process.env.SENTRY_ORG       ?? "shareo-ow",
-  project:   process.env.SENTRY_PROJECT   ?? "shareo-web",
-  authToken: process.env.SENTRY_AUTH_TOKEN,
-  // source maps: upload só quando SENTRY_AUTH_TOKEN estiver presente e válido
-  sourcemaps: { disable: !process.env.SENTRY_AUTH_TOKEN },
-  hideSourceMaps:        true,
-  widenClientFileUpload: true,
-  // telemetria e logs de build
-  telemetry:    false,
-  silent:       false,
-  disableLogger: true,
-  automaticVercelMonitors: true,
-})
+// Sentry só é ativado quando SENTRY_AUTH_TOKEN estiver presente e válido.
+// Sem token (ex: staging sem secret configurado), exporta nextConfig diretamente
+// para evitar falha de build por 401 no sentry-cli.
+export default process.env.SENTRY_AUTH_TOKEN
+  ? withSentryConfig(config, {
+      org:       process.env.SENTRY_ORG     ?? "shareo-ow",
+      project:   process.env.SENTRY_PROJECT ?? "shareo-web",
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      sourcemaps: { disable: false },
+      hideSourceMaps:        true,
+      widenClientFileUpload: true,
+      telemetry:             false,
+      silent:                true,
+      disableLogger:         true,
+      automaticVercelMonitors: true,
+    })
+  : config
