@@ -37,7 +37,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     const target = await prisma.user.findFirst({
       where:  { id, deletedAt: null, role: "ADMIN" },
-      select: { id: true },
+      select: { id: true, adminRole: true, isActive: true },
     })
     if (!target) {
       return NextResponse.json(
@@ -63,7 +63,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         action:     "adminRole" in parsed.data ? "UPDATE_ADMIN_ROLE" : parsed.data.action.toUpperCase(),
         entityType: "User",
         entityId:   id,
-        metadata:   JSON.stringify(parsed.data),
+        metadata:   JSON.stringify({
+          before: { adminRole: target.adminRole, isActive: target.isActive },
+          after:  { adminRole: updated.adminRole, isActive: updated.isActive },
+        }),
       },
     }).catch((e) => console.warn("[adminLog]", e instanceof Error ? e.message : e))
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useRef } from "react"
 import { useRouter } from "next/navigation"
 
 interface Props {
@@ -13,9 +13,12 @@ export function UserActions({ userId, isActive }: Props) {
   const [, startTransition]   = useTransition()
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState("")
+  const inflight              = useRef(false)
 
   async function act() {
-    setError(""); setLoading(true)
+    if (inflight.current) return
+    if (isActive && !confirm("Desativar este usuário? Ele perderá acesso imediatamente.")) return
+    setError(""); setLoading(true); inflight.current = true
     try {
       const res  = await fetch(`/api/admin/users/${userId}`, {
         method:  "PATCH",
@@ -23,10 +26,10 @@ export function UserActions({ userId, isActive }: Props) {
         body:    JSON.stringify({ action: isActive ? "deactivate" : "activate" }),
       })
       const json = await res.json()
-      if (!res.ok) { setError(json.error?.message ?? "Erro."); return }
+      if (!res.ok) { setError(json.error?.message ?? "Erro ao salvar."); return }
       startTransition(() => router.refresh())
     } finally {
-      setLoading(false)
+      setLoading(false); inflight.current = false
     }
   }
 
@@ -43,7 +46,7 @@ export function UserActions({ userId, isActive }: Props) {
       >
         {loading ? "…" : isActive ? "Desativar" : "Ativar"}
       </button>
-      {error && <p className="mt-0.5 text-[10px] text-red-600">{error}</p>}
+      {error && <p className="mt-0.5 text-xs text-red-600">{error}</p>}
     </div>
   )
 }

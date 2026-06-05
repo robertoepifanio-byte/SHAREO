@@ -3,6 +3,7 @@ import { z } from "zod"
 import bcrypt from "bcryptjs"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 
 const schema = z.object({
   currentPassword: z.string().min(1),
@@ -14,6 +15,9 @@ export async function PATCH(req: Request) {
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
   }
+
+  const rl = await checkRateLimit(`pwd-change:${session.user.id}`, 5, 15 * 60 * 1000)
+  if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
   const body = await req.json()
   const parsed = schema.safeParse(body)

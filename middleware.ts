@@ -122,6 +122,12 @@ export async function middleware(req: NextRequest) {
   if (isAdminRoute && token) {
     const role = token.role as string | undefined
     if (role !== "ADMIN") {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json(
+          { error: { code: "FORBIDDEN", message: "Acesso restrito a administradores." } },
+          { status: 403 },
+        )
+      }
       return NextResponse.redirect(new URL("/dashboard", req.url))
     }
   }

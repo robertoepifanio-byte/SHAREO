@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { signOut } from "next-auth/react"
 
 export function ChangePasswordForm() {
   const [, startTransition] = useTransition()
@@ -28,7 +29,10 @@ export function ChangePasswordForm() {
       const json = await res.json()
       if (!res.ok) { setError(json.error ?? "Erro ao alterar senha."); return }
       setSuccess(true)
-      startTransition(() => { setCurrent(""); setNext(""); setConfirm("") })
+      startTransition(() => {
+        setCurrent(""); setNext(""); setConfirm("")
+        setTimeout(() => signOut({ callbackUrl: "/login?msg=senha-alterada" }), 1500)
+      })
     } finally {
       setLoading(false)
     }
@@ -72,7 +76,7 @@ export function ChangePasswordForm() {
       </div>
 
       {error   && <p className="text-xs text-destructive">{error}</p>}
-      {success && <p className="text-xs text-success">Senha alterada com sucesso.</p>}
+      {success && <p className="text-xs text-success">Senha alterada. Redirecionando para o login…</p>}
 
       <button
         type="submit"
