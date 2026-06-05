@@ -59,6 +59,15 @@ All ADRs live in **`docs/adr/`** (kebab-case filenames). The legacy `ADRs/` root
 | 009 | `ADR-009-rls-nextauth.md` | RLS + NextAuth integration |
 | 010 | `ADR-010-upload-imagens.md` | Image upload — Supabase Storage |
 | 011 | `ADR-011-tipografia-dual.md` | Tipografia dual — Inter (UI) + Montserrat (branding) |
+| 012 | `ADR-012-modelo-pix-centralizado.md` | PIX centralizado no MVP (D1) |
+| 013 | `ADR-013-webhook-queue.md` | StripeEventQueue + cron (MVP), Inngest (V2) |
+| 014 | `ADR-014-payout-trigger.md` | Payout trigger — 3 dias de hold + cron 10h BRT |
+| 015 | `ADR-015-caucao-mvp-adiado.md` | Sem caução no MVP, teto R$ 500 (D2) |
+| 016 | `ADR-016-exportacao-financeira.md` | Exportação híbrida: síncrono ≤90 dias, assíncrono acima |
+| 017 | `ADR-017-retencao-dados-financeiros.md` | Retenção 5 anos (CTN Art. 173), anonimização LGPD |
+| 018 | `ADR-018-chargebacks.md` | Chargeback: bloqueio automático payout + resolução via webhook |
+| 019 | `ADR-019-informe-rendimentos-ir.md` | Informe de rendimentos anual para declaração IR |
+| 020 | `ADR-020-relatorio-mensal-financeiro.md` | Relatório mensal via cron, notificação in-app para admins |
 
 ## Subagents System
 
