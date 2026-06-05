@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { DeleteAccountButton } from "../_DeleteAccountButton"
+import { ChangePasswordForm } from "./_ChangePasswordForm"
 
 export const metadata: Metadata = { title: "Login e Segurança" }
 
@@ -22,10 +23,12 @@ export default async function SegurancaPage() {
 
   const user = await prisma.user.findUnique({
     where:  { id: session.user.id },
-    select: { email: true, createdAt: true },
+    select: { email: true, createdAt: true, role: true },
   })
 
   if (!user) redirect("/login")
+
+  const isAdmin = user.role === "ADMIN"
 
   return (
     <div className="min-h-screen bg-background">
@@ -58,25 +61,38 @@ export default async function SegurancaPage() {
           {/* Senha */}
           <div className="rounded-xl border border-border bg-surface p-5">
             <h2 className="mb-1 font-semibold text-foreground">Senha</h2>
-            <p className="mb-4 text-sm text-muted-foreground">
-              Para alterar sua senha, use o fluxo de recuperação de senha.
-            </p>
-            <Link
-              href="/forgot-password"
-              className="inline-flex h-11 items-center rounded-lg border border-border px-4 text-sm font-semibold text-foreground hover:bg-background transition-colors"
-            >
-              Alterar senha
-            </Link>
+            {isAdmin ? (
+              <>
+                <p className="mb-4 text-sm text-muted-foreground">
+                  Altere sua senha de acesso ao painel admin.
+                </p>
+                <ChangePasswordForm />
+              </>
+            ) : (
+              <>
+                <p className="mb-4 text-sm text-muted-foreground">
+                  Para alterar sua senha, use o fluxo de recuperação de senha.
+                </p>
+                <Link
+                  href="/forgot-password"
+                  className="inline-flex h-11 items-center rounded-lg border border-border px-4 text-sm font-semibold text-foreground hover:bg-background transition-colors"
+                >
+                  Alterar senha
+                </Link>
+              </>
+            )}
           </div>
 
-          {/* Zona de perigo */}
-          <div className="rounded-xl border border-destructive/30 bg-surface p-5">
-            <h2 className="mb-1 font-semibold text-destructive">Zona de perigo</h2>
-            <p className="mb-4 text-sm text-muted-foreground">
-              Ações irreversíveis que afetam permanentemente sua conta.
-            </p>
-            <DeleteAccountButton />
-          </div>
+          {/* Zona de perigo — oculta para admins */}
+          {!isAdmin && (
+            <div className="rounded-xl border border-destructive/30 bg-surface p-5">
+              <h2 className="mb-1 font-semibold text-destructive">Zona de perigo</h2>
+              <p className="mb-4 text-sm text-muted-foreground">
+                Ações irreversíveis que afetam permanentemente sua conta.
+              </p>
+              <DeleteAccountButton />
+            </div>
+          )}
         </div>
       </main>
     </div>
