@@ -37,8 +37,20 @@ export const FIXTURE_ADMIN = {
   consentVersion: 'v1.0',
 }
 
+export const FIXTURE_FINANCEIRO = {
+  email:    'financeiro@shareo.com.br',
+  password: 'REDACTED_USE_ENV_VAR',
+}
+
+export const FIXTURE_OPERACIONAL = {
+  email:    'operacional@shareo.com.br',
+  password: 'REDACTED_USE_ENV_VAR',
+}
+
 export const SESSION_PATHS = {
   locatario:    'e2e/fixtures/session-locatario.json',
   proprietario: 'e2e/fixtures/session-proprietario.json',
   admin:        'e2e/fixtures/session-admin.json',
+  financeiro:   'e2e/fixtures/session-financeiro.json',
+  operacional:  'e2e/fixtures/session-operacional.json',
 }
