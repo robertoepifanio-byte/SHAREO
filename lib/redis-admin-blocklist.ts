@@ -1,36 +1,51 @@
 /**
- * Admin blocklist no Redis (Upstash).
+ * Admin blocklist via Upstash REST API — Edge Runtime compatível.
  *
- * Ao desativar ou rebaixar um admin, seu userId é adicionado ao set com TTL
- * igual ao maxAge do JWT (1 dia). O middleware checa o set a cada request
- * em rotas admin — revogação ocorre em <1s sem query SQL.
+ * Usa fetch direto à API REST do Upstash em vez do SDK @upstash/redis,
+ * que depende de jose/CompressionStream (Node.js only, incompatível com Edge).
  *
- * Fallback gracioso: se Redis estiver indisponível, o JWT permanece válido
- * até expirar (1 dia). Risco residual aceito pelo produto (vide análise ADR).
+ * Ao desativar ou rebaixar um admin, seu userId é adicionado com TTL = maxAge
+ * do JWT (1 dia). O middleware checa a cada request em rotas admin.
+ *
+ * Fallback gracioso: se Upstash estiver indisponível, retorna false (acesso
+ * permitido) — o JWT expira normalmente em 1 dia.
  */
 
-import { Redis } from "@upstash/redis"
+const JWT_MAX_AGE_SECONDS = 24 * 60 * 60
 
-const JWT_MAX_AGE_SECONDS = 24 * 60 * 60 // 1 dia — alinhado com session.maxAge
-
-function getRedis(): Redis | null {
-  if (
-    !process.env.UPSTASH_REDIS_REST_URL ||
-    !process.env.UPSTASH_REDIS_REST_TOKEN
-  ) return null
-  return Redis.fromEnv()
+function upstashUrl(): string | null {
+  return process.env.UPSTASH_REDIS_REST_URL ?? null
 }
 
-function key(userId: string) {
-  return `admin:blocked:${userId}`
+function upstashToken(): string | null {
+  return process.env.UPSTASH_REDIS_REST_TOKEN ?? null
+}
+
+function redisKey(userId: string) {
+  return `admin:blocked:${encodeURIComponent(userId)}`
+}
+
+async function upstashFetch(command: string[]): Promise<unknown> {
+  const url   = upstashUrl()
+  const token = upstashToken()
+  if (!url || !token) return null
+
+  const res = await fetch(`${url}`, {
+    method:  "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body:    JSON.stringify(command),
+  })
+
+  if (!res.ok) throw new Error(`Upstash ${res.status}`)
+  const json = await res.json() as { result: unknown }
+  return json.result
 }
 
 /** Bloqueia JWT do admin imediatamente (desativação ou rebaixamento de role). */
 export async function blockAdminToken(userId: string): Promise<void> {
-  const redis = getRedis()
-  if (!redis) return
+  if (!upstashUrl()) return
   try {
-    await redis.setex(key(userId), JWT_MAX_AGE_SECONDS, "1")
+    await upstashFetch(["SETEX", redisKey(userId), String(JWT_MAX_AGE_SECONDS), "1"])
   } catch (e) {
     console.warn("[blocklist] blockAdminToken falhou:", e instanceof Error ? e.message : e)
   }
@@ -38,23 +53,21 @@ export async function blockAdminToken(userId: string): Promise<void> {
 
 /** Retorna true se o userId está na blocklist (acesso deve ser negado). */
 export async function isAdminBlocked(userId: string): Promise<boolean> {
-  const redis = getRedis()
-  if (!redis) return false
+  if (!upstashUrl()) return false
   try {
-    const val = await redis.get(key(userId))
-    return val === "1"
+    const result = await upstashFetch(["GET", redisKey(userId)])
+    return result === "1"
   } catch (e) {
     console.warn("[blocklist] isAdminBlocked falhou:", e instanceof Error ? e.message : e)
-    return false // falha aberta — preferível a bloquear admins legítimos
+    return false
   }
 }
 
 /** Remove da blocklist (reativação de admin). */
 export async function unblockAdminToken(userId: string): Promise<void> {
-  const redis = getRedis()
-  if (!redis) return
+  if (!upstashUrl()) return
   try {
-    await redis.del(key(userId))
+    await upstashFetch(["DEL", redisKey(userId)])
   } catch (e) {
     console.warn("[blocklist] unblockAdminToken falhou:", e instanceof Error ? e.message : e)
   }
