@@ -256,6 +256,41 @@ test.describe('API — validações server-side do módulo financeiro', () => {
   })
 })
 
+// ─── FIN-7. Chargebacks ───────────────────────────────────────────────────────
+
+test.describe('FIN-7 — chargebacks e disputas', () => {
+  test.skip(!hasAdminSession, 'Requer session-admin.json')
+  test.use({ storageState: SESSION_PATHS.admin })
+
+  test('16. painel financeiro exibe seção de disputas (ou estado vazio)', async ({ page }) => {
+    await page.goto('/admin/financeiro')
+    await expect(page.locator('main')).toBeVisible()
+    // Pode ter disputas abertas ou não — o card de métricas "Disputas abertas" deve existir
+    const body = await page.locator('body').textContent()
+    expect(body).toContain('Disputas abertas')
+  })
+
+  test('17. webhook charge.dispute.created retorna 400 sem assinatura', async ({ page }) => {
+    const res = await page.request.post('/api/webhooks/stripe', {
+      data: JSON.stringify({ type: 'charge.dispute.created', data: { object: {} } }),
+      headers: { 'Content-Type': 'application/json' },
+    })
+    // Sem assinatura Stripe → 400
+    expect(res.status()).toBe(400)
+  })
+
+  test('18. webhook charge.dispute.created retorna 400 com assinatura inválida', async ({ page }) => {
+    const res = await page.request.post('/api/webhooks/stripe', {
+      data: JSON.stringify({ type: 'charge.dispute.created', data: { object: {} } }),
+      headers: {
+        'Content-Type': 'application/json',
+        'stripe-signature': 'assinatura-invalida',
+      },
+    })
+    expect(res.status()).toBe(400)
+  })
+})
+
 // ─── Admin — API de pagamentos com role correto ───────────────────────────────
 
 test.describe('admin — APIs financeiras protegidas', () => {

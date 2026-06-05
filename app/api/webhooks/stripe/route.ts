@@ -156,6 +156,69 @@ export async function POST(req: Request) {
         break
       }
 
+      case "charge.dispute.created": {
+        const dispute = event.data.object as Stripe.Dispute
+        const intentId = typeof dispute.payment_intent === "string"
+          ? dispute.payment_intent
+          : (dispute.payment_intent?.id ?? null)
+
+        if (!intentId) {
+          console.warn("[stripe webhook] charge.dispute.created: no payment_intent")
+          break
+        }
+
+        const updated = await prisma.booking.updateMany({
+          where: { stripePaymentIntentId: intentId },
+          data:  { status: "DISPUTED", stripeDisputeId: dispute.id },
+        })
+
+        if (updated.count > 0) {
+          // Notifica admins financeiros sobre a disputa
+          const admins = await prisma.user.findMany({
+            where:  { role: "ADMIN", adminRole: "ADMIN_FINANCEIRO" },
+            select: { id: true },
+          })
+          for (const admin of admins) {
+            prisma.notification.create({
+              data: {
+                userId: admin.id,
+                type:   "BOOKING_CANCELLED" as never, // reuse existing type
+                title:  "⚠️ Disputa aberta no Stripe",
+                body:   `Chargeback criado: dispute ${dispute.id} (R$ ${((dispute.amount ?? 0) / 100).toFixed(2)})`,
+                data:   { disputeId: dispute.id, paymentIntentId: intentId },
+              },
+            }).catch(() => undefined)
+          }
+          console.warn(`[stripe webhook] dispute created ${dispute.id} — booking marked DISPUTED`)
+        } else {
+          console.warn(`[stripe webhook] dispute ${dispute.id}: no booking found for intent ${intentId}`)
+        }
+        break
+      }
+
+      case "charge.dispute.closed": {
+        const dispute = event.data.object as Stripe.Dispute
+        const intentId = typeof dispute.payment_intent === "string"
+          ? dispute.payment_intent
+          : (dispute.payment_intent?.id ?? null)
+
+        if (!intentId) break
+
+        // Se a disputa foi perdida → CANCELLED (sem repasse)
+        // Se ganhou ou fechou sem penalidade → volta a COMPLETED
+        const newStatus = dispute.status === "lost" ? "CANCELLED" : "COMPLETED"
+
+        await prisma.booking.updateMany({
+          where: { stripePaymentIntentId: intentId, status: "DISPUTED" },
+          data:  { status: newStatus },
+        })
+
+        console.warn(
+          `[stripe webhook] dispute closed ${dispute.id} status=${dispute.status} → booking ${newStatus}`,
+        )
+        break
+      }
+
       default:
         // Ignora eventos não tratados
         break
