@@ -8,9 +8,25 @@ const MAX_BYTES  = Number(process.env.STORAGE_MAX_FILE_SIZE_MB ?? 10) * 1024 * 1
 const BUCKET     = process.env.NEXT_PUBLIC_STORAGE_BUCKET ?? "item-images"
 const MAX_IMAGES = 10
 
-/** Aceita qualquer image/* — inclui HEIC/HEIF de câmeras iOS e outros formatos mobile */
+/**
+ * Whitelist explícita de tipos de imagem aceitos.
+ * Não usar `startsWith("image/")` — permitiria image/svg+xml, que pode conter
+ * <script> e ser executado como XSS quando servido pelo Supabase com o mesmo
+ * Content-Type. application/octet-stream também foi removido — aceitaria
+ * qualquer binário (exe, php, etc.) no Storage público.
+ */
+const ALLOWED_IMAGE_MIMES = new Set([
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/heic",
+  "image/heif",
+])
+
 function isImageType(mimeType: string): boolean {
-  return mimeType.startsWith("image/") || mimeType === "application/octet-stream"
+  return ALLOWED_IMAGE_MIMES.has(mimeType)
 }
 
 type RouteContext = { params: Promise<{ id: string }> }
