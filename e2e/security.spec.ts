@@ -276,7 +276,7 @@ test.describe('smoke #17 — Upload MIME bypass: tipos perigosos bloqueados', ()
       data: {
         title: 'MIME bypass test item E2E', description: 'Temporário smoke #17',
         categoryId: cats[0].id, condition: 'GOOD', pricePerDay: 1000,
-        city: 'Natal', state: 'RN',
+        city: 'Natal', state: 'RN', latitude: -5.7945, longitude: -35.211,
       },
     })
     if (!createRes.ok()) {
