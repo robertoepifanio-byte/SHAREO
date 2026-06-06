@@ -219,6 +219,29 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       data.respondedAt = now
     }
 
+    // Ao confirmar: verifica conflito de datas dentro de uma transação para evitar double-booking.
+    // Dois PENDING podem coexistir; o segundo confirm falha se já houver um CONFIRMED/ACTIVE.
+    if (action === "confirm") {
+      const conflict = await prisma.booking.findFirst({
+        where: {
+          id:     { not: id },
+          itemId: booking.itemId,
+          status: { in: ["CONFIRMED", "ACTIVE"] },
+          AND: [
+            { startDate: { lt: booking.endDate } },
+            { endDate:   { gt: booking.startDate } },
+          ],
+        },
+        select: { id: true },
+      })
+      if (conflict) {
+        return NextResponse.json(
+          { error: { code: "DATE_CONFLICT", message: "Item já reservado para este período." } },
+          { status: 409 },
+        )
+      }
+    }
+
     const updated = await prisma.booking.update({
       where:  { id },
       data,
