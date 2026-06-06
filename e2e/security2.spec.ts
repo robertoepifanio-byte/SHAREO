@@ -29,12 +29,19 @@ const BASE = process.env.BASE_URL ?? 'http://localhost:3000'
 // ─────────────────────────────────────────────────────────────────────────────
 test.describe('smoke #18 — Brute force login bloqueado por rate limit', () => {
   test('10 tentativas de login com senha errada → rate limited (credenciais recusadas)', async () => {
-    test.setTimeout(60000)
+    test.setTimeout(90000)
 
-    // Usa fetch nativo sem o header x-e2e-token (que bypassaria o rate limit)
+    // Obtém CSRF token real antes de fazer as tentativas
+    // (CSRF inválido faz NextAuth rejeitar antes do rate limit ser verificado)
+    const csrfRes  = await fetch(`${BASE}/api/auth/csrf`)
+    const csrfJson = await csrfRes.json() as { csrfToken?: string }
+    const csrfToken = csrfJson.csrfToken ?? ''
+    console.log(`  CSRF token obtido: ${csrfToken ? csrfToken.slice(0, 8) + '…' : 'FALHOU'}`)
+
     const email = `bruteforce-${Date.now()}@shareo-test.com`
     let blockedAt = -1
 
+    // Sem x-e2e-token → rate limit NÃO é bypassado
     for (let i = 1; i <= 12; i++) {
       const res = await fetch(`${BASE}/api/auth/callback/credentials`, {
         method: 'POST',
@@ -42,7 +49,7 @@ test.describe('smoke #18 — Brute force login bloqueado por rate limit', () => 
         body: new URLSearchParams({
           email,
           password: `WrongPassword${i}!`,
-          csrfToken: 'dummy',
+          csrfToken,
           callbackUrl: `${BASE}/dashboard`,
           json: 'true',
         }),
@@ -52,47 +59,20 @@ test.describe('smoke #18 — Brute force login bloqueado por rate limit', () => 
       const status = res.status
       console.log(`  tentativa ${i} → ${status}`)
 
-      // NextAuth com rate limit retorna 200 com url de erro, ou 429 diretamente
-      // Após N tentativas, o authorize() retorna null → NextAuth retorna redirect para /login?error=
-      // O importante é que após o limite, o comportamento muda
       if (status === 429) {
         blockedAt = i
         console.log(`  rate limit ativo em tentativa ${i} → 429 ✅`)
         break
       }
 
-      // Pequeno delay para não sobrecarregar o servidor
-      await new Promise(r => setTimeout(r, 200))
-    }
-
-    // Se não recebeu 429 direto (NextAuth pode absorver o 429 internamente),
-    // verifica se o usuário real também ficou bloqueado
-    if (blockedAt === -1) {
-      // Tenta logar com credenciais CORRETAS de um usuário real — deve também falhar
-      // porque o rate limit por IP foi atingido
-      const realRes = await fetch(`${BASE}/api/auth/callback/credentials`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          email: FIXTURE_LOCATARIO.email,
-          password: FIXTURE_LOCATARIO.password,
-          csrfToken: 'dummy',
-          callbackUrl: `${BASE}/dashboard`,
-          json: 'true',
-        }),
-        redirect: 'manual',
-      })
-      // Se o rate limit funcionou, este login também deve ser bloqueado (mesmo IP)
-      console.log(`  login real após 12 tentativas ruins → ${realRes.status}`)
-      // Aceita 429 (rate limit explícito) ou verifica que a resposta indica erro
-      // O que NÃO pode acontecer: 12 tentativas passarem sem nenhum bloqueio
+      await new Promise(r => setTimeout(r, 150))
     }
 
     expect(
       blockedAt,
-      'Rate limit não ativado em 12 tentativas — brute force possível. ' +
-      'O login deve ser bloqueado após 10 tentativas por minuto por IP. ' +
-      'Fix: adicionar checkRateLimit() no authorize() de lib/auth.ts.',
+      'Rate limit não ativado em 12 tentativas de login — brute force possível. ' +
+      'O login deve ser bloqueado após 10 tentativas/min por IP. ' +
+      'Fix: checkRateLimit() no POST wrapper de app/api/auth/[...nextauth]/route.ts.',
     ).toBeGreaterThan(0)
 
     console.log(`  brute force bloqueado em tentativa ${blockedAt} ✅`)
@@ -198,8 +178,8 @@ test.describe('smoke #21 — Review flow: avaliações após booking COMPLETED',
     const loc     = await locCtx.newPage()
     const prop    = await propCtx.newPage()
 
-    // Offset único por worker: usa últimos 4 dígitos do timestamp para separar runs paralelos
-    const offset = 400 + (Date.now() % 50)
+    // Offset amplo para não conflitar com outros smokes nem runs anteriores
+    const offset = 800 + Math.floor(Math.random() * 500)
     const start  = new Date(Date.now() + offset * 86400000).toISOString()
     const end    = new Date(Date.now() + (offset + 2) * 86400000).toISOString()
 
@@ -297,8 +277,8 @@ test.describe('smoke #22 — Booking boundary: casos limítrofes de datas', () =
     const loc     = await locCtx.newPage()
     const prop    = await propCtx.newPage()
 
-    // Base: dia 450 no futuro (distante de outros smokes)
-    const base    = 450
+    // Base ampla e aleatória para não conflitar com outros smokes nem runs anteriores no DB de staging
+    const base    = 1000 + Math.floor(Math.random() * 500)
     const day     = (n: number) => new Date(Date.now() + n * 86400000).toISOString()
 
     const bookingIds: string[] = []
