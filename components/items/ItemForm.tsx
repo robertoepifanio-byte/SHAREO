@@ -705,13 +705,7 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
             )}
           </div>
 
-          <PriceInput
-            id="deposit-amount"
-            label="Caução"
-            value={depositAmount}
-            onChange={setDepositAmount}
-            helper="Opcional — valor retido como garantia durante o aluguel"
-          />
+          {/* Caução oculta no MVP (D2) — FIN-6 pós V1-Financeiro */}
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
