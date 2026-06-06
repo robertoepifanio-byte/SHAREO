@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
+import { fileTypeFromBuffer } from "file-type"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
@@ -10,10 +11,13 @@ const MAX_IMAGES = 10
 
 /**
  * Whitelist explícita de tipos de imagem aceitos.
- * Não usar `startsWith("image/")` — permitiria image/svg+xml, que pode conter
- * <script> e ser executado como XSS quando servido pelo Supabase com o mesmo
- * Content-Type. application/octet-stream também foi removido — aceitaria
- * qualquer binário (exe, php, etc.) no Storage público.
+ * Não usar `startsWith("image/")` — permitiria image/svg+xml (XSS).
+ * application/octet-stream removido — aceitaria qualquer binário.
+ *
+ * Validação em duas camadas:
+ * 1. Content-Type declarado pelo cliente (whitelist)
+ * 2. Magic bytes reais do arquivo (fileTypeFromBuffer) — impede SVG/exe
+ *    disfarçado de JPEG alterando apenas o Content-Type.
  */
 const ALLOWED_IMAGE_MIMES = new Set([
   "image/jpeg",
@@ -27,6 +31,19 @@ const ALLOWED_IMAGE_MIMES = new Set([
 
 function isImageType(mimeType: string): boolean {
   return ALLOWED_IMAGE_MIMES.has(mimeType)
+}
+
+/**
+ * Valida os magic bytes reais do arquivo.
+ * file-type lê apenas os primeiros ~12 bytes — impacto de performance mínimo.
+ * Retorna false se o tipo detectado não estiver na whitelist ou for desconhecido.
+ */
+async function isMagicBytesValid(buffer: ArrayBuffer): Promise<boolean> {
+  const detected = await fileTypeFromBuffer(buffer)
+  // HEIC/HEIF: file-type detecta como "image/heic" ou "image/heif"
+  // Se não detectado (arquivo muito pequeno ou formato raro), rejeitar por segurança
+  if (!detected) return false
+  return ALLOWED_IMAGE_MIMES.has(detected.mime)
 }
 
 type RouteContext = { params: Promise<{ id: string }> }
@@ -92,6 +109,15 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       )
     }
 
+    // Validação de magic bytes — impede arquivos disfarçados (SVG como image/jpeg, etc.)
+    const buffer = await file.arrayBuffer()
+    if (!(await isMagicBytesValid(buffer))) {
+      return NextResponse.json(
+        { error: { code: "INVALID_TYPE", message: "Arquivo inválido ou corrompido." } },
+        { status: 415 }
+      )
+    }
+
     // Mapeia MIME → extensão (HEIC de iOS → salva como heic)
     const MIME_EXT: Record<string, string> = {
       "image/jpeg": "jpg", "image/jpg": "jpg", "image/png": "png",
@@ -105,7 +131,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     const supabase = createAdminClient()
     const { error: uploadError } = await supabase.storage
       .from(BUCKET)
-      .upload(path, file, { contentType: file.type, upsert: false })
+      .upload(path, buffer, { contentType: file.type, upsert: false })
 
     if (uploadError) {
       console.error("[images/upload]", uploadError.message)

@@ -5,8 +5,8 @@
  * #14 Admin bypass   — Rotas /api/admin/* bloqueadas para usuários sem role admin
  * #15 Own-item       — Proprietário não pode reservar o próprio item
  * #16 Price tamper   — Servidor ignora totalPrice do cliente; recalcula server-side
- * #17 Upload MIME    — Tipos não-imagem bloqueados (SVG/svg+xml, octet-stream)
- *                      SVG com <script> seria XSS se servido com Content-Type: image/svg+xml
+ * #17 Upload MIME    — Tipos não-imagem bloqueados (SVG/svg+xml, octet-stream, SVG disfarçado de JPEG)
+ *                      Validação em 2 camadas: Content-Type whitelist + magic bytes (file-type)
  *
  * Todos os testes devem PASSAR — failure = vulnerabilidade ativa em produção.
  */
@@ -328,22 +328,22 @@ test.describe('smoke #17 — Upload MIME bypass: tipos perigosos bloqueados', ()
         console.log('  application/octet-stream → 415 ✅')
       }
 
-      // ── C) SVG disfarçado de JPEG (image/jpeg) — documenta comportamento ──
-      // Risco menor: Supabase serve como image/jpeg → browser não executa scripts
-      // Ideal futuro: validar magic bytes (sharp/file-type) → rejeitar bytes não-JPEG
+      // ── C) SVG disfarçado de JPEG (image/jpeg + magic bytes inválidos) → 415 ──
+      // Fix: fileTypeFromBuffer detecta que os bytes não são JPEG (não começa com FF D8 FF)
+      // e rejeita com 415 — defesa em profundidade contra bypass de Content-Type
       {
-        const res = await page.request.post(`/api/items/${itemId}/images`, {
+        const res  = await page.request.post(`/api/items/${itemId}/images`, {
           multipart: { file: { name: 'evil.jpg', mimeType: 'image/jpeg', buffer: XSS_SVG } },
         })
-        const status = res.status()
-        if (status === 201) {
-          const { data } = await res.json() as { data: { id: string } }
-          await page.request.delete(`/api/items/${itemId}/images`, { data: { imageId: data.id } }).catch(() => {})
-          console.log('  ⚠️  SVG/JPEG aceito — sem risco XSS imediato (servido como image/jpeg); recomenda-se magic bytes validation futuramente')
-        } else {
-          console.log(`  SVG/JPEG rejeitado (${status}) ✅`)
-        }
-        // Não falha — baixo risco; apenas documenta
+        const body = await res.json().catch(() => ({}))
+        console.log(`  SVG disfarçado de JPEG (magic bytes inválidos) → ${res.status()} ${JSON.stringify(body)}`)
+        expect(
+          res.status(),
+          `[Magic bytes] SVG disfarçado de image/jpeg aceito (${res.status()}) — ` +
+          'magic bytes validation deveria ter bloqueado: bytes não iniciam com FF D8 FF (JPEG). ' +
+          'Fix: fileTypeFromBuffer em app/api/items/[id]/images/route.ts.',
+        ).toBe(415)
+        console.log('  SVG/JPEG (magic bytes inválidos) → 415 ✅ (defesa em profundidade)')
       }
 
       // ── D) image/gif legítimo → deve ser aceito (201) ──
