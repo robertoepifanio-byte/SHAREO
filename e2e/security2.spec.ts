@@ -198,8 +198,8 @@ test.describe('smoke #21 — Review flow: avaliações após booking COMPLETED',
     const loc     = await locCtx.newPage()
     const prop    = await propCtx.newPage()
 
-    // Datas no futuro distante para não conflitar
-    const offset = 400 + Math.floor(Math.random() * 10)
+    // Offset único por worker: usa últimos 4 dígitos do timestamp para separar runs paralelos
+    const offset = 400 + (Date.now() % 50)
     const start  = new Date(Date.now() + offset * 86400000).toISOString()
     const end    = new Date(Date.now() + (offset + 2) * 86400000).toISOString()
 
@@ -227,26 +227,10 @@ test.describe('smoke #21 — Review flow: avaliações após booking COMPLETED',
       expect(pendingBody.error?.code).toBe('BOOKING_NOT_REVIEWABLE')
       console.log('  review em PENDING → 422 BOOKING_NOT_REVIEWABLE ✅')
 
-      // — Avança booking para RETURNED (confirm → start → return) —
+      // — Avança booking para RETURNED: confirm → mark_active → mark_returned —
       await prop.request.patch(`/api/bookings/${bookingId}`, { data: { action: 'confirm' } })
-      await prop.request.patch(`/api/bookings/${bookingId}`, { data: { action: 'start' } })
-
-      // Devolução bilateral: proprietário marca como devolvido
-      await prop.request.patch(`/api/bookings/${bookingId}`, {
-        data: {
-          action: 'owner_return',
-          returnCondition: 'GOOD',
-          returnNote: 'Item devolvido em bom estado',
-        },
-      })
-      // Locatário confirma devolução
-      const returnRes = await loc.request.patch(`/api/bookings/${bookingId}`, {
-        data: {
-          action: 'borrower_return',
-          returnCondition: 'GOOD',
-          returnNote: 'Tudo certo',
-        },
-      })
+      await prop.request.patch(`/api/bookings/${bookingId}`, { data: { action: 'mark_active' } })
+      const returnRes = await loc.request.patch(`/api/bookings/${bookingId}`, { data: { action: 'mark_returned' } })
       console.log(`  booking avançado para RETURNED → ${returnRes.status()}`)
 
       // ── B) Proprietário tenta avaliar como ITEM (tipo não permitido) → 422 ──
@@ -290,12 +274,7 @@ test.describe('smoke #21 — Review flow: avaliações após booking COMPLETED',
       console.log('  proprietário review BORROWER → 201 ✅')
 
     } finally {
-      if (bookingId) {
-        // Tenta cancelar; se já avançou, ignora o erro
-        await loc.request.patch(`/api/bookings/${bookingId}`, {
-          data: { action: 'cancel', reason: 'Cleanup smoke #21' },
-        }).catch(() => {})
-      }
+      // Booking já avançou para RETURNED/COMPLETED — não pode cancelar; cleanup só fecha contextos
       await locCtx.close()
       await propCtx.close()
     }
