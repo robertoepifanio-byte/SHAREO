@@ -2,6 +2,7 @@ import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
+import { checkRateLimit } from "@/lib/rateLimit"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET,
@@ -18,11 +19,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email:    { label: "E-mail",  type: "email"    },
         password: { label: "Senha",   type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         if (!credentials?.email || !credentials?.password) return null
 
+        // Rate limiting por IP — 10 tentativas por minuto
+        const ip =
+          request?.headers?.get("x-forwarded-for")?.split(",")[0].trim() ??
+          request?.headers?.get("x-real-ip") ??
+          "unknown"
+        const rlIp = await checkRateLimit(`login:ip:${ip}`, 10, 60_000)
+        if (!rlIp.allowed) return null
+
+        // Rate limiting por email — 5 tentativas por 5 minutos (protege conta específica)
+        const emailKey = (credentials.email as string).toLowerCase()
+        const rlEmail = await checkRateLimit(`login:email:${emailKey}`, 5, 5 * 60_000)
+        if (!rlEmail.allowed) return null
+
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
+          where: { email: emailKey },
         })
 
         if (!user?.passwordHash) return null
