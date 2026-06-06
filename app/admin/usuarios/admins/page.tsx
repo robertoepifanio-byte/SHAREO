@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma"
 import { hasAdminRole } from "@/lib/auth/admin-guards"
 import { AdminActions } from "./_AdminActions"
 import { CreateAdminForm } from "./_CreateAdminForm"
+import { PromoteUserForm } from "./_PromoteUserForm"
 
 export const metadata: Metadata = { title: "Admin — Gestão de Admins" }
 
@@ -47,7 +48,10 @@ export default async function AdminsPage() {
             Visível apenas para Superadmins. Todas as ações são auditadas.
           </p>
         </div>
-        <CreateAdminForm />
+        <div className="flex flex-wrap gap-2">
+          <PromoteUserForm />
+          <CreateAdminForm />
+        </div>
       </div>
 
       {/* Tabela */}
