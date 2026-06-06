@@ -92,7 +92,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </a>
         {/* Padding bottom garante que o BottomNav não tape o conteúdo no mobile */}
         <Providers>
-          <div id="main-content" className="pb-16 md:pb-0">
+          <div id="main-content" className="pb-[72px] md:pb-0">
             {children}
             <AppFooter />
           </div>

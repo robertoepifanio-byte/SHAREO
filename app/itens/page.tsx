@@ -268,10 +268,10 @@ export default async function ExplorarPage({ searchParams }: Props) {
           </button>
         </form>
 
-        {/* ─── CHIPS DE CATEGORIA ─── */}
+        {/* ─── CHIPS DE CATEGORIA ─── (oculto em desktop — sidebar já filtra por categoria) */}
         {categories.length > 0 && (
           <div
-            className="mb-5 flex gap-2 overflow-x-auto scrollbar-hide pb-1"
+            className="mb-5 flex gap-2 overflow-x-auto scrollbar-hide pb-1 lg:hidden"
             role="list"
             aria-label="Filtrar por categoria"
           >

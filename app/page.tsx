@@ -215,11 +215,6 @@ export default async function HomePage() {
             {/* Campo de busca */}
             <HeroSearch />
 
-            {/* Tagline */}
-            <p className="mt-3 text-xs italic tracking-[0.3px] text-white/85">
-              <em>Use Mais. Possua Menos.</em>
-            </p>
-
             {/* Stats integradas (substituem proof bar separado) */}
             <div
               role="list"
@@ -231,8 +226,8 @@ export default async function HomePage() {
                 { num: "R$2.000", label: "Renda média/mês" },
                 { num: "4,8 ★", label: "Avaliação média" },
                 {
-                  num: cityItemCount > 0 ? `${cityItemCount}` : "890+",
-                  label: cityItemCount > 0 ? `Itens em ${cityName}` : "Proprietários ativos",
+                  num: cityItemCount >= 20 ? `${cityItemCount}` : "890+",
+                  label: cityItemCount >= 20 ? `Itens em ${cityName}` : "Proprietários ativos",
                 },
               ].map((stat) => (
                 <div key={stat.label} role="listitem" className="text-center text-white">
