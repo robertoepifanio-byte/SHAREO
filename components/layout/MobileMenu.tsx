@@ -74,6 +74,7 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
   const [explorarOpen,  setExplorarOpen]  = useState(false)
   const [anunciarOpen,  setAnunciarOpen]  = useState(false)
   const [accountOpen,   setAccountOpen]   = useState(false)
+  const [helpOpen,      setHelpOpen]      = useState(false)
   const pathname = usePathname()
 
   useEffect(() => {
@@ -81,6 +82,7 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
     setExplorarOpen(false)
     setAnunciarOpen(false)
     setAccountOpen(false)
+    setHelpOpen(false)
   }, [pathname])
 
   useEffect(() => {
@@ -236,26 +238,38 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
 
                   <li><div className="my-1 h-px bg-white/10" /></li>
 
-                  {/* Central de Ajuda */}
+                  {/* Central de Ajuda — expansível */}
                   <li>
-                    <p className="px-4 pt-2 pb-1 text-xs font-semibold text-white/50 uppercase tracking-wider">Central de Ajuda</p>
+                    <button
+                      type="button"
+                      onClick={() => setHelpOpen((v) => !v)}
+                      aria-expanded={helpOpen}
+                      className="flex h-12 w-full items-center justify-between rounded-lg px-4 text-base font-semibold text-white/90 hover:bg-white/10 transition-colors"
+                    >
+                      <span>Central de Ajuda</span>
+                      <Chevron open={helpOpen} />
+                    </button>
                   </li>
-                  {HELP_LINKS.map((link) => (
-                    <li key={link.href}>
-                      <Link
-                        href={link.href}
-                        className="flex h-11 items-center gap-3 rounded-lg px-4 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white transition-colors"
-                      >
-                        <span aria-hidden="true">{link.icon}</span>
-                        {link.label}
-                      </Link>
-                    </li>
-                  ))}
-                  <li>
-                    <Link href="/ajuda" className="flex h-11 items-center gap-3 rounded-lg px-4 text-sm font-medium text-brand hover:bg-white/10 transition-colors">
-                      Ver tudo →
-                    </Link>
-                  </li>
+                  {helpOpen && (
+                    <>
+                      {HELP_LINKS.map((link) => (
+                        <li key={link.href}>
+                          <Link
+                            href={link.href}
+                            className="flex h-11 items-center gap-3 rounded-lg pl-8 pr-4 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+                          >
+                            <span aria-hidden="true">{link.icon}</span>
+                            {link.label}
+                          </Link>
+                        </li>
+                      ))}
+                      <li>
+                        <Link href="/ajuda" className="flex h-11 items-center gap-3 rounded-lg pl-8 pr-4 text-sm font-medium text-brand hover:bg-white/10 transition-colors">
+                          Ver tudo →
+                        </Link>
+                      </li>
+                    </>
+                  )}
 
                   {/* Painel Admin — apenas para admins */}
                   {isAdmin && (
@@ -303,27 +317,39 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
                     </Link>
                   </li>
 
-                  {/* Central de Ajuda — não logado */}
+                  {/* Central de Ajuda — não logado, expansível */}
                   <li><div className="my-1 h-px bg-white/10" /></li>
                   <li>
-                    <p className="px-4 pt-2 pb-1 text-xs font-semibold text-white/50 uppercase tracking-wider">Central de Ajuda</p>
+                    <button
+                      type="button"
+                      onClick={() => setHelpOpen((v) => !v)}
+                      aria-expanded={helpOpen}
+                      className="flex h-12 w-full items-center justify-between rounded-lg px-4 text-base font-semibold text-white/90 hover:bg-white/10 transition-colors"
+                    >
+                      <span>Central de Ajuda</span>
+                      <Chevron open={helpOpen} />
+                    </button>
                   </li>
-                  {HELP_LINKS.map((link) => (
-                    <li key={link.href}>
-                      <Link
-                        href={link.href}
-                        className="flex h-11 items-center gap-3 rounded-lg px-4 text-sm font-medium text-white/80 hover:bg-white/10 hover:text-white transition-colors"
-                      >
-                        <span aria-hidden="true">{link.icon}</span>
-                        {link.label}
-                      </Link>
-                    </li>
-                  ))}
-                  <li>
-                    <Link href="/ajuda" className="flex h-11 items-center gap-3 rounded-lg px-4 text-sm font-medium text-brand hover:bg-white/10 transition-colors">
-                      Ver tudo →
-                    </Link>
-                  </li>
+                  {helpOpen && (
+                    <>
+                      {HELP_LINKS.map((link) => (
+                        <li key={link.href}>
+                          <Link
+                            href={link.href}
+                            className="flex h-11 items-center gap-3 rounded-lg pl-8 pr-4 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+                          >
+                            <span aria-hidden="true">{link.icon}</span>
+                            {link.label}
+                          </Link>
+                        </li>
+                      ))}
+                      <li>
+                        <Link href="/ajuda" className="flex h-11 items-center gap-3 rounded-lg pl-8 pr-4 text-sm font-medium text-brand hover:bg-white/10 transition-colors">
+                          Ver tudo →
+                        </Link>
+                      </li>
+                    </>
+                  )}
                 </>
               )}
             </ul>
