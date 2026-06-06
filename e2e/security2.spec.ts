@@ -31,12 +31,14 @@ test.describe('smoke #18 — Brute force login bloqueado por rate limit', () => 
   test('10 tentativas de login com senha errada → rate limited (credenciais recusadas)', async () => {
     test.setTimeout(90000)
 
-    // Obtém CSRF token real antes de fazer as tentativas
-    // (CSRF inválido faz NextAuth rejeitar antes do rate limit ser verificado)
-    const csrfRes  = await fetch(`${BASE}/api/auth/csrf`)
-    const csrfJson = await csrfRes.json() as { csrfToken?: string }
+    // Obtém CSRF token + cookie de sessão (NextAuth usa double-submit cookie para CSRF)
+    const csrfRes   = await fetch(`${BASE}/api/auth/csrf`)
+    const csrfJson  = await csrfRes.json() as { csrfToken?: string }
     const csrfToken = csrfJson.csrfToken ?? ''
-    console.log(`  CSRF token obtido: ${csrfToken ? csrfToken.slice(0, 8) + '…' : 'FALHOU'}`)
+    // Captura o cookie da resposta (necessário para CSRF ser aceito)
+    const csrfCookie = csrfRes.headers.get('set-cookie') ?? ''
+    console.log(`  CSRF token: ${csrfToken ? csrfToken.slice(0, 8) + '…' : 'FALHOU'}`)
+    console.log(`  CSRF cookie: ${csrfCookie ? csrfCookie.slice(0, 40) + '…' : 'nenhum'}`)
 
     const email = `bruteforce-${Date.now()}@shareo-test.com`
     let blockedAt = -1
@@ -45,7 +47,10 @@ test.describe('smoke #18 — Brute force login bloqueado por rate limit', () => 
     for (let i = 1; i <= 12; i++) {
       const res = await fetch(`${BASE}/api/auth/callback/credentials`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          ...(csrfCookie ? { 'Cookie': csrfCookie.split(';')[0] } : {}),
+        },
         body: new URLSearchParams({
           email,
           password: `WrongPassword${i}!`,
