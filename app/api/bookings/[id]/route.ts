@@ -129,7 +129,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       where:  { id },
       select: {
         id: true, status: true, borrowerId: true, ownerId: true,
-        startDate: true, endDate: true, totalPrice: true,
+        itemId: true, startDate: true, endDate: true, totalPrice: true,
         item:     { select: { title: true } },
         borrower: { select: { email: true, name: true } },
         owner:    { select: { email: true, name: true } },
