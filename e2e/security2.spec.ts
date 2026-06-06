@@ -88,9 +88,13 @@ test.describe('smoke #18 — Brute force login bloqueado por rate limit', () => 
 // Smoke #19 — Password reset: token criado, single-use, expirado rejeita
 // ─────────────────────────────────────────────────────────────────────────────
 test.describe('smoke #19 — Password reset: fluxo e segurança do token', () => {
-  test('forgot-password retorna 200 independente do email existir (não vaza info)', async ({ page }) => {
-    // Usa page.request (inclui x-e2e-token) para bypassar rate limit
-    // O rate limit test (abaixo) pode ter consumido a cota do IP neste mesmo run paralelo
+  test('forgot-password retorna 200 independente do email existir (não vaza info)', async ({ page, browserName }) => {
+    // Anti-enumeration é propriedade server-side — testar em 1 browser é suficiente.
+    // Os outros browsers compartilham o mesmo IP e o contador Redis fica esgotado
+    // pelo sub-teste de rate limit que roda em paralelo, causando 429 inevitável.
+    test.skip(browserName !== 'chromium', 'Anti-enumeration verificado apenas em chromium (IP compartilhado entre browsers)')
+
+    // Usa page.request (inclui x-e2e-token via extraHTTPHeaders) para bypassar rate limit
     const res = await page.request.post(`${BASE}/api/auth/forgot-password`, {
       data: { email: `naoexiste-${Date.now()}@shareo-test.com` },
     })
