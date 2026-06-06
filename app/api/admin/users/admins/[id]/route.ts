@@ -10,7 +10,7 @@ type Params = { params: Promise<{ id: string }> }
 
 const PatchSchema = z.union([
   z.object({ adminRole: z.enum(["ADMIN_SUPERADMIN", "ADMIN_FINANCEIRO", "ADMIN_OPERACIONAL"]) }),
-  z.object({ action: z.enum(["activate", "deactivate"]) }),
+  z.object({ action: z.enum(["activate", "deactivate", "demote_to_user"]) }),
 ])
 
 export async function PATCH(req: NextRequest, { params }: Params) {
@@ -36,9 +36,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       )
     }
 
+    const isDemote = "action" in parsed.data && parsed.data.action === "demote_to_user"
+
     const target = await prisma.user.findFirst({
-      where:  { id, deletedAt: null, role: "ADMIN" },
-      select: { id: true, adminRole: true, isActive: true },
+      where:  { id, deletedAt: null, role: isDemote ? undefined : "ADMIN" },
+      select: { id: true, role: true, adminRole: true, isActive: true },
     })
     if (!target) {
       return NextResponse.json(
@@ -50,25 +52,34 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const data =
       "adminRole" in parsed.data
         ? { adminRole: parsed.data.adminRole }
-        : { isActive: parsed.data.action === "activate" }
+        : parsed.data.action === "demote_to_user"
+          ? { role: "USER" as const, adminRole: null, isActive: true }
+          : { isActive: parsed.data.action === "activate" }
 
     const updated = await prisma.user.update({
       where:  { id },
       data,
-      select: { id: true, adminRole: true, isActive: true },
+      select: { id: true, role: true, adminRole: true, isActive: true },
     })
 
-    // Revogar JWT imediatamente se rebaixado ou desativado; limpar se reativado
-    if ("adminRole" in parsed.data || parsed.data.action === "deactivate") {
+    // Revogar JWT imediatamente se rebaixado, removido de admin ou desativado; limpar se reativado
+    if ("adminRole" in parsed.data || parsed.data.action === "deactivate" || parsed.data.action === "demote_to_user") {
       await blockAdminToken(id)
     } else if (parsed.data.action === "activate") {
       await unblockAdminToken(id)
     }
 
+    const auditAction =
+      "adminRole" in parsed.data
+        ? "UPDATE_ADMIN_ROLE"
+        : parsed.data.action === "demote_to_user"
+          ? "DEMOTE_TO_USER"
+          : parsed.data.action.toUpperCase()
+
     prisma.adminLog.create({
       data: {
         adminId:    session!.user.id,
-        action:     "adminRole" in parsed.data ? "UPDATE_ADMIN_ROLE" : parsed.data.action.toUpperCase(),
+        action:     auditAction,
         entityType: "User",
         entityId:   id,
         metadata:   JSON.stringify({

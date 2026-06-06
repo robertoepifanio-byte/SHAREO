@@ -46,6 +46,16 @@ export function AdminActions({ userId, adminRole, isActive }: Props) {
     patch({ action: isActive ? "deactivate" : "activate" })
   }
 
+  function handleDemote() {
+    if (
+      !confirm(
+        "Remover privilégios de admin?\n\nO usuário virará uma conta PF comum e perderá acesso ao painel imediatamente. Esta ação pode ser desfeita manualmente pelo banco de dados.",
+      )
+    )
+      return
+    patch({ action: "demote_to_user" })
+  }
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       <select
@@ -70,6 +80,15 @@ export function AdminActions({ userId, adminRole, isActive }: Props) {
         }`}
       >
         {loading ? "…" : isActive ? "Desativar" : "Ativar"}
+      </button>
+
+      <button
+        onClick={handleDemote}
+        disabled={loading}
+        className="rounded-md border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50 transition-colors"
+        title="Remover todos os privilégios admin — o usuário vira conta PF comum"
+      >
+        {loading ? "…" : "Remover admin"}
       </button>
 
       {error && <p className="mt-0.5 text-xs text-red-600">{error}</p>}
