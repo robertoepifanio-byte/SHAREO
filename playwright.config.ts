@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
+const isRemote = !!process.env.BASE_URL && process.env.BASE_URL.startsWith('https://')
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -11,6 +13,9 @@ export default defineConfig({
     baseURL: process.env.BASE_URL ?? 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    extraHTTPHeaders: process.env.E2E_SECRET
+      ? { 'x-e2e-token': process.env.E2E_SECRET }
+      : {},
   },
   projects: process.env.CI
     ? [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }]
@@ -20,7 +25,8 @@ export default defineConfig({
         { name: 'Mobile Chrome', use: { ...devices['Pixel 5'] } },
         { name: 'Mobile Safari', use: { ...devices['iPhone 13'] } },
       ],
-  webServer: {
+  // Não sobe servidor local quando BASE_URL aponta para staging/produção
+  webServer: isRemote ? undefined : {
     command: 'pnpm dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,

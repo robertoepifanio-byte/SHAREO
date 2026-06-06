@@ -70,8 +70,13 @@ export async function checkRateLimit(
   key: string,
   limit: number,
   windowMs: number,
+  req?: { headers: { get(name: string): string | null } },
 ): Promise<RateLimitResult> {
   if (process.env.SKIP_RATE_LIMIT === "true") {
+    return { allowed: true, remaining: limit, resetAt: Date.now() + windowMs }
+  }
+  const e2eSecret = process.env.E2E_SECRET
+  if (e2eSecret && req?.headers.get("x-e2e-token") === e2eSecret) {
     return { allowed: true, remaining: limit, resetAt: Date.now() + windowMs }
   }
   if (!hasUpstash) return inMemoryCheck(key, limit, windowMs)

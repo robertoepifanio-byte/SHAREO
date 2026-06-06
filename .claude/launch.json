@@ -1,18 +1,11 @@
-{
+﻿{
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "shareo-next",
+      "name": "shareo-dev",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["dev", "--port", "3000"],
-      "cwd": "C:\\Users\\Roberto\\Documents\\2026\\ShareO",
+      "runtimeArgs": ["dev"],
       "port": 3000
-    },
-    {
-      "name": "shareo-proto",
-      "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "3131", "--directory", "C:\\Users\\Roberto\\Documents\\2026\\ShareO"],
-      "port": 3131
     }
   ]
 }

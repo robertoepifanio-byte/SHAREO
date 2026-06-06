@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     const session = await auth()
     requireAdminRole(session, "ADMIN_SUPERADMIN")
 
-    const rl = await checkRateLimit(`admin-create:${session!.user.id}`, 5, 24 * 60 * 60 * 1000)
+    const rl = await checkRateLimit(`admin-create:${session!.user.id}`, 5, 24 * 60 * 60 * 1000, req)
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const body   = await req.json()
