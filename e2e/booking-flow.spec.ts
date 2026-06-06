@@ -1,7 +1,7 @@
 import fs from 'fs'
 import { test, expect, type Page } from '@playwright/test'
 import { SESSION_PATHS } from './fixtures/test-credentials'
-import { TEST_ITEM_PATH, TEST_BOOKING_PATH } from './fixtures/test-paths'
+import { TEST_ITEM_PATH, TEST_BOOKING_PATH, TEST_LIFECYCLE_PATH } from './fixtures/test-paths'
 
 const hasLocatarioSession    = fs.existsSync(SESSION_PATHS.locatario)
 const hasProprietarioSession = fs.existsSync(SESSION_PATHS.proprietario)
@@ -101,6 +101,95 @@ test.describe('smoke #5 — proprietário confirma reserva', () => {
     await page.goto('/reservas?tab=owner')
     await expect(page).toHaveURL(/\/reservas/, { timeout: 15000 })
     await expect(page.getByText('Confirmada').first()).toBeVisible({ timeout: 10000 })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Smoke #6 — Ciclo completo de reserva: CONFIRMED → ACTIVE → RETURNED → COMPLETED
+//
+// Depende do smoke #5 ter criado e confirmado uma reserva (TEST_LIFECYCLE_PATH).
+// Cada describe usa a sessão do ator responsável pela transição de estado.
+// Os testes devem rodar na ordem: criar → ativar → devolver → concluir.
+// ---------------------------------------------------------------------------
+
+// Smoke #6 — ciclo completo em um único teste sequencial (dois contextos de browser)
+// PENDING → CONFIRMED → ACTIVE → RETURNED → COMPLETED
+// Usa dois contextos separados (locatário e proprietário) sem compartilhar arquivo de estado.
+test.describe('smoke #6 — ciclo completo PENDING→CONFIRMED→ACTIVE→RETURNED→COMPLETED', () => {
+  test.skip(
+    !hasLocatarioSession || !hasProprietarioSession || !hasTestItem,
+    'Requer session-locatario.json, session-proprietario.json e test-item-id.json',
+  )
+
+  test('ciclo completo de reserva sem Stripe', async ({ browser }) => {
+    const { itemId } = JSON.parse(fs.readFileSync(TEST_ITEM_PATH, 'utf-8')) as { itemId: string }
+
+    // Contextos independentes para cada ator
+    const locCtx  = await browser.newContext({ storageState: SESSION_PATHS.locatario })
+    const propCtx = await browser.newContext({ storageState: SESSION_PATHS.proprietario })
+    const loc  = await locCtx.newPage()
+    const prop = await propCtx.newPage()
+
+    try {
+      // — Cleanup: cancela lifecycle booking anterior —
+      if (fs.existsSync(TEST_LIFECYCLE_PATH)) {
+        const { bookingId: prevId } = JSON.parse(fs.readFileSync(TEST_LIFECYCLE_PATH, 'utf-8')) as { bookingId: string }
+        await loc.request.patch(`/api/bookings/${prevId}`, { data: { action: 'cancel', reason: 'Cleanup lifecycle E2E' } })
+      }
+
+      // — PENDING: locatário cria reserva (datas 120–150 dias no futuro) —
+      const offsetDays = 120 + Math.floor(Math.random() * 30)
+      const start = new Date(Date.now() + offsetDays * 24 * 60 * 60 * 1000)
+      const end   = new Date(start.getTime() + 2 * 24 * 60 * 60 * 1000)
+
+      const createRes = await loc.request.post('/api/bookings', {
+        data: { itemId, startDate: start.toISOString(), endDate: end.toISOString(), borrowerNote: 'Lifecycle smoke test E2E.' },
+      })
+      if (!createRes.ok()) console.error(`  [create] ${createRes.status()}:`, JSON.stringify(await createRes.json().catch(() => ({}))))
+      expect(createRes.ok()).toBeTruthy()
+      const { data: created } = await createRes.json() as { data: { id: string; status: string } }
+      expect(created.status).toBe('PENDING')
+      const bookingId = created.id
+      fs.writeFileSync(TEST_LIFECYCLE_PATH, JSON.stringify({ bookingId }, null, 2))
+      console.log(`  PENDING ✅ ${bookingId}`)
+
+      // — CONFIRMED: proprietário confirma —
+      const confirmRes = await prop.request.patch(`/api/bookings/${bookingId}`, { data: { action: 'confirm' } })
+      if (!confirmRes.ok()) console.error(`  [confirm] ${confirmRes.status()}:`, JSON.stringify(await confirmRes.json().catch(() => ({}))))
+      expect(confirmRes.ok()).toBeTruthy()
+      expect(((await confirmRes.json()) as { data: { status: string } }).data.status).toBe('CONFIRMED')
+      console.log(`  CONFIRMED ✅`)
+
+      // — ACTIVE: proprietário marca item como entregue —
+      const activeRes = await prop.request.patch(`/api/bookings/${bookingId}`, { data: { action: 'mark_active' } })
+      if (!activeRes.ok()) console.error(`  [mark_active] ${activeRes.status()}:`, JSON.stringify(await activeRes.json().catch(() => ({}))))
+      expect(activeRes.ok()).toBeTruthy()
+      expect(((await activeRes.json()) as { data: { status: string } }).data.status).toBe('ACTIVE')
+      console.log(`  ACTIVE ✅`)
+
+      // — RETURNED: locatário marca devolução —
+      const returnRes = await loc.request.patch(`/api/bookings/${bookingId}`, { data: { action: 'mark_returned' } })
+      if (!returnRes.ok()) console.error(`  [mark_returned] ${returnRes.status()}:`, JSON.stringify(await returnRes.json().catch(() => ({}))))
+      expect(returnRes.ok()).toBeTruthy()
+      expect(((await returnRes.json()) as { data: { status: string } }).data.status).toBe('RETURNED')
+      console.log(`  RETURNED ✅`)
+
+      // — COMPLETED: proprietário confirma devolução —
+      const completeRes = await prop.request.patch(`/api/bookings/${bookingId}`, { data: { action: 'confirm_return' } })
+      if (!completeRes.ok()) console.error(`  [confirm_return] ${completeRes.status()}:`, JSON.stringify(await completeRes.json().catch(() => ({}))))
+      expect(completeRes.ok()).toBeTruthy()
+      expect(((await completeRes.json()) as { data: { status: string } }).data.status).toBe('COMPLETED')
+      console.log(`  COMPLETED ✅ — ciclo concluído com sucesso`)
+
+      // — UI: verifica status final na aba do locador —
+      await prop.goto('/reservas?tab=owner')
+      await expect(prop).toHaveURL(/\/reservas/, { timeout: 15000 })
+      await expect(prop.getByText('Concluída').or(prop.getByText('Completa')).first()).toBeVisible({ timeout: 10000 })
+
+    } finally {
+      await locCtx.close()
+      await propCtx.close()
+    }
   })
 })
 
