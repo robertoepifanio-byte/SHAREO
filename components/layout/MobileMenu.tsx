@@ -165,6 +165,12 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
   const topItem = "flex h-12 items-center rounded-lg px-4 text-base font-medium text-white/75 hover:bg-white/10 hover:text-white transition-colors"
   const sectionBtn = "flex h-12 w-full items-center justify-between rounded-lg px-4 text-base font-semibold text-white/75 hover:bg-white/10 hover:text-white transition-colors"
 
+  const close = () => setOpen(false)
+
+  function NavLink({ href, className, children }: { href: string; className: string; children: React.ReactNode }) {
+    return <Link href={href} className={className} onClick={close}>{children}</Link>
+  }
+
   return (
     <>
       {/* Botão hamburguer */}
@@ -200,15 +206,12 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
             id="mobile-nav"
             className="fixed left-0 right-0 top-16 bg-primary border-t border-white/10 shadow-2xl z-[195] md:hidden overflow-y-auto max-h-[calc(100dvh-4rem)]"
             aria-label="Navegação mobile"
-            onClick={(e) => {
-              if ((e.target as HTMLElement).closest('a[href]')) setOpen(false)
-            }}
           >
             <ul className="container py-3 flex flex-col gap-1">
 
               {/* Início */}
               <li>
-                <Link href="/" className={topItem}>Início</Link>
+                <NavLink href="/" className={topItem}>Início</NavLink>
               </li>
 
               {/* Explorar — expansível */}
@@ -226,10 +229,10 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
               </li>
               {explorarOpen && EXPLORAR_LINKS.map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className={subItem}>
+                  <NavLink href={link.href} className={subItem}>
                     <MenuIcon name={link.icon} />
                     {link.label}
-                  </Link>
+                  </NavLink>
                 </li>
               ))}
 
@@ -250,10 +253,10 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
                   </li>
                   {anunciarOpen && ANUNCIAR_LINKS.map((link) => (
                     <li key={link.href}>
-                      <Link href={link.href} className={subItem}>
+                      <NavLink href={link.href} className={subItem}>
                         <MenuIcon name={link.icon} />
                         {link.label}
-                      </Link>
+                      </NavLink>
                     </li>
                   ))}
                 </>
@@ -271,10 +274,10 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
                   </li>
                   {(isAdmin ? ADMIN_ATALHOS_LINKS : ATIVIDADE_LINKS).map((link) => (
                     <li key={link.href}>
-                      <Link href={link.href} className={`${subItem} pl-4`}>
+                      <NavLink href={link.href} className={`${subItem} pl-4`}>
                         <MenuIcon name={link.icon} />
                         {link.label}
-                      </Link>
+                      </NavLink>
                     </li>
                   ))}
 
@@ -295,10 +298,10 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
                   </li>
                   {accountOpen && ACCOUNT_LINKS.map((link) => (
                     <li key={link.href}>
-                      <Link href={link.href} className={subItem}>
+                      <NavLink href={link.href} className={subItem}>
                         <MenuIcon name={link.icon} />
                         {link.label}
-                      </Link>
+                      </NavLink>
                     </li>
                   ))}
 
@@ -307,13 +310,13 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
                     <>
                       <li><div className="my-1 h-px bg-white/10" /></li>
                       <li>
-                        <Link
+                        <NavLink
                           href="/admin"
                           className="flex h-12 w-full items-center rounded-lg px-4 text-base font-semibold text-brand hover:bg-white/10 transition-colors"
                         >
                           <MenuIcon name="grid" />
                           <span className="ml-2">Painel Admin</span>
-                        </Link>
+                        </NavLink>
                       </li>
                     </>
                   )}
@@ -353,16 +356,16 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
                     <>
                       {HELP_LINKS.map((link) => (
                         <li key={link.href}>
-                          <Link href={link.href} className={subItem}>
+                          <NavLink href={link.href} className={subItem}>
                             <MenuIcon name={link.icon} />
                             {link.label}
-                          </Link>
+                          </NavLink>
                         </li>
                       ))}
                       <li>
-                        <Link href="/ajuda" className="flex h-11 items-center gap-3 rounded-lg pl-8 pr-4 text-sm font-medium text-brand hover:bg-white/10 transition-colors">
+                        <NavLink href="/ajuda" className="flex h-11 items-center gap-3 rounded-lg pl-8 pr-4 text-sm font-medium text-brand hover:bg-white/10 transition-colors">
                           Ver tudo →
-                        </Link>
+                        </NavLink>
                       </li>
                     </>
                   )}
@@ -373,7 +376,7 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
                 <>
                   <li><div className="my-1 h-px bg-white/10" /></li>
                   <li>
-                    <Link href="/login" className={topItem}>Entrar</Link>
+                    <NavLink href="/login" className={topItem}>Entrar</NavLink>
                   </li>
 
                   {/* Central de Ajuda — não logado */}
@@ -394,16 +397,16 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
                     <>
                       {HELP_LINKS.map((link) => (
                         <li key={link.href}>
-                          <Link href={link.href} className={subItem}>
+                          <NavLink href={link.href} className={subItem}>
                             <MenuIcon name={link.icon} />
                             {link.label}
-                          </Link>
+                          </NavLink>
                         </li>
                       ))}
                       <li>
-                        <Link href="/ajuda" className="flex h-11 items-center gap-3 rounded-lg pl-8 pr-4 text-sm font-medium text-brand hover:bg-white/10 transition-colors">
+                        <NavLink href="/ajuda" className="flex h-11 items-center gap-3 rounded-lg pl-8 pr-4 text-sm font-medium text-brand hover:bg-white/10 transition-colors">
                           Ver tudo →
-                        </Link>
+                        </NavLink>
                       </li>
                     </>
                   )}
