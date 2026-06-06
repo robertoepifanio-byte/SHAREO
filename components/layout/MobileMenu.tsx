@@ -79,10 +79,6 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
 
   useEffect(() => {
     setOpen(false)
-    setExplorarOpen(false)
-    setAnunciarOpen(false)
-    setAccountOpen(false)
-    setHelpOpen(false)
   }, [pathname])
 
   useEffect(() => {
