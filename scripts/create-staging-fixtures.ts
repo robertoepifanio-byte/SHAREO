@@ -85,11 +85,19 @@ async function loginAndSaveSession(
 
   try {
     await page.goto('/login')
+    await page.waitForLoadState('networkidle')
     await page.getByLabel(/e-mail/i).fill(email)
     await page.locator('#password').fill(password)
     await page.getByRole('button', { name: /entrar/i }).click()
 
-    await page.waitForURL(/\/(dashboard|home|meus-anuncios)/, { timeout: 20000 })
+    try {
+      await page.waitForURL(/\/(dashboard|itens|perfil|home|meus-anuncios)/, { timeout: 30000 })
+    } catch {
+      await page.screenshot({ path: `scripts/debug-login-${email.split('@')[0]}.png` })
+      const url = page.url()
+      const bodyText = await page.locator('body').innerText().catch(() => '')
+      throw new Error(`Login timeout. URL atual: ${url}\nConteúdo: ${bodyText.slice(0, 500)}`)
+    }
 
     const dir = path.dirname(outputPath)
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })

@@ -38,7 +38,7 @@ export function StickyBookingCTA({ pricePerDay, isLoggedIn, itemId }: Props) {
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-[150] flex items-center justify-between gap-4 border-t border-border bg-white px-4 py-3 pb-[env(safe-area-inset-bottom,12px)] shadow-[0_-4px_16px_rgba(0,0,0,.1)] lg:hidden"
+      className="fixed bottom-[72px] left-0 right-0 z-[150] flex items-center justify-between gap-4 border-t border-border bg-white px-4 py-3 shadow-[0_-4px_16px_rgba(0,0,0,.1)] lg:hidden"
       role="complementary"
       aria-label="Reservar item"
     >
