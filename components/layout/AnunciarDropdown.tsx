@@ -14,7 +14,7 @@ const OPCOES = [
     href:  "/anunciar/estimativa",
     icon:  "💰",
     label: "Estimativa de Ganhos",
-    desc:  "Veja quanto pode ganhar por mês",
+    desc:  "Anuncie grátis. Pague apenas quando ganhar dinheiro.",
   },
   {
     href:  "/anunciar/dicas",
@@ -46,7 +46,7 @@ export function AnunciarDropdown() {
       <Link
         href="/itens/novo"
         className="rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:bg-white/10 hover:text-white transition-colors outline-none focus-visible:ring-1 focus-visible:ring-white flex items-center gap-1"
-        aria-haspopup="true"
+        aria-haspopup="menu"
         aria-expanded={open}
       >
         Anunciar
