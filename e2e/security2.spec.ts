@@ -88,15 +88,17 @@ test.describe('smoke #18 — Brute force login bloqueado por rate limit', () => 
 // Smoke #19 — Password reset: token criado, single-use, expirado rejeita
 // ─────────────────────────────────────────────────────────────────────────────
 test.describe('smoke #19 — Password reset: fluxo e segurança do token', () => {
-  test('forgot-password retorna 200 independente do email existir (não vaza info)', async () => {
-    // Email inexistente → mesmo comportamento que email válido (protege enumeration)
-    const res = await fetch(`${BASE}/api/auth/forgot-password`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: `naoexiste-${Date.now()}@shareo-test.com` }),
+  test('forgot-password retorna 200 independente do email existir (não vaza info)', async ({ page }) => {
+    // Usa page.request (inclui x-e2e-token) para bypassar rate limit
+    // O rate limit test (abaixo) pode ter consumido a cota do IP neste mesmo run paralelo
+    const res = await page.request.post(`${BASE}/api/auth/forgot-password`, {
+      data: { email: `naoexiste-${Date.now()}@shareo-test.com` },
     })
-    console.log(`  forgot-password (email inexistente) → ${res.status}`)
-    expect(res.status, 'forgot-password deve retornar 200 mesmo para emails inexistentes (anti-enumeration)').toBe(200)
+    console.log(`  forgot-password (email inexistente) → ${res.status()}`)
+    expect(
+      res.status(),
+      'forgot-password deve retornar 200 mesmo para emails inexistentes (anti-enumeration)',
+    ).toBe(200)
     const body = await res.json()
     expect(body.data?.message).toBeTruthy()
     console.log(`  resposta genérica (não vaza existência do email) ✅`)
@@ -282,9 +284,14 @@ test.describe('smoke #22 — Booking boundary: casos limítrofes de datas', () =
     const loc     = await locCtx.newPage()
     const prop    = await propCtx.newPage()
 
-    // Base ampla e aleatória para não conflitar com outros smokes nem runs anteriores no DB de staging
-    const base    = 1000 + Math.floor(Math.random() * 500)
-    const day     = (n: number) => new Date(Date.now() + n * 86400000).toISOString()
+    // Base determinística por worker para evitar colisão entre browsers paralelos.
+    // workerIndex é único por processo Playwright (0–3 com 4 browsers).
+    // Offset semanal garante separação de runs anteriores que podem ter deixado
+    // bookings PENDING/CONFIRMED no staging sem cleanup.
+    const workerIdx = test.info().workerIndex
+    const weekNum   = Math.floor(Date.now() / (7 * 86400000)) % 52
+    const base      = 2000 + workerIdx * 300 + weekNum * 50
+    const day       = (n: number) => new Date(Date.now() + n * 86400000).toISOString()
 
     const bookingIds: string[] = []
     try {
