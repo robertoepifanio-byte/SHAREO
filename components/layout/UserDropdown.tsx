@@ -17,6 +17,12 @@ const ATIVIDADE = [
   { href: "/dashboard",  label: "Dashboard",  icon: "📊" },
 ]
 
+const ADMIN_ATALHOS = [
+  { href: "/admin",            label: "Visão Geral", icon: "🏠" },
+  { href: "/admin/usuarios",   label: "Usuários",    icon: "👥" },
+  { href: "/admin/disputas",   label: "Disputas",    icon: "⚖️" },
+]
+
 const CONTA = [
   { href: "/perfil",            label: "Ver Perfil",   icon: "👤" },
   { href: "/perfil/editar",     label: "Editar dados", icon: "✏️" },
@@ -88,12 +94,14 @@ export function UserDropdown({ name, avatarUrl, role }: Props) {
             <p className="truncate text-sm font-semibold text-foreground">{name}</p>
           </div>
 
-          {/* Seção: Atividade */}
+          {/* Seção: Atividade (usuário comum) / Atalhos admin */}
           <div className="px-4 pt-2.5 pb-1">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Atividade</p>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+              {isAdmin ? "Admin" : "Atividade"}
+            </p>
           </div>
           <ul className="pb-1">
-            {ATIVIDADE.map((item) => (
+            {(isAdmin ? ADMIN_ATALHOS : ATIVIDADE).map((item) => (
               <li key={item.href} role="none">
                 <Link
                   href={item.href}

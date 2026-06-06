@@ -30,6 +30,7 @@ export default async function ProfilePage() {
   const session = await auth()
   if (!session) redirect("/login?callbackUrl=/perfil")
 
+  const isAdmin = session.user.role != null && session.user.role !== "USER"
   const userId = session.user.id
 
   const [user, reviewStats] = await Promise.all([
@@ -154,37 +155,39 @@ export default async function ProfilePage() {
                 <span>🗓 Membro desde {fmtMemberSince}</span>
               </div>
 
-              {/* Vitrine PJ ou CTA upgrade */}
-              {user.userType === "PJ" ? (
-                <div className="mt-4 flex items-center gap-3">
-                  <Link
-                    href={`/loja/${user.slug ?? user.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-semibold text-foreground hover:bg-background transition-colors"
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                      <polyline points="15 3 21 3 21 9"/>
-                      <line x1="10" y1="14" x2="21" y2="3"/>
-                    </svg>
-                    Ver minha vitrine
-                  </Link>
-                  <span className="text-xs text-muted-foreground">
-                    shareo.com.br/loja/{user.slug ?? user.id}
-                  </span>
-                </div>
-              ) : (
-                <div className="mt-4 rounded-xl border border-brand/20 bg-brand/5 p-4">
-                  <div className="mb-1 flex items-center gap-2">
-                    <span className="rounded-full bg-brand/10 px-2 py-0.5 text-xs font-semibold text-brand">PJ</span>
-                    <p className="text-sm font-semibold text-foreground">Desbloqueie recursos para negócios</p>
+              {/* Vitrine PJ ou CTA upgrade (oculto para admins) */}
+              {!isAdmin && (
+                user.userType === "PJ" ? (
+                  <div className="mt-4 flex items-center gap-3">
+                    <Link
+                      href={`/loja/${user.slug ?? user.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-semibold text-foreground hover:bg-background transition-colors"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                        <polyline points="15 3 21 3 21 9"/>
+                        <line x1="10" y1="14" x2="21" y2="3"/>
+                      </svg>
+                      Ver minha vitrine
+                    </Link>
+                    <span className="text-xs text-muted-foreground">
+                      shareo.com.br/loja/{user.slug ?? user.id}
+                    </span>
                   </div>
-                  <p className="mb-3 text-xs text-muted-foreground">
-                    Vitrine personalizada, analytics avançado e importação em massa de itens.
-                  </p>
-                  <UpgradePjForm />
-                </div>
+                ) : (
+                  <div className="mt-4 rounded-xl border border-brand/20 bg-brand/5 p-4">
+                    <div className="mb-1 flex items-center gap-2">
+                      <span className="rounded-full bg-brand/10 px-2 py-0.5 text-xs font-semibold text-brand">PJ</span>
+                      <p className="text-sm font-semibold text-foreground">Desbloqueie recursos para negócios</p>
+                    </div>
+                    <p className="mb-3 text-xs text-muted-foreground">
+                      Vitrine personalizada, analytics avançado e importação em massa de itens.
+                    </p>
+                    <UpgradePjForm />
+                  </div>
+                )
               )}
             </div>
           </div>

@@ -30,6 +30,12 @@ const ATIVIDADE_LINKS = [
   { href: "/dashboard", label: "Dashboard", icon: "📊" },
 ]
 
+const ADMIN_ATALHOS_LINKS = [
+  { href: "/admin",          label: "Visão Geral", icon: "🏠" },
+  { href: "/admin/usuarios", label: "Usuários",    icon: "👥" },
+  { href: "/admin/disputas", label: "Disputas",    icon: "⚖️" },
+]
+
 const HELP_LINKS = [
   { href: "/ajuda#primeiros-passos", label: "Primeiros passos", icon: "🚀" },
   { href: "/ajuda#locatario",        label: "Quero alugar",     icon: "🛒" },
@@ -152,39 +158,45 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
                 </li>
               ))}
 
-              {/* Anunciar — expansível */}
-              <li>
-                <button
-                  type="button"
-                  onClick={() => setAnunciarOpen((v) => !v)}
-                  aria-expanded={anunciarOpen}
-                  className="flex h-12 w-full items-center justify-between rounded-lg px-4 text-base font-medium bg-accent text-[#003366] font-bold hover:brightness-105 transition-colors"
-                >
-                  <span>Anunciar</span>
-                  <Chevron open={anunciarOpen} />
-                </button>
-              </li>
-              {anunciarOpen && ANUNCIAR_LINKS.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="flex h-11 items-center gap-3 rounded-lg pl-8 pr-4 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white transition-colors"
-                  >
-                    <span aria-hidden="true">{link.icon}</span>
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
+              {/* Anunciar — expansível (apenas para não-admins) */}
+              {!isAdmin && (
+                <>
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => setAnunciarOpen((v) => !v)}
+                      aria-expanded={anunciarOpen}
+                      className="flex h-12 w-full items-center justify-between rounded-lg px-4 text-base font-medium bg-accent text-[#003366] font-bold hover:brightness-105 transition-colors"
+                    >
+                      <span>Anunciar</span>
+                      <Chevron open={anunciarOpen} />
+                    </button>
+                  </li>
+                  {anunciarOpen && ANUNCIAR_LINKS.map((link) => (
+                    <li key={link.href}>
+                      <Link
+                        href={link.href}
+                        className="flex h-11 items-center gap-3 rounded-lg pl-8 pr-4 text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+                      >
+                        <span aria-hidden="true">{link.icon}</span>
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </>
+              )}
 
               {isLoggedIn && (
                 <>
                   <li><div className="my-1 h-px bg-white/10" /></li>
 
-                  {/* Seção Atividade */}
+                  {/* Seção Atividade (usuário comum) / Atalhos admin */}
                   <li>
-                    <p className="px-4 pt-2 pb-1 text-xs font-semibold text-white/50 uppercase tracking-wider">Atividade</p>
+                    <p className="px-4 pt-2 pb-1 text-xs font-semibold text-white/50 uppercase tracking-wider">
+                      {isAdmin ? "Admin" : "Atividade"}
+                    </p>
                   </li>
-                  {ATIVIDADE_LINKS.map((link) => (
+                  {(isAdmin ? ADMIN_ATALHOS_LINKS : ATIVIDADE_LINKS).map((link) => (
                     <li key={link.href}>
                       <Link
                         href={link.href}

@@ -43,7 +43,9 @@ export async function AppHeader() {
         <nav className="hidden md:flex items-center gap-1 ml-6" aria-label="Navegação principal">
           <HomeDropdown />
           <ExplorarDropdown />
-          <AnunciarDropdown />
+          {(session?.user?.role == null || session.user.role === "USER") && (
+            <AnunciarDropdown />
+          )}
         </nav>
 
         {/* Ações de autenticação */}
