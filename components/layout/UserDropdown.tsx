@@ -8,6 +8,7 @@ import { signOut } from "next-auth/react"
 interface Props {
   name:      string
   avatarUrl?: string | null
+  role?:     string | null
 }
 
 const ATIVIDADE = [
@@ -25,7 +26,8 @@ const CONTA = [
   { href: "/perfil/indicacoes", label: "Indicações",   icon: "🎁" },
 ]
 
-export function UserDropdown({ name, avatarUrl }: Props) {
+export function UserDropdown({ name, avatarUrl, role }: Props) {
+  const isAdmin = role != null && role !== "USER"
   const [open, setOpen]   = useState(false)
   const ref               = useRef<HTMLDivElement>(null)
   const pathname          = usePathname()
@@ -123,6 +125,22 @@ export function UserDropdown({ name, avatarUrl }: Props) {
               </li>
             ))}
           </ul>
+
+          {/* Link Admin — apenas para admins */}
+          {isAdmin && (
+            <div className="border-t border-border py-1">
+              <Link
+                href="/admin"
+                role="menuitem"
+                className="flex h-10 items-center gap-3 px-4 text-sm font-semibold text-brand hover:bg-brand/5 transition-colors outline-none focus-visible:bg-brand/5"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                  <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                </svg>
+                Painel Admin
+              </Link>
+            </div>
+          )}
 
           {/* Divisor + Sair */}
           <div className="border-t border-border py-1">

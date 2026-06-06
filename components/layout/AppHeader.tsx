@@ -57,7 +57,7 @@ export async function AppHeader() {
             <>
               {/* Saudação — apenas desktop */}
               <span className="hidden md:block text-sm font-semibold text-white/85 whitespace-nowrap">
-                Olá, {session.user.name?.split(" ")[0] ?? "você"}!
+                Olá, {session.user?.name?.split(" ")[0] ?? "você"}!
               </span>
 
               <NotificationBell />
@@ -67,6 +67,7 @@ export async function AppHeader() {
                 <UserDropdown
                   name={session.user.name ?? "Usuário"}
                   avatarUrl={session.user.image ?? null}
+                  role={session.user.role ?? null}
                 />
               </div>
 
@@ -83,7 +84,7 @@ export async function AppHeader() {
           )}
 
           {/* Menu hamburguer — apenas mobile */}
-          <MobileMenu isLoggedIn={!!session} />
+          <MobileMenu isLoggedIn={!!session} role={session?.user?.role ?? null} />
         </div>
       </div>
     </header>

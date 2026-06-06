@@ -7,6 +7,7 @@ import { signOut } from "next-auth/react"
 
 interface Props {
   isLoggedIn: boolean
+  role?:      string | null
 }
 
 const EXPLORAR_LINKS = [
@@ -61,7 +62,8 @@ const Chevron = ({ open }: { open: boolean }) => (
   </svg>
 )
 
-export function MobileMenu({ isLoggedIn }: Props) {
+export function MobileMenu({ isLoggedIn, role }: Props) {
+  const isAdmin = role != null && role !== "USER"
   const [open,          setOpen]          = useState(false)
   const [explorarOpen,  setExplorarOpen]  = useState(false)
   const [anunciarOpen,  setAnunciarOpen]  = useState(false)
@@ -242,6 +244,24 @@ export function MobileMenu({ isLoggedIn }: Props) {
                       Ver tudo →
                     </Link>
                   </li>
+
+                  {/* Painel Admin — apenas para admins */}
+                  {isAdmin && (
+                    <>
+                      <li><div className="my-1 h-px bg-white/10" /></li>
+                      <li>
+                        <Link
+                          href="/admin"
+                          className="flex h-12 w-full items-center rounded-lg px-4 text-base font-semibold text-brand hover:bg-white/10 transition-colors"
+                        >
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="mr-2" aria-hidden="true">
+                            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                          </svg>
+                          Painel Admin
+                        </Link>
+                      </li>
+                    </>
+                  )}
 
                   {/* Sair */}
                   <li><div className="my-1 h-px bg-white/10" /></li>
