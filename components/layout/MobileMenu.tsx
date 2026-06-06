@@ -200,6 +200,9 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
             id="mobile-nav"
             className="fixed left-0 right-0 top-16 bg-primary border-t border-white/10 shadow-2xl z-[195] md:hidden overflow-y-auto max-h-[calc(100dvh-4rem)]"
             aria-label="Navegação mobile"
+            onClick={(e) => {
+              if ((e.target as HTMLElement).closest('a[href]')) setOpen(false)
+            }}
           >
             <ul className="container py-3 flex flex-col gap-1">
 
