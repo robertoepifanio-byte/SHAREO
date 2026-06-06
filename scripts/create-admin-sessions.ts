@@ -39,14 +39,14 @@ const ADMINS: AdminConfig[] = [
   },
   {
     email:          "financeiro@shareo.com.br",
-    password:       "REDACTED_USE_ENV_VAR",
+    password:       process.env.FIXTURE_FINANCEIRO_PASSWORD ?? "",
     file:           "session-financeiro.json",
     validateUrl:    "/admin/usuarios",
     validatePattern: /\/admin\/usuarios/,
   },
   {
     email:          "operacional@shareo.com.br",
-    password:       "REDACTED_USE_ENV_VAR",
+    password:       process.env.FIXTURE_OPERACIONAL_PASSWORD ?? "",
     file:           "session-operacional.json",
     validateUrl:    "/admin/usuarios",
     validatePattern: /\/admin\/usuarios/,

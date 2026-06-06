@@ -39,12 +39,12 @@ export const FIXTURE_ADMIN = {
 
 export const FIXTURE_FINANCEIRO = {
   email:    'financeiro@shareo.com.br',
-  password: 'REDACTED_USE_ENV_VAR',
+  password: process.env.FIXTURE_FINANCEIRO_PASSWORD ?? '',
 }
 
 export const FIXTURE_OPERACIONAL = {
   email:    'operacional@shareo.com.br',
-  password: 'REDACTED_USE_ENV_VAR',
+  password: process.env.FIXTURE_OPERACIONAL_PASSWORD ?? '',
 }
 
 export const SESSION_PATHS = {
