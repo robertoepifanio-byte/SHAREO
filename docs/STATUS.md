@@ -1,15 +1,29 @@
 # ShareO — Status do Projeto
 
-**Atualizado em**: 2026-06-05  
-**Ambiente staging**: https://shareo-rouge.vercel.app (branch `main`, deploy automático)  
-**Último commit**: `65cbf67`  
+**Atualizado em**: 2026-06-05 (sessão tarde/noite — validação manual staging + UX admin)
+**Ambiente staging**: https://shareo-rouge.vercel.app (webhook GitHub→Vercel ativo — push em main faz deploy automático)
+**Último commit**: `9517259`  
 **Release estável**: [`v1.0.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.0.0)
 
 ---
 
 ## Resumo Executivo
 
-**✅ Módulo Financeiro MVP completo.** Fases 0–4 implementadas e deployadas em staging (commit `65cbf67`). Fluxo financeiro ponta-a-ponta: PIX cadastrado → checkout com split → payout automático → four-eyes admin → chargebacks → exportação CSV → informe IR → relatório mensal. Suite E2E financeiro: **33 testes** (suite base: 87 passed). ADRs 012–020 documentados. Próximo passo: validação manual de staging + consulta jurídica (D4) antes de go-live em produção.
+**✅ Módulo Financeiro MVP completo.** Fases 0–4 implementadas e deployadas em staging (commit `65cbf67`). Fluxo financeiro ponta-a-ponta: PIX cadastrado → checkout com split → payout automático → four-eyes admin → chargebacks → exportação CSV → informe IR → relatório mensal. Suite E2E financeiro: **33 testes** (suite base: 87 passed). ADRs 012–020 documentados.
+
+**✅ Gestão de admins via UI** (commit `d9b763a`). Tela `/admin/usuarios/admins` exclusiva para SUPERADMIN: criar admins, alterar `adminRole` por dropdown, ativar/desativar — todas as ações auditadas no `AdminLog`. Admins criados nos dois bancos (local + staging): `admin@shareo.com.br` (SUPERADMIN), `financeiro@shareo.com.br` (FINANCEIRO), `operacional@shareo.com.br` (OPERACIONAL).
+
+**✅ Conteúdo pós-módulo financeiro atualizado** (commit `d9b763a`). Central de ajuda, ganhar/page, Seguranca, reservas/sucesso: taxa corrigida para 15%, caução removida do MVP, PIX + hold 3 dias documentados, limite R$ 500, rota real informe IR. Hero: "casa e jardim" → "casa e cozinha".
+
+**✅ Segurança admin hardening (sessão noite jun/05)** — commits `a75c015`→`4148f30`. Nav filtrada por role, guards em todas as rotas admin, blocklist Redis (Edge-compatible), rate limiting, audit log antes/depois, invalidação de sessão pós-troca de senha, formulário inline de senha para admins, tsconfig corrigido, ESLint a11y corrigido, SENTRY_AUTH_TOKEN expirado removido, webhook Vercel reativado via CLI.
+
+**✅ Testes E2E admin** — `e2e/admin-usuarios.spec.ts` — **28 passed / 0 failed / 6 skipped** (por design) contra staging `shareo-rouge.vercel.app`. Sessions fixture: `session-admin.json`, `session-financeiro.json`, `session-operacional.json`.
+
+**✅ Validação manual staging** (05/06/2026) — todos os fluxos validados: login por role, restrições de rota, painel financeiro, exportação CSV, contas PIX, segurança admin, gestão de admins.
+
+**✅ UX admin segregada** (commit `46ea0e6`) — link "Painel Admin" no dropdown/mobile; menu "Anunciar" oculto para admins; seção "Atividade" substituída por atalhos admin; banner upgrade PJ oculto em `/perfil`.
+
+Próximo passo: deletar scripts temporários + aguardar D4 (jurídico) para go-live em produção.
 
 ---
 
@@ -25,6 +39,9 @@
 | **Pós-v2** | Confirmação devolução bilateral, status DRAFT p/ itens sem foto, área de perfil (7 sub-páginas) |
 | **Sessões jun/04** | Nav reestruturada (dropdowns), HelpButton, MobileMenu expansível, pills de categoria 2 linhas |
 | **Módulo Financeiro (jun/05)** | PIX, split, payout, four-eyes, chargebacks, exportação CSV, informe IR, relatório mensal |
+| **Sessão jun/05 tarde** | Gestão de admins via UI, conteúdo central de ajuda corrigido, admins criados em local + staging |
+| **Sessão jun/05 noite** | Hardening segurança admin (nav por role, guards, blocklist Redis, rate limit, audit log, senha inline), E2E admin spec, fix build Vercel (Sentry + Edge Runtime + tsconfig + a11y) |
+| **Sessão jun/05 tarde/noite 2** | E2E admin 28/0/6 ✅ contra staging, validação manual completa ✅, UX admin segregada (Painel Admin no menu, Anunciar oculto para admins, atalhos admin no dropdown/mobile, banner PJ oculto) |
 
 ---
 
@@ -85,7 +102,7 @@
 |---|---|---|---|
 | `v1.0` | — | pré-v2 | Estado antes da v2 UX |
 | `v1.0.0` | `40d1a2b` | 2026-06-04 | Staging validado — ponto de recuperação estável |
-| *(próxima)* | `65cbf67` | 2026-06-05 | Módulo financeiro MVP completo — candidata a `v1.1.0` |
+| *(próxima)* | `9517259` | 2026-06-05 | E2E ✅ + validação manual ✅ + UX admin segregada — candidata a `v1.1.0` |
 
 ---
 
@@ -100,7 +117,7 @@
 |---|---|
 | **D4 — Consulta jurídica** | Nenhum go-live em produção antes do retorno do jurídico |
 | **Supabase production** | Criar 3º projeto Supabase isolado + GitHub environment `production` com Required Reviewers |
-| **Validação manual staging financeiro** | Login `admin@shareo.com.br`: testar exportação CSV, painel de disputas, informe IR como proprietário |
+| ~~**Validação manual staging financeiro**~~ | ✅ **Concluída** — todos os fluxos validados em 05/06/2026 |
 
 ### 🟢 Próximas frentes (pós-produção)
 
