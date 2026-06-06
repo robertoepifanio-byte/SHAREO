@@ -160,7 +160,7 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
   const [pricePerDay,   setPricePerDay]   = useState(toDisplay(initialData?.pricePerDay))
   const [pricePerWeek,  setPricePerWeek]  = useState(toDisplay(initialData?.pricePerWeek))
   const [pricePerMonth, setPricePerMonth] = useState(toDisplay(initialData?.pricePerMonth))
-  const [depositAmount,        setDepositAmount]        = useState(toDisplay(initialData?.depositAmount))
+  const [depositAmount,        _setDepositAmount]       = useState(toDisplay(initialData?.depositAmount))
   const [estimatedRetailPrice, setEstimatedRetailPrice] = useState(toDisplay(initialData?.estimatedRetailPrice))
   const [address,       setAddress]       = useState(initialData?.address       ?? "")
   const [city,          setCity]          = useState(initialData?.city          ?? (process.env.NEXT_PUBLIC_DEFAULT_CITY ?? ""))
