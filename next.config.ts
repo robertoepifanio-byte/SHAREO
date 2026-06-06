@@ -16,6 +16,10 @@ const securityHeaders = [
   },
 ]
 
+const staticCacheHeaders = [
+  { key: "Cache-Control", value: "public, max-age=3600, stale-while-revalidate=86400" },
+]
+
 const config: NextConfig = {
   // Headers de segurança em todas as rotas
   async headers() {
@@ -24,6 +28,14 @@ const config: NextConfig = {
         source: "/(.*)",
         headers: securityHeaders,
       },
+      // Páginas estáticas institucionais — habilitam BF Cache no browser
+      { source: "/sobre",       headers: staticCacheHeaders },
+      { source: "/politicas",   headers: staticCacheHeaders },
+      { source: "/termos",      headers: staticCacheHeaders },
+      { source: "/privacidade", headers: staticCacheHeaders },
+      { source: "/ajuda",       headers: staticCacheHeaders },
+      { source: "/comunidade",  headers: staticCacheHeaders },
+      { source: "/ganhar",      headers: staticCacheHeaders },
     ]
   },
 
