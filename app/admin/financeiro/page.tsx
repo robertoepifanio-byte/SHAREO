@@ -5,6 +5,8 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { hasAdminRole } from "@/lib/auth/admin-guards"
 import { PayoutActions } from "./_PayoutActions"
+import { FeeRateForm } from "./_FeeRateForm"
+import { getPlatformFeeRate } from "@/lib/platform-config"
 
 export const metadata: Metadata = { title: "Admin — Financeiro" }
 
@@ -18,7 +20,10 @@ export default async function AdminFinanceiroPage() {
     redirect("/admin")
   }
 
+  const isSuperAdmin = hasAdminRole(session, "ADMIN_SUPERADMIN")
+
   const [
+    currentFeeRate,
     gmvResult,
     feeResult,
     payoutStats,
@@ -27,6 +32,8 @@ export default async function AdminFinanceiroPage() {
     pixAccountStats,
     disputedBookings,
   ] = await Promise.all([
+
+    getPlatformFeeRate(),
     // GMV — volume total de aluguéis concluídos
     prisma.booking.aggregate({
       where: { status: "COMPLETED" },
@@ -111,7 +118,7 @@ export default async function AdminFinanceiroPage() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {[
           { label: "GMV",              value: fmt(gmv),       sub: "volume total de aluguéis",        color: "text-primary" },
-          { label: "Receita ShareO",   value: fmt(shareoFee), sub: "taxa de 15% sobre GMV",           color: "text-success" },
+          { label: "Receita ShareO",   value: fmt(shareoFee), sub: `taxa de ${currentFeeRate / 100}% sobre GMV`,  color: "text-success" },
           { label: "Repasse líquido",  value: fmt(ownerNet),  sub: "o que os proprietários recebem",  color: "text-primary" },
           { label: "Repasses pagos",   value: fmt(completedPayouts), sub: `${payoutByStatus["COMPLETED"]?.count ?? 0} transferências`, color: "text-success" },
           { label: "Pendentes agora",  value: pendingPayouts, sub: "repasses elegíveis hoje",         color: pendingPayouts > 0 ? "text-[#9A4700]" : "text-primary" },
@@ -228,6 +235,14 @@ export default async function AdminFinanceiroPage() {
       {processingPayouts.length === 0 && pendingPayouts === 0 && (
         <div className="rounded-xl border border-border bg-surface p-8 text-center text-sm text-muted-foreground">
           Nenhum repasse pendente no momento.
+        </div>
+      )}
+
+      {/* ── Configurações (SUPERADMIN only) ── */}
+      {isSuperAdmin && (
+        <div className="rounded-xl border border-border bg-surface p-5">
+          <h2 className="mb-4 text-sm font-semibold text-foreground">Configurações da plataforma</h2>
+          <FeeRateForm currentRate={currentFeeRate} />
         </div>
       )}
 
