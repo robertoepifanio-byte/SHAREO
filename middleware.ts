@@ -115,6 +115,13 @@ export async function middleware(req: NextRequest) {
   }
 
   if ((isProtectedRoute || isAdminRoute) && !token) {
+    // API routes retornam 401 JSON (fetch não segue redirect; cliente trata via React Query)
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
+        { status: 401 },
+      )
+    }
     const loginUrl = new URL("/login", req.url)
     loginUrl.searchParams.set("callbackUrl", pathname)
     return NextResponse.redirect(loginUrl)
