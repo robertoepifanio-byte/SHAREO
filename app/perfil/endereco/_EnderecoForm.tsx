@@ -43,11 +43,12 @@ export function EnderecoForm({ cep, street, city, state, neighborhood }: Props) 
   const [cityVal,   setCityVal]   = useState(city         ?? "")
   const [stateVal,  setStateVal]  = useState(state        ?? "")
 
-  const [cepLoading, setCepLoading] = useState(false)
-  const [cepError,   setCepError]   = useState("")
-  const [saving,     setSaving]     = useState(false)
-  const [saveError,  setSaveError]  = useState("")
-  const [success,    setSuccess]    = useState(false)
+  const [cepLoading,  setCepLoading]  = useState(false)
+  const [cepError,    setCepError]    = useState("")
+  const [cepFilled,   setCepFilled]   = useState(false)
+  const [saving,      setSaving]      = useState(false)
+  const [saveError,   setSaveError]   = useState("")
+  const [success,     setSuccess]     = useState(false)
 
   // Evita busca duplicada se o usuário sair/entrar no campo sem mudar o valor
   const lastFetchedCep = useRef("")
@@ -59,6 +60,7 @@ export function EnderecoForm({ cep, street, city, state, neighborhood }: Props) 
 
     setCepLoading(true)
     setCepError("")
+    setCepFilled(false)
     try {
       const res  = await fetch(`https://viacep.com.br/ws/${digits}/json/`)
       const data = await res.json() as ViaCepResponse
@@ -70,13 +72,12 @@ export function EnderecoForm({ cep, street, city, state, neighborhood }: Props) 
 
       lastFetchedCep.current = digits
 
-      // Preenche apenas campos que estejam vazios OU que foram preenchidos
-      // automaticamente antes — não sobrescreve edições manuais.
-      // (regra simples: preenche sempre, pois o usuário pode corrigir depois)
       if (data.logradouro) setStreetVal(data.logradouro)
       if (data.bairro)     setNeighVal(data.bairro)
-      if (data.localidade) setCityVal(data.localidade)
-      if (data.uf)         setStateVal(data.uf)
+      // Cidade e estado sempre sobrescritos — vêm sempre preenchidos no ViaCEP
+      setStateVal(data.uf        ?? stateVal)
+      setCityVal(data.localidade ?? cityVal)
+      setCepFilled(true)
     } catch {
       setCepError("Erro ao consultar o CEP. Verifique sua conexão.")
     } finally {
@@ -150,8 +151,8 @@ export function EnderecoForm({ cep, street, city, state, neighborhood }: Props) 
         {cepError && (
           <p className="mt-1 text-xs text-red-500">{cepError}</p>
         )}
-        {!cepError && !cepLoading && cepVal.replace(/\D/g, "").length === 8 && (
-          <p className="mt-1 text-xs text-success">✓ CEP válido — campos preenchidos automaticamente</p>
+        {cepFilled && !cepError && (
+          <p className="mt-1 text-xs text-success">✓ Endereço preenchido automaticamente</p>
         )}
       </div>
 

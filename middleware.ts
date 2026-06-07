@@ -41,7 +41,7 @@ function buildCsp(nonce: string): string {
       "worker-src blob: 'self'",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: *.supabase.co *.mapbox.com",
-      "connect-src 'self' ws: wss: *.supabase.co api.mapbox.com events.mapbox.com *.tiles.mapbox.com",
+      "connect-src 'self' ws: wss: *.supabase.co api.mapbox.com events.mapbox.com *.tiles.mapbox.com https://viacep.com.br",
       "font-src 'self' data:",
       "frame-src 'none'",
     ].join("; ")
@@ -54,7 +54,7 @@ function buildCsp(nonce: string): string {
     // unsafe-inline para styles permanece — Tailwind e Mapbox GL injetam estilos inline
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: *.supabase.co *.mapbox.com https://www.google-analytics.com",
-    "connect-src 'self' wss://*.supabase.co api.mapbox.com events.mapbox.com *.tiles.mapbox.com *.sentry.io https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com",
+    "connect-src 'self' wss://*.supabase.co api.mapbox.com events.mapbox.com *.tiles.mapbox.com *.sentry.io https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://viacep.com.br",
     "font-src 'self' data:",
     "frame-src 'none'",
   ].join("; ")
