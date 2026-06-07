@@ -15,9 +15,11 @@ export const UpdateProfileSchema = z.object({
     .regex(/^\+55\d{10,11}$/, "Telefone inválido (ex: +5584999999999)")
     .nullable()
     .optional(),
+  cep:          z.string().regex(/^\d{8}$/, "CEP inválido").nullable().optional(),
+  street:       z.string().max(200).nullable().optional(),
+  neighborhood: z.string().max(100).nullable().optional(),
   city:         z.string().min(2, "Cidade: mínimo 2 caracteres").max(100).optional(),
   state:        z.enum(BR_STATES, { errorMap: () => ({ message: "Estado inválido" }) }).nullable().optional(),
-  neighborhood: z.string().max(100).nullable().optional(),
   avatarUrl:    z.string().url("URL de avatar inválida").max(500).nullable().optional(),
   slug:         z
     .string()

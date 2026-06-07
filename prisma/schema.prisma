@@ -177,9 +177,11 @@ model User {
   bio       String? @db.Text
 
   // Localização (base do usuário — para geo-search de proximidade)
+  cep          String? @db.Char(8)  // somente dígitos, ex.: "59114270"
+  street       String?              // logradouro preenchido via ViaCEP
+  neighborhood String?
   city         String?
   state        String? @db.Char(2)
-  neighborhood String?
   // PostGIS: requer extensão "postgis" ativa no Supabase
   // lat/lng armazenados separadamente para queries sem PostGIS no dev
   latitude     Float?
