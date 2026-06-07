@@ -1,8 +1,8 @@
 # ShareO — Status do Projeto
 
-**Atualizado em**: 2026-06-05 (sessão tarde/noite — validação manual staging + UX admin)
+**Atualizado em**: 2026-06-06 (sessão — smokes #23-#27 ✅ + fix security middleware)
 **Ambiente staging**: https://shareo-rouge.vercel.app (webhook GitHub→Vercel ativo — push em main faz deploy automático)
-**Último commit**: `9517259`  
+**Último commit**: `86b4285`  
 **Release estável**: [`v1.0.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.0.0)
 
 ---
@@ -42,6 +42,7 @@ Próximo passo: deletar scripts temporários + aguardar D4 (jurídico) para go-l
 | **Sessão jun/05 tarde** | Gestão de admins via UI, conteúdo central de ajuda corrigido, admins criados em local + staging |
 | **Sessão jun/05 noite** | Hardening segurança admin (nav por role, guards, blocklist Redis, rate limit, audit log, senha inline), E2E admin spec, fix build Vercel (Sentry + Edge Runtime + tsconfig + a11y) |
 | **Sessão jun/05 tarde/noite 2** | E2E admin 28/0/6 ✅ contra staging, validação manual completa ✅, UX admin segregada (Painel Admin no menu, Anunciar oculto para admins, atalhos admin no dropdown/mobile, banner PJ oculto) |
+| **Sessão jun/06** | GitGuardian fix (senhas movidas para env vars, histórico scrubado), id-docs bug fix (getPublicUrl → storage path), security2 25/0/3 ✅, security3 12/12 ✅ (smokes #23-#27), fix crítico: middleware retorna 401 para /api/* sem auth (era 307 redirect) |
 
 ---
 
@@ -92,6 +93,8 @@ Próximo passo: deletar scripts temporários + aguardar D4 (jurídico) para go-l
 | Integration — `bookings/patch`, `bookings/reviews`, `auth/register`, `conversations/messages`, `items/get/post/patch` | ✅ Escritos |
 | E2E Playwright staging — suite base | ✅ **87 passed / 0 failed / 20 skipped** |
 | E2E Playwright — módulo financeiro (`e2e/financeiro.spec.ts`) | ✅ **33 testes** (21 base + FIN-7/8/Fase4) |
+| E2E Playwright — `e2e/security2.spec.ts` (smokes #18–#22) | ✅ **25 passed / 0 failed / 3 skipped** contra staging |
+| E2E Playwright — `e2e/security3.spec.ts` (smokes #23–#27) | ✅ **12 passed / 0 failed / 12 skipped** contra staging |
 | `coverageThreshold` — 70% para `pricing`, `crypto`, `bookings` | ✅ Configurado |
 
 ---
@@ -102,7 +105,7 @@ Próximo passo: deletar scripts temporários + aguardar D4 (jurídico) para go-l
 |---|---|---|---|
 | `v1.0` | — | pré-v2 | Estado antes da v2 UX |
 | `v1.0.0` | `40d1a2b` | 2026-06-04 | Staging validado — ponto de recuperação estável |
-| *(próxima)* | `9517259` | 2026-06-05 | E2E ✅ + validação manual ✅ + UX admin segregada — candidata a `v1.1.0` |
+| *(próxima)* | `86b4285` | 2026-06-06 | Security smokes #18–#27 ✅ + GitGuardian fix + middleware 401 — candidata a `v1.1.0` |
 
 ---
 
