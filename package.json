@@ -86,7 +86,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@typescript-eslint/eslint-plugin": "^8.18.0",
-    "@typescript-eslint/parser": "^8.18.0",
+    "@typescript-eslint/parser": "^8.60.1",
     "autoprefixer": "^10.4.20",
     "chrome-launcher": "^1.2.1",
     "eslint": "^9.17.0",
