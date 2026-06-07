@@ -67,15 +67,14 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const docUrl    = supabase.storage.from("id-docs").getPublicUrl(docPath).data.publicUrl
-  const selfieUrl = supabase.storage.from("id-docs").getPublicUrl(selfiePath).data.publicUrl
-
+  // Bucket id-docs é privado — não usar getPublicUrl (retorna URL inoperante).
+  // Salvar o storage path diretamente; a admin page gera signed URLs sob demanda.
   await prisma.user.update({
     where: { id: userId },
     data: {
       idVerificationStatus: "PENDING",
-      idDocumentUrl:        docUrl,
-      idSelfieUrl:          selfieUrl,
+      idDocumentUrl:        docPath,
+      idSelfieUrl:          selfiePath,
       idSubmittedAt:        new Date(),
     },
   })
