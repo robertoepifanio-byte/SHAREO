@@ -110,9 +110,9 @@ test.describe('smoke #23 — Exclusão de conta: bloqueio com ACTIVE booking; cl
 // ─────────────────────────────────────────────────────────────────────────────
 test.describe('smoke #24 — Exportação CSV admin: formato e segurança', () => {
   test.skip(!hasSessions, 'Requer sessão admin fixture')
-  test.skip(test.info().project.name !== 'chromium', 'CSV export verificado apenas em chromium')
 
   test('GET /api/admin/export → 200 text/csv sem CPF/senha expostos', async ({ browser }) => {
+    test.skip(test.info().project.name !== 'chromium', 'CSV export verificado apenas em chromium')
     test.setTimeout(30000)
 
     const adminCtx = await browser.newContext({ storageState: SESSION_PATHS.admin })
@@ -165,9 +165,8 @@ test.describe('smoke #24 — Exportação CSV admin: formato e segurança', () =
 // (distância é calculada client-side via haversine pós-fetch — não é param da API)
 // ─────────────────────────────────────────────────────────────────────────────
 test.describe('smoke #25 — Filtro de itens: city/state e paginação respeitam schema', () => {
-  test.skip(test.info().project.name !== 'chromium', 'Item filter verificado apenas em chromium')
-
   test('GET /api/items — city filter, city inexistente retorna 0 itens, page/limit validados', async ({ page }) => {
+    test.skip(test.info().project.name !== 'chromium', 'Item filter verificado apenas em chromium')
     test.setTimeout(20000)
 
     // 1) Sem filtro → deve retornar items com latitude/longitude (necessário para haversine client-side)
@@ -223,9 +222,9 @@ test.describe('smoke #25 — Filtro de itens: city/state e paginação respeitam
 // ─────────────────────────────────────────────────────────────────────────────
 test.describe('smoke #26 — LGPD data export: isolamento e campos corretos', () => {
   test.skip(!hasSessions, 'Requer sessões fixture')
-  test.skip(test.info().project.name !== 'chromium', 'LGPD export verificado apenas em chromium')
 
   test('GET /api/users/me/export — 401 sem auth; 200 com dados próprios; não expõe passwordHash', async ({ browser }) => {
+    test.skip(test.info().project.name !== 'chromium', 'LGPD export verificado apenas em chromium')
     test.setTimeout(20000)
 
     // A) Sem autenticação → 401
@@ -270,9 +269,9 @@ test.describe('smoke #26 — LGPD data export: isolamento e campos corretos', ()
 // ─────────────────────────────────────────────────────────────────────────────
 test.describe('smoke #27 — Four-eyes payout: integridade do fluxo de aprovação', () => {
   test.skip(!hasSessions, 'Requer sessão admin fixture')
-  test.skip(test.info().project.name !== 'chromium', 'Four-eyes verificado apenas em chromium')
 
   test('PATCH /api/admin/payouts/[id] — apenas FINANCEIRO pode aprovar; sem payout inválido', async ({ browser }) => {
+    test.skip(test.info().project.name !== 'chromium', 'Four-eyes verificado apenas em chromium')
     test.setTimeout(20000)
 
     const adminCtx = await browser.newContext({ storageState: SESSION_PATHS.admin })
