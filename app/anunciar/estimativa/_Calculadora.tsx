@@ -31,7 +31,7 @@ export function Calculadora() {
 
   const ganhoMes     = diaria * diasMes
   const ganhoAno     = ganhoMes * 12
-  const taxaPlat     = ganhoMes * 0.10   // 10% plataforma
+  const taxaPlat     = ganhoMes * 0.15   // 15% plataforma
   const ganhoLiquido = ganhoMes - taxaPlat
 
   return (
@@ -126,7 +126,7 @@ export function Calculadora() {
           <div className="rounded-xl bg-brand border border-brand p-4 text-center">
             <p className="text-xs text-white/80 mb-1">Você recebe</p>
             <p className="text-2xl font-bold text-white">{fmt(ganhoLiquido)}</p>
-            <p className="text-xs text-white/70 mt-1">após taxa de 10%</p>
+            <p className="text-xs text-white/70 mt-1">após taxa de 15%</p>
           </div>
 
           {/* Por ano */}
@@ -152,7 +152,7 @@ export function Calculadora() {
             <span className="font-medium">{fmt(ganhoMes)}</span>
           </div>
           <div className="flex justify-between px-4 py-2.5">
-            <span className="text-muted-foreground">Taxa da plataforma (10%)</span>
+            <span className="text-muted-foreground">Taxa da plataforma (15%)</span>
             <span className="font-medium text-destructive">− {fmt(taxaPlat)}</span>
           </div>
           <div className="flex justify-between px-4 py-2.5 font-semibold">
