@@ -7,7 +7,7 @@ export default function NotFound() {
       {/* Logo */}
       <Link href="/" className="mb-8 inline-block" aria-label="ShareO — página inicial">
         <Image
-          src="/logos/shareo-logo-v4.webp"
+          src="/logos/shareo-logo.png"
           alt="ShareO"
           width={120}
           height={40}

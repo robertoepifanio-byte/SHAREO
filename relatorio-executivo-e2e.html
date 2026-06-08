@@ -16,7 +16,7 @@
   }
 
   .card {
-    width: 860px;
+    width: 920px;
     background: #fff;
     border-radius: 12px;
     overflow: hidden;
@@ -30,230 +30,123 @@
     text-align: center;
     padding: 32px 24px 28px;
   }
-  .header h1 {
-    font-size: 2rem;
-    font-weight: 800;
-    letter-spacing: -.5px;
-  }
-  .header .subtitle {
-    font-size: 1.45rem;
-    font-weight: 700;
-    color: #59C686;
-    margin-top: 4px;
-  }
-  .header .meta {
-    font-size: .82rem;
-    color: #9ec8f0;
-    margin-top: 10px;
-    letter-spacing: .3px;
-  }
-  .divider-line {
-    width: 60px;
-    height: 3px;
-    background: #59C686;
-    margin: 10px auto 0;
-    border-radius: 2px;
-  }
+  .header h1 { font-size: 2rem; font-weight: 800; letter-spacing: -.5px; }
+  .header .subtitle { font-size: 1.45rem; font-weight: 700; color: #59C686; margin-top: 4px; }
+  .header .meta { font-size: .82rem; color: #9ec8f0; margin-top: 10px; letter-spacing: .3px; }
+  .divider-line { width: 60px; height: 3px; background: #59C686; margin: 10px auto 0; border-radius: 2px; }
 
   /* ── Sections ── */
   .section { padding: 20px 28px; border-bottom: 1px solid #e5eaf0; }
   .section:last-child { border-bottom: none; }
 
   .section-title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: #003366;
-    color: #fff;
-    font-size: 1rem;
-    font-weight: 700;
-    padding: 9px 16px;
-    border-radius: 6px;
-    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 10px;
+    background: #003366; color: #fff;
+    font-size: 1rem; font-weight: 700;
+    padding: 9px 16px; border-radius: 6px; margin-bottom: 16px;
   }
   .section-title svg { flex-shrink: 0; }
 
-  /* ── Objetivo ── */
-  .objetivo-text {
-    font-size: .97rem;
-    color: #1a2a3a;
-    line-height: 1.6;
-  }
+  .objetivo-text { font-size: .97rem; color: #1a2a3a; line-height: 1.6; }
   .objetivo-text strong { color: #003366; }
   .objetivo-text .dot { color: #007B3C; font-size: 1.3em; vertical-align: middle; }
 
   /* ── KPI Strip ── */
-  .kpi-strip {
-    display: flex;
-    gap: 12px;
-    margin-top: 16px;
-  }
+  .kpi-strip { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
   .kpi {
-    flex: 1;
-    background: #f4f8ff;
-    border: 1px solid #c8d8ee;
-    border-radius: 8px;
-    text-align: center;
-    padding: 12px 8px;
+    flex: 1; min-width: 80px;
+    background: #f4f8ff; border: 1px solid #c8d8ee;
+    border-radius: 8px; text-align: center; padding: 12px 8px;
   }
-  .kpi .num {
-    font-size: 1.9rem;
-    font-weight: 800;
-    color: #003366;
-    line-height: 1;
-  }
+  .kpi .num { font-size: 1.9rem; font-weight: 800; color: #003366; line-height: 1; }
   .kpi .num.green { color: #007B3C; }
   .kpi .num.amber { color: #d97706; }
   .kpi .label {
-    font-size: .75rem;
-    color: #5a7080;
-    margin-top: 4px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: .4px;
+    font-size: .72rem; color: #5a7080; margin-top: 4px;
+    font-weight: 600; text-transform: uppercase; letter-spacing: .4px;
   }
 
   /* ── Áreas Testadas ── */
-  .areas-grid {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
+  .areas-grid { display: flex; gap: 10px; flex-wrap: wrap; }
   .area-chip {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    background: #f0f6ff;
-    border: 1.5px solid #c5d8f0;
-    border-radius: 10px;
-    padding: 12px 14px;
-    flex: 1;
-    min-width: 82px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    background: #f0f6ff; border: 1.5px solid #c5d8f0;
+    border-radius: 10px; padding: 12px 14px; flex: 1; min-width: 82px;
   }
   .area-chip .icon-wrap {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
+    width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
   }
-  .area-chip .area-label {
-    font-size: .72rem;
-    font-weight: 700;
-    color: #003366;
-    text-align: center;
-    line-height: 1.2;
-  }
-  .area-chip.ok    { border-color: #007B3C; background: #f0faf4; }
-  .area-chip.warn  { border-color: #d97706; background: #fffbf0; }
+  .area-chip .area-label { font-size: .72rem; font-weight: 700; color: #003366; text-align: center; line-height: 1.2; }
+  .area-chip.ok { border-color: #007B3C; background: #f0faf4; }
+  .area-chip.warn { border-color: #d97706; background: #fffbf0; }
 
-  /* ── Tabela de Resultados ── */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: .9rem;
-  }
+  /* ── Tabelas ── */
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
   thead th {
-    background: #003366;
-    color: #fff;
-    font-weight: 700;
-    padding: 10px 14px;
-    text-align: left;
+    background: #003366; color: #fff; font-weight: 700;
+    padding: 10px 14px; text-align: left;
   }
-  thead th:nth-child(2) { text-align: center; width: 190px; }
+  thead th.center { text-align: center; }
   tbody tr:nth-child(even) { background: #f5f8fc; }
   tbody tr:hover { background: #eaf2ff; }
   tbody td {
-    padding: 10px 14px;
-    color: #1a2a3a;
-    vertical-align: middle;
-    border-bottom: 1px solid #e5eaf0;
+    padding: 10px 14px; color: #1a2a3a;
+    vertical-align: middle; border-bottom: 1px solid #e5eaf0;
   }
-  tbody td:first-child {
-    font-weight: 700;
-    color: #003366;
-    width: 150px;
-  }
-  tbody td:nth-child(2) { text-align: center; width: 190px; }
+  tbody td.name { font-weight: 700; color: #003366; }
+  tbody td.center { text-align: center; }
 
-  /* ── Status badges ── */
+  /* ── Badges ── */
   .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 12px;
-    border-radius: 20px;
-    font-size: .8rem;
-    font-weight: 700;
-    white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border-radius: 20px;
+    font-size: .8rem; font-weight: 700; white-space: nowrap;
   }
   .badge.ok    { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
   .badge.warn  { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
   .badge.skip  { background: #e0e7ff; color: #3730a3; border: 1px solid #a5b4fc; }
-
   .badge svg { flex-shrink: 0; }
 
-  /* ── Conclusões + Recomendações ── */
-  .two-col {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
+  /* ── Smokes grid ── */
+  .smokes-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px;
   }
-  .box {
-    border-radius: 8px;
-    padding: 16px 18px;
+  .smoke {
+    border-radius: 8px; padding: 10px 12px;
+    border: 1.5px solid #86efac; background: #f0faf4;
+    display: flex; flex-direction: column; gap: 3px;
   }
-  .box.conclusoes {
-    background: #f0f6ff;
-    border: 1.5px solid #c5d8f0;
-  }
-  .box.recomendacoes {
-    background: #f0faf4;
-    border: 1.5px solid #86efac;
-  }
+  .smoke .snum { font-size: .72rem; font-weight: 800; color: #007B3C; text-transform: uppercase; letter-spacing: .4px; }
+  .smoke .sdesc { font-size: .78rem; color: #1a2a3a; line-height: 1.3; }
+  .smoke .sstatus { font-size: .7rem; font-weight: 700; color: #166534; margin-top: 2px; }
+
+  /* ── Two-col ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .box { border-radius: 8px; padding: 16px 18px; }
+  .box.conclusoes { background: #f0f6ff; border: 1.5px solid #c5d8f0; }
+  .box.recomendacoes { background: #f0faf4; border: 1.5px solid #86efac; }
   .box-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: .95rem;
-    font-weight: 700;
-    color: #003366;
-    margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+    font-size: .95rem; font-weight: 700; color: #003366; margin-bottom: 12px;
   }
   .box.recomendacoes .box-title { color: #166534; }
   .box ul { list-style: none; }
   .box ul li {
-    font-size: .85rem;
-    color: #1a2a3a;
-    padding: 4px 0;
-    display: flex;
-    align-items: flex-start;
-    gap: 7px;
-    line-height: 1.45;
+    font-size: .85rem; color: #1a2a3a; padding: 4px 0;
+    display: flex; align-items: flex-start; gap: 7px; line-height: 1.45;
   }
   .box ul li .bullet { flex-shrink: 0; margin-top: 1px; }
 
-  /* ── Footer STATUS GERAL ── */
+  /* ── Footer ── */
   .footer-status {
     background: linear-gradient(90deg, #007B3C 0%, #059652 100%);
-    color: #fff;
-    text-align: center;
-    padding: 16px 24px;
-    font-size: 1.1rem;
-    font-weight: 800;
-    letter-spacing: .8px;
-    text-transform: uppercase;
+    color: #fff; text-align: center; padding: 16px 24px;
+    font-size: 1.1rem; font-weight: 800; letter-spacing: .8px; text-transform: uppercase;
   }
   .footer-status .sub {
-    font-size: .78rem;
-    font-weight: 500;
-    letter-spacing: .4px;
-    margin-top: 3px;
-    opacity: .88;
-    text-transform: none;
+    font-size: .78rem; font-weight: 500; letter-spacing: .4px;
+    margin-top: 3px; opacity: .88; text-transform: none;
   }
 </style>
 </head>
@@ -265,7 +158,7 @@
     <h1>Relatório Executivo</h1>
     <div class="subtitle">— Testes E2E ShareO —</div>
     <div class="divider-line"></div>
-    <div class="meta">Ambiente: Staging &nbsp;|&nbsp; shareo-rouge.vercel.app &nbsp;|&nbsp; 2026-06-02 &nbsp;|&nbsp; Playwright · Chromium · Firefox · WebKit · Edge</div>
+    <div class="meta">Ambiente: Staging &nbsp;|&nbsp; shareo-rouge.vercel.app &nbsp;|&nbsp; 2026-06-08 &nbsp;|&nbsp; Playwright · Chromium · Firefox · WebKit · Edge</div>
   </div>
 
   <!-- ── OBJETIVO ── -->
@@ -276,21 +169,17 @@
     </div>
     <p class="objetivo-text">
       Validar o <strong>ShareO</strong><span class="dot"> ● </span>no <strong>ambiente de Staging</strong> garantindo funcionalidade,
-      segurança, acessibilidade e conformidade LGPD — cobrindo <strong>8 categorias</strong> em
-      <strong>12 specs Playwright</strong> antes do sign-off formal de produção (julho/2026).
+      segurança, acessibilidade, conformidade LGPD e Core Web Vitals — cobrindo <strong>32 smokes</strong> em
+      <strong>múltiplas suites Playwright</strong> antes do sign-off formal de produção (após D4 jurídico).
     </p>
 
     <div class="kpi-strip">
       <div class="kpi">
-        <div class="num">12</div>
-        <div class="label">Specs</div>
+        <div class="num">32</div>
+        <div class="label">Smokes</div>
       </div>
       <div class="kpi">
-        <div class="num">20</div>
-        <div class="label">Testes</div>
-      </div>
-      <div class="kpi">
-        <div class="num green">20</div>
+        <div class="num green">32</div>
         <div class="label">Aprovados</div>
       </div>
       <div class="kpi">
@@ -298,12 +187,24 @@
         <div class="label">Falhas</div>
       </div>
       <div class="kpi">
-        <div class="num green">0</div>
-        <div class="label">Flaky</div>
+        <div class="num green">87</div>
+        <div class="label">Suite Base</div>
       </div>
       <div class="kpi">
-        <div class="num">5.1m</div>
-        <div class="label">Duração</div>
+        <div class="num green">33</div>
+        <div class="label">Financeiro</div>
+      </div>
+      <div class="kpi">
+        <div class="num green">28</div>
+        <div class="label">Admin</div>
+      </div>
+      <div class="kpi">
+        <div class="num green">37</div>
+        <div class="label">Security</div>
+      </div>
+      <div class="kpi">
+        <div class="num green">0</div>
+        <div class="label">Flaky</div>
       </div>
     </div>
   </div>
@@ -347,103 +248,193 @@
         <div class="icon-wrap" style="background:#dcfce7">📊</div>
         <div class="area-label">Governança</div>
       </div>
+      <div class="area-chip ok">
+        <div class="icon-wrap" style="background:#dcfce7">💰</div>
+        <div class="area-label">Financeiro</div>
+      </div>
+      <div class="area-chip ok">
+        <div class="icon-wrap" style="background:#dcfce7">👤</div>
+        <div class="area-label">Admin</div>
+      </div>
+      <div class="area-chip ok">
+        <div class="icon-wrap" style="background:#dcfce7">📍</div>
+        <div class="area-label">CEP Auto-fill</div>
+      </div>
+      <div class="area-chip ok">
+        <div class="icon-wrap" style="background:#dcfce7">🏆</div>
+        <div class="area-label">Lighthouse CWV</div>
+      </div>
     </div>
   </div>
 
-  <!-- ── RESULTADOS ── -->
+  <!-- ── SMOKES DASHBOARD ── -->
+  <div class="section">
+    <div class="section-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#59C686" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Smokes #1–#32 — Todos Aprovados ✅
+    </div>
+    <div class="smokes-grid">
+      <div class="smoke"><div class="snum">#1–#8</div><div class="sdesc">Auth, Register, Login/Logout</div><div class="sstatus">✅ Aprovado</div></div>
+      <div class="smoke"><div class="snum">#9–#12</div><div class="sdesc">CRUD Itens, Favoritos, Busca</div><div class="sstatus">✅ Aprovado</div></div>
+      <div class="smoke"><div class="snum">#13–#15</div><div class="sdesc">Chat Realtime, Avaliações</div><div class="sstatus">✅ Aprovado</div></div>
+      <div class="smoke"><div class="snum">#16–#17</div><div class="sdesc">Admin Dashboard, Roles</div><div class="sstatus">✅ Aprovado</div></div>
+      <div class="smoke"><div class="snum">#18</div><div class="sdesc">Segurança — Rate Limit CSRF</div><div class="sstatus">✅ Aprovado</div></div>
+      <div class="smoke"><div class="snum">#19</div><div class="sdesc">Segurança — Anti-enumeração</div><div class="sstatus">✅ Aprovado</div></div>
+      <div class="smoke"><div class="snum">#20–#22</div><div class="sdesc">Segurança — XSS, IDOR, LGPD export</div><div class="sstatus">✅ Aprovado</div></div>
+      <div class="smoke"><div class="snum">#23</div><div class="sdesc">Exclusão de conta</div><div class="sstatus">✅ Aprovado</div></div>
+      <div class="smoke"><div class="snum">#24</div><div class="sdesc">Exportação CSV financeiro</div><div class="sstatus">✅ Aprovado</div></div>
+      <div class="smoke"><div class="snum">#25</div><div class="sdesc">Filtro de itens</div><div class="sstatus">✅ Aprovado</div></div>
+      <div class="smoke"><div class="snum">#26</div><div class="sdesc">LGPD — anonimização</div><div class="sstatus">✅ Aprovado</div></div>
+      <div class="smoke"><div class="snum">#27</div><div class="sdesc">Payout — auth guard</div><div class="sstatus">✅ Aprovado</div></div>
+      <div class="smoke"><div class="snum">#28</div><div class="sdesc">Checkout Stripe — guards + session + webhook</div><div class="sstatus">✅ Aprovado</div></div>
+      <div class="smoke"><div class="snum">#29</div><div class="sdesc">Reviews — fluxo bilateral</div><div class="sstatus">✅ Aprovado</div></div>
+      <div class="smoke"><div class="snum">#30</div><div class="sdesc">Chat — XSS sanitization</div><div class="sstatus">✅ Aprovado</div></div>
+      <div class="smoke"><div class="snum">#31</div><div class="sdesc">CEP auto-fill (ViaCEP)</div><div class="sstatus">✅ Aprovado</div></div>
+      <div class="smoke"><div class="snum">#32</div><div class="sdesc">Lighthouse — Core Web Vitals</div><div class="sstatus">✅ Aprovado</div></div>
+    </div>
+  </div>
+
+  <!-- ── SUITES DETALHADAS ── -->
   <div class="section">
     <div class="section-title">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#59C686" stroke-width="2.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      Suites por Domínio
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Suite</th>
+          <th class="center">Passando</th>
+          <th class="center">Falhas</th>
+          <th class="center">Skipped</th>
+          <th>Observações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="name">Suite Base (E2E)</td>
+          <td class="center"><span class="badge ok">✅ 87</span></td>
+          <td class="center">0</td>
+          <td class="center">20</td>
+          <td>CRUD · Auth · Chat · Avaliações · Favoritos · Admin — 4 browsers</td>
+        </tr>
+        <tr>
+          <td class="name">Financeiro</td>
+          <td class="center"><span class="badge ok">✅ 33</span></td>
+          <td class="center">0</td>
+          <td class="center">0</td>
+          <td>PIX · Split · Payout · Chargebacks · CSV · Informe IR · Relatório mensal</td>
+        </tr>
+        <tr>
+          <td class="name">Admin Usuários</td>
+          <td class="center"><span class="badge ok">✅ 28</span></td>
+          <td class="center">0</td>
+          <td class="center">6</td>
+          <td>Roles SUPERADMIN/FINANCEIRO/OPERACIONAL · Guards · Audit log</td>
+        </tr>
+        <tr>
+          <td class="name">Security2</td>
+          <td class="center"><span class="badge ok">✅ 25</span></td>
+          <td class="center">0</td>
+          <td class="center">3</td>
+          <td>Smokes #18–#22 — Rate limit, anti-enumeração, XSS, IDOR, LGPD</td>
+        </tr>
+        <tr>
+          <td class="name">Security3</td>
+          <td class="center"><span class="badge ok">✅ 12</span></td>
+          <td class="center">0</td>
+          <td class="center">12</td>
+          <td>Smokes #23–#27 — Exclusão conta, CSV, filtros, LGPD, payout auth</td>
+        </tr>
+        <tr>
+          <td class="name">Reviews + Chat</td>
+          <td class="center"><span class="badge ok">✅</span></td>
+          <td class="center">0</td>
+          <td class="center">—</td>
+          <td>Smokes #29–#30 — Avaliação bilateral + XSS chat sanitizado</td>
+        </tr>
+        <tr>
+          <td class="name">CEP Auto-fill</td>
+          <td class="center"><span class="badge ok">✅</span></td>
+          <td class="center">0</td>
+          <td class="center">—</td>
+          <td>Smoke #31 — ViaCEP: rua, bairro, cidade, estado preenchidos automaticamente</td>
+        </tr>
+        <tr>
+          <td class="name">Lighthouse CWV</td>
+          <td class="center"><span class="badge ok">✅</span></td>
+          <td class="center">0</td>
+          <td class="center">—</td>
+          <td>Smoke #32 — LCP &lt; 2.5s · CLS &lt; 0.1 · INP &lt; 200ms contra staging</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── RESULTADOS POR CATEGORIA ── -->
+  <div class="section">
+    <div class="section-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#59C686" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       Resultados por Categoria
     </div>
     <table>
       <thead>
         <tr>
           <th>Categoria</th>
-          <th>Status</th>
+          <th class="center" style="width:160px">Status</th>
           <th>Observações</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td>Funcionais</td>
-          <td>
-            <span class="badge ok">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-              Aprovado
-            </span>
-          </td>
+          <td class="name">Funcionais</td>
+          <td class="center"><span class="badge ok"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Aprovado</span></td>
           <td>CRUD · Auth · Compartilhamento · Admin — 4 specs, todos OK</td>
         </tr>
         <tr>
-          <td>Performance</td>
-          <td>
-            <span class="badge ok">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-              Aprovado
-            </span>
-          </td>
-          <td>Warm-up de instância implementado — cold start eliminado. 4/4 steps sem flaky.</td>
+          <td class="name">Performance</td>
+          <td class="center"><span class="badge ok"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Aprovado</span></td>
+          <td>Warm-up implementado — cold start eliminado. Lighthouse CWV ✅ staging.</td>
         </tr>
         <tr>
-          <td>Acessibilidade</td>
-          <td>
-            <span class="badge ok">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-              Aprovado
-            </span>
-          </td>
-          <td>WCAG 2.1 AA — axe-core 4.9.1 — 4/4 steps — 0 violações bloqueantes</td>
+          <td class="name">Acessibilidade</td>
+          <td class="center"><span class="badge ok"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Aprovado</span></td>
+          <td>WCAG 2.1 AA — axe-core — 4/4 steps — 0 violações bloqueantes</td>
         </tr>
         <tr>
-          <td>Cross-Browser</td>
-          <td>
-            <span class="badge ok">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-              Aprovado
-            </span>
-          </td>
-          <td>Chrome · Firefox 150 · Edge · WebKit 26.4 — 4/4 passando. iOS Safari: julho/2026.</td>
+          <td class="name">Cross-Browser</td>
+          <td class="center"><span class="badge ok"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Aprovado</span></td>
+          <td>Chrome · Firefox · Edge · WebKit — 4/4 passando. iOS Safari: julho/2026.</td>
         </tr>
         <tr>
-          <td>Segurança</td>
-          <td>
-            <span class="badge ok">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-              Aprovado
-            </span>
-          </td>
-          <td>Sessão · Auth · Admin · XSS — 3 payloads testados, 0 dialogs disparados</td>
+          <td class="name">Segurança</td>
+          <td class="center"><span class="badge ok"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Aprovado</span></td>
+          <td>37 testes security2+3 — Rate limit · CSRF · XSS · IDOR · anti-enumeração · middleware 401</td>
         </tr>
         <tr>
-          <td>Usabilidade</td>
-          <td>
-            <span class="badge ok">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-              Aprovado
-            </span>
-          </td>
-          <td>Feedback · Navegação · Onboarding — 3/3 OK — mensagens de erro claras</td>
+          <td class="name">Financeiro</td>
+          <td class="center"><span class="badge ok"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Aprovado</span></td>
+          <td>33 testes — PIX, checkout, split, chargebacks, CSV, IR, payout, four-eyes</td>
         </tr>
         <tr>
-          <td>Integração</td>
-          <td>
-            <span class="badge ok">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-              Aprovado
-            </span>
-          </td>
-          <td>APIs (health ok, 7 categorias, 11 itens). Item público acessível. Front/back ✓</td>
+          <td class="name">Admin</td>
+          <td class="center"><span class="badge ok"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Aprovado</span></td>
+          <td>28 testes — 3 roles · guards de rota · audit log · gestão via UI</td>
         </tr>
         <tr>
-          <td>Governança</td>
-          <td>
-            <span class="badge ok">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-              Aprovado
-            </span>
-          </td>
-          <td>6 headers de segurança · LGPD bloqueado · robots.txt · sitemap (56 URLs) · Rate limit OK</td>
+          <td class="name">Usabilidade</td>
+          <td class="center"><span class="badge ok"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Aprovado</span></td>
+          <td>CEP auto-fill · reviews bilateral · chat XSS sanitizado · mensagens de erro claras</td>
+        </tr>
+        <tr>
+          <td class="name">Integração</td>
+          <td class="center"><span class="badge ok"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Aprovado</span></td>
+          <td>APIs · ViaCEP · Stripe webhook · Supabase Realtime · health check</td>
+        </tr>
+        <tr>
+          <td class="name">Governança</td>
+          <td class="center"><span class="badge ok"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Aprovado</span></td>
+          <td>CSP headers · LGPD bloqueio · robots.txt · sitemap · rate limit · RLS server-side</td>
         </tr>
       </tbody>
     </table>
@@ -458,39 +449,48 @@
           Conclusões
         </div>
         <ul>
-          <li><span class="bullet">●</span>20/20 testes aprovados — zero falhas, zero flaky</li>
-          <li><span class="bullet">●</span>8 categorias cobertas em 12 specs Playwright</li>
-          <li><span class="bullet">●</span>WCAG 2.1 AA e LGPD validados programaticamente</li>
+          <li><span class="bullet">●</span>32/32 smokes aprovados — zero falhas, zero flaky</li>
+          <li><span class="bullet">●</span>185+ testes Playwright nas suites combinadas</li>
+          <li><span class="bullet">●</span>WCAG 2.1 AA, LGPD e segurança validados programaticamente</li>
           <li><span class="bullet">●</span>Cross-browser 4/4: Chrome, Firefox, Edge, WebKit</li>
-          <li><span class="bullet">●</span>CI regressão contínua ativo após cada deploy na main</li>
+          <li><span class="bullet">●</span>Core Web Vitals (Lighthouse) passando em staging</li>
+          <li><span class="bullet">●</span>CI regressão contínua ativo — e2e-staging após cada deploy</li>
           <li><span class="bullet">●</span>iOS Safari e validação manual pendentes — julho/2026</li>
         </ul>
       </div>
       <div class="box recomendacoes">
         <div class="box-title">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="2.5"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-          Recomendações
+          Próximos Passos
         </div>
         <ul>
           <li>
             <svg class="bullet" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-            <s style="opacity:.5">Firefox + WebKit</s>&nbsp;<strong style="color:#166534">✅ Concluído</strong> — 4/4 browsers passando
+            <s style="opacity:.5">Smokes #1–#32</s>&nbsp;<strong style="color:#166534">✅ 100% completos</strong>
           </li>
           <li>
             <svg class="bullet" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-            <s style="opacity:.5">Warm-up de instância</s>&nbsp;<strong style="color:#166534">✅ Concluído</strong> — cold start eliminado
+            <s style="opacity:.5">Módulo financeiro E2E</s>&nbsp;<strong style="color:#166534">✅ 33 testes</strong>
           </li>
           <li>
             <svg class="bullet" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-            <s style="opacity:.5">CI regressão contínua</s>&nbsp;<strong style="color:#166534">✅ Concluído</strong> — job e2e-staging ativo
+            <s style="opacity:.5">Security hardening + E2E</s>&nbsp;<strong style="color:#166534">✅ 37 testes</strong>
+          </li>
+          <li>
+            <svg class="bullet" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            Deletar scripts temporários antes de go-live
           </li>
           <li>
             <svg class="bullet" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="3"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <span style="color:#92400e">iOS Safari BrowserStack — pendente julho/2026</span>
+            <span style="color:#92400e"><strong>D4 jurídico</strong> — bloqueador de produção</span>
           </li>
           <li>
             <svg class="bullet" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="3"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <span style="color:#92400e">Validação manual Locatário/Proprietário — pendente julho/2026</span>
+            <span style="color:#92400e">iOS Safari BrowserStack — julho/2026</span>
+          </li>
+          <li>
+            <svg class="bullet" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="3"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span style="color:#92400e">Validação manual Locatário/Proprietário — julho/2026</span>
           </li>
         </ul>
       </div>
@@ -499,8 +499,8 @@
 
   <!-- ── STATUS GERAL ── -->
   <div class="footer-status">
-    ✅ &nbsp;STATUS GERAL: STAGING APROVADO — SIGN-OFF PREVISTO JULHO/2026
-    <div class="sub">12 specs · 20/20 · zero flaky · 4 browsers · CI regressão ativo · shareo-rouge.vercel.app · 2026-06-02 · commit 10a3eb9</div>
+    ✅ &nbsp;STATUS GERAL: STAGING APROVADO — AGUARDANDO D4 (JURÍDICO) PARA GO-LIVE
+    <div class="sub">32 smokes ✅ · 185+ testes · zero flaky · 4 browsers · Lighthouse CWV ✅ · shareo-rouge.vercel.app · 2026-06-08 · commit e2ffbc7</div>
   </div>
 
 </div>

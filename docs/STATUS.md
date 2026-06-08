@@ -1,9 +1,9 @@
 # ShareO — Status do Projeto
 
-**Atualizado em**: 2026-06-06 (sessão — smokes #23-#27 ✅ + fix security middleware)
+**Atualizado em**: 2026-06-07 (sessão — smokes #28-#32 ✅ + CEP auto-fill + Lighthouse)
 **Ambiente staging**: https://shareo-rouge.vercel.app (webhook GitHub→Vercel ativo — push em main faz deploy automático)
-**Último commit**: `86b4285`  
-**Release estável**: [`v1.0.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.0.0)
+**Último commit**: `02498ac`  
+**Release estável**: [`v1.0.0`](https://github.com/robertoepifanio/SHAREO/releases/tag/v1.0.0)
 
 ---
 
