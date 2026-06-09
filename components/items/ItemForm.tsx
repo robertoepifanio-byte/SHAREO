@@ -315,7 +315,7 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
   const addFiles = useCallback((files: File[]) => {
     setImages((prev) => {
       const visible   = prev.filter((i) => !(i.type === "existing" && deletedImageIds.includes((i as ExistingImage).id)))
-      const remaining = 10 - visible.length
+      const remaining = 3 - visible.length
       const toAdd     = files.slice(0, remaining)
       const newEntries: NewImage[] = toAdd.map((file) => ({
         type:       "new",
@@ -492,7 +492,7 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
   const FIELD_TIPS: Record<string, string> = {
     title:      "Use palavras que as pessoas buscariam (ex: 'Câmera Sony A6400')",
     description:"Seja específico: estado de conservação, inclui acessórios, como usar.",
-    photos:     "Anúncios com 3+ fotos recebem 4× mais contatos.",
+    photos:     "Anúncios com 3 fotos recebem 4× mais contatos.",
     pricePerDay:"Itens com preço justo aluguem 2× mais rápido.",
   }
 
@@ -841,7 +841,7 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
       <section className="rounded-lg border border-border bg-surface p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-primary">Fotos</h2>
-          <span className="text-xs text-muted-foreground">{visibleImages.length}/10</span>
+          <span className="text-xs text-muted-foreground">{visibleImages.length}/3</span>
         </div>
 
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -872,7 +872,7 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
             </div>
           ))}
 
-          {visibleImages.length < 10 && (
+          {visibleImages.length < 3 && (
             <div className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-md border-2 border-dashed border-border">
               <button
                 type="button"
