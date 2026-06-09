@@ -129,7 +129,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       where:  { id },
       select: {
         id: true, status: true, borrowerId: true, ownerId: true,
-        itemId: true, startDate: true, endDate: true, totalPrice: true,
+        itemId: true, startDate: true, endDate: true, totalPrice: true, totalDays: true,
         item:     { select: { title: true } },
         borrower: { select: { email: true, name: true } },
         owner:    { select: { email: true, name: true } },
@@ -217,6 +217,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       (action === "confirm" || action === "cancel")
     ) {
       data.respondedAt = now
+    }
+
+    // Grava horário real de retirada e recalcula endDate a partir dele.
+    // Regra: prazo de devolução = mesmo horário da retirada + totalDays.
+    if (action === "mark_active") {
+      data.activatedAt = now
+      data.endDate     = new Date(now.getTime() + booking.totalDays * 24 * 60 * 60 * 1000)
     }
 
     // Ao confirmar: verifica conflito de datas dentro de uma transação para evitar double-booking.

@@ -369,6 +369,9 @@ model Booking {
   // Resposta do proprietário (para cálculo do badge de responsividade)
   respondedAt DateTime? // quando o dono aceitou ou recusou (primeira ação sobre PENDING)
 
+  // Retirada real — gravada no mark_active; endDate é recalculado a partir daqui
+  activatedAt DateTime? // horário real de retirada confirmada pelo locador
+
   // Devolução e taxa de atraso
   returnedAt    DateTime? // data real de devolução (pode ser após endDate)
   lateFeeAmount Int? // cents — calculado se returnedAt > endDate

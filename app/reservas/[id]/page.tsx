@@ -39,6 +39,14 @@ function fmtDate(d: Date) {
   return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "long", year: "numeric" }).format(new Date(d))
 }
 
+function fmtDateTime(d: Date) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit", month: "long", year: "numeric",
+    hour: "2-digit", minute: "2-digit",
+    timeZone: "America/Fortaleza",
+  }).format(new Date(d))
+}
+
 export default async function BookingDetailPage({ params, searchParams }: Props) {
   const session = await auth()
   if (!session) redirect("/login?callbackUrl=/reservas")
@@ -66,6 +74,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
       cancelReason:  true,
       createdAt:     true,
       contractSignedAt: true,
+      activatedAt:   true,
       returnedAt:    true,
       lateFeeAmount: true,
       photos:        { select: { id: true, url: true, phase: true, createdAt: true }, orderBy: { createdAt: "asc" } },
@@ -148,11 +157,21 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Retirada</p>
-                  <p className="font-semibold text-foreground">{fmtDate(booking.startDate)}</p>
+                  <p className="font-semibold text-foreground">
+                    {booking.activatedAt ? fmtDateTime(booking.activatedAt) : fmtDate(booking.startDate)}
+                  </p>
+                  {booking.activatedAt && (
+                    <p className="text-[10px] text-success">✓ Confirmada pelo locador</p>
+                  )}
                 </div>
                 <div>
-                  <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Devolução</p>
-                  <p className="font-semibold text-foreground">{fmtDate(booking.endDate)}</p>
+                  <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Devolução até</p>
+                  <p className="font-semibold text-foreground">
+                    {booking.activatedAt ? fmtDateTime(booking.endDate) : fmtDate(booking.endDate)}
+                  </p>
+                  {booking.activatedAt && (
+                    <p className="text-[10px] text-muted-foreground">Mesmo horário da retirada</p>
+                  )}
                 </div>
               </div>
 
