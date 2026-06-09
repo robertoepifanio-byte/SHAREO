@@ -300,6 +300,8 @@ const SECTIONS = [
         a: "No seu perfil, encontre o bloco de upgrade para Pessoa Jurídica (PJ). Como PJ, você ganha uma vitrine personalizada com link próprio, acesso a analytics avançado dos seus anúncios e recursos para importar itens em massa — ideal para quem aluga profissionalmente." },
       { q: "O que é a Vitrine PJ e como ela funciona?",
         a: "A Vitrine PJ é uma página personalizada para locadores pessoa jurídica, acessível pelo link shareo.com.br/loja/[seu-slug]. Ela reúne todos os seus itens ativos em um layout de loja, com logo, descrição do negócio e avaliação geral. Você pode compartilhar esse link com clientes, redes sociais ou materiais de divulgação. Para ativar, faça o upgrade para PJ Premium no seu perfil e configure seu slug único." },
+      { q: "Como funciona o Programa de Indicação?",
+        a: "Ao indicar um amigo e ele se inscrever e realizar a primeira locação, você receberá pontos ShareO que poderão ser usados como desconto em locações futuras ou resgatados conforme as regras do programa. O link de indicação está disponível em 'Meu Perfil > Indicações'. Programa disponível em breve." },
       { q: "Como excluo minha conta?",
         a: "Acesse 'Meu Perfil > Privacidade e dados > Excluir conta'. A exclusão remove todos os seus dados pessoais em até 15 dias (conforme a LGPD). Reservas em andamento precisam ser finalizadas antes da exclusão. O histórico de transações pode ser retido por até 5 anos para fins legais e fiscais." },
     ],
