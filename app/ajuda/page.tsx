@@ -75,7 +75,7 @@ const LOCADOR_STEPS: Step[] = [
   {
     step: 2, icon: "📸", title: "Criar seu primeiro anúncio",
     desc: "Clique em 'Anunciar' no menu. Adicione pelo menos 3 fotos nítidas em boa iluminação, de diferentes ângulos. Preencha: título claro e descritivo, categoria, estado de conservação (novo, seminovo, bom estado ou regular) e uma descrição detalhada mencionando dimensões, capacidade e cuidados necessários. Defina o preço por dia (obrigatório), e opcionalmente por semana e mês com desconto. Publique — o anúncio aparece na busca em minutos.",
-    example: "Anúncio: 'Tenda Gazebo 3×3m branca para festas'. Preço: R$ 120/dia, R$ 600/semana (desconto de 16%), R$ 1.800/mês. Categoria: Festas e Eventos. Estado: Bom estado.",
+    example: "Anúncio: 'Tenda Gazebo 3×3m branca para festas'. Preço: R$ 120/dia, R$ 360/semana (3× diária), R$ 1.800/mês (15× diária). Categoria: Festas e Eventos. Estado: Bom estado.",
   },
   {
     step: 3, icon: "💳", title: "Cadastrar sua chave PIX",
@@ -165,7 +165,7 @@ const SECTIONS = [
       { q: "Como anuncio meu item?",
         a: "Vá em 'Anunciar' no app. Preencha o título, descrição, categoria, estado de conservação (novo, seminovo, bom estado ou regular) e adicione fotos. Informe seu bairro e cidade para que locatários saibam onde o item está. Depois defina o preço e publique." },
       { q: "Como defino o preço?",
-        a: "Você define o preço por dia. Também pode oferecer preço por semana e por mês — normalmente com desconto para incentivar aluguéis mais longos. Se o item tiver valor de mercado conhecido, informe o preço de compra: o app mostra ao locatário quanto ele economiza alugando em vez de comprar." },
+        a: "Você define o preço por dia. Uma sugestão de referência: diária = 3–5% do valor do bem; semanal = 3× a diária; mensal = 15× a diária. O formulário de anúncio tem um botão 'Calcular' que aplica esses valores automaticamente. Também pode oferecer preço por semana e por mês com desconto diferente, para incentivar aluguéis mais longos. Se o item tiver valor de mercado conhecido, informe o preço de compra: o app mostra ao locatário quanto ele economiza alugando em vez de comprar." },
       { q: "Como confirmo uma reserva?",
         a: "Quando alguém solicitar seu item, você recebe uma notificação. Em 'Minhas Reservas', clique na aba 'Como locador'. Abra a reserva, leia a mensagem do locatário e clique em 'Confirmar reserva'. Se não quiser aceitar, pode cancelar informando o motivo." },
       { q: "Quando recebo o pagamento?",

@@ -1,129 +1,153 @@
-# CLAUDE.md
+# ShareO — Instruções para Claude Code
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Marketplace de economia circular para aluguel local de itens. Foco em Natal/RN. Slogan: "Use Mais. Possua Menos."
 
-## What This Repository Is
+## Repositório e ambientes
 
-This is a **project planning and AI agent specification repository** for **ShareO** — a circular economy marketplace for local item rental ("Use Mais. Possua Menos." / "Use More. Own Less."). It is managed as an Obsidian vault.
+- **Código:** `C:\Users\Roberto\Documents\2026\ShareO`
+- **Staging:** `https://shareo-rouge.vercel.app` — NÃO é produção
+- **Produção:** ainda não existe — só após D4 (consulta jurídica) + validação total staging
 
-The repository contains no production code yet. It holds:
-- `*_Agente_Shareo.md` — Role-based specifications for AI agents (Architect, Full Stack Dev, Product Owner, Designer, QA, DevOps, SEO, Security Analyst, Project Manager)
-- `shareo-prototipo-v2.html` — **Active UI prototype** (since 2026-05-29, single-file, self-contained; tipografia dual Inter/Montserrat + Leaflet map, 11 telas completas)
-- `shareo-prototipo.html` — Legacy prototype (superseded by v2)
-- `icones/` — SVG category icons used in the prototype
+## Stack
 
-## Planned Tech Stack
-
-| Layer | Technology |
+| Camada | Tecnologia |
 |---|---|
-| Frontend | Next.js (App Router), TypeScript, Tailwind CSS |
-| State/Cache | React Query (TanStack Query) |
-| Backend | Next.js API Routes, Prisma ORM |
-| Database | PostgreSQL via Supabase |
-| Auth | NextAuth.js or JWT with rotating refresh tokens |
-| Real-time (chat) | Supabase Realtime |
-| Maps | Google Maps API or Mapbox |
-| Hosting | Vercel (with preview deploys per PR) |
-| Testing | Jest + React Testing Library (unit/integration), Playwright (E2E) |
+| Frontend | Next.js 15.5 (App Router), TypeScript 5, Tailwind CSS 3, Montserrat |
+| Componentes | shadcn/ui (Radix UI) + componentes próprios |
+| Backend | Next.js API Routes, Prisma ORM v6 |
+| Banco | PostgreSQL via Supabase (sa-east-1) |
+| Auth | NextAuth.js v5 — JWT strategy **sem** PrismaAdapter |
+| Real-time | Supabase Realtime (chat) |
+| Mapas | Mapbox GL (`react-map-gl`) — token `NEXT_PUBLIC_MAPBOX_TOKEN` |
+| Pagamentos | Stripe Checkout Sessions (Test mode — UI Stripe Connect oculta até dez/2026) |
+| E-mail | Resend (`RESEND_API_KEY`) |
+| Storage | Supabase Storage — `item-images` (público), `booking-photos` (público), `id-docs` (privado) |
+| Hosting | Vercel (main → staging automático) |
+| Mobile | Expo + React Native (`apps/mobile/`) — scaffold completo, não testado |
 
-## Architecture Decisions (from agent docs)
+## Design System (v2)
 
-**Rendering strategy by page type:**
-- **SSG**: Landing page, institutional pages
-- **SSR**: Item listings with geo-filters
-- **ISR**: Category pages and popular listings
-- **CSR**: User dashboard, favorites, in-app chat
+- **Cores:** Navy `#003366` (primary), Verde ação `#007B3C` (brand), Verde claro `#59C686` (**nunca** com texto branco — contraste 2.07:1), Off-white `#F8FAFC` (background)
+- **Fonte:** Montserrat (variable `--font-montserrat`)
+- **Breakpoints:** 375px mobile, 768px tablet, 1280px desktop
+- **Tap targets:** mínimo 44×44px (`min-h-11`)
+- **Tokens:** `bg-surface`, `bg-background`, `text-foreground`, `text-muted-foreground`, `border-border`, `text-brand`, `text-success`
 
-**Three-environment setup**: `development` (local + `.env.local`), `staging` (Supabase isolated instance), `production` (manual/approval-gated deploy via Vercel).
+## Dois projetos Supabase — ATENÇÃO
 
-**Database**: Always use Prisma migrations — never manual schema changes in production. Migrations must be reviewed by the Architect before applying to staging.
-
-**API domains**: Auth, Items, Bookings, Users, Chat, Admin — all with server-side Zod validation. Sensitive fields (CPF, CNPJ, documents) must never appear in logs or unnecessary API responses.
-
-**Security**: Row Level Security (RLS) in Supabase, rate limiting on auth/document-validation endpoints, LGPD compliance (explicit consent, minimal data, account deletion).
-
-## Architecture Decision Records (ADRs)
-
-All ADRs live in **`docs/adr/`** (kebab-case filenames). The legacy `ADRs/` root folder has been consolidated. Current ADRs:
-
-| # | File | Decision |
+| Arquivo | Projeto Supabase | Uso |
 |---|---|---|
-| 001 | `ADR-001-autenticacao.md` | Auth — NextAuth.js v5 |
-| 002 | `ADR-002-mapas.md` | Maps — Mapbox + PostGIS |
-| 003 | `ADR-003-chat.md` | Chat — Supabase Realtime |
-| 004 | `ADR-004-paleta-cores-definitiva.md` | Design system — paleta oficial (navy #003366 + verde #007B3C) |
-| 005 | `ADR-005-criptografia-documentos.md` | CPF/CNPJ encryption |
-| 006 | `ADR-006-estrutura-pastas.md` | Folder structure |
-| 007 | `ADR-007-rendering-strategy.md` | SSG/SSR/ISR/CSR per page type |
-| 008 | `ADR-008-state-management.md` | State — React Query |
-| 009 | `ADR-009-rls-nextauth.md` | RLS + NextAuth integration |
-| 010 | `ADR-010-upload-imagens.md` | Image upload — Supabase Storage |
-| 011 | `ADR-011-tipografia-dual.md` | Tipografia dual — Inter (UI) + Montserrat (branding) |
-| 012 | `ADR-012-modelo-pix-centralizado.md` | PIX centralizado no MVP (D1) |
-| 013 | `ADR-013-webhook-queue.md` | StripeEventQueue + cron (MVP), Inngest (V2) |
-| 014 | `ADR-014-payout-trigger.md` | Payout trigger — 3 dias de hold + cron 10h BRT |
-| 015 | `ADR-015-caucao-mvp-adiado.md` | Sem caução no MVP, teto R$ 500 (D2) |
-| 016 | `ADR-016-exportacao-financeira.md` | Exportação híbrida: síncrono ≤90 dias, assíncrono acima |
-| 017 | `ADR-017-retencao-dados-financeiros.md` | Retenção 5 anos (CTN Art. 173), anonimização LGPD |
-| 018 | `ADR-018-chargebacks.md` | Chargeback: bloqueio automático payout + resolução via webhook |
-| 019 | `ADR-019-informe-rendimentos-ir.md` | Informe de rendimentos anual para declaração IR |
-| 020 | `ADR-020-relatorio-mensal-financeiro.md` | Relatório mensal via cron, notificação in-app para admins |
+| `.env` (local) | `jtianehxosfdrhjzqvqj` | Desenvolvimento local |
+| `.env.staging-migrate` | `fflpuoluiqmhpvcxubqi` | **Banco real do staging no Vercel** |
 
-## Subagents System
+SQL de manutenção/migration para staging → sempre usar `fflpuoluiqmhpvcxubqi`.
 
-The `.claude/Agents/` directory contains 9 Claude Code subagents. Each file has YAML frontmatter (`name`, `description`, `model`, `tools`) that enables automatic invocation. The legacy `*_Agente_Shareo.md` files (PascalCase) are kept as reference — the active subagents are the kebab-case files.
+## Decisões arquiteturais
 
-| Subagent file | Role | Model |
-|---|---|---|
-| `arquiteto-shareo.md` | Architecture decisions, ADRs, rendering strategy | Opus |
-| `fullstack-dev-shareo.md` | Feature implementation, API routes, Tailwind, Supabase | Sonnet |
-| `designer-shareo.md` | Design system, Tailwind handoff, WCAG specs | Sonnet |
-| `devops-shareo.md` | CI/CD, Vercel, monitoring, infrastructure | Sonnet |
-| `qa-shareo.md` | Tests (Jest/Playwright/jest-axe), bug reports, Lighthouse | Sonnet |
-| `seguranca-shareo.md` | OWASP, LGPD, JWT, RLS, PCI-DSS | Opus |
-| `product-owner-shareo.md` | User stories, backlog, roadmap, acceptance criteria | Sonnet |
-| `gestor-projeto-shareo.md` | Sprint management, status reports, risk tracking | Sonnet |
-| `seo-shareo.md` | Metadata API, JSON-LD, Core Web Vitals, Mobile-First SEO | Sonnet |
+- **Auth:** JWT sem PrismaAdapter — `authorize()` faz `prisma.user.findUnique` direto
+- **Segurança:** `if (resource.ownerId !== session.user.id) → 403` (RLS desabilitado — incompatível com PgBouncer)
+- **Upload:** Supabase Storage via service role key server-side
+- **RLS:** desabilitado — segurança via guards server-side
+- **Geocoding:** Mapbox Geocoding API automático via `lib/geocodeItem.ts`
+- **Filtro distância:** Haversine em JS pós-fetch (não no Prisma)
+- **Cron:** `GET /api/cron/reminders` — `CRON_SECRET=shareo-cron-2026`, 08h BRT via Vercel Cron
+- **Middleware cookie name:** `__Secure-authjs.session-token` em HTTPS, `authjs.session-token` em HTTP
 
-**Invocation rules:**
-- The `arquiteto-shareo` agent is the authority on structural decisions.
-- The `fullstack-dev-shareo` agent implements features — always consult `shareo-prototipo-v2.html` first.
-- All agents enforce: LGPD compliance, WCAG 2.1 AA, mobile-first (375px base), tap targets ≥ 44×44px.
-- No `"use client"` in layout components — only on interactive leaf nodes (performance rule).
+## Módulo financeiro (MVP completo — commit 4ef3cb7)
 
-## Design System
+- **D1:** PIX apenas no MVP. Stripe Connect reavaliado ~dez/2026. Código Stripe preservado mas invisível na UI.
+- **D2:** Sem caução no MVP. Teto R$500 por transação.
+- **D4 (BLOQUEADOR):** Consulta jurídica em análise — **nenhum go-live em produção antes do retorno.**
+- Taxa plataforma: 15% (`DEFAULT_FEE_RATE = 1500` basis points em `lib/platform-config.ts`)
+- Models financeiros: `OwnerPaymentAccount`, `PlatformTransaction`, `Payout`, `PlatformConfig`, `StripeEventQueue`, `ExportJob`
 
-- **Colors** (paleta oficial DID v1.0):
-  - Navy `#003366` — header, títulos, fundo escuro
-  - Verde Escuro `#007B3C` — botões CTA, destaques, ação
-  - Verde Claro `#59C686` — badges, ícones, fundos decorativos (**nunca** com texto branco — contraste 2.07:1)
-  - Azul Médio `#144D81` — textos e seções intermediárias
-  - Branco `#FFFFFF` — fundo e texto sobre escuro
-  - Erro `#E74C3C` — feedback de erro
-- **Breakpoints**: 375px (mobile), 768px (tablet), 1280px (desktop)
-- **Spacing**: 4px grid (4, 8, 12, 16, 24, 32, 48, 64px)
-- **Border radius**: 12px cards (`--radius`), 8px inputs, 50% avatars
-- **Font (UI)**: Inter, weights 400–700 — corpo de texto, labels, botões, formulários, menus, navegação
-- **Font (Branding)**: Montserrat, weights 600–800 — h1–h6, títulos de seção, logo, hero
-- **Fallback**: Arial, sans-serif
-- **Tailwind config**: `fontFamily.sans = ['Inter']` / `fontFamily.display = ['Montserrat']`
-- **Accessibility**: WCAG 2.1 AA (contraste mínimo 4.5:1 — verificar sempre #59C686 sobre branco)
+## Roles de admin
 
-## Quality Targets (for when code is written)
+| AdminRole | Acesso |
+|---|---|
+| `ADMIN_SUPERADMIN` | Tudo, incluindo gestão de admins |
+| `ADMIN_FINANCEIRO` | Financeiro + Disputas + Usuários |
+| `ADMIN_OPERACIONAL` | Itens + Usuários + Disputas + Verificações |
 
-- Minimum 70% test coverage on domain modules (auth, items, bookings, users)
-- Core Web Vitals: LCP < 2.5s, CLS < 0.1, INP < 200ms
-- CI pipeline must complete in under 10 minutes
-- Uptime target: 99.9%
+Admins seed em staging: `admin@shareo.com.br`, `financeiro@shareo.com.br`, `operacional@shareo.com.br` (senha `ShareO@2026`).
 
-## Roadmap Phases
+## CSP — regra importante
 
-- **H1 (MVP)**: Auth/profile (CPF/CNPJ), geo-search, item listing, in-app chat, ratings, favorites, admin dashboard
-- **H2 (Growth)**: Insurance integration, PJ Premium subscription + analytics, personalized storefronts
-- **H3 (Scale)**: In-app payments (Stripe/Pagar.me), PJ inventory sync, React Native mobile app
+Qualquer `fetch()` client-side para domínio externo precisa estar no `connect-src` em `middleware.ts` (dois blocos: dev ~linha 44, prod ~linha 57). Domínios ativos: `supabase.co`, `mapbox`, `sentry`, `google analytics`, `viacep.com.br`.
 
-## Prototype
+Se fetch client-side cair no `catch` com "Erro de conexão" sem erro de rede aparente → primeiro suspeito é o CSP.
 
-`shareo-prototipo-v2.html` is the **active** standalone HTML/CSS/JS prototype covering the full MVP UI (adopted 2026-05-29). Open it in a browser to review the intended UX before implementing. Category icons referenced in the prototype live in `icones/`.
+## Variáveis `NEXT_PUBLIC_*` no Vercel
 
-`shareo-prototipo.html` is the legacy prototype — kept for historical reference only.
+**Nunca marcar como Sensitive** — Sensitive impede injeção no build time. Se `NEXT_PUBLIC_*` aparecer vazia no staging, verificar flag Sensitive antes de qualquer outra hipótese.
+
+## Vercel build — armadilhas conhecidas
+
+- `SENTRY_AUTH_TOKEN` expirado quebra o build silenciosamente — remover via `npx vercel env rm SENTRY_AUTH_TOKEN production`
+- `@upstash/redis` é incompatível com Edge Runtime — usar fetch direto à API REST do Upstash no middleware
+- `scripts/` e `e2e/` devem estar no `exclude` do `tsconfig.json`
+- Webhook GitHub→Vercel pode parar — usar `npx vercel --prod` se deploy não disparar
+
+## Migrations Prisma — lições
+
+- `ALTER TYPE ... ADD VALUE` e `UPDATE` na mesma transação PG → inválido; separar em dois SQLs
+- RLS policies bloqueiam `DROP COLUMN` → dropar policies antes do DROP
+- SQL de reparo vai nos **dois** projetos Supabase (local e staging)
+
+## Navegação atual
+
+**Desktop:** `[Logo→/]  Início▾  Explorar▾  Anunciar▾  [?]  Olá, Nome!  [🔔]  [Avatar]`
+- `AppHeader` permanece Server Component — dropdowns são `"use client"` em folha
+- `HomeDropdown`, `ExplorarDropdown` (6 opções), `AnunciarDropdown` (3 opções)
+- `UserDropdown` (ATIVIDADE + MINHA CONTA)
+
+**Mobile:** BottomNav 4 tabs + MobileMenu com Explorar▾ / Anunciar▾ expansíveis + seção Atividade rotulada
+
+## UX da locação (PriceCalc)
+
+Arquivo: `app/itens/[id]/_PriceCalc.tsx`
+- Modalidade **diária:** cliente informa quantidade de dias (input +/-); devolução = retirada + N dias
+- Modalidade **semanal:** devolução = retirada + 7 dias (campo read-only)
+- Modalidade **mensal:** devolução = retirada + 30 dias (campo read-only)
+- Tabs de modalidade só aparecem se item tiver `pricePerWeek`/`pricePerMonth`
+
+## Precificação de referência (seed e formulários)
+
+Diária ≈ 3–5% do valor do produto. Semana = 3× diária. Mês = 15× diária.
+Multiplicadores configuráveis pelo SuperAdmin em `/admin/financeiro` (chaves `pricingWeeklyMultiplier` e `pricingMonthlyMultiplier`).
+
+| Slug categoria | Diária padrão |
+|---|---|
+| ferramentas | R$35 |
+| eletronicos | R$100 |
+| casa-jardim | R$30 |
+| construcao | R$45 |
+| esporte | R$60 |
+| moda | R$50 |
+| festas | R$80 |
+
+## Arquivos de referência
+
+- `prisma/schema.prisma` — fonte da verdade do modelo de dados
+- `shareo-prototipo-v3b.html` — protótipo visual ativo (referência de UI desde 06/06/2026)
+- `lib/pricing.ts` — `calcBookingTotal()` com desconto semanal/mensal
+- `lib/geocodeItem.ts` — geocoding fire-and-forget
+- `lib/email.ts` — todos os templates de e-mail transacional
+- `lib/platform-config.ts` — `getPlatformFeeRate()`, `calcSplit()`, `CHECKOUT_MAX_CENTS=50000`
+- `docs/adr/` — ADR-001 a ADR-020
+- `docs/STATUS.md` — estado atual do projeto
+- `docs/backlog-atividades-priorizadas.md` — backlog P0–P3
+
+## Subagentes (`.claude/Agents/`)
+
+`arquiteto-shareo`, `fullstack-dev-shareo`, `designer-shareo`, `devops-shareo`, `qa-shareo`, `seguranca-shareo`, `product-owner-shareo`, `gestor-projeto-shareo`, `seo-shareo`
+
+## Scripts temporários a deletar antes de produção
+
+`scripts/reset-fixture-pwd.ts`, `scripts/delete-e2e-admins.ts`, `scripts/clear-rl.mjs`, `scripts/fix-admin-roles.ts`, `scripts/set-fixture-admin-role.ts`, `scripts/verify-admin-sessions.ts`
+
+## Estado atual (07/06/2026)
+
+Commit `e2ffbc7`. Staging validado (smokes #1–#32 passando). Aguardando **D4** (jurídico) para go-live produção.
+
+Próximos passos: deletar scripts temporários → aguardar D4 → criar Supabase production → tag v1.1.0.

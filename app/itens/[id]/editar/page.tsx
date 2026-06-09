@@ -4,6 +4,7 @@ import { redirect, notFound } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { ItemForm } from "@/components/items/ItemForm"
+import { getPricingMultipliers } from "@/lib/platform-config"
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -15,10 +16,13 @@ export default async function EditarItemPage({ params }: Props) {
   const session = await auth()
   if (!session) redirect(`/login?callbackUrl=/itens/${id}/editar`)
 
-  const item = await prisma.item.findFirst({
+  const [item, { weeklyMultiplier, monthlyMultiplier }] = await Promise.all([
+    prisma.item.findFirst({
     where:   { id, deletedAt: null },
-    include: { images: { orderBy: { order: "asc" } } },
-  })
+      include: { images: { orderBy: { order: "asc" } } },
+    }),
+    getPricingMultipliers(),
+  ])
 
   if (!item) notFound()
 
@@ -59,7 +63,7 @@ export default async function EditarItemPage({ params }: Props) {
             <h1 className="text-2xl font-bold text-primary">Editar anúncio</h1>
             <p className="mt-1 text-sm text-muted-foreground truncate">{item.title}</p>
           </div>
-          <ItemForm mode="edit" initialData={initialData} />
+          <ItemForm mode="edit" initialData={initialData} weeklyMultiplier={weeklyMultiplier} monthlyMultiplier={monthlyMultiplier} />
         </div>
       </main>
     </div>

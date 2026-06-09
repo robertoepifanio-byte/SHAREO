@@ -3,12 +3,15 @@ import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { ItemForm } from "@/components/items/ItemForm"
+import { getPricingMultipliers } from "@/lib/platform-config"
 
 export const metadata: Metadata = { title: "Novo anúncio" }
 
 export default async function NovoItemPage() {
   const session = await auth()
   if (!session) redirect("/login?callbackUrl=/itens/novo")
+
+  const { weeklyMultiplier, monthlyMultiplier } = await getPricingMultipliers()
 
   return (
     <div className="min-h-screen bg-background">
@@ -21,7 +24,7 @@ export default async function NovoItemPage() {
               Compartilhe o que você tem para alugar e comece a ganhar
             </p>
           </div>
-          <ItemForm mode="create" />
+          <ItemForm mode="create" weeklyMultiplier={weeklyMultiplier} monthlyMultiplier={monthlyMultiplier} />
         </div>
       </main>
     </div>

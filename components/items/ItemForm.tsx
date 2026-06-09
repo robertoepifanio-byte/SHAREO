@@ -56,12 +56,14 @@ interface InitialData {
 }
 
 interface ItemFormProps {
-  mode:          "create" | "edit"
-  initialData?:  InitialData
+  mode:               "create" | "edit"
+  initialData?:       InitialData
+  weeklyMultiplier?:  number
+  monthlyMultiplier?: number
 }
 
 // ─── Price suggestions by category slug ──────────────────────────────────────
-// Base: diária ≈ 5% do valor do produto (mercado brasileiro)
+// Base: diária ≈ 3–5% do valor do produto. Semana = 3× diária. Mês = 15× diária.
 const PRICE_SUGGESTIONS: Record<string, number> = {
   "ferramentas":   35,
   "eletronicos":   100,
@@ -149,7 +151,7 @@ function PriceInput({
 
 // ─── Componente ──────────────────────────────────────────────────────────────
 
-export function ItemForm({ mode, initialData }: ItemFormProps) {
+export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMultiplier = 15 }: ItemFormProps) {
   const router = useRouter()
 
   // Form fields
@@ -219,13 +221,13 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
   function autoWeekly() {
     const cents = toCents(pricePerDay)
     if (!cents) return
-    setPricePerWeek(((cents * 4) / 100).toFixed(2).replace(".", ","))
+    setPricePerWeek(((cents * weeklyMultiplier) / 100).toFixed(2).replace(".", ","))
   }
 
   function autoMonthly() {
     const cents = toCents(pricePerDay)
     if (!cents) return
-    setPricePerMonth(((cents * 12) / 100).toFixed(2).replace(".", ","))
+    setPricePerMonth(((cents * monthlyMultiplier) / 100).toFixed(2).replace(".", ","))
   }
 
   // Load categories on mount
@@ -678,7 +680,7 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
                 disabled={loading}
                 className="self-start text-[11px] text-brand hover:underline disabled:opacity-50"
               >
-                Calcular (4× diária = R$ {((toCents(pricePerDay) * 4) / 100).toFixed(2).replace(".", ",")})
+                Calcular ({weeklyMultiplier}× diária = R$ {((toCents(pricePerDay) * weeklyMultiplier) / 100).toFixed(2).replace(".", ",")})
               </button>
             )}
           </div>
@@ -700,7 +702,7 @@ export function ItemForm({ mode, initialData }: ItemFormProps) {
                 disabled={loading}
                 className="self-start text-[11px] text-brand hover:underline disabled:opacity-50"
               >
-                Calcular (12× diária = R$ {((toCents(pricePerDay) * 12) / 100).toFixed(2).replace(".", ",")})
+                Calcular ({monthlyMultiplier}× diária = R$ {((toCents(pricePerDay) * monthlyMultiplier) / 100).toFixed(2).replace(".", ",")})
               </button>
             )}
           </div>

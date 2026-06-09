@@ -69,7 +69,8 @@ export function Calculadora() {
           2. Qual será o preço por diária?
         </h2>
         <p className="text-xs text-muted-foreground mb-3">
-          Sugestão para {cat.label}: <strong className="text-foreground">{fmt(cat.diaria)}/dia</strong>
+          Sugestão para {cat.label}: <strong className="text-foreground">{fmt(cat.diaria)}/dia</strong>{" "}
+          <span className="text-muted-foreground/70">(3–5% do valor do bem · semana = 3× diária · mês = 15× diária)</span>
         </p>
         <div className="flex items-center gap-3 max-w-xs">
           <span className="text-sm font-medium text-muted-foreground">R$</span>

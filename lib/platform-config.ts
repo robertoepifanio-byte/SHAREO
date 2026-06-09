@@ -25,3 +25,27 @@ export function calcSplit(totalPrice: number, feeRate: number) {
 }
 
 export const CHECKOUT_MAX_CENTS = 50_000 // R$ 500,00 — teto MVP (D2)
+
+const DEFAULT_WEEKLY_MULTIPLIER  = 3   // preço semanal = 3× diária
+const DEFAULT_MONTHLY_MULTIPLIER = 15  // preço mensal  = 15× diária
+
+/**
+ * Lê os multiplicadores de precificação sugeridos do banco.
+ * Nunca lança exceção — usado no formulário de anúncio.
+ */
+export async function getPricingMultipliers(): Promise<{ weeklyMultiplier: number; monthlyMultiplier: number }> {
+  try {
+    const [weekly, monthly] = await Promise.all([
+      prisma.platformConfig.findUnique({ where: { key: "pricingWeeklyMultiplier" } }),
+      prisma.platformConfig.findUnique({ where: { key: "pricingMonthlyMultiplier" } }),
+    ])
+    const w = weekly  ? parseInt(weekly.value,  10) : DEFAULT_WEEKLY_MULTIPLIER
+    const m = monthly ? parseInt(monthly.value, 10) : DEFAULT_MONTHLY_MULTIPLIER
+    return {
+      weeklyMultiplier:  isNaN(w) || w < 1 || w > 52 ? DEFAULT_WEEKLY_MULTIPLIER  : w,
+      monthlyMultiplier: isNaN(m) || m < 1 || m > 90 ? DEFAULT_MONTHLY_MULTIPLIER : m,
+    }
+  } catch {
+    return { weeklyMultiplier: DEFAULT_WEEKLY_MULTIPLIER, monthlyMultiplier: DEFAULT_MONTHLY_MULTIPLIER }
+  }
+}
