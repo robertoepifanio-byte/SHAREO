@@ -122,7 +122,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       )
     }
 
-    const { action, reason } = parsed.data
+    const { action, reason, actualTime } = parsed.data
+    // Horário efetivo: usa o informado pelo usuário (se válido e no passado), senão o momento atual
+    const effectiveTime = actualTime ? new Date(actualTime) : new Date()
     const userId = session.user.id
 
     const booking = await prisma.booking.findUnique({
@@ -219,11 +221,16 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       data.respondedAt = now
     }
 
-    // Grava horário real de retirada e recalcula endDate a partir dele.
+    // Grava horário real de retirada (informado pelo locador ou server time) e recalcula endDate.
     // Regra: prazo de devolução = mesmo horário da retirada + totalDays.
     if (action === "mark_active") {
-      data.activatedAt = now
-      data.endDate     = new Date(now.getTime() + booking.totalDays * 24 * 60 * 60 * 1000)
+      data.activatedAt = effectiveTime
+      data.endDate     = new Date(effectiveTime.getTime() + booking.totalDays * 24 * 60 * 60 * 1000)
+    }
+
+    // Grava horário real de devolução (informado pelo locatário ou server time).
+    if (action === "mark_returned" || action === "confirm_return") {
+      data.returnedAt = effectiveTime
     }
 
     // Ao confirmar: verifica conflito de datas dentro de uma transação para evitar double-booking.
