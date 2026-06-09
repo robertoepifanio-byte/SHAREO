@@ -122,7 +122,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       )
     }
 
-    const { action, reason, actualTime } = parsed.data
+    const { action, reason, actualTime, pickupToken } = parsed.data
     // Horário efetivo: usa o informado pelo usuário (se válido e no passado), senão o momento atual
     const effectiveTime = actualTime ? new Date(actualTime) : new Date()
     const userId = session.user.id
@@ -132,6 +132,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       select: {
         id: true, status: true, borrowerId: true, ownerId: true,
         itemId: true, startDate: true, endDate: true, totalPrice: true, totalDays: true,
+        pickupToken: true, pickupTokenUsedAt: true,
         item:     { select: { title: true } },
         borrower: { select: { email: true, name: true } },
         owner:    { select: { email: true, name: true } },
@@ -221,11 +222,30 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       data.respondedAt = now
     }
 
-    // Grava horário real de retirada (informado pelo locador ou server time) e recalcula endDate.
+    // Grava horário real de retirada — exige token válido e o consome.
     // Regra: prazo de devolução = mesmo horário da retirada + totalDays.
     if (action === "mark_active") {
-      data.activatedAt = effectiveTime
-      data.endDate     = new Date(effectiveTime.getTime() + booking.totalDays * 24 * 60 * 60 * 1000)
+      if (!pickupToken) {
+        return NextResponse.json(
+          { error: { code: "TOKEN_REQUIRED", message: "Código de retirada obrigatório." } },
+          { status: 400 },
+        )
+      }
+      if (booking.pickupTokenUsedAt) {
+        return NextResponse.json(
+          { error: { code: "TOKEN_ALREADY_USED", message: "Este código já foi utilizado." } },
+          { status: 409 },
+        )
+      }
+      if (booking.pickupToken !== pickupToken) {
+        return NextResponse.json(
+          { error: { code: "TOKEN_INVALID", message: "Código de retirada inválido. Verifique com o locatário." } },
+          { status: 422 },
+        )
+      }
+      data.activatedAt      = effectiveTime
+      data.pickupTokenUsedAt = effectiveTime
+      data.endDate           = new Date(effectiveTime.getTime() + booking.totalDays * 24 * 60 * 60 * 1000)
     }
 
     // Grava horário real de devolução (informado pelo locatário ou server time).

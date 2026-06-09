@@ -372,6 +372,10 @@ model Booking {
   // Retirada real — gravada no mark_active; endDate é recalculado a partir daqui
   activatedAt DateTime? // horário real de retirada confirmada pelo locador
 
+  // Token de segurança para retirada — gerado no pagamento, validado pelo proprietário na entrega
+  pickupToken       String?   @unique // código de 6 dígitos exibido ao locatário
+  pickupTokenUsedAt DateTime? // quando foi validado (mark_active)
+
   // Devolução e taxa de atraso
   returnedAt    DateTime? // data real de devolução (pode ser após endDate)
   lateFeeAmount Int? // cents — calculado se returnedAt > endDate

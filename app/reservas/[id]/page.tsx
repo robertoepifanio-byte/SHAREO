@@ -35,6 +35,19 @@ const STATUS_LABEL: Record<string, { label: string; color: string }> = {
 const fmt = (cents: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
 
+function fmtOwnerAddress(owner: {
+  cep?: string | null; street?: string | null
+  neighborhood?: string | null; city?: string | null; state?: string | null
+}) {
+  const parts: string[] = []
+  if (owner.street)       parts.push(owner.street)
+  if (owner.neighborhood) parts.push(owner.neighborhood)
+  if (owner.city && owner.state) parts.push(`${owner.city} — ${owner.state}`)
+  else if (owner.city)   parts.push(owner.city)
+  if (owner.cep)         parts.push(`CEP ${owner.cep.replace(/(\d{5})(\d{3})/, "$1-$2")}`)
+  return parts.length ? parts.join(", ") : null
+}
+
 function fmtDate(d: Date) {
   return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "long", year: "numeric" }).format(new Date(d))
 }
@@ -89,8 +102,15 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
       },
       extensionStatus:           true,
       extensionRequestedEndDate: true,
+      pickupToken:       true,
+      pickupTokenUsedAt: true,
       borrower:     { select: { id: true, name: true } },
-      owner:        { select: { id: true, name: true } },
+      owner:        {
+        select: {
+          id: true, name: true,
+          cep: true, street: true, neighborhood: true, city: true, state: true,
+        },
+      },
       conversation: { select: { id: true } },
       reviews: {
         where:  { reviewerId: userId },
@@ -227,8 +247,59 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
               </svg>
               <div>
                 <p className="font-semibold text-success text-sm">Pagamento confirmado!</p>
-                <p className="text-xs text-success/80">O locador foi notificado. Combine a entrega do item.</p>
+                <p className="text-xs text-success/80">O locador foi notificado. Apresente o código abaixo na retirada.</p>
               </div>
+            </div>
+          )}
+
+          {/* ── Token de retirada — exibido ao locatário enquanto não foi usado ── */}
+          {isBorrower && booking.pickupToken && !booking.pickupTokenUsedAt && (
+            <div className="mb-6 rounded-xl border-2 border-brand/40 bg-brand/5 p-5">
+              <div className="mb-3 flex items-center gap-2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-brand" aria-hidden="true">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <p className="font-semibold text-brand text-sm">Código de retirada</p>
+              </div>
+
+              <p className="mb-1 text-[11px] text-muted-foreground uppercase tracking-wider font-semibold">
+                Apresente este código ao proprietário na retirada
+              </p>
+              <div className="my-3 flex justify-center">
+                <span className="rounded-xl bg-white border-2 border-brand/30 px-8 py-4 text-4xl font-extrabold tracking-[0.35em] text-primary shadow-sm select-all">
+                  {booking.pickupToken}
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-foreground text-center">
+                O proprietário digitará este código no app para confirmar a entrega. Guarde-o.
+              </p>
+
+              {/* Endereço de retirada */}
+              {(() => {
+                const addr = fmtOwnerAddress(booking.owner)
+                return addr ? (
+                  <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3">
+                    <p className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-amber-800">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                        <circle cx="12" cy="10" r="3"/>
+                      </svg>
+                      Local de retirada (endereço cadastrado do proprietário)
+                    </p>
+                    <p className="text-sm font-medium text-amber-900">{addr}</p>
+                    <p className="mt-1 text-[10px] text-amber-700">
+                      Por segurança, a retirada deve ocorrer exclusivamente neste endereço. Não aceite outro local.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3">
+                    <p className="text-xs text-amber-800">
+                      O proprietário ainda não cadastrou endereço. Entre em contato pelo chat para combinar o local de retirada.
+                    </p>
+                  </div>
+                )
+              })()}
             </div>
           )}
           {payment === "cancelled" && (

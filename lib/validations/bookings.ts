@@ -38,10 +38,12 @@ export type ListBookingsQuery = z.infer<typeof ListBookingsQuerySchema>
 
 export const PatchBookingSchema = z
   .object({
-    action:     z.enum(["confirm", "cancel", "mark_active", "mark_returned", "confirm_return", "open_dispute"]),
-    reason:     z.string().max(500).optional(),
+    action:      z.enum(["confirm", "cancel", "mark_active", "mark_returned", "confirm_return", "open_dispute"]),
+    reason:      z.string().max(500).optional(),
     // Horário real de retirada (mark_active) ou devolução (mark_returned/confirm_return)
-    actualTime: z.string().datetime({ message: "actualTime inválido" }).optional(),
+    actualTime:  z.string().datetime({ message: "actualTime inválido" }).optional(),
+    // Token de segurança obrigatório no mark_active
+    pickupToken: z.string().length(6).regex(/^\d{6}$/, "Token deve ter 6 dígitos numéricos").optional(),
   })
   .superRefine((data, ctx) => {
     if (

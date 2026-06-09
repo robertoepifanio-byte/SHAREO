@@ -91,19 +91,37 @@ export async function POST(req: Request) {
           break
         }
 
-        // Pagamento de aluguel normal
+        // Pagamento de aluguel normal — gera token de retirada único de 6 dígitos
+        let pickupToken: string
+        for (;;) {
+          const candidate = String(Math.floor(100000 + Math.random() * 900000))
+          const conflict  = await prisma.booking.findFirst({ where: { pickupToken: candidate }, select: { id: true } })
+          if (!conflict) { pickupToken = candidate; break }
+        }
+
         await prisma.booking.update({
           where: { id: bookingId },
           data: {
             paymentStatus:         "PAID",
             stripePaymentIntentId: paymentIntentId,
-            paidAt: new Date(),
+            paidAt:                new Date(),
+            pickupToken,
           },
         })
 
         const booking = await prisma.booking.findUnique({
           where:  { id: bookingId },
-          select: { ownerId: true, item: { select: { title: true } } },
+          select: {
+            ownerId: true,
+            pickupToken: true,
+            item: { select: { title: true } },
+            owner: {
+              select: {
+                name: true, cep: true, street: true,
+                neighborhood: true, city: true, state: true,
+              },
+            },
+          },
         })
         if (booking) {
           dispatchWebhookEvent(booking.ownerId, "booking.paid", {

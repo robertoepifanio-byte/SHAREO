@@ -54,6 +54,7 @@ export function BookingActions({
     return d.toISOString().slice(0, 16) // "YYYY-MM-DDTHH:MM"
   }
   const [pickupTime,  setPickupTime]  = useState("")
+  const [pickupTokenInput, setPickupTokenInput] = useState("")
   const [returnTime,  setReturnTime]  = useState("")
 
   // report problem
@@ -158,10 +159,14 @@ export function BookingActions({
   }
 
   async function submitPickupTime() {
+    if (pickupTokenInput.replace(/\s/g, "").length !== 6) {
+      setError("Informe o código de 6 dígitos apresentado pelo locatário.")
+      return
+    }
     const actualTime = pickupTime
       ? new Date(pickupTime).toISOString()
       : new Date().toISOString()
-    await execCore("mark_active", { actualTime })
+    await execCore("mark_active", { actualTime, pickupToken: pickupTokenInput.replace(/\s/g, "") })
   }
 
   async function submitReturnTime() {
@@ -233,14 +238,28 @@ export function BookingActions({
         </div>
       )}
 
-      {/* ── Painel: Confirmar retirada com horário ── */}
+      {/* ── Painel: Confirmar retirada — valida token + horário ── */}
       {panel === "pickup_time" && (
         <div className="rounded-xl border border-brand/40 bg-brand/5 p-4">
           <p className="mb-1 text-sm font-semibold text-foreground">Confirmar retirada do item</p>
-          <p className="mb-3 text-xs text-muted-foreground">
-            Informe o horário exato da retirada. O prazo de devolução será calculado a partir deste momento.
+          <p className="mb-4 text-xs text-muted-foreground">
+            Solicite o código de retirada ao locatário e informe abaixo para confirmar a entrega.
           </p>
-          <label className="mb-1 block text-xs font-medium text-foreground">
+
+          <label className="mb-1 block text-xs font-semibold text-foreground">
+            Código do locatário <span className="text-destructive">*</span>
+          </label>
+          <input
+            type="text"
+            inputMode="numeric"
+            maxLength={6}
+            placeholder="000000"
+            value={pickupTokenInput}
+            onChange={(e) => setPickupTokenInput(e.target.value.replace(/\D/g, ""))}
+            className="mb-3 w-full rounded-lg border border-input bg-white px-3 py-2.5 text-center text-2xl font-bold tracking-[0.3em] text-primary outline-none focus:border-brand"
+          />
+
+          <label className="mb-1 block text-xs font-semibold text-foreground">
             Horário da retirada <span className="text-destructive">*</span>
           </label>
           <input
@@ -250,13 +269,14 @@ export function BookingActions({
             onChange={(e) => setPickupTime(e.target.value)}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-brand"
           />
-          <p className="mt-1 text-[10px] text-muted-foreground">
+          <p className="mt-1 mb-3 text-[10px] text-muted-foreground">
             Não pode ser no futuro. Se não alterar, usa o horário atual.
           </p>
-          <div className="mt-3 flex gap-2">
+
+          <div className="flex gap-2">
             <button
               onClick={submitPickupTime}
-              disabled={loading}
+              disabled={loading || pickupTokenInput.length !== 6}
               className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
             >
               Confirmar retirada
