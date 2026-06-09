@@ -42,7 +42,7 @@ const LOCATARIO_STEPS: Step[] = [
   {
     step: 4, icon: "📅", title: "Solicitar a reserva",
     desc: "Abra o anúncio e use a calculadora de locação. Selecione a modalidade (diário, semanal ou mensal), a data de retirada e a duração. O valor total — incluindo a taxa de serviço de 15% — aparece antes de você confirmar. Escreva uma mensagem apresentando-se ao proprietário e clique em 'Solicitar locação'. Você ainda não paga nada nesta etapa. O valor máximo por locação é R$ 500.",
-    example: "Item: R$ 80/dia. Aluguel de 3 dias = R$ 240,00. Taxa de serviço (10%) = R$ 24,00. Total cobrado no cartão ao confirmar: R$ 264,00.",
+    example: "Item: R$ 80/dia. Aluguel de 3 dias = R$ 240,00. Taxa de serviço (15%) = R$ 36,00. Total cobrado no cartão ao confirmar: R$ 276,00.",
   },
   {
     step: 5, icon: "💳", title: "Aguardar confirmação e pagar",
@@ -100,7 +100,7 @@ const LOCADOR_STEPS: Step[] = [
   },
   {
     step: 7, icon: "✅", title: "Confirme o recebimento",
-    desc: "Após o locatário devolver, toque em 'Confirmar recebimento' e informe o estado do item. O repasse entra na fila e é enviado via PIX em até 3 dias úteis para a chave cadastrada em Meu Perfil → Recebimentos.",
+    desc: "Após o locatário devolver, toque em 'Confirmar recebimento' e informe o estado do item. O valor líquido entra na fila de repasse semanal e é transferido via PIX toda segunda-feira (feriado: primeiro dia útil seguinte) para a chave cadastrada em Meu Perfil → Recebimentos.",
     warning: "Se o item voltar danificado, selecione 'Danificado'. Uma disputa será aberta automaticamente e o repasse fica suspenso até a resolução.",
   },
 ]
@@ -113,6 +113,7 @@ const FEE_TABLE = [
   { label: "Repasse ao locador",                      value: "Via PIX — valor líquido",       when: "Toda segunda-feira (feriado: 1º dia útil seguinte)" },
   { label: "Valor máximo do bem anunciado",             value: "R$ 1.000 por item",             when: "Validado ao publicar o anúncio" },
   { label: "Limite por locação",                      value: "R$ 500 por transação",          when: "Validado no checkout" },
+  { label: "Seguro opcional (locador)",                value: "1% sobre o valor da locação",   when: "Optativo — cobre extravio do item" },
   { label: "Multa por atraso na devolução",           value: "1× preço diário por dia extra", when: "Por cada dia além do prazo" },
   { label: "Cancelamento com +24h de antecedência",   value: "Gratuito",                      when: "Reembolso integral" },
   { label: "Cancelamento com menos de 24h",           value: "30% do valor da locação",       when: "Descontado do reembolso" },
