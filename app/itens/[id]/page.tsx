@@ -10,6 +10,7 @@ import { Gallery } from "./_Gallery"
 import { PriceCalc } from "./_PriceCalc"
 import { StickyBookingCTA } from "./_StickyBookingCTA"
 import { CANCELLATION_POLICY_LINES } from "@/lib/cancellationPolicy"
+import { getPlatformFeeRate } from "@/lib/platform-config"
 import { ItemCard } from "@/components/items/ItemCard"
 import { AvailabilityCalendar } from "@/components/items/AvailabilityCalendar"
 
@@ -155,6 +156,9 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
   ])
 
   prisma.item.update({ where: { id }, data: { viewCount: { increment: 1 } } }).catch(() => {})
+
+  const feeRateBps = await getPlatformFeeRate()   // basis points (ex: 1500 = 15%)
+  const feeRatePct = feeRateBps / 100             // 15.0
 
   const isOwner   = session?.user.id === item.ownerId
   const avgRating = item.reviews.length
@@ -485,6 +489,7 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
                     depositAmount={item.depositAmount}
                     itemId={item.id}
                     isLoggedIn={!!session}
+                    feeRatePct={feeRatePct}
                   />
                 </div>
               )}

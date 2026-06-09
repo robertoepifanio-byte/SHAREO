@@ -13,6 +13,7 @@ import { BookingProgressBar }  from "@/components/booking/BookingProgressBar"
 import { ReturnCountdown }    from "@/components/booking/ReturnCountdown"
 import { ReturnChecklist }    from "@/components/booking/ReturnChecklist"
 import { ReturnConditionForm } from "@/components/booking/ReturnConditionForm"
+import { getPlatformFeeRate } from "@/lib/platform-config"
 
 type Props = {
   params:       Promise<{ id: string }>
@@ -91,6 +92,9 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
 
   if (!booking) notFound()
 
+  const feeRateBps = await getPlatformFeeRate()
+  const feeRatePct = feeRateBps / 100
+
   const isOwner    = booking.owner.id    === userId
   const isBorrower = booking.borrower.id === userId
   if (!isOwner && !isBorrower) notFound()
@@ -161,7 +165,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                   <span>{fmt(booking.dailyPrice * booking.totalDays)}</span>
                 </div>
                 <div className="flex justify-between text-muted-foreground">
-                  <span>Taxa Shareo (10%)</span>
+                  <span>Taxa Shareo ({feeRatePct % 1 === 0 ? feeRatePct.toFixed(0) : feeRatePct}%)</span>
                   <span>{fmt(booking.totalPrice - booking.dailyPrice * booking.totalDays)}</span>
                 </div>
                 {booking.depositAmount && (

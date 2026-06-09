@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import type { ReactNode } from "react"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { HelpSearch } from "@/components/ajuda/HelpSearch"
+import { getPlatformFeeRate } from "@/lib/platform-config"
 
 export const metadata: Metadata = {
   title: "Central de Ajuda — ShareO",
@@ -364,7 +365,21 @@ function StepItem({ s }: { s: Step }) {
 }
 
 /* ── Página ─────────────────────────────────────────────────────── */
-export default function AjudaPage() {
+export default async function AjudaPage() {
+  const feeRateBps = await getPlatformFeeRate()
+  const feeRatePct = feeRateBps / 100
+  const feeLabel   = `${feeRatePct % 1 === 0 ? feeRatePct.toFixed(0) : feeRatePct}%`
+
+  // Recalcula o exemplo do passo 4 do locatário com a taxa atual
+  const exFee   = 240 * (feeRatePct / 100)
+  const exTotal = 240 + exFee
+  const locatarioSteps: Step[] = LOCATARIO_STEPS.map(s =>
+    s.step === 4
+      ? { ...s, example: `Item: R$ 80/dia. Aluguel de 3 dias = R$ 240,00. Taxa de serviço (${feeLabel}) = R$ ${exFee.toFixed(2).replace(".", ",")
+        }. Total cobrado ao confirmar: R$ ${exTotal.toFixed(2).replace(".", ",")}.` }
+      : s
+  )
+
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
@@ -431,10 +446,10 @@ export default function AjudaPage() {
                   </p>
                 </div>
                 <div>
-                  {LOCATARIO_STEPS.map((s, i) => (
+                  {locatarioSteps.map((s, i) => (
                     <div
                       key={s.step}
-                      className={i === LOCATARIO_STEPS.length - 1 ? "[&>div>div:first-child>div:last-child]:hidden" : ""}
+                      className={i === locatarioSteps.length - 1 ? "[&>div>div:first-child>div:last-child]:hidden" : ""}
                     >
                       <StepItem s={s} />
                     </div>

@@ -12,11 +12,12 @@ interface Props {
   depositAmount?: number | null
   itemId:         string
   isLoggedIn:     boolean
+  feeRatePct:     number   // ex: 15.0 para 15%
 }
 
 type Mode = "daily" | "weekly" | "monthly"
 
-const COMMISSION = 0.10
+// feeRatePct vem como prop do Server Component pai (ex: 15.0)
 
 const fmt = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v)
@@ -60,7 +61,7 @@ function buildBreakdown(
 
 export function PriceCalc({
   pricePerDay, pricePerWeek, pricePerMonth,
-  depositAmount, itemId, isLoggedIn,
+  depositAmount, itemId, isLoggedIn, feeRatePct,
 }: Props) {
   const router = useRouter()
   const today  = new Date().toISOString().split("T")[0]
@@ -100,7 +101,7 @@ export function PriceCalc({
 
   const subtotal  = subtotalCents / 100
   const savings   = savingsCents  / 100
-  const fee       = subtotal * COMMISSION
+  const fee       = subtotal * (feeRatePct / 100)
   const total     = subtotal + fee
   const breakdown = days > 0
     ? buildBreakdown(days, pricePerDay, pricePerWeek, pricePerMonth)
@@ -294,7 +295,7 @@ export function PriceCalc({
             )}
 
             <div className="mb-1.5 flex justify-between text-muted-foreground">
-              <span>Taxa Shareo (10%)</span>
+              <span>Taxa Shareo ({feeRatePct % 1 === 0 ? feeRatePct.toFixed(0) : feeRatePct}%)</span>
               <span>{fmt(fee)}</span>
             </div>
 
