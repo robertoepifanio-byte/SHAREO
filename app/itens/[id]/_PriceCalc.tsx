@@ -270,10 +270,10 @@ export function PriceCalc({
         {endDate && (
           <p className="mt-1 text-[10px] text-muted-foreground">
             {mode === "daily"
-              ? `Retirada + ${numDays} dia${numDays > 1 ? "s" : ""}`
+              ? `Retirada + ${numDays} dia${numDays > 1 ? "s" : ""} — devolução no mesmo horário da retirada`
               : mode === "weekly"
-              ? "Retirada + 7 dias"
-              : "Retirada + 30 dias"}
+              ? "Retirada + 7 dias — devolução no mesmo horário da retirada"
+              : "Retirada + 30 dias — devolução no mesmo horário da retirada"}
           </p>
         )}
       </div>

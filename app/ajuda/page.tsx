@@ -56,7 +56,7 @@ const LOCATARIO_STEPS: Step[] = [
   },
   {
     step: 7, icon: "📦", title: "Usar, devolver no prazo e avaliar",
-    desc: "Cuide bem do item durante toda a locação. Você recebe um aviso no app 24 horas antes do prazo de devolução. Devolva no local e horário combinados pelo chat. Aguarde o proprietário registrar o check-out e confirmar a devolução. Após isso, avalie o proprietário com uma nota de 1 a 5 estrelas.",
+    desc: "Cuide bem do item durante toda a locação. O prazo de devolução é contado a partir do horário confirmado de retirada — se você retirou às 10h, deve devolver até às 10h do último dia. Você recebe um aviso no app 24 horas antes desse prazo. Devolva no local e horário combinados pelo chat. Aguarde o proprietário registrar o check-out e confirmar a devolução. Após isso, avalie o proprietário com uma nota de 1 a 5 estrelas.",
     example: "Atraso de 1 dia em item de R$ 80/dia = R$ 80 de multa cobrada automaticamente. Atraso de 3 dias = R$ 240. Para evitar: solicite uma extensão de prazo antes do vencimento — nunca depois.",
   },
   {
@@ -94,8 +94,8 @@ const LOCADOR_STEPS: Step[] = [
   },
   {
     step: 6, icon: "💰", title: "Receber a devolução e o pagamento",
-    desc: "Na data combinada, receba o item de volta. Use a opção 'Registrar fotos de check-out' e compare com as fotos do check-in. Se tudo estiver ok, confirme a devolução. Após 3 dias úteis de hold (proteção contra chargebacks), o repasse é enviado automaticamente para sua chave PIX. Avalie o locatário após cada devolução.",
-    example: "Locação: R$ 120/dia × 2 dias = R$ 240. Taxa de plataforma (15%) = R$ 36. Você recebe R$ 204 via PIX 3 dias após a confirmação de devolução.",
+    desc: "No horário combinado (mesmo horário da retirada), receba o item de volta. Use a opção 'Registrar fotos de check-out' e compare com as fotos do check-in. Se tudo estiver ok, confirme a devolução. O valor líquido entra na fila de repasse semanal e é transferido via PIX na próxima segunda-feira. Avalie o locatário após cada devolução.",
+    example: "Locação: R$ 120/dia × 2 dias = R$ 240. Taxa de plataforma (15%) = R$ 36. Você recebe R$ 204 via PIX na segunda-feira seguinte à confirmação de devolução.",
     tip: "Quanto mais avaliações positivas você tiver, mais alto o seu anúncio aparece nos resultados de busca.",
   },
   {
@@ -136,7 +136,7 @@ const SECTIONS = [
       { q: "Posso cancelar uma reserva?",
         a: "Sim. Enquanto a reserva estiver 'Aguardando' ou 'Confirmada', você pode cancelar na página da reserva. O cancelamento é gratuito até 24 horas antes da data de retirada." },
       { q: "O que acontece na retirada do item?",
-        a: "Combine com o proprietário pelo chat do app onde e quando retirar o item. Na entrega, o proprietário pode registrar fotos do estado do item. Quando tudo estiver certo, ele marca a reserva como 'Ativo' e o período de locação começa." },
+        a: "Combine com o proprietário pelo chat do app onde e quando retirar o item. Na entrega, o proprietário registra fotos do estado do item (check-in) e marca a reserva como 'Ativo'. O período de locação começa a contar a partir desse momento — o prazo de devolução é no mesmo horário, N dias depois. Exemplo: retirada em 10/10 às 10h → devolução até 11/10 às 10h (1 dia)." },
       { q: "E se o item não estiver como anunciado?",
         a: "Se houver algum problema, você pode abrir uma disputa na página da reserva enquanto ela estiver ativa ou em até 48 horas após a devolução. Descreva o que aconteceu e a equipe ShareO vai analisar o caso em até 3 dias úteis. Estamos disponíveis 7 dias por semana." },
       { q: "Como avalio o proprietário?",
@@ -146,7 +146,7 @@ const SECTIONS = [
       { q: "Posso pedir para estender o prazo de um aluguel que já está em andamento?",
         a: "Sim, enquanto a reserva estiver com status 'Ativo' você pode solicitar uma extensão diretamente na página da reserva. O proprietário precisa aceitar a extensão. Se ele confirmar, o novo período e o valor adicional são calculados automaticamente e o pagamento é processado na hora. Só solicite se ainda tiver o item em mãos e com tempo hábil para o proprietário responder." },
       { q: "O que acontece se eu devolver o item com atraso?",
-        a: "Uma taxa de atraso é gerada automaticamente para cada dia extra além da data de devolução combinada. O valor é proporcional ao preço diário do item. Você recebe um aviso no app quando a data de devolução se aproxima. Para evitar cobranças extras, solicite uma extensão antes do prazo vencer — e não depois." },
+        a: "O prazo de devolução é calculado a partir do horário exato de retirada confirmada — se você retirou às 10h, deve devolver até às 10h do último dia. Uma taxa de atraso equivalente a 1 diária é gerada automaticamente para cada dia extra além desse prazo. Você recebe um aviso no app 24h antes do vencimento. Para evitar cobranças extras, solicite uma extensão antes do prazo vencer — nunca depois." },
       { q: "Como funciona o chat com o proprietário?",
         a: "Assim que você solicita uma reserva, um chat exclusivo entre você e o proprietário é aberto na página da reserva. As mensagens chegam em tempo real. Use o chat para combinar local e horário de entrega, tirar dúvidas sobre o item ou enviar qualquer informação necessária. O chat fica disponível durante toda a locação, inclusive no período de devolução." },
       { q: "Como salvo itens para ver depois?",
@@ -181,7 +181,7 @@ const SECTIONS = [
       { q: "Tenho um prazo para confirmar uma solicitação?",
         a: "Sim. Você tem até 24 horas para confirmar ou recusar qualquer solicitação. Se não responder dentro desse prazo, a reserva é cancelada automaticamente. Cancelamentos automáticos por falta de resposta afetam sua reputação na plataforma. Ative as notificações do app para não perder solicitações." },
       { q: "O que acontece se o locatário não devolver o item no prazo?",
-        a: "Uma taxa de atraso é gerada automaticamente para cada dia além da data combinada. Você é notificado no app assim que o atraso é registrado. Se o locatário não entrar em contato, use o chat da reserva para cobrar a devolução. Em casos de atraso prolongado ou sem resposta, abra uma disputa na página da reserva para acionar a equipe ShareO." },
+        a: "O prazo de devolução é o mesmo horário da retirada, N dias depois — por exemplo, retirou às 14h, deve devolver até às 14h do último dia. Se o locatário não devolver no prazo, uma taxa equivalente a 1 diária é gerada automaticamente para cada dia de atraso. Você é notificado no app assim que o atraso é registrado. Se o locatário não entrar em contato, use o chat da reserva para cobrar a devolução. Em casos de atraso prolongado ou sem resposta, abra uma disputa na página da reserva para acionar a equipe ShareO." },
       { q: "Como avalio o locatário após a locação?",
         a: "Após a devolução do item, a opção de avaliar o locatário aparece na página da reserva. Você pode dar uma nota de 1 a 5 estrelas e deixar um comentário sobre pontualidade, cuidado com o item e comunicação. A avaliação fica visível no perfil do locatário e ajuda outros proprietários a decidir com quem alugar." },
       { q: "Como funciona o check-in e check-out fotográfico?",
