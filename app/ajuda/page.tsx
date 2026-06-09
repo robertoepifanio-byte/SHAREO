@@ -41,7 +41,7 @@ const LOCATARIO_STEPS: Step[] = [
   },
   {
     step: 4, icon: "📅", title: "Solicitar a reserva",
-    desc: "Abra o anúncio e use a calculadora de locação. Selecione a modalidade (diário, semanal ou mensal), a data de retirada e a duração. O valor total — incluindo a taxa de serviço de 15% — aparece antes de você confirmar. Escreva uma mensagem apresentando-se ao proprietário e clique em 'Solicitar locação'. Você ainda não paga nada nesta etapa. O valor máximo por locação é R$ 500.",
+    desc: "Abra o anúncio e use a calculadora de locação. Selecione a modalidade (diário, semanal ou mensal), a data de retirada e a duração. O valor total — incluindo a taxa de serviço — aparece antes de você confirmar. Escreva uma mensagem apresentando-se ao proprietário e clique em 'Solicitar locação'. Você ainda não paga nada nesta etapa. O valor máximo por locação é R$ 500.",
     example: "Item: R$ 80/dia. Aluguel de 3 dias = R$ 240,00. Taxa de serviço (15%) = R$ 36,00. Total cobrado no cartão ao confirmar: R$ 276,00.",
   },
   {
@@ -95,7 +95,7 @@ const LOCADOR_STEPS: Step[] = [
   {
     step: 6, icon: "💰", title: "Receber a devolução e o pagamento",
     desc: "No horário combinado (mesmo horário da retirada), receba o item de volta. Use a opção 'Registrar fotos de check-out' e compare com as fotos do check-in. Se tudo estiver ok, confirme a devolução. O valor líquido entra na fila de repasse semanal e é transferido via PIX na próxima segunda-feira. Avalie o locatário após cada devolução.",
-    example: "Locação: R$ 120/dia × 2 dias = R$ 240. Taxa de plataforma (15%) = R$ 36. Você recebe R$ 204 via PIX na segunda-feira seguinte à confirmação de devolução.",
+    example: "LOCADOR_STEP6_EXAMPLE",
     tip: "Quanto mais avaliações positivas você tiver, mais alto o seu anúncio aparece nos resultados de busca.",
   },
   {
@@ -107,8 +107,8 @@ const LOCADOR_STEPS: Step[] = [
 
 /* ── Dados — Taxas ──────────────────────────────────────────────── */
 
-const FEE_TABLE = [
-  { label: "Taxa de serviço (cobrada do locatário)", value: "15% do total",                  when: "Na confirmação do pagamento" },
+function buildFeeTable(feeLabel: string) { return [
+  { label: "Taxa de serviço (cobrada do locatário)", value: `${feeLabel} do total`,           when: "Na confirmação do pagamento" },
   { label: "Anunciar na plataforma (locador)",        value: "Gratuito",                      when: "Sempre, sem mensalidade" },
   { label: "Repasse ao locador",                      value: "Via PIX — valor líquido",       when: "Toda segunda-feira (feriado: 1º dia útil seguinte)" },
   { label: "Valor máximo do bem anunciado",             value: "R$ 1.000 por item",             when: "Validado ao publicar o anúncio" },
@@ -117,7 +117,7 @@ const FEE_TABLE = [
   { label: "Multa por atraso na devolução",           value: "1× preço diário por dia extra", when: "Por cada dia além do prazo" },
   { label: "Cancelamento com +24h de antecedência",   value: "Gratuito",                      when: "Reembolso integral" },
   { label: "Cancelamento com menos de 24h",           value: "30% do valor da locação",       when: "Descontado do reembolso" },
-]
+] }
 
 /* ── Dados — FAQ ────────────────────────────────────────────────── */
 
@@ -233,7 +233,7 @@ const SECTIONS = [
     iconBg: "bg-emerald-100",
     faqs: [
       { q: "Qual é a taxa de serviço do ShareO?",
-        a: "O ShareO cobra 15% sobre o valor total da locação — cobrado do locatário. Essa taxa cobre o sistema de pagamento seguro, suporte ao cliente, proteção financeira da plataforma e manutenção do serviço. O valor exato aparece no resumo de pagamento antes de você confirmar. Sem surpresas." },
+        a: "TAXA_FAQ_PLACEHOLDER" },
       { q: "Existe algum custo para anunciar?",
         a: "Não. Anunciar no ShareO é 100% gratuito. Você não paga nada para criar anúncios, receber reservas ou usar o chat. O ShareO só cobra a taxa de serviço (do locatário) quando uma locação é concluída com sucesso. Se a reserva for cancelada antes da entrega, nenhuma taxa é cobrada." },
       { q: "Como funciona a multa por atraso na devolução?",
@@ -372,15 +372,35 @@ export default async function AjudaPage() {
   const feeRatePct = feeRateBps / 100
   const feeLabel   = `${feeRatePct % 1 === 0 ? feeRatePct.toFixed(0) : feeRatePct}%`
 
-  // Recalcula o exemplo do passo 4 do locatário com a taxa atual
-  const exFee   = 240 * (feeRatePct / 100)
-  const exTotal = 240 + exFee
+  // Exemplos dinâmicos com a taxa atual
+  const ex4Fee   = Math.round(240 * feeRatePct) / 100
+  const ex4Total = 240 + ex4Fee
+  const ex6Net   = Math.round(240 * (1 - feeRatePct / 100))
+
   const locatarioSteps: Step[] = LOCATARIO_STEPS.map(s =>
     s.step === 4
-      ? { ...s, example: `Item: R$ 80/dia. Aluguel de 3 dias = R$ 240,00. Taxa de serviço (${feeLabel}) = R$ ${exFee.toFixed(2).replace(".", ",")
-        }. Total cobrado ao confirmar: R$ ${exTotal.toFixed(2).replace(".", ",")}.` }
+      ? { ...s, example: `Item: R$ 80/dia. Aluguel de 3 dias = R$ 240,00. Taxa de serviço (${feeLabel}) = R$ ${ex4Fee.toFixed(2).replace(".", ",")}. Total cobrado ao confirmar: R$ ${ex4Total.toFixed(2).replace(".", ",")}.` }
       : s
   )
+
+  const locadorSteps: Step[] = LOCADOR_STEPS.map(s =>
+    s.example === "LOCADOR_STEP6_EXAMPLE"
+      ? { ...s, example: `Locação: R$ 120/dia × 2 dias = R$ 240. Taxa de plataforma (${feeLabel}) = R$ ${(240 - ex6Net).toFixed(0)}. Você recebe R$ ${ex6Net} via PIX na segunda-feira seguinte à confirmação de devolução.` }
+      : s
+  )
+
+  const sections = SECTIONS.map(sec =>
+    sec.id !== "taxas" ? sec : {
+      ...sec,
+      faqs: sec.faqs.map(f =>
+        f.a === "TAXA_FAQ_PLACEHOLDER"
+          ? { ...f, a: `O ShareO cobra ${feeLabel} sobre o valor total da locação — cobrado do locatário. Essa taxa cobre o sistema de pagamento seguro, suporte ao cliente, proteção financeira da plataforma e manutenção do serviço. O valor exato aparece no resumo de pagamento antes de você confirmar. Sem surpresas.` }
+          : f
+      ),
+    }
+  )
+
+  const feeTable = buildFeeTable(feeLabel)
 
   return (
     <div className="min-h-screen bg-background">
@@ -471,10 +491,10 @@ export default async function AjudaPage() {
                   </p>
                 </div>
                 <div>
-                  {LOCADOR_STEPS.map((s, i) => (
+                  {locadorSteps.map((s, i) => (
                     <div
                       key={s.step}
-                      className={i === LOCADOR_STEPS.length - 1 ? "[&>div>div:first-child>div:last-child]:hidden" : ""}
+                      className={i === locadorSteps.length - 1 ? "[&>div>div:first-child>div:last-child]:hidden" : ""}
                     >
                       <StepItem s={s} />
                     </div>
@@ -509,7 +529,7 @@ export default async function AjudaPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {FEE_TABLE.map((row, i) => (
+                  {feeTable.map((row, i) => (
                     <tr key={i} className="hover:bg-muted/30 transition-colors">
                       <td className="px-5 py-4 font-medium text-primary">{row.label}</td>
                       <td className="px-5 py-4 font-bold text-brand whitespace-nowrap">{row.value}</td>
@@ -526,7 +546,7 @@ export default async function AjudaPage() {
         </section>
 
         {/* Busca + FAQs filtradas — Client Component */}
-        <HelpSearch sections={SECTIONS} />
+        <HelpSearch sections={sections} />
 
       </main>
     </div>
