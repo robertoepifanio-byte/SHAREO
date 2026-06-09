@@ -1,13 +1,22 @@
 # ShareO — Status do Projeto
 
-**Atualizado em**: 2026-06-07 (sessão — smokes #28-#32 ✅ + CEP auto-fill + Lighthouse)
+**Atualizado em**: 2026-06-09 (sessão — taxa dinâmica 100% + multiplicadores configuráveis + ajuda page v2)
 **Ambiente staging**: https://shareo-rouge.vercel.app (webhook GitHub→Vercel ativo — push em main faz deploy automático)
-**Último commit**: `02498ac`  
+**Último commit**: `31068af`
 **Release estável**: [`v1.0.0`](https://github.com/robertoepifanio/SHAREO/releases/tag/v1.0.0)
+**Candidata a `v1.1.0`**: commit `31068af` — staging aprovado, aguarda D4
+
+---
+
+## ⚠️ BLOQUEADOR ATIVO
+
+**D4 — Consulta jurídica pendente.** Nenhuma atividade de produção (criação de projeto Supabase, deploy, DNS, go-live) antes do retorno formal do jurídico.
 
 ---
 
 ## Resumo Executivo
+
+**✅ Taxa da plataforma 100% dinâmica** (commit `31068af`). Zero hardcodes de "15%" em todo o codebase — sempre lido de `PlatformConfig` via `getPlatformFeeRate()`. Multiplicadores semanal (3×) e mensal (15×) configuráveis pelo SuperAdmin em `/admin/financeiro`. Central de ajuda, calculadoras e todas as páginas de conteúdo atualizam automaticamente quando o SuperAdmin altera a taxa.
 
 **✅ Módulo Financeiro MVP completo.** Fases 0–4 implementadas e deployadas em staging (commit `65cbf67`). Fluxo financeiro ponta-a-ponta: PIX cadastrado → checkout com split → payout automático → four-eyes admin → chargebacks → exportação CSV → informe IR → relatório mensal. Suite E2E financeiro: **33 testes** (suite base: 87 passed). ADRs 012–020 documentados.
 
@@ -105,7 +114,7 @@ Próximo passo: deletar scripts temporários + aguardar D4 (jurídico) para go-l
 |---|---|---|---|
 | `v1.0` | — | pré-v2 | Estado antes da v2 UX |
 | `v1.0.0` | `40d1a2b` | 2026-06-04 | Staging validado — ponto de recuperação estável |
-| *(próxima)* | `86b4285` | 2026-06-06 | Security smokes #18–#27 ✅ + GitGuardian fix + middleware 401 — candidata a `v1.1.0` |
+| *(candidata)* | `31068af` | 2026-06-09 | Taxa 100% dinâmica + multiplicadores configuráveis + ajuda page v2 — candidata a `v1.1.0` |
 
 ---
 
@@ -151,3 +160,137 @@ Próximo passo: deletar scripts temporários + aguardar D4 (jurídico) para go-l
 | Pagamentos MVP | PIX centralizado (D1) — Stripe Connect BR reavaliado ~dez/2026 |
 | Exportação financeira | Síncrono ≤90 dias, assíncrono >90 dias (ADR-016) |
 | Retenção de dados | 5 anos CTN Art. 173, anonimização LGPD (ADR-017) |
+
+---
+
+## Sessões recentes
+
+| Sessão | Destaques |
+|---|---|
+| **jun/06** | GitGuardian fix (senhas movidas para env vars, histórico scrubado), id-docs bug fix, security2 25/0/3 ✅, security3 12/12 ✅ (smokes #23-#27), fix crítico: middleware retorna 401 para /api/* sem auth |
+| **jun/07** | ViaCEP auto-fill endereço, CSP atualizado (`viacep.com.br`), Lighthouse CI smoke #32 ✅ |
+| **jun/08** | Logo recortado (sharp) 1254×1254→1216×275, ícone mobile atualizado, taxa plataforma fix `10% → 15%` |
+| **jun/09** | Multiplicadores semanal (3×) / mensal (15×) configuráveis SuperAdmin; taxa 100% dinâmica (zero hardcode); ajuda page atualizada (seguro/extravio, indicação, limite R$1.000, precificação 3–5%); fotos MVP limitadas a 3 |
+
+---
+
+## Arquitetura de Produção (planejamento pós-D4)
+
+> Toda esta seção é **planejamento** — nenhuma ação executada antes do sign-off D4.
+
+### Infraestrutura de serviços
+
+| Serviço | Plano atual (staging) | Plano produção | Custo estimado/mês |
+|---|---|---|---|
+| **Vercel** | Pro (atual) | Pro — necessário para Cron Jobs e Edge Middleware | ~US$20/mês |
+| **Supabase (staging)** | Free tier — `fflpuoluiqmhpvcxubqi` | **3º projeto isolado** (sa-east-1) | Free → Pro (~US$25) |
+| **Supabase (produção)** | ⏳ Não criado | Pro tier — 8 GB DB, 100 GB Storage, 5M row reads/mês | ~US$25/mês |
+| **Upstash Redis** | Pay-as-you-go | Pay-as-you-go (rate limit + blocklist) | ~US$0–5/mês |
+| **Resend (e-mail)** | Free (100/dia) | Starter US$20/mês — 50.000 e-mails/mês | ~US$20/mês |
+| **Sentry** | Free (5k eventos/mês) | Team US$26/mês se ultrapassar | ~US$0–26/mês |
+| **Mapbox** | Free (50k tile requests) | Pay-as-you-go — US$0.50/1.000 requests acima do free | ~US$0–10/mês |
+| **Stripe** | Test mode | Live mode — 2.99% + R$0.39 por transação (BR) | % sobre GMV |
+| **UptimeRobot** | Free (5 min interval) | Free suficiente para MVP | US$0 |
+
+**Estimativa infra mês 1 produção:** ~US$70–100/mês (≈R$370–530)
+
+### Projetos Supabase — 3 ambientes isolados
+
+| Ambiente | Project ID | Uso |
+|---|---|---|
+| Local dev | `jtianehxosfdrhjzqvqj` | Desenvolvimento local — dados fictícios |
+| Staging | `fflpuoluiqmhpvcxubqi` | Validação CI/CD — dados de fixture |
+| **Produção** | ⏳ Criar após D4 | Dados reais de usuários — **nunca misturar** |
+
+**Regra absoluta:** variáveis de env de produção (`DATABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXTAUTH_SECRET` etc.) **nunca** no `.env`, apenas em GitHub Secrets + Vercel env `production`.
+
+### Variáveis de ambiente por ambiente
+
+| Variável | Local | Staging | Produção |
+|---|---|---|---|
+| `DATABASE_URL` | Supabase local | Supabase staging | Supabase produção (novo) |
+| `NEXTAUTH_URL` | `http://localhost:3000` | `https://shareo-rouge.vercel.app` | `https://shareo.com.br` (domínio real) |
+| `NEXTAUTH_SECRET` | Qualquer string | Secret staging | Secret produção — **diferente** |
+| `NEXT_PUBLIC_MAPBOX_TOKEN` | Token dev | Token staging | Token produção — quota separada |
+| `RESEND_API_KEY` | Opcional | Key staging | Key produção |
+| `STRIPE_SECRET_KEY` | `sk_test_...` | `sk_test_...` | `sk_live_...` — só após D4 |
+| `CRON_SECRET` | `shareo-cron-2026` | Staging value | Novo secret produção |
+| `ENCRYPTION_KEY` | 64 hex chars | Staging value | **Novo** — rotacionar antes de prod |
+
+### Plano de provisionamento produção (pós-D4)
+
+```
+1. Criar Supabase production (sa-east-1, mesmo region do staging)
+2. Executar migrations: prisma migrate deploy --schema=prisma/schema.prisma
+3. Seed inicial: pnpm db:seed (apenas categorias + PlatformConfig defaults)
+4. Criar Vercel project "shareo-production" ou configurar environment "production" no projeto atual
+5. Configurar domínio (shareo.com.br ou equivalente) no Vercel
+6. GitHub environment "production" com Required Reviewers (mínimo 1 aprovação para deploy)
+7. Adicionar todas as variáveis de produção (NUNCA marcar NEXT_PUBLIC_* como Sensitive)
+8. Smoke test manual nos fluxos críticos antes de abrir para usuários
+9. Ativar Stripe live mode + webhook live endpoint
+10. Tag v1.1.0
+```
+
+### Limites operacionais do MVP (produção)
+
+| Limite | Valor | Configurável? |
+|---|---|---|
+| Valor máximo do bem anunciado | R$1.000 por item | SuperAdmin — `maxItemValueCents` |
+| Teto por transação | R$500 (`CHECKOUT_MAX_CENTS = 50000`) | `lib/platform-config.ts` |
+| Taxa da plataforma (default) | 15% (`DEFAULT_FEE_RATE = 1500` bps) | SuperAdmin via `/admin/financeiro` |
+| Multiplicador semanal (sugerido) | 3× a diária | SuperAdmin via `/admin/financeiro` |
+| Multiplicador mensal (sugerido) | 15× a diária | SuperAdmin via `/admin/financeiro` |
+| Fotos por item | 3 no MVP | Hard-coded `_ItemImageUpload.tsx` |
+| Rate limit (default) | 20 req/10s por IP | Upstash Ratelimit |
+| Sessão JWT access token | 15 min | `lib/auth.ts` |
+| Retenção de dados financeiros | 5 anos | ADR-017 (CTN Art. 173) |
+| Cutoff payout semanal | Domingo 23h59 BRT | `/api/cron/payout` toda segunda |
+
+### Licenças de dependências críticas
+
+| Pacote | Versão | Licença | Ponto de atenção |
+|---|---|---|---|
+| `next` | 15.3.3 | MIT | OK |
+| `next-auth` | 5.0.0-beta.31 | ISC | **Beta** — monitorar breaking changes pré-GA |
+| `@prisma/client` | 6.7.0 | Apache-2.0 | OK |
+| `stripe` | 22.1.1 | MIT | Termos Stripe (2.99% + R$0.39 BR) — verificar com jurídico |
+| `mapbox-gl` | 3.3.0 | BSD-3 + Mapbox ToS | Mapbox ToS exige atribuição de marca |
+| `react-map-gl` | 7.1.7 | MIT | OK — wrapper sobre mapbox-gl |
+| `@supabase/supabase-js` | 2.46.0 | MIT | OK |
+| `resend` | 4.0.0 | MIT | ToS Resend — sem spam, opt-out obrigatório |
+| `@sentry/nextjs` | 8.14.0 | MIT + Sentry ToS | DSN separado para produção |
+| `bcryptjs` | 2.4.3 | MIT | OK |
+| `jose` | 5.9.0 | MIT | OK |
+| `sharp` | 0.33.4 | Apache-2.0 | OK |
+| `lucide-react` | 0.468.0 | ISC | OK |
+| `@upstash/ratelimit` | 2.0.8 | MIT | OK |
+| `zod` | 3.23.8 | MIT | OK |
+
+**Aviso:** `next-auth` ainda está em beta (v5 beta.31). Antes do go-live em produção, avaliar se há versão estável disponível ou documentar risco aceito.
+
+### Pontos de atenção pré-produção
+
+| # | Item | Risco | Ação |
+|---|---|---|---|
+| 1 | **D4 — Jurídico** | Bloqueador total | Aguardar sign-off formal |
+| 2 | **Stripe live mode** | Financeiro | Ativar apenas após D4; verificar KYC Stripe BR |
+| 3 | **NextAuth v5 beta** | Técnico médio | Checar changelog antes do go-live; planejar migração se sair GA com breaking changes |
+| 4 | **RLS desabilitado** | Segurança | Compensado por guards server-side; documentar e revisar com jurídico (LGPD) |
+| 5 | **ENCRYPTION_KEY rotação** | Segurança | Gerar nova key para produção — dados criptografados em staging são ilegíveis em prod (esperado) |
+| 6 | **Mapbox ToS atribuição** | Legal | Footer/mapa deve exibir "© Mapbox © OpenStreetMap" |
+| 7 | **Resend domínio verificado** | E-mail | Configurar SPF/DKIM para `@shareo.com.br` antes de enviar e-mails transacionais |
+| 8 | **Scripts temporários** | Segurança | Deletar 6 scripts antes de qualquer go-live (listados abaixo) |
+| 9 | **Supabase Storage buckets** | Ops | Criar buckets `item-images`, `booking-photos`, `id-docs` no projeto produção |
+| 10 | **Cron secrets distintos** | Segurança | `CRON_SECRET` produção deve ser diferente do staging |
+
+### Scripts temporários a deletar antes de produção
+
+```
+scripts/reset-fixture-pwd.ts
+scripts/delete-e2e-admins.ts
+scripts/clear-rl.mjs
+scripts/fix-admin-roles.ts
+scripts/set-fixture-admin-role.ts
+scripts/verify-admin-sessions.ts
+```
