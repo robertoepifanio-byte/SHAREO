@@ -236,8 +236,6 @@ const SECTIONS = [
         a: "Não. Anunciar no ShareO é 100% gratuito. Você não paga nada para criar anúncios, receber reservas ou usar o chat. O ShareO só cobra a taxa de serviço (do locatário) quando uma locação é concluída com sucesso. Se a reserva for cancelada antes da entrega, nenhuma taxa é cobrada." },
       { q: "Como funciona a multa por atraso na devolução?",
         a: "Para cada dia além da data combinada, o app registra automaticamente uma cobrança equivalente ao preço diário do item. Exemplo: se o aluguel é R$ 50/dia e você atrasou 2 dias, serão cobrados R$ 100 extras. Você recebe uma notificação de aviso 1 dia antes do prazo vencer. Para evitar multa, solicite uma extensão antes do prazo — e não depois." },
-      { q: "Existe caução nesta versão do ShareO?",
-        a: "Não. A caução não está disponível nesta versão do ShareO. A proteção ao proprietário é garantida pelas fotos de check-in e check-out e pelo canal de disputas. A caução estará disponível em uma versão futura da plataforma." },
       { q: "Existe limite de valor por locação?",
         a: "Sim. O valor máximo por transação é R$ 500 nesta versão do ShareO. Se o valor calculado ultrapassar esse limite, o sistema bloqueia o checkout e exibe uma mensagem orientando o locatário. Este limite existe para proteger os usuários enquanto o sistema de pagamentos está em fase inicial." },
       { q: "Existe taxa de cancelamento?",
