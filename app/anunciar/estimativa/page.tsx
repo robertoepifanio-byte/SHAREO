@@ -2,13 +2,17 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { Calculadora } from "./_Calculadora"
+import { getPlatformFeeRate } from "@/lib/platform-config"
 
 export const metadata: Metadata = {
   title:       "Estimativa de Ganhos — ShareO",
   description: "Calcule quanto você pode ganhar alugando seus itens no ShareO.",
 }
 
-export default function EstimativaPage() {
+export default async function EstimativaPage() {
+  const feeRateBps = await getPlatformFeeRate()
+  const feeRatePct = feeRateBps / 100
+
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
@@ -30,7 +34,7 @@ export default function EstimativaPage() {
         </div>
 
         {/* Calculadora interativa */}
-        <Calculadora />
+        <Calculadora feeRatePct={feeRatePct} />
 
         {/* Link para dicas */}
         <div className="mt-8 rounded-xl border border-border bg-muted/40 px-5 py-4 flex items-center justify-between gap-4">

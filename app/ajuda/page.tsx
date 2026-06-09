@@ -42,7 +42,7 @@ const LOCATARIO_STEPS: Step[] = [
   {
     step: 4, icon: "📅", title: "Solicitar a reserva",
     desc: "Abra o anúncio e use a calculadora de locação. Selecione a modalidade (diário, semanal ou mensal), a data de retirada e a duração. O valor total — incluindo a taxa de serviço — aparece antes de você confirmar. Escreva uma mensagem apresentando-se ao proprietário e clique em 'Solicitar locação'. Você ainda não paga nada nesta etapa. O valor máximo por locação é R$ 500.",
-    example: "Item: R$ 80/dia. Aluguel de 3 dias = R$ 240,00. Taxa de serviço (15%) = R$ 36,00. Total cobrado no cartão ao confirmar: R$ 276,00.",
+    example: "",
   },
   {
     step: 5, icon: "💳", title: "Aguardar confirmação e pagar",
