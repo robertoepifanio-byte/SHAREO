@@ -1,9 +1,9 @@
 # ShareO — Status do Projeto
 
-**Atualizado em**: 2026-06-10 (sessão — bugfix pickupToken PIX + E2E features-jun09 + crítica de design implementada)
+**Atualizado em**: 2026-06-10 (sessão tarde/noite — verificação de identidade: e-mail resultado + fix upload mobile + compressão client-side + bucket id-docs criado no staging)
 **Ambiente staging**: https://shareo-rouge.vercel.app (⚠️ deploys automáticos GitHub→Vercel aparecem **Canceled** — deploy real é manual: `npx vercel --prod`)
-**Último commit**: `33920ab`
-**Release atual**: [`v1.2.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.2.0) — commit `e20c1e9` — staging aprovado, aguarda D4 para produção
+**Último commit**: `ecbc6e8`
+**Release atual**: [`v1.2.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.2.0) — aguarda D4 para produção
 **Release anterior**: [`v1.0.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.0.0) (a v1.1.0 planejada foi absorvida pela v1.2.0)
 
 ---
@@ -57,7 +57,8 @@ Próximo passo: deletar scripts temporários + aguardar D4 (jurídico) para go-l
 | **Sessão jun/05 tarde/noite 2** | E2E admin 28/0/6 ✅ contra staging, validação manual completa ✅, UX admin segregada (Painel Admin no menu, Anunciar oculto para admins, atalhos admin no dropdown/mobile, banner PJ oculto) |
 | **Sessão jun/06** | GitGuardian fix (senhas movidas para env vars, histórico scrubado), id-docs bug fix (getPublicUrl → storage path), security2 25/0/3 ✅, security3 12/12 ✅ (smokes #23-#27), fix crítico: middleware retorna 401 para /api/* sem auth (era 307 redirect) |
 | **Sessão jun/09** | Token retirada + endereço anti-golpe, prazo por horário real, repasse segundas, 3 fotos MVP, multiplicadores SuperAdmin, taxa 100% dinâmica, STATUS.md + relatório executivo com arquitetura produção, briefing D4 |
-| **Sessão jun/10** | Bugfix pickupToken PIX (gerado no confirm), fix a11y labels painéis retirada/devolução, e2e/features-jun09 16/16 ✅, crítica de design + 3 prioridades (seed demo 21 itens, detalhe mobile CTA acima da dobra, /ajuda accordion −40% altura), testes defasados corrigidos (financeiro 7 cards, ajuda-plan taxa dinâmica) |
+| **Sessão jun/10 manhã** | Bugfix pickupToken PIX (gerado no confirm), fix a11y labels painéis retirada/devolução, e2e/features-jun09 16/16 ✅, crítica de design + 3 prioridades (seed demo 21 itens, detalhe mobile CTA acima da dobra, /ajuda accordion −40% altura), testes defasados corrigidos (financeiro 7 cards, ajuda-plan taxa dinâmica) |
+| **Sessão jun/10 tarde/noite** | Verificação de identidade: e-mail de resultado aprovação/rejeição (sendIdVerifiedEmail + sendIdRejectedEmail via Resend), fix upload mobile (removido capture forçado, compressão Canvas client-side máx 4MB), hint câmera na selfie, log detalhado erro Supabase, bucket id-docs criado no staging. Backlog v3.2: item P3 #25 verificação celular Zenvia (decisão Raimundo). Aguarda deploy manual (`npx vercel --prod`) para tester validar. |
 
 ---
 
