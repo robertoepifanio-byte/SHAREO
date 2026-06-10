@@ -61,11 +61,11 @@ test.describe('admin — painel financeiro', () => {
     await expect(page.locator('h1')).toContainText('Contas PIX')
   })
 
-  test('4b. painel financeiro exibe 6 cards de métricas', async ({ page }) => {
+  test('4b. painel financeiro exibe 7 cards de métricas', async ({ page }) => {
     await page.goto('/admin/financeiro')
-    // 6 cards: GMV, Receita ShareO, Repasse líquido, Repasses pagos, Pendentes agora, Contas PIX
+    // 7 cards: GMV, Receita ShareO, Repasse líquido, Repasses pagos, Pendentes agora, Contas PIX, Disputas abertas
     const cards = page.locator('.rounded-xl.border.border-border.bg-surface.p-4')
-    await expect(cards).toHaveCount(6, { timeout: 10000 })
+    await expect(cards).toHaveCount(7, { timeout: 10000 })
   })
 })
 
@@ -166,13 +166,14 @@ test.describe('FIN-MVP-TETO — teto R$ 500 no checkout UI', () => {
 
     // Encontrar reserva CONFIRMED com totalPrice > 500
     // Se não encontrar, o teste passa como não-aplicável
-    const bookingLinks = page.locator('a[href*="/reservas/"]')
-    const count = await bookingLinks.count()
+    // Coleta os hrefs ANTES de navegar — o locator re-consultaria a página de
+    // detalhe (sem links de lista) e estouraria timeout
+    const hrefs = await page.locator('a[href*="/reservas/"]').evaluateAll(
+      (els) => els.map((a) => (a as HTMLAnchorElement).getAttribute('href')).filter(Boolean) as string[],
+    )
     let foundBlockedButton = false
 
-    for (let i = 0; i < Math.min(count, 5); i++) {
-      const href = await bookingLinks.nth(i).getAttribute('href')
-      if (!href) continue
+    for (const href of hrefs.slice(0, 5)) {
       await page.goto(href)
 
       const blockedBtn = page.locator('button:disabled', { hasText: /Pagamento indisponível/ })
