@@ -61,8 +61,10 @@ export async function POST(req: NextRequest) {
   ])
 
   if (docUpload.error || selfieUpload.error) {
+    const detail = docUpload.error?.message ?? selfieUpload.error?.message ?? "unknown"
+    console.error("[id-verification upload]", detail)
     return NextResponse.json(
-      { error: { code: "UPLOAD_ERROR", message: "Falha ao enviar arquivos." } },
+      { error: { code: "UPLOAD_ERROR", message: `Falha ao enviar arquivos: ${detail}` } },
       { status: 500 }
     )
   }
