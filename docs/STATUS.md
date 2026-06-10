@@ -1,10 +1,10 @@
 # ShareO — Status do Projeto
 
-**Atualizado em**: 2026-06-09 (sessão — taxa dinâmica 100% + multiplicadores configuráveis + ajuda page v2)
-**Ambiente staging**: https://shareo-rouge.vercel.app (webhook GitHub→Vercel ativo — push em main faz deploy automático)
-**Último commit**: `31068af`
+**Atualizado em**: 2026-06-10 (sessão — bugfix pickupToken PIX + E2E features-jun09 + crítica de design implementada)
+**Ambiente staging**: https://shareo-rouge.vercel.app (⚠️ deploys automáticos GitHub→Vercel aparecem **Canceled** — deploy real é manual: `npx vercel --prod`)
+**Último commit**: `33920ab`
 **Release estável**: [`v1.0.0`](https://github.com/robertoepifanio/SHAREO/releases/tag/v1.0.0)
-**Candidata a `v1.1.0`**: commit `31068af` — staging aprovado, aguarda D4
+**Candidata a `v1.1.0`**: commit `33920ab` — staging aprovado, aguarda D4
 
 ---
 
@@ -15,6 +15,10 @@
 ---
 
 ## Resumo Executivo
+
+**✅ Bugfix crítico — pickupToken no fluxo PIX** (commit `db9397d`, jun/10). O token de retirada só era gerado pelo webhook do Stripe; no fluxo PIX (MVP) o `mark_active` falharia sempre com `TOKEN_REQUIRED`. Agora o token é gerado no `confirm` quando ainda não existe, e o `GET /api/bookings/[id]` retorna o token (locatário exibe o código). Suite nova `e2e/features-jun09.spec.ts`: **16/16 ✅** (token, actualTime, multiplicadores, 3 fotos, taxa dinâmica). booking-flow 5/5 ✅, financeiro 40/40 ✅ (testes defasados corrigidos: 7 cards de métricas, locator de hrefs).
+
+**✅ Crítica de design implementada — 3 prioridades** (commits `e62e8ef`/`8998860`, jun/10). (1) Seed de demonstração: `scripts/seed-demo-items.ts` — 21 itens com fotos Unsplash validadas, 3 por categoria, bairros reais de Natal; listagem deixou de mostrar itens de teste com imagem preta. (2) Detalhe do item mobile: grid com `order` — preço + CTA "Solicitar locação" acima da dobra, antes da descrição. (3) `/ajuda`: guias "Primeiros Passos" em `<details>` fechados por padrão — altura mobile caiu de ~16.100px para ~9.600px (FAQs já tinham accordion+busca via `HelpSearch`).
 
 **✅ Taxa da plataforma 100% dinâmica** (commit `31068af`). Zero hardcodes de "15%" em todo o codebase — sempre lido de `PlatformConfig` via `getPlatformFeeRate()`. Multiplicadores semanal (3×) e mensal (15×) configuráveis pelo SuperAdmin em `/admin/financeiro`. Central de ajuda, calculadoras e todas as páginas de conteúdo atualizam automaticamente quando o SuperAdmin altera a taxa.
 
@@ -52,6 +56,8 @@ Próximo passo: deletar scripts temporários + aguardar D4 (jurídico) para go-l
 | **Sessão jun/05 noite** | Hardening segurança admin (nav por role, guards, blocklist Redis, rate limit, audit log, senha inline), E2E admin spec, fix build Vercel (Sentry + Edge Runtime + tsconfig + a11y) |
 | **Sessão jun/05 tarde/noite 2** | E2E admin 28/0/6 ✅ contra staging, validação manual completa ✅, UX admin segregada (Painel Admin no menu, Anunciar oculto para admins, atalhos admin no dropdown/mobile, banner PJ oculto) |
 | **Sessão jun/06** | GitGuardian fix (senhas movidas para env vars, histórico scrubado), id-docs bug fix (getPublicUrl → storage path), security2 25/0/3 ✅, security3 12/12 ✅ (smokes #23-#27), fix crítico: middleware retorna 401 para /api/* sem auth (era 307 redirect) |
+| **Sessão jun/09** | Token retirada + endereço anti-golpe, prazo por horário real, repasse segundas, 3 fotos MVP, multiplicadores SuperAdmin, taxa 100% dinâmica, STATUS.md + relatório executivo com arquitetura produção, briefing D4 |
+| **Sessão jun/10** | Bugfix pickupToken PIX (gerado no confirm), fix a11y labels painéis retirada/devolução, e2e/features-jun09 16/16 ✅, crítica de design + 3 prioridades (seed demo 21 itens, detalhe mobile CTA acima da dobra, /ajuda accordion −40% altura), testes defasados corrigidos (financeiro 7 cards, ajuda-plan taxa dinâmica) |
 
 ---
 
