@@ -90,6 +90,17 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const userCheck = await prisma.user.findUnique({
+      where:  { id: borrowerId },
+      select: { emailVerified: true },
+    })
+    if (!userCheck?.emailVerified) {
+      return NextResponse.json(
+        { error: { code: "EMAIL_NOT_VERIFIED", message: "Confirme seu e-mail antes de realizar uma reserva." } },
+        { status: 403 },
+      )
+    }
+
     const body   = await req.json()
     const parsed = CreateBookingSchema.safeParse(body)
     if (!parsed.success) {

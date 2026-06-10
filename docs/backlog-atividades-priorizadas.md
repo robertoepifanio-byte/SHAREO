@@ -1,7 +1,7 @@
 # Backlog de Atividades Priorizadas — ShareO
 
-**Versão:** 3.1  
-**Atualizado em:** 2026-06-04 (verificação completa do código)  
+**Versão:** 3.2  
+**Atualizado em:** 2026-06-10  
 **Responsável:** Roberto Epifânio
 
 > Verificação feita diretamente no código — cada item foi confirmado por arquivo/componente.
@@ -82,6 +82,7 @@
 
 | # | Atividade | Detalhe |
 |---|---|---|
+| 25 | **Verificação de celular via SMS OTP (Zenvia)** | Decisão Raimundo 2026-06-10. Provedor: Zenvia (~R$0,12–0,20/SMS, melhor entrega BR). Fluxo: OTP 6 dígitos, TTL 10min, bcrypt no banco. Schema: `phoneVerifiedAt`, `phoneOtpHash`, `phoneOtpExpiresAt`. Gate: bloqueia 1ª reserva se não verificado. Endpoints: `POST /api/phone/send-otp` + `POST /api/phone/verify-otp`. UI em `/perfil/seguranca`. Estimativa: ~1 sprint. |
 | 15 | **Lighthouse CI** | LCP < 2,5s, CLS < 0,1, INP < 200ms — medir no CI após preview URL estável |
 | 16 | **k6 load test** | 50 usuários em `GET /api/items`, P95 < 1s |
 | 17 | **Expo Go — teste mobile** | `cd apps/mobile && npx expo start --tunnel --clear` |
@@ -103,7 +104,7 @@
 | 🔴 P0 | 3 | Bloqueia produção |
 | 🟠 P1 | 3 | Fluxo incompleto (UI faltando para features com API pronta) |
 | 🟡 P2 | 8 | Polimento e assets |
-| 🟢 P3 | 10 | Pós-produção |
+| 🟢 P3 | 11 | Pós-produção |
 
 ---
 

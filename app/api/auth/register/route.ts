@@ -5,7 +5,8 @@ import { prisma } from "@/lib/prisma"
 import { hashDocument, encryptDocument } from "@/lib/crypto"
 import { RegisterSchema } from "@/lib/validations/auth"
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
-import { sendWelcomeEmail } from "@/lib/email"
+import { sendVerificationEmail } from "@/lib/email"
+import crypto from "crypto"
 import { generateUserSlug } from "@/lib/slugify"
 
 export async function POST(req: NextRequest) {
@@ -113,10 +114,18 @@ export async function POST(req: NextRequest) {
       })
     })
 
-    // Boas-vindas — fire-and-forget
-    sendWelcomeEmail(user.email, user.name).catch((err) =>
-      console.error("[register] welcome email error:", err instanceof Error ? err.message : err)
-    )
+    // Token de verificação de e-mail — fire-and-forget
+    const verifyToken   = crypto.randomBytes(32).toString("hex")
+    const tokenExpiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000) // 48h
+    prisma.user
+      .update({
+        where: { id: user.id },
+        data:  { emailVerifyToken: verifyToken, emailTokenExpiresAt: tokenExpiresAt },
+      })
+      .then(() => sendVerificationEmail(user.email, user.name, verifyToken))
+      .catch((err) =>
+        console.error("[register] verification email error:", err instanceof Error ? err.message : err)
+      )
 
     return NextResponse.json({ data: user }, { status: 201 })
   } catch (e: unknown) {

@@ -10,10 +10,10 @@ interface Props {
 }
 
 const STATUS_INFO: Record<Status, { label: string; color: string; icon: string }> = {
-  UNVERIFIED: { label: "Não verificado",      color: "text-muted-foreground", icon: "○" },
-  PENDING:    { label: "Em análise",          color: "text-amber-600",        icon: "⏳" },
-  VERIFIED:   { label: "Identidade verificada", color: "text-success",        icon: "✓" },
-  REJECTED:   { label: "Recusado",            color: "text-destructive",      icon: "✗" },
+  UNVERIFIED: { label: "Não verificado",        color: "text-muted-foreground", icon: "○" },
+  PENDING:    { label: "Em análise",            color: "text-amber-600",        icon: "⏳" },
+  VERIFIED:   { label: "Identidade verificada", color: "text-success",          icon: "✓" },
+  REJECTED:   { label: "Recusado",              color: "text-destructive",      icon: "✗" },
 }
 
 export function IdVerification({ status: initialStatus, rejectionReason }: Props) {
@@ -28,22 +28,63 @@ export function IdVerification({ status: initialStatus, rejectionReason }: Props
 
   const info = STATUS_INFO[status]
 
+  async function compressImage(file: File, maxSizeMB = 4): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file)
+      const img = new Image()
+      img.onload = () => {
+        URL.revokeObjectURL(url)
+        const canvas = document.createElement("canvas")
+        const MAX_PX = 1920
+        let { width, height } = img
+        if (width > MAX_PX || height > MAX_PX) {
+          if (width > height) { height = Math.round(height * MAX_PX / width); width = MAX_PX }
+          else                { width  = Math.round(width  * MAX_PX / height); height = MAX_PX }
+        }
+        canvas.width = width; canvas.height = height
+        canvas.getContext("2d")!.drawImage(img, 0, 0, width, height)
+
+        let quality = 0.85
+        const tryCompress = () => {
+          canvas.toBlob((blob) => {
+            if (!blob) { reject(new Error("Falha ao compactar imagem")); return }
+            if (blob.size <= maxSizeMB * 1024 * 1024 || quality <= 0.3) { resolve(blob); return }
+            quality -= 0.1
+            tryCompress()
+          }, "image/jpeg", quality)
+        }
+        tryCompress()
+      }
+      img.onerror = () => reject(new Error("Imagem inválida"))
+      img.src = url
+    })
+  }
+
   async function submit() {
     const doc    = docRef.current?.files?.[0]
     const selfie = selfieRef.current?.files?.[0]
     if (!doc || !selfie) { setError("Selecione o documento e a selfie."); return }
 
     setLoading(true); setError("")
-    const fd = new FormData()
-    fd.append("document", doc)
-    fd.append("selfie",   selfie)
+    try {
+      const [docBlob, selfieBlob] = await Promise.all([
+        compressImage(doc),
+        compressImage(selfie),
+      ])
+      const fd = new FormData()
+      fd.append("document", docBlob, "document.jpg")
+      fd.append("selfie",   selfieBlob, "selfie.jpg")
 
-    const res  = await fetch("/api/users/me/id-verification", { method: "POST", body: fd })
-    const json = await res.json()
-    setLoading(false)
+      const res  = await fetch("/api/users/me/id-verification", { method: "POST", body: fd })
+      const json = await res.json()
 
-    if (!res.ok) { setError(json.error?.message ?? "Erro ao enviar documentos."); return }
-    setStatus("PENDING"); setSuccess(true); setOpen(false)
+      if (!res.ok) { setError(json.error?.message ?? "Erro ao enviar documentos."); return }
+      setStatus("PENDING"); setSuccess(true); setOpen(false)
+    } catch {
+      setError("Não foi possível processar as imagens. Tente novamente.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -101,7 +142,6 @@ export function IdVerification({ status: initialStatus, rejectionReason }: Props
                   ref={docRef}
                   type="file"
                   accept="image/*"
-                  capture="environment"
                   className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground file:mr-3 file:rounded file:border-0 file:bg-brand/10 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-brand"
                 />
               </div>
@@ -115,7 +155,6 @@ export function IdVerification({ status: initialStatus, rejectionReason }: Props
                   ref={selfieRef}
                   type="file"
                   accept="image/*"
-                  capture="user"
                   className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground file:mr-3 file:rounded file:border-0 file:bg-brand/10 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-brand"
                 />
               </div>
@@ -141,7 +180,7 @@ export function IdVerification({ status: initialStatus, rejectionReason }: Props
                 disabled={loading}
                 className="flex-1 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
               >
-                {loading ? "Enviando…" : "Enviar documentos"}
+                {loading ? "Comprimindo e enviando…" : "Enviar documentos"}
               </button>
             </div>
           </div>

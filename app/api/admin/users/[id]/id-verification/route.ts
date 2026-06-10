@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { sendIdVerifiedEmail, sendIdRejectedEmail } from "@/lib/email"
 import { z } from "zod"
 
 type Params = { params: Promise<{ id: string }> }
@@ -43,7 +44,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     const user = await prisma.user.findFirst({
       where:  { id, deletedAt: null },
-      select: { id: true, idVerificationStatus: true, name: true },
+      select: { id: true, idVerificationStatus: true, name: true, email: true },
     })
 
     if (!user) {
@@ -73,6 +74,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       },
       select: { id: true, idVerificationStatus: true, isVerified: true, updatedAt: true },
     })
+
+    // E-mail de resultado (fire-and-forget)
+    const emailFn = isApprove
+      ? sendIdVerifiedEmail(user.email, user.name)
+      : sendIdRejectedEmail(user.email, user.name, rejectionReason!)
+    emailFn.catch((e) => console.error("[id-verification email]", e instanceof Error ? e.message : e))
 
     // Notificar usuário
     const notifType = isApprove ? "ID_VERIFIED" : "ID_REJECTED"

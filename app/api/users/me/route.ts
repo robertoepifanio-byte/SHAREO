@@ -126,6 +126,7 @@ export async function GET(req: NextRequest) {
         city:         true,
         state:        true,
         neighborhood: true,
+        street:       true,
         avatarUrl:    true,
         userType:     true,
         isVerified:   true,

@@ -156,7 +156,9 @@ enum EventQueueStatus {
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
-  emailVerified DateTime?
+  emailVerified       DateTime?
+  emailVerifyToken    String?   @unique
+  emailTokenExpiresAt DateTime?
   passwordHash  String?
   name          String
   phone         String?

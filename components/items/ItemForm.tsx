@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, type ChangeEvent, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import Image from "next/image"
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
@@ -62,17 +63,17 @@ interface ItemFormProps {
   monthlyMultiplier?: number
 }
 
-// ─── Price suggestions by category slug ──────────────────────────────────────
-// Base: diária ≈ 3–5% do valor do produto. Semana = 3× diária. Mês = 15× diária.
-const PRICE_SUGGESTIONS: Record<string, number> = {
-  "ferramentas":   35,
-  "eletronicos":   100,
-  "casa-jardim":   30,
-  "construcao":    45,
-  "esporte":       60,
-  "moda":          50,
-  "festas":        80,
+// ─── Sugestão de preço por faixa de valor do bem ─────────────────────────────
+interface PriceBand { minRate: number; maxRate: number }
+
+function getPriceBand(retailCents: number): PriceBand {
+  if (retailCents <= 20_000)  return { minRate: 0.05, maxRate: 0.08 } // até R$200
+  if (retailCents <= 100_000) return { minRate: 0.03, maxRate: 0.05 } // R$200–R$1.000
+  if (retailCents <= 500_000) return { minRate: 0.02, maxRate: 0.04 } // R$1.000–R$5.000
+  return                             { minRate: 0.01, maxRate: 0.03 } // acima R$5.000
 }
+
+function fmtPct(r: number) { return `${(r * 100).toFixed(0)}%` }
 
 // Categorias onde faz sentido exibir campo de voltagem
 const ELECTRICAL_CATEGORIES = new Set([
@@ -187,7 +188,6 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
   const [categories,    setCategories]    = useState<Category[]>([])
   const [errors,        setErrors]        = useState<Record<string, string>>({})
   const [loading,       setLoading]       = useState(false)
-  const [gettingLoc,    setGettingLoc]    = useState(false)
   const [geocoding,     setGeocoding]     = useState(false)
   const [geocodeResult, setGeocodeResult] = useState<"ok" | "not_found" | "error" | null>(
     initialData?.latitude ? "ok" : null
@@ -195,6 +195,12 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
   const gpsUsedRef = useRef(false)
   const fileInputRef    = useRef<HTMLInputElement>(null)
   const cameraInputRef  = useRef<HTMLInputElement>(null)
+
+  // Endereço do perfil do usuário (usado no modo create para pré-preencher)
+  const [profileAddress, setProfileAddress] = useState<{
+    city: string; state: string; neighborhood: string; address: string
+  } | null>(null)
+  const [profileAddressLoaded, setProfileAddressLoaded] = useState(false)
 
   // P2-52 — Sugestão de preço médio da região
   const [regionSuggestion, setRegionSuggestion] = useState<{
@@ -206,16 +212,31 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
   // Dica ativa por campo (P2-62)
   const [activeTip, setActiveTip] = useState<string | null>(null)
 
-  // Price suggestion derived from selected category
-  const selectedCat       = categories.find((c) => c.id === categoryId)
-  const suggestedDayPrice  = selectedCat ? PRICE_SUGGESTIONS[selectedCat.slug] : undefined
-  const isElectrical       = selectedCat ? ELECTRICAL_CATEGORIES.has(selectedCat.slug) : false
+  // Sugestão de preço por faixa de valor do bem
+  const [priceSuggestion, setPriceSuggestion] = useState<PriceBand | null>(() => {
+    const retailCents = toCents(toDisplay(initialData?.estimatedRetailPrice))
+    return retailCents > 0 ? getPriceBand(retailCents) : null
+  })
 
-  function applyPriceSuggestion() {
-    if (!suggestedDayPrice) return
-    const suggested = suggestedDayPrice.toFixed(2).replace(".", ",")
-    setPricePerDay(suggested)
-    setErrors((p) => ({ ...p, pricePerDay: undefined! }))
+  // Price suggestion derived from selected category (usado apenas para isElectrical)
+  const selectedCat  = categories.find((c) => c.id === categoryId)
+  const isElectrical = selectedCat ? ELECTRICAL_CATEGORIES.has(selectedCat.slug) : false
+
+  function applyRetailSuggestion(retailDisplay: string) {
+    const retailCents = toCents(retailDisplay)
+    if (retailCents <= 0) { setPriceSuggestion(null); return }
+    const band = getPriceBand(retailCents)
+    setPriceSuggestion(band)
+    const suggestedDayCents = Math.round(retailCents * band.minRate)
+    if (!toCents(pricePerDay)) {
+      const dayDisplay = (suggestedDayCents / 100).toFixed(2).replace(".", ",")
+      setPricePerDay(dayDisplay)
+      setErrors((p) => ({ ...p, pricePerDay: undefined! }))
+      if (!toCents(pricePerWeek))
+        setPricePerWeek(((suggestedDayCents * weeklyMultiplier) / 100).toFixed(2).replace(".", ","))
+      if (!toCents(pricePerMonth))
+        setPricePerMonth(((suggestedDayCents * monthlyMultiplier) / 100).toFixed(2).replace(".", ","))
+    }
   }
 
   function autoWeekly() {
@@ -238,6 +259,32 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
       .catch(() => {})
   }, [])
 
+  // No modo create, busca o endereço do perfil para pré-preencher localização
+  useEffect(() => {
+    if (mode !== "create") return
+    fetch("/api/users/me")
+      .then((r) => r.json())
+      .then(({ data }) => {
+        const c = data?.city?.trim()
+        const s = data?.state?.trim()
+        if (c && s) {
+          const addr = {
+            city:         c,
+            state:        s,
+            neighborhood: data?.neighborhood?.trim() ?? "",
+            address:      data?.street?.trim()       ?? "",
+          }
+          setProfileAddress(addr)
+          setCity(c)
+          setState(s)
+          setNeighborhood(addr.neighborhood)
+          setAddress(addr.address)
+        }
+        setProfileAddressLoaded(true)
+      })
+      .catch(() => setProfileAddressLoaded(true))
+  }, [mode]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // P2-52 — Buscar sugestão de preço da região ao mudar categoria ou cidade
   useEffect(() => {
     if (!categoryId || city.trim().length < 2) { setRegionSuggestion(null); return }
@@ -258,29 +305,6 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Location ──────────────────────────────────────────────────────────────
-
-  function handleGetLocation() {
-    if (!navigator.geolocation) {
-      setErrors((p) => ({ ...p, location: "Geolocalização não suportada neste navegador." }))
-      return
-    }
-    setGettingLoc(true)
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLatitude(pos.coords.latitude)
-        setLongitude(pos.coords.longitude)
-        setGettingLoc(false)
-        setGeocodeResult("ok")
-        gpsUsedRef.current = true
-        setErrors((p) => { const n = { ...p }; delete n.location; return n })
-      },
-      () => {
-        setGettingLoc(false)
-        setErrors((p) => ({ ...p, location: "Não foi possível obter a localização. Permita o acesso ou ajuste manualmente." }))
-      },
-      { timeout: 8000 }
-    )
-  }
 
   async function geocodeAddress() {
     if (gpsUsedRef.current) return
@@ -615,24 +639,24 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
       <section className="rounded-lg border border-border bg-surface p-6 space-y-4">
         <h2 className="font-semibold text-primary">Preços</h2>
 
-        {/* Sugestão automática de preço por categoria */}
-        {suggestedDayPrice && !toCents(pricePerDay) && (
-          <div className="flex items-center gap-3 rounded-md border border-brand/25 bg-brand/5 px-3 py-2 text-xs text-muted-foreground">
-            <span>
-              💡 Sugestão para <strong>{selectedCat?.name}</strong>:{" "}
-              <strong className="text-foreground">R$ {suggestedDayPrice.toFixed(2).replace(".", ",")}/dia</strong>
-              <span className="ml-1 text-[11px]">(referência: 5% do valor do produto)</span>
-            </span>
-            <button
-              type="button"
-              onClick={applyPriceSuggestion}
-              disabled={loading}
-              className="ml-auto shrink-0 rounded-md bg-brand px-2.5 py-1 text-[11px] font-semibold text-white hover:opacity-90 transition-opacity disabled:opacity-50"
-            >
-              Usar
-            </button>
+        {/* Valor do bem — base para sugestão de preços */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <PriceInput
+              id="estimated-retail-price"
+              label="Valor de compra estimado"
+              value={estimatedRetailPrice}
+              onChange={setEstimatedRetailPrice}
+              onBlur={() => applyRetailSuggestion(estimatedRetailPrice)}
+              helper="Preencha para calcular automaticamente a diária sugerida"
+            />
+            {priceSuggestion && (
+              <p className="mt-1 text-xs text-brand">
+                💡 Sugestão: diária de <strong>{fmtPct(priceSuggestion.minRate)} a {fmtPct(priceSuggestion.maxRate)}</strong> do valor do bem
+              </p>
+            )}
           </div>
-        )}
+        </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
@@ -647,6 +671,17 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
             />
             {errors.pricePerDay && (
               <p role="alert" className="mt-1 text-xs text-destructive">{errors.pricePerDay}</p>
+            )}
+            {priceSuggestion && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Faixa sugerida:{" "}
+                <span className="font-semibold text-foreground">
+                  R$ {(toCents(estimatedRetailPrice) * priceSuggestion.minRate / 100).toFixed(2).replace(".", ",")}
+                  {" – "}
+                  R$ {(toCents(estimatedRetailPrice) * priceSuggestion.maxRate / 100).toFixed(2).replace(".", ",")}
+                </span>
+                <span className="ml-1 opacity-60">({fmtPct(priceSuggestion.minRate)}–{fmtPct(priceSuggestion.maxRate)} do valor do bem)</span>
+              </p>
             )}
             {/* P2-52 — Preço médio na região */}
             {regionSuggestion && (
@@ -671,17 +706,23 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
               label="Preço por semana"
               value={pricePerWeek}
               onChange={setPricePerWeek}
-              helper="Desconto para locações ≥ 7 dias"
             />
-            {toCents(pricePerDay) > 0 && !toCents(pricePerWeek) && (
-              <button
-                type="button"
-                onClick={autoWeekly}
-                disabled={loading}
-                className="self-start text-[11px] text-brand hover:underline disabled:opacity-50"
-              >
-                Calcular ({weeklyMultiplier}× diária = R$ {((toCents(pricePerDay) * weeklyMultiplier) / 100).toFixed(2).replace(".", ",")})
-              </button>
+            {priceSuggestion ? (
+              <p className="text-[11px] text-muted-foreground">
+                Sugerido: R$ {(toCents(estimatedRetailPrice) * priceSuggestion.minRate * weeklyMultiplier / 100).toFixed(2).replace(".", ",")}
+                <span className="ml-1 opacity-70">({weeklyMultiplier}× diária mín.) — Desconto para locações ≥ 7 dias</span>
+              </p>
+            ) : (
+              toCents(pricePerDay) > 0 && !toCents(pricePerWeek) && (
+                <button
+                  type="button"
+                  onClick={autoWeekly}
+                  disabled={loading}
+                  className="self-start text-[11px] text-brand hover:underline disabled:opacity-50"
+                >
+                  Calcular ({weeklyMultiplier}× diária = R$ {((toCents(pricePerDay) * weeklyMultiplier) / 100).toFixed(2).replace(".", ",")})
+                </button>
+              )
             )}
           </div>
         </div>
@@ -693,57 +734,65 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
               label="Preço por mês"
               value={pricePerMonth}
               onChange={setPricePerMonth}
-              helper="Desconto para locações ≥ 30 dias"
             />
-            {toCents(pricePerDay) > 0 && !toCents(pricePerMonth) && (
-              <button
-                type="button"
-                onClick={autoMonthly}
-                disabled={loading}
-                className="self-start text-[11px] text-brand hover:underline disabled:opacity-50"
-              >
-                Calcular ({monthlyMultiplier}× diária = R$ {((toCents(pricePerDay) * monthlyMultiplier) / 100).toFixed(2).replace(".", ",")})
-              </button>
+            {priceSuggestion ? (
+              <p className="text-[11px] text-muted-foreground">
+                Sugerido: R$ {(toCents(estimatedRetailPrice) * priceSuggestion.minRate * monthlyMultiplier / 100).toFixed(2).replace(".", ",")}
+                <span className="ml-1 opacity-70">({monthlyMultiplier}× diária mín.) — Desconto para locações ≥ 30 dias</span>
+              </p>
+            ) : (
+              toCents(pricePerDay) > 0 && !toCents(pricePerMonth) && (
+                <button
+                  type="button"
+                  onClick={autoMonthly}
+                  disabled={loading}
+                  className="self-start text-[11px] text-brand hover:underline disabled:opacity-50"
+                >
+                  Calcular ({monthlyMultiplier}× diária = R$ {((toCents(pricePerDay) * monthlyMultiplier) / 100).toFixed(2).replace(".", ",")})
+                </button>
+              )
             )}
           </div>
 
           {/* Caução oculta no MVP (D2) — FIN-6 pós V1-Financeiro */}
         </div>
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <PriceInput
-            id="estimated-retail-price"
-            label="Valor de compra estimado"
-            value={estimatedRetailPrice}
-            onChange={setEstimatedRetailPrice}
-            helper="Opcional — exibe economia vs comprar novo para o locatário"
-          />
-        </div>
       </section>
 
       {/* ── Localização ─────────────────────────────────────────────────────── */}
       <section className="rounded-lg border border-border bg-surface p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-primary">Localização</h2>
-          <button
-            type="button"
-            onClick={handleGetLocation}
-            disabled={loading || gettingLoc}
-            className="flex items-center gap-1.5 text-xs text-brand hover:underline disabled:opacity-50 outline-none focus-visible:ring-1 focus-visible:ring-brand rounded"
-          >
-            {gettingLoc ? (
-              <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-              </svg>
-            ) : (
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-              </svg>
-            )}
-            Usar minha localização
-          </button>
-        </div>
+        <h2 className="font-semibold text-primary">Localização</h2>
+
+        {/* Banner: endereço do perfil pré-preenchido (somente leitura) */}
+        {mode === "create" && profileAddressLoaded && profileAddress && (
+          <div className="flex items-start gap-2 rounded-lg border border-brand/20 bg-brand/5 px-3 py-2.5 text-xs text-brand">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 shrink-0" aria-hidden="true">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+            </svg>
+            <span>
+              Endereço do seu perfil.{" "}
+              Para alterar,{" "}
+              <Link href="/perfil/endereco" className="underline font-semibold hover:opacity-80">
+                edite seu endereço no perfil
+              </Link>.
+            </span>
+          </div>
+        )}
+
+        {/* Banner: endereço do perfil não cadastrado */}
+        {mode === "create" && profileAddressLoaded && !profileAddress && (
+          <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-700">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 shrink-0" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>
+              Você ainda não tem um endereço cadastrado.{" "}
+              <Link href="/perfil/endereco" className="underline font-semibold hover:opacity-80">
+                Cadastre seu endereço no perfil
+              </Link>{" "}
+              para que ele apareça automaticamente em todos os seus anúncios.
+            </span>
+          </div>
+        )}
 
         {errors.location && (
           <p role="alert" className="text-xs text-destructive">{errors.location}</p>
@@ -762,20 +811,20 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
         {!geocoding && geocodeResult === "ok" && (
           <p className="text-xs text-success">
             📍 Localização encontrada — {latitude.toFixed(4)}, {longitude.toFixed(4)}
-            {gpsUsedRef.current && " (GPS)"}
           </p>
         )}
         {!geocoding && geocodeResult === "not_found" && (
           <p className="text-xs text-amber-600">
-            ⚠️ Endereço não encontrado no mapa. Verifique cidade e estado, ou use o GPS.
+            ⚠️ Endereço não encontrado no mapa. Verifique cidade e estado no seu perfil.
           </p>
         )}
         {!geocoding && geocodeResult === "error" && (
           <p className="text-xs text-destructive">
-            Erro ao buscar localização. Tente novamente ou use o GPS.
+            Erro ao buscar localização. Tente novamente.
           </p>
         )}
 
+        {/* Campos somente leitura no create (endereço vem do perfil); editáveis apenas no edit */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="md:col-span-2">
             <Input
@@ -784,31 +833,33 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
               placeholder="Natal"
               value={city}
               onChange={(e) => {
+                if (mode === "create") return
                 setCity(e.target.value)
                 setErrors((p) => ({ ...p, city: undefined! }))
                 gpsUsedRef.current = false
                 setGeocodeResult(null)
               }}
-              onBlur={geocodeAddress}
+              onBlur={mode === "edit" ? geocodeAddress : undefined}
               error={errors.city}
               required
-              disabled={loading}
+              disabled={loading || mode === "create"}
             />
           </div>
           <Select
             label="Estado"
             value={state}
             onChange={(e) => {
+              if (mode === "create") return
               setState(e.target.value)
               setErrors((p) => ({ ...p, state: undefined! }))
               gpsUsedRef.current = false
               setGeocodeResult(null)
             }}
-            onBlur={geocodeAddress}
+            onBlur={mode === "edit" ? geocodeAddress : undefined}
             error={errors.state}
             placeholder="UF"
             required
-            disabled={loading}
+            disabled={loading || mode === "create"}
           >
             {BR_STATES.map((uf) => (
               <option key={uf} value={uf}>{uf}</option>
@@ -822,19 +873,19 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
             type="text"
             placeholder="Ponta Negra"
             value={neighborhood}
-            onChange={(e) => setNeighborhood(e.target.value)}
-            onBlur={geocodeAddress}
+            onChange={(e) => { if (mode !== "create") setNeighborhood(e.target.value) }}
+            onBlur={mode === "edit" ? geocodeAddress : undefined}
             helper="Opcional — melhora a precisão no mapa"
-            disabled={loading}
+            disabled={loading || mode === "create"}
           />
           <Input
             label="Endereço"
             type="text"
             placeholder="Rua das Dunas, 123"
             value={address}
-            onChange={(e) => setAddress(e.target.value)}
+            onChange={(e) => { if (mode !== "create") setAddress(e.target.value) }}
             helper="Opcional — só compartilhado após confirmação"
-            disabled={loading}
+            disabled={loading || mode === "create"}
           />
         </div>
       </section>

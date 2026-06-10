@@ -253,6 +253,49 @@ export async function sendWelcomeEmail(to: string, name: string): Promise<void> 
   if (error) throw new Error(`Resend error: ${error.message}`)
 }
 
+export async function sendVerificationEmail(
+  to: string,
+  name: string,
+  token: string,
+): Promise<void> {
+  const resend = getResend()
+  if (!resend) return
+
+  const firstName  = name.split(" ")[0]
+  const verifyUrl  = `${APP_URL}/verify-email?token=${token}`
+
+  const html = baseLayout(`
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
+      Confirme seu e-mail
+    </h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
+      Olá, ${firstName}! Clique no botão abaixo para confirmar seu endereço de e-mail.
+      O link expira em <strong>48 horas</strong>.
+    </p>
+
+    <div style="text-align:center;">
+      ${ctaButton(verifyUrl, "Confirmar e-mail")}
+    </div>
+
+    <p style="margin:20px 0 0;font-size:12px;color:#94A3B8;">
+      Se o botão não funcionar, acesse o link diretamente:<br/>
+      <a href="${verifyUrl}" style="color:#007B3C;word-break:break-all;">${verifyUrl}</a>
+    </p>
+    <p style="margin:12px 0 0;font-size:12px;color:#94A3B8;">
+      Se você não criou uma conta no ShareO, ignore este e-mail.
+    </p>
+  `)
+
+  const { error } = await resend.emails.send({
+    from:    `ShareO <${FROM}>`,
+    to,
+    subject: "Confirme seu e-mail no ShareO",
+    html,
+  })
+
+  if (error) throw new Error(`Resend error: ${error.message}`)
+}
+
 // ─── Lembretes automáticos ────────────────────────────────────────────────────
 
 function fmtDate(d: Date) {
@@ -382,6 +425,83 @@ export async function sendLateFeeEmail(
     to,
     subject: `🚨 Taxa de atraso — ${itemTitle} — ShareO`,
     html:    lateFeeHtml(firstName, itemTitle, lateFeeFormatted, paymentUrl, bookingUrl),
+  })
+  if (error) throw new Error(`Resend error: ${error.message}`)
+}
+
+function idVerifiedHtml(firstName: string) {
+  return baseLayout(`
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
+      ✅ Identidade verificada!
+    </h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
+      Olá, ${firstName}! Sua identidade foi verificada com sucesso pela equipe ShareO.
+      Agora você pode alugar e anunciar itens com o selo de verificação na sua conta.
+    </p>
+
+    <div style="margin-bottom:24px;padding:16px 20px;background:#F0FDF4;border-radius:8px;border:1px solid #BBF7D0;">
+      <p style="margin:0;font-size:14px;color:#15803D;">
+        <strong>✓ Conta verificada</strong> — Usuários verificados têm maior credibilidade e mais chances de fechar locações.
+      </p>
+    </div>
+
+    <div style="text-align:center;">
+      ${ctaButton(`${APP_URL}/perfil`, "Ver meu perfil")}
+    </div>
+  `)
+}
+
+function idRejectedHtml(firstName: string, reason: string) {
+  return baseLayout(`
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#B91C1C;">
+      Verificação não aprovada
+    </h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
+      Olá, ${firstName}! Infelizmente não foi possível verificar sua identidade com os documentos enviados.
+    </p>
+
+    <div style="margin-bottom:24px;padding:16px 20px;background:#FFF7ED;border-radius:8px;border:1px solid #FED7AA;">
+      <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#C2410C;text-transform:uppercase;letter-spacing:0.5px;">Motivo</p>
+      <p style="margin:0;font-size:14px;color:#C2410C;">${reason}</p>
+    </div>
+
+    <p style="margin:0 0 20px;font-size:14px;color:#475569;line-height:1.6;">
+      Você pode reenviar seus documentos corrigindo o problema indicado acima.
+      Certifique-se de que a foto está nítida e o documento está válido e legível.
+    </p>
+
+    <div style="text-align:center;">
+      ${ctaButton(`${APP_URL}/perfil/documentos`, "Reenviar documentos")}
+    </div>
+
+    <p style="margin:20px 0 0;font-size:12px;color:#94A3B8;">
+      Se acredita que houve um engano, entre em contato com nosso suporte.
+    </p>
+  `)
+}
+
+export async function sendIdVerifiedEmail(to: string, name: string): Promise<void> {
+  const resend = getResend()
+  if (!resend) return
+  const firstName = name.split(" ")[0]
+  const { error } = await resend.emails.send({
+    from:    `ShareO <${FROM}>`,
+    to,
+    subject: "✅ Sua identidade foi verificada — ShareO",
+    html:    idVerifiedHtml(firstName),
+  })
+  if (error) throw new Error(`Resend error: ${error.message}`)
+}
+
+export async function sendIdRejectedEmail(to: string, name: string, reason: string): Promise<void> {
+  const resend = getResend()
+  if (!resend) return
+  const firstName = name.split(" ")[0]
+  const { error } = await resend.emails.send({
+    from:    `ShareO <${FROM}>`,
+    to,
+    subject: "Verificação de identidade — ShareO",
+    html:    idRejectedHtml(firstName, reason),
   })
   if (error) throw new Error(`Resend error: ${error.message}`)
 }

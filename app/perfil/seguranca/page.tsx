@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { DeleteAccountButton } from "../_DeleteAccountButton"
 import { ChangePasswordForm } from "./_ChangePasswordForm"
+import { ResendVerificationButton } from "./_ResendVerificationButton"
 
 export const metadata: Metadata = { title: "Login e Segurança" }
 
@@ -23,7 +24,7 @@ export default async function SegurancaPage() {
 
   const user = await prisma.user.findUnique({
     where:  { id: session.user.id },
-    select: { email: true, createdAt: true, role: true },
+    select: { email: true, createdAt: true, role: true, emailVerified: true },
   })
 
   if (!user) redirect("/login")
@@ -54,8 +55,24 @@ export default async function SegurancaPage() {
                 <p className="text-sm font-medium text-foreground">{maskEmail(user.email)}</p>
                 <p className="text-xs text-muted-foreground">Conta criada em {new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(user.createdAt)}</p>
               </div>
-              <span className="rounded-full bg-success/10 px-2.5 py-0.5 text-xs font-semibold text-success">Verificado</span>
+              {user.emailVerified ? (
+                <span className="rounded-full bg-success/10 px-2.5 py-0.5 text-xs font-semibold text-success">
+                  Verificado
+                </span>
+              ) : (
+                <span className="rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-800">
+                  Pendente
+                </span>
+              )}
             </div>
+            {!user.emailVerified && (
+              <div className="mt-4 border-t border-border pt-4">
+                <p className="mb-2 text-xs text-muted-foreground">
+                  Confirme seu e-mail para poder realizar reservas na plataforma.
+                </p>
+                <ResendVerificationButton />
+              </div>
+            )}
           </div>
 
           {/* Senha */}

@@ -49,6 +49,8 @@ export function EnderecoForm({ cep, street, city, state, neighborhood }: Props) 
   const [saving,      setSaving]      = useState(false)
   const [saveError,   setSaveError]   = useState("")
   const [success,     setSuccess]     = useState(false)
+  const [gettingLoc,  setGettingLoc]  = useState(false)
+  const [locError,    setLocError]    = useState("")
 
   // Evita busca duplicada se o usuário sair/entrar no campo sem mudar o valor
   const lastFetchedCep = useRef("")
@@ -83,6 +85,76 @@ export function EnderecoForm({ cep, street, city, state, neighborhood }: Props) 
     } finally {
       setCepLoading(false)
     }
+  }
+
+  // ── Geolocalização GPS → Mapbox geocoding reverso ─────────────────────────
+  function handleGetLocation() {
+    if (!navigator.geolocation) {
+      setLocError("Geolocalização não suportada neste navegador.")
+      return
+    }
+    setGettingLoc(true)
+    setLocError("")
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude: lat, longitude: lng } = pos.coords
+          const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+          if (!token || token.endsWith("...")) {
+            setLocError("Token de mapa não configurado.")
+            return
+          }
+          const url =
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json` +
+            `?access_token=${token}&country=BR&language=pt&types=place,locality,neighborhood,address&limit=1`
+          const res  = await fetch(url)
+          const data = await res.json() as {
+            features?: {
+              place_type: string[]
+              text: string
+              context?: { id: string; text: string }[]
+            }[]
+          }
+          const feature = data?.features?.[0]
+          if (feature) {
+            const ctx = feature.context ?? []
+            const place  = ctx.find((c) => c.id.startsWith("place"))?.text
+            const region = ctx.find((c) => c.id.startsWith("region"))?.text
+            const neigh  = ctx.find((c) => c.id.startsWith("neighborhood"))?.text
+                        ?? (feature.place_type.includes("neighborhood") ? feature.text : "")
+            if (place)  setCityVal(place)
+            if (region) setStateVal(stateAbbr(region))
+            if (neigh)  setNeighVal(neigh)
+          } else {
+            setLocError("Não foi possível identificar o endereço a partir do GPS.")
+          }
+        } catch {
+          setLocError("Erro ao buscar localização. Tente novamente.")
+        } finally {
+          setGettingLoc(false)
+        }
+      },
+      () => {
+        setGettingLoc(false)
+        setLocError("Não foi possível obter a localização. Permita o acesso ao GPS.")
+      },
+      { timeout: 8000 }
+    )
+  }
+
+  // Converte nome do estado (ex.: "Rio Grande do Norte") para sigla (ex.: "RN")
+  function stateAbbr(name: string): string {
+    const map: Record<string, string> = {
+      "Acre": "AC", "Alagoas": "AL", "Amapá": "AP", "Amazonas": "AM",
+      "Bahia": "BA", "Ceará": "CE", "Distrito Federal": "DF", "Espírito Santo": "ES",
+      "Goiás": "GO", "Maranhão": "MA", "Mato Grosso": "MT", "Mato Grosso do Sul": "MS",
+      "Minas Gerais": "MG", "Pará": "PA", "Paraíba": "PB", "Paraná": "PR",
+      "Pernambuco": "PE", "Piauí": "PI", "Rio de Janeiro": "RJ",
+      "Rio Grande do Norte": "RN", "Rio Grande do Sul": "RS", "Rondônia": "RO",
+      "Roraima": "RR", "Santa Catarina": "SC", "São Paulo": "SP", "Sergipe": "SE",
+      "Tocantins": "TO",
+    }
+    return map[name] ?? name.slice(0, 2).toUpperCase()
   }
 
   // ── Salva no banco ────────────────────────────────────────────────────────
@@ -121,6 +193,32 @@ export function EnderecoForm({ cep, street, city, state, neighborhood }: Props) 
 
   return (
     <form onSubmit={save} className="space-y-4">
+
+      {/* ── Usar minha localização ── */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          Sua localização é usada para centralizar o mapa e exibir itens próximos.
+        </p>
+        <button
+          type="button"
+          onClick={handleGetLocation}
+          disabled={gettingLoc}
+          className="flex shrink-0 items-center gap-1.5 text-xs text-brand hover:underline disabled:opacity-50 outline-none focus-visible:ring-1 focus-visible:ring-brand rounded ml-3"
+        >
+          {gettingLoc ? (
+            <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
+          ) : (
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+            </svg>
+          )}
+          Usar minha localização
+        </button>
+      </div>
+      {locError && <p className="text-xs text-red-500">{locError}</p>}
 
       {/* ── CEP ── */}
       <div>
