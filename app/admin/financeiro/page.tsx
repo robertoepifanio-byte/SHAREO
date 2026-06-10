@@ -252,7 +252,7 @@ export default async function AdminFinanceiroPage() {
           <div>
             <p className="mb-1 text-xs text-muted-foreground font-medium">Multiplicadores de precificação sugerida</p>
             <p className="mb-3 text-xs text-muted-foreground">
-              Usados no botão "Calcular" do formulário de anúncio (semanal = N× diária, mensal = N× diária).
+              Usados no botão &quot;Calcular&quot; do formulário de anúncio (semanal = N× diária, mensal = N× diária).
               Recomendado: semanal 3×, mensal 15×.
             </p>
             <PricingMultipliersForm

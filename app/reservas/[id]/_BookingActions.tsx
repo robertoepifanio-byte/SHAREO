@@ -246,10 +246,11 @@ export function BookingActions({
             Solicite o código de retirada ao locatário e informe abaixo para confirmar a entrega.
           </p>
 
-          <label className="mb-1 block text-xs font-semibold text-foreground">
+          <label htmlFor="pickup-token-input" className="mb-1 block text-xs font-semibold text-foreground">
             Código do locatário <span className="text-destructive">*</span>
           </label>
           <input
+            id="pickup-token-input"
             type="text"
             inputMode="numeric"
             maxLength={6}
@@ -259,10 +260,11 @@ export function BookingActions({
             className="mb-3 w-full rounded-lg border border-input bg-white px-3 py-2.5 text-center text-2xl font-bold tracking-[0.3em] text-primary outline-none focus:border-brand"
           />
 
-          <label className="mb-1 block text-xs font-semibold text-foreground">
+          <label htmlFor="pickup-time-input" className="mb-1 block text-xs font-semibold text-foreground">
             Horário da retirada <span className="text-destructive">*</span>
           </label>
           <input
+            id="pickup-time-input"
             type="datetime-local"
             value={pickupTime}
             max={nowLocal()}
@@ -295,10 +297,11 @@ export function BookingActions({
           <p className="mb-3 text-xs text-muted-foreground">
             Informe o horário exato da devolução. Este registro fica vinculado à reserva.
           </p>
-          <label className="mb-1 block text-xs font-medium text-foreground">
+          <label htmlFor="return-time-input" className="mb-1 block text-xs font-medium text-foreground">
             Horário da devolução <span className="text-destructive">*</span>
           </label>
           <input
+            id="return-time-input"
             type="datetime-local"
             value={returnTime}
             max={nowLocal()}
