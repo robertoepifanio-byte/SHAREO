@@ -3,8 +3,8 @@
 **Atualizado em**: 2026-06-10 (sessão — bugfix pickupToken PIX + E2E features-jun09 + crítica de design implementada)
 **Ambiente staging**: https://shareo-rouge.vercel.app (⚠️ deploys automáticos GitHub→Vercel aparecem **Canceled** — deploy real é manual: `npx vercel --prod`)
 **Último commit**: `33920ab`
-**Release estável**: [`v1.0.0`](https://github.com/robertoepifanio/SHAREO/releases/tag/v1.0.0)
-**Candidata a `v1.1.0`**: commit `33920ab` — staging aprovado, aguarda D4
+**Release atual**: [`v1.2.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.2.0) — commit `e20c1e9` — staging aprovado, aguarda D4 para produção
+**Release anterior**: [`v1.0.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.0.0) (a v1.1.0 planejada foi absorvida pela v1.2.0)
 
 ---
 
