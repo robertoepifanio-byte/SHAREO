@@ -321,6 +321,167 @@
     color: #5a7080;
     font-weight: 600;
   }
+
+  /* ── Bloqueador banner ── */
+  .blocker-banner {
+    background: #fff7ed;
+    border-left: 4px solid #ea580c;
+    padding: 12px 20px;
+    margin: 0 28px 0;
+    border-radius: 0 6px 6px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .blocker-banner .blocker-icon { font-size: 1.4rem; flex-shrink: 0; }
+  .blocker-banner .blocker-text { font-size: .88rem; color: #7c2d12; line-height: 1.5; }
+  .blocker-banner .blocker-text strong { color: #9a3412; }
+
+  /* ── Prod infra tables ── */
+  .prod-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .82rem;
+    margin-top: 4px;
+  }
+  .prod-table thead th {
+    background: #1e3a5f;
+    color: #fff;
+    font-weight: 700;
+    padding: 8px 11px;
+    text-align: left;
+    font-size: .78rem;
+    letter-spacing: .3px;
+  }
+  .prod-table thead th.right { text-align: right; }
+  .prod-table thead th.center { text-align: center; }
+  .prod-table tbody tr:nth-child(even) { background: #f5f8fc; }
+  .prod-table tbody tr:hover { background: #eaf2ff; }
+  .prod-table tbody td {
+    padding: 8px 11px;
+    color: #1a2a3a;
+    border-bottom: 1px solid #e5eaf0;
+    vertical-align: middle;
+    line-height: 1.4;
+  }
+  .prod-table tbody td.right { text-align: right; font-weight: 600; color: #007B3C; }
+  .prod-table tbody td.center { text-align: center; }
+  .prod-table tbody td.label { font-weight: 700; color: #003366; white-space: nowrap; }
+  .prod-table tbody td.mono { font-family: monospace; font-size: .8rem; color: #444; }
+  .prod-table .sub-row td { background: #f9fbff; font-size: .78rem; color: #5a7080; }
+  .prod-table .warn td { background: #fff7ed; }
+  .prod-table .warn td.label { color: #9a3412; }
+  .prod-table tfoot td {
+    background: #f0faf4;
+    padding: 8px 11px;
+    font-size: .82rem;
+    color: #166534;
+    font-weight: 700;
+    border-top: 2px solid #86efac;
+  }
+
+  /* ── Env badge ── */
+  .env-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: .72rem;
+    font-weight: 700;
+  }
+  .env-badge.dev    { background: #e0e7ff; color: #3730a3; }
+  .env-badge.stg    { background: #fef3c7; color: #92400e; }
+  .env-badge.prod   { background: #dcfce7; color: #166534; }
+  .env-badge.block  { background: #fee2e2; color: #991b1b; }
+
+  /* ── License badge ── */
+  .lic-badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-size: .72rem;
+    font-weight: 700;
+    background: #f0f6ff;
+    color: #003366;
+    border: 1px solid #c5d8f0;
+  }
+  .lic-badge.warn { background: #fff7ed; color: #9a3412; border-color: #fed7aa; }
+  .lic-badge.ok   { background: #dcfce7; color: #166534; border-color: #86efac; }
+
+  /* ── Risk badges ── */
+  .risk {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: .72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+  }
+  .risk.high   { background: #fee2e2; color: #991b1b; }
+  .risk.medium { background: #fff7ed; color: #9a3412; }
+  .risk.low    { background: #dcfce7; color: #166534; }
+
+  /* ── Step list ── */
+  .step-list { list-style: none; display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .step-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: .83rem;
+    color: #1a2a3a;
+    line-height: 1.45;
+  }
+  .step-num {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #003366;
+    color: #fff;
+    font-size: .72rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+  }
+
+  /* ── Three-col grid ── */
+  .three-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    margin-top: 4px;
+  }
+  .mini-box {
+    border-radius: 8px;
+    padding: 13px 14px;
+    border: 1.5px solid #c5d8f0;
+    background: #f4f8ff;
+  }
+  .mini-box.green { border-color: #86efac; background: #f0faf4; }
+  .mini-box.amber { border-color: #fcd34d; background: #fffbf0; }
+  .mini-box .mini-title {
+    font-size: .78rem;
+    font-weight: 800;
+    color: #003366;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    margin-bottom: 7px;
+  }
+  .mini-box.green .mini-title { color: #166534; }
+  .mini-box.amber .mini-title { color: #92400e; }
+  .mini-box ul { list-style: none; }
+  .mini-box ul li {
+    font-size: .79rem;
+    color: #334155;
+    padding: 2px 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    line-height: 1.4;
+  }
+  .mini-box ul li::before { content: "›"; color: #007B3C; font-weight: 700; flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -331,7 +492,7 @@
     <h1>Relatório Executivo</h1>
     <div class="subtitle">— Inventário de Funcionalidades ShareO —</div>
     <div class="divider-line"></div>
-    <div class="meta">Versão MVP · Next.js App Router · TypeScript · Supabase · Stripe &nbsp;|&nbsp; 2026-06-02 &nbsp;|&nbsp; Gerado a partir do código-fonte (staging aprovado)</div>
+    <div class="meta">Versão MVP · Next.js App Router · TypeScript · Supabase · Stripe &nbsp;|&nbsp; 2026-06-09 &nbsp;|&nbsp; Gerado a partir do código-fonte (staging aprovado · commit 31068af)</div>
   </div>
 
   <!-- ── OBJETIVO ── -->
@@ -583,8 +744,8 @@
               <li>Cancelar reserva com motivo (ambos — grátis até 24h antes)</li>
               <li>Pagar via Stripe (locatário após confirmação)</li>
               <li>Pagamento retido até confirmação de entrega</li>
-              <li>Taxa ShareO 10% explicitada no resumo financeiro</li>
-              <li>Caução cobrada no checkout e devolvida após devolução sem danos</li>
+              <li>Taxa ShareO 15% dinâmica (configurável SuperAdmin) no resumo financeiro</li>
+              <li>Token de 6 dígitos para retirada — anti-fraude (locatário apresenta ao proprietário)</li>
               <li>Marcar como Ativo — proprietário confirma entrega</li>
               <li>Countdown de devolução em tempo real</li>
               <li>Checklist de devolução (locatário)</li>
@@ -637,7 +798,7 @@
               <li>Checkout via Stripe (redirect página segura)</li>
               <li>Webhooks Stripe para atualização de status em tempo real</li>
               <li>Dados de cartão nunca trafegam nos servidores ShareO</li>
-              <li>Resumo financeiro: diárias × preço, taxa 10%, caução, total</li>
+              <li>Resumo financeiro: diárias × preço, taxa 15% (dinâmica), total</li>
               <li>Status de pagamento: PENDING | PAID</li>
               <li>Retorno visual pós-pagamento (<code>?payment=success</code> / <code>?payment=cancelled</code>)</li>
               <li>Disputas com análise manual pela equipe ShareO</li>
@@ -865,7 +1026,8 @@
               <li>Google Analytics 4 integrado</li>
               <li>5 crons automáticos: cancelamento, lembretes, reengajamento, expiração, devolução</li>
               <li>14 migrations Prisma aplicadas + 75 políticas RLS</li>
-              <li>12 specs E2E — 20/20 — zero flaky — 4 browsers — CI regressão contínua</li>
+              <li>32 smokes E2E — 185+ testes — zero flaky — 4 browsers — CI regressão contínua</li>
+              <li>7 crons automáticos: cancelamento, lembretes, expiração, devolução, reengajamento, payout, relatório mensal</li>
             </ul>
           </td>
         </tr>
@@ -933,10 +1095,424 @@
     </div>
   </div>
 
+  <!-- ── BLOQUEADOR D4 ── -->
+  <div class="section" style="padding-top:14px;padding-bottom:14px;">
+    <div class="blocker-banner">
+      <div class="blocker-icon">⛔</div>
+      <div class="blocker-text">
+        <strong>D4 — BLOQUEADOR ATIVO:</strong> Consulta jurídica pendente. Nenhuma atividade de produção (criação de projeto Supabase, deploy, DNS, go-live) antes do sign-off formal do jurídico. Staging aprovado e pronto — aguardando liberação.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ARQUITETURA DE PRODUÇÃO ── -->
+  <div class="section">
+    <div class="section-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#59C686" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      Arquitetura de Produção (Planejamento Pós-D4)
+    </div>
+
+    <!-- Infra / Serviços -->
+    <p style="font-size:.84rem;color:#5a7080;margin-bottom:12px;">Todos os valores são estimativas de referência. Nenhum serviço de produção provisionado até sign-off D4.</p>
+    <table class="prod-table">
+      <thead>
+        <tr>
+          <th style="width:160px">Serviço</th>
+          <th>Plano atual (staging)</th>
+          <th>Plano produção</th>
+          <th class="right" style="width:160px">Custo est. / mês</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="label">☁️ Vercel</td>
+          <td>Pro (compartilhado)</td>
+          <td>Pro — obrigatório para Cron Jobs e Edge Middleware</td>
+          <td class="right">~US$20</td>
+        </tr>
+        <tr>
+          <td class="label">🗄️ Supabase Staging</td>
+          <td>Free tier · <span class="mono">fflpuoluiqmhpvcxubqi</span></td>
+          <td>Manter como staging isolado</td>
+          <td class="right">US$0</td>
+        </tr>
+        <tr class="warn">
+          <td class="label">🗄️ Supabase Produção</td>
+          <td><span class="env-badge block">⏳ Não criado</span></td>
+          <td>3º projeto isolado sa-east-1 · Pro tier · 8 GB DB · 100 GB Storage · 5M row reads/mês</td>
+          <td class="right">~US$25</td>
+        </tr>
+        <tr>
+          <td class="label">🔴 Upstash Redis</td>
+          <td>Pay-as-you-go</td>
+          <td>Pay-as-you-go — rate limit + blocklist Edge</td>
+          <td class="right">~US$0–5</td>
+        </tr>
+        <tr>
+          <td class="label">📧 Resend</td>
+          <td>Free (100 e-mails/dia)</td>
+          <td>Starter — 50.000 e-mails/mês · domínio <span class="mono">@shareo.com.br</span> verificado</td>
+          <td class="right">~US$20</td>
+        </tr>
+        <tr>
+          <td class="label">🐛 Sentry</td>
+          <td>Free (5k eventos/mês)</td>
+          <td>Team se ultrapassar free tier — DSN separado para produção</td>
+          <td class="right">~US$0–26</td>
+        </tr>
+        <tr>
+          <td class="label">🗺️ Mapbox</td>
+          <td>Free (50k tile req.)</td>
+          <td>Pay-as-you-go · US$0,50/1.000 req. acima do free · atribuição © Mapbox obrigatória</td>
+          <td class="right">~US$0–10</td>
+        </tr>
+        <tr class="warn">
+          <td class="label">💳 Stripe</td>
+          <td><span class="env-badge stg">Test mode</span></td>
+          <td><span class="env-badge prod">Live mode</span> — ativar após D4 · KYC Stripe BR · 2,99% + R$0,39/tx</td>
+          <td class="right">% sobre GMV</td>
+        </tr>
+        <tr>
+          <td class="label">📡 UptimeRobot</td>
+          <td>Free (5 min interval)</td>
+          <td>Free suficiente para MVP · alerta em <span class="mono">/api/health</span></td>
+          <td class="right">US$0</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3">💰 Estimativa total infraestrutura mês 1 de produção</td>
+          <td class="right">~US$70–100 / mês<br><span style="font-size:.75rem;font-weight:500;color:#5a7080">(≈ R$370–530)</span></td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="h-rule"></div>
+
+    <!-- 3 Ambientes Supabase -->
+    <div style="font-size:.9rem;font-weight:700;color:#003366;margin-bottom:10px;">🗄️ Três projetos Supabase isolados — regra de ouro</div>
+    <table class="prod-table">
+      <thead>
+        <tr><th style="width:120px">Ambiente</th><th>Project ID</th><th>Arquivo de env</th><th>Uso</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="env-badge dev">Dev local</span></td>
+          <td class="mono">jtianehxosfdrhjzqvqj</td>
+          <td class="mono">.env</td>
+          <td>Desenvolvimento local — dados fictícios</td>
+        </tr>
+        <tr>
+          <td><span class="env-badge stg">Staging</span></td>
+          <td class="mono">fflpuoluiqmhpvcxubqi</td>
+          <td class="mono">.env.staging-migrate</td>
+          <td>CI/CD + validação — dados de fixture</td>
+        </tr>
+        <tr class="warn">
+          <td><span class="env-badge block">Produção</span></td>
+          <td class="mono">⏳ Criar após D4</td>
+          <td>GitHub Secrets + Vercel env <span class="mono">production</span></td>
+          <td><strong>Dados reais de usuários — nunca misturar com staging</strong></td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="font-size:.78rem;color:#9a3412;margin-top:8px;">⚠️ Variáveis <span style="font-family:monospace">NEXT_PUBLIC_*</span> no Vercel: <strong>nunca marcar como Sensitive</strong> — impede injeção no build-time. Se aparecerem vazias em staging, verificar esse flag antes de qualquer outra hipótese.</p>
+  </div>
+
+  <!-- ── LIMITES OPERACIONAIS + PLANO DE PROVISIONAMENTO ── -->
+  <div class="section">
+    <div class="section-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#59C686" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      Limites Operacionais do MVP &amp; Plano de Provisionamento
+    </div>
+
+    <div class="two-col">
+      <!-- Limites -->
+      <div>
+        <div style="font-size:.88rem;font-weight:700;color:#003366;margin-bottom:10px;">📏 Limites configurados</div>
+        <table class="prod-table">
+          <thead>
+            <tr><th>Limite</th><th class="right">Valor</th><th class="center">Editável?</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Valor máximo do bem anunciado</td>
+              <td class="right">R$ 1.000</td>
+              <td class="center"><span class="env-badge dev">SuperAdmin</span></td>
+            </tr>
+            <tr>
+              <td>Teto por transação de locação</td>
+              <td class="right">R$ 500</td>
+              <td class="center"><span class="lic-badge warn">lib/platform-config.ts</span></td>
+            </tr>
+            <tr>
+              <td>Taxa da plataforma (default)</td>
+              <td class="right">15% (1500 bps)</td>
+              <td class="center"><span class="env-badge dev">SuperAdmin</span></td>
+            </tr>
+            <tr>
+              <td>Multiplicador semanal sugerido</td>
+              <td class="right">3× diária</td>
+              <td class="center"><span class="env-badge dev">SuperAdmin</span></td>
+            </tr>
+            <tr>
+              <td>Multiplicador mensal sugerido</td>
+              <td class="right">15× diária</td>
+              <td class="center"><span class="env-badge dev">SuperAdmin</span></td>
+            </tr>
+            <tr>
+              <td>Fotos por item (MVP)</td>
+              <td class="right">3 fotos</td>
+              <td class="center"><span class="lic-badge">hard-coded</span></td>
+            </tr>
+            <tr>
+              <td>Rate limit (auth endpoints)</td>
+              <td class="right">20 req / 10s por IP</td>
+              <td class="center"><span class="lic-badge">Upstash</span></td>
+            </tr>
+            <tr>
+              <td>JWT access token</td>
+              <td class="right">15 min</td>
+              <td class="center"><span class="lic-badge">lib/auth.ts</span></td>
+            </tr>
+            <tr>
+              <td>Refresh token rotativo</td>
+              <td class="right">7 dias</td>
+              <td class="center"><span class="lic-badge">lib/auth.ts</span></td>
+            </tr>
+            <tr>
+              <td>Cutoff payout semanal</td>
+              <td class="right">Domingo 23h59 BRT</td>
+              <td class="center"><span class="lic-badge">cron/payout</span></td>
+            </tr>
+            <tr>
+              <td>Retenção dados financeiros</td>
+              <td class="right">5 anos</td>
+              <td class="center"><span class="lic-badge">CTN Art. 173</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Plano de provisionamento -->
+      <div>
+        <div style="font-size:.88rem;font-weight:700;color:#003366;margin-bottom:10px;">🚀 Provisionamento produção (pós-D4)</div>
+        <ol class="step-list">
+          <li><span class="step-num">1</span>Criar projeto Supabase production (sa-east-1 — mesmo region do staging)</li>
+          <li><span class="step-num">2</span>Rodar <span style="font-family:monospace;font-size:.78rem">prisma migrate deploy</span> no banco de produção</li>
+          <li><span class="step-num">3</span>Seed inicial: apenas categorias + <span style="font-family:monospace;font-size:.78rem">PlatformConfig</span> defaults</li>
+          <li><span class="step-num">4</span>Criar buckets Supabase Storage: <span style="font-family:monospace;font-size:.78rem">item-images</span> (público), <span style="font-family:monospace;font-size:.78rem">booking-photos</span> (público), <span style="font-family:monospace;font-size:.78rem">id-docs</span> (privado)</li>
+          <li><span class="step-num">5</span>GitHub environment <span style="font-family:monospace;font-size:.78rem">production</span> com Required Reviewers (≥1 aprovação para deploy)</li>
+          <li><span class="step-num">6</span>Configurar todas as variáveis de produção no Vercel (nunca marcar <span style="font-family:monospace;font-size:.78rem">NEXT_PUBLIC_*</span> como Sensitive)</li>
+          <li><span class="step-num">7</span>Gerar nova <span style="font-family:monospace;font-size:.78rem">ENCRYPTION_KEY</span> (64 hex chars) — incompatível com staging por design</li>
+          <li><span class="step-num">8</span>Verificar domínio SPF/DKIM no Resend para <span style="font-family:monospace;font-size:.78rem">@shareo.com.br</span></li>
+          <li><span class="step-num">9</span>Ativar Stripe live mode + registrar webhook endpoint de produção</li>
+          <li><span class="step-num">10</span>Smoke test manual nos fluxos críticos → deletar scripts temporários → tag <span style="font-family:monospace;font-size:.78rem">v1.1.0</span></li>
+        </ol>
+        <div style="margin-top:14px;padding:10px 12px;background:#f0faf4;border-radius:6px;border-left:3px solid #007B3C;">
+          <div style="font-size:.78rem;font-weight:700;color:#166534;margin-bottom:6px;">🗑️ Scripts temporários a deletar antes do go-live</div>
+          <div style="font-family:monospace;font-size:.75rem;color:#334155;line-height:1.7">
+            scripts/reset-fixture-pwd.ts<br>
+            scripts/delete-e2e-admins.ts<br>
+            scripts/clear-rl.mjs<br>
+            scripts/fix-admin-roles.ts<br>
+            scripts/set-fixture-admin-role.ts<br>
+            scripts/verify-admin-sessions.ts
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── LICENÇAS ── -->
+  <div class="section">
+    <div class="section-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#59C686" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Licenças das Dependências Críticas
+    </div>
+    <table class="prod-table">
+      <thead>
+        <tr>
+          <th style="width:200px">Pacote</th>
+          <th class="center" style="width:90px">Versão</th>
+          <th class="center" style="width:100px">Licença</th>
+          <th>Ponto de atenção</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="label">next</td>
+          <td class="center mono">15.3.3</td>
+          <td class="center"><span class="lic-badge ok">MIT</span></td>
+          <td>Sem restrições comerciais</td>
+        </tr>
+        <tr class="warn">
+          <td class="label">next-auth</td>
+          <td class="center mono">5.0.0-beta.31</td>
+          <td class="center"><span class="lic-badge ok">ISC</span></td>
+          <td>⚠️ <strong>Beta</strong> — monitorar breaking changes pré-GA. Avaliar versão estável antes do go-live.</td>
+        </tr>
+        <tr>
+          <td class="label">@prisma/client</td>
+          <td class="center mono">6.7.0</td>
+          <td class="center"><span class="lic-badge ok">Apache-2.0</span></td>
+          <td>Sem restrições comerciais</td>
+        </tr>
+        <tr class="warn">
+          <td class="label">stripe</td>
+          <td class="center mono">22.1.1</td>
+          <td class="center"><span class="lic-badge ok">MIT</span></td>
+          <td>⚠️ Termos Stripe BR: 2,99% + R$0,39/tx · KYC obrigatório · verificar com jurídico (D4)</td>
+        </tr>
+        <tr class="warn">
+          <td class="label">mapbox-gl</td>
+          <td class="center mono">3.3.0</td>
+          <td class="center"><span class="lic-badge warn">BSD-3 + ToS</span></td>
+          <td>⚠️ Mapbox ToS exige atribuição visual <strong>"© Mapbox © OpenStreetMap"</strong> visível no mapa</td>
+        </tr>
+        <tr>
+          <td class="label">react-map-gl</td>
+          <td class="center mono">7.1.7</td>
+          <td class="center"><span class="lic-badge ok">MIT</span></td>
+          <td>Wrapper sobre mapbox-gl — herda ToS do Mapbox</td>
+        </tr>
+        <tr>
+          <td class="label">@supabase/supabase-js</td>
+          <td class="center mono">2.46.0</td>
+          <td class="center"><span class="lic-badge ok">MIT</span></td>
+          <td>Sem restrições comerciais</td>
+        </tr>
+        <tr class="warn">
+          <td class="label">resend</td>
+          <td class="center mono">4.0.0</td>
+          <td class="center"><span class="lic-badge ok">MIT</span></td>
+          <td>⚠️ ToS Resend: anti-spam, opt-out obrigatório em e-mails de marketing (transacional ok)</td>
+        </tr>
+        <tr>
+          <td class="label">@sentry/nextjs</td>
+          <td class="center mono">8.14.0</td>
+          <td class="center"><span class="lic-badge ok">MIT</span></td>
+          <td>DSN separado para produção · sem PII nos eventos (LGPD)</td>
+        </tr>
+        <tr>
+          <td class="label">bcryptjs</td>
+          <td class="center mono">2.4.3</td>
+          <td class="center"><span class="lic-badge ok">MIT</span></td>
+          <td>Sem restrições</td>
+        </tr>
+        <tr>
+          <td class="label">jose</td>
+          <td class="center mono">5.9.0</td>
+          <td class="center"><span class="lic-badge ok">MIT</span></td>
+          <td>JWT signing/verification — sem restrições</td>
+        </tr>
+        <tr>
+          <td class="label">sharp</td>
+          <td class="center mono">0.33.4</td>
+          <td class="center"><span class="lic-badge ok">Apache-2.0</span></td>
+          <td>Processamento de imagens server-side — sem restrições comerciais</td>
+        </tr>
+        <tr>
+          <td class="label">@upstash/ratelimit</td>
+          <td class="center mono">2.0.8</td>
+          <td class="center"><span class="lic-badge ok">MIT</span></td>
+          <td>Sem restrições</td>
+        </tr>
+        <tr>
+          <td class="label">zod</td>
+          <td class="center mono">3.23.8</td>
+          <td class="center"><span class="lic-badge ok">MIT</span></td>
+          <td>Sem restrições</td>
+        </tr>
+      </tbody>
+    </table>
+    <p style="font-size:.78rem;color:#5a7080;margin-top:8px;">Todas as dependências consultadas via <span style="font-family:monospace">pnpm licenses list</span>. Licenças MIT/Apache-2.0/ISC/BSD permitem uso comercial. Atenção especial aos ToS de serviços terceiros (Stripe, Mapbox, Resend).</p>
+  </div>
+
+  <!-- ── PONTOS DE ATENÇÃO ── -->
+  <div class="section">
+    <div class="section-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#59C686" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      10 Pontos de Atenção Pré-Produção
+    </div>
+    <table class="prod-table">
+      <thead>
+        <tr>
+          <th class="center" style="width:36px">#</th>
+          <th style="width:200px">Item</th>
+          <th class="center" style="width:90px">Risco</th>
+          <th>Ação necessária</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="warn">
+          <td class="center" style="font-weight:800;color:#991b1b">1</td>
+          <td class="label">D4 — Jurídico</td>
+          <td class="center"><span class="risk high">Bloqueador</span></td>
+          <td>Aguardar sign-off formal antes de qualquer ação de produção</td>
+        </tr>
+        <tr class="warn">
+          <td class="center" style="font-weight:800;color:#9a3412">2</td>
+          <td class="label">Stripe live mode</td>
+          <td class="center"><span class="risk high">Alto</span></td>
+          <td>Ativar apenas após D4 · completar KYC Stripe BR · testar webhook live endpoint</td>
+        </tr>
+        <tr class="warn">
+          <td class="center" style="font-weight:800;color:#9a3412">3</td>
+          <td class="label">NextAuth v5 beta</td>
+          <td class="center"><span class="risk medium">Médio</span></td>
+          <td>Verificar se versão estável (GA) foi lançada antes do go-live. Documentar risco aceito se ainda em beta.</td>
+        </tr>
+        <tr>
+          <td class="center" style="font-weight:800;color:#166534">4</td>
+          <td class="label">RLS desabilitado</td>
+          <td class="center"><span class="risk medium">Médio</span></td>
+          <td>Compensado por guards server-side (ownerId !== session.user.id → 403). Revisar com jurídico no contexto LGPD.</td>
+        </tr>
+        <tr class="warn">
+          <td class="center" style="font-weight:800;color:#9a3412">5</td>
+          <td class="label">ENCRYPTION_KEY rotação</td>
+          <td class="center"><span class="risk high">Alto</span></td>
+          <td>Gerar nova chave (64 hex chars) para produção. Dados criptografados em staging são ilegíveis em prod — comportamento esperado.</td>
+        </tr>
+        <tr>
+          <td class="center" style="font-weight:800;color:#166534">6</td>
+          <td class="label">Mapbox ToS atribuição</td>
+          <td class="center"><span class="risk low">Baixo</span></td>
+          <td>Footer/mapa deve exibir <strong>"© Mapbox © OpenStreetMap"</strong> visível ao usuário</td>
+        </tr>
+        <tr class="warn">
+          <td class="center" style="font-weight:800;color:#9a3412">7</td>
+          <td class="label">Resend SPF/DKIM</td>
+          <td class="center"><span class="risk medium">Médio</span></td>
+          <td>Configurar registros DNS SPF + DKIM para <span style="font-family:monospace">@shareo.com.br</span> antes de enviar e-mails transacionais</td>
+        </tr>
+        <tr>
+          <td class="center" style="font-weight:800;color:#166534">8</td>
+          <td class="label">Scripts temporários</td>
+          <td class="center"><span class="risk medium">Médio</span></td>
+          <td>Deletar 6 scripts de fixture/debug antes de qualquer go-live (listados na seção anterior)</td>
+        </tr>
+        <tr>
+          <td class="center" style="font-weight:800;color:#166534">9</td>
+          <td class="label">Supabase Storage buckets</td>
+          <td class="center"><span class="risk low">Baixo</span></td>
+          <td>Criar buckets <span style="font-family:monospace">item-images</span>, <span style="font-family:monospace">booking-photos</span>, <span style="font-family:monospace">id-docs</span> no novo projeto de produção</td>
+        </tr>
+        <tr>
+          <td class="center" style="font-weight:800;color:#166534">10</td>
+          <td class="label">Cron secrets distintos</td>
+          <td class="center"><span class="risk low">Baixo</span></td>
+          <td><span style="font-family:monospace">CRON_SECRET</span> de produção deve ser diferente do staging — gerar novo valor antes do deploy</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
   <!-- ── STATUS GERAL ── -->
   <div class="footer-status">
-    ✅ &nbsp;MVP MAPEADO — 178 FUNCIONALIDADES — 24 CATEGORIAS — H1 85% ENTREGUE
-    <div class="sub">35 páginas · 47 endpoints · LGPD ✓ · WCAG 2.1 AA ✓ · Segurança OWASP ✓ · E2E 20/20 ✓ · staging aprovado · 2026-06-02</div>
+    ✅ &nbsp;MVP COMPLETO — 178 FUNCIONALIDADES — STAGING APROVADO — AGUARDANDO D4
+    <div class="sub">35 páginas · 47 endpoints · E2E 185+ testes ✓ · LGPD ✓ · WCAG 2.1 AA ✓ · Segurança OWASP ✓ · commit 31068af · 2026-06-09</div>
   </div>
 
 </div>
