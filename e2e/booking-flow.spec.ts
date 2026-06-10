@@ -160,8 +160,13 @@ test.describe('smoke #6 — ciclo completo PENDING→CONFIRMED→ACTIVE→RETURN
       expect(((await confirmRes.json()) as { data: { status: string } }).data.status).toBe('CONFIRMED')
       console.log(`  CONFIRMED ✅`)
 
-      // — ACTIVE: proprietário marca item como entregue —
-      const activeRes = await prop.request.patch(`/api/bookings/${bookingId}`, { data: { action: 'mark_active' } })
+      // — ACTIVE: proprietário marca item como entregue (exige pickupToken do locatário) —
+      const bookingDetail = await loc.request.get(`/api/bookings/${bookingId}`)
+      const { data: detail } = await bookingDetail.json() as { data: { pickupToken: string | null } }
+      const pickupToken = detail.pickupToken
+      expect(pickupToken).toBeTruthy() // gerado no confirm
+
+      const activeRes = await prop.request.patch(`/api/bookings/${bookingId}`, { data: { action: 'mark_active', pickupToken } })
       if (!activeRes.ok()) console.error(`  [mark_active] ${activeRes.status()}:`, JSON.stringify(await activeRes.json().catch(() => ({}))))
       expect(activeRes.ok()).toBeTruthy()
       expect(((await activeRes.json()) as { data: { status: string } }).data.status).toBe('ACTIVE')

@@ -52,7 +52,8 @@ export async function GET(req: NextRequest, { params }: Params) {
         borrower:     { select: { id: true, name: true, avatarUrl: true } },
         owner:        { select: { id: true, name: true, avatarUrl: true } },
         conversation: { select: { id: true } },
-        reviews:      {
+        pickupToken:  true,
+      reviews:      {
           select: {
             id:         true,
             reviewType: true,
@@ -251,6 +252,15 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     // Grava horário real de devolução (informado pelo locatário ou server time).
     if (action === "mark_returned" || action === "confirm_return") {
       data.returnedAt = effectiveTime
+    }
+
+    // Gera pickupToken único no confirm (fluxo PIX/manual — Stripe gera o próprio via webhook).
+    if (action === "confirm" && !booking.pickupToken) {
+      for (;;) {
+        const candidate = String(Math.floor(100000 + Math.random() * 900000))
+        const conflict  = await prisma.booking.findFirst({ where: { pickupToken: candidate }, select: { id: true } })
+        if (!conflict) { data.pickupToken = candidate; break }
+      }
     }
 
     // Ao confirmar: verifica conflito de datas dentro de uma transação para evitar double-booking.
