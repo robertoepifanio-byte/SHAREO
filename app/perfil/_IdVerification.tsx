@@ -157,6 +157,9 @@ export function IdVerification({ status: initialStatus, rejectionReason }: Props
                   accept="image/*"
                   className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground file:mr-3 file:rounded file:border-0 file:bg-brand/10 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-brand"
                 />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  📷 No celular, você pode tirar a foto na hora ou escolher da galeria.
+                </p>
               </div>
 
               <p className="text-xs text-muted-foreground">
