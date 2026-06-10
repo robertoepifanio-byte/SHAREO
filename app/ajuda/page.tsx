@@ -456,18 +456,25 @@ export default async function AjudaPage() {
             </div>
 
             <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
-              {/* Locatário */}
-              <div>
-                <div className="mb-8 rounded-xl bg-[#144D81]/8 border border-[#144D81]/20 px-5 py-4">
-                  <h3 className="font-display text-lg font-bold text-[#144D81] flex items-center gap-2">
-                    <span className="text-2xl" aria-hidden="true">🛒</span>
-                    Quero alugar um item
-                  </h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Do cadastro à devolução — tudo que você precisa saber.
-                  </p>
-                </div>
-                <div>
+              {/* Locatário — accordion nativo: fechado por padrão para a página não virar uma parede de scroll */}
+              <details className="group/guide">
+                <summary className="cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden rounded-xl bg-[#144D81]/8 border border-[#144D81]/20 px-5 py-4 transition-colors hover:bg-[#144D81]/15">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <h3 className="font-display text-lg font-bold text-[#144D81] flex items-center gap-2">
+                        <span className="text-2xl" aria-hidden="true">🛒</span>
+                        Quero alugar um item
+                      </h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Do cadastro à devolução — guia em {locatarioSteps.length} passos.
+                      </p>
+                    </div>
+                    <svg className="h-5 w-5 flex-shrink-0 text-[#144D81] transition-transform duration-200 group-open/guide:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </div>
+                </summary>
+                <div className="mt-8">
                   {locatarioSteps.map((s, i) => (
                     <div
                       key={s.step}
@@ -477,20 +484,27 @@ export default async function AjudaPage() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </details>
 
-              {/* Locador */}
-              <div>
-                <div className="mb-8 rounded-xl bg-brand/8 border border-brand/20 px-5 py-4">
-                  <h3 className="font-display text-lg font-bold text-brand flex items-center gap-2">
-                    <span className="text-2xl" aria-hidden="true">📦</span>
-                    Quero anunciar meus itens
-                  </h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Cadastre, anuncie e conclua as primeiras locações com segurança.
-                  </p>
-                </div>
-                <div>
+              {/* Locador — accordion nativo */}
+              <details className="group/guide">
+                <summary className="cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden rounded-xl bg-brand/8 border border-brand/20 px-5 py-4 transition-colors hover:bg-brand/15">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <h3 className="font-display text-lg font-bold text-brand flex items-center gap-2">
+                        <span className="text-2xl" aria-hidden="true">📦</span>
+                        Quero anunciar meus itens
+                      </h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Do anúncio ao repasse — guia em {locadorSteps.length} passos.
+                      </p>
+                    </div>
+                    <svg className="h-5 w-5 flex-shrink-0 text-brand transition-transform duration-200 group-open/guide:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </div>
+                </summary>
+                <div className="mt-8">
                   {locadorSteps.map((s, i) => (
                     <div
                       key={s.step}
@@ -500,7 +514,7 @@ export default async function AjudaPage() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </details>
             </div>
           </div>
         </section>

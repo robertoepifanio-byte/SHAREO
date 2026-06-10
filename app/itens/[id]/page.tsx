@@ -293,16 +293,20 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
 
       <main className="container py-8">
         <h1 className="sr-only">{item.title}</h1>
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+        {/* Mobile: galeria → card de reserva (preço+CTA acima da dobra) → descrição.
+            Desktop (lg): coluna esquerda galeria+descrição, card sticky à direita. */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
 
-          {/* ─── ESQUERDA: Galeria + Descrição + Avaliações ─── */}
-          <div className="min-w-0 flex-1">
-
-            {/* Galeria interativa (client component) */}
+          {/* ─── Galeria ─── */}
+          <div className="order-1 min-w-0 lg:col-start-1 lg:row-start-1">
             <Gallery images={item.images} title={item.title} />
+          </div>
+
+          {/* ─── Descrição + Disponibilidade + Avaliações ─── */}
+          <div className="order-3 min-w-0 lg:col-start-1 lg:row-start-2">
 
             {/* Descrição */}
-            <div className="mt-6">
+            <div>
               <h2 className="mb-3 text-lg font-bold text-primary">Sobre o item</h2>
               <p className="text-sm leading-relaxed text-muted-foreground">
                 {item.description}
@@ -372,9 +376,9 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
             </div>
           </div>
 
-          {/* ─── DIREITA: Card de locação (sticky) ─── */}
-          <div className="w-full lg:w-[360px] lg:flex-shrink-0">
-            <div className="sticky top-20 rounded-xl border border-border bg-surface p-6">
+          {/* ─── Card de locação (mobile: logo após a galeria · lg: sticky à direita) ─── */}
+          <div className="order-2 w-full lg:col-start-2 lg:row-span-2 lg:row-start-1">
+            <div className="lg:sticky lg:top-20 rounded-xl border border-border bg-surface p-6">
 
               {/* Categoria */}
               <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-brand">
