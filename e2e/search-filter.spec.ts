@@ -84,8 +84,9 @@ test.describe('Busca e filtros — lista de itens', () => {
     await page.goto('/itens')
     await expect(page.getByRole('main')).toBeVisible()
 
-    // Abre painel/seção de filtros se necessário
-    const filtrosBtn = page.getByRole('button', { name: /filtros|mais filtros|filtrar/i })
+    // Abre painel/seção de filtros se necessário (trigger mobile — nome exato
+    // para não colidir com "Fechar filtros" do bottom sheet)
+    const filtrosBtn = page.getByRole('button', { name: 'Filtros', exact: true })
     if (await filtrosBtn.isVisible()) {
       await filtrosBtn.click()
     }
