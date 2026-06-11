@@ -98,9 +98,9 @@ export async function getUserMapLocation(userId?: string | null): Promise<UserMa
 
   if (!user) return DEFAULT
 
-  // 1. Coords salvas no perfil (preenchidas via geocoding de item)
+  // 1. Coords salvas no perfil
   if (user.latitude && user.longitude) {
-    return { lat: user.latitude, lng: user.longitude, zoom: 13 }
+    return { lat: user.latitude, lng: user.longitude, zoom: 15 }
   }
 
   // 2. Lookup pela cidade com normalização e matching parcial

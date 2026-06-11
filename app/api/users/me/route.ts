@@ -5,18 +5,36 @@ import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
 import { UpdateProfileSchema } from "@/lib/validations/users"
 
-/** Geocodifica cidade+estado do usuário e salva lat/lng no perfil (fire-and-forget) */
-async function geocodeUserLocation(userId: string, city: string, state: string) {
+/** Geocodifica endereço completo do usuário e salva lat/lng no perfil (fire-and-forget) */
+async function geocodeUserLocation(userId: string, opts: {
+  street?:       string | null
+  neighborhood?: string | null
+  city:          string
+  state:         string
+}) {
   try {
     const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
     if (!token) return
-    const query = `${city.trim()}, ${state.trim()}, Brasil`
-    const url   = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${token}&country=BR&language=pt&limit=1&types=place,locality`
-    const res   = await fetch(url)
-    const data  = await res.json() as { features?: { center: [number, number] }[] }
-    const feat  = data.features?.[0]
-    if (!feat) return
-    const [lng, lat] = feat.center
+
+    // Tenta endereço completo primeiro; fallback para cidade+estado
+    const fullQuery = [opts.street?.trim(), opts.neighborhood?.trim(), opts.city.trim(), opts.state.trim(), "Brasil"]
+      .filter(Boolean).join(", ")
+    const cityQuery = `${opts.city.trim()}, ${opts.state.trim()}, Brasil`
+
+    async function fetchCoords(query: string, types: string): Promise<[number, number] | null> {
+      const url  = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${token}&country=BR&language=pt&limit=1&types=${types}`
+      const res  = await fetch(url)
+      const data = await res.json() as { features?: { center: [number, number] }[] }
+      return data.features?.[0]?.center ?? null
+    }
+
+    const center =
+      (opts.street   && await fetchCoords(fullQuery, "address,neighborhood,place,locality")) ||
+      (opts.neighborhood && await fetchCoords([opts.neighborhood.trim(), opts.city.trim(), opts.state.trim(), "Brasil"].join(", "), "neighborhood,place,locality")) ||
+      await fetchCoords(cityQuery, "place,locality")
+
+    if (!center) return
+    const [lng, lat] = center
     await prisma.user.update({
       where: { id: userId },
       data:  { latitude: lat, longitude: lng },
@@ -206,14 +224,19 @@ export async function PATCH(req: NextRequest) {
       },
     })
 
-    // Geocodificar cidade/estado do perfil (fire-and-forget) para centrar o mapa corretamente
-    const cityChanged  = d.city  !== undefined
-    const stateChanged = d.state !== undefined
-    if (cityChanged || stateChanged) {
+    // Geocodificar endereço completo do perfil (fire-and-forget) para centrar o mapa corretamente
+    const addressChanged = d.city !== undefined || d.state !== undefined
+                        || d.street !== undefined || d.neighborhood !== undefined
+    if (addressChanged) {
       const city  = d.city  ?? updated.city
       const state = d.state ?? updated.state
       if (city && state) {
-        void geocodeUserLocation(session.user.id, city, state)
+        void geocodeUserLocation(session.user.id, {
+          street:       d.street       ?? updated.street,
+          neighborhood: d.neighborhood ?? updated.neighborhood,
+          city,
+          state,
+        })
       }
     }
 
