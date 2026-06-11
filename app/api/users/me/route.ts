@@ -224,14 +224,15 @@ export async function PATCH(req: NextRequest) {
       },
     })
 
-    // Geocodificar endereço completo do perfil (fire-and-forget) para centrar o mapa corretamente
+    // Geocodificar endereço completo do perfil para centrar o mapa corretamente.
+    // Precisa de await: fire-and-forget morre quando a lambda congela após a resposta.
     const addressChanged = d.city !== undefined || d.state !== undefined
                         || d.street !== undefined || d.neighborhood !== undefined
     if (addressChanged) {
       const city  = d.city  ?? updated.city
       const state = d.state ?? updated.state
       if (city && state) {
-        void geocodeUserLocation(session.user.id, {
+        await geocodeUserLocation(session.user.id, {
           street:       d.street       ?? updated.street,
           neighborhood: d.neighborhood ?? updated.neighborhood,
           city,
