@@ -96,10 +96,9 @@ Se fetch client-side cair no `catch` com "Erro de conexão" sem erro de rede apa
 
 ## Navegação atual
 
-**Desktop:** `[Logo→/]  Início▾  Explorar▾  Anunciar▾  [?]  Olá, Nome!  [🔔]  [Avatar]`
-- `AppHeader` permanece Server Component — dropdowns são `"use client"` em folha
-- `HomeDropdown`, `ExplorarDropdown` (6 opções), `AnunciarDropdown` (3 opções)
-- `UserDropdown` (ATIVIDADE + MINHA CONTA)
+**Desktop:** `[Logo→/]  Início  Explorar  Anunciar  [?]  Olá, Nome!  [🔔]  [Avatar]`
+- `AppHeader` permanece Server Component — links diretos sem dropdown (Início → `/`, Explorar → `/itens`, Anunciar → `/itens/novo`)
+- Únicos popups mantidos: `HelpButton` e `UserDropdown` (ATIVIDADE + MINHA CONTA)
 
 **Mobile:** BottomNav 4 tabs + MobileMenu com Explorar▾ / Anunciar▾ expansíveis + seção Atividade rotulada
 
