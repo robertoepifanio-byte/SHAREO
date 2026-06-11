@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ShareO — Protótipo Bottom Nav</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy: #003366;
+      --green: #007B3C;
+      --green-light: #59C686;
+      --off-white: #F8FAFC;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --font: 'Montserrat', sans-serif;
+    }
+
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+
+    body {
+      font-family: var(--font), sans-serif;
+      background: #f1f5f9;
+      color: #1e293b;
+    }
+
+    /* ─── LAYOUT WRAPPER ─────────────────────── */
+    .phone-frame {
+      width: 390px;
+      height: 844px;
+      background: var(--off-white);
+      border-radius: 40px;
+      border: 8px solid #1e293b;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 32px 80px rgba(0,0,0,.35);
+    }
+
+    /* ─── TOP HEADER ─────────────────────────── */
+    .app-header {
+      background: var(--navy);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .logo {
+      color: #fff;
+      font-weight: 700;
+      font-size: 22px;
+      letter-spacing: -0.5px;
+    }
+    .logo span { color: var(--green-light); }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: var(--green);
+      border: 2px solid var(--green-light);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 700; font-size: 14px;
+    }
+    .notification-btn {
+      position: relative;
+      color: rgba(255,255,255,.75);
+    }
+    .notif-dot {
+      width: 8px; height: 8px;
+      background: #ef4444;
+      border-radius: 50%;
+      position: absolute;
+      top: -2px; right: -2px;
+      border: 1.5px solid var(--navy);
+    }
+
+    /* ─── SEARCH BAR ─────────────────────────── */
+    .search-bar {
+      background: var(--navy);
+      padding: 0 16px 14px;
+      flex-shrink: 0;
+    }
+    .search-input {
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 12px;
+      padding: 10px 14px;
+      color: #fff;
+      font-family: var(--font);
+      font-size: 14px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .search-input span { color: rgba(255,255,255,.5); }
+
+    /* ─── SCROLL CONTENT ─────────────────────── */
+    .page-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      padding-bottom: 88px; /* espaço para bottom nav */
+    }
+
+    /* ─── SECTION TITLE ──────────────────────── */
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      margin-bottom: 12px;
+    }
+
+    /* ─── CATEGORY CHIPS ─────────────────────── */
+    .chips {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      margin-bottom: 20px;
+    }
+    .chips::-webkit-scrollbar { display: none; }
+    .chip {
+      flex-shrink: 0;
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #334155;
+      cursor: pointer;
+    }
+    .chip.active {
+      background: var(--navy);
+      border-color: var(--navy);
+      color: #fff;
+    }
+
+    /* ─── CARD GRID ──────────────────────────── */
+    .card-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    }
+    .card-img {
+      width: 100%; height: 110px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px;
+    }
+    .card-img.blue { background: #dbeafe; }
+    .card-img.green { background: #dcfce7; }
+    .card-img.yellow { background: #fef9c3; }
+    .card-img.purple { background: #f3e8ff; }
+    .card-body { padding: 10px; }
+    .card-title { font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 2px; }
+    .card-sub { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+    .card-price { font-size: 14px; font-weight: 700; color: var(--green); }
+    .card-price span { font-size: 11px; font-weight: 400; color: var(--muted); }
+
+    /* ─── BOTTOM NAV ─────────────────────────── */
+    .bottom-nav {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 72px;
+      background: #fff;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 4px;
+      box-shadow: 0 -4px 20px rgba(0,0,0,.08);
+      z-index: 50;
+    }
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      height: 100%;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 500;
+      position: relative;
+      transition: color .15s;
+    }
+    .nav-item:hover { color: var(--navy); }
+    .nav-item.active { color: var(--navy); }
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 20%; right: 20%;
+      height: 2px;
+      background: var(--navy);
+      border-radius: 0 0 4px 4px;
+    }
+    .nav-icon {
+      width: 24px; height: 24px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* Botão + central */
+    .nav-item.cta {
+      position: relative;
+      top: -12px;
+    }
+    .nav-cta-btn {
+      width: 52px; height: 52px;
+      background: var(--green);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(0,123,60,.4);
+      color: #fff;
+      margin-bottom: 2px;
+    }
+    .nav-item.cta .nav-label { color: var(--green); font-weight: 600; }
+
+    .nav-label { font-size: 10px; }
+
+    /* ─── SVG ICONS ──────────────────────────── */
+    svg { display: block; }
+
+    /* ─── DEMO WRAPPER (página de apresentação) ─ */
+    .demo-page {
+      min-height: 100vh;
+      padding: 40px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 48px;
+    }
+    .demo-title {
+      font-family: var(--font), sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--navy);
+      text-align: center;
+    }
+    .demo-subtitle {
+      font-family: var(--font), sans-serif;
+      font-size: 15px;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    /* Seção mobile */
+    .section-label {
+      font-family: var(--font), sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    /* ─── DESKTOP PREVIEW ────────────────────── */
+    .desktop-frame {
+      width: 100%;
+      max-width: 1100px;
+      background: var(--off-white);
+      border-radius: 16px;
+      border: 6px solid #1e293b;
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0,0,0,.25);
+    }
+    .desktop-header {
+      background: var(--navy);
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .desktop-nav-links {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .desktop-nav-link {
+      color: rgba(255,255,255,.75);
+      font-family: var(--font), sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+    .desktop-nav-link:hover { background: rgba(255,255,255,.1); color: #fff; }
+    .desktop-nav-link.active { color: #fff; }
+    .desktop-btn-anunciar {
+      background: var(--green);
+      color: #fff;
+      font-family: var(--font), sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .desktop-right { display: flex; align-items: center; gap: 12px; }
+    .desktop-body {
+      padding: 24px 32px 32px;
+    }
+    .desktop-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-top: 20px;
+    }
+    .desktop-card {
+      background: #fff;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    }
+    .desktop-card-img {
+      width: 100%; height: 130px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 42px;
+    }
+    .desktop-card-body { padding: 12px; }
+    .desktop-card-title { font-family: var(--font), sans-serif; font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+    .desktop-card-price { font-family: var(--font), sans-serif; font-size: 15px; font-weight: 700; color: var(--green); }
+    .desktop-card-price span { font-size: 12px; color: var(--muted); font-weight: 400; }
+
+    /* nota */
+    .note {
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 18px;
+      font-family: var(--font), sans-serif;
+      font-size: 13px;
+      color: #475569;
+      max-width: 420px;
+      text-align: center;
+      line-height: 1.6;
+    }
+    .note strong { color: var(--navy); }
+
+    /* toggle de estado */
+    .state-toggle {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 4px;
+    }
+    .toggle-btn {
+      font-family: var(--font), sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1.5px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+      color: var(--muted);
+      transition: all .15s;
+    }
+    .toggle-btn.sel {
+      background: var(--navy);
+      border-color: var(--navy);
+      color: #fff;
+    }
+
+    @media (max-width: 600px) {
+      .desktop-frame { display: none; }
+      .demo-page { padding: 24px 16px; gap: 32px; }
+    }
+  </style>
+</head>
+<body>
+<div class="demo-page">
+
+  <div>
+    <div class="demo-title">ShareO — Bottom Navigation</div>
+    <div class="demo-subtitle">Protótipo visual — mobile + desktop</div>
+  </div>
+
+  <!-- ─── MOBILE ─────────────────────────── -->
+  <div>
+    <div class="section-label">Mobile (390×844px)</div>
+
+    <!-- Seletor de aba ativa -->
+    <div class="state-toggle" id="tabToggle">
+      <button class="toggle-btn sel" onclick="setTab('inicio')">Início</button>
+      <button class="toggle-btn" onclick="setTab('explorar')">Explorar</button>
+      <button class="toggle-btn" onclick="setTab('anunciar')">+ Anunciar</button>
+      <button class="toggle-btn" onclick="setTab('chat')">Chat</button>
+      <button class="toggle-btn" onclick="setTab('perfil')">Perfil</button>
+    </div>
+    <br/>
+
+    <div class="phone-frame">
+
+      <!-- Header -->
+      <div class="app-header">
+        <div class="logo">Share<span>O</span></div>
+        <div class="header-right">
+          <div class="notification-btn">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.75)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <div class="notif-dot"></div>
+          </div>
+          <div class="avatar">R</div>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="search-bar">
+        <div class="search-input">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.5)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          <span>O que você precisa alugar?</span>
+        </div>
+      </div>
+
+      <!-- Conteúdo rolável -->
+      <div class="page-content">
+        <div class="section-title">Categorias</div>
+        <div class="chips">
+          <div class="chip active">Todos</div>
+          <div class="chip">Ferramentas</div>
+          <div class="chip">Eletrônicos</div>
+          <div class="chip">Esportes</div>
+          <div class="chip">Casa</div>
+          <div class="chip">Eventos</div>
+        </div>
+
+        <div class="section-title">Próximos a você</div>
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-img blue">🔧</div>
+            <div class="card-body">
+              <div class="card-title">Furadeira</div>
+              <div class="card-sub">500m de distância</div>
+              <div class="card-price">R$ 25 <span>/dia</span></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-img green">🏕️</div>
+            <div class="card-body">
+              <div class="card-title">Barraca camping</div>
+              <div class="card-sub">1,2km de distância</div>
+              <div class="card-price">R$ 40 <span>/dia</span></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-img yellow">📷</div>
+            <div class="card-body">
+              <div class="card-title">Câmera DSLR</div>
+              <div class="card-sub">800m de distância</div>
+              <div class="card-price">R$ 80 <span>/dia</span></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-img purple">🛴</div>
+            <div class="card-body">
+              <div class="card-title">Patinete elétrico</div>
+              <div class="card-sub">2,1km de distância</div>
+              <div class="card-price">R$ 35 <span>/dia</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">Mais alugados</div>
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-img green">🏄</div>
+            <div class="card-body">
+              <div class="card-title">Prancha surf</div>
+              <div class="card-sub">3km de distância</div>
+              <div class="card-price">R$ 50 <span>/dia</span></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-img blue">🎮</div>
+            <div class="card-body">
+              <div class="card-title">Projetor HD</div>
+              <div class="card-sub">1,5km de distância</div>
+              <div class="card-price">R$ 60 <span>/dia</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Nav -->
+      <div class="bottom-nav">
+
+        <!-- Início -->
+        <div class="nav-item active" id="tab-inicio" onclick="setTab('inicio')">
+          <div class="nav-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+              <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </div>
+          <span class="nav-label">Início</span>
+        </div>
+
+        <!-- Explorar -->
+        <div class="nav-item" id="tab-explorar" onclick="setTab('explorar')">
+          <div class="nav-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+          </div>
+          <span class="nav-label">Explorar</span>
+        </div>
+
+        <!-- Anunciar (CTA) -->
+        <div class="nav-item cta" id="tab-anunciar" onclick="setTab('anunciar')">
+          <div class="nav-cta-btn">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+          </div>
+          <span class="nav-label">Anunciar</span>
+        </div>
+
+        <!-- Chat -->
+        <div class="nav-item" id="tab-chat" onclick="setTab('chat')">
+          <div class="nav-icon" style="position:relative">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <div style="position:absolute;top:-2px;right:-4px;width:8px;height:8px;background:#ef4444;border-radius:50%;border:1.5px solid #fff"></div>
+          </div>
+          <span class="nav-label">Chat</span>
+        </div>
+
+        <!-- Perfil -->
+        <div class="nav-item" id="tab-perfil" onclick="setTab('perfil')">
+          <div class="nav-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+          <span class="nav-label">Perfil</span>
+        </div>
+
+      </div>
+    </div><!-- /phone-frame -->
+
+    <br/>
+    <div style="text-align:center">
+      <div class="note">
+        <strong>Botões acima</strong> simulam qual aba está ativa na bottom nav.
+        O botão <strong style="color:var(--green)">+ Anunciar</strong> fica elevado e em verde — CTA principal.
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── DESKTOP ─────────────────────────── -->
+  <div style="width:100%;max-width:1100px">
+    <div class="section-label">Desktop — bottom nav oculta (md:hidden)</div>
+    <div class="desktop-frame">
+      <div class="desktop-header">
+        <div class="logo" style="font-family:var(--font),sans-serif;font-size:24px;font-weight:700;color:#fff;letter-spacing:-0.5px">
+          Share<span style="color:var(--green-light)">O</span>
+        </div>
+        <div class="desktop-nav-links">
+          <div class="desktop-nav-link active">Início</div>
+          <div class="desktop-nav-link">Explorar ▾</div>
+          <div class="desktop-nav-link">Como funciona</div>
+        </div>
+        <div class="desktop-right">
+          <div class="desktop-btn-anunciar">+ Anunciar</div>
+          <div class="notification-btn" style="color:rgba(255,255,255,.75)">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+          </div>
+          <div class="avatar">R</div>
+        </div>
+      </div>
+
+      <div class="desktop-body">
+        <div style="font-family:var(--font),sans-serif;font-size:22px;font-weight:700;color:var(--navy)">
+          Próximos a você em Natal, RN
+        </div>
+        <div class="desktop-grid">
+          <div class="desktop-card">
+            <div class="desktop-card-img blue">🔧</div>
+            <div class="desktop-card-body">
+              <div class="desktop-card-title">Furadeira</div>
+              <div class="desktop-card-price">R$ 25 <span>/dia</span></div>
+            </div>
+          </div>
+          <div class="desktop-card">
+            <div class="desktop-card-img green">🏕️</div>
+            <div class="desktop-card-body">
+              <div class="desktop-card-title">Barraca camping</div>
+              <div class="desktop-card-price">R$ 40 <span>/dia</span></div>
+            </div>
+          </div>
+          <div class="desktop-card">
+            <div class="desktop-card-img yellow">📷</div>
+            <div class="desktop-card-body">
+              <div class="desktop-card-title">Câmera DSLR</div>
+              <div class="desktop-card-price">R$ 80 <span>/dia</span></div>
+            </div>
+          </div>
+          <div class="desktop-card">
+            <div class="desktop-card-img purple">🛴</div>
+            <div class="desktop-card-body">
+              <div class="desktop-card-title">Patinete elétrico</div>
+              <div class="desktop-card-price">R$ 35 <span>/dia</span></div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:16px;padding:12px 16px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px;font-family:var(--font),sans-serif;font-size:13px;color:#166534">
+          ✅ No desktop a <strong>bottom nav não aparece</strong>. A navegação principal fica no header (Início, Explorar, Como funciona) e o botão <strong>+ Anunciar</strong> fica no canto superior direito.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note" style="max-width:580px">
+    Protótipo gerado em 06/06/2026 — ShareO<br/>
+    Arquivo: <code>prototipo-bottom-nav.html</code>
+  </div>
+
+</div>
+
+<script>
+  const tabs = ['inicio','explorar','anunciar','chat','perfil'];
+
+  function setTab(name) {
+    // atualiza nav items
+    tabs.forEach(t => {
+      const el = document.getElementById('tab-' + t);
+      if (!el) return;
+      if (t === name) {
+        el.classList.add('active');
+        if (t !== 'anunciar') el.querySelector('.nav-label').style.color = '';
+      } else {
+        el.classList.remove('active');
+        if (t !== 'anunciar') el.querySelector('.nav-label').style.color = '';
+      }
+    });
+
+    // atualiza toggle buttons
+    document.querySelectorAll('#tabToggle .toggle-btn').forEach(btn => {
+      btn.classList.toggle('sel', btn.textContent.trim().replace('+ ','') === name.charAt(0).toUpperCase() + name.slice(1) ||
+        btn.textContent.trim() === '+ Anunciar' && name === 'anunciar');
+    });
+  }
+</script>
+</body>
+</html>
