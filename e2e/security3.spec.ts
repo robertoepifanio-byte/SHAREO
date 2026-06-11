@@ -54,9 +54,12 @@ test.describe('smoke #23 — Exclusão de conta: bloqueio com ACTIVE booking; cl
     expect(resA.ok(), `Booking criação falhou: ${resA.status()}`).toBeTruthy()
     const { data: bkA } = await resA.json() as { data: { id: string } }
 
-    // confirm → mark_active
+    // confirm → fetch pickupToken como locatário → mark_active com token
     await prop.request.patch(`/api/bookings/${bkA.id}`, { data: { action: 'confirm' } })
-    await prop.request.patch(`/api/bookings/${bkA.id}`, { data: { action: 'mark_active' } })
+    const tokenResA = await loc.request.get(`/api/bookings/${bkA.id}`)
+    const { data: tokenDataA } = await tokenResA.json() as { data: { pickupToken: string | null } }
+    expect(tokenDataA.pickupToken, 'pickupToken deve existir após confirm').toBeTruthy()
+    await prop.request.patch(`/api/bookings/${bkA.id}`, { data: { action: 'mark_active', pickupToken: tokenDataA.pickupToken } })
 
     // Tentar excluir conta enquanto booking está ACTIVE → 409
     const delActive = await loc.request.delete('/api/users/me')

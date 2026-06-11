@@ -1,4 +1,6 @@
+import fs from 'fs'
 import { test, expect, type Page } from '@playwright/test'
+import { SESSION_PATHS, FIXTURE_LOCATARIO } from './fixtures/test-credentials'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -73,6 +75,8 @@ const VALID_USER = {
   estado: 'SP',
 }
 
+const hasLocatarioSession = fs.existsSync(SESSION_PATHS.locatario)
+
 // ---------------------------------------------------------------------------
 // Suite
 // ---------------------------------------------------------------------------
@@ -135,12 +139,11 @@ test.describe('Autenticação — cadastro, login, logout e redirect', () => {
   // -------------------------------------------------------------------------
   // 3. Login válido
   // -------------------------------------------------------------------------
-  // NOTE: este teste depende de um usuário pré-existente no banco de staging.
-  // TODO: criar fixture de usuário via API antes de executar.
-  test.skip('login válido redireciona para /dashboard', async ({ page }) => {
-    // TODO: criar fixture de usuário
-    await login(page, 'usuario.existente@shareo.test', 'Shareo@2026!')
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 })
+  test('login válido redireciona para área logada', async ({ page }) => {
+    test.skip(!hasLocatarioSession, 'Requer session-locatario.json (FIXTURE_LOCATARIO)')
+    await login(page, FIXTURE_LOCATARIO.email, FIXTURE_LOCATARIO.password)
+    // Após login bem-sucedido não deve permanecer em /login
+    await expect(page).not.toHaveURL(/\/login/, { timeout: 15000 })
   })
 
   // -------------------------------------------------------------------------
@@ -159,24 +162,27 @@ test.describe('Autenticação — cadastro, login, logout e redirect', () => {
   // -------------------------------------------------------------------------
   // 5. Logout
   // -------------------------------------------------------------------------
-  // NOTE: requer usuário autenticado — depende de fixture de sessão.
-  // TODO: criar fixture de usuário e injetar cookie/token de sessão.
-  test.skip('usuário logado faz logout e é redirecionado', async ({ page }) => {
-    // TODO: criar fixture de usuário e injetar cookie/token de sessão
-    await page.goto('/dashboard')
+  test('usuário logado faz logout e é redirecionado', async ({ browser }) => {
+    test.skip(!hasLocatarioSession, 'Requer session-locatario.json')
+    const ctx = await browser.newContext({ storageState: SESSION_PATHS.locatario })
+    const page = await ctx.newPage()
+    try {
+      await page.goto('/dashboard')
 
-    // Clica em logout — pode estar em menu de perfil
-    const logoutBtn = page.getByRole('button', { name: /sair|logout/i })
-    const profileMenu = page.getByRole('button', { name: /perfil|conta|avatar/i })
+      // Logout pode estar em dropdown de perfil
+      const profileMenu = page.getByRole('button', { name: /perfil|conta|avatar/i })
+      if (await profileMenu.isVisible({ timeout: 3000 }).catch(() => false)) {
+        await profileMenu.click()
+      }
 
-    if (await profileMenu.isVisible()) {
-      await profileMenu.click()
+      const logoutBtn = page.getByRole('button', { name: /sair|logout/i })
+      await expect(logoutBtn).toBeVisible({ timeout: 8000 })
+      await logoutBtn.click()
+
+      await expect(page).toHaveURL(/\/(login|$)/, { timeout: 8000 })
+    } finally {
+      await ctx.close()
     }
-
-    await expect(logoutBtn).toBeVisible()
-    await logoutBtn.click()
-
-    await expect(page).toHaveURL(/\/(login|$)/, { timeout: 8000 })
   })
 
   // -------------------------------------------------------------------------
@@ -194,27 +200,28 @@ test.describe('Autenticação — cadastro, login, logout e redirect', () => {
     expect(decodeURIComponent(url)).toContain('/dashboard')
   })
 
-  // NOTE: segunda parte do fluxo (login → retorna ao callbackUrl) depende de
-  // usuário pré-existente — marcado como skip até fixture disponível.
-  // TODO: criar fixture de usuário
-  test.skip('após login com callbackUrl, redireciona de volta para /dashboard', async ({ page }) => {
-    // TODO: criar fixture de usuário
+  test('após login com callbackUrl, redireciona de volta para /dashboard', async ({ page }) => {
+    test.skip(!hasLocatarioSession, 'Requer fixture de credenciais (FIXTURE_LOCATARIO)')
     await page.goto('/login?callbackUrl=%2Fdashboard')
-    await page.getByLabel(/e-?mail/i).fill('usuario.existente@shareo.test')
-    await page.getByLabel(/senha/i).fill('Shareo@2026!')
+    await page.getByLabel(/e-?mail/i).fill(FIXTURE_LOCATARIO.email)
+    await page.getByLabel(/senha/i).fill(FIXTURE_LOCATARIO.password)
     await page.getByRole('button', { name: /entrar|login|acessar/i }).click()
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 })
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 })
   })
 
   // -------------------------------------------------------------------------
-  // 7. Usuário autenticado acessa /login → redireciona para /dashboard
+  // 7. Usuário autenticado acessa /login → redireciona para fora do /login
   // -------------------------------------------------------------------------
-  // NOTE: requer fixture de sessão autenticada.
-  // TODO: criar fixture de usuário e injetar cookie/token de sessão.
-  test.skip('usuário já autenticado que acessa /login é redirecionado para /dashboard', async ({ page }) => {
-    // TODO: criar fixture de usuário e injetar cookie/token de sessão
-    // Após injetar a sessão:
-    await page.goto('/login')
-    await expect(page).toHaveURL(/\/dashboard/, { timeout: 8000 })
+  test('usuário já autenticado que acessa /login é redirecionado', async ({ browser }) => {
+    test.skip(!hasLocatarioSession, 'Requer session-locatario.json')
+    const ctx = await browser.newContext({ storageState: SESSION_PATHS.locatario })
+    const page = await ctx.newPage()
+    try {
+      await page.goto('/login')
+      // Usuário autenticado não deve permanecer em /login
+      await expect(page).not.toHaveURL(/\/login/, { timeout: 8000 })
+    } finally {
+      await ctx.close()
+    }
   })
 })

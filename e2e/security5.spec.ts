@@ -92,7 +92,10 @@ test.describe('smoke #29 — Review após COMPLETED: guards, roles e auto-comple
 
     // Avançar: PENDING → CONFIRMED → ACTIVE → RETURNED
     await prop.request.patch(`${BASE}/api/bookings/${bk.id}`, { data: { action: 'confirm' } })
-    await prop.request.patch(`${BASE}/api/bookings/${bk.id}`, { data: { action: 'mark_active' } })
+    const tokenRes = await loc.request.get(`${BASE}/api/bookings/${bk.id}`)
+    const { data: tokenData } = await tokenRes.json() as { data: { pickupToken: string | null } }
+    expect(tokenData.pickupToken, 'pickupToken deve existir após confirm').toBeTruthy()
+    await prop.request.patch(`${BASE}/api/bookings/${bk.id}`, { data: { action: 'mark_active', pickupToken: tokenData.pickupToken } })
     await loc.request.patch(`${BASE}/api/bookings/${bk.id}`, { data: { action: 'mark_returned' } })
     console.log(`  Booking avançado para RETURNED`)
 

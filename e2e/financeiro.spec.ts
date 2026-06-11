@@ -61,11 +61,25 @@ test.describe('admin — painel financeiro', () => {
     await expect(page.locator('h1')).toContainText('Contas PIX')
   })
 
-  test('4b. painel financeiro exibe 7 cards de métricas', async ({ page }) => {
+  test('4b. painel financeiro exibe os 7 cards de métricas esperados', async ({ page }) => {
     await page.goto('/admin/financeiro')
-    // 7 cards: GMV, Receita ShareO, Repasse líquido, Repasses pagos, Pendentes agora, Contas PIX, Disputas abertas
-    const cards = page.locator('.rounded-xl.border.border-border.bg-surface.p-4')
-    await expect(cards).toHaveCount(7, { timeout: 10000 })
+    await expect(page.locator('main')).toBeVisible({ timeout: 15000 })
+    // Valida presença de cada métrica pelo texto — resiliente a refactors visuais
+    const expectedMetrics = [
+      'GMV',
+      'Receita ShareO',
+      'Repasse líquido',
+      'Repasses pagos',
+      'Pendentes agora',
+      'Contas PIX',
+      'Disputas abertas',
+    ]
+    for (const metric of expectedMetrics) {
+      await expect(
+        page.getByText(metric, { exact: false }).first(),
+        `Métrica "${metric}" deve estar visível no painel`,
+      ).toBeVisible({ timeout: 10000 })
+    }
   })
 })
 

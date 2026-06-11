@@ -35,21 +35,32 @@ function bookingId() {
 
 test.describe('smoke #6 — proprietário: CONFIRMED → ACTIVE', () => {
   test.skip(!canRun, 'Requer session fixtures e test-booking-id.json (rode smoke #5 primeiro)')
-  test.use({ storageState: SESSION_PATHS.proprietario })
 
-  test('proprietário marca booking como ACTIVE (mark_active)', async ({ page }) => {
-    const id  = bookingId()
-    const res = await page.request.patch(`/api/bookings/${id}`, {
-      data: { action: 'mark_active' },
-    })
-    if (!res.ok()) {
-      const err = await res.json().catch(() => ({}))
-      console.error(`  [mark_active] ${res.status()}:`, JSON.stringify(err))
+  test('proprietário marca booking como ACTIVE (mark_active)', async ({ browser }) => {
+    const id = bookingId()
+    // pickupToken visível apenas para o borrower — locatário busca e repassa ao proprietário
+    const locCtx  = await browser.newContext({ storageState: SESSION_PATHS.locatario })
+    const propCtx = await browser.newContext({ storageState: SESSION_PATHS.proprietario })
+    try {
+      const detailRes = await locCtx.request.get(`/api/bookings/${id}`)
+      const { data: detail } = await detailRes.json() as { data: { pickupToken: string | null } }
+      expect(detail.pickupToken, 'pickupToken deve existir após confirm (smoke #5)').toBeTruthy()
+
+      const res = await propCtx.request.patch(`/api/bookings/${id}`, {
+        data: { action: 'mark_active', pickupToken: detail.pickupToken },
+      })
+      if (!res.ok()) {
+        const err = await res.json().catch(() => ({}))
+        console.error(`  [mark_active] ${res.status()}:`, JSON.stringify(err))
+      }
+      expect(res.ok()).toBeTruthy()
+      const { data } = await res.json() as { data: { status: string } }
+      expect(data.status).toBe('ACTIVE')
+      console.log('  booking → ACTIVE')
+    } finally {
+      await locCtx.close()
+      await propCtx.close()
     }
-    expect(res.ok()).toBeTruthy()
-    const { data } = await res.json() as { data: { status: string } }
-    expect(data.status).toBe('ACTIVE')
-    console.log('  booking → ACTIVE')
   })
 })
 
