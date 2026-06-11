@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 interface Props {
-  dist?:    string
-  userLat?: string
-  userLng?: string
+  dist?:         string
+  userLat?:      string
+  userLng?:      string
+  onAutoSubmit?: (dist: string, lat: string, lng: string) => void
 }
 
 const OPTIONS = [
@@ -15,18 +16,19 @@ const OPTIONS = [
   { label: "Qualquer",  value: ""   },
 ]
 
-/**
- * Filtro de distância como participante de formulário (não usa router.push imediato).
- * Geolocalização preenche inputs ocultos ulat/ulng; submissão ocorre pelo botão
- * "Aplicar filtros" do FilterForm — funciona igualmente na sidebar e no bottom sheet.
- */
-export function DistanceFilter({ dist, userLat, userLng }: Props) {
+export function DistanceFilter({ dist, userLat, userLng, onAutoSubmit }: Props) {
   const [selected, setSelected] = useState(dist ?? "")
-  // Localização pode vir da URL (sessão anterior) ou ser obtida agora
   const [lat, setLat] = useState(userLat ?? "")
   const [lng, setLng] = useState(userLng ?? "")
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState("")
+
+  // Sincroniza com a URL quando outra navegação muda os params (ex.: sidebar vs. bottom sheet)
+  useEffect(() => {
+    setSelected(dist ?? "")
+    setLat(userLat ?? "")
+    setLng(userLng ?? "")
+  }, [dist, userLat, userLng])
 
   const hasLocation = !!(lat && lng)
   const needsLocation = selected !== "" && !hasLocation
@@ -37,8 +39,11 @@ export function DistanceFilter({ dist, userLat, userLng }: Props) {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         setLoading(false)
-        setLat(String(pos.coords.latitude))
-        setLng(String(pos.coords.longitude))
+        const newLat = String(pos.coords.latitude)
+        const newLng = String(pos.coords.longitude)
+        setLat(newLat)
+        setLng(newLng)
+        if (selected && onAutoSubmit) onAutoSubmit(selected, newLat, newLng)
       },
       () => {
         setLoading(false)
@@ -54,10 +59,6 @@ export function DistanceFilter({ dist, userLat, userLng }: Props) {
         Distância
       </legend>
 
-      {/* Inputs ocultos — enviados junto com o form */}
-      {lat && <input type="hidden" name="ulat" value={lat} />}
-      {lng && <input type="hidden" name="ulng" value={lng} />}
-
       <div className="space-y-0.5">
         {OPTIONS.map((opt) => (
           <label key={opt.value} className="flex cursor-pointer items-center gap-2 py-1 text-sm text-foreground">
@@ -68,8 +69,13 @@ export function DistanceFilter({ dist, userLat, userLng }: Props) {
               checked={selected === opt.value}
               onChange={() => {
                 setSelected(opt.value)
-                // Limpa localização ao selecionar "Qualquer"
-                if (!opt.value) { setLat(""); setLng(""); setError("") }
+                if (!opt.value) {
+                  setLat(""); setLng(""); setError("")
+                  onAutoSubmit?.("", "", "")
+                } else if (lat && lng) {
+                  onAutoSubmit?.(opt.value, lat, lng)
+                }
+                // sem localização: aguarda clique em "Usar minha localização"
               }}
               className="accent-brand"
             />
