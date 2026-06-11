@@ -151,6 +151,27 @@ enum EventQueueStatus {
   FAILED
 }
 
+enum FounderWave {
+  WAVE_1 // Posições 1–500   — primeiros fundadores
+  WAVE_2 // Posições 501–1500
+  WAVE_3 // Posições 1501+
+}
+
+enum LeadStatus {
+  PENDING      // E-mail cadastrado, aguardando convite
+  INVITED      // Link de convite enviado
+  CONVERTED    // Usuário criou conta via convite
+  UNSUBSCRIBED // Pediu exclusão
+}
+
+enum SignupSource {
+  ORGANIC     // Acesso direto / orgânico
+  VIP_LANDING // Formulário "Entrar na Lista"
+  REFERRAL    // Indicação de outro usuário
+  GOOGLE_ADS
+  META_ADS
+}
+
 // ─── Models ──────────────────────────────────────────────
 
 model User {
@@ -215,6 +236,15 @@ model User {
   consentIp      String?
   consentVersion String? // versão da política aceita (ex.: "v1.0")
 
+  // Programa Fundadores (não ativar customFeeRate/searchBoost antes do D4 jurídico)
+  isFounder        Boolean     @default(false)
+  founderWave      FounderWave?
+  founderJoinedAt  DateTime?
+  customFeeRate    Int?         // basis points; null → usa taxa global
+  searchBoost      Float?       // multiplicador de relevância; null → 1.0
+  signupSource     SignupSource @default(ORGANIC)
+  signupSourceMeta Json?
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime? // soft delete — nunca delete fisicamente
@@ -236,6 +266,7 @@ model User {
   accounts            Account[]
   sessions            Session[]
   ownerPaymentAccount OwnerPaymentAccount?
+  founderLead         FounderLead?
 
   @@index([email])
   @@index([latitude, longitude])
@@ -757,4 +788,65 @@ model StripeEventQueue {
 
   @@index([status, createdAt])
   @@map("stripe_event_queue")
+}
+
+// ─── Programa Fundadores ──────────────────────────────────
+
+model FounderLead {
+  id            String      @id @default(cuid())
+  email         String      @unique
+  name          String?
+  intent        String      @default("proprietario") // "proprietario" | "locatario"
+  queuePosition Int         @unique @default(autoincrement())
+  wave          FounderWave @default(WAVE_1)          // atualizado pela API após create
+  status        LeadStatus  @default(PENDING)
+  source        SignupSource @default(VIP_LANDING)
+
+  // LGPD — consentimento explícito (LGPD Art. 7 + ANPD)
+  marketingConsentAt DateTime
+  consentVersion     String   @default("v1.0")
+  consentIp          String?
+  consentUserAgent   String?  @db.VarChar(500)
+
+  // Conversão: preenchido quando lead cria conta via link de convite
+  convertedUserId String?  @unique
+  convertedUser   User?    @relation(fields: [convertedUserId], references: [id])
+  invitedAt       DateTime?
+  convertedAt     DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("founder_leads")
+}
+
+model FounderBenefit {
+  id          String      @id @default(cuid())
+  wave        FounderWave
+  key         String      // "feeRate" | "searchBoost" | "freeVerification"
+  value       String      // string-encoded (basis points, float, "true"/"false")
+  description String?
+  active      Boolean     @default(true)
+  effectiveFrom  DateTime @default(now())
+  effectiveUntil DateTime?
+  createdAt      DateTime @default(now())
+
+  @@unique([wave, key])
+  @@map("founder_benefits")
+}
+
+model FounderAuditLog {
+  id        String   @id @default(cuid())
+  leadId    String?
+  userId    String?
+  action    String   // "LEAD_CREATED" | "INVITED" | "CONVERTED" | "UNSUBSCRIBED"
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([leadId])
+  @@index([userId])
+  @@map("founder_audit_logs")
 }

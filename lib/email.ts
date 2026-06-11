@@ -506,6 +506,48 @@ export async function sendIdRejectedEmail(to: string, name: string, reason: stri
   if (error) throw new Error(`Resend error: ${error.message}`)
 }
 
+function founderWelcomeHtml(firstName: string, queuePosition: number) {
+  return baseLayout(`
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
+      Você está na lista, ${firstName}!
+    </h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
+      Você é o <strong>#${queuePosition}°</strong> na lista de fundadores do ShareO em Natal.
+      Avisaremos você em primeira mão quando abrirmos — antes de qualquer anúncio público.
+    </p>
+
+    <div style="margin-bottom:24px;padding:16px 20px;background:#F0FDF4;border-radius:8px;border:1px solid #BBF7D0;">
+      <p style="margin:0;font-size:14px;color:#15803D;line-height:1.5;">
+        <strong>O que esperar:</strong> Um e-mail com link de acesso exclusivo assim que ShareO
+        abrir em Natal. Nenhum spam até lá.
+      </p>
+    </div>
+
+    <p style="margin:0;font-size:12px;color:#94A3B8;line-height:1.6;">
+      Para sair da lista a qualquer momento, envie um e-mail para
+      <a href="mailto:privacidade@shareo.com.br" style="color:#007B3C;">privacidade@shareo.com.br</a>.
+    </p>
+  `)
+}
+
+export async function sendFounderWelcomeEmail(
+  to: string,
+  name: string,
+  queuePosition: number,
+): Promise<void> {
+  const resend = getResend()
+  if (!resend) return
+
+  const firstName = name.split(" ")[0]
+  const { error } = await resend.emails.send({
+    from:    `ShareO <${FROM}>`,
+    to,
+    subject: `Você é o #${queuePosition}° na lista de fundadores do ShareO!`,
+    html:    founderWelcomeHtml(firstName, queuePosition),
+  })
+  if (error) throw new Error(`Resend error: ${error.message}`)
+}
+
 /** Lembrete: item em atraso — enviado ao locatário e ao locador */
 export async function sendReminderOverdue(
   borrowerEmail: string, borrowerName: string,
