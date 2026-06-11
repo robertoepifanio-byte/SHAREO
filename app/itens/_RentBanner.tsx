@@ -1,10 +1,22 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 
+const DISMISS_KEY = "shareo-rent-banner-dismissed"
+
 export function RentBanner() {
-  const [visible, setVisible] = useState(true)
+  // Começa oculto para evitar hydration mismatch; useEffect decide com base no localStorage
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    if (localStorage.getItem(DISMISS_KEY) !== "1") setVisible(true)
+  }, [])
+
+  function dismiss() {
+    setVisible(false)
+    localStorage.setItem(DISMISS_KEY, "1")
+  }
 
   if (!visible) return null
 
@@ -42,7 +54,7 @@ export function RentBanner() {
 
       {/* Fechar */}
       <button
-        onClick={() => setVisible(false)}
+        onClick={dismiss}
         className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors"
         aria-label="Fechar dica"
       >

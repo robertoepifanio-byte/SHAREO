@@ -190,7 +190,7 @@ export default async function HomePage() {
                 Quero Ganhar Dinheiro
               </Link>
               <Link
-                href="/itens"
+                href="/itens?intent=rent"
                 className="inline-flex min-h-tap w-full items-center justify-center gap-2 rounded-lg border-2 border-white/60 bg-transparent px-6 py-3 text-sm font-semibold uppercase tracking-[0.4px] text-white transition-all hover:border-white hover:bg-white/10 md:w-auto md:min-w-[200px]"
                 aria-label="Quero alugar um item"
               >
