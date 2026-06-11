@@ -23,8 +23,13 @@ export function IdVerification({ status: initialStatus, rejectionReason }: Props
   const [success, setSuccess] = useState(false)
   const [open,    setOpen]    = useState(false)
 
-  const docRef    = useRef<HTMLInputElement>(null)
-  const selfieRef = useRef<HTMLInputElement>(null)
+  const docRef        = useRef<HTMLInputElement>(null)
+  const docCamRef     = useRef<HTMLInputElement>(null)
+  const selfieRef     = useRef<HTMLInputElement>(null)
+  const selfieCamRef  = useRef<HTMLInputElement>(null)
+
+  const [docName,    setDocName]    = useState("")
+  const [selfieName, setSelfieName] = useState("")
 
   const info = STATUS_INFO[status]
 
@@ -61,8 +66,8 @@ export function IdVerification({ status: initialStatus, rejectionReason }: Props
   }
 
   async function submit() {
-    const doc    = docRef.current?.files?.[0]
-    const selfie = selfieRef.current?.files?.[0]
+    const doc    = docRef.current?.files?.[0] ?? docCamRef.current?.files?.[0]
+    const selfie = selfieRef.current?.files?.[0] ?? selfieCamRef.current?.files?.[0]
     if (!doc || !selfie) { setError("Selecione o documento e a selfie."); return }
 
     setLoading(true); setError("")
@@ -133,33 +138,48 @@ export function IdVerification({ status: initialStatus, rejectionReason }: Props
             </div>
 
             <div className="space-y-4 px-6 py-4">
+              {/* Documento */}
               <div>
-                <label htmlFor="id-doc" className="mb-1.5 block text-sm font-medium text-foreground">
+                <p className="mb-1.5 text-sm font-medium text-foreground">
                   Documento com foto (CNH, RG ou Passaporte)
-                </label>
-                <input
-                  id="id-doc"
-                  ref={docRef}
-                  type="file"
-                  accept="image/*"
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground file:mr-3 file:rounded file:border-0 file:bg-brand/10 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-brand"
-                />
+                </p>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => docCamRef.current?.click()}
+                    className="flex-1 rounded-lg border border-input bg-background py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors">
+                    📷 Tirar foto
+                  </button>
+                  <button type="button" onClick={() => docRef.current?.click()}
+                    className="flex-1 rounded-lg border border-input bg-background py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors">
+                    🖼️ Galeria
+                  </button>
+                </div>
+                {docName && <p className="mt-1 text-xs text-success truncate">✓ {docName}</p>}
+                <input ref={docCamRef} type="file" accept="image/*" capture="environment" className="hidden"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) { setDocName(f.name); docRef.current && (docRef.current.value = "") } }} />
+                <input ref={docRef}    type="file" accept="image/*" className="hidden"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) { setDocName(f.name); docCamRef.current && (docCamRef.current.value = "") } }} />
               </div>
 
+              {/* Selfie */}
               <div>
-                <label htmlFor="id-selfie" className="mb-1.5 block text-sm font-medium text-foreground">
+                <p className="mb-1.5 text-sm font-medium text-foreground">
                   Selfie segurando o documento
-                </label>
-                <input
-                  id="id-selfie"
-                  ref={selfieRef}
-                  type="file"
-                  accept="image/*"
-                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground file:mr-3 file:rounded file:border-0 file:bg-brand/10 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-brand"
-                />
-                <p className="mt-1 text-xs text-muted-foreground">
-                  📷 No celular, você pode tirar a foto na hora ou escolher da galeria.
                 </p>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => selfieCamRef.current?.click()}
+                    className="flex-1 rounded-lg border border-input bg-background py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors">
+                    🤳 Tirar selfie
+                  </button>
+                  <button type="button" onClick={() => selfieRef.current?.click()}
+                    className="flex-1 rounded-lg border border-input bg-background py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors">
+                    🖼️ Galeria
+                  </button>
+                </div>
+                {selfieName && <p className="mt-1 text-xs text-success truncate">✓ {selfieName}</p>}
+                <input ref={selfieCamRef} type="file" accept="image/*" capture="user" className="hidden"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) { setSelfieName(f.name); selfieRef.current && (selfieRef.current.value = "") } }} />
+                <input ref={selfieRef}    type="file" accept="image/*" className="hidden"
+                  onChange={e => { const f = e.target.files?.[0]; if (f) { setSelfieName(f.name); selfieCamRef.current && (selfieCamRef.current.value = "") } }} />
               </div>
 
               <p className="text-xs text-muted-foreground">
