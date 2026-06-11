@@ -5,9 +5,9 @@ import { NotificationBell } from "@/components/ui/NotificationBell"
 import { MobileMenu } from "@/components/layout/MobileMenu"
 import { UserDropdown } from "@/components/layout/UserDropdown"
 import { HelpButton } from "@/components/layout/HelpButton"
-import { HomeDropdown } from "@/components/layout/HomeDropdown"
-import { ExplorarDropdown } from "@/components/layout/ExplorarDropdown"
-import { AnunciarDropdown } from "@/components/layout/AnunciarDropdown"
+
+const NAV_LINK_CLASS =
+  "rounded-md px-3 py-1.5 text-sm font-medium text-white/75 hover:bg-white/10 hover:text-white transition-colors outline-none focus-visible:ring-1 focus-visible:ring-white"
 
 export async function AppHeader() {
   const session = await auth().catch(() => null)
@@ -41,10 +41,10 @@ export async function AppHeader() {
 
         {/* Nav desktop — oculta em mobile */}
         <nav className="hidden md:flex items-center gap-1 ml-6" aria-label="Navegação principal">
-          <HomeDropdown />
-          <ExplorarDropdown />
+          <Link href="/" className={NAV_LINK_CLASS}>Início</Link>
+          <Link href="/itens" className={NAV_LINK_CLASS}>Explorar</Link>
           {(session?.user?.role == null || session.user.role === "USER") && (
-            <AnunciarDropdown />
+            <Link href="/itens/novo" className={NAV_LINK_CLASS}>Anunciar</Link>
           )}
         </nav>
 
