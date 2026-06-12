@@ -37,16 +37,10 @@ export function AppFooter() {
               <strong className="text-white">renda</strong>{" "}
               e ajude sua comunidade.
             </p>
-            <div className="mt-5 flex items-center gap-2">
-              <span className="text-[11px] text-white/50">Desenvolvido por</span>
-              <Image
-                src="/logos/pratika-ia-footer.png"
-                alt="Pratika-IA"
-                width={239}
-                height={72}
-                className="object-contain h-9 w-auto"
-              />
-            </div>
+            <p className="mt-5 text-[11px] text-white/50">
+              Desenvolvido por{" "}
+              <span className="font-semibold text-white/80">Pratika IA</span>
+            </p>
           </div>
 
           {/* Links */}
