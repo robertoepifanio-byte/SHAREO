@@ -27,6 +27,7 @@ export const RegisterSchema = z
     state: z.string().length(2, "Use a sigla do estado (ex: RN)"),
     street: z.string().max(200).optional().or(z.literal("")),
     neighborhood: z.string().max(100).optional().or(z.literal("")),
+    referralCode: z.string().max(20).optional().or(z.literal("")),
     consentVersion: z.string().min(1),
   })
   .refine((d) => (d.userType === "PF" ? !!d.cpf : !!d.cnpj), {

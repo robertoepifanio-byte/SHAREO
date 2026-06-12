@@ -8,6 +8,7 @@ import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 import { sendVerificationEmail } from "@/lib/email"
 import crypto from "crypto"
 import { generateUserSlug } from "@/lib/slugify"
+import { applyReferralCode } from "@/lib/referral"
 
 export async function POST(req: NextRequest) {
   try {
@@ -114,6 +115,13 @@ export async function POST(req: NextRequest) {
         },
       })
     })
+
+    // Aplicar código de indicação — fire-and-forget (não bloqueia registro)
+    if (d.referralCode) {
+      applyReferralCode(user.id, d.referralCode).catch((err) =>
+        console.error("[register] referral apply error:", err instanceof Error ? err.message : err)
+      )
+    }
 
     // Token de verificação de e-mail — fire-and-forget
     const verifyToken   = crypto.randomBytes(32).toString("hex")

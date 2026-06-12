@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent, type ChangeEvent } from "react"
 import { signIn } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
@@ -80,7 +80,9 @@ function PasswordHints({ password }: { password: string }) {
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export function RegisterForm() {
-  const router = useRouter()
+  const router       = useRouter()
+  const searchParams = useSearchParams()
+  const referralCode = searchParams.get("ref")?.trim().toUpperCase() || ""
 
   const [userType,     setUserType]     = useState<UserType>("PF")
   const [name,         setName]         = useState("")
@@ -155,6 +157,7 @@ export function RegisterForm() {
       state:          state.trim().toUpperCase(),
       street:         street.trim() || undefined,
       neighborhood:   neighborhood.trim() || undefined,
+      referralCode:   referralCode || undefined,
       consentVersion: CONSENT_VERSION,
     }
 
@@ -248,7 +251,21 @@ export function RegisterForm() {
       </div>
 
       <h1 className="mb-1 font-display text-center text-2xl font-bold text-primary">Criar conta</h1>
-      <p className="mb-6 text-center text-sm text-muted-foreground">É grátis e leva menos de 2 minutos</p>
+      <p className="mb-4 text-center text-sm text-muted-foreground">É grátis e leva menos de 2 minutos</p>
+
+      {referralCode && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-brand/30 bg-brand/5 px-4 py-3 text-sm text-brand">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <span>
+            Você foi convidado com o código <strong>{referralCode}</strong>. A indicação será registrada automaticamente.
+          </span>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
         {errors.form && (
