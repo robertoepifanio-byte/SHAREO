@@ -39,17 +39,15 @@ export function AppFooter() {
             </p>
             <div className="mt-5 flex items-center gap-2">
               <span className="text-[11px] text-white/50">Desenvolvido por</span>
-              <span className="inline-flex items-center gap-1.5 rounded-md bg-white/15 border border-white/20 px-2.5 py-1">
+              <div className="inline-block rounded-md overflow-hidden">
                 <Image
                   src="/logos/pratike-ia-footer.png"
-                  alt=""
-                  width={30}
-                  height={20}
-                  className="object-contain h-5 w-auto"
-                  aria-hidden="true"
+                  alt="Pratika-IA"
+                  width={108}
+                  height={72}
+                  className="object-contain h-9 w-auto"
                 />
-                <span className="text-xs font-semibold text-white tracking-wide">Pratika-IA</span>
-              </span>
+              </div>
             </div>
           </div>
 
