@@ -43,9 +43,9 @@ export function AppFooter() {
                 <Image
                   src="/logos/pratike-ia-footer.png"
                   alt=""
-                  width={21}
-                  height={28}
-                  className="object-contain h-4 w-auto"
+                  width={24}
+                  height={20}
+                  className="object-contain h-5 w-auto"
                   aria-hidden="true"
                 />
                 <span className="text-xs font-semibold text-white tracking-wide">Pratike-IA</span>
