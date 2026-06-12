@@ -37,7 +37,8 @@ export function ProfileForm({ user, redirectOnSave }: { user: UserData; redirect
         body:    JSON.stringify({
           name:      name.trim()      || undefined,
           bio:       bio.trim()       || null,
-          phone:     phone.trim()     || null,
+          // Normaliza para o formato da API (+55DDDNÚMERO): aceita espaços e omissão do +
+          phone:     phone.replace(/\D/g, "") ? `+${phone.replace(/\D/g, "")}` : null,
           avatarUrl: avatarUrl.trim() || null,
         }),
       })
@@ -95,15 +96,15 @@ export function ProfileForm({ user, redirectOnSave }: { user: UserData; redirect
 
         <div className="sm:col-span-2">
           <label htmlFor="profile-phone" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Telefone <span className="font-normal normal-case">(ex: +5584999999999)</span>
+            Telefone <span className="font-normal normal-case">(ex: 55 99 999999999)</span>
           </label>
           <input
             id="profile-phone"
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            placeholder="+5584999999999"
-            maxLength={14}
+            placeholder="55 99 999999999"
+            maxLength={18}
             className={inputCls}
           />
         </div>
