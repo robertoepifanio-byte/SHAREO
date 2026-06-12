@@ -80,9 +80,9 @@ const RegisterSchema = z.object({
   "phone": "+5584999990000",
   "userType": "PF",
   "cpf": "123.456.789-09",
-  "city": "Natal",
-  "state": "RN",
-  "neighborhood": "Ponta Negra",
+  "city": "São Paulo",
+  "state": "SP",
+  "neighborhood": "Pinheiros",
   "consentVersion": "v1.0"
 }
 ```
@@ -95,8 +95,8 @@ const RegisterSchema = z.object({
   "password": "Senha@123",
   "userType": "PJ",
   "cnpj": "11.222.333/0001-81",
-  "city": "Natal",
-  "state": "RN",
+  "city": "São Paulo",
+  "state": "SP",
   "consentVersion": "v1.0"
 }
 ```
@@ -113,8 +113,8 @@ const RegisterSchema = z.object({
     "role": "USER",
     "avatarUrl": null,
     "bio": null,
-    "city": "Natal",
-    "state": "RN",
+    "city": "São Paulo",
+    "state": "SP",
     "isVerified": false,
     "createdAt": "2026-05-22T14:30:00.000Z"
   }

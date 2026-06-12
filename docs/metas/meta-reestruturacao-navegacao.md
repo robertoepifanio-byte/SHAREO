@@ -58,7 +58,7 @@ O trabalho segue o mesmo padrão já executado com:
 - **Dicas para Anfitriões** (`/anunciar/dicas`) — guia editorial: como fotografar, precificar, descrever
 
 ### 3. Experiências Locais — seção nova (baixa prioridade técnica, alta prioridade de produto)
-- **Destaques Locais** (`/comunidade/destaques`) — itens em alta em Natal/RN
+- **Destaques Locais** (`/comunidade/destaques`) — itens em alta na sua região
 - **Histórias de Usuários** (`/comunidade/historias`) — depoimentos e casos de uso reais
 - **Comunidade** (`/comunidade`) — hub da seção
 

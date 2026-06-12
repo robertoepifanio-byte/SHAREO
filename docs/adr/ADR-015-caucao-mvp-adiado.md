@@ -17,6 +17,8 @@ Itens de alto valor exigem alguma forma de proteção ao proprietário contra da
 
 O foco do MVP é validar demanda e fluxo de locação, não gestão de risco avançada. A base de usuários inicial em Natal/RN é conhecida, reduzindo risco de má-fé.
 
+> **Atualização (12/06/2026):** por decisão dos fundadores, o lançamento será nacional. A premissa de "base de usuários conhecida" deixa de valer — o teto de R$500 por transação ganha ainda mais importância como mitigador de risco até a implementação da caução na V1.
+
 ## Decisão
 
 1. **Nenhuma caução implementada no MVP.**

@@ -41,6 +41,8 @@ Opções avaliadas: Google Maps Platform, Mapbox, OpenStreetMap + Nominatim (aut
 
 **Decisão de custo**: Para o MVP com mercado inicial em Natal/RN, o free tier do Mapbox (50k loads/mês) é suficiente. Google Maps se torna mais vantajoso acima de ~30k usuários ativos/mês — revisar na H2.
 
+> **Atualização (12/06/2026):** por decisão dos fundadores, o lançamento será nacional (não mais restrito a Natal/RN). A análise de custo do free tier permanece válida — o gatilho de revisão continua sendo ~30k usuários ativos/mês, independentemente da geografia.
+
 ### PostGIS para queries de proximidade
 
 Queries de proximidade (`ST_DWithin`, `ST_Distance`) executadas diretamente no Supabase/PostgreSQL com a extensão PostGIS. Isso evita round-trips a APIs externas para o caso de uso mais frequente (busca de items próximos).

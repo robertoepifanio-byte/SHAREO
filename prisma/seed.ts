@@ -14,12 +14,12 @@ const categories = [
 ]
 
 // Itens de exemplo para visualização no staging
-// Localização: bairros de Natal/RN
+// Localização: espalhados por capitais brasileiras (lançamento nacional)
 // Preços baseados em referência de mercado: diária ≈ 5% do valor do produto
 // pricePerWeek = pricePerDay × 4  |  pricePerMonth = pricePerDay × 12
 const sampleItems = [
   {
-    slug:          "furadeira-impacto-bosch-em-natal-rn-seed01",
+    slug:          "furadeira-impacto-bosch-em-sao-paulo-sp-seed01",
     categorySlug:   "ferramentas",
     title:          "Furadeira de Impacto Bosch",
     description:    "Furadeira de impacto Bosch 650W, ideal para furos em alvenaria, madeira e metal. Acompanha maleta, brocas e ponteiras.",
@@ -27,14 +27,14 @@ const sampleItems = [
     pricePerDay:    3500,    // R$35/dia   (produto ~R$700)
     pricePerWeek:   14000,   // R$140/sem  (4×)
     pricePerMonth:  42000,   // R$420/mês  (12×)
-    city:           "Natal",
-    state:          "RN",
-    neighborhood:   "Tirol",
-    latitude:       -5.7825,
-    longitude:      -35.2046,
+    city:           "São Paulo",
+    state:          "SP",
+    neighborhood:   "Pinheiros",
+    latitude:       -23.5614,
+    longitude:      -46.7020,
   },
   {
-    slug:          "camera-sony-a7iii-lente-em-natal-rn-seed02",
+    slug:          "camera-sony-a7iii-lente-em-rio-de-janeiro-rj-seed02",
     categorySlug:   "eletronicos",
     title:          "Câmera Sony A7 III + Lente",
     description:    "Câmera mirrorless full-frame Sony A7 III com lente 28-70mm f/3.5-5.6. Ideal para ensaios, eventos e viagens. Bateria extra inclusa.",
@@ -42,14 +42,14 @@ const sampleItems = [
     pricePerDay:    15000,   // R$150/dia  (produto ~R$10.000)
     pricePerWeek:   60000,   // R$600/sem  (4×)
     pricePerMonth:  180000,  // R$1.800/mês (12×)
-    city:           "Natal",
-    state:          "RN",
-    neighborhood:   "Ponta Negra",
-    latitude:       -5.8823,
-    longitude:      -35.1766,
+    city:           "Rio de Janeiro",
+    state:          "RJ",
+    neighborhood:   "Copacabana",
+    latitude:       -22.9711,
+    longitude:      -43.1822,
   },
   {
-    slug:          "barraca-camping-6-pessoas-em-natal-rn-seed03",
+    slug:          "barraca-camping-6-pessoas-em-curitiba-pr-seed03",
     categorySlug:   "esporte",
     title:          "Barraca de Camping 6 pessoas",
     description:    "Barraca Coleman para 6 pessoas, impermeável, fácil de montar. Acompanha estacas e cordas. Ótima para praia e trilhas.",
@@ -57,14 +57,14 @@ const sampleItems = [
     pricePerDay:    6000,    // R$60/dia   (produto ~R$1.200)
     pricePerWeek:   24000,   // R$240/sem  (4×)
     pricePerMonth:  72000,   // R$720/mês  (12×)
-    city:           "Natal",
-    state:          "RN",
-    neighborhood:   "Capim Macio",
-    latitude:       -5.8520,
-    longitude:      -35.2046,
+    city:           "Curitiba",
+    state:          "PR",
+    neighborhood:   "Batel",
+    latitude:       -25.4411,
+    longitude:      -49.2860,
   },
   {
-    slug:          "conjunto-halteres-5-30kg-em-natal-rn-seed04",
+    slug:          "conjunto-halteres-5-30kg-em-belo-horizonte-mg-seed04",
     categorySlug:   "esporte",
     title:          "Conjunto de Halteres 5-30kg",
     description:    "Conjunto com 8 pares de halteres de borracha (5, 8, 10, 12, 15, 20, 25 e 30kg) + suporte. Ideal para treinos em casa.",
@@ -72,14 +72,14 @@ const sampleItems = [
     pricePerDay:    2500,    // R$25/dia   (produto ~R$500)
     pricePerWeek:   10000,   // R$100/sem  (4×)
     pricePerMonth:  30000,   // R$300/mês  (12×)
-    city:           "Natal",
-    state:          "RN",
-    neighborhood:   "Tirol",
-    latitude:       -5.7830,
-    longitude:      -35.2060,
+    city:           "Belo Horizonte",
+    state:          "MG",
+    neighborhood:   "Savassi",
+    latitude:       -19.9386,
+    longitude:      -43.9332,
   },
   {
-    slug:          "projetor-epson-fullhd-em-natal-rn-seed05",
+    slug:          "projetor-epson-fullhd-em-porto-alegre-rs-seed05",
     categorySlug:   "eletronicos",
     title:          "Projetor Epson Full HD 3500 lúmens",
     description:    "Projetor Epson EH-TW5705 Full HD 1080p, 3500 lúmens, HDMI + WiFi. Perfeito para apresentações, cinema em casa e eventos.",
@@ -87,14 +87,14 @@ const sampleItems = [
     pricePerDay:    10000,   // R$100/dia  (produto ~R$2.000)
     pricePerWeek:   40000,   // R$400/sem  (4×)
     pricePerMonth:  120000,  // R$1.200/mês (12×)
-    city:           "Natal",
-    state:          "RN",
-    neighborhood:   "Petrópolis",
-    latitude:       -5.7960,
-    longitude:      -35.2060,
+    city:           "Porto Alegre",
+    state:          "RS",
+    neighborhood:   "Moinhos de Vento",
+    latitude:       -30.0240,
+    longitude:      -51.2030,
   },
   {
-    slug:          "cadeiras-evento-10un-em-natal-rn-seed06",
+    slug:          "cadeiras-evento-10un-em-salvador-ba-seed06",
     categorySlug:   "festas",
     title:          "Cadeiras para Evento (10 unidades)",
     description:    "10 cadeiras plásticas brancas resistentes, ideais para festas, reuniões e eventos. Entrega e retirada combinados.",
@@ -102,14 +102,14 @@ const sampleItems = [
     pricePerDay:    4000,    // R$40/dia   (conjunto ~R$800)
     pricePerWeek:   16000,   // R$160/sem  (4×)
     pricePerMonth:  48000,   // R$480/mês  (12×)
-    city:           "Natal",
-    state:          "RN",
-    neighborhood:   "Lagoa Nova",
-    latitude:       -5.8010,
-    longitude:      -35.2110,
+    city:           "Salvador",
+    state:          "BA",
+    neighborhood:   "Pituba",
+    latitude:       -12.9911,
+    longitude:      -38.4580,
   },
   {
-    slug:          "escada-telescopica-7m-em-natal-rn-seed07",
+    slug:          "escada-telescopica-7m-em-brasilia-df-seed07",
     categorySlug:   "construcao",
     title:          "Escada Telescópica 7m",
     description:    "Escada telescópica em alumínio até 7m, capacidade 150kg. Compacta para transporte, ideal para manutenção e pintura.",
@@ -117,14 +117,14 @@ const sampleItems = [
     pricePerDay:    4500,    // R$45/dia   (produto ~R$900)
     pricePerWeek:   18000,   // R$180/sem  (4×)
     pricePerMonth:  54000,   // R$540/mês  (12×)
-    city:           "Natal",
-    state:          "RN",
-    neighborhood:   "Candelária",
-    latitude:       -5.8240,
-    longitude:      -35.2280,
+    city:           "Brasília",
+    state:          "DF",
+    neighborhood:   "Asa Norte",
+    latitude:       -15.7650,
+    longitude:      -47.8780,
   },
   {
-    slug:          "kit-jardinagem-completo-em-natal-rn-seed08",
+    slug:          "kit-jardinagem-completo-em-recife-pe-seed08",
     categorySlug:   "casa-jardim",
     title:          "Kit de Jardinagem Completo",
     description:    "Kit com tesoura de poda, cavadeira, ancinho, regador 10L e luvas. Ideal para quem quer cuidar do jardim sem precisar comprar ferramentas.",
@@ -132,11 +132,11 @@ const sampleItems = [
     pricePerDay:    3000,    // R$30/dia   (kit ~R$500)
     pricePerWeek:   12000,   // R$120/sem  (4×)
     pricePerMonth:  36000,   // R$360/mês  (12×)
-    city:           "Natal",
-    state:          "RN",
-    neighborhood:   "Petrópolis",
-    latitude:       -5.7970,
-    longitude:      -35.2070,
+    city:           "Recife",
+    state:          "PE",
+    neighborhood:   "Boa Viagem",
+    latitude:       -8.1265,
+    longitude:      -34.9009,
   },
 ]
 
@@ -173,8 +173,8 @@ async function main() {
       role:           "ADMIN",
       adminRole:      "ADMIN_SUPERADMIN",
       isVerified:     true,
-      city:           "Natal",
-      state:          "RN",
+      city:           "São Paulo",
+      state:          "SP",
       consentAt:      new Date(),
       consentVersion: "v1.0",
     },

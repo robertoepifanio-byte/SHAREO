@@ -17,7 +17,7 @@ O ShareO partiu de um protótipo HTML estático e evoluiu para um produto web co
 | Camada | Tecnologia | Status |
 |--------|-----------|--------|
 | Frontend | Next.js 15 (App Router) + TypeScript + Tailwind CSS | ✅ produção |
-| Banco de dados | PostgreSQL via Supabase (Natal/RN, sa-east-1) | ✅ produção |
+| Banco de dados | PostgreSQL via Supabase (sa-east-1) | ✅ produção |
 | ORM | Prisma v6 com migrations versionadas | ✅ produção |
 | Autenticação | NextAuth v5 beta.31 · Credentials + JWT | ✅ produção |
 | Armazenamento | Supabase Storage (bucket `item-images`) | ✅ produção |

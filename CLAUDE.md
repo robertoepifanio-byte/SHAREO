@@ -1,6 +1,6 @@
 # ShareO — Instruções para Claude Code
 
-Marketplace de economia circular para aluguel local de itens. Foco em Natal/RN. Slogan: "Use Mais. Possua Menos."
+Marketplace de economia circular para aluguel local de itens. Lançamento nacional (decisão dos fundadores, jun/2026 — não citar Natal/RN como default na UI). Slogan: "Use Mais. Possua Menos."
 
 ## Repositório e ambientes
 

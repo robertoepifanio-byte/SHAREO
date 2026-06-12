@@ -1,6 +1,6 @@
 # ShareO — Status do Projeto
 
-**Atualizado em**: 2026-06-11 (sessão — Programa de Embaixadores ADR-022 implementado completo)
+**Atualizado em**: 2026-06-12 (sessão — lançamento nacional: referências a Natal/RN removidas da UI)
 **Ambiente staging**: https://shareo-rouge.vercel.app (⚠️ deploys automáticos GitHub→Vercel aparecem **Canceled** — deploy real é manual: `npx vercel --prod`)
 **Último commit**: `538b7f4`
 **Release atual**: [`v1.2.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.2.0) — aguarda D4 para produção
@@ -15,6 +15,8 @@
 ---
 
 ## Resumo Executivo
+
+**✅ Lançamento nacional — referências a Natal/RN removidas** (commit `7b83b4a`, jun/12). Decisão dos fundadores: o ShareO lança em âmbito nacional. UI sem Natal/RN hardcoded (placeholders, Lista VIP, e-mails de fundador, metadados "em todo o Brasil"); depoimentos fictícios com cidades variadas (SP/BH/Curitiba/POA); mapa default centra no Brasil (zoom 4) para usuário sem cidade; /sobre sem o stat "cidade de origem". Seeds (`prisma/seed.ts`, `scripts/seed-demo-items.ts`) espalham itens por 8 capitais. ADR-002 e ADR-015 receberam notas de atualização (premissas geográficas superadas). Cidade real do usuário logado continua exibida normalmente.
 
 **✅ Bugfix crítico — pickupToken no fluxo PIX** (commit `db9397d`, jun/10). O token de retirada só era gerado pelo webhook do Stripe; no fluxo PIX (MVP) o `mark_active` falharia sempre com `TOKEN_REQUIRED`. Agora o token é gerado no `confirm` quando ainda não existe, e o `GET /api/bookings/[id]` retorna o token (locatário exibe o código). Suite nova `e2e/features-jun09.spec.ts`: **16/16 ✅** (token, actualTime, multiplicadores, 3 fotos, taxa dinâmica). booking-flow 5/5 ✅, financeiro 40/40 ✅ (testes defasados corrigidos: 7 cards de métricas, locator de hrefs).
 

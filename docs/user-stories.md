@@ -135,7 +135,7 @@ Então sou redirecionado da mesma forma que o clique com mouse
 Dado que estou na tela de busca com resultados
 Quando seleciono "Até 2 km" no filtro de distância
 Então apenas itens dentro de 2 km da minha localização aparecem
-E o contador "X itens encontrados em Natal, RN" é atualizado
+E o contador "X itens encontrados em {cidade do usuário}" é atualizado
 ```
 
 **Cenário 2 – Filtro de preço por range slider**

@@ -466,7 +466,7 @@ test.describe("F04 — Cadastro de Anúncio", () => {
     await page.getByLabel("Modelo").fill("GSB 13 RE")
     await page.getByLabel("Condição").selectOption("Seminovo — excelente estado")
     await page.getByLabel("Preço por dia").fill("35")
-    await page.getByLabel("Local de retirada").fill("Ponta Negra, Natal-RN")
+    await page.getByLabel("Local de retirada").fill("Pinheiros, São Paulo-SP")
 
     await page.getByRole("button", { name: "Publicar anúncio" }).click()
 

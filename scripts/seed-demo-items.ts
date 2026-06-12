@@ -10,7 +10,7 @@
  * - Valida cada URL de imagem (HEAD) antes de inserir — nunca insere foto quebrada
  * - Preços seguem a tabela de referência (diária ≈ 3–5% do valor do bem;
  *   semana = 3× diária; mês = 15× diária)
- * - Coordenadas espalhadas por bairros reais de Natal/RN
+ * - Coordenadas espalhadas por capitais brasileiras (lançamento nacional)
  *
  * Uso:
  *   pnpm exec tsx --env-file=.env.staging-migrate scripts/seed-demo-items.ts
@@ -31,15 +31,15 @@ function assertStagingDb() {
   }
 }
 
-// Bairros de Natal/RN com coordenadas aproximadas — espalha os itens no mapa
-const NATAL_SPOTS = [
-  { neighborhood: 'Ponta Negra',    latitude: -5.8814, longitude: -35.1700 },
-  { neighborhood: 'Tirol',          latitude: -5.7900, longitude: -35.2030 },
-  { neighborhood: 'Petrópolis',     latitude: -5.7800, longitude: -35.1980 },
-  { neighborhood: 'Lagoa Nova',     latitude: -5.8200, longitude: -35.2150 },
-  { neighborhood: 'Capim Macio',    latitude: -5.8580, longitude: -35.2000 },
-  { neighborhood: 'Candelária',     latitude: -5.8380, longitude: -35.2200 },
-  { neighborhood: 'Neópolis',       latitude: -5.8700, longitude: -35.2050 },
+// Capitais brasileiras com coordenadas aproximadas — espalha os itens no mapa
+const CITY_SPOTS = [
+  { city: 'São Paulo',      state: 'SP', neighborhood: 'Pinheiros',         latitude: -23.5614, longitude: -46.7020 },
+  { city: 'Rio de Janeiro', state: 'RJ', neighborhood: 'Copacabana',        latitude: -22.9711, longitude: -43.1822 },
+  { city: 'Belo Horizonte', state: 'MG', neighborhood: 'Savassi',           latitude: -19.9386, longitude: -43.9332 },
+  { city: 'Curitiba',       state: 'PR', neighborhood: 'Batel',             latitude: -25.4411, longitude: -49.2860 },
+  { city: 'Porto Alegre',   state: 'RS', neighborhood: 'Moinhos de Vento',  latitude: -30.0240, longitude: -51.2030 },
+  { city: 'Salvador',       state: 'BA', neighborhood: 'Pituba',            latitude: -12.9911, longitude: -38.4580 },
+  { city: 'Recife',         state: 'PE', neighborhood: 'Boa Viagem',        latitude: -8.1265,  longitude: -34.9009 },
 ]
 
 type DemoItem = {
@@ -158,7 +158,7 @@ const DEMO_ITEMS: DemoItem[] = [
   {
     category: 'esporte',
     title: 'Prancha de Stand Up Paddle Inflável Completa',
-    description: 'SUP inflável 10\'6" com remo ajustável, bomba de alta pressão, leash e mochila de transporte. Estável para iniciantes. Perfeita para a lagoa de Pitangui, Pirangi e dias calmos em Ponta Negra.',
+    description: 'SUP inflável 10\'6" com remo ajustável, bomba de alta pressão, leash e mochila de transporte. Estável para iniciantes. Perfeita para lagoas, represas e dias de mar calmo.',
     condition: 'EXCELLENT', pricePerDay: 7000,
     imageUrls: [u('photo-1502680390469-be75c86b636f')],
   },
@@ -270,7 +270,7 @@ async function main() {
       continue
     }
 
-    const spot = NATAL_SPOTS[i % NATAL_SPOTS.length]
+    const spot = CITY_SPOTS[i % CITY_SPOTS.length]
     // Jitter de ~300m para não empilhar pins no mapa
     const jitter = () => (Math.random() - 0.5) * 0.006
 
@@ -286,8 +286,8 @@ async function main() {
         pricePerMonth: demo.pricePerDay * 15, // mês = 15× diária
         estimatedRetailPrice: Math.round(demo.pricePerDay / 0.04), // diária ≈ 4% do valor do bem
         voltage:      demo.voltage,
-        city:         'Natal',
-        state:        'RN',
+        city:         spot.city,
+        state:        spot.state,
         neighborhood: spot.neighborhood,
         latitude:     spot.latitude + jitter(),
         longitude:    spot.longitude + jitter(),
