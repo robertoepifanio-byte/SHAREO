@@ -1,8 +1,8 @@
 # ShareO — Status do Projeto
 
-**Atualizado em**: 2026-06-10 (sessão tarde/noite — verificação de identidade: e-mail resultado + fix upload mobile + compressão client-side + bucket id-docs criado no staging)
+**Atualizado em**: 2026-06-11 (sessão — Programa de Embaixadores ADR-022 implementado completo)
 **Ambiente staging**: https://shareo-rouge.vercel.app (⚠️ deploys automáticos GitHub→Vercel aparecem **Canceled** — deploy real é manual: `npx vercel --prod`)
-**Último commit**: `ecbc6e8`
+**Último commit**: `538b7f4`
 **Release atual**: [`v1.2.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.2.0) — aguarda D4 para produção
 **Release anterior**: [`v1.0.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.0.0) (a v1.1.0 planejada foi absorvida pela v1.2.0)
 
@@ -36,7 +36,7 @@
 
 **✅ UX admin segregada** (commit `46ea0e6`) — link "Painel Admin" no dropdown/mobile; menu "Anunciar" oculto para admins; seção "Atividade" substituída por atalhos admin; banner upgrade PJ oculto em `/perfil`.
 
-Próximo passo: deletar scripts temporários + aguardar D4 (jurídico) para go-live em produção.
+Próximo passo: aplicar migration de embaixadores no staging → deletar scripts temporários → aguardar D4 (jurídico) para go-live em produção.
 
 ---
 
@@ -59,6 +59,7 @@ Próximo passo: deletar scripts temporários + aguardar D4 (jurídico) para go-l
 | **Sessão jun/09** | Token retirada + endereço anti-golpe, prazo por horário real, repasse segundas, 3 fotos MVP, multiplicadores SuperAdmin, taxa 100% dinâmica, STATUS.md + relatório executivo com arquitetura produção, briefing D4 |
 | **Sessão jun/10 manhã** | Bugfix pickupToken PIX (gerado no confirm), fix a11y labels painéis retirada/devolução, e2e/features-jun09 16/16 ✅, crítica de design + 3 prioridades (seed demo 21 itens, detalhe mobile CTA acima da dobra, /ajuda accordion −40% altura), testes defasados corrigidos (financeiro 7 cards, ajuda-plan taxa dinâmica) |
 | **Sessão jun/10 tarde/noite** | Verificação de identidade: e-mail de resultado aprovação/rejeição (sendIdVerifiedEmail + sendIdRejectedEmail via Resend), fix upload mobile (removido capture forçado, compressão Canvas client-side máx 4MB), hint câmera na selfie, log detalhado erro Supabase, bucket id-docs criado no staging. Backlog v3.2: item P3 #25 verificação celular Zenvia (decisão Raimundo). Aguarda deploy manual (`npx vercel --prod`) para tester validar. |
+| **Sessão jun/11** | Programa de Embaixadores (ADR-022): schema com AmbassadorProfile/Referral/AmbassadorCommission, migration local, lib/ambassador.ts (funções puras), lib/referral.ts reescrito (Referral PENDING em vez de ReferralCredit), webhook Stripe integrado, cron ambassador-decay, /api/ambassador/consent, /perfil/embaixador (painel tier/link/histórico), /admin/embaixadores (métricas + config SuperAdmin). Payout bloqueado (ambassadorPayoutEnabled=false) até D4. Commit 538b7f4. |
 
 ---
 
