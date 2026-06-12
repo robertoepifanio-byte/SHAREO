@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { auth } from "@/lib/auth"
+import { APP_VERSION, BUILD_SHA, BUILD_ENV } from "@/lib/version"
 
 type AdminRole = "ADMIN_SUPERADMIN" | "ADMIN_FINANCEIRO" | "ADMIN_OPERACIONAL"
 
@@ -140,6 +141,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             {children}
           </main>
         </div>
+
+        {/* Build info — referência para QA/suporte ("bug em qual build?") */}
+        <p className="mt-10 border-t border-border pt-4 text-center text-xs text-muted-foreground">
+          ShareO v{APP_VERSION} · <code className="font-mono">{BUILD_SHA}</code> · {BUILD_ENV === "production" ? "staging" : BUILD_ENV}
+        </p>
       </div>
     </div>
   )

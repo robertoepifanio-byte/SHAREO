@@ -1,5 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
+import { APP_VERSION } from "@/lib/version"
 
 /**
  * Rodapé global do ShareO.
@@ -83,7 +84,7 @@ export function AppFooter() {
         {/* Bottom bar */}
         <div className="mt-8 flex flex-col gap-3 border-t border-white/20 pt-6 md:flex-row md:items-center md:justify-between">
           <p className="text-xs text-white/90">
-            © {year} ShareO · Todos os direitos reservados.
+            © {year} ShareO · Todos os direitos reservados. · v{APP_VERSION}
           </p>
           <div className="flex flex-wrap gap-3">
             <span className="flex items-center gap-1.5 rounded-md border border-white/20 px-3 py-1 text-xs font-semibold text-white">
