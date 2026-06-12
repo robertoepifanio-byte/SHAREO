@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { copyToClipboard } from "@/lib/copy-to-clipboard"
 import type { AmbassadorStats } from "@/lib/ambassador"
 import { getTierLabel, tierProgress } from "@/lib/ambassador"
 import type { AmbassadorTier } from "@prisma/client"
@@ -68,12 +69,12 @@ export function AmbassadorSection({ stats: initialStats, hasConsented: initialCo
     }
   }
 
-  function copyLink() {
+  async function copyLink() {
     if (!shareLink) return
-    navigator.clipboard.writeText(shareLink).then(() => {
+    if (await copyToClipboard(shareLink)) {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-    })
+    }
   }
 
   function shareWhatsApp() {

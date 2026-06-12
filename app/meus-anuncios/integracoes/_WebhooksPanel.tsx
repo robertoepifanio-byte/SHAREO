@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { copyToClipboard } from "@/lib/copy-to-clipboard"
 import { WEBHOOK_EVENTS } from "@/lib/outboundWebhooks"
 import type { WebhookEvent } from "@/lib/outboundWebhooks"
 
@@ -140,7 +141,7 @@ export function WebhooksPanel({ initialWebhooks }: Props) {
               {newSecret}
             </code>
             <button
-              onClick={() => { navigator.clipboard.writeText(newSecret); }}
+              onClick={() => { void copyToClipboard(newSecret) }}
               className="flex-shrink-0 rounded-lg border border-border bg-surface px-3 py-2 text-xs hover:bg-background transition-colors"
               aria-label="Copiar secret"
             >

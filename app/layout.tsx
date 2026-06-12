@@ -78,9 +78,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="pt-BR" className={`${montserrat.variable} ${inter.variable}`}>
       <body className="min-h-screen bg-background font-sans antialiased">
+        {/* JSON-LD é data block (não executado) — CSP script-src não se aplica, nonce dispensável */}
         <script
           type="application/ld+json"
-          nonce={nonce}
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
         />
         {/* Skip link — acessibilidade de teclado */}
