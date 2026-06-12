@@ -79,7 +79,7 @@ export function AmbassadorSection({ stats: initialStats, hasConsented: initialCo
 
   function shareWhatsApp() {
     if (!shareLink) return
-    const text = encodeURIComponent(`Venha alugar e anunciar seus itens no ShareO! Use meu link: ${shareLink}`)
+    const text = encodeURIComponent(`${shareLink} clique nesse link e faça o seu cadastro.`)
     window.open(`https://wa.me/?text=${text}`, "_blank")
   }
 
