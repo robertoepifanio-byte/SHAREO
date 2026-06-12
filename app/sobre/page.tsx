@@ -237,10 +237,10 @@ export default function SobrePage() {
             <div className="flex justify-center">
               <div className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-surface overflow-hidden text-center">
                 <Image
-                  src="/logos/pratike-ia-sobre.png"
+                  src="/logos/pratika-ia-sobre.png"
                   alt="Pratika-IA"
-                  width={320}
-                  height={213}
+                  width={480}
+                  height={154}
                   className="w-full h-auto object-cover"
                 />
                 <p className="px-8 pb-6 max-w-sm text-sm text-muted-foreground leading-relaxed">

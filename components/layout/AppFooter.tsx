@@ -41,9 +41,9 @@ export function AppFooter() {
               <span className="text-[11px] text-white/50">Desenvolvido por</span>
               <div className="inline-block rounded-md overflow-hidden">
                 <Image
-                  src="/logos/pratike-ia-footer.png"
+                  src="/logos/pratika-ia-footer.png"
                   alt="Pratika-IA"
-                  width={108}
+                  width={224}
                   height={72}
                   className="object-contain h-9 w-auto"
                 />
