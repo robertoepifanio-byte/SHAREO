@@ -1,6 +1,6 @@
 # ShareO — Status do Projeto
 
-**Atualizado em**: 2026-06-12 (sessão — lançamento nacional + fixes UI + re-seed staging por capitais)
+**Atualizado em**: 2026-06-12 (sessão — auditoria de promessas não implementadas + lançamento nacional + fixes UI + re-seed staging por capitais)
 **Ambiente staging**: https://shareo-rouge.vercel.app (⚠️ deploys automáticos GitHub→Vercel aparecem **Canceled** — deploy real é manual: `npx vercel --prod`)
 **Último commit**: `ac88374`
 **Release atual**: [`v1.3.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.3.0) — Lançamento Nacional + Embaixadores (commit `60b5b92`, jun/12) — aguarda D4 para produção
@@ -42,7 +42,11 @@
 
 **✅ UX admin segregada** (commit `46ea0e6`) — link "Painel Admin" no dropdown/mobile; menu "Anunciar" oculto para admins; seção "Atividade" substituída por atalhos admin; banner upgrade PJ oculto em `/perfil`.
 
-Próximo passo: aplicar migration de embaixadores no staging → deletar scripts temporários → aguardar D4 (jurídico) para go-live em produção.
+**✅ P0 sem bloqueador externo resolvidos** (jun/12). (1) 6 scripts temporários deletados do repo. (2) 4 hardcoded P0 movidos para `PlatformConfig`: política de cancelamento (horas + percentuais), thresholds de tier embaixador (Prata/Ouro), janela de referral e multiplicador de late fee. Cada um tem função assíncrona em `lib/platform-config.ts` com fallback para o valor anterior como default. TypeScript limpo.
+
+**✅ Auditoria de promessas — 64 itens catalogados** (jun/12). PO levantou todas as features prometidas (ADRs, schema, protótipo, backlog) que ainda não estão implementadas ponta-a-ponta. Documento completo em `docs/promessas-nao-implementadas.md`. Bloqueadores identificados: D4 trava 8 itens críticos; 16 valores hardcoded sem bloqueador externo (P0–P2); 7 gaps protótipo vs. app. Top P0 imediatos: scripts temporários, `/politicas` stub, limiares embaixador hardcoded, janela referral hardcoded, política de cancelamento hardcoded.
+
+Próximo passo: resolver P0 sem bloqueador externo (hardcoded + scripts) → aguardar D4 (jurídico) para go-live em produção.
 
 ---
 
