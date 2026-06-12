@@ -240,7 +240,7 @@ export default function SobrePage() {
                   src="/logos/pratike-ia-sobre.png"
                   alt="Pratika-IA"
                   width={320}
-                  height={180}
+                  height={213}
                   className="w-full h-auto object-cover"
                 />
                 <p className="px-8 pb-6 max-w-sm text-sm text-muted-foreground leading-relaxed">
