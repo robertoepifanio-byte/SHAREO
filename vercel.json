@@ -27,6 +27,10 @@
     {
       "path": "/api/cron/monthly-report",
       "schedule": "0 12 1 * *"
+    },
+    {
+      "path": "/api/cron/ambassador-decay",
+      "schedule": "0 11 1 * *"
     }
   ]
 }

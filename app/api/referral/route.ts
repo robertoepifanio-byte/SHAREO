@@ -1,16 +1,17 @@
 /**
- * GET  /api/referral  — retorna código + stats do usuário logado
- * POST /api/referral  — gera código se ainda não existir
+ * GET  /api/referral  — retorna código + stats do embaixador (ADR-022)
+ * POST /api/referral  — gera código de indicação se ainda não existir
  */
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { getOrCreateReferralCode, getReferralStats } from "@/lib/referral"
+import { getOrCreateReferralCode } from "@/lib/referral"
+import { getAmbassadorStats } from "@/lib/ambassador"
 
 export async function GET() {
   const session = await auth()
   if (!session) return NextResponse.json({ error: { code: "UNAUTHORIZED" } }, { status: 401 })
 
-  const stats = await getReferralStats(session.user.id)
+  const stats = await getAmbassadorStats(session.user.id)
   return NextResponse.json({ data: stats })
 }
 

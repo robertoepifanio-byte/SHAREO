@@ -73,6 +73,17 @@ const NAV: { href: string; label: string; roles: AdminRole[]; icon: React.ReactN
       </svg>
     ),
   },
+  {
+    href:  "/admin/embaixadores",
+    label: "Embaixadores",
+    roles: ["ADMIN_SUPERADMIN", "ADMIN_FINANCEIRO"],
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+        <circle cx="12" cy="8" r="4"/>
+        <path d="M8 14l-4 8M16 14l4 8M12 14v8M9 17h6"/>
+      </svg>
+    ),
+  },
 ]
 
 const linkCls =

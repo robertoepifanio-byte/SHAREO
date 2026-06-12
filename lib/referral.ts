@@ -1,16 +1,16 @@
 /**
  * lib/referral.ts
- * Programa de indicação ShareO — R$15 para quem indica + R$15 para quem é indicado.
- * Créditos válidos por 90 dias e usáveis no primeiro aluguel concluído.
+ * Programa de indicação ShareO — ADR-022 (Embaixadores)
+ *
+ * applyReferralCode agora cria um Referral(PENDING) em vez de crédito R$15.
+ * A comissão é calculada e registrada em lib/ambassador.ts quando o booking é pago.
  */
 
 import { prisma } from "@/lib/prisma"
 
-export const REFERRAL_CREDIT_CENTS = 1_500  // R$15,00
-export const REFERRAL_EXPIRY_DAYS  = 90
-export const REFERRAL_APPLY_WINDOW_DAYS = 30 // código só pode ser aplicado nos primeiros 30 dias
+export const REFERRAL_APPLY_WINDOW_DAYS = 30
 
-// ─── Gerar código ─────────────────────────────────────────────────────────────
+// ─── Gerar código ──────────────────────────────────────────────────────────────
 
 function makeCode(name: string): string {
   const prefix = name
@@ -23,7 +23,6 @@ function makeCode(name: string): string {
   return `${prefix}-${suffix}`
 }
 
-/** Retorna código existente ou cria um novo. */
 export async function getOrCreateReferralCode(userId: string, name: string): Promise<string> {
   const user = await prisma.user.findUnique({
     where:  { id: userId },
@@ -31,7 +30,6 @@ export async function getOrCreateReferralCode(userId: string, name: string): Pro
   })
   if (user?.referralCode) return user.referralCode
 
-  // Garantir unicidade (máx 5 tentativas)
   let code = ""
   for (let i = 0; i < 5; i++) {
     const candidate = makeCode(name)
@@ -44,12 +42,16 @@ export async function getOrCreateReferralCode(userId: string, name: string): Pro
   return code
 }
 
-// ─── Aplicar código ───────────────────────────────────────────────────────────
+// ─── Aplicar código ────────────────────────────────────────────────────────────
 
 export type ApplyResult =
   | { success: true }
   | { success: false; error: string }
 
+/**
+ * Vincula o usuário ao referrer criando um Referral(PENDING).
+ * A comissão só é gerada após o primeiro booking pago (webhook Stripe → lib/ambassador.ts).
+ */
 export async function applyReferralCode(userId: string, rawCode: string): Promise<ApplyResult> {
   const code = rawCode.trim().toUpperCase()
 
@@ -72,62 +74,49 @@ export async function applyReferralCode(userId: string, rawCode: string): Promis
     return { success: false, error: `O código só pode ser aplicado nos primeiros ${REFERRAL_APPLY_WINDOW_DAYS} dias após o cadastro.` }
   }
 
-  const expiresAt = new Date(Date.now() + REFERRAL_EXPIRY_DAYS * 86_400_000)
+  // Verificar se já existe Referral (idempotência)
+  const existing = await prisma.referral.findUnique({ where: { referredId: userId }, select: { id: true } })
+  if (existing) return { success: false, error: "Você já usou um código de indicação." }
 
   await prisma.$transaction([
     prisma.user.update({ where: { id: userId }, data: { referredById: referrer.id } }),
-    prisma.referralCredit.create({
-      data: { userId, amountCents: REFERRAL_CREDIT_CENTS, reason: `Bônus de boas-vindas — indicado por ${referrer.name}`, expiresAt },
-    }),
-    prisma.referralCredit.create({
-      data: { userId: referrer.id, amountCents: REFERRAL_CREDIT_CENTS, reason: `Indicação aceita — novo usuário cadastrado`, expiresAt },
+    prisma.referral.create({
+      data: {
+        id:         generateId(),
+        referrerId: referrer.id,
+        referredId: userId,
+        status:     "PENDING",
+      },
     }),
   ])
-
-  // Notificações (fire-and-forget)
-  prisma.notification.createMany({
-    data: [
-      { userId: referrer.id, type: "REFERRAL_CREDIT", title: "Indicação aceita! 🎉", body: `Você ganhou R$15,00 de crédito por indicar um novo usuário.`, data: {} },
-      { userId,              type: "REFERRAL_CREDIT", title: "Bônus de boas-vindas! 🎉", body: `Você ganhou R$15,00 de crédito. Use no seu próximo aluguel.`, data: {} },
-    ],
-  }).catch(() => {})
 
   return { success: true }
 }
 
-// ─── Estatísticas ─────────────────────────────────────────────────────────────
+// ─── Estatísticas (compat — preferir getAmbassadorStats em lib/ambassador.ts) ──
 
 export interface ReferralStats {
-  code:             string | null
-  totalReferrals:   number
-  hasBeenReferred:  boolean
-  availableBalance: number  // centavos
-  credits:          { id: string; amountCents: number; reason: string; usedAt: Date | null; expiresAt: Date | null; createdAt: Date }[]
+  code:            string | null
+  totalReferrals:  number
+  hasBeenReferred: boolean
 }
 
 export async function getReferralStats(userId: string): Promise<ReferralStats> {
-  const [user, credits] = await Promise.all([
+  const [user, referralCount] = await Promise.all([
     prisma.user.findUnique({
       where:  { id: userId },
-      select: { referralCode: true, referredById: true, _count: { select: { referrals: true } } },
+      select: { referralCode: true, referredById: true },
     }),
-    prisma.referralCredit.findMany({
-      where:   { userId },
-      orderBy: { createdAt: "desc" },
-      select:  { id: true, amountCents: true, reason: true, usedAt: true, expiresAt: true, createdAt: true },
-    }),
+    prisma.referral.count({ where: { referrerId: userId } }),
   ])
 
-  const now = new Date()
-  const availableBalance = credits
-    .filter((c) => !c.usedAt && (!c.expiresAt || c.expiresAt > now))
-    .reduce((sum, c) => sum + c.amountCents, 0)
-
   return {
-    code:             user?.referralCode ?? null,
-    totalReferrals:   user?._count.referrals ?? 0,
-    hasBeenReferred:  !!(user?.referredById),
-    availableBalance,
-    credits,
+    code:            user?.referralCode ?? null,
+    totalReferrals:  referralCount,
+    hasBeenReferred: !!(user?.referredById),
   }
+}
+
+function generateId(): string {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36)
 }

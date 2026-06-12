@@ -3,6 +3,7 @@ import type { Stripe } from "stripe"
 import { stripe } from "@/lib/stripe"
 import { prisma } from "@/lib/prisma"
 import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
+import { processAmbassadorOnBookingPaid, cancelAmbassadorCommissions } from "@/lib/ambassador"
 
 // Vercel/Next.js: o body deve ser lido como raw buffer para validar a assinatura
 export const config = { api: { bodyParser: false } }
@@ -140,6 +141,11 @@ export async function POST(req: Request) {
           }).catch((e) => console.error("[stripe webhook notification]", e instanceof Error ? e.message : e))
         }
 
+        // Gerar comissão do embaixador se o locatário foi indicado (fire-and-forget)
+        processAmbassadorOnBookingPaid(bookingId).catch((e) =>
+          console.error("[stripe webhook] ambassador commission error:", e instanceof Error ? e.message : e)
+        )
+
         console.warn(`[stripe webhook] booking ${bookingId} paid (session ${session.id})`)
         break
       }
@@ -230,6 +236,17 @@ export async function POST(req: Request) {
           where: { stripePaymentIntentId: intentId, status: "DISPUTED" },
           data:  { status: newStatus },
         })
+
+        // Cancelar comissões de embaixador se dispute perdida
+        if (dispute.status === "lost") {
+          const lostBooking = await prisma.booking.findFirst({
+            where:  { stripePaymentIntentId: intentId },
+            select: { id: true },
+          })
+          if (lostBooking) {
+            cancelAmbassadorCommissions(lostBooking.id, `Dispute ${dispute.id} lost`).catch(() => undefined)
+          }
+        }
 
         console.warn(
           `[stripe webhook] dispute closed ${dispute.id} status=${dispute.status} → booking ${newStatus}`,
