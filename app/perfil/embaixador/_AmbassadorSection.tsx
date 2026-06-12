@@ -148,7 +148,7 @@ export function AmbassadorSection({ stats: initialStats, hasConsented: initialCo
             <div className="rounded-xl border border-border bg-surface p-4 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="font-medium text-foreground">
-                  Tier atual: <strong>{currentTier ? getTierLabel(currentTier) : "Sem tier"}</strong>
+                  Nível atual: <strong>{currentTier ? getTierLabel(currentTier) : "Sem nível"}</strong>
                 </span>
                 <span className="text-muted-foreground">
                   Próximo: {getTierLabel(progress.nextTier)} ({TIER_RATES[progress.nextTier]}%)
@@ -165,7 +165,7 @@ export function AmbassadorSection({ stats: initialStats, hasConsented: initialCo
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Faltam <strong>{progress.needed}</strong> indicados ativos para o tier{" "}
+                Faltam <strong>{progress.needed}</strong> indicados ativos para o nível{" "}
                 {getTierLabel(progress.nextTier)}.
               </p>
             </div>
@@ -226,7 +226,7 @@ export function AmbassadorSection({ stats: initialStats, hasConsented: initialCo
                         {new Date(c.createdAt).toLocaleDateString("pt-BR")}
                       </span>
                       <span className="ml-2 text-xs text-muted-foreground">
-                        Tier {getTierLabel(c.tierSnapshot)}
+                        Nível {getTierLabel(c.tierSnapshot)}
                       </span>
                     </div>
                     <span className={`font-semibold ${c.status === "CANCELLED" ? "text-muted-foreground line-through" : "text-brand"}`}>

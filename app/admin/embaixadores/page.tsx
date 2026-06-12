@@ -115,7 +115,7 @@ export default async function AdminEmbaixadoresPage({
 
       {/* Embaixadores por tier */}
       <div className="rounded-xl border border-border bg-surface p-5">
-        <h2 className="mb-4 font-semibold text-foreground">Distribuição por tier</h2>
+        <h2 className="mb-4 font-semibold text-foreground">Distribuição por nível</h2>
         <div className="flex gap-4 flex-wrap">
           {TIER_ORDER.map((tier) => {
             const entry = stats.byTier.find((b) => b.tier === tier)
@@ -141,7 +141,7 @@ export default async function AdminEmbaixadoresPage({
               <thead>
                 <tr className="border-b border-border text-left text-xs text-muted-foreground">
                   <th className="pb-2 pr-4 font-medium">Nome</th>
-                  <th className="pb-2 pr-4 font-medium">Tier</th>
+                  <th className="pb-2 pr-4 font-medium">Nível</th>
                   <th className="pb-2 pr-4 font-medium">Ativos</th>
                   <th className="pb-2 pr-4 font-medium">Pendente</th>
                   <th className="pb-2 font-medium">Pago</th>
