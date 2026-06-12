@@ -87,6 +87,7 @@ export async function POST(req: NextRequest) {
           cnpjEncrypted:  d.cnpj ? encryptDocument(d.cnpj) : null,
           city:           d.city,
           state:          d.state,
+          cep:            d.zipCode || null,
           street:         d.street || null,
           neighborhood:   d.neighborhood || null,
           consentVersion: d.consentVersion,

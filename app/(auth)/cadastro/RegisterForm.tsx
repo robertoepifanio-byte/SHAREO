@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type FormEvent, type ChangeEvent } from "react"
+import { useState, useRef, type FormEvent, type ChangeEvent } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
@@ -42,6 +42,11 @@ function maskCNPJ(value: string): string {
     .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
     .replace(/^(\d{2})\.(\d{3})\.(\d{3})(\d)/, "$1.$2.$3/$4")
     .replace(/^(\d{2})\.(\d{3})\.(\d{3})\/(\d{4})(\d)/, "$1.$2.$3/$4-$5")
+}
+
+function maskCEP(value: string): string {
+  const d = value.replace(/\D/g, "").slice(0, 8)
+  return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d
 }
 
 function maskPhone(value: string): string {
@@ -92,6 +97,11 @@ export function RegisterForm() {
   const [cpf,          setCpf]          = useState("")
   const [cnpj,         setCnpj]         = useState("")
   const [phone,        setPhone]        = useState("")
+  const [zipCode,      setZipCode]      = useState("")
+  const [zipLoading,   setZipLoading]   = useState(false)
+  const [zipError,     setZipError]     = useState("")
+  const [zipFilled,    setZipFilled]    = useState(false)
+  const lastFetchedCep = useRef("")
   const [city,         setCity]         = useState("")
   const [state,        setState]        = useState("")
   const [street,       setStreet]       = useState("")
@@ -101,6 +111,30 @@ export function RegisterForm() {
   const [errors,       setErrors]       = useState<FormErrors>({})
   const [loading,      setLoading]      = useState(false)
   const [success,      setSuccess]      = useState(false)
+
+  async function handleCepBlur() {
+    const digits = zipCode.replace(/\D/g, "")
+    if (digits.length !== 8 || digits === lastFetchedCep.current) return
+    setZipLoading(true)
+    setZipError("")
+    setZipFilled(false)
+    try {
+      const res  = await fetch(`https://viacep.com.br/ws/${digits}/json/`)
+      const data = await res.json() as { erro?: boolean; logradouro: string; bairro: string; localidade: string; uf: string }
+      if (data.erro) { setZipError("CEP não encontrado."); return }
+      lastFetchedCep.current = digits
+      if (data.logradouro) setStreet(data.logradouro)
+      if (data.bairro)     setNeighborhood(data.bairro)
+      setCity(data.localidade ?? city)
+      setState(data.uf ?? state)
+      setZipFilled(true)
+      setErrors((p) => ({ ...p, city: undefined, state: undefined }))
+    } catch {
+      setZipError("Erro ao consultar o CEP. Verifique sua conexão.")
+    } finally {
+      setZipLoading(false)
+    }
+  }
 
   function handleCPF(e: ChangeEvent<HTMLInputElement>) {
     setCpf(maskCPF(e.target.value))
@@ -155,6 +189,7 @@ export function RegisterForm() {
       cnpj:           userType === "PJ" ? cnpj : undefined,
       city:           city.trim(),
       state:          state.trim().toUpperCase(),
+      zipCode:        zipCode.replace(/\D/g, "") || undefined,
       street:         street.trim() || undefined,
       neighborhood:   neighborhood.trim() || undefined,
       referralCode:   referralCode || undefined,
@@ -389,6 +424,26 @@ export function RegisterForm() {
           disabled={loading}
         />
 
+        {/* CEP com auto-fill ViaCEP */}
+        <div className="flex flex-col gap-1">
+          <Input
+            label="CEP"
+            type="text"
+            inputMode="numeric"
+            autoComplete="postal-code"
+            placeholder="00000-000"
+            value={zipCode}
+            onChange={(e) => { setZipCode(maskCEP(e.target.value)); setZipError(""); setZipFilled(false) }}
+            onBlur={handleCepBlur}
+            helper={zipFilled ? "✓ Endereço preenchido automaticamente" : "Opcional — preenche endereço automaticamente"}
+            disabled={loading || zipLoading}
+            suffix={zipLoading ? <SpinnerIcon /> : undefined}
+          />
+          {zipError && (
+            <p role="alert" className="text-xs text-destructive">{zipError}</p>
+          )}
+        </div>
+
         <Input
           label="Rua"
           type="text"
@@ -510,6 +565,14 @@ function EyeIcon() {
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
       <circle cx="12" cy="12" r="3"/>
+    </svg>
+  )
+}
+
+function SpinnerIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true" className="animate-spin text-muted-foreground">
+      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
     </svg>
   )
 }

@@ -25,6 +25,7 @@ export const RegisterSchema = z
     cnpj: z.string().optional(),
     city: z.string().min(2, "Cidade obrigatória").max(100),
     state: z.string().length(2, "Use a sigla do estado (ex: RN)"),
+    zipCode: z.string().regex(/^\d{8}$/, "CEP inválido").optional().or(z.literal("")),
     street: z.string().max(200).optional().or(z.literal("")),
     neighborhood: z.string().max(100).optional().or(z.literal("")),
     referralCode: z.string().max(20).optional().or(z.literal("")),
