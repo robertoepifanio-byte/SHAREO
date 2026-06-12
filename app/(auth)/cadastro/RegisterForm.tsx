@@ -92,6 +92,7 @@ export function RegisterForm() {
   const [phone,        setPhone]        = useState("")
   const [city,         setCity]         = useState("")
   const [state,        setState]        = useState("")
+  const [street,       setStreet]       = useState("")
   const [neighborhood, setNeighborhood] = useState("")
   const [consent,      setConsent]      = useState(false)
   const [ageConfirmed, setAgeConfirmed] = useState(false)
@@ -152,6 +153,7 @@ export function RegisterForm() {
       cnpj:           userType === "PJ" ? cnpj : undefined,
       city:           city.trim(),
       state:          state.trim().toUpperCase(),
+      street:         street.trim() || undefined,
       neighborhood:   neighborhood.trim() || undefined,
       consentVersion: CONSENT_VERSION,
     }
@@ -370,6 +372,27 @@ export function RegisterForm() {
           disabled={loading}
         />
 
+        <Input
+          label="Rua"
+          type="text"
+          autoComplete="street-address"
+          placeholder="Ex: Av. Paulista, 1000"
+          value={street}
+          onChange={(e) => setStreet(e.target.value)}
+          helper="Opcional"
+          disabled={loading}
+        />
+
+        <Input
+          label="Bairro"
+          type="text"
+          autoComplete="address-level3"
+          value={neighborhood}
+          onChange={(e) => setNeighborhood(e.target.value)}
+          helper="Opcional"
+          disabled={loading}
+        />
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="col-span-2">
             <Input
@@ -398,16 +421,6 @@ export function RegisterForm() {
             />
           </div>
         </div>
-
-        <Input
-          label="Bairro"
-          type="text"
-          autoComplete="address-level3"
-          value={neighborhood}
-          onChange={(e) => setNeighborhood(e.target.value)}
-          helper="Opcional"
-          disabled={loading}
-        />
 
         {/* Consentimento LGPD */}
         <div>
