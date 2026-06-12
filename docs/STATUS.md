@@ -1,8 +1,8 @@
 # ShareO — Status do Projeto
 
-**Atualizado em**: 2026-06-12 (sessão — lançamento nacional: referências a Natal/RN removidas da UI)
+**Atualizado em**: 2026-06-12 (sessão — lançamento nacional + fixes UI + re-seed staging por capitais)
 **Ambiente staging**: https://shareo-rouge.vercel.app (⚠️ deploys automáticos GitHub→Vercel aparecem **Canceled** — deploy real é manual: `npx vercel --prod`)
-**Último commit**: `538b7f4`
+**Último commit**: `ac88374`
 **Release atual**: [`v1.2.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.2.0) — aguarda D4 para produção
 **Release anterior**: [`v1.0.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.0.0) (a v1.1.0 planejada foi absorvida pela v1.2.0)
 
@@ -15,6 +15,10 @@
 ---
 
 ## Resumo Executivo
+
+**✅ Staging re-seedado por capitais** (jun/12). 29 itens demo antigos de Natal soft-deletados (preservados itens E2E — a "Câmera Fixture E2E Smoke Test" tem 235 bookings da suíte); `seed-demo-items.ts` recriou 21 itens, 3 por capital (SP, RJ, BH, Curitiba, POA, Salvador, Recife), **todos com foto validada**. Regra: só sobe item com foto — os 8 itens do `prisma/seed.ts` (sem imagens) não foram recriados. Validado no banco e na API pública.
+
+**✅ Fixes UI da sessão jun/12** (commits `9a7e395`–`031ed30`). (1) Badge do sino zera ao ler a mensagem — abrir conversa marca notificações `NEW_MESSAGE` como lidas + novo `PATCH /api/notifications/[id]/read` + clique individual no dropdown (optimistic). (2) Compartilhamento embaixador: og:description do /cadastro e template WhatsApp reescritos. (3) Endereço: dados salvos exibidos; placeholders "Ex: …" removidos; criar conta sem cidade/UF pré-preenchidos. (4) Telefone do perfil: placeholder "55 99 999999999" + normalização para `+55DDDNÚMERO` no submit.
 
 **✅ Lançamento nacional — referências a Natal/RN removidas** (commit `7b83b4a`, jun/12). Decisão dos fundadores: o ShareO lança em âmbito nacional. UI sem Natal/RN hardcoded (placeholders, Lista VIP, e-mails de fundador, metadados "em todo o Brasil"); depoimentos fictícios com cidades variadas (SP/BH/Curitiba/POA); mapa default centra no Brasil (zoom 4) para usuário sem cidade; /sobre sem o stat "cidade de origem". Seeds (`prisma/seed.ts`, `scripts/seed-demo-items.ts`) espalham itens por 8 capitais. ADR-002 e ADR-015 receberam notas de atualização (premissas geográficas superadas). Cidade real do usuário logado continua exibida normalmente.
 
