@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import { z } from "zod"
 import bcrypt from "bcryptjs"
 import crypto from "crypto"
@@ -69,9 +69,11 @@ export async function PATCH(req: Request) {
     },
   })
 
-  // Envia verificação para o novo endereço (fire-and-forget)
-  sendVerificationEmail(newEmail, user.name, verifyToken).catch((err) =>
-    console.error("[email-change] send verification error:", err instanceof Error ? err.message : err)
+  // Envia verificação para o novo endereço — após a resposta
+  after(() =>
+    sendVerificationEmail(newEmail, user.name, verifyToken).catch((err) =>
+      console.error("[email-change] send verification error:", err instanceof Error ? err.message : err)
+    )
   )
 
   return NextResponse.json({ ok: true })

@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server"
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
@@ -76,18 +76,20 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           ? "DEMOTE_TO_USER"
           : parsed.data.action.toUpperCase()
 
-    prisma.adminLog.create({
-      data: {
-        adminId:    session!.user.id,
-        action:     auditAction,
-        entityType: "User",
-        entityId:   id,
-        metadata:   JSON.stringify({
-          before: { adminRole: target.adminRole, isActive: target.isActive },
-          after:  { adminRole: updated.adminRole, isActive: updated.isActive },
-        }),
-      },
-    }).catch((e) => console.warn("[adminLog]", e instanceof Error ? e.message : e))
+    after(() =>
+      prisma.adminLog.create({
+        data: {
+          adminId:    session!.user.id,
+          action:     auditAction,
+          entityType: "User",
+          entityId:   id,
+          metadata:   JSON.stringify({
+            before: { adminRole: target.adminRole, isActive: target.isActive },
+            after:  { adminRole: updated.adminRole, isActive: updated.isActive },
+          }),
+        },
+      }).catch((e) => console.warn("[adminLog]", e instanceof Error ? e.message : e))
+    )
 
     return NextResponse.json({ data: updated })
   } catch (e) {

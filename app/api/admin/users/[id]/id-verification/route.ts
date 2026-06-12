@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server"
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { sendIdVerifiedEmail, sendIdRejectedEmail } from "@/lib/email"
@@ -75,11 +75,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       select: { id: true, idVerificationStatus: true, isVerified: true, updatedAt: true },
     })
 
-    // E-mail de resultado (fire-and-forget)
-    const emailFn = isApprove
-      ? sendIdVerifiedEmail(user.email, user.name)
-      : sendIdRejectedEmail(user.email, user.name, rejectionReason!)
-    emailFn.catch((e) => console.error("[id-verification email]", e instanceof Error ? e.message : e))
+    // E-mail de resultado — após a resposta
+    after(() =>
+      (isApprove
+        ? sendIdVerifiedEmail(user.email, user.name)
+        : sendIdRejectedEmail(user.email, user.name, rejectionReason!)
+      ).catch((e) => console.error("[id-verification email]", e instanceof Error ? e.message : e))
+    )
 
     // Notificar usuário
     const notifType = isApprove ? "ID_VERIFIED" : "ID_REJECTED"
@@ -87,25 +89,29 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       ? "Sua identidade foi verificada com sucesso! ✅"
       : `Sua verificação foi rejeitada: ${rejectionReason}`
 
-    prisma.notification.create({
-      data: {
-        userId: id,
-        type:   notifType,
-        title:  isApprove ? "Identidade verificada" : "Verificação rejeitada",
-        body:   notifMsg,
-      },
-    }).catch((e) => console.error("[id-verification notify]", e instanceof Error ? e.message : e))
+    after(() =>
+      prisma.notification.create({
+        data: {
+          userId: id,
+          type:   notifType,
+          title:  isApprove ? "Identidade verificada" : "Verificação rejeitada",
+          body:   notifMsg,
+        },
+      }).catch((e) => console.error("[id-verification notify]", e instanceof Error ? e.message : e))
+    )
 
-    // Admin log
-    prisma.adminLog.create({
-      data: {
-        adminId:    session.user.id,
-        action:     isApprove ? "ID_APPROVED" : "ID_REJECTED",
-        entityType: "User",
-        entityId:   id,
-        metadata:   rejectionReason ? { rejectionReason } : undefined,
-      },
-    }).catch((e) => console.error("[adminLog]", e instanceof Error ? e.message : e))
+    // Admin log — após a resposta
+    after(() =>
+      prisma.adminLog.create({
+        data: {
+          adminId:    session.user.id,
+          action:     isApprove ? "ID_APPROVED" : "ID_REJECTED",
+          entityType: "User",
+          entityId:   id,
+          metadata:   rejectionReason ? { rejectionReason } : undefined,
+        },
+      }).catch((e) => console.error("[adminLog]", e instanceof Error ? e.message : e))
+    )
 
     return NextResponse.json({ data: updated })
   } catch (e) {

@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server"
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
 import { z } from "zod"
@@ -74,17 +74,19 @@ export async function POST(req: NextRequest, { params }: Params) {
       }),
     ])
 
-    // Notifica os outros participantes (fire-and-forget)
+    // Notifica os outros participantes — após a resposta
     const others = conv.participants.filter((p) => p.userId !== userId)
-    prisma.notification.createMany({
-      data: others.map((p) => ({
-        userId: p.userId,
-        type:   "NEW_MESSAGE" as const,
-        title:  "Nova mensagem",
-        body:   rawContent.slice(0, 80),
-        data:   { conversationId: id },
-      })),
-    }).catch(() => {})
+    after(() =>
+      prisma.notification.createMany({
+        data: others.map((p) => ({
+          userId: p.userId,
+          type:   "NEW_MESSAGE" as const,
+          title:  "Nova mensagem",
+          body:   rawContent.slice(0, 80),
+          data:   { conversationId: id },
+        })),
+      }).catch(() => {})
+    )
 
     return NextResponse.json({ data: { ...message, body: message.content } }, { status: 201 })
   } catch (e) {

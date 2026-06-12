@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server"
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { CreateReviewSchema } from "@/lib/validations/reviews"
@@ -168,35 +168,41 @@ export async function POST(req: NextRequest, { params }: Params) {
       },
     })
 
-    // P3-70: +10 pontos de reputação para quem avaliou (fire-and-forget)
-    void prisma.user?.update({
-      where: { id: userId },
-      data:  { reputationPoints: { increment: REPUTATION_PER_REVIEW } },
-    }).catch(() => {})
+    // P3-70: +10 pontos de reputação para quem avaliou — após a resposta
+    after(() =>
+      prisma.user.update({
+        where: { id: userId },
+        data:  { reputationPoints: { increment: REPUTATION_PER_REVIEW } },
+      }).catch(() => {})
+    )
 
-    // Notifica o avaliado (fire-and-forget)
-    prisma.notification.create({
-      data: {
-        userId: revieweeId,
-        type:   "NEW_REVIEW",
-        title:  "Você recebeu uma avaliação",
-        body:   comment?.trim() ? `"${comment.trim().slice(0, 80)}"` : `Nota ${rating} recebida.`,
-        data:   { bookingId: id },
-      },
-    }).catch((e) => console.error("[notification] NEW_REVIEW:", e instanceof Error ? e.message : e))
+    // Notifica o avaliado — após a resposta
+    after(() =>
+      prisma.notification.create({
+        data: {
+          userId: revieweeId,
+          type:   "NEW_REVIEW",
+          title:  "Você recebeu uma avaliação",
+          body:   comment?.trim() ? `"${comment.trim().slice(0, 80)}"` : `Nota ${rating} recebida.`,
+          data:   { bookingId: id },
+        },
+      }).catch((e) => console.error("[notification] NEW_REVIEW:", e instanceof Error ? e.message : e))
+    )
 
-    // Auto-complete booking once all 3 review types have been submitted (fire-and-forget)
+    // Auto-complete booking once all 3 review types have been submitted — após a resposta
     if (booking.status === "RETURNED") {
-      prisma.review.count({ where: { bookingId: id } })
-        .then(async (count) => {
-          if (count >= 3) {
-            await prisma.booking.update({
-              where: { id, status: "RETURNED" },
-              data:  { status: "COMPLETED" },
-            })
-          }
-        })
-        .catch((e) => console.error("[auto-complete booking]", e instanceof Error ? e.message : e))
+      after(() =>
+        prisma.review.count({ where: { bookingId: id } })
+          .then(async (count) => {
+            if (count >= 3) {
+              await prisma.booking.update({
+                where: { id, status: "RETURNED" },
+                data:  { status: "COMPLETED" },
+              })
+            }
+          })
+          .catch((e) => console.error("[auto-complete booking]", e instanceof Error ? e.message : e))
+      )
     }
 
     return NextResponse.json({ data: review }, { status: 201 })

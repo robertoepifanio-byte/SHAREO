@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server"
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import crypto from "crypto"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
@@ -48,8 +48,10 @@ export async function POST(req: NextRequest) {
     data:  { emailVerifyToken: verifyToken, emailTokenExpiresAt: tokenExpiresAt },
   })
 
-  sendVerificationEmail(user.email, user.name, verifyToken).catch((err) =>
-    console.error("[resend-verification] email error:", err instanceof Error ? err.message : err)
+  after(() =>
+    sendVerificationEmail(user.email, user.name, verifyToken).catch((err) =>
+      console.error("[resend-verification] email error:", err instanceof Error ? err.message : err)
+    )
   )
 
   return NextResponse.json({ data: { sent: true } })

@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server"
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { hashDocument, encryptDocument } from "@/lib/crypto"
@@ -118,25 +118,30 @@ export async function POST(req: NextRequest) {
       })
     })
 
-    // Aplicar código de indicação — fire-and-forget (não bloqueia registro)
-    if (d.referralCode) {
-      applyReferralCode(user.id, d.referralCode).catch((err) =>
-        console.error("[register] referral apply error:", err instanceof Error ? err.message : err)
+    // Aplicar código de indicação — após a resposta (não bloqueia registro)
+    const referralCode = d.referralCode
+    if (referralCode) {
+      after(() =>
+        applyReferralCode(user.id, referralCode).catch((err) =>
+          console.error("[register] referral apply error:", err instanceof Error ? err.message : err)
+        )
       )
     }
 
-    // Token de verificação de e-mail — fire-and-forget
+    // Token de verificação de e-mail — após a resposta (não bloqueia registro)
     const verifyToken   = crypto.randomBytes(32).toString("hex")
     const tokenExpiresAt = new Date(Date.now() + EMAIL_VERIFY_TOKEN_TTL_MS)
-    prisma.user
-      .update({
-        where: { id: user.id },
-        data:  { emailVerifyToken: verifyToken, emailTokenExpiresAt: tokenExpiresAt },
-      })
-      .then(() => sendVerificationEmail(user.email, user.name, verifyToken))
-      .catch((err) =>
-        console.error("[register] verification email error:", err instanceof Error ? err.message : err)
-      )
+    after(() =>
+      prisma.user
+        .update({
+          where: { id: user.id },
+          data:  { emailVerifyToken: verifyToken, emailTokenExpiresAt: tokenExpiresAt },
+        })
+        .then(() => sendVerificationEmail(user.email, user.name, verifyToken))
+        .catch((err) =>
+          console.error("[register] verification email error:", err instanceof Error ? err.message : err)
+        )
+    )
 
     return NextResponse.json({ data: user }, { status: 201 })
   } catch (e: unknown) {

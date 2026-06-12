@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server"
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import { z } from "zod"
 import { revalidateTag } from "next/cache"
 import { prisma } from "@/lib/prisma"
@@ -68,12 +68,12 @@ export async function POST(req: NextRequest) {
 
     // wave é determinístico pela posição — atualizar de forma não-crítica
     const wave = assignWave(lead.queuePosition)
-    void prisma.founderLead.update({ where: { id: lead.id }, data: { wave } }).catch(() => {})
+    after(() => prisma.founderLead.update({ where: { id: lead.id }, data: { wave } }).catch(() => {}))
 
     revalidateTag("founders")
 
     const displayName = name?.trim() || email.split("@")[0]
-    void sendFounderWelcomeEmail(email.toLowerCase(), displayName, lead.queuePosition).catch(() => {})
+    after(() => sendFounderWelcomeEmail(email.toLowerCase(), displayName, lead.queuePosition).catch(() => {}))
 
     return NextResponse.json(
       { data: { leadId: lead.id, queuePosition: lead.queuePosition, wave } },

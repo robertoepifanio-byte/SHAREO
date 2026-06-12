@@ -1,4 +1,4 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { type NextRequest, NextResponse, after } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { checkRateLimit } from "@/lib/rateLimit"
@@ -98,17 +98,19 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     console.error("[reminder] notification error:", err instanceof Error ? err.message : "unknown")
   })
 
-  // Email opcional — best-effort, não bloqueia resposta
+  // Email opcional — após a resposta, best-effort
   if (booking.borrower.email) {
-    sendReminderReturnTomorrow(
-      booking.borrower.email,
-      booking.borrower.name,
-      booking.item.title,
-      bookingId,
-      new Date(booking.endDate),
-    ).catch((err) => {
-      console.error("[reminder] email error:", err instanceof Error ? err.message : "unknown")
-    })
+    after(() =>
+      sendReminderReturnTomorrow(
+        booking.borrower.email,
+        booking.borrower.name,
+        booking.item.title,
+        bookingId,
+        new Date(booking.endDate),
+      ).catch((err) => {
+        console.error("[reminder] email error:", err instanceof Error ? err.message : "unknown")
+      })
+    )
   }
 
   return NextResponse.json({ success: true, message: "Lembrete enviado." })

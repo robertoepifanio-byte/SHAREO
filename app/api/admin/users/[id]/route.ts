@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server"
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { hasAdminRole } from "@/lib/auth/admin-guards"
@@ -65,18 +65,20 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       select: { id: true, isActive: true, updatedAt: true },
     })
 
-    prisma.adminLog.create({
-      data: {
-        adminId:    session.user.id,
-        action:     parsed.data.action.toUpperCase(),
-        entityType: "User",
-        entityId:   id,
-        metadata:   JSON.stringify({
-          actorRole: (session.user as { adminRole?: string }).adminRole ?? null,
-          isActive:  updated.isActive,
-        }),
-      },
-    }).catch((e) => console.error("[adminLog]", e instanceof Error ? e.message : e))
+    after(() =>
+      prisma.adminLog.create({
+        data: {
+          adminId:    session.user.id,
+          action:     parsed.data.action.toUpperCase(),
+          entityType: "User",
+          entityId:   id,
+          metadata:   JSON.stringify({
+            actorRole: (session.user as { adminRole?: string }).adminRole ?? null,
+            isActive:  updated.isActive,
+          }),
+        },
+      }).catch((e) => console.error("[adminLog]", e instanceof Error ? e.message : e))
+    )
 
     return NextResponse.json({ data: updated })
   } catch (e) {

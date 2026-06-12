@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server"
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import { fileTypeFromBuffer } from "file-type"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
@@ -219,8 +219,10 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
 
     // Demote AVAILABLE → DRAFT when the last photo is removed
     if (image.item.status === "AVAILABLE" && image.item._count.images === 1) {
-      prisma.item.update({ where: { id }, data: { status: "DRAFT" } })
-        .catch((e) => console.error("[images/demote-to-draft]", e instanceof Error ? e.message : e))
+      after(() =>
+        prisma.item.update({ where: { id }, data: { status: "DRAFT" } })
+          .catch((e) => console.error("[images/demote-to-draft]", e instanceof Error ? e.message : e))
+      )
     }
 
     return new NextResponse(null, { status: 204 })

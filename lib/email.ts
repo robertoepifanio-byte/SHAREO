@@ -1,4 +1,5 @@
 import { Resend } from "resend"
+import { APP_URL } from "@/lib/app-url"
 
 const hasResendKey =
   typeof process.env.RESEND_API_KEY === "string" &&
@@ -12,8 +13,8 @@ function getResend(): Resend | null {
   return _resend
 }
 
-const FROM    = process.env.EMAIL_FROM    ?? "noreply@shareo.com.br"
-const APP_URL = process.env.NEXTAUTH_URL  ?? "https://shareo-rouge.vercel.app"
+// || (não ??): EMAIL_FROM vazio no Vercel não pode virar from inválido
+const FROM = process.env.EMAIL_FROM || "noreply@shareo.com.br"
 
 // ─── Templates ────────────────────────────────────────────────────────────────
 

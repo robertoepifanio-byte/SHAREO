@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server"
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
 import { CreateBookingSchema, ListBookingsQuerySchema } from "@/lib/validations/bookings"
@@ -235,26 +235,30 @@ export async function POST(req: NextRequest) {
       return { ...b, conversationId: conv.id }
     }, { timeout: 5000 })
 
-    // Webhook de saída para o locador (fire-and-forget)
-    dispatchWebhookEvent(item.ownerId, "booking.created", {
-      bookingId:  booking.id,
-      itemTitle:  booking.item.title,
-      borrower:   booking.item.owner.name,
-      startDate:  booking.startDate,
-      endDate:    booking.endDate,
-      totalPrice: booking.totalPrice,
-    })
+    // Webhook de saída para o locador — após a resposta
+    after(() =>
+      dispatchWebhookEvent(item.ownerId, "booking.created", {
+        bookingId:  booking.id,
+        itemTitle:  booking.item.title,
+        borrower:   booking.item.owner.name,
+        startDate:  booking.startDate,
+        endDate:    booking.endDate,
+        totalPrice: booking.totalPrice,
+      })
+    )
 
-    // Notificação para o locador (fire-and-forget)
-    prisma.notification.create({
-      data: {
-        userId: item.ownerId,
-        type:   "BOOKING_REQUEST",
-        title:  "Nova solicitação de aluguel",
-        body:   `${borrower?.name ?? "Um usuário"} quer alugar "${booking.item.title}"`,
-        data:   { bookingId: booking.id },
-      },
-    }).catch((e) => console.error("[notification] BOOKING_REQUEST:", e instanceof Error ? e.message : e))
+    // Notificação para o locador — após a resposta
+    after(() =>
+      prisma.notification.create({
+        data: {
+          userId: item.ownerId,
+          type:   "BOOKING_REQUEST",
+          title:  "Nova solicitação de aluguel",
+          body:   `${borrower?.name ?? "Um usuário"} quer alugar "${booking.item.title}"`,
+          data:   { bookingId: booking.id },
+        },
+      }).catch((e) => console.error("[notification] BOOKING_REQUEST:", e instanceof Error ? e.message : e))
+    )
 
     return NextResponse.json({ data: booking }, { status: 201 })
   } catch (e) {

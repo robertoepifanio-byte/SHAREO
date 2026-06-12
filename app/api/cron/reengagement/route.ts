@@ -11,6 +11,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { Resend } from "resend"
+import { APP_URL } from "@/lib/app-url"
 
 export const dynamic = "force-dynamic"
 
@@ -57,7 +58,7 @@ async function sendReviewReminders() {
           <p>Olá, ${b.borrower.name?.split(" ")[0] ?? ""}!</p>
           <p>Sua locação de <strong>${b.item.title}</strong> foi concluída.</p>
           <p>Avaliações ajudam a comunidade — leva menos de 1 minuto!</p>
-          <p><a href="${process.env.NEXTAUTH_URL}/reservas/${b.id}">Avaliar agora →</a></p>
+          <p><a href="${APP_URL}/reservas/${b.id}">Avaliar agora →</a></p>
           <p>Obrigado por usar o ShareO!</p>
         `,
       })
@@ -95,7 +96,7 @@ async function sendSimilarItemSuggestions() {
       if (similar.length === 0) return
 
       const itemLinks = similar
-        .map((i) => `<li><a href="${process.env.NEXTAUTH_URL}/itens/${i.slug ?? i.id}">${i.title} — R$ ${(i.pricePerDay / 100).toFixed(2)}/dia</a></li>`)
+        .map((i) => `<li><a href="${APP_URL}/itens/${i.slug ?? i.id}">${i.title} — R$ ${(i.pricePerDay / 100).toFixed(2)}/dia</a></li>`)
         .join("")
 
       await getResend().emails.send({
@@ -106,7 +107,7 @@ async function sendSimilarItemSuggestions() {
           <p>Olá, ${b.borrower.name?.split(" ")[0] ?? ""}!</p>
           <p>Com base na sua última locação, selecionamos alguns itens em <strong>${b.item.city}</strong>:</p>
           <ul>${itemLinks}</ul>
-          <p><a href="${process.env.NEXTAUTH_URL}/itens">Ver mais →</a></p>
+          <p><a href="${APP_URL}/itens">Ver mais →</a></p>
         `,
       })
     }),
@@ -143,7 +144,7 @@ async function sendFavoriteAvailableReminders() {
           <p>Olá, ${f.user.name?.split(" ")[0] ?? ""}!</p>
           <p>O item <strong>${f.item.title}</strong> que você adicionou aos favoritos está disponível por
              <strong>R$ ${(f.item.pricePerDay / 100).toFixed(2)}/dia</strong>.</p>
-          <p><a href="${process.env.NEXTAUTH_URL}/itens/${f.item.slug ?? f.item.id}">Ver item →</a></p>
+          <p><a href="${APP_URL}/itens/${f.item.slug ?? f.item.id}">Ver item →</a></p>
         `,
       })
     }),

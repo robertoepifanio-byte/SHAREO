@@ -4,6 +4,7 @@ import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { stripe } from "@/lib/stripe"
+import { APP_URL } from "@/lib/app-url"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { getPlatformFeeRate, calcSplit, CHECKOUT_MAX_CENTS, STRIPE_CHECKOUT_EXPIRES_SECONDS } from "@/lib/platform-config"
 
@@ -93,7 +94,7 @@ export async function POST(req: NextRequest) {
     const feeRate = await getPlatformFeeRate()
     const split   = calcSplit(booking.totalPrice, feeRate)
 
-    const appUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000"
+    const appUrl = APP_URL
 
     const fmtDate = (d: Date) =>
       new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(d)

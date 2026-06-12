@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server"
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
@@ -323,25 +323,29 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       }
     }
 
-    // E-mails transacionais (fire-and-forget)
+    // E-mails transacionais — após a resposta
     if (action === "confirm") {
-      sendBookingConfirmedEmail(
-        booking.borrower.email, booking.borrower.name,
-        booking.item.title, id,
-        booking.startDate, booking.endDate,
-      ).catch((e) => console.error("[email] booking confirmed:", e instanceof Error ? e.message : e))
+      after(() =>
+        sendBookingConfirmedEmail(
+          booking.borrower.email, booking.borrower.name,
+          booking.item.title, id,
+          booking.startDate, booking.endDate,
+        ).catch((e) => console.error("[email] booking confirmed:", e instanceof Error ? e.message : e))
+      )
     }
     if (action === "cancel") {
       const notifyEmail = isOwner ? booking.borrower.email : booking.owner.email
       const notifyName  = isOwner ? booking.borrower.name  : booking.owner.name
       const notifyRole  = isOwner ? "borrower" as const    : "owner" as const
-      sendBookingCancelledEmail(
-        notifyEmail, notifyName, notifyRole,
-        booking.item.title, id, reason ?? undefined,
-      ).catch((e) => console.error("[email] booking cancelled:", e instanceof Error ? e.message : e))
+      after(() =>
+        sendBookingCancelledEmail(
+          notifyEmail, notifyName, notifyRole,
+          booking.item.title, id, reason ?? undefined,
+        ).catch((e) => console.error("[email] booking cancelled:", e instanceof Error ? e.message : e))
+      )
     }
 
-    // Webhooks de saída (fire-and-forget)
+    // Webhooks de saída — após a resposta
     const webhookEventMap: Partial<Record<typeof action, WebhookEvent>> = {
       confirm:        "booking.confirmed",
       cancel:         "booking.cancelled",
@@ -351,15 +355,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
     const webhookEvent = webhookEventMap[action]
     if (webhookEvent) {
-      dispatchWebhookEvent(booking.ownerId, webhookEvent, {
-        bookingId: id,
-        itemTitle: booking.item.title,
-        status:    transition.nextStatus,
-        reason,
-      })
+      after(() =>
+        dispatchWebhookEvent(booking.ownerId, webhookEvent, {
+          bookingId: id,
+          itemTitle: booking.item.title,
+          status:    transition.nextStatus,
+          reason,
+        })
+      )
     }
 
-    // Notificações (fire-and-forget)
+    // Notificações — após a resposta
     const notifyUserId = isOwner ? booking.borrowerId : booking.ownerId
     const notifMap: Partial<Record<typeof action, { type: string; title: string; body: string }>> = {
       confirm:        { type: "BOOKING_CONFIRMED",  title: "Reserva confirmada!",        body: `Sua reserva de "${booking.item.title}" foi confirmada.` },
@@ -369,9 +375,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
     const notif = notifMap[action]
     if (notif) {
-      prisma.notification.create({
-        data: { userId: notifyUserId, type: notif.type as never, title: notif.title, body: notif.body, data: { bookingId: id } },
-      }).catch((e) => console.error(`[notification] ${action}:`, e instanceof Error ? e.message : e))
+      after(() =>
+        prisma.notification.create({
+          data: { userId: notifyUserId, type: notif.type as never, title: notif.title, body: notif.body, data: { bookingId: id } },
+        }).catch((e) => console.error(`[notification] ${action}:`, e instanceof Error ? e.message : e))
+      )
     }
 
     return NextResponse.json({ data: updated })

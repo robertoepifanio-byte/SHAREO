@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server"
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
 
@@ -92,16 +92,18 @@ export async function GET(req: NextRequest, { params }: Params) {
       prisma.message.count({ where: msgWhere }),
     ])
 
-    // Fire-and-forget outside Promise.all to avoid blocking the response
-    prisma.message.updateMany({
-      where: { conversationId: id, senderId: { not: userId }, readAt: null },
-      data:  { readAt: new Date() },
-    }).then(() =>
-      prisma.conversationParticipant.update({
-        where: { conversationId_userId: { conversationId: id, userId } },
-        data:  { lastReadAt: new Date() },
-      })
-    ).catch((e) => console.error("[mark-as-read]", e instanceof Error ? e.message : e))
+    // Mark-as-read após a resposta — não bloqueia, mas after() garante execução
+    after(() =>
+      prisma.message.updateMany({
+        where: { conversationId: id, senderId: { not: userId }, readAt: null },
+        data:  { readAt: new Date() },
+      }).then(() =>
+        prisma.conversationParticipant.update({
+          where: { conversationId_userId: { conversationId: id, userId } },
+          data:  { lastReadAt: new Date() },
+        })
+      ).catch((e) => console.error("[mark-as-read]", e instanceof Error ? e.message : e))
+    )
 
     const other = conv.participants.find((p) => p.userId !== userId)
 

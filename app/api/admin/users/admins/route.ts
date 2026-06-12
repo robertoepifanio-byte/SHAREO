@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server"
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
 import { auth } from "@/lib/auth"
@@ -56,15 +56,17 @@ export async function POST(req: NextRequest) {
 
     await unblockAdminToken(user.id)
 
-    prisma.adminLog.create({
-      data: {
-        adminId:    session!.user.id,
-        action:     "CREATE_ADMIN",
-        entityType: "User",
-        entityId:   user.id,
-        metadata:   JSON.stringify({ adminRole }),
-      },
-    }).catch((e) => console.warn("[adminLog]", e instanceof Error ? e.message : e))
+    after(() =>
+      prisma.adminLog.create({
+        data: {
+          adminId:    session!.user.id,
+          action:     "CREATE_ADMIN",
+          entityType: "User",
+          entityId:   user.id,
+          metadata:   JSON.stringify({ adminRole }),
+        },
+      }).catch((e) => console.warn("[adminLog]", e instanceof Error ? e.message : e))
+    )
 
     return NextResponse.json({ data: user }, { status: 201 })
   } catch (e) {

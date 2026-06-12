@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import type { Stripe } from "stripe"
 import { stripe } from "@/lib/stripe"
 import { prisma } from "@/lib/prisma"
@@ -67,25 +67,29 @@ export async function POST(req: Request) {
             },
           })
           if (booking) {
-            prisma.notification.create({
-              data: {
-                userId: booking.ownerId,
-                type:   "LATE_FEE_APPLIED" as never,
-                title:  "Taxa de atraso recebida",
-                body:   `A taxa de atraso de "${booking.item.title}" foi paga.`,
-                data:   { bookingId },
-              },
-            }).catch(() => undefined)
+            after(() =>
+              prisma.notification.create({
+                data: {
+                  userId: booking.ownerId,
+                  type:   "LATE_FEE_APPLIED" as never,
+                  title:  "Taxa de atraso recebida",
+                  body:   `A taxa de atraso de "${booking.item.title}" foi paga.`,
+                  data:   { bookingId },
+                },
+              }).catch(() => undefined)
+            )
 
-            prisma.notification.create({
-              data: {
-                userId: booking.borrowerId,
-                type:   "LATE_FEE_APPLIED" as never,
-                title:  "Taxa de atraso paga",
-                body:   `Pagamento da taxa de atraso de "${booking.item.title}" confirmado.`,
-                data:   { bookingId },
-              },
-            }).catch(() => undefined)
+            after(() =>
+              prisma.notification.create({
+                data: {
+                  userId: booking.borrowerId,
+                  type:   "LATE_FEE_APPLIED" as never,
+                  title:  "Taxa de atraso paga",
+                  body:   `Pagamento da taxa de atraso de "${booking.item.title}" confirmado.`,
+                  data:   { bookingId },
+                },
+              }).catch(() => undefined)
+            )
           }
 
           console.warn(`[stripe webhook] late_fee paid for booking ${bookingId}`)
@@ -125,25 +129,31 @@ export async function POST(req: Request) {
           },
         })
         if (booking) {
-          dispatchWebhookEvent(booking.ownerId, "booking.paid", {
-            bookingId,
-            itemTitle: booking.item.title,
-          })
+          after(() =>
+            dispatchWebhookEvent(booking.ownerId, "booking.paid", {
+              bookingId,
+              itemTitle: booking.item.title,
+            })
+          )
 
-          prisma.notification.create({
-            data: {
-              userId: booking.ownerId,
-              type:   "BOOKING_CONFIRMED",
-              title:  "Pagamento recebido!",
-              body:   `O aluguel de "${booking.item.title}" foi pago. Combine a entrega com o locatário.`,
-              data:   { bookingId },
-            },
-          }).catch((e) => console.error("[stripe webhook notification]", e instanceof Error ? e.message : e))
+          after(() =>
+            prisma.notification.create({
+              data: {
+                userId: booking.ownerId,
+                type:   "BOOKING_CONFIRMED",
+                title:  "Pagamento recebido!",
+                body:   `O aluguel de "${booking.item.title}" foi pago. Combine a entrega com o locatário.`,
+                data:   { bookingId },
+              },
+            }).catch((e) => console.error("[stripe webhook notification]", e instanceof Error ? e.message : e))
+          )
         }
 
-        // Gerar comissão do embaixador se o locatário foi indicado (fire-and-forget)
-        processAmbassadorOnBookingPaid(bookingId).catch((e) =>
-          console.error("[stripe webhook] ambassador commission error:", e instanceof Error ? e.message : e)
+        // Gerar comissão do embaixador se o locatário foi indicado — após a resposta
+        after(() =>
+          processAmbassadorOnBookingPaid(bookingId).catch((e) =>
+            console.error("[stripe webhook] ambassador commission error:", e instanceof Error ? e.message : e)
+          )
         )
 
         console.warn(`[stripe webhook] booking ${bookingId} paid (session ${session.id})`)
@@ -203,15 +213,17 @@ export async function POST(req: Request) {
             select: { id: true },
           })
           for (const admin of admins) {
-            prisma.notification.create({
-              data: {
-                userId: admin.id,
-                type:   "BOOKING_CANCELLED" as never, // reuse existing type
-                title:  "⚠️ Disputa aberta no Stripe",
-                body:   `Chargeback criado: dispute ${dispute.id} (R$ ${((dispute.amount ?? 0) / 100).toFixed(2)})`,
-                data:   { disputeId: dispute.id, paymentIntentId: intentId },
-              },
-            }).catch(() => undefined)
+            after(() =>
+              prisma.notification.create({
+                data: {
+                  userId: admin.id,
+                  type:   "BOOKING_CANCELLED" as never, // reuse existing type
+                  title:  "⚠️ Disputa aberta no Stripe",
+                  body:   `Chargeback criado: dispute ${dispute.id} (R$ ${((dispute.amount ?? 0) / 100).toFixed(2)})`,
+                  data:   { disputeId: dispute.id, paymentIntentId: intentId },
+                },
+              }).catch(() => undefined)
+            )
           }
           console.warn(`[stripe webhook] dispute created ${dispute.id} — booking marked DISPUTED`)
         } else {
@@ -244,7 +256,9 @@ export async function POST(req: Request) {
             select: { id: true },
           })
           if (lostBooking) {
-            cancelAmbassadorCommissions(lostBooking.id, `Dispute ${dispute.id} lost`).catch(() => undefined)
+            after(() =>
+              cancelAmbassadorCommissions(lostBooking.id, `Dispute ${dispute.id} lost`).catch(() => undefined)
+            )
           }
         }
 

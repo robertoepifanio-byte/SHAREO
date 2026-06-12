@@ -5,6 +5,7 @@
  */
 import { NextResponse, type NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { APP_URL } from "@/lib/app-url"
 import {
   sendReminderStartTomorrow,
   sendReminderReturnTomorrow,
@@ -109,7 +110,7 @@ export async function GET(req: NextRequest) {
     sent.push(`return:${b.id}`)
   }
 
-  const appUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "https://shareo-rouge.vercel.app"
+  const appUrl = APP_URL
 
   for (const b of overdueBookings) {
     const daysLate = Math.ceil(
