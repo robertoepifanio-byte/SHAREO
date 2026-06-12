@@ -93,7 +93,9 @@ export default async function HomePage() {
         .catch(() => null)
     : null
 
-  const [categories, cityItemCount] = await Promise.all([
+  const AVAILABLE = { status: "AVAILABLE" as const, isApproved: true, deletedAt: null }
+
+  const [categories, cityItemCount, itemCount, ownerGroups, ratingAgg] = await Promise.all([
     prisma.category
       .findMany({
         where: { parentId: null },
@@ -103,11 +105,26 @@ export default async function HomePage() {
       .catch(() => []),
 
     prisma.item
-      .count({
-        where: { status: "AVAILABLE", isApproved: true, deletedAt: null, ...(cityName ? { city: cityName } : {}) },
-      })
+      .count({ where: { ...AVAILABLE, ...(cityName ? { city: cityName } : {}) } })
       .catch(() => 0),
+
+    prisma.item.count({ where: AVAILABLE }).catch(() => 0),
+
+    prisma.item
+      .groupBy({ by: ["ownerId"], where: AVAILABLE })
+      .catch(() => [] as { ownerId: string }[]),
+
+    prisma.review
+      .aggregate({ _avg: { rating: true }, _count: { rating: true } })
+      .catch(() => ({ _avg: { rating: null }, _count: { rating: 0 } })),
   ])
+
+  const ownerCount = ownerGroups.length
+  // Avaliação média real só com amostra mínima; antes disso, destaque institucional
+  const avgRating =
+    ratingAgg._count.rating >= 5 && ratingAgg._avg.rating
+      ? `${ratingAgg._avg.rating.toFixed(1).replace(".", ",")} ★`
+      : null
 
   return (
     <div className="min-h-screen bg-background">
@@ -222,12 +239,14 @@ export default async function HomePage() {
               className="mt-9 flex flex-wrap justify-center gap-5 xl:gap-8"
             >
               {[
-                { num: "2.400+", label: "Itens disponíveis" },
-                { num: "R$2.000", label: "Renda média/mês" },
-                { num: "4,8 ★", label: "Avaliação média" },
+                { num: itemCount.toLocaleString("pt-BR"), label: "Itens disponíveis" },
+                { num: ownerCount.toLocaleString("pt-BR"), label: "Proprietários ativos" },
+                avgRating
+                  ? { num: avgRating, label: "Avaliação média" }
+                  : { num: "0%", label: "Custo para anunciar" },
                 {
-                  num: cityName && cityItemCount >= 20 ? `${cityItemCount}` : "890+",
-                  label: cityName && cityItemCount >= 20 ? `Itens em ${cityName}` : "Proprietários ativos",
+                  num: cityName && cityItemCount >= 20 ? `${cityItemCount}` : `${categories.length}`,
+                  label: cityName && cityItemCount >= 20 ? `Itens em ${cityName}` : "Categorias",
                 },
               ].map((stat) => (
                 <div key={stat.label} role="listitem" className="text-center text-white">

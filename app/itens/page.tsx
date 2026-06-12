@@ -53,6 +53,7 @@ function getOrderBy(sort?: string) {
     case "price_asc":  return [{ pricePerDay: "asc"  as const }, id]
     case "price_desc": return [{ pricePerDay: "desc" as const }, id]
     case "views":      return [{ viewCount:   "desc" as const }, id]
+    case "rented":     return [{ bookings: { _count: "desc" as const } }, id]
     default:           return [{ createdAt:   "desc" as const }, id]
   }
 }

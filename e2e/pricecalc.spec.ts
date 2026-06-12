@@ -86,19 +86,27 @@ test.describe('PriceCalc — modo diário', () => {
     const hasNumDays = await numDaysInput.isVisible({ timeout: 3000 }).catch(() => false)
     if (hasNumDays) {
       console.log('  1. Input de dias visível no modo diário ✅')
+      // Espera a hidratação: o botão "+" só altera o valor quando o React está ativo
+      await expect(async () => {
+        await page.getByRole('button', { name: 'Aumentar' }).click()
+        await expect(numDaysInput).toHaveValue('2', { timeout: 500 })
+      }).toPass({ timeout: 30000 })
+      await page.getByRole('button', { name: 'Diminuir' }).click()
+      await expect(numDaysInput).toHaveValue('1')
     } else {
       test.info().annotations.push({ type: 'info', description: '#num-days não encontrado — item pode ser multi-modal com weekly selecionado por default' })
     }
 
     // ── Teste 2: devolução calculada automaticamente ──────────────────────
     const startDate = addDays(new Date().toISOString().split('T')[0], 10)
-    await dateInput.fill(startDate)
-    await dateInput.press('Tab')
+    const endDisplay   = page.locator('#date-end')
+    const expectedEnd1 = isoToDisplay(addDays(startDate, 1))
 
-    const endDisplay     = page.locator('#date-end')
-    await expect(endDisplay).toBeVisible({ timeout: 5000 })
-    const expectedEnd1   = isoToDisplay(addDays(startDate, 1))
-    await expect(endDisplay).toContainText(expectedEnd1, { timeout: 5000 })
+    // fill antes da hidratação do React é descartado — repete até a devolução refletir
+    await expect(async () => {
+      await dateInput.fill(startDate)
+      await expect(endDisplay).toContainText(expectedEnd1, { timeout: 1500 })
+    }).toPass({ timeout: 15000 })
     console.log(`  2. Devolução +1 dia = ${expectedEnd1} ✅`)
 
     // ── Teste 3: botões +/- e mínimo de 1 dia ────────────────────────────
@@ -122,7 +130,8 @@ test.describe('PriceCalc — modo diário', () => {
     }
 
     // ── Teste 4: resumo de preço tem conteúdo ────────────────────────────
-    const breakdown     = page.locator('[aria-live="polite"]')
+    // Escopado ao #price-calc: a página tem outras regiões aria-live (notificações)
+    const breakdown     = page.locator('#price-calc [aria-live="polite"]')
     await expect(breakdown).toBeVisible()
     const breakdownText = await breakdown.textContent() ?? ''
     expect(breakdownText.length, 'Resumo de preço deve ter conteúdo').toBeGreaterThan(5)
@@ -182,15 +191,17 @@ test.describe('PriceCalc — modalidade semanal e mensal', () => {
     await expect(dateInput).toBeVisible()
 
     // ── Semanal: devolução +7, sem input de dias ──────────────────────────
-    await semanalTab.click()
-    await dateInput.fill(startDate)
-    await dateInput.press('Tab')
-
-    await expect(page.locator('#num-days')).not.toBeVisible({ timeout: 3000 }).catch(() => {})
-
     const endDisplay      = page.locator('#date-end')
     const expectedWeekEnd = isoToDisplay(addDays(startDate, 7))
-    await expect(endDisplay).toContainText(expectedWeekEnd, { timeout: 5000 })
+
+    // fill antes da hidratação do React é descartado — repete até a devolução refletir
+    await expect(async () => {
+      await semanalTab.click()
+      await dateInput.fill(startDate)
+      await expect(endDisplay).toContainText(expectedWeekEnd, { timeout: 1500 })
+    }).toPass({ timeout: 15000 })
+
+    await expect(page.locator('#num-days')).not.toBeVisible({ timeout: 3000 }).catch(() => {})
     console.log(`  6. Devolução semanal = ${expectedWeekEnd} (+7 dias) ✅`)
 
     // ── Mensal: devolução +30 ─────────────────────────────────────────────
@@ -226,8 +237,16 @@ test.describe('PriceCalc — troca de modo preserva data', () => {
 
     const startDate = addDays(new Date().toISOString().split('T')[0], 20)
     const dateInput = page.locator('#date-start')
-    await dateInput.fill(startDate)
 
+    // Espera a hidratação: o botão "+" só altera o valor quando o React está ativo
+    const numDays = page.locator('#num-days')
+    await expect(async () => {
+      await page.getByRole('button', { name: 'Aumentar' }).click()
+      await expect(numDays).toHaveValue('2', { timeout: 500 })
+    }).toPass({ timeout: 30000 })
+    await page.getByRole('button', { name: 'Diminuir' }).click()
+
+    await dateInput.fill(startDate)
     await page.getByRole('button', { name: 'Semanal' }).click()
     await expect(dateInput).toHaveValue(startDate)
     console.log('  8. Data mantida após troca para Semanal ✅')
@@ -235,6 +254,72 @@ test.describe('PriceCalc — troca de modo preserva data', () => {
     await page.getByRole('button', { name: 'Diário' }).click()
     await expect(dateInput).toHaveValue(startDate)
     console.log('  8. Data mantida ao voltar para Diário ✅')
+  })
+})
+
+// ─── 11. Teto de R$500 por locação (D2) ───────────────────────────────────────
+
+test.describe('PriceCalc — teto de transação', () => {
+  test('11. subtotal acima de R$500 exibe alerta e desabilita o CTA', async ({ page, request }) => {
+    test.skip(test.info().project.name !== 'chromium', 'PriceCalc verificado apenas em chromium')
+    test.setTimeout(40000)
+
+    const items  = await fetchItems(request)
+    const listed = items.find(i => i.pricePerDay > 0)
+    if (!listed) {
+      test.info().annotations.push({ type: 'info', description: 'Nenhum item disponível' })
+      return
+    }
+
+    // A API de listagem não retorna pricePerMonth — buscar o detalhe do item,
+    // pois o subtotal usa o desconto da modalidade mais econômica
+    const detailRes = await request.get(`${BASE}/api/items/${listed.id}`)
+    const detail    = (await detailRes.json()).data as ItemData
+    const item      = { ...listed, ...detail }
+
+    const minRate = (i: ItemData) =>
+      Math.min(
+        i.pricePerDay,
+        i.pricePerWeek  ? i.pricePerWeek  / 7  : Infinity,
+        i.pricePerMonth ? i.pricePerMonth / 30 : Infinity,
+      )
+    if (Math.ceil(50_001 / minRate(item)) > 365) {
+      test.info().annotations.push({ type: 'info', description: 'Preço baixo demais para exceder R$500 em 365 dias' })
+      return
+    }
+
+    await page.goto(`${BASE}/itens/${item.id}`)
+    await expect(page.locator('main')).toBeVisible({ timeout: 15000 })
+
+    const dateInput = page.locator('#date-start')
+    await expect(dateInput).toBeVisible({ timeout: 8000 })
+
+    const numDaysInput = page.locator('#num-days')
+    if (!(await numDaysInput.isVisible({ timeout: 3000 }).catch(() => false))) {
+      test.info().annotations.push({ type: 'info', description: '#num-days indisponível — teste pulado' })
+      return
+    }
+
+    const startDate = addDays(new Date().toISOString().split('T')[0], 10)
+    const daysOver  = Math.ceil(50_001 / minRate(item))
+    const alert     = page.locator('#price-calc [role="alert"]')
+
+    // A hidratação do React pode descartar fills anteriores — repete a sequência
+    // completa (data + dias) até o alerta de teto aparecer
+    await expect(async () => {
+      await dateInput.fill(startDate)
+      await numDaysInput.fill(String(daysOver))
+      await expect(alert).toBeVisible({ timeout: 1500 })
+    }).toPass({ timeout: 15000 })
+    await expect(alert).toContainText('R$')
+    console.log(`  11. Alerta de teto visível com ${daysOver} dias ✅`)
+
+    // CTA (logado: button desabilitado / deslogado: link continua, mas o alerta cobre o aviso)
+    const ctaBtn = page.getByRole('button', { name: /solicitar locação/i })
+    if (await ctaBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await expect(ctaBtn).toBeDisabled()
+      console.log('  11. CTA desabilitado acima do teto ✅')
+    }
   })
 })
 
