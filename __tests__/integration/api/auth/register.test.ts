@@ -55,6 +55,7 @@ const mockRateLimitResponse = jest.fn()
 jest.mock("@/lib/rateLimit", () => ({
   checkRateLimit:    (...args: unknown[]) => mockCheckRateLimit(...args),
   rateLimitResponse: (...args: unknown[]) => mockRateLimitResponse(...args),
+  RATE_LIMITS:       { register: { limit: 5, windowMs: 60_000 } },
 }))
 
 // ---------------------------------------------------------------------------

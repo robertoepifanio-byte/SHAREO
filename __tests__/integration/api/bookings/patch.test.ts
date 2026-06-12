@@ -30,10 +30,21 @@ jest.mock("@/lib/prisma", () => ({
   prisma: {
     booking: {
       findUnique: (...args: unknown[]) => mockBookingFindUnique(...args),
+      findFirst:  jest.fn().mockResolvedValue(null), // sem conflito de datas
       update:     (...args: unknown[]) => mockBookingUpdate(...args),
     },
     notification: {
       create: (...args: unknown[]) => mockNotificationCreate(...args),
+    },
+    ownerPaymentAccount: {
+      findUnique: jest.fn().mockResolvedValue(null), // sem conta PIX → pula criação de payout
+    },
+    payout: {
+      create: jest.fn().mockResolvedValue({}),
+    },
+    platformConfig: {
+      findUnique: jest.fn().mockResolvedValue(null), // getters caem nos defaults
+      findMany:   jest.fn().mockResolvedValue([]),
     },
   },
 }))
@@ -162,12 +173,18 @@ describe("PATCH /api/bookings/[id]", () => {
     })
 
     // 3. CONFIRMED + mark_active (owner) → 200, status ACTIVE
+    // mark_active exige pickupToken válido (gerado no confirm)
     it("CONFIRMED + mark_active pelo owner → 200, status ACTIVE", async () => {
       mockAuth.mockResolvedValue(makeSession(OWNER_ID))
-      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "CONFIRMED" }))
+      mockBookingFindUnique.mockResolvedValue({
+        ...makeBooking({ status: "CONFIRMED" }),
+        pickupToken:       "123456",
+        pickupTokenUsedAt: null,
+        totalDays:         5,
+      })
       mockBookingUpdate.mockResolvedValue(makeUpdatedBooking("ACTIVE"))
 
-      const res  = await PATCH(makeReq({ action: "mark_active" }), makeParams())
+      const res  = await PATCH(makeReq({ action: "mark_active", pickupToken: "123456" }), makeParams())
       const body = await res.json() as { data: { status: string } }
 
       expect(res.status).toBe(200)

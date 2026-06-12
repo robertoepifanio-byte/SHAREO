@@ -11,11 +11,12 @@
  * Body params (POST):
  *  { start: string, end: string }
  */
-import { NextResponse, type NextRequest } from "next/server"
+import { NextResponse, after, type NextRequest } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { requireAdminRole } from "@/lib/auth/admin-guards"
 import { auditLog } from "@/lib/audit"
+import { sendExportReadyEmail } from "@/lib/email"
 
 export const runtime = "nodejs"
 
@@ -158,11 +159,12 @@ export async function POST(req: NextRequest) {
     start: startStr, end: endStr, async: true,
   })
 
-  // Dispara processamento em background (fire-and-forget)
-  // MVP: processa imediatamente na mesma request (< 60s)
+  // Processa em background com after() — fire-and-forget puro morre quando a lambda congela
   // V1+: mover para Vercel Background Function ou Inngest
-  processExportJobAsync(job.id, start, end, adminId).catch((e) =>
-    console.error("[export] async job failed:", e instanceof Error ? e.message : e),
+  after(() =>
+    processExportJobAsync(job.id, start, end, adminId).catch((e) =>
+      console.error("[export] async job failed:", e instanceof Error ? e.message : e),
+    )
   )
 
   return NextResponse.json({ jobId: job.id, status: "PENDING" }, { status: 202 })
@@ -172,7 +174,7 @@ async function processExportJobAsync(
   jobId: string,
   start: Date,
   end: Date,
-  _adminId: string,
+  adminId: string,
 ) {
   await prisma.exportJob.update({ where: { id: jobId }, data: { status: "PROCESSING" } })
 
@@ -189,6 +191,17 @@ async function processExportJobAsync(
       where: { id: jobId },
       data:  { status: "COMPLETED", fileUrl: dataUrl },
     })
+
+    // ADR-016: notificar o admin por e-mail quando a exportação assíncrona conclui
+    const admin = await prisma.user.findUnique({
+      where:  { id: adminId },
+      select: { email: true, name: true },
+    })
+    if (admin) {
+      await sendExportReadyEmail(admin.email, admin.name ?? "Admin", start, end).catch((e) =>
+        console.error("[export] notify email failed:", e instanceof Error ? e.message : e),
+      )
+    }
 
     console.warn(`[export] job ${jobId} completed — ${rows.length} rows`)
   } catch (e) {

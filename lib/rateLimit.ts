@@ -52,6 +52,25 @@ function getUpstashLimiter(limit: number, windowMs: number): Ratelimit {
   return limiterCache.get(cacheKey)!
 }
 
+// ─── Limites nomeados por endpoint ────────────────────────────────────────────
+// Fonte única dos rate limits da aplicação. Ajustar aqui — não nos endpoints.
+
+export const RATE_LIMITS = {
+  register:       { limit: 5,  windowMs: 60_000 },              // 5/min por IP
+  loginIp:        { limit: 10, windowMs: 60_000 },              // 10/min por IP
+  loginEmail:     { limit: 5,  windowMs: 5 * 60_000 },          // 5/5min por e-mail
+  mobileLogin:    { limit: 10, windowMs: 60_000 },              // 10/min por IP
+  forgotPassword: { limit: 3,  windowMs: 60_000 },              // 3/min por IP
+  resetPassword:  { limit: 10, windowMs: 60_000 },              // 10/min por IP
+  resendVerify:   { limit: 3,  windowMs: 3_600_000 },           // 3/h por usuário
+  emailChange:    { limit: 3,  windowMs: 60 * 60 * 1000 },      // 3/h por usuário
+  passwordChange: { limit: 5,  windowMs: 15 * 60 * 1000 },      // 5/15min por usuário
+  checkout:       { limit: 10, windowMs: 60_000 },              // 10/min por usuário
+  upgradePj:      { limit: 5,  windowMs: 60_000 },              // 5/min por usuário
+  pjWebhooks:     { limit: 10, windowMs: 60_000 },              // 10/min por usuário
+  adminCreate:    { limit: 5,  windowMs: 24 * 60 * 60 * 1000 }, // 5/dia por admin
+} as const
+
 // ─── Public API ───────────────────────────────────────────────────────────────
 
 export interface RateLimitResult {

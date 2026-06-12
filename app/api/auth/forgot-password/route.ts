@@ -3,8 +3,9 @@ import { NextResponse } from "next/server"
 import crypto from "crypto"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
-import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { sendPasswordResetEmail } from "@/lib/email"
+import { PASSWORD_RESET_TOKEN_TTL_MS } from "@/lib/auth-config"
 
 const Schema = z.object({
   email: z.string().email("E-mail inválido"),
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
       req.headers.get("x-real-ip") ??
       "unknown"
 
-    const rl = await checkRateLimit(`forgot-password:${ip}`, 3, 60_000, req) // 3 por minuto por IP
+    const rl = await checkRateLimit(`forgot-password:${ip}`, RATE_LIMITS.forgotPassword.limit, RATE_LIMITS.forgotPassword.windowMs, req)
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const body   = await req.json()
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
       data: {
         email:     email.toLowerCase(),
         token,
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000),  // 1 hora
+        expiresAt: new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MS),
       },
     })
 

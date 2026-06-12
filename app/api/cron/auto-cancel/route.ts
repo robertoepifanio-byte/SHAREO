@@ -5,6 +5,7 @@
  */
 import { NextResponse, type NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { getAutoCancelConfig } from "@/lib/platform-config"
 
 export const runtime  = "nodejs"
 export const maxDuration = 60
@@ -17,7 +18,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000) // 48h atrás
+  // PlatformConfig: autoCancelOwnerHours (default 48)
+  const { ownerHours } = await getAutoCancelConfig()
+  const cutoff = new Date(Date.now() - ownerHours * 60 * 60 * 1000)
 
   // Busca reservas PENDING criadas há mais de 48h
   const stale = await prisma.booking.findMany({
@@ -49,7 +52,7 @@ export async function GET(req: NextRequest) {
           status:        "CANCELLED",
           cancelledAt:   now,
           cancelledById: booking.ownerId,
-          cancelReason:  "Auto-cancelado: sem resposta do proprietário em 48h.",
+          cancelReason:  `Auto-cancelado: sem resposta do proprietário em ${ownerHours}h.`,
         },
       })
 
@@ -59,7 +62,7 @@ export async function GET(req: NextRequest) {
           userId: booking.borrowerId,
           type:   "BOOKING_AUTO_CANCELLED",
           title:  "Reserva cancelada automaticamente",
-          body:   `Sua solicitação de "${booking.item.title}" foi cancelada pois o proprietário não respondeu em 48h.`,
+          body:   `Sua solicitação de "${booking.item.title}" foi cancelada pois o proprietário não respondeu em ${ownerHours}h.`,
           data:   { bookingId: booking.id },
         },
       })

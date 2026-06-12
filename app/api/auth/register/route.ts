@@ -4,11 +4,12 @@ import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { hashDocument, encryptDocument } from "@/lib/crypto"
 import { RegisterSchema } from "@/lib/validations/auth"
-import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { sendVerificationEmail } from "@/lib/email"
 import crypto from "crypto"
 import { generateUserSlug } from "@/lib/slugify"
 import { applyReferralCode } from "@/lib/referral"
+import { EMAIL_VERIFY_TOKEN_TTL_MS } from "@/lib/auth-config"
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest) {
       req.headers.get("x-real-ip") ??
       "unknown"
 
-    const rl = await checkRateLimit(`register:${ip}`, 5, 60_000) // 5 por minuto por IP
+    const rl = await checkRateLimit(`register:${ip}`, RATE_LIMITS.register.limit, RATE_LIMITS.register.windowMs)
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const body = await req.json()
@@ -126,7 +127,7 @@ export async function POST(req: NextRequest) {
 
     // Token de verificação de e-mail — fire-and-forget
     const verifyToken   = crypto.randomBytes(32).toString("hex")
-    const tokenExpiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000) // 48h
+    const tokenExpiresAt = new Date(Date.now() + EMAIL_VERIFY_TOKEN_TTL_MS)
     prisma.user
       .update({
         where: { id: user.id },

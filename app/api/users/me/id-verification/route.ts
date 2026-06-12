@@ -8,6 +8,7 @@ import { NextResponse }     from "next/server"
 import { auth }             from "@/lib/auth"
 import { prisma }           from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { getUploadLimits }   from "@/lib/platform-config"
 
 export async function POST(req: NextRequest) {
   const supabase = createAdminClient()
@@ -35,10 +36,11 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     )
 
-  const MAX = 10 * 1024 * 1024
+  const { maxUploadSizeMB } = await getUploadLimits()
+  const MAX = maxUploadSizeMB * 1024 * 1024
   if (docFile.size > MAX || selfie.size > MAX)
     return NextResponse.json(
-      { error: { code: "VALIDATION_ERROR", message: "Arquivo muito grande (máx 10 MB)." } },
+      { error: { code: "VALIDATION_ERROR", message: `Arquivo muito grande (máx ${maxUploadSizeMB} MB).` } },
       { status: 400 }
     )
 

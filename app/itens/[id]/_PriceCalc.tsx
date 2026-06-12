@@ -6,13 +6,14 @@ import Link from "next/link"
 import { calcBookingTotal } from "@/lib/pricing"
 
 interface Props {
-  pricePerDay:    number
-  pricePerWeek?:  number | null
-  pricePerMonth?: number | null
-  depositAmount?: number | null
-  itemId:         string
-  isLoggedIn:     boolean
-  feeRatePct:     number   // ex: 15.0 para 15%
+  pricePerDay:      number
+  pricePerWeek?:    number | null
+  pricePerMonth?:   number | null
+  depositAmount?:   number | null
+  itemId:           string
+  isLoggedIn:       boolean
+  feeRatePct:       number   // ex: 15.0 para 15%
+  checkoutMaxCents: number   // teto por transação (D2) — ex: 50000 = R$500
 }
 
 type Mode = "daily" | "weekly" | "monthly"
@@ -61,7 +62,7 @@ function buildBreakdown(
 
 export function PriceCalc({
   pricePerDay, pricePerWeek, pricePerMonth,
-  depositAmount, itemId, isLoggedIn, feeRatePct,
+  depositAmount, itemId, isLoggedIn, feeRatePct, checkoutMaxCents,
 }: Props) {
   const router = useRouter()
   const today  = new Date().toISOString().split("T")[0]
@@ -107,7 +108,11 @@ export function PriceCalc({
     ? buildBreakdown(days, pricePerDay, pricePerWeek, pricePerMonth)
     : ""
 
-  const isReady = !!startDate && days > 0
+  // Teto D2: o checkout compara booking.totalPrice (subtotal, sem taxa) com o teto
+  const overLimit      = subtotalCents > checkoutMaxCents
+  const checkoutMaxFmt = fmt(checkoutMaxCents / 100)
+
+  const isReady = !!startDate && days > 0 && !overLimit
 
   function handleModeChange(m: Mode) {
     setMode(m)
@@ -347,6 +352,20 @@ export function PriceCalc({
             placeholder="Ex.: Preciso para um evento no fim de semana…"
             className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-brand transition-colors placeholder:text-muted-foreground"
           />
+        </div>
+      )}
+
+      {/* Aviso de teto por transação (D2) */}
+      {overLimit && (
+        <div role="alert" className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 shrink-0" aria-hidden="true">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <span>
+            O total excede o limite de <strong>{checkoutMaxFmt}</strong> por locação.
+            Reduza a quantidade de dias ou escolha outra modalidade.
+          </span>
         </div>
       )}
 

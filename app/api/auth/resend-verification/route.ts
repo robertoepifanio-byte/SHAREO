@@ -3,8 +3,9 @@ import { NextResponse } from "next/server"
 import crypto from "crypto"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { sendVerificationEmail } from "@/lib/email"
+import { EMAIL_VERIFY_TOKEN_TTL_MS } from "@/lib/auth-config"
 
 export async function POST(req: NextRequest) {
   const session = await auth()
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest) {
 
   const userId = session.user.id
 
-  const rl = await checkRateLimit(`resend-verify:${userId}`, 3, 3_600_000, req)
+  const rl = await checkRateLimit(`resend-verify:${userId}`, RATE_LIMITS.resendVerify.limit, RATE_LIMITS.resendVerify.windowMs, req)
   if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
   const user = await prisma.user.findUnique({
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
   }
 
   const verifyToken    = crypto.randomBytes(32).toString("hex")
-  const tokenExpiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000) // 48h
+  const tokenExpiresAt = new Date(Date.now() + EMAIL_VERIFY_TOKEN_TTL_MS)
 
   await prisma.user.update({
     where: { id: userId },

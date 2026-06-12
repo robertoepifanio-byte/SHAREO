@@ -9,7 +9,7 @@ import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
 import type { WebhookEvent } from "@/lib/outboundWebhooks"
 import { sendBookingConfirmedEmail, sendBookingCancelledEmail } from "@/lib/email"
 import { calcRefund } from "@/lib/cancellationPolicy"
-import { getCancellationConfig } from "@/lib/platform-config"
+import { getCancellationConfig, getPayoutWindowDays } from "@/lib/platform-config"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -301,15 +301,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       },
     })
 
-    // FIN-3.3 — criar Payout elegível 3 dias após devolução confirmada
+    // FIN-3.3 — criar Payout elegível N dias após devolução confirmada (PlatformConfig: payoutWindowDays)
     if (action === "confirm_return") {
-      const eligibleAfter = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
+      const payoutWindowDays = await getPayoutWindowDays()
+      const eligibleAfter = new Date(now.getTime() + payoutWindowDays * 24 * 60 * 60 * 1000)
       const ownerAccount  = await prisma.ownerPaymentAccount.findUnique({
         where:  { userId: booking.ownerId },
         select: { id: true },
       })
       if (ownerAccount && updated.ownerNetAmount) {
-        prisma.payout.create({
+        // await obrigatório — fire-and-forget morre quando a lambda congela e o payout se perde
+        await prisma.payout.create({
           data: {
             ownerPaymentAccountId: ownerAccount.id,
             bookingId:             id,

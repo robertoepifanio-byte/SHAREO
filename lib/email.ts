@@ -237,6 +237,48 @@ export async function sendPasswordResetEmail(
   if (error) throw new Error(`Resend error: ${error.message}`)
 }
 
+export async function sendExportReadyEmail(
+  to: string,
+  name: string,
+  periodStart: Date,
+  periodEnd: Date,
+): Promise<void> {
+  const resend = getResend()
+  if (!resend) return
+
+  const firstName = name.split(" ")[0]
+  const fmtBr     = (d: Date) => d.toLocaleDateString("pt-BR")
+  const url       = `${APP_URL}/admin/financeiro/exportar`
+
+  const html = baseLayout(`
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
+      Exportação concluída
+    </h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
+      Olá, ${firstName}! A exportação financeira do período
+      <strong>${fmtBr(periodStart)} a ${fmtBr(periodEnd)}</strong> foi concluída
+      e está disponível para download no painel administrativo.
+    </p>
+
+    <div style="text-align:center;">
+      ${ctaButton(url, "Baixar exportação")}
+    </div>
+
+    <p style="margin:0;font-size:13px;color:#64748B;line-height:1.6;">
+      O arquivo fica disponível na página de exportações do painel financeiro.
+    </p>
+  `)
+
+  const { error } = await resend.emails.send({
+    from:    `ShareO <${FROM}>`,
+    to,
+    subject: "Sua exportação financeira está pronta — ShareO",
+    html,
+  })
+
+  if (error) throw new Error(`Resend error: ${error.message}`)
+}
+
 export async function sendWelcomeEmail(to: string, name: string): Promise<void> {
   const resend = getResend()
   if (!resend) return

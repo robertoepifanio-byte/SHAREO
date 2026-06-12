@@ -4,8 +4,8 @@ import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { stripe } from "@/lib/stripe"
-import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
-import { getPlatformFeeRate, calcSplit, CHECKOUT_MAX_CENTS } from "@/lib/platform-config"
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
+import { getPlatformFeeRate, calcSplit, CHECKOUT_MAX_CENTS, STRIPE_CHECKOUT_EXPIRES_SECONDS } from "@/lib/platform-config"
 
 const Schema = z.object({
   bookingId: z.string().min(1),
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const rl = await checkRateLimit(`checkout:${session.user.id}`, 10, 60_000)
+    const rl = await checkRateLimit(`checkout:${session.user.id}`, RATE_LIMITS.checkout.limit, RATE_LIMITS.checkout.windowMs)
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const body   = await req.json()
@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
       },
       success_url: `${appUrl}/reservas/sucesso?bookingId=${bookingId}`,
       cancel_url:  `${appUrl}/reservas/${bookingId}?payment=cancelled`,
-      expires_at:  Math.floor(Date.now() / 1000) + 30 * 60, // 30 min
+      expires_at:  Math.floor(Date.now() / 1000) + STRIPE_CHECKOUT_EXPIRES_SECONDS,
     })
 
     // Salva Session ID + valores financeiros do split (FIN-2.2)

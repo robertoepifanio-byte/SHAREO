@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs"
 import { SignJWT } from "jose"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
-import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 
 const Schema = z.object({
   email:    z.string().email(),
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       req.headers.get("x-real-ip") ??
       "unknown"
 
-    const rl = await checkRateLimit(`mobile-login:${ip}`, 10, 60_000)
+    const rl = await checkRateLimit(`mobile-login:${ip}`, RATE_LIMITS.mobileLogin.limit, RATE_LIMITS.mobileLogin.windowMs)
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const body = await req.json()

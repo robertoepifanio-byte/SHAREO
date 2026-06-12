@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs"
 import crypto from "crypto"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { sendVerificationEmail } from "@/lib/email"
 
 const schema = z.object({
@@ -18,7 +18,7 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
   }
 
-  const rl = await checkRateLimit(`email-change:${session.user.id}`, 3, 60 * 60 * 1000) // 3 por hora
+  const rl = await checkRateLimit(`email-change:${session.user.id}`, RATE_LIMITS.emailChange.limit, RATE_LIMITS.emailChange.windowMs)
   if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
   const body   = await req.json()

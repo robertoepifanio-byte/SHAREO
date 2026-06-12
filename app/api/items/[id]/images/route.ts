@@ -4,10 +4,9 @@ import { fileTypeFromBuffer } from "file-type"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { getUploadLimits } from "@/lib/platform-config"
 
-const MAX_BYTES  = Number(process.env.STORAGE_MAX_FILE_SIZE_MB ?? 10) * 1024 * 1024
-const BUCKET     = process.env.NEXT_PUBLIC_STORAGE_BUCKET ?? "item-images"
-const MAX_IMAGES = 10
+const BUCKET = process.env.NEXT_PUBLIC_STORAGE_BUCKET ?? "item-images"
 
 /**
  * Whitelist explícita de tipos de imagem aceitos.
@@ -78,9 +77,12 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       )
     }
 
-    if (item._count.images >= MAX_IMAGES) {
+    const { maxImagesPerItem, maxUploadSizeMB } = await getUploadLimits()
+    const maxBytes = maxUploadSizeMB * 1024 * 1024
+
+    if (item._count.images >= maxImagesPerItem) {
       return NextResponse.json(
-        { error: { code: "IMAGE_LIMIT", message: `Máximo de ${MAX_IMAGES} fotos por anúncio.` } },
+        { error: { code: "IMAGE_LIMIT", message: `Máximo de ${maxImagesPerItem} fotos por anúncio.` } },
         { status: 422 }
       )
     }
@@ -95,9 +97,9 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       )
     }
 
-    if (file.size > MAX_BYTES) {
+    if (file.size > maxBytes) {
       return NextResponse.json(
-        { error: { code: "FILE_TOO_LARGE", message: `Tamanho máximo: ${process.env.STORAGE_MAX_FILE_SIZE_MB ?? 5}MB.` } },
+        { error: { code: "FILE_TOO_LARGE", message: `Tamanho máximo: ${maxUploadSizeMB}MB.` } },
         { status: 413 }
       )
     }

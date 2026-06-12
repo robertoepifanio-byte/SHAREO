@@ -10,7 +10,7 @@ import { Gallery } from "./_Gallery"
 import { PriceCalc } from "./_PriceCalc"
 import { StickyBookingCTA } from "./_StickyBookingCTA"
 import { CANCELLATION_POLICY_LINES } from "@/lib/cancellationPolicy"
-import { getPlatformFeeRate } from "@/lib/platform-config"
+import { getPlatformFeeRate, CHECKOUT_MAX_CENTS } from "@/lib/platform-config"
 import { ItemCard } from "@/components/items/ItemCard"
 import { AvailabilityCalendar } from "@/components/items/AvailabilityCalendar"
 
@@ -494,6 +494,7 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
                     itemId={item.id}
                     isLoggedIn={!!session}
                     feeRatePct={feeRatePct}
+                    checkoutMaxCents={CHECKOUT_MAX_CENTS}
                   />
                 </div>
               )}

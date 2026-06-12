@@ -10,6 +10,7 @@
 
 import { NextResponse, type NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { getAutoCancelConfig } from "@/lib/platform-config"
 
 export const runtime     = "nodejs"
 export const maxDuration = 60
@@ -22,8 +23,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  // Reservas PENDING criadas há mais de 2h
-  const cutoff = new Date(Date.now() - 2 * 60 * 60 * 1000)
+  // Reservas PENDING criadas há mais de N horas (PlatformConfig: autoCancelPendingHours)
+  const { pendingHours } = await getAutoCancelConfig()
+  const cutoff = new Date(Date.now() - pendingHours * 60 * 60 * 1000)
 
   const stale = await prisma.booking.findMany({
     where: {
@@ -54,7 +56,7 @@ export async function GET(req: NextRequest) {
           status:        "CANCELLED",
           cancelledAt:   now,
           cancelledById: booking.ownerId,
-          cancelReason:  "Auto-cancelado: proprietário não respondeu em 2h.",
+          cancelReason:  `Auto-cancelado: proprietário não respondeu em ${pendingHours}h.`,
           refundAmount:  0, // reserva nunca foi paga — sem reembolso necessário
           refundPercent: 100,
         },
@@ -66,7 +68,7 @@ export async function GET(req: NextRequest) {
           userId: booking.borrowerId,
           type:   "BOOKING_AUTO_CANCELLED",
           title:  "Reserva cancelada automaticamente",
-          body:   `Sua solicitação de "${booking.item.title}" foi cancelada pois o proprietário não respondeu em 2h.`,
+          body:   `Sua solicitação de "${booking.item.title}" foi cancelada pois o proprietário não respondeu em ${pendingHours}h.`,
           data:   { bookingId: booking.id },
         },
       })
@@ -77,7 +79,7 @@ export async function GET(req: NextRequest) {
           userId: booking.ownerId,
           type:   "BOOKING_AUTO_CANCELLED",
           title:  "Solicitação expirada",
-          body:   `A reserva de "${booking.item.title}" foi cancelada por falta de resposta no prazo de 2h.`,
+          body:   `A reserva de "${booking.item.title}" foi cancelada por falta de resposta no prazo de ${pendingHours}h.`,
           data:   { bookingId: booking.id },
         },
       })

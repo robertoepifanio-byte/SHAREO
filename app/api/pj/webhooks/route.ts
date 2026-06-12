@@ -5,7 +5,7 @@ import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { WEBHOOK_EVENTS } from "@/lib/outboundWebhooks"
-import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 
 const MAX_WEBHOOKS_PER_USER = 5
 
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const rl = await checkRateLimit(`pj-webhooks:${session.user.id}`, 10, 60_000)
+    const rl = await checkRateLimit(`pj-webhooks:${session.user.id}`, RATE_LIMITS.pjWebhooks.limit, RATE_LIMITS.pjWebhooks.windowMs)
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const body   = await req.json()

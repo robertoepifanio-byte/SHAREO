@@ -5,7 +5,7 @@ import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { requireAdminRole } from "@/lib/auth/admin-guards"
-import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { unblockAdminToken } from "@/lib/redis-admin-blocklist"
 
 const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*]).{10,}$/
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     const session = await auth()
     requireAdminRole(session, "ADMIN_SUPERADMIN")
 
-    const rl = await checkRateLimit(`admin-create:${session!.user.id}`, 5, 24 * 60 * 60 * 1000, req)
+    const rl = await checkRateLimit(`admin-create:${session!.user.id}`, RATE_LIMITS.adminCreate.limit, RATE_LIMITS.adminCreate.windowMs, req)
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const body   = await req.json()

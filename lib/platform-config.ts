@@ -73,6 +73,69 @@ export async function getReferralWindowDays(): Promise<number> {
   }
 }
 
+// ─── Auto-cancelamento de reservas ───────────────────────────────────────────
+
+export interface AutoCancelConfig {
+  pendingHours: number // horas até cancelar PENDING sem resposta (default 2)
+  ownerHours:   number // horas até cancelar quando proprietário não age (default 48)
+}
+
+const DEFAULT_AUTO_CANCEL: AutoCancelConfig = { pendingHours: 2, ownerHours: 48 }
+
+export async function getAutoCancelConfig(): Promise<AutoCancelConfig> {
+  try {
+    const rows = await prisma.platformConfig.findMany({
+      where: { key: { in: ["autoCancelPendingHours", "autoCancelOwnerHours"] } },
+    })
+    const map = Object.fromEntries(rows.map((r) => [r.key, parseInt(r.value, 10)]))
+    return {
+      pendingHours: Number.isFinite(map.autoCancelPendingHours) && map.autoCancelPendingHours > 0 ? map.autoCancelPendingHours : DEFAULT_AUTO_CANCEL.pendingHours,
+      ownerHours:   Number.isFinite(map.autoCancelOwnerHours)   && map.autoCancelOwnerHours   > 0 ? map.autoCancelOwnerHours   : DEFAULT_AUTO_CANCEL.ownerHours,
+    }
+  } catch {
+    return DEFAULT_AUTO_CANCEL
+  }
+}
+
+// ─── Janela de payout ─────────────────────────────────────────────────────────
+
+const DEFAULT_PAYOUT_WINDOW_DAYS = 3
+
+export async function getPayoutWindowDays(): Promise<number> {
+  try {
+    const row = await prisma.platformConfig.findUnique({ where: { key: "payoutWindowDays" } })
+    if (!row) return DEFAULT_PAYOUT_WINDOW_DAYS
+    const v = parseInt(row.value, 10)
+    return Number.isFinite(v) && v >= 0 ? v : DEFAULT_PAYOUT_WINDOW_DAYS
+  } catch {
+    return DEFAULT_PAYOUT_WINDOW_DAYS
+  }
+}
+
+// ─── Limites de upload ────────────────────────────────────────────────────────
+
+export interface UploadLimits {
+  maxImagesPerItem: number // máx fotos por item (default 10)
+  maxUploadSizeMB:  number // máx MB por arquivo (default 10)
+}
+
+const DEFAULT_UPLOAD_LIMITS: UploadLimits = { maxImagesPerItem: 10, maxUploadSizeMB: 10 }
+
+export async function getUploadLimits(): Promise<UploadLimits> {
+  try {
+    const rows = await prisma.platformConfig.findMany({
+      where: { key: { in: ["maxImagesPerItem", "maxUploadSizeMB"] } },
+    })
+    const map = Object.fromEntries(rows.map((r) => [r.key, parseInt(r.value, 10)]))
+    return {
+      maxImagesPerItem: Number.isFinite(map.maxImagesPerItem) && map.maxImagesPerItem > 0 ? map.maxImagesPerItem : DEFAULT_UPLOAD_LIMITS.maxImagesPerItem,
+      maxUploadSizeMB:  Number.isFinite(map.maxUploadSizeMB)  && map.maxUploadSizeMB  > 0 ? map.maxUploadSizeMB  : DEFAULT_UPLOAD_LIMITS.maxUploadSizeMB,
+    }
+  } catch {
+    return DEFAULT_UPLOAD_LIMITS
+  }
+}
+
 // ─── Multiplicador de taxa de atraso ─────────────────────────────────────────
 
 // Armazenado como inteiro × 100 (ex: 150 = 1.5×). Default 150.
@@ -112,6 +175,9 @@ export function calcSplit(totalPrice: number, feeRate: number) {
 }
 
 export const CHECKOUT_MAX_CENTS = 50_000 // R$ 500,00 — teto MVP (D2)
+
+/** Expiração da sessão Stripe Checkout em segundos (mín. 30min exigido pela Stripe) */
+export const STRIPE_CHECKOUT_EXPIRES_SECONDS = 30 * 60
 
 const DEFAULT_WEEKLY_MULTIPLIER  = 3   // preço semanal = 3× diária
 const DEFAULT_MONTHLY_MULTIPLIER = 15  // preço mensal  = 15× diária

@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server"
 import { handlers } from "@/lib/auth"
-import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 
 export const { GET } = handlers
 
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
       req.headers.get("x-real-ip") ??
       "unknown"
 
-    const rlIp = await checkRateLimit(`login:ip:${ip}`, 10, 60_000, req)
+    const rlIp = await checkRateLimit(`login:ip:${ip}`, RATE_LIMITS.loginIp.limit, RATE_LIMITS.loginIp.windowMs, req)
     if (!rlIp.allowed) return rateLimitResponse(rlIp.resetAt)
 
     // Rate limit por email (protege conta específica contra ataques direcionados)
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       const body  = await req.clone().text()
       const email = new URLSearchParams(body).get("email")?.toLowerCase()
       if (email) {
-        const rlEmail = await checkRateLimit(`login:email:${email}`, 5, 5 * 60_000, req)
+        const rlEmail = await checkRateLimit(`login:email:${email}`, RATE_LIMITS.loginEmail.limit, RATE_LIMITS.loginEmail.windowMs, req)
         if (!rlEmail.allowed) return rateLimitResponse(rlEmail.resetAt)
       }
     } catch {

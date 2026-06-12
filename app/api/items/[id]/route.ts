@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server"
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { UpdateItemSchema } from "@/lib/validations/items"
@@ -144,12 +144,15 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
     })
 
     // Regeocodifica em background quando endereço muda
+    // after() garante execução mesmo depois da resposta (fire-and-forget puro morre no Vercel)
     if (d.city || d.state || d.neighborhood) {
-      prisma.item.findUnique({ where: { id }, select: { city: true, state: true, neighborhood: true } })
-        .then((it) => {
-          if (it) geocodeItem(id, { city: it.city, state: it.state, neighborhood: it.neighborhood })
-        })
-        .catch(() => undefined)
+      after(() =>
+        prisma.item.findUnique({ where: { id }, select: { city: true, state: true, neighborhood: true } })
+          .then((it) => {
+            if (it) return geocodeItem(id, { city: it.city, state: it.state, neighborhood: it.neighborhood })
+          })
+          .catch((e) => console.error("[geocodeItem PUT]", e instanceof Error ? e.message : e))
+      )
     }
 
     return NextResponse.json({ data: updated })

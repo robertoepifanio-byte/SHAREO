@@ -17,8 +17,7 @@ import type { NextRequest } from "next/server"
 import { NextResponse }     from "next/server"
 import { auth }             from "@/lib/auth"
 import { createAdminClient } from "@/lib/supabase/admin"
-
-const MAX_BYTES = 10 * 1024 * 1024 // 10 MB
+import { getUploadLimits } from "@/lib/platform-config"
 
 const ALLOWED_BUCKETS = new Set(["booking-photos", "item-images"])
 
@@ -61,9 +60,10 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (file.size > MAX_BYTES) {
+    const { maxUploadSizeMB } = await getUploadLimits()
+    if (file.size > maxUploadSizeMB * 1024 * 1024) {
       return NextResponse.json(
-        { error: { code: "FILE_TOO_LARGE", message: "Arquivo maior que 10 MB." } },
+        { error: { code: "FILE_TOO_LARGE", message: `Arquivo maior que ${maxUploadSizeMB} MB.` } },
         { status: 422 },
       )
     }

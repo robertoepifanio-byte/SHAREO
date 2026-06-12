@@ -11,6 +11,7 @@ import { NextResponse }     from "next/server"
 import { auth }             from "@/lib/auth"
 import { prisma }           from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { getUploadLimits }   from "@/lib/platform-config"
 
 type Ctx = { params: Promise<{ id: string }> }
 
@@ -77,9 +78,10 @@ export async function POST(req: NextRequest, { params }: Ctx) {
       { status: 400 }
     )
 
-  if (file.size > 10 * 1024 * 1024)
+  const { maxUploadSizeMB } = await getUploadLimits()
+  if (file.size > maxUploadSizeMB * 1024 * 1024)
     return NextResponse.json(
-      { error: { code: "VALIDATION_ERROR", message: "Arquivo muito grande (máx 10 MB)." } },
+      { error: { code: "VALIDATION_ERROR", message: `Arquivo muito grande (máx ${maxUploadSizeMB} MB).` } },
       { status: 400 }
     )
 
