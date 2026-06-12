@@ -235,15 +235,15 @@ export default function SobrePage() {
               </p>
             </div>
             <div className="flex justify-center">
-              <div className="flex flex-col items-center gap-4 rounded-2xl border border-border bg-surface overflow-hidden text-center">
+              <div className="flex flex-col items-center gap-5 rounded-2xl border border-border bg-surface p-8 text-center">
                 <Image
                   src="/logos/pratika-ia-sobre.png"
                   alt="Pratika-IA"
                   width={480}
-                  height={154}
-                  className="w-full h-auto object-cover"
+                  height={145}
+                  className="h-auto w-full max-w-sm"
                 />
-                <p className="px-8 pb-6 max-w-sm text-sm text-muted-foreground leading-relaxed">
+                <p className="max-w-sm text-sm text-muted-foreground leading-relaxed">
                   Responsável pelo desenvolvimento completo da plataforma ShareO — da arquitetura
                   ao produto final, com foco em experiência do usuário, segurança e escalabilidade.
                 </p>
