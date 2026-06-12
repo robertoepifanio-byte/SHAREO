@@ -99,7 +99,7 @@ function SectionBlock({
   return (
     <section
       id={section.id}
-      className={`rounded-2xl border p-6 ${section.color}`}
+      className={`rounded-2xl border p-6 scroll-mt-24 ${section.color}`}
     >
       <h2 className="mb-6 font-display flex items-center gap-3 text-xl font-bold text-primary">
         <span

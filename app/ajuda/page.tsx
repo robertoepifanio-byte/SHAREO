@@ -441,7 +441,7 @@ export default async function AjudaPage() {
         </section>
 
         {/* Primeiros Passos */}
-        <section id="primeiros-passos" className="bg-surface px-4 py-16 border-b border-border">
+        <section id="primeiros-passos" className="bg-surface px-4 py-16 border-b border-border scroll-mt-20">
           <div className="container mx-auto max-w-5xl">
             <div className="mb-12 text-center">
               <span className="rounded-full bg-brand/10 px-4 py-1 text-xs font-bold text-brand uppercase tracking-wide">
@@ -520,7 +520,7 @@ export default async function AjudaPage() {
         </section>
 
         {/* Tabela de taxas */}
-        <section id="taxas-secao" className="bg-background px-4 py-12 border-b border-border">
+        <section id="taxas-secao" className="bg-background px-4 py-12 border-b border-border scroll-mt-20">
           <div className="container mx-auto max-w-3xl">
             <div className="mb-8 text-center">
               <span className="rounded-full bg-amber-100 px-4 py-1 text-xs font-bold text-amber-700 uppercase tracking-wide">
