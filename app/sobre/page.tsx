@@ -239,14 +239,14 @@ export default function SobrePage() {
                 <div className="rounded-xl overflow-hidden">
                   <Image
                     src="/logos/pratike-ia-sobre.png"
-                    alt="Pratike-IA"
+                    alt="Pratika-IA"
                     width={117}
                     height={96}
                     className="h-24 w-auto object-contain"
                   />
                 </div>
                 <div>
-                  <h3 className="font-display text-lg font-bold text-primary">Pratike-IA</h3>
+                  <h3 className="font-display text-lg font-bold text-primary">Pratika-IA</h3>
                   <p className="mt-1 text-sm text-muted-foreground">
                     Desenvolvimento de produto e tecnologia
                   </p>
