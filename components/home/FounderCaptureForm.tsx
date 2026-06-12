@@ -2,15 +2,34 @@
 
 import { useState, type FormEvent } from "react"
 
-type Intent = "proprietario" | "locatario"
+type IntentOption = "proprietario" | "locatario"
 type State  = "collapsed" | "expanded" | "loading" | "success" | "error-network" | "error-duplicate"
 
+function resolveIntent(selected: Set<IntentOption>): "proprietario" | "locatario" | "ambos" {
+  if (selected.has("proprietario") && selected.has("locatario")) return "ambos"
+  if (selected.has("locatario")) return "locatario"
+  return "proprietario"
+}
+
 export function FounderCaptureForm() {
-  const [state, setState]     = useState<State>("collapsed")
-  const [intent, setIntent]   = useState<Intent>("proprietario")
-  const [name, setName]       = useState("")
-  const [email, setEmail]     = useState("")
+  const [state, setState]       = useState<State>("collapsed")
+  const [selected, setSelected] = useState<Set<IntentOption>>(new Set(["proprietario"]))
+  const [name, setName]         = useState("")
+  const [email, setEmail]       = useState("")
   const [position, setPosition] = useState(0)
+
+  function toggleIntent(opt: IntentOption) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(opt)) {
+        if (next.size === 1) return prev // pelo menos uma opção sempre selecionada
+        next.delete(opt)
+      } else {
+        next.add(opt)
+      }
+      return next
+    })
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -22,7 +41,7 @@ export function FounderCaptureForm() {
         body: JSON.stringify({
           email:            email.trim().toLowerCase(),
           name:             name.trim() || undefined,
-          intent,
+          intent:           resolveIntent(selected),
           marketingConsent: true as const,
           consentVersion:   "v1.0",
           source:           "VIP_LANDING",
@@ -103,27 +122,33 @@ export function FounderCaptureForm() {
       aria-label="Formulário de entrada na lista do ShareO"
       className="mx-auto flex max-w-[400px] flex-col gap-3"
     >
-      <div role="radiogroup" aria-label="Tipo de uso" className="grid grid-cols-2 gap-2">
-        {(["proprietario", "locatario"] as const).map((opt) => (
-          <button
-            key={opt}
-            type="button"
-            role="radio"
-            aria-checked={intent === opt}
-            onClick={() => setIntent(opt)}
-            disabled={state === "loading"}
-            className={[
-              "min-h-[44px] rounded-lg border px-3 text-sm font-semibold transition-colors",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-primary",
-              intent === opt
-                ? "border-accent bg-accent/20 text-white"
-                : "border-white/20 text-white/70 hover:border-white/40 hover:text-white",
-              state === "loading" ? "opacity-60" : "",
-            ].join(" ")}
-          >
-            {opt === "proprietario" ? "Quero anunciar" : "Quero alugar"}
-          </button>
-        ))}
+      <div role="group" aria-label="Tipo de uso" className="grid grid-cols-2 gap-2">
+        {(["proprietario", "locatario"] as const).map((opt) => {
+          const isChecked = selected.has(opt)
+          return (
+            <button
+              key={opt}
+              type="button"
+              role="checkbox"
+              aria-checked={isChecked}
+              onClick={() => toggleIntent(opt)}
+              disabled={state === "loading"}
+              className={[
+                "min-h-[44px] rounded-lg border px-3 text-sm font-semibold transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-primary",
+                isChecked
+                  ? "border-accent bg-accent/20 text-white"
+                  : "border-white/20 text-white/70 hover:border-white/40 hover:text-white",
+                state === "loading" ? "opacity-60" : "",
+              ].join(" ")}
+            >
+              <span className="flex items-center justify-center gap-1.5">
+                <span aria-hidden="true" className={isChecked ? "opacity-100" : "opacity-0"}>✓</span>
+                {opt === "proprietario" ? "Quero anunciar" : "Quero alugar"}
+              </span>
+            </button>
+          )
+        })}
       </div>
 
       <div>

@@ -71,6 +71,7 @@ export function AppFooter() {
               <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-white/90">
                 Suporte
               </p>
+              <Link href="/sobre"           className="text-sm text-white/90 hover:text-white transition-colors">Sobre o Shareo</Link>
               <Link href="/ajuda"           className="text-sm text-white/90 hover:text-white transition-colors">Central de ajuda</Link>
               <Link href="/ganhar"          className="text-sm text-white/90 hover:text-white transition-colors">Como ganhar</Link>
               <Link href="/termos"          className="text-sm text-white/90 hover:text-white transition-colors">Termos de uso</Link>

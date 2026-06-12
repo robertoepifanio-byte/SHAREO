@@ -214,6 +214,11 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
                 <NavLink href="/" className={topItem}>Início</NavLink>
               </li>
 
+              {/* Sobre */}
+              <li>
+                <NavLink href="/sobre" className={topItem}>Sobre</NavLink>
+              </li>
+
               {/* Explorar — expansível */}
               <li>
                 <button

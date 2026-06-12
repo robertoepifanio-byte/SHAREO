@@ -9,7 +9,7 @@ import { sendFounderWelcomeEmail } from "@/lib/email"
 const Schema = z.object({
   email:            z.string().email({ message: "E-mail inválido" }),
   name:             z.string().min(2).max(100).optional(),
-  intent:           z.enum(["proprietario", "locatario"]).default("proprietario"),
+  intent:           z.enum(["proprietario", "locatario", "ambos"]).default("proprietario"),
   marketingConsent: z.literal(true, { errorMap: () => ({ message: "Consentimento obrigatório" }) }),
   consentVersion:   z.string().default("v1.0"),
   source:           z.string().default("VIP_LANDING"),
