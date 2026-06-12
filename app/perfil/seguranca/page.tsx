@@ -7,6 +7,7 @@ import { AppHeader } from "@/components/layout/AppHeader"
 import { DeleteAccountButton } from "../_DeleteAccountButton"
 import { ChangePasswordForm } from "./_ChangePasswordForm"
 import { ResendVerificationButton } from "./_ResendVerificationButton"
+import { ChangeEmailForm } from "./_ChangeEmailForm"
 
 export const metadata: Metadata = { title: "Login e Segurança" }
 
@@ -73,6 +74,7 @@ export default async function SegurancaPage() {
                 <ResendVerificationButton />
               </div>
             )}
+            <ChangeEmailForm />
           </div>
 
           {/* Senha */}
