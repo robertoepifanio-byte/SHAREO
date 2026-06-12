@@ -141,12 +141,10 @@ Multiplicadores configuráveis pelo SuperAdmin em `/admin/financeiro` (chaves `p
 
 `arquiteto-shareo`, `fullstack-dev-shareo`, `designer-shareo`, `devops-shareo`, `qa-shareo`, `seguranca-shareo`, `product-owner-shareo`, `gestor-projeto-shareo`, `seo-shareo`
 
-## Scripts temporários a deletar antes de produção
+## Estado atual (12/06/2026)
 
-`scripts/reset-fixture-pwd.ts`, `scripts/delete-e2e-admins.ts`, `scripts/clear-rl.mjs`, `scripts/fix-admin-roles.ts`, `scripts/set-fixture-admin-role.ts`, `scripts/verify-admin-sessions.ts`
+Commit `0fc0480`. Staging validado (smokes #1–#32 passando). Aguardando **D4** (jurídico) para go-live produção.
 
-## Estado atual (07/06/2026)
+Scripts temporários deletados ✅ (2026-06-12). Hardcoded P0 movidos para PlatformConfig ✅.
 
-Commit `e2ffbc7`. Staging validado (smokes #1–#32 passando). Aguardando **D4** (jurídico) para go-live produção.
-
-Próximos passos: deletar scripts temporários → aguardar D4 → criar Supabase production → tag v1.1.0.
+Próximos passos: aguardar D4 → criar Supabase production → tag v1.1.0.

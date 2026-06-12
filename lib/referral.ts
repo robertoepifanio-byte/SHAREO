@@ -7,8 +7,7 @@
  */
 
 import { prisma } from "@/lib/prisma"
-
-export const REFERRAL_APPLY_WINDOW_DAYS = 30
+import { getReferralWindowDays } from "@/lib/platform-config"
 
 // ─── Gerar código ──────────────────────────────────────────────────────────────
 
@@ -69,9 +68,10 @@ export async function applyReferralCode(userId: string, rawCode: string): Promis
   if (!user) return { success: false, error: "Usuário não encontrado." }
   if (user.referredById) return { success: false, error: "Você já usou um código de indicação." }
 
+  const referralWindowDays = await getReferralWindowDays()
   const daysSince = (Date.now() - new Date(user.createdAt).getTime()) / 86_400_000
-  if (daysSince > REFERRAL_APPLY_WINDOW_DAYS) {
-    return { success: false, error: `O código só pode ser aplicado nos primeiros ${REFERRAL_APPLY_WINDOW_DAYS} dias após o cadastro.` }
+  if (daysSince > referralWindowDays) {
+    return { success: false, error: `O código só pode ser aplicado nos primeiros ${referralWindowDays} dias após o cadastro.` }
   }
 
   // Verificar se já existe Referral (idempotência)

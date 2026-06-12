@@ -9,6 +9,7 @@ import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
 import type { WebhookEvent } from "@/lib/outboundWebhooks"
 import { sendBookingConfirmedEmail, sendBookingCancelledEmail } from "@/lib/email"
 import { calcRefund } from "@/lib/cancellationPolicy"
+import { getCancellationConfig } from "@/lib/platform-config"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -200,10 +201,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       data.cancelReason  = reason
 
       // Calcula o reembolso com base na política de cancelamento do ShareO
+      const cancelConfig = await getCancellationConfig()
       const refund = calcRefund(
         new Date(booking.startDate),
         now,
         booking.totalPrice,
+        cancelConfig,
       )
       data.refundAmount  = refund.refundAmount
       data.refundPercent = refund.refundPercent

@@ -8,14 +8,19 @@
  */
 
 import { prisma } from "@/lib/prisma"
+import { getAmbassadorThresholds } from "@/lib/platform-config"
 import type { AmbassadorTier, CommissionStatus } from "@prisma/client"
 
 // ─── Tier logic (funções puras — testáveis sem banco) ─────────────────────────
 
-export function getAmbassadorTier(activeReferrals: number): AmbassadorTier | null {
-  if (activeReferrals >= 51) return "GOLD"
-  if (activeReferrals >= 11) return "SILVER"
-  if (activeReferrals >= 1)  return "BRONZE"
+export function getAmbassadorTier(
+  activeReferrals:  number,
+  silverThreshold = 11,
+  goldThreshold   = 51,
+): AmbassadorTier | null {
+  if (activeReferrals >= goldThreshold)   return "GOLD"
+  if (activeReferrals >= silverThreshold) return "SILVER"
+  if (activeReferrals >= 1)               return "BRONZE"
   return null
 }
 
@@ -34,10 +39,14 @@ export function getTierLabel(tier: AmbassadorTier | null): string {
 }
 
 /** Quantos indicados ativos faltam para o próximo tier */
-export function tierProgress(activeCount: number): { nextTier: AmbassadorTier | null; needed: number } {
-  if (activeCount < 1)  return { nextTier: "BRONZE", needed: 1 - activeCount }
-  if (activeCount < 11) return { nextTier: "SILVER", needed: 11 - activeCount }
-  if (activeCount < 51) return { nextTier: "GOLD",   needed: 51 - activeCount }
+export function tierProgress(
+  activeCount:      number,
+  silverThreshold = 11,
+  goldThreshold   = 51,
+): { nextTier: AmbassadorTier | null; needed: number } {
+  if (activeCount < 1)                return { nextTier: "BRONZE", needed: 1 - activeCount }
+  if (activeCount < silverThreshold)  return { nextTier: "SILVER", needed: silverThreshold - activeCount }
+  if (activeCount < goldThreshold)    return { nextTier: "GOLD",   needed: goldThreshold - activeCount }
   return { nextTier: null, needed: 0 }
 }
 
@@ -219,7 +228,8 @@ export async function processAmbassadorOnBookingPaid(bookingId: string): Promise
     },
   })
 
-  const currentTier = getAmbassadorTier(activeCount)
+  const { silverThreshold, goldThreshold } = await getAmbassadorThresholds()
+  const currentTier = getAmbassadorTier(activeCount, silverThreshold, goldThreshold)
   if (!currentTier) return
 
   const tierPercentBp = getTierCommissionRateBp(currentTier)
@@ -365,7 +375,8 @@ async function recalcTiersForUsers(userIds: string[]): Promise<void> {
       },
     })
 
-    const newTier = getAmbassadorTier(activeCount) ?? "BRONZE"
+    const thresholds = await getAmbassadorThresholds()
+    const newTier = getAmbassadorTier(activeCount, thresholds.silverThreshold, thresholds.goldThreshold) ?? "BRONZE"
 
     await prisma.ambassadorProfile.update({
       where: { id: profile.id },

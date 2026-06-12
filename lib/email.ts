@@ -550,15 +550,16 @@ export async function sendFounderWelcomeEmail(
 
 /** Lembrete: item em atraso — enviado ao locatário e ao locador */
 export async function sendReminderOverdue(
-  borrowerEmail: string, borrowerName: string,
-  ownerEmail:    string, ownerName:    string,
-  itemTitle:     string, bookingId:    string,
-  endDate:       Date,   daysLate:     number,
-  dailyPriceCents: number,
+  borrowerEmail:    string, borrowerName: string,
+  ownerEmail:       string, ownerName:    string,
+  itemTitle:        string, bookingId:    string,
+  endDate:          Date,   daysLate:     number,
+  dailyPriceCents:  number,
+  lateFeeMultiplier = 1.5,
 ): Promise<void> {
   const url       = `${APP_URL}/reservas/${bookingId}`
   const lateFee   = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" })
-                      .format((dailyPriceCents * 1.5 * daysLate) / 100)
+                      .format((dailyPriceCents * lateFeeMultiplier * daysLate) / 100)
 
   const html = (firstName: string, role: "borrower" | "owner") => baseLayout(`
     <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#B91C1C;">
