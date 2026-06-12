@@ -4,7 +4,7 @@
  * Prioridade:
  * 1. latitude/longitude do perfil (preenchido via geocoding ao cadastrar item)
  * 2. city do perfil → lookup de capitais/cidades brasileiras (normalizado)
- * 3. Natal, RN como default (mercado principal do ShareO)
+ * 3. Brasil inteiro como default (lançamento nacional — zoom de país)
  */
 
 import { prisma } from "@/lib/prisma"
@@ -41,7 +41,8 @@ const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
   "natal/rn":          { lat: -5.7945,  lng: -35.2110 },
 }
 
-const DEFAULT = { lat: -5.7945, lng: -35.2110, zoom: 12 }
+// Centro geográfico do Brasil — zoom de país para usuários sem localização
+const DEFAULT = { lat: -14.235, lng: -51.9253, zoom: 4 }
 
 /** Remove acentos e normaliza string para lookup */
 function normalize(s: string): string {

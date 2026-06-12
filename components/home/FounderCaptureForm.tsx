@@ -72,11 +72,11 @@ export function FounderCaptureForm() {
             Você é o #{position}° na lista!
           </p>
           <p className="mt-1 text-sm text-white/70">
-            Avisaremos <strong className="text-white">{email}</strong> quando Shareo abrir em Natal.
+            Avisaremos <strong className="text-white">{email}</strong> quando o Shareo abrir.
           </p>
         </div>
         <a
-          href={`https://wa.me/?text=${encodeURIComponent("Entrei na lista de fundadores do Shareo — plataforma de aluguel local em Natal. Entre também: https://shareo.com.br")}`}
+          href={`https://wa.me/?text=${encodeURIComponent("Entrei na lista de fundadores do Shareo — plataforma de aluguel de itens entre pessoas. Entre também: https://shareo.com.br")}`}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/20"

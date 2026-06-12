@@ -47,7 +47,7 @@ export default async function EarningsPage() {
                   &ldquo;Anunciei minha furadeira e câmera fotográfica. Em 2 meses já paguei metade do valor que gastei nelas.&rdquo;
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  — Marcelo S., Natal/RN
+                  — Marcelo S., Porto Alegre/RS
                 </p>
               </div>
             </div>

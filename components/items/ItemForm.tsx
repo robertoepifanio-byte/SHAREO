@@ -830,7 +830,6 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
             <Input
               label="Cidade"
               type="text"
-              placeholder="Natal"
               value={city}
               onChange={(e) => {
                 if (mode === "create") return
@@ -871,7 +870,6 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
           <Input
             label="Bairro"
             type="text"
-            placeholder="Ponta Negra"
             value={neighborhood}
             onChange={(e) => { if (mode !== "create") setNeighborhood(e.target.value) }}
             onBlur={mode === "edit" ? geocodeAddress : undefined}

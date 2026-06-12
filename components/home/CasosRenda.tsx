@@ -2,7 +2,7 @@ const CASES = [
   {
     initial: "C",
     name: "Carlos Souza",
-    role: "Proprietário · Natal, RN",
+    role: "Proprietário · São Paulo, SP",
     item: "Furadeira Bosch",
     itemEmoji: "🔧",
     renda: "R$ 135",
@@ -13,7 +13,7 @@ const CASES = [
   {
     initial: "F",
     name: "Fernanda Lima",
-    role: "Proprietária · Ponta Negra",
+    role: "Proprietária · Belo Horizonte, MG",
     item: "Caixa de Som JBL",
     itemEmoji: "🔊",
     renda: "R$ 420",
@@ -24,7 +24,7 @@ const CASES = [
   {
     initial: "M",
     name: "Marcos Silva",
-    role: "Proprietário · Capim Macio",
+    role: "Proprietário · Curitiba, PR",
     item: "Projetor Epson Full HD",
     itemEmoji: "📽️",
     renda: "R$ 280",

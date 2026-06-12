@@ -44,7 +44,7 @@ export async function ListaVIP() {
             <circle cx="12" cy="12" r="10"/>
             <polyline points="12 6 12 12 16 14"/>
           </svg>
-          Pré-lançamento · Primeiros em Natal
+          Pré-lançamento · Primeiros no Brasil
         </div>
 
         <h2
@@ -57,7 +57,7 @@ export async function ListaVIP() {
         </h2>
 
         <p className="mx-auto mb-9 max-w-[520px] text-[15px] leading-relaxed text-white/85">
-          Seja avisado em primeira mão quando lançarmos em Natal e conheça as condições
+          Seja avisado em primeira mão quando lançarmos e conheça as condições
           especiais que planejamos oferecer aos primeiros anunciantes.
         </p>
 
@@ -135,11 +135,11 @@ export async function ListaVIP() {
                 ? `${thisWeek} pessoas entraram esta semana`
                 : `${total} pessoas já estão na lista`}
             </strong>{" "}
-            em Natal
+            no Brasil
           </p>
         ) : (
           <p className="mt-4 text-[13px] text-white/55">
-            Seja um dos primeiros fundadores do Shareo em Natal
+            Seja um dos primeiros fundadores do Shareo no Brasil
           </p>
         )}
       </div>

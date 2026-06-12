@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     template: "%s | ShareO",
   },
   description:
-    "Marketplace de economia circular para aluguel local de itens entre pessoas e empresas em Natal/RN.",
+    "Marketplace de economia circular para aluguel local de itens entre pessoas e empresas em todo o Brasil.",
   metadataBase: new URL(BASE),
   openGraph: {
     type:     "website",
@@ -62,7 +62,7 @@ const orgJsonLd = {
   name:         "ShareO",
   url:          BASE,
   logo:         `${BASE}/shareo-logo.png`,
-  description:  "Marketplace de economia circular para aluguel local de itens em Natal/RN.",
+  description:  "Marketplace de economia circular para aluguel local de itens em todo o Brasil.",
   sameAs:       [],
   contactPoint: {
     "@type":       "ContactPoint",

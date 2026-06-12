@@ -6,7 +6,7 @@ import { AppHeader } from "@/components/layout/AppHeader"
 export const metadata: Metadata = {
   title: "Sobre o ShareO",
   description:
-    "Conheça a missão, história e valores do ShareO — marketplace de economia circular para aluguel local de itens em Natal/RN.",
+    "Conheça a missão, história e valores do ShareO — marketplace de economia circular para aluguel local de itens em todo o Brasil.",
 }
 
 const VALORES = [
@@ -58,7 +58,6 @@ const STATS = [
   { value: "2.400+", label: "itens cadastrados" },
   { value: "R$2.000", label: "renda média/mês por proprietário" },
   { value: "2026", label: "ano de fundação" },
-  { value: "Natal/RN", label: "cidade de origem" },
 ]
 
 const EQUIPE = [
@@ -109,7 +108,7 @@ export default function SobrePage() {
         {/* ── Stats ────────────────────────────────────────────────────── */}
         <section className="border-b border-border bg-surface">
           <div className="container py-12">
-            <dl className="grid grid-cols-2 gap-8 md:grid-cols-4">
+            <dl className="grid grid-cols-2 gap-8 md:grid-cols-3">
               {STATS.map((s) => (
                 <div key={s.label} className="text-center">
                   <dt className="font-display text-3xl font-bold text-brand">{s.value}</dt>

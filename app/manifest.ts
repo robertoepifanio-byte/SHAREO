@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name:             "ShareO — Use Mais. Possua Menos.",
     short_name:       "ShareO",
-    description:      "Marketplace de economia circular para aluguel local de itens em Natal/RN.",
+    description:      "Marketplace de economia circular para aluguel local de itens em todo o Brasil.",
     start_url:        "/",
     display:          "standalone",
     orientation:      "portrait",

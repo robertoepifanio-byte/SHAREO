@@ -13,7 +13,7 @@ import { HeroSearch } from "@/components/home/HeroSearch"
 
 export const metadata: Metadata = {
   title: "ShareO — Use Mais. Possua Menos.",
-  description: "Alugue o que precisa de quem já tem. Marketplace de economia circular em Natal/RN.",
+  description: "Alugue o que precisa de quem já tem. Marketplace de economia circular em todo o Brasil.",
 }
 
 export const revalidate = 60
@@ -86,12 +86,12 @@ const steps = [
 export default async function HomePage() {
   const session = await auth().catch(() => null)
 
-  const cityName = session?.user?.id
+  const cityName: string | null = session?.user?.id
     ? await prisma.user
         .findUnique({ where: { id: session.user.id }, select: { city: true } })
-        .then((u) => u?.city ?? "Natal")
-        .catch(() => "Natal")
-    : "Natal"
+        .then((u) => u?.city ?? null)
+        .catch(() => null)
+    : null
 
   const [categories, cityItemCount] = await Promise.all([
     prisma.category
@@ -104,7 +104,7 @@ export default async function HomePage() {
 
     prisma.item
       .count({
-        where: { status: "AVAILABLE", isApproved: true, deletedAt: null, city: cityName },
+        where: { status: "AVAILABLE", isApproved: true, deletedAt: null, ...(cityName ? { city: cityName } : {}) },
       })
       .catch(() => 0),
   ])
@@ -226,8 +226,8 @@ export default async function HomePage() {
                 { num: "R$2.000", label: "Renda média/mês" },
                 { num: "4,8 ★", label: "Avaliação média" },
                 {
-                  num: cityItemCount >= 20 ? `${cityItemCount}` : "890+",
-                  label: cityItemCount >= 20 ? `Itens em ${cityName}` : "Proprietários ativos",
+                  num: cityName && cityItemCount >= 20 ? `${cityItemCount}` : "890+",
+                  label: cityName && cityItemCount >= 20 ? `Itens em ${cityName}` : "Proprietários ativos",
                 },
               ].map((stat) => (
                 <div key={stat.label} role="listitem" className="text-center text-white">

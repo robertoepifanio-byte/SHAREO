@@ -123,7 +123,7 @@ export function RegisterForm() {
     if (userType === "PF" && !cpf)           errs.cpf      = "CPF obrigatório"
     if (userType === "PJ" && !cnpj)          errs.cnpj     = "CNPJ obrigatório"
     if (!city.trim())                        errs.city         = "Cidade obrigatória"
-    if (state.length !== 2)                  errs.state        = "UF inválida (ex: RN)"
+    if (state.length !== 2)                  errs.state        = "UF inválida (2 letras)"
     if (!consent)                            errs.consent      = "Aceite os termos para continuar"
     if (!ageConfirmed)                       errs.ageConfirmed = "Confirme que você tem 18 anos ou mais"
     return errs
@@ -376,7 +376,6 @@ export function RegisterForm() {
               label="Cidade"
               type="text"
               autoComplete="address-level2"
-              placeholder="Natal"
               value={city}
               onChange={(e) => { setCity(e.target.value); setErrors((p) => ({ ...p, city: undefined })) }}
               error={errors.city}
@@ -389,7 +388,7 @@ export function RegisterForm() {
               label="Estado"
               type="text"
               autoComplete="address-level1"
-              placeholder="RN"
+              placeholder="UF"
               maxLength={2}
               value={state}
               onChange={(e) => { setState(e.target.value.toUpperCase()); setErrors((p) => ({ ...p, state: undefined })) }}
@@ -404,7 +403,6 @@ export function RegisterForm() {
           label="Bairro"
           type="text"
           autoComplete="address-level3"
-          placeholder="Ex: Ponta Negra"
           value={neighborhood}
           onChange={(e) => setNeighborhood(e.target.value)}
           helper="Opcional"
