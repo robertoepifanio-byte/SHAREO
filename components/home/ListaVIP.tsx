@@ -51,7 +51,7 @@ export async function ListaVIP() {
           id="vip-title"
           className="mb-3 font-display text-[24px] font-extrabold leading-snug text-white xl:text-[32px]"
         >
-          Shareo está chegando.
+          O Shareo está chegando.
           <br />
           <span className="text-accent">Entre na lista.</span>
         </h2>
