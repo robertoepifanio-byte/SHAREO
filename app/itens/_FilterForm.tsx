@@ -15,6 +15,7 @@ interface FilterFormProps {
   userLng?:    string
   minRating?:  string
   view?:       string
+  hasProfileLocation?: boolean
 }
 
 function buildFilterUrl(props: FilterFormProps, overrides: Record<string, string>): string {
@@ -123,6 +124,7 @@ export function FilterForm(props: FilterFormProps) {
         dist={props.dist}
         userLat={props.userLat}
         userLng={props.userLng}
+        hasProfileLocation={props.hasProfileLocation}
         onAutoSubmit={handleDistanceReady}
       />
 

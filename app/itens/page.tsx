@@ -14,7 +14,7 @@ import { FilterForm } from "./_FilterForm"
 import { FilterTrigger } from "./_FilterTrigger"
 import { ActiveFilterChips } from "./_ActiveFilterChips"
 import { haversineKm } from "@/lib/haversine"
-import { getUserMapLocation } from "@/lib/userLocation"
+import { getUserCoords, BRAZIL_DEFAULT } from "@/lib/userLocation"
 import { MapToggle } from "./_MapToggle"
 import { PullToRefresh } from "@/components/items/PullToRefresh"
 import { FloatingCTA } from "@/components/items/FloatingCTA"
@@ -62,7 +62,10 @@ export default async function ExplorarPage({ searchParams }: Props) {
     searchParams,
     auth().catch(() => null),
   ])
-  const userLoc = await getUserMapLocation(session?.user?.id)
+  const profileCoords = await getUserCoords(session?.user?.id)
+  const userLoc = profileCoords
+    ? { lat: profileCoords.lat, lng: profileCoords.lng, zoom: profileCoords.source === "profile" ? 15 : 12 }
+    : BRAZIL_DEFAULT
   const page       = Math.max(1, Number(sp.page ?? 1))
   const search     = sp.search?.trim() || undefined
   const categoryId = sp.categoryId    || undefined
@@ -70,8 +73,9 @@ export default async function ExplorarPage({ searchParams }: Props) {
   const sort       = sp.sort          || undefined
   const priceMaxR  = sp.priceMax ? Number(sp.priceMax) : undefined // reais
   const dist       = sp.dist     || undefined
-  const userLat    = sp.ulat ? Number(sp.ulat) : undefined
-  const userLng    = sp.ulng ? Number(sp.ulng) : undefined
+  // Sem GPS na URL, a distância é medida a partir da localização do perfil
+  const userLat    = sp.ulat ? Number(sp.ulat) : (dist ? profileCoords?.lat : undefined)
+  const userLng    = sp.ulng ? Number(sp.ulng) : (dist ? profileCoords?.lng : undefined)
   const minRating  = sp.minRating ? Number(sp.minRating) : undefined
   const skip       = (page - 1) * PAGE_SIZE
 
@@ -334,6 +338,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
             userLng={sp.ulng}
             minRating={sp.minRating}
             view={sp.view}
+            hasProfileLocation={!!profileCoords}
           />
         </FilterTrigger>
 
@@ -356,6 +361,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
                 userLng={sp.ulng}
                 minRating={sp.minRating}
                 view={sp.view}
+                hasProfileLocation={!!profileCoords}
               />
             </div>
           </aside>

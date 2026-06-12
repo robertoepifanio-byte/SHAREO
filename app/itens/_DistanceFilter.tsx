@@ -6,6 +6,8 @@ interface Props {
   dist?:         string
   userLat?:      string
   userLng?:      string
+  /** Usuário logado tem localização no perfil — o servidor filtra por ela sem GPS */
+  hasProfileLocation?: boolean
   onAutoSubmit?: (dist: string, lat: string, lng: string) => void
 }
 
@@ -16,7 +18,7 @@ const OPTIONS = [
   { label: "Qualquer",  value: ""   },
 ]
 
-export function DistanceFilter({ dist, userLat, userLng, onAutoSubmit }: Props) {
+export function DistanceFilter({ dist, userLat, userLng, hasProfileLocation, onAutoSubmit }: Props) {
   const [selected, setSelected] = useState(dist ?? "")
   const [lat, setLat] = useState(userLat ?? "")
   const [lng, setLng] = useState(userLng ?? "")
@@ -31,7 +33,8 @@ export function DistanceFilter({ dist, userLat, userLng, onAutoSubmit }: Props) 
   }, [dist, userLat, userLng])
 
   const hasLocation = !!(lat && lng)
-  const needsLocation = selected !== "" && !hasLocation
+  // Sem GPS e sem localização de perfil: o filtro não tem ponto de origem
+  const needsLocation = selected !== "" && !hasLocation && !hasProfileLocation
 
   function handleGetLocation() {
     setLoading(true)
@@ -74,8 +77,11 @@ export function DistanceFilter({ dist, userLat, userLng, onAutoSubmit }: Props) 
                   onAutoSubmit?.("", "", "")
                 } else if (lat && lng) {
                   onAutoSubmit?.(opt.value, lat, lng)
+                } else if (hasProfileLocation) {
+                  // Sem GPS: navega só com dist — o servidor usa a localização do perfil
+                  onAutoSubmit?.(opt.value, "", "")
                 }
-                // sem localização: aguarda clique em "Usar minha localização"
+                // sem GPS e sem perfil: aguarda clique em "Usar minha localização"
               }}
               className="accent-brand"
             />
@@ -84,7 +90,27 @@ export function DistanceFilter({ dist, userLat, userLng, onAutoSubmit }: Props) 
         ))}
       </div>
 
-      {/* Botão de localização — só aparece quando distância selecionada e sem coords */}
+      {/* Filtrando pela localização do perfil — GPS opcional para refinar */}
+      {!hasLocation && hasProfileLocation && selected !== "" && (
+        <p className="mt-1.5 flex items-center gap-1 text-[11px] text-brand">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/>
+          </svg>
+          Usando a localização do seu perfil
+        </p>
+      )}
+      {!hasLocation && hasProfileLocation && selected !== "" && (
+        <button
+          type="button"
+          onClick={handleGetLocation}
+          disabled={loading}
+          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted/50 transition-colors disabled:opacity-50"
+        >
+          {loading ? "Obtendo localização…" : "Usar minha localização atual"}
+        </button>
+      )}
+
+      {/* Botão de localização — distância selecionada sem GPS nem perfil */}
       {needsLocation && (
         <button
           type="button"
