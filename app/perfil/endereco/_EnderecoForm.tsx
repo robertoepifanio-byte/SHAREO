@@ -10,7 +10,11 @@ const BR_STATES = [
 ] as const
 
 interface Props {
-  cep: string | null
+  cep:          string | null
+  street:       string | null
+  city:         string | null
+  state:        string | null
+  neighborhood: string | null
 }
 
 const inputCls = "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-brand transition-colors placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
@@ -29,17 +33,15 @@ interface ViaCepResponse {
   uf:           string
 }
 
-export function EnderecoForm({ cep }: Props) {
+export function EnderecoForm({ cep, street, city, state, neighborhood }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
 
-  // Rua, bairro, cidade e estado iniciam sempre vazios — o usuário preenche
-  // (ou usa CEP/localização); o que está salvo no banco não é pré-carregado.
-  const [cepVal,    setCepVal]    = useState(cep ? `${cep.slice(0, 5)}-${cep.slice(5)}` : "")
-  const [streetVal, setStreetVal] = useState("")
-  const [neighVal,  setNeighVal]  = useState("")
-  const [cityVal,   setCityVal]   = useState("")
-  const [stateVal,  setStateVal]  = useState("")
+  const [cepVal,    setCepVal]    = useState(cep    ? `${cep.slice(0, 5)}-${cep.slice(5)}` : "")
+  const [streetVal, setStreetVal] = useState(street       ?? "")
+  const [neighVal,  setNeighVal]  = useState(neighborhood ?? "")
+  const [cityVal,   setCityVal]   = useState(city         ?? "")
+  const [stateVal,  setStateVal]  = useState(state        ?? "")
 
   const [cepLoading,  setCepLoading]  = useState(false)
   const [cepError,    setCepError]    = useState("")
@@ -262,7 +264,6 @@ export function EnderecoForm({ cep }: Props) {
           type="text"
           value={streetVal}
           onChange={(e) => setStreetVal(e.target.value)}
-          placeholder="Ex: Avenida Engenheiro Roberto Freire"
           maxLength={200}
           className={inputCls}
         />
@@ -278,7 +279,6 @@ export function EnderecoForm({ cep }: Props) {
           type="text"
           value={neighVal}
           onChange={(e) => setNeighVal(e.target.value)}
-          placeholder="Ex: Ponta Negra"
           maxLength={100}
           className={inputCls}
         />
@@ -295,7 +295,6 @@ export function EnderecoForm({ cep }: Props) {
             type="text"
             value={cityVal}
             onChange={(e) => setCityVal(e.target.value)}
-            placeholder="Ex: Natal"
             maxLength={100}
             className={inputCls}
           />

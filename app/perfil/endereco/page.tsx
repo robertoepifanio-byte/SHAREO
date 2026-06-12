@@ -14,7 +14,7 @@ export default async function EnderecoPage() {
 
   const user = await prisma.user.findUnique({
     where:  { id: session.user.id },
-    select: { cep: true },
+    select: { cep: true, street: true, city: true, state: true, neighborhood: true },
   })
 
   if (!user) redirect("/login")
@@ -39,7 +39,13 @@ export default async function EnderecoPage() {
           </p>
 
           <div className="rounded-xl border border-border bg-surface p-6">
-            <EnderecoForm cep={user.cep} />
+            <EnderecoForm
+              cep={user.cep}
+              street={user.street}
+              city={user.city}
+              state={user.state}
+              neighborhood={user.neighborhood}
+            />
           </div>
         </div>
       </main>
