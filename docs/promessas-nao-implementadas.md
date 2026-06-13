@@ -1,9 +1,9 @@
 # Promessas Não Implementadas — ShareO
 
-**Versão:** 2.0 (re-auditoria completa contra o código)
-**Data:** 2026-06-12 (noite)
-**Autor:** Re-auditoria por Claude Code — cada item verificado contra `main` (commit `cdf677f`)
-**Versão anterior:** v1.0 (2026-06-12 manhã) — catalogou 64 itens; **32 já estavam ou foram resolvidos**, incluindo itens que a v1.0 classificou errado (ex.: webhooks PJ já tinham UI+API+disparo completos).
+**Versão:** 2.1 (pós-sessão s8)
+**Data:** 2026-06-13
+**Autor:** Claude Code — verificado contra `main` (commit `bd53b26`)
+**Versão anterior:** v2.0 (2026-06-12 noite) — 32 resolvidos, 6 executáveis catalogados.
 
 > **Lição da v1.0:** vários itens foram catalogados consultando só schema/docs sem verificar a UI correspondente. Esta versão verificou cada item no código. Regra para futuras auditorias: grep na UI (`app/**`, `components/**`) antes de declarar "sem UI".
 
@@ -13,10 +13,10 @@
 
 | Situação | Qtd |
 |---|---|
-| ✅ Resolvidos (verificados no código) | 32 |
+| ✅ Resolvidos (verificados no código) | 38 |
 | ⏳ Bloqueados por D4 (jurídico) | 9 |
 | 🤝 Aguardam decisão de fundadores/produto | 11 |
-| 🔨 Executáveis agora (sem bloqueador externo) | 6 |
+| 🔨 Executáveis agora (sem bloqueador externo) | 0 |
 | 📅 H2/H3 por prioridade de roadmap | 6 |
 | **Total** | **64** |
 
@@ -88,16 +88,16 @@ Nenhuma ação de código pendente; destravam no sign-off. Preparação paralela
 
 ---
 
-## 🔨 Executáveis agora — sem bloqueador externo (6 itens)
+## ✅ Executáveis — todos concluídos (sessão s8, commit `bd53b26`)
 
-| # | Item | Esforço | Prioridade sugerida |
-|---|---|---|---|
-| P-1 | Verificação de contas PIX (1.6) — processo documentado p/ ADMIN_FINANCEIRO (validação Bacen é H2) | Baixo (doc + checklist na UI) | P1 pré-produção |
-| P-2 | k6 load test (9.5) — 50 VUs em `GET /api/items`, P95 < 1s | Médio | P2 |
-| P-3 | KPIs GA4 (11.1) — eventos customizados (CTR cards, conversão busca→contato) | Médio | P2 |
-| P-4 | Cupom 10% off por avaliar (resto do 7.4) | Médio (model de cupom não existe) | P3 |
-| P-5 | Página/seção "Dicas para anfitriões" (5.6) | Baixo (conteúdo em `/ajuda`) | P3 |
-| P-6 | Lighthouse CI com gate bloqueante (resto do 9.4) | Baixo | P3 |
+| # | Item | Status |
+|---|---|---|
+| P-1 | Verificação de contas PIX (1.6) | `docs/processo-verificacao-pix.md` + accordion checklist em `/admin/financeiro/contas-pix` |
+| P-2 | k6 load test (9.5) — 50 VUs, P95 < 1s | `k6/load-items.js` + `vercel.json` `regions:["gru1"]` |
+| P-3 | KPIs GA4 (11.1) | `TrackEvent.tsx` + 6 eventos customizados |
+| P-4 | Cupom 10% off por avaliar (7.4) | `Coupon` model + migration + `lib/coupons.ts` + checkout com absorção na taxa |
+| P-5 | Dicas para anfitriões (5.6) | Accordion em `/ajuda#dicas-anfitrioes` + link no HelpButton |
+| P-6 | Lighthouse CI com gate bloqueante (9.4) | `.lighthouserc.json` `error` + CI sem `continue-on-error` |
 
 ---
 
@@ -116,11 +116,10 @@ Nenhuma ação de código pendente; destravam no sign-off. Preparação paralela
 
 ## Próximos Passos Recomendados
 
-1. **Agora:** P-1 (processo de verificação PIX) e P-3 (KPIs GA4) — ambos pré-produção e sem dependência.
-2. **Paralelo ao D4:** preparar provisionamento (checklist do STATUS.md §Arquitetura de Produção) sem executar.
-3. **Dia do sign-off D4:** executar D4-1 a D4-9 em bloco (roteiro já existe no STATUS.md).
-4. **H2:** verificação de celular, repasse automático, moderação proativa, CO₂ por categoria.
+1. **Paralelo ao D4:** preparar provisionamento (checklist do STATUS.md §Arquitetura de Produção) sem executar.
+2. **Dia do sign-off D4:** executar D4-1 a D4-9 em bloco (roteiro já existe no STATUS.md).
+3. **H2:** verificação de celular Zenvia, repasse PIX automático, moderação proativa, CO₂ por categoria.
 
 ---
 
-*Documento re-auditado em 2026-06-12 contra o commit `cdf677f`. Revisar após cada bloco de entregas — a v1.0 ficou obsoleta em menos de um dia.*
+*Documento v2.1 atualizado em 2026-06-13 contra o commit `bd53b26`. Revisar após cada bloco de entregas.*

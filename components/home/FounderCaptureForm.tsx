@@ -12,11 +12,12 @@ function resolveIntent(selected: Set<IntentOption>): "proprietario" | "locatario
 }
 
 export function FounderCaptureForm() {
-  const [state, setState]       = useState<State>("collapsed")
-  const [selected, setSelected] = useState<Set<IntentOption>>(new Set(["proprietario"]))
-  const [name, setName]         = useState("")
-  const [email, setEmail]       = useState("")
-  const [position, setPosition] = useState(0)
+  const [state, setState]         = useState<State>("collapsed")
+  const [selected, setSelected]   = useState<Set<IntentOption>>(new Set(["proprietario"]))
+  const [name, setName]           = useState("")
+  const [email, setEmail]         = useState("")
+  const [lgpdConsent, setLgpdConsent] = useState(false)
+  const [position, setPosition]   = useState(0)
 
   function toggleIntent(opt: IntentOption) {
     setSelected((prev) => {
@@ -42,8 +43,8 @@ export function FounderCaptureForm() {
           email:            email.trim().toLowerCase(),
           name:             name.trim() || undefined,
           intent:           resolveIntent(selected),
-          marketingConsent: true as const,
-          consentVersion:   "v1.0",
+          marketingConsent: lgpdConsent,
+          consentVersion:   "v1.1",
           source:           "VIP_LANDING",
         }),
       })
@@ -190,9 +191,26 @@ export function FounderCaptureForm() {
         </div>
       )}
 
+      <label className="flex cursor-pointer items-start gap-2.5">
+        <input
+          type="checkbox"
+          checked={lgpdConsent}
+          onChange={(e) => setLgpdConsent(e.target.checked)}
+          disabled={state === "loading"}
+          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-white/30 bg-white/10 accent-accent"
+        />
+        <span className="text-xs leading-snug text-white/60">
+          Concordo em receber comunicações sobre o lançamento do Shareo. Posso cancelar a qualquer momento
+          pelo e-mail{" "}
+          <a href="mailto:privacidade@shareo.com.br" className="underline decoration-white/30 hover:decoration-white/60">
+            privacidade@shareo.com.br
+          </a>.
+        </span>
+      </label>
+
       <button
         type="submit"
-        disabled={state === "loading" || !email.trim()}
+        disabled={state === "loading" || !email.trim() || !lgpdConsent}
         aria-busy={state === "loading"}
         className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg bg-brand px-6 py-3 text-sm font-semibold uppercase tracking-[0.4px] text-white transition-colors hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary disabled:cursor-not-allowed disabled:opacity-70"
       >
@@ -214,11 +232,11 @@ export function FounderCaptureForm() {
         )}
       </button>
 
-      <p className="text-center text-xs text-white/50">
-        Sem spam. Exclusão a qualquer momento em{" "}
-        <a href="mailto:privacidade@shareo.com.br" className="underline decoration-white/30 hover:decoration-white/60">
-          privacidade@shareo.com.br
-        </a>
+      <p className="text-center text-xs text-white/40">
+        Ao continuar você aceita as{" "}
+        <a href="/politicas" className="underline decoration-white/30 hover:decoration-white/60">
+          políticas do Shareo
+        </a>.
       </p>
     </form>
   )
