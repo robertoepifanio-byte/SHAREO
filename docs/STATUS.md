@@ -1,8 +1,8 @@
 # ShareO — Status do Projeto
 
-**Atualizado em**: 2026-06-12 (sessão — auditoria de promessas não implementadas + lançamento nacional + fixes UI + re-seed staging por capitais)
+**Atualizado em**: 2026-06-12 (sessão s7b — fix e-mails de verificação + stats homepage reais + sort "Mais alugados" + E2E PriceCalc estável)
 **Ambiente staging**: https://shareo-rouge.vercel.app (⚠️ deploys automáticos GitHub→Vercel aparecem **Canceled** — deploy real é manual: `npx vercel --prod`)
-**Último commit**: `ac88374`
+**Último commit**: `1c6a7dc`
 **Release atual**: [`v1.3.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.3.0) — Lançamento Nacional + Embaixadores (commit `60b5b92`, jun/12) — aguarda D4 para produção
 **Release anterior**: [`v1.2.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.2.0) (a v1.1.0 planejada foi absorvida pela v1.2.0)
 
@@ -15,6 +15,10 @@
 ---
 
 ## Resumo Executivo
+
+**✅ Fix crítico — e-mails de verificação não chegavam + links 404** (commits `28ca951`–`5c55582`, jun/12). Duas causas raiz: (1) e-mails disparados fire-and-forget morriam quando a lambda congelava após a resposta — `after()` do `next/server` aplicado em ~30 rotas; (2) `NEXTAUTH_URL` vazia no Vercel + fallback com `??` (que não captura string vazia) gerava links quebrados — criado `lib/app-url.ts` com `||` + strip de barra final, e a var foi recriada limpa no Vercel. UI de reenvio em `/perfil/seguranca` agora mostra o motivo real (429 → "limite atingido, tente em N minutos" via Retry-After; rate limit é 3/hora).
+
+**✅ Bloco rápido jun/12 s7b** (commit `1c6a7dc`). (1) Stats da homepage agora reais do banco: itens disponíveis, proprietários ativos, avaliação média (mín. 5 reviews) e categorias — staging mostra 27 itens / 2 proprietários (decisão aberta: fundadores podem preferir copy aspiracional). (2) Ordenação "Mais alugados" (`?sort=rented` por contagem de bookings) no Explorar. (3) E2E PriceCalc estabilizado — 18/18 em 3 execuções paralelas (fix de race de hidratação + seletor escopado) + teste novo do teto R$500. (4) Verificado que já existiam (doc promessas desatualizado): link Indicações, filtro minRating, cron ambassador-decay. (5) P1/P2 sem bloqueador (`287c64c`): getAutoCancelConfig, getPayoutWindowDays, getUploadLimits, RATE_LIMITS nomeado em 13 endpoints, alerta R$500 no PriceCalc, `await` em payout.create. Suíte: 23 suítes / 408 testes ✅.
 
 **✅ Staging re-seedado por capitais** (jun/12). 29 itens demo antigos de Natal soft-deletados (preservados itens E2E — a "Câmera Fixture E2E Smoke Test" tem 235 bookings da suíte); `seed-demo-items.ts` recriou 21 itens, 3 por capital (SP, RJ, BH, Curitiba, POA, Salvador, Recife), **todos com foto validada**. Regra: só sobe item com foto — os 8 itens do `prisma/seed.ts` (sem imagens) não foram recriados. Validado no banco e na API pública.
 
@@ -189,6 +193,8 @@ Próximo passo: resolver P0 sem bloqueador externo (hardcoded + scripts) → agu
 | **jun/07** | ViaCEP auto-fill endereço, CSP atualizado (`viacep.com.br`), Lighthouse CI smoke #32 ✅ |
 | **jun/08** | Logo recortado (sharp) 1254×1254→1216×275, ícone mobile atualizado, taxa plataforma fix `10% → 15%` |
 | **jun/09** | Multiplicadores semanal (3×) / mensal (15×) configuráveis SuperAdmin; taxa 100% dinâmica (zero hardcode); ajuda page atualizada (seguro/extravio, indicação, limite R$1.000, precificação 3–5%); fotos MVP limitadas a 3 |
+| **jun/12 s7** | Hardcoded P0/P1/P2 → PlatformConfig (cancelamento, tiers embaixador, referral, late fee, auto-cancel, payout window, uploads); CEP ViaCEP no cadastro; RATE_LIMITS nomeado; auditoria de promessas (64 itens); suíte 408 testes verde |
+| **jun/12 s7b** | Fix e-mails (after() em ~30 rotas + NEXTAUTH_URL recriada + lib/app-url.ts); stats homepage reais; sort "Mais alugados"; E2E PriceCalc 18/18 estável + teste teto R$500; UI reenvio de verificação mostra motivo real (429) |
 
 ---
 
