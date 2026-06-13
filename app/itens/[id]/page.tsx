@@ -14,6 +14,7 @@ import { getPlatformFeeRate, CHECKOUT_MAX_CENTS } from "@/lib/platform-config"
 import { ItemCard } from "@/components/items/ItemCard"
 import { AvailabilityCalendar } from "@/components/items/AvailabilityCalendar"
 import { ReviewDetails, ReviewSentiment } from "@/components/reviews/ReviewDetails"
+import { TrackEvent } from "@/components/analytics/TrackEvent"
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ back?: string }> }
 
@@ -243,6 +244,7 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
 
   return (
     <>
+    <TrackEvent event={{ name: "item_view", params: { item_id: item.id, item_name: item.title, category: item.category?.name ?? "sem-categoria" } }} />
     <script
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}

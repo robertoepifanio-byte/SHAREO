@@ -4,6 +4,7 @@ import { useState, useTransition, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { calcBookingTotal } from "@/lib/pricing"
+import { trackEvent } from "@/components/analytics/GoogleAnalytics"
 
 interface Props {
   pricePerDay:      number
@@ -77,6 +78,7 @@ export function PriceCalc({
   const [startDate, setStartDate] = useState("")
   const [numDays,   setNumDays]   = useState(1)
   const [note,      setNote]      = useState("")
+  const [coupon,    setCoupon]    = useState("")
   const [error,     setError]     = useState("")
   const [pending,   startTransition] = useTransition()
 
@@ -136,6 +138,7 @@ export function PriceCalc({
           startDate: new Date(`${startDate}T12:00:00`).toISOString(),
           endDate:   new Date(`${endDate}T12:00:00`).toISOString(),
           borrowerNote: note || undefined,
+          couponCode:   coupon.trim() || undefined,
         }),
       })
       const json = await res.json()
@@ -146,6 +149,7 @@ export function PriceCalc({
         setError(detail)
         return
       }
+      trackEvent({ name: "booking_started", params: { item_id: itemId, price: subtotalCents / 100 } })
       router.push(`/reservas/${json.data.id}`)
     })
   }
@@ -352,6 +356,28 @@ export function PriceCalc({
             placeholder="Ex.: Preciso para um evento no fim de semana…"
             className="w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-brand transition-colors placeholder:text-muted-foreground"
           />
+        </div>
+      )}
+
+      {/* P3-20 — Cupom de desconto (ganho ao avaliar locações anteriores) */}
+      {isReady && isLoggedIn && (
+        <div className="mb-4">
+          <label htmlFor="coupon-code" className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Cupom de desconto (opcional)
+          </label>
+          <input
+            id="coupon-code"
+            type="text"
+            value={coupon}
+            onChange={(e) => setCoupon(e.target.value.toUpperCase())}
+            maxLength={30}
+            autoComplete="off"
+            placeholder="Ex.: SHARE10-AB2CD"
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm uppercase text-foreground outline-none focus:border-brand transition-colors placeholder:normal-case placeholder:text-muted-foreground"
+          />
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            O desconto é aplicado no valor final da reserva.
+          </p>
         </div>
       )}
 

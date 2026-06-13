@@ -13,6 +13,7 @@ export const CreateBookingSchema = z
     startDate:   z.string().datetime({ message: "startDate inválida" }),
     endDate:     z.string().datetime({ message: "endDate inválida" }),
     borrowerNote: z.string().max(500, "Nota: máximo 500 caracteres").optional(),
+    couponCode:   z.string().trim().min(4).max(30).optional(),
   })
   .refine((d) => new Date(d.startDate) >= tomorrow(), {
     message: "A data de início deve ser a partir de amanhã",

@@ -10,6 +10,7 @@ import type { WebhookEvent } from "@/lib/outboundWebhooks"
 import { sendBookingConfirmedEmail, sendBookingCancelledEmail } from "@/lib/email"
 import { calcRefund } from "@/lib/cancellationPolicy"
 import { getCancellationConfig, getPayoutWindowDays } from "@/lib/platform-config"
+import { releaseCouponForBooking } from "@/lib/coupons"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -343,6 +344,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           booking.item.title, id, reason ?? undefined,
         ).catch((e) => console.error("[email] booking cancelled:", e instanceof Error ? e.message : e))
       )
+      // P3-20: devolve o cupom usado nesta reserva — após a resposta
+      after(() => releaseCouponForBooking(id))
     }
 
     // Webhooks de saída — após a resposta

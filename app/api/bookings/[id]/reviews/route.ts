@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { CreateReviewSchema } from "@/lib/validations/reviews"
 import type { ReviewType } from "@prisma/client"
 import { REPUTATION_PER_REVIEW } from "@/lib/badges"
+import { issueReviewCoupon } from "@/lib/coupons"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -175,6 +176,9 @@ export async function POST(req: NextRequest, { params }: Params) {
         data:  { reputationPoints: { increment: REPUTATION_PER_REVIEW } },
       }).catch(() => {})
     )
+
+    // P3-20: cupom de desconto por avaliar (1 por reserva; idempotente) — após a resposta
+    after(() => issueReviewCoupon(userId, id))
 
     // Notifica o avaliado — após a resposta
     after(() =>

@@ -34,6 +34,34 @@ export async function getCancellationConfig(): Promise<CancellationConfig> {
   }
 }
 
+// ─── Cupom por avaliação (P3-20) ──────────────────────────────────────────────
+
+export interface ReviewCouponConfig {
+  enabled:      boolean // chave reviewCouponEnabled ("true"/"false")
+  percentOff:   number  // chave reviewCouponPercent (default 10)
+  validityDays: number  // chave reviewCouponValidityDays (default 90)
+}
+
+const DEFAULT_REVIEW_COUPON: ReviewCouponConfig = { enabled: true, percentOff: 10, validityDays: 90 }
+
+export async function getReviewCouponConfig(): Promise<ReviewCouponConfig> {
+  try {
+    const rows = await prisma.platformConfig.findMany({
+      where: { key: { in: ["reviewCouponEnabled", "reviewCouponPercent", "reviewCouponValidityDays"] } },
+    })
+    const map = Object.fromEntries(rows.map((r) => [r.key, r.value]))
+    const percent  = parseInt(map.reviewCouponPercent ?? "", 10)
+    const validity = parseInt(map.reviewCouponValidityDays ?? "", 10)
+    return {
+      enabled:      map.reviewCouponEnabled !== undefined ? map.reviewCouponEnabled === "true" : DEFAULT_REVIEW_COUPON.enabled,
+      percentOff:   Number.isFinite(percent)  && percent  > 0 ? percent  : DEFAULT_REVIEW_COUPON.percentOff,
+      validityDays: Number.isFinite(validity) && validity > 0 ? validity : DEFAULT_REVIEW_COUPON.validityDays,
+    }
+  } catch {
+    return DEFAULT_REVIEW_COUPON
+  }
+}
+
 // ─── Thresholds de embaixador ─────────────────────────────────────────────────
 
 export interface AmbassadorThresholds {

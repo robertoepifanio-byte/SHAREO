@@ -88,6 +88,7 @@ enum NotificationType {
   RETURN_REMINDER          // P2-59 — lembrete manual de devolução enviado pelo proprietário
   AMBASSADOR_COMMISSION    // ADR-022 — comissão gerada por locação de indicado
   AMBASSADOR_TIER_UP       // ADR-022 — embaixador subiu de tier
+  COUPON_EARNED            // P3-20 — cupom de desconto ganho por avaliar
 }
 
 enum CheckPhase {
@@ -298,6 +299,7 @@ model User {
   sessions            Session[]
   ownerPaymentAccount OwnerPaymentAccount?
   founderLead         FounderLead?
+  coupons             Coupon[]
 
   @@index([email])
   @@index([latitude, longitude])
@@ -461,6 +463,9 @@ model Booking {
   depositStatus        DepositStatus @default(NONE)
   stripeDisputeId      String?
 
+  // P3-20 — desconto de cupom aplicado na criação (absorvido pela taxa da plataforma, não pelo proprietário)
+  discountCents Int?
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime? // soft delete — LGPD obrigatório em dados transacionais
@@ -473,6 +478,7 @@ model Booking {
   platformTransactions  PlatformTransaction[]
   payouts               Payout[]
   ambassadorCommissions AmbassadorCommission[]
+  couponUsed            Coupon?                @relation("CouponUsedInBooking")
 
   @@index([borrowerId])
   @@index([ownerId])
@@ -482,6 +488,32 @@ model Booking {
   @@index([itemId, status, startDate, endDate])
   @@index([ownerId, paymentStatus, paidAt])
   @@map("bookings")
+}
+
+// P3-20 — cupom de desconto ganho ao avaliar (1 por reserva avaliada por usuário).
+// O desconto é absorvido pela taxa da plataforma; o proprietário recebe o valor cheio.
+model Coupon {
+  id         String  @id @default(cuid())
+  userId     String
+  user       User    @relation(fields: [userId], references: [id])
+  code       String  @unique
+  percentOff Int // ex.: 10 = 10%
+  source     String  @default("review_reward")
+
+  // Reserva que originou o cupom (impede cupom duplicado pela mesma reserva)
+  sourceBookingId String?
+
+  expiresAt DateTime
+  usedAt    DateTime?
+  // Reserva onde o cupom foi usado
+  bookingId String?  @unique
+  booking   Booking? @relation("CouponUsedInBooking", fields: [bookingId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, sourceBookingId])
+  @@index([userId, usedAt])
+  @@map("coupons")
 }
 
 model Review {

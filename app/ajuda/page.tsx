@@ -519,6 +519,71 @@ export default async function AjudaPage() {
           </div>
         </section>
 
+        {/* P-5 — Dicas para anfitriões (prometido no protótipo v3b, nav "Anunciar") */}
+        <section id="dicas-anfitrioes" className="bg-background px-4 py-16 border-b border-border scroll-mt-20">
+          <div className="container mx-auto max-w-3xl">
+            <div className="mb-10 text-center">
+              <span className="rounded-full bg-brand/10 px-4 py-1 text-xs font-bold text-brand uppercase tracking-wide">
+                Para proprietários
+              </span>
+              <h2 className="mt-3 font-display text-2xl font-bold text-primary">
+                Dicas para anfitriões
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
+                Maximize seus aluguéis: o que separa um anúncio que aluga toda semana de um que ninguém vê.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {[
+                {
+                  emoji: "📸",
+                  title: "Fotos vendem — tire 3 boas",
+                  body: "Luz natural, fundo limpo e o item inteiro no quadro. A primeira foto é a capa do anúncio: mostre o item em uso ou montado, não dentro da caixa. Itens sem foto nem entram na busca.",
+                },
+                {
+                  emoji: "💰",
+                  title: "Precifique pela referência",
+                  body: "A diária ideal fica entre 3% e 5% do valor do produto — o formulário sugere automaticamente pela faixa de valor. Ofereça preço semanal e mensal: períodos longos alugam mais e dão menos trabalho de logística.",
+                },
+                {
+                  emoji: "⚡",
+                  title: "Responda rápido",
+                  body: "Solicitações expiram se você não responder, e quem responde em menos de 1 hora ganha o selo de resposta rápida no perfil. Ative as notificações e use o chat para combinar tudo por escrito.",
+                },
+                {
+                  emoji: "📝",
+                  title: "Descreva como se fosse o manual",
+                  body: "Marca, modelo, voltagem, o que acompanha (cabos, brocas, manual) e o estado real de conservação. Descrição honesta evita disputa na devolução — e o critério “item como descrito” das avaliações pesa no seu perfil.",
+                },
+                {
+                  emoji: "🤝",
+                  title: "Combine retirada e devolução com clareza",
+                  body: "Confira o item junto com o locatário na entrega, use o código de retirada e registre fotos do estado. Na devolução, confirme pela plataforma no mesmo dia — o repasse via PIX conta a partir da confirmação.",
+                },
+                {
+                  emoji: "⭐",
+                  title: "Avalie sempre",
+                  body: "Avaliar o locatário libera a conclusão da locação e constrói sua reputação. Perfis com avaliações e selo de verificação convertem muito mais visitas em reservas.",
+                },
+              ].map((tip) => (
+                <details key={tip.title} className="group/tip rounded-xl border border-border bg-surface px-5 py-4">
+                  <summary className="cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden flex items-center justify-between gap-3">
+                    <span className="flex items-center gap-3 font-semibold text-foreground">
+                      <span className="text-xl" aria-hidden="true">{tip.emoji}</span>
+                      {tip.title}
+                    </span>
+                    <svg className="h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform duration-200 group-open/tip:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </summary>
+                  <p className="mt-3 text-sm text-muted-foreground">{tip.body}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* Tabela de taxas */}
         <section id="taxas-secao" className="bg-background px-4 py-12 border-b border-border scroll-mt-20">
           <div className="container mx-auto max-w-3xl">

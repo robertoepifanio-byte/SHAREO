@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState } from "react"
+import { trackEvent } from "@/components/analytics/GoogleAnalytics"
 
 type ReviewType = "ITEM" | "OWNER" | "BORROWER"
 
@@ -143,6 +144,7 @@ export function ReviewForm({ bookingId, reviewType, targetName, existing }: Prop
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok) { setError((json as { error?: { message?: string } }).error?.message ?? "Erro ao enviar avaliação."); return }
+      trackEvent({ name: "review_submitted", params: { review_type: reviewType, rating } })
       setDone(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao enviar avaliação.")

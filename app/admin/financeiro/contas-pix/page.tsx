@@ -51,6 +51,23 @@ export default async function ContasPixPage() {
         </div>
       </div>
 
+      {/* Checklist do processo manual — docs/processo-verificacao-pix.md */}
+      <details className="rounded-xl border border-border bg-surface px-5 py-4">
+        <summary className="cursor-pointer text-sm font-semibold text-foreground">
+          ✓ Checklist de verificação manual (abrir antes de aprovar)
+        </summary>
+        <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-sm text-muted-foreground">
+          <li><strong className="text-foreground">Titularidade:</strong> o nome do titular da chave deve corresponder ao nome do usuário na plataforma.</li>
+          <li><strong className="text-foreground">Coerência da chave:</strong> CPF/e-mail/telefone idealmente iguais aos do cadastro; chave aleatória (EVP) exige transferência de teste.</li>
+          <li><strong className="text-foreground">Histórico:</strong> conta recém-criada com chave de terceiro é sinal de alerta — verificar e-mail confirmado e anúncio real.</li>
+          <li><strong className="text-foreground">Transferência de teste (R$0,01)</strong> em caso de dúvida: o nome do recebedor exibido pelo banco deve bater com o titular informado.</li>
+          <li><strong className="text-foreground">SLA:</strong> verificar em até 2 dias úteis — repasses só saem para contas verificadas.</li>
+        </ol>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Processo completo e sinais de fraude: <code>docs/processo-verificacao-pix.md</code>. Toda ação é registrada no AdminLog.
+        </p>
+      </details>
+
       {accounts.length === 0 ? (
         <div className="rounded-xl border border-border bg-surface p-8 text-center text-sm text-muted-foreground">
           Nenhuma conta PIX cadastrada ainda.

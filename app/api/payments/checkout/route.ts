@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
         status:        true,
         paymentStatus: true,
         totalPrice:    true,
+        discountCents: true,
         totalDays:     true,
         startDate:     true,
         endDate:       true,
@@ -90,9 +91,17 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // FIN-2.2: calcular split da plataforma antes de criar a Checkout Session
-    const feeRate = await getPlatformFeeRate()
-    const split   = calcSplit(booking.totalPrice, feeRate)
+    // FIN-2.2: calcular split da plataforma antes de criar a Checkout Session.
+    // P3-20: o split usa o valor BRUTO (sem cupom) — o proprietário recebe o valor cheio
+    // e o desconto é deduzido da taxa da plataforma.
+    const feeRate  = await getPlatformFeeRate()
+    const discount = booking.discountCents ?? 0
+    const grossSplit = calcSplit(booking.totalPrice + discount, feeRate)
+    const split = {
+      platformFeeRate:   grossSplit.platformFeeRate,
+      platformFeeAmount: Math.max(0, grossSplit.platformFeeAmount - discount),
+      ownerNetAmount:    grossSplit.ownerNetAmount,
+    }
 
     const appUrl = APP_URL
 

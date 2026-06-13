@@ -40,7 +40,7 @@ export function GoogleAnalytics({ nonce }: { nonce?: string }) {
 }
 
 // Helper tipado para eventos customizados
-type GA4Event =
+export type GA4Event =
   | { name: "item_view";          params: { item_id: string; item_name: string; category: string } }
   | { name: "booking_started";    params: { item_id: string; price: number } }
   | { name: "booking_completed";  params: { booking_id: string; value: number } }

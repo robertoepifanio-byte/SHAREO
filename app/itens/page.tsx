@@ -18,6 +18,7 @@ import { getUserCoords, BRAZIL_DEFAULT } from "@/lib/userLocation"
 import { MapToggle } from "./_MapToggle"
 import { PullToRefresh } from "@/components/items/PullToRefresh"
 import { FloatingCTA } from "@/components/items/FloatingCTA"
+import { TrackEvent } from "@/components/analytics/TrackEvent"
 import { RentBanner } from "./_RentBanner"
 
 export const metadata: Metadata = {
@@ -369,6 +370,13 @@ export default async function ExplorarPage({ searchParams }: Props) {
 
           {/* Área de resultados */}
           <div className="min-w-0 flex-1">
+
+            {search && (
+              <TrackEvent
+                key={`search-${search}-${total}`}
+                event={{ name: "search", params: { search_term: search, results_count: total } }}
+              />
+            )}
 
             {/* Chips de filtros ativos — Suspense obrigatório: useSearchParams no interior */}
             <Suspense fallback={null}>

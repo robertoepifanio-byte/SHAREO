@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { BookingProgressBar } from "@/components/booking/BookingProgressBar"
+import { TrackEvent } from "@/components/analytics/TrackEvent"
 
 export const metadata: Metadata = { title: "Reserva confirmada! — ShareO" }
 
@@ -72,6 +73,7 @@ export default async function BookingSuccessPage({ searchParams }: Props) {
 
   return (
     <div className="min-h-screen bg-background">
+      <TrackEvent event={{ name: "booking_completed", params: { booking_id: booking.id, value: booking.totalPrice / 100 } }} />
       <AppHeader />
 
       <main className="container py-10">
