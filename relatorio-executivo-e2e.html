@@ -158,7 +158,7 @@
     <h1>Relatório Executivo</h1>
     <div class="subtitle">— Testes E2E ShareO —</div>
     <div class="divider-line"></div>
-    <div class="meta">Ambiente: Staging &nbsp;|&nbsp; shareo-rouge.vercel.app &nbsp;|&nbsp; 2026-06-08 &nbsp;|&nbsp; Playwright · Chromium · Firefox · WebKit · Edge</div>
+    <div class="meta">Ambiente: Staging &nbsp;|&nbsp; shareo-rouge.vercel.app &nbsp;|&nbsp; 2026-06-13 &nbsp;|&nbsp; Playwright · Chromium · Firefox · WebKit · Edge · k6</div>
   </div>
 
   <!-- ── OBJETIVO ── -->
@@ -170,7 +170,7 @@
     <p class="objetivo-text">
       Validar o <strong>ShareO</strong><span class="dot"> ● </span>no <strong>ambiente de Staging</strong> garantindo funcionalidade,
       segurança, acessibilidade, conformidade LGPD e Core Web Vitals — cobrindo <strong>32 smokes</strong> em
-      <strong>múltiplas suites Playwright</strong> antes do sign-off formal de produção (após D4 jurídico).
+      <strong>múltiplas suites Playwright + k6 load test</strong> antes do sign-off formal de produção (após D4 jurídico).
     </p>
 
     <div class="kpi-strip">
@@ -187,20 +187,20 @@
         <div class="label">Falhas</div>
       </div>
       <div class="kpi">
-        <div class="num green">87</div>
-        <div class="label">Suite Base</div>
+        <div class="num green">230+</div>
+        <div class="label">Total Testes</div>
       </div>
       <div class="kpi">
-        <div class="num green">33</div>
+        <div class="num green">40</div>
         <div class="label">Financeiro</div>
       </div>
       <div class="kpi">
-        <div class="num green">28</div>
-        <div class="label">Admin</div>
+        <div class="num green">159ms</div>
+        <div class="label">k6 P95</div>
       </div>
       <div class="kpi">
-        <div class="num green">37</div>
-        <div class="label">Security</div>
+        <div class="num green">LH ✅</div>
+        <div class="label">CWV Gate</div>
       </div>
       <div class="kpi">
         <div class="num green">0</div>
@@ -320,10 +320,10 @@
         </tr>
         <tr>
           <td class="name">Financeiro</td>
-          <td class="center"><span class="badge ok">✅ 33</span></td>
+          <td class="center"><span class="badge ok">✅ 40</span></td>
           <td class="center">0</td>
           <td class="center">0</td>
-          <td>PIX · Split · Payout · Chargebacks · CSV · Informe IR · Relatório mensal</td>
+          <td>PIX · Split · Payout · Chargebacks · CSV · Informe IR · Relatório mensal · 7 cards métricas</td>
         </tr>
         <tr>
           <td class="name">Admin Usuários</td>
@@ -347,6 +347,20 @@
           <td>Smokes #23–#27 — Exclusão conta, CSV, filtros, LGPD, payout auth</td>
         </tr>
         <tr>
+          <td class="name">PriceCalc</td>
+          <td class="center"><span class="badge ok">✅ 18</span></td>
+          <td class="center">0</td>
+          <td class="center">0</td>
+          <td>Diária/semanal/mensal · teto R$500 · hidratação SSR estável — 3 execuções paralelas</td>
+        </tr>
+        <tr>
+          <td class="name">Features jun/09</td>
+          <td class="center"><span class="badge ok">✅ 16</span></td>
+          <td class="center">0</td>
+          <td class="center">0</td>
+          <td>pickupToken PIX · actualTime · 3 fotos de devolução · taxa dinâmica · multiplicadores</td>
+        </tr>
+        <tr>
           <td class="name">Reviews + Chat</td>
           <td class="center"><span class="badge ok">✅</span></td>
           <td class="center">0</td>
@@ -365,7 +379,14 @@
           <td class="center"><span class="badge ok">✅</span></td>
           <td class="center">0</td>
           <td class="center">—</td>
-          <td>Smoke #32 — LCP &lt; 2.5s · CLS &lt; 0.1 · INP &lt; 200ms contra staging</td>
+          <td>Smoke #32 — LCP &lt; 2.5s · CLS &lt; 0.1 · INP &lt; 200ms contra staging · <strong>gate bloqueante no CI</strong></td>
+        </tr>
+        <tr>
+          <td class="name">k6 Load Test</td>
+          <td class="center"><span class="badge ok">✅ P95=159ms</span></td>
+          <td class="center">0</td>
+          <td class="center">—</td>
+          <td>50 VUs · 4 min · 4117 iterações · P95&lt;1s ✅ · 0% falhas · region gru1 (São Paulo)</td>
         </tr>
       </tbody>
     </table>
@@ -450,10 +471,11 @@
         </div>
         <ul>
           <li><span class="bullet">●</span>32/32 smokes aprovados — zero falhas, zero flaky</li>
-          <li><span class="bullet">●</span>185+ testes Playwright nas suites combinadas</li>
+          <li><span class="bullet">●</span>230+ testes Playwright nas suites combinadas</li>
           <li><span class="bullet">●</span>WCAG 2.1 AA, LGPD e segurança validados programaticamente</li>
           <li><span class="bullet">●</span>Cross-browser 4/4: Chrome, Firefox, Edge, WebKit</li>
-          <li><span class="bullet">●</span>Core Web Vitals (Lighthouse) passando em staging</li>
+          <li><span class="bullet">●</span>Lighthouse CI gate bloqueante — LCP&lt;2.5s, CLS&lt;0.1, INP&lt;200ms</li>
+          <li><span class="bullet">●</span>k6: 50 VUs, P95=159ms, 0% falhas — region gru1 (71× menos latência)</li>
           <li><span class="bullet">●</span>CI regressão contínua ativo — e2e-staging após cada deploy</li>
           <li><span class="bullet">●</span>iOS Safari e validação manual pendentes — julho/2026</li>
         </ul>
@@ -478,7 +500,7 @@
           </li>
           <li>
             <svg class="bullet" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-            Deletar scripts temporários antes de go-live
+            <s style="opacity:.5">Deletar scripts temporários antes de go-live</s>&nbsp;<strong style="color:#166534">✅ deletados (commit 939c8b6)</strong>
           </li>
           <li>
             <svg class="bullet" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="3"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -500,7 +522,7 @@
   <!-- ── STATUS GERAL ── -->
   <div class="footer-status">
     ✅ &nbsp;STATUS GERAL: STAGING APROVADO — AGUARDANDO D4 (JURÍDICO) PARA GO-LIVE
-    <div class="sub">32 smokes ✅ · 185+ testes · zero flaky · 4 browsers · Lighthouse CWV ✅ · shareo-rouge.vercel.app · 2026-06-08 · commit e2ffbc7</div>
+    <div class="sub">32 smokes ✅ · 230+ testes · zero flaky · 4 browsers · k6 P95=159ms ✅ · LH CI gate ✅ · shareo-rouge.vercel.app · 2026-06-13 · commit 9b51199</div>
   </div>
 
 </div>

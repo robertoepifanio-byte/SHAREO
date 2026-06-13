@@ -492,7 +492,7 @@
     <h1>Relatório Executivo</h1>
     <div class="subtitle">— Inventário de Funcionalidades ShareO —</div>
     <div class="divider-line"></div>
-    <div class="meta">Versão MVP · Next.js App Router · TypeScript · Supabase · Stripe &nbsp;|&nbsp; 2026-06-09 &nbsp;|&nbsp; Gerado a partir do código-fonte (staging aprovado · commit 31068af)</div>
+    <div class="meta">Versão MVP · Next.js App Router · TypeScript · Supabase · Stripe &nbsp;|&nbsp; 2026-06-13 &nbsp;|&nbsp; Gerado a partir do código-fonte (staging aprovado · commit 9b51199)</div>
   </div>
 
   <!-- ── OBJETIVO ── -->
@@ -504,30 +504,30 @@
     <p class="objetivo-text">
       Inventário completo das funcionalidades do <strong>ShareO</strong><span class="dot"> ● </span>
       marketplace de economia circular para aluguel de itens. Baseado no código-fonte atual
-      do repositório (<strong>branch main</strong>, staging aprovado). Cobre as <strong>24 categorias</strong>
-      do MVP — autenticação, itens, reservas, pagamentos, LGPD, acessibilidade, segurança
-      e infraestrutura — com indicação de fase de entrega por item.
+      do repositório (<strong>branch main</strong>, staging aprovado). Cobre as <strong>27 categorias</strong>
+      do MVP — autenticação, itens, reservas, pagamentos, LGPD, embaixadores, fundadores,
+      acessibilidade, segurança e infraestrutura — com indicação de fase de entrega por item.
     </p>
 
     <div class="kpi-strip">
       <div class="kpi">
-        <div class="num">24</div>
+        <div class="num">27</div>
         <div class="label">Categorias</div>
       </div>
       <div class="kpi">
-        <div class="num green">178</div>
+        <div class="num green">207</div>
         <div class="label">Funcionalidades</div>
       </div>
       <div class="kpi">
-        <div class="num">35</div>
+        <div class="num">37</div>
         <div class="label">Páginas</div>
       </div>
       <div class="kpi">
-        <div class="num">47</div>
+        <div class="num">52</div>
         <div class="label">Endpoints API</div>
       </div>
       <div class="kpi">
-        <div class="num green">152</div>
+        <div class="num green">181</div>
         <div class="label">MVP (H1)</div>
       </div>
       <div class="kpi">
@@ -573,6 +573,9 @@
       <div class="area-chip ok"><div class="icon-wrap" style="background:#dcfce7">📲</div><div class="area-label">PWA</div></div>
       <div class="area-chip ok"><div class="icon-wrap" style="background:#dcfce7">❓</div><div class="area-label">Ajuda</div></div>
       <div class="area-chip ok"><div class="icon-wrap" style="background:#dcfce7">⚙️</div><div class="area-label">Infra &amp; CI</div></div>
+      <div class="area-chip ok"><div class="icon-wrap" style="background:#dcfce7">🏅</div><div class="area-label">Embaixadores</div></div>
+      <div class="area-chip ok"><div class="icon-wrap" style="background:#dcfce7">🎟️</div><div class="area-label">Fundadores</div></div>
+      <div class="area-chip ok"><div class="icon-wrap" style="background:#dcfce7">🎁</div><div class="area-label">Cupons</div></div>
       <div class="area-chip h3"><div class="icon-wrap" style="background:#ede9fe">📱</div><div class="area-label">App Nativo</div></div>
     </div>
   </div>
@@ -599,7 +602,7 @@
 
         <tr>
           <td class="cat">🔐 Autenticação</td>
-          <td class="count">10</td>
+          <td class="count">12</td>
           <td class="phase"><span class="badge mvp">H1</span></td>
           <td>
             <ul class="feat-list">
@@ -613,12 +616,14 @@
               <li>Auth mobile — endpoints separados (JWT)</li>
               <li>Rate limiting em endpoints de auth</li>
               <li>Redirecionamento pós-login com callbackUrl</li>
+              <li>Verificação de e-mail por token (48h) — bloqueia reservas se não verificado</li>
+              <li>Reenvio de e-mail com rate limit 3/hora (429 + Retry-After)</li>
             </ul>
           </td>
         </tr>
         <tr>
           <td class="cat">👤 Perfil</td>
-          <td class="count">9</td>
+          <td class="count">11</td>
           <td class="phase"><span class="badge mvp">H1</span></td>
           <td>
             <ul class="feat-list">
@@ -631,12 +636,14 @@
               <li>Data de membro desde</li>
               <li>Tipo de conta: PF ou PJ</li>
               <li>Upgrade de PF → PJ</li>
+              <li>Seção "Conquistas": badges (locatário, Avaliador Ativo), pontos e progress bar</li>
+              <li>Painel de indicações — link para <code>/perfil/embaixador</code></li>
             </ul>
           </td>
         </tr>
         <tr>
           <td class="cat">⚖️ LGPD</td>
-          <td class="count">7</td>
+          <td class="count">10</td>
           <td class="phase"><span class="badge mvp">H1</span></td>
           <td>
             <ul class="feat-list">
@@ -644,9 +651,12 @@
               <li>Excluir conta com confirmação (soft-delete)</li>
               <li>Verificação de identidade — CPF/CNPJ criptografados</li>
               <li>Status de verificação: pendente / aprovado / rejeitado + motivo</li>
-              <li>Política de Privacidade (<code>/privacidade</code>)</li>
-              <li>Termos de Serviço (<code>/termos</code>)</li>
+              <li>Política unificada (<code>/politicas</code>) — Termos, Privacidade, Cancelamento, Cookies, Contato</li>
+              <li>Encarregado (DPO) nomeado — art. 41 LGPD — contato <code>privacidade@shareo.com.br</code></li>
               <li>Zero PII em logs, zero PII em respostas de API desnecessárias</li>
+              <li>Consentimento explícito na Lista VIP (checkbox — art. 7 LGPD)</li>
+              <li>Registro de versão de consentimento (<code>consentVersion: "v1.1"</code>)</li>
+              <li>Direitos do titular: acesso, correção, exclusão, portabilidade (art. 18 LGPD)</li>
             </ul>
           </td>
         </tr>
@@ -669,10 +679,11 @@
               <li>Filtro por nota mínima (minRating)</li>
               <li>Filtro por distância (geolocalização)</li>
               <li>Chips de filtros ativos com remoção individual</li>
-              <li>Ordenação: mais recentes, menor preço, melhor avaliação</li>
+              <li>Ordenação: mais recentes, menor preço, melhor avaliação, mais alugados (<code>?sort=rented</code>)</li>
               <li>Toggle visualização em mapa (Mapbox / Leaflet)</li>
               <li>Pull to refresh (mobile)</li>
               <li>Skeleton loading + estado vazio com CTA</li>
+              <li>Sugestão de preço por faixa de valor do bem (<code>getPriceBand()</code> — auto-preenche diária/semana/mês)</li>
             </ul>
           </td>
         </tr>
@@ -762,22 +773,23 @@
         </tr>
         <tr>
           <td class="cat">💬 Chat</td>
-          <td class="count">6</td>
+          <td class="count">7</td>
           <td class="phase"><span class="badge mvp">H1</span></td>
           <td>
             <ul class="feat-list">
               <li>Chat em tempo real via Supabase Realtime</li>
               <li>Lista de conversas com preview da última mensagem</li>
               <li>Janela de conversa por ID (<code>/mensagens/[id]</code>)</li>
-              <li>Marcar conversa como lida</li>
+              <li>Marcar conversa como lida (badge do sino zera ao abrir)</li>
               <li>Conversa criada automaticamente ao solicitar reserva</li>
               <li>Link da reserva → chat e vice-versa</li>
+              <li>5 templates de mensagem rápida (chips quando input vazio)</li>
             </ul>
           </td>
         </tr>
         <tr>
           <td class="cat">⭐ Avaliações</td>
-          <td class="count">5</td>
+          <td class="count">8</td>
           <td class="phase"><span class="badge mvp">H1</span></td>
           <td>
             <ul class="feat-list">
@@ -786,6 +798,9 @@
               <li>Avaliar o locatário (proprietário → inquilino)</li>
               <li>Editar avaliação já enviada</li>
               <li>Nota média exibida no perfil e nos cards de item</li>
+              <li>Critérios por tipo: cuidado, pontualidade, comunicação (média automática)</li>
+              <li>Emoji de satisfação (😠–😍) — seletor + exibição nos cards</li>
+              <li>Foto do item em uso (upload em reviewType ITEM) + exibição nos cards</li>
             </ul>
           </td>
         </tr>
@@ -811,15 +826,16 @@
 
         <tr>
           <td class="cat">🔔 Notificações</td>
-          <td class="count">5</td>
+          <td class="count">6</td>
           <td class="phase"><span class="badge mvp">H1</span></td>
           <td>
             <ul class="feat-list">
-              <li>Sino de notificações no header com contagem</li>
+              <li>Sino de notificações no header com contagem (zera ao ler — optimistic update)</li>
               <li>Notificações in-app: reservas, confirmações, pagamentos, mensagens</li>
-              <li>Marcar todas como lidas</li>
+              <li>Marcar todas como lidas / marcar individualmente</li>
               <li>Lembretes por e-mail via cron (reservas pendentes, devoluções próximas)</li>
               <li>Cron de reengajamento para usuários inativos</li>
+              <li>6 eventos GA4 customizados: busca, reserva, chat, avaliação, cupom, perfil</li>
             </ul>
           </td>
         </tr>
@@ -883,12 +899,55 @@
           </td>
         </tr>
 
+        <tr>
+          <td class="cat">🏅 Programa Embaixadores</td>
+          <td class="count">6</td>
+          <td class="phase"><span class="badge mvp">H1</span></td>
+          <td>
+            <ul class="feat-list">
+              <li>3 tiers: Bronze (3%) · Silver (5%) · Gold (7%) sobre a taxa da plataforma</li>
+              <li>Progressão automática por indicações convertidas (limiares configuráveis)</li>
+              <li>Captura do código <code>?ref=</code> no cadastro e registro da indicação</li>
+              <li>Painel do embaixador (<code>/perfil/embaixador</code>): saldo, indicações, tier atual</li>
+              <li>Payout de comissões via <code>OwnerPaymentAccount</code> (ativação após D4)</li>
+              <li>Cron ambassador-decay para atualização periódica de tiers</li>
+            </ul>
+          </td>
+        </tr>
+        <tr>
+          <td class="cat">🎟️ Programa Fundadores</td>
+          <td class="count">5</td>
+          <td class="phase"><span class="badge mvp">H1</span></td>
+          <td>
+            <ul class="feat-list">
+              <li>Lista VIP — <code>FounderCaptureForm</code> com intent (anunciar/alugar/ambos)</li>
+              <li>Consentimento LGPD explícito (checkbox art. 7) + versão <code>v1.1</code> registrada</li>
+              <li>Modelo <code>FounderLead</code>: posição na fila, origem, intent, consentimento</li>
+              <li>Compartilhamento WhatsApp pós-cadastro (template nacional)</li>
+              <li>API <code>/api/founders/leads</code> com deduplicação (409 em e-mail duplicado)</li>
+            </ul>
+          </td>
+        </tr>
+        <tr>
+          <td class="cat">🎁 Cupons</td>
+          <td class="count">4</td>
+          <td class="phase"><span class="badge mvp">H1</span></td>
+          <td>
+            <ul class="feat-list">
+              <li>Modelo <code>Coupon</code>: código único, tipo percentual, desconto 10%</li>
+              <li>Geração automática de cupom 10% off ao completar avaliação com foto</li>
+              <li>Absorção do desconto na taxa da plataforma no checkout (proprietário não é penalizado)</li>
+              <li>Validação no checkout: expiração, uso único, associação ao usuário</li>
+            </ul>
+          </td>
+        </tr>
+
         <!-- GRUPO: MODERAÇÃO -->
         <tr class="group-header"><td colspan="4">Administração &amp; Moderação</td></tr>
 
         <tr>
           <td class="cat">🛡️ Painel Admin</td>
-          <td class="count">9</td>
+          <td class="count">12</td>
           <td class="phase"><span class="badge mvp">H1</span></td>
           <td>
             <ul class="feat-list">
@@ -899,8 +958,11 @@
               <li>Verificação de identidade: aprovar / rejeitar documentos + motivo</li>
               <li>Disputas: visualizar detalhes e resolver manualmente</li>
               <li>Geocodificação em lote de itens sem coordenadas</li>
-              <li>Acesso restrito por <code>role=ADMIN</code> via RLS + middleware</li>
-              <li>API admin protegida: <code>PATCH /api/admin/users/:id</code>, <code>PATCH /api/admin/items/:id</code></li>
+              <li>3 roles diferenciados: SUPERADMIN · FINANCEIRO · OPERACIONAL</li>
+              <li>Gestão de admins via UI (<code>/admin/usuarios/admins</code>) — exclusivo SUPERADMIN</li>
+              <li>Audit log de todas as ações admin (antes/depois)</li>
+              <li>Checklist de verificação de contas PIX (accordion em <code>/admin/financeiro/contas-pix</code>)</li>
+              <li>Configuração de PlatformConfig: taxa, multiplicadores, limiares, janelas</li>
             </ul>
           </td>
         </tr>
@@ -1012,22 +1074,24 @@
         </tr>
         <tr>
           <td class="cat">⚙️ Infra &amp; CI/CD</td>
-          <td class="count">11</td>
+          <td class="count">14</td>
           <td class="phase"><span class="badge mvp">H1</span></td>
           <td>
             <ul class="feat-list">
-              <li>Pipeline CI/CD: lint → build → staging → E2E → produção (aprovação manual)</li>
+              <li>Pipeline CI/CD: lint → build → staging → E2E → Lighthouse → produção (aprovação manual)</li>
               <li>3 ambientes isolados: development, staging, production</li>
               <li>Staging estável: <code>shareo-rouge.vercel.app</code></li>
               <li>Deploy automático no Vercel controlado pelo GitHub Actions</li>
               <li>Health check endpoint: <code>GET /api/health</code></li>
               <li>Backup Supabase automático (retenção 30 dias)</li>
               <li>Monitoramento Sentry (erros + performance)</li>
-              <li>Google Analytics 4 integrado</li>
-              <li>5 crons automáticos: cancelamento, lembretes, reengajamento, expiração, devolução</li>
-              <li>14 migrations Prisma aplicadas + 75 políticas RLS</li>
-              <li>32 smokes E2E — 185+ testes — zero flaky — 4 browsers — CI regressão contínua</li>
+              <li>Google Analytics 4 + 6 eventos customizados via <code>TrackEvent.tsx</code></li>
               <li>7 crons automáticos: cancelamento, lembretes, expiração, devolução, reengajamento, payout, relatório mensal</li>
+              <li>16+ migrations Prisma aplicadas</li>
+              <li>32 smokes E2E — 230+ testes — zero flaky — 4 browsers — CI regressão contínua</li>
+              <li>Lighthouse CI gate bloqueante (<code>.lighthouserc.json</code> em <code>error</code> mode) — LCP&lt;2.5s, CLS&lt;0.1, INP&lt;200ms</li>
+              <li>k6 load test: 50 VUs · P95=159ms · 0% falhas · 4117 iterações em 4 min</li>
+              <li>Vercel region pinned <code>gru1</code> (São Paulo) — latência 71× menor vs iad1 US-East</li>
             </ul>
           </td>
         </tr>
@@ -1058,14 +1122,16 @@
           Conclusões do MVP
         </div>
         <ul>
-          <li><span class="bullet">●</span><strong>178 funcionalidades</strong> mapeadas em 24 categorias</li>
-          <li><span class="bullet">●</span>152 itens no H1 (MVP) — <strong>85% do total entregues</strong></li>
-          <li><span class="bullet">●</span>35 páginas / 47 endpoints de API implementados</li>
-          <li><span class="bullet">●</span>LGPD: exportar dados, excluir conta, criptografia, RLS</li>
+          <li><span class="bullet">●</span><strong>207 funcionalidades</strong> mapeadas em 27 categorias</li>
+          <li><span class="bullet">●</span>181 itens no H1 (MVP) — <strong>87% do total entregues</strong></li>
+          <li><span class="bullet">●</span>37 páginas / 52 endpoints de API implementados</li>
+          <li><span class="bullet">●</span>LGPD: DPO nomeado, /politicas completa, consentimento explícito, exportação, exclusão</li>
           <li><span class="bullet">●</span>WCAG 2.1 AA validado com axe-core 4.9.1 — 0 violações bloqueantes</li>
           <li><span class="bullet">●</span>Ciclo de locação completo: solicitar → pagar → retirar → devolver → avaliar</li>
           <li><span class="bullet">●</span>Segurança OWASP Top 10 verificada — 6 headers HTTP ativos</li>
-          <li><span class="bullet">●</span>12 specs E2E — 20/20 — CI regressão ativo após cada deploy</li>
+          <li><span class="bullet">●</span>230+ testes E2E — 32 smokes — zero flaky — 4 browsers — CI regressão + Lighthouse gate</li>
+          <li><span class="bullet">●</span>k6: 50 VUs · P95=159ms · 0% falhas · region gru1 (São Paulo)</li>
+          <li><span class="bullet">●</span>Embaixadores + Fundadores + Cupons — gamificação e pré-lançamento</li>
         </ul>
       </div>
       <div class="box roadmap">
@@ -1087,8 +1153,8 @@
             <span><strong style="color:#92400e">Sign-off staging → produção:</strong> iOS Safari BrowserStack, Validação manual Locatário/Proprietário, DNS <code>www.shareo.com.br</code> — previsto julho/2026</span>
           </li>
           <li>
-            <svg class="bullet" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="3"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <span><strong style="color:#92400e">Lista VIP:</strong> captura de e-mail com consentimento LGPD explícito — pendente H2</span>
+            <svg class="bullet" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+            <s style="opacity:.5">Lista VIP pendente</s>&nbsp;<strong style="color:#166534">✅ FounderCaptureForm + LGPD consentimento explícito v1.1</strong>
           </li>
         </ul>
       </div>
@@ -1307,11 +1373,11 @@
           <li><span class="step-num">7</span>Gerar nova <span style="font-family:monospace;font-size:.78rem">ENCRYPTION_KEY</span> (64 hex chars) — incompatível com staging por design</li>
           <li><span class="step-num">8</span>Verificar domínio SPF/DKIM no Resend para <span style="font-family:monospace;font-size:.78rem">@shareo.com.br</span></li>
           <li><span class="step-num">9</span>Ativar Stripe live mode + registrar webhook endpoint de produção</li>
-          <li><span class="step-num">10</span>Smoke test manual nos fluxos críticos → deletar scripts temporários → tag <span style="font-family:monospace;font-size:.78rem">v1.1.0</span></li>
+          <li><span class="step-num">10</span>Smoke test manual nos fluxos críticos → tag <span style="font-family:monospace;font-size:.78rem">v1.3.0-prod</span> (scripts temporários já deletados no commit 939c8b6)</li>
         </ol>
         <div style="margin-top:14px;padding:10px 12px;background:#f0faf4;border-radius:6px;border-left:3px solid #007B3C;">
-          <div style="font-size:.78rem;font-weight:700;color:#166534;margin-bottom:6px;">🗑️ Scripts temporários a deletar antes do go-live</div>
-          <div style="font-family:monospace;font-size:.75rem;color:#334155;line-height:1.7">
+          <div style="font-size:.78rem;font-weight:700;color:#166534;margin-bottom:6px;">✅ Scripts temporários deletados — commit 939c8b6 (2026-06-12)</div>
+          <div style="font-family:monospace;font-size:.75rem;color:#6b7280;line-height:1.7;text-decoration:line-through">
             scripts/reset-fixture-pwd.ts<br>
             scripts/delete-e2e-admins.ts<br>
             scripts/clear-rl.mjs<br>
@@ -1511,8 +1577,8 @@
 
   <!-- ── STATUS GERAL ── -->
   <div class="footer-status">
-    ✅ &nbsp;MVP COMPLETO — 178 FUNCIONALIDADES — STAGING APROVADO — AGUARDANDO D4
-    <div class="sub">35 páginas · 47 endpoints · E2E 185+ testes ✓ · LGPD ✓ · WCAG 2.1 AA ✓ · Segurança OWASP ✓ · commit 31068af · 2026-06-09</div>
+    ✅ &nbsp;MVP COMPLETO — 207 FUNCIONALIDADES — STAGING APROVADO — AGUARDANDO D4
+    <div class="sub">37 páginas · 52 endpoints · E2E 230+ testes ✓ · k6 P95=159ms ✓ · LH CI gate ✓ · LGPD+DPO ✓ · WCAG 2.1 AA ✓ · Segurança OWASP ✓ · commit 9b51199 · 2026-06-13</div>
   </div>
 
 </div>
