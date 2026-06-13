@@ -200,11 +200,23 @@ export default function PoliticasPage() {
                 </PolicyBlock>
 
                 <PolicyBlock title="2.7 Encarregado (DPO)">
-                  O Encarregado de Proteção de Dados (DPO) pode ser contatado em:{" "}
-                  <a href="mailto:privacidade@shareo.com.br" className="text-brand hover:underline">
-                    privacidade@shareo.com.br
-                  </a>.
-                  {/* JURÍDICO: indicar nome e qualificação do DPO antes do go-live em produção (LGPD Art. 41) */}
+                  <p className="mb-3">
+                    O Encarregado de Proteção de Dados (DPO) do ShareO, nos termos do Art. 41 da LGPD, é:
+                  </p>
+                  <p className="mb-1 font-semibold text-foreground">Roberto Epifanio da Silva</p>
+                  <p className="mb-3">
+                    Responsável por assegurar a conformidade da organização com a LGPD e demais normas
+                    aplicáveis à privacidade e proteção de dados pessoais. Atua como ponto de contato
+                    entre o ShareO, os titulares de dados e a Autoridade Nacional de Proteção de Dados
+                    (ANPD), monitorando práticas de tratamento de dados, promovendo treinamentos internos
+                    e apoiando a gestão de riscos e a resposta a incidentes de segurança.
+                  </p>
+                  <p>
+                    Contato:{" "}
+                    <a href="mailto:privacidade@shareo.com.br" className="text-brand hover:underline">
+                      privacidade@shareo.com.br
+                    </a>
+                  </p>
                 </PolicyBlock>
               </div>
             </section>
