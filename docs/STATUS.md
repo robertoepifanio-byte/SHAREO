@@ -1,8 +1,8 @@
 # ShareO — Status do Projeto
 
-**Atualizado em**: 2026-06-12 (sessão s7c — exibição completa das avaliações + re-auditoria de promessas v2.0)
-**Ambiente staging**: https://shareo-rouge.vercel.app (⚠️ deploys automáticos GitHub→Vercel aparecem **Canceled** — deploy real é manual: `npx vercel --prod`)
-**Último commit**: `409b547`
+**Atualizado em**: 2026-06-13 (sessão s8 — P-1..P-6 sem bloqueador: PIX checklist, k6+gru1, GA4 eventos, cupom por avaliar, dicas anfitrião, Lighthouse CI gate)
+**Ambiente staging**: https://shareo-rouge.vercel.app (push automático → deploy via GitHub webhook)
+**Último commit**: `bd53b26`
 **Release atual**: [`v1.3.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.3.0) — Lançamento Nacional + Embaixadores (commit `60b5b92`, jun/12) — aguarda D4 para produção
 **Release anterior**: [`v1.2.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.2.0) (a v1.1.0 planejada foi absorvida pela v1.2.0)
 
@@ -200,6 +200,7 @@ Próximo passo: resolver P0 sem bloqueador externo (hardcoded + scripts) → agu
 | **jun/12 s7** | Hardcoded P0/P1/P2 → PlatformConfig (cancelamento, tiers embaixador, referral, late fee, auto-cancel, payout window, uploads); CEP ViaCEP no cadastro; RATE_LIMITS nomeado; auditoria de promessas (64 itens); suíte 408 testes verde |
 | **jun/12 s7b** | Fix e-mails (after() em ~30 rotas + NEXTAUTH_URL recriada + lib/app-url.ts); stats homepage reais; sort "Mais alugados"; E2E PriceCalc 18/18 estável + teste teto R$500; UI reenvio de verificação mostra motivo real (429) |
 | **jun/12 s7c** | ReviewDetails.tsx exibe emoji/critérios/foto nos cards de avaliação (item + perfil público); re-auditoria promessas v2.0 — 32/64 resolvidos, doc reorganizado por bloqueador |
+| **jun/13 s8** | P-1..P-6 sem bloqueador (`bd53b26`): PIX checklist admin, k6 50VUs + gru1, GA4 6 eventos, Coupon model/migration/lib + checkout com split-absorção, dicas anfitrião, Lighthouse CI gate |
 
 ---
 
