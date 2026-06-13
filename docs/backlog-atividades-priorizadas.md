@@ -1,10 +1,104 @@
 # Backlog de Atividades Priorizadas — ShareO
 
-**Versão:** 3.6  
-**Atualizado em:** 2026-06-13 (sessão 11 — regeneração fixtures + rerrodada E2E staging: delta 28→30 falhas, 18 bugs reais confirmados)  
+**Versão:** 3.7  
+**Atualizado em:** 2026-06-13 (sessão 13 — auditoria crítica multi-aspecto delegada: QA/E2E + Segurança + Arquitetura, read-only, para deliberação)  
 **Responsável:** Roberto Epifânio
 
 > Verificação feita diretamente no código — cada item foi confirmado por arquivo/componente.
+
+---
+
+## 🔬 Auditoria Crítica s13 (2026-06-13) — PARA DELIBERAÇÃO COM O FUNDADOR
+
+> Auditoria multi-aspecto delegada a 3 subagentes em paralelo (`qa-shareo`, `seguranca-shareo`, `arquiteto-shareo`) sobre o commit `14c51f2`.
+> **READ-ONLY — nenhum código/spec/config foi alterado.** Todos os itens aguardam deliberação antes de qualquer ação. NÃO re-reporta QA-01/QA-14 (resolvidos na s12).
+> **Run E2E:** 248✅ / 9❌ / 19skip (7m30s, chromium serial). Evidência bruta: `docs/auditoria-critica-2026-06-13-qa.txt`.
+> **Postura de segurança:** base SÓLIDA — guards `ownerId === session.user.id → 403` consistentes em 30+ rotas (tese do ADR-009 validada; nenhum IDOR explorável em GET/PATCH de bookings/items/users). **Arquitetura:** nota **A−** (disciplina de `after()`, `PlatformConfig` e CSP-com-nonce confirmadas).
+> IDs: `SEC-*` segurança · `ARQ-*` arquitetura · `QA-*` qa/e2e. ⊕ = item deduplicado (mesmo achado por +1 eixo).
+> ⚠️ Achados são reportados como os subagentes os classificaram. O orquestrador NÃO os reverificou linha-a-linha — ver "Notas do orquestrador" ao final para confiança e ordem sugerida de verificação.
+
+### 🔴 CRITICAL — deliberar primeiro
+
+| ID | Achado | Local | Risco |
+|---|---|---|---|
+| **SEC-CRIT-01** ✅verificado | Cron routes "abrem por padrão" se `CRON_SECRET` vazio: `if (secret && auth !== Bearer secret)` curto-circuita p/ false quando secret undefined/"" → rota fica **pública**. CONFIRMADO em `reminders/route.ts:36` | 6 rotas `app/api/cron/*` | Disparar cobranças Stripe late fee, cancelar reservas, marcar payout PROCESSING, e-mail em massa. **Correção ao agente:** `middleware.ts:99` na verdade FALHA-FECHADO (bypass só com secret presente) — NÃO é vulnerável. 2 crons (ambassador-decay, reengagement) já usam a forma estrita |
+| **SEC-CRIT-02** | `CRON_SECRET` real (`shareo-cron-2026`) versionado em texto claro | `CLAUDE.md:53`, `docs/STATUS.md:252`, `e2e/cron.spec.ts:16` | Combinado com SEC-CRIT-01, qualquer um com acesso ao repo aciona todos os crons de staging. Rotacionar + usar `process.env` nos specs |
+| ~~**SEC-CRIT-03**~~ ❌**REFUTADO** | Falso positivo. O agente alegou "login web sem rate limit / `loginIp`/`loginEmail` código morto", mas há um wrapper que intercepta o POST do NextAuth e aplica rate limit em `/callback/credentials` (**10/min por IP + 5/5min por e-mail**). O agente grepou só `lib/auth.ts` e não viu o wrapper | `app/api/auth/[...nextauth]/route.ts:14-40` | **Sem risco — login web ESTÁ protegido contra brute force.** Removido dos pendentes |
+| **SEC-CRIT-04** ⚠️ | Invalidação de sessão pós-troca de senha **NÃO implementada** — porém `STATUS.md:49` afirma como entregue (**divergência doc×código**). Sem `passwordChangedAt`/bump de sessionVersion/blocklist | `app/api/user/password/route.ts:42-46`, `lib/auth.ts:50-58` | Sessão JWT comprometida sobrevive até 24h após a vítima trocar senha. Idem mudança de e-mail |
+| **SEC-CRIT-05** ✅verificado | Upload de fotos de booking: guard só checa participante, **zero validação de `status`** e **nenhum check de MIME/magic-bytes** (nem content-type — só tamanho) | `app/api/bookings/[id]/photos/route.ts:48-117` | Subir fotos CHECKOUT fora de fase / após COMPLETED → envenenar histórico p/ fraude em disputa. Exige ser participante do booking (severidade real mais p/ Major que Critical) |
+| ~~**SEC-CRIT-06**~~ ⬇️**rebaixado p/ Minor** | Exclusão de imagem sem validar prefixo do path. **Verificado:** o guard de propriedade (`ownerId !== session.user.id → 403`, linha 202) já protege e `image.url` é server-controlled → apenas defesa-em-profundidade, não explorável | `app/api/items/[id]/images/route.ts:202,211` | Baixo |
+| **ARQ-A-01** | **Estratégia de render divergiu do ADR-007**: `/itens`, `/itens/[id]`, `/loja/[slug]`, `/perfil/[id]`, `/sobre` são SSR puro (`auth()` no topo força dynamic); zero ISR/SSG; `/categoria/[slug]` prometida não existe | múltiplas páginas + `app/sitemap.ts` | SEO orgânico capado + custo lambda linear ao crawl + LCP mobile pior em escala. **Decisão estratégica sua** |
+| **ARQ-A-02** | Regressão de `after()`: `prisma.item.update({viewCount:+1}).catch()` solto após o return da Server Component | `app/itens/[id]/page.tsx:164` | viewCount subdimensionado em prod (afeta sort "Mais alugados" e o futuro `generateStaticParams`); silencioso. Classe de bug que o CLAUDE.md alerta |
+| **ARQ-A-03** ⊕ **QA-BUG-06** | `BASE_URL` não propaga p/ 13 specs no run completo (`?? 'http://localhost:3000'`) → ~14 falhas mascaradas/falsos-positivos; sumário reporta MENOS falhas do que há | `playwright.staging.config.ts` + 13 specs | Ruído mascara bugs reais; gate de release vira permissivo por hábito ("é só o BASE_URL de novo") |
+
+### 🟠 MAJOR
+
+| ID | Achado | Local | Risco/Nota |
+|---|---|---|---|
+| **SEC-MAJ-02** | `/api/upload` (genérico, usado por `/itens/novo`) aceita `application/octet-stream` sem magic-bytes | `app/api/upload/route.ts:24-26` | Payload arbitrário em bucket público com URL `*.supabase.co` → phishing/malware. `items/[id]/images` já valida certo — alinhar |
+| **SEC-MAJ-03** | Upload de doc de identidade (CPF/RG/selfie) sem whitelist MIME nem magic-bytes; contentType vem do cliente | `app/api/users/me/id-verification/route.ts:55-63` | XSS no painel admin via signed URL (SVG/HTML como "documento"). Comprometimento de admin = jackpot |
+| **SEC-MAJ-04** | `pnpm audit --prod`: 2 High (`rollup` path-traversal, `esbuild` RCE), 2 Moderate (`postcss`, `uuid`), 1 Low (`cookie`<0.7 via `@supabase/ssr` — path de sessão) | `pnpm-lock.yaml` | rollup/esbuild são build-time; `cookie` e `postcss` runtime. Atualizar `@sentry/nextjs` + `@supabase/ssr` |
+| **SEC-MAJ-05** ⊕ **ARQ-M-02** | NextAuth **v5.0.0-beta.31** em produção, sem ADR de risco nem plano de migração GA (changelog v5 já trocou cookies/callbacks) | `package.json`, `lib/auth.ts` | Auth é caminho crítico; beta sem garantia de patch de segurança. Criar ADR-023 (versão alvo, gatilho, soak) |
+| **SEC-MAJ-06** ⚠️LGPD | DELETE de conta anonimiza nome/e-mail/CPF mas **não** `borrowerNote/ownerNote/Review.comment/Message.content/OwnerPaymentAccount(PIX)/IDVerification.idDocumentUrl+selfie` | `app/api/users/me/route.ts:90-114` | Manter doc de identidade + PIX após exclusão viola LGPD art.18 (multa ANPD). Jurídico (D4) vai cobrar |
+| **SEC-MAJ-07** | Bypass global de rate limit: `SKIP_RATE_LIMIT=true` e `E2E_SECRET`+header `x-e2e-token` desligam TUDO; workflows setam `SKIP_RATE_LIMIT=true` | `lib/rateLimit.ts:94-100`, `.github/workflows/*` | Se a env vazar p/ Vercel prod, rate limits caem silenciosamente. Condicionar a `NODE_ENV !== production` |
+| **SEC-MAJ-09** | `pickupToken` (6 dígitos, controle anti-fraude da retirada) gerado com `Math.random()` (PRNG não-cripto) | `app/api/webhooks/stripe/route.ts:99-105`, `app/api/bookings/[id]/route.ts:262-268` | Previsão sequencial → "ativar" reserva alheia. Trocar por `crypto.randomInt(100000,1000000)` |
+| **QA-BUG-04** ⚠️app | `POST /api/auth/resend-verification` retorna **400 ALREADY_VERIFIED** quando e-mail já verificado — deveria ser **409** (RFC 7231 estado de recurso). Spec também tem assert invertido | `app/api/auth/resend-verification/route.ts:37-41` | Client que trata 400 como erro de input mostra mensagem genérica. **Único achado de semântica de API app-side novo do QA** |
+| **ARQ-M-01** | Filtro de distância carrega **TODOS os itens AVAILABLE em memória** (Haversine em JS; sem PostGIS — `geom` comentado no schema) | `app/itens/page.tsx:122-127` | O(n) RAM+CPU; 27 itens OK, 50k explode (timeout mobile). LCP da rota de maior conversão. Resolver hoje = horas; depois = reescrita |
+| **ARQ-M-03** | `SessionProvider` (client) envolve a árvore inteira no root layout — hidrata até `/sobre` | `components/layout/Providers.tsx`, `app/layout.tsx:95` | Bundle inflado em páginas públicas; degrada LCP. Mover p/ layout de rotas autenticadas ou passar session via prop aos 3 leafs |
+| **ARQ-M-04 / M-05** | `Item.slug` e `Category.slug` existem no schema (índice + "SEO URL") mas URLs usam `id` (cuid); `/categoria/[slug]` (ADR-007) não existe | `schema.prisma:311,331`, `app/sitemap.ts` | SEO long-tail enfraquecido; habilitar slugs depois = 301 em massa (perda temporária de PageRank). Decidir antes de prod |
+| **ARQ-M-06** | `getPlatformFeeRate()` e as 10+ helpers de `PlatformConfig` fazem `findUnique` **a cada request** — zero `unstable_cache`/`React.cache` | `lib/platform-config.ts` | Round-trip ao Postgres por request no caminho crítico (item/booking/webhook) p/ valor que muda ~1×/mês |
+| **ARQ-M-07** | `GET /api/items/[id]` usa `include` amplo + `images` sem `take` (carrega todas as fotos) | `app/api/items/[id]/route.ts:17-40` | Payload 50–200KB; cresce com upload. Server Component equivalente já usa `select` granular |
+| **ARQ-M-08** | Paginação dupla `useJsFilter ? slice : raw` frágil a refactor (invariante não-óbvio) | `app/itens/page.tsx:184-187` | Bug latente (count errado/itens duplicados). Extrair p/ função pura testada |
+| **QA-BUG-01** | Cobertura: smoke #21 não passa `pickupToken` no `mark_active` → fluxo de **avaliação pós-locação fica sem cobertura real** (app correto ao exigir token) | `e2e/security2.spec.ts:224` | Regressão em reviews passaria invisível. Spec deve buscar token como `review.spec.ts:44-48` |
+
+### 🟡 MINOR (backlog — baixo risco residual)
+
+| ID | Achado | Local |
+|---|---|---|
+| **SEC-MIN-05** ❗⬆️**CONFIRMADO — SOBE p/ MAJOR/CRITICAL** | **Stored XSS público confirmado.** `item.title`/`description`/`owner.name` entram em `productJsonLd`+`breadcrumbJsonLd` via `dangerouslySetInnerHTML`+`JSON.stringify` (não escapa `</script>`) E a validação do título é **só length** (`item.ts:10-11`, sem stripHtml/sanitize). Título `</script><script>…` (≤120 ch) executa em **todo visitante** da página do item | `app/itens/[id]/page.tsx:208-254` + `lib/validations/item.ts:10-11` |
+| **SEC-MIN-06** ✅confirmado (considerar MAJOR) | `GET /api/items` (público) retorna `latitude/longitude` **exatos** (linhas 63-64) — vaza endereço do dono apesar da UI mostrar só bairro. Privacidade/segurança física + LGPD | `app/api/items/route.ts:63-64` |
+| **SEC-MIN-01** | Faltam headers `Cross-Origin-*` e CSP `frame-ancestors 'none'` | `next.config.ts:7-17`, `middleware.ts:35-61` |
+| **SEC-MIN-02** | `/api/auth/verify-email` é GET com side-effect (CSRF-friendly; mitigado por token único 32B) | `app/api/auth/verify-email/route.ts` |
+| **SEC-MIN-09** | Mobile JWT sem rotação de refresh, sem blocklist, sem `jti` — device roubado válido por 30d | `app/api/auth/mobile/login/route.ts`, `refresh/route.ts` |
+| **SEC-MIN-10** | `/api/admin/disputes/[id]` checa só `role==="ADMIN"`, não `requireAdminRole` granular | `app/api/admin/disputes/[id]/route.ts:17` |
+| **SEC-MIN-11** | `prisma/seed.ts` loga senha admin em texto claro; sem guard `NODE_ENV!=="production"` | `prisma/seed.ts:163,182` |
+| **SEC-MIN-03/04/07/08** | IP em claro no contract (export LGPD não inclui); `stripHtml` simplista no chat; `/founders/leads` sem unsubscribe; `viewCount` sem rate-limit | (ver relatório) |
+| **LGPD-01/02/03** | `consentVersion` hardcoded sem catálogo/re-consentimento; UUID retido no Sentry; sem `ConsentLog` (histórico de consentimento) | múltiplos |
+| **ARQ-Mi-01** | 6+ primitivos UI com `"use client"` desnecessário (`Button`, `ShareOLogo` sem hooks) — bundle inflado | `components/ui/*` |
+| **ARQ-Mi-08** | `geocodeUserLocation` é `await` (não `after()`) no `PATCH /me` → form espera Mapbox 3–5s | `app/api/users/me/route.ts:228,235` |
+| **ARQ-Mi-10** | Detalhe do item faz 3 `booking.count` que poderiam ser 1 `groupBy` | `app/itens/[id]/page.tsx:118-139` |
+| **ARQ-Mi-11** | `lib/rateLimit.ts` usa SDK `@upstash/redis` (Node-only) — quebra se rota virar Edge | `lib/rateLimit.ts:10` |
+| **ARQ-Mi-02/03/04/05/06/07/09/12** | 2 fontes p/ APP_URL; `bodyParser:false` morto no webhook; `app/(admin)/` órfão; `@tanstack/react-query` no bundle web sem caller; polling client em 3 componentes booking; duplicata `"natal/rn"` em CITY_COORDS; TODOs sem owner; hook `useChat` legado morto | (ver relatório) |
+
+### 📊 Gaps de cobertura E2E (fluxos implementados, zero teste automatizado)
+
+| ID | Fluxo sem cobertura | Local | Risco |
+|---|---|---|---|
+| **QA-GAP-01** | **Cupons** (aplicar válido/inválido/expirado/race `COUPON_RACE`) | `lib/coupons.ts`, `POST /api/bookings` | Regressão em desconto/concorrência invisível |
+| **QA-GAP-02** | **Embaixadores** (consent, painel `/perfil/embaixador`, tier, link, payout bloqueado) | `app/perfil/embaixador/`, `/api/ambassador/consent` | Painel com dado errado passa ao go-live |
+| **QA-GAP-03** | **Extensão de prazo** bilateral (solicitar/aprovar/recusar + banner) | `app/api/bookings/[id]/extend/route.ts` | Fluxo de gestão de locação ativa sem validação |
+| **QA-GAP-04** | **Disputa** ponta-a-ponta (abrir → admin vê → resolve) — só webhook coberto | `bookings/[id]/dispute`, `admin/disputes/[id]` | Mecanismo central de confiança sem E2E |
+| **QA-GAP-05** | **JWT refresh / sessão 15min** (expira durante ação, refresh transparente) | `lib/auth.ts` | Usuário 15min+ no checkout pode ter erro silencioso → abandono |
+| **QA-GAP-07** | **Fotos de devolução** (upload pré/pós-locação) | `bookings/[id]/photos` | Crítico p/ disputa; regressão invisível |
+| **QA-GAP-06/08/09/10** | Sugestão de preço no form; auth mobile; founder leads; `PATCH /notifications/[id]/read` (badge do sino) | (ver relatório) | Menor |
+
+### Notas do orquestrador (dedup, confiança, próximos passos)
+
+- **Deduplicação aplicada:** NextAuth beta = SEC-MAJ-05 ⊕ ARQ-M-02 (1 item). BASE_URL = ARQ-A-03 ⊕ QA-BUG-06 (1 item) e já era conhecido (QA-02..13/24/25 da s11). Locators de auth do QA (**QA-BUG-02 logout**, **QA-BUG-03 callbackUrl**) **confirmam** os já-catalogados QA-03/QA-04 (bug no spec, app OK) — QA-BUG-03 adiciona nota a11y: `aria-label="Mostrar senha"` do toggle gera ambiguidade semântica. **QA-BUG-05** (admin 429) = QA-23 já catalogado.
+- **O que é genuinamente novo e app-side (não infra de teste):** toda a coluna SEC-* (segurança), todo ARQ-* exceto A-03, e **QA-BUG-04** (400 vs 409). O resto dos "bugs" do QA são confirmações de itens de infra de teste já conhecidos — o valor do QA aqui foi **mapear os 10 gaps de cobertura** acima.
+- **Verificações já feitas pelo orquestrador (read-only, 2026-06-13):**
+  - ✅ **SEC-CRIT-01 CONFIRMADO** — `reminders/route.ts:36` falha-aberto se `CRON_SECRET` vazio. (Mas `middleware.ts:99` falha-FECHADO — corrigido na tabela.)
+  - ✅ **SEC-CRIT-02 CONFIRMADO** — `CRON_SECRET=shareo-cron-2026` está em texto claro no CLAUDE.md.
+  - ❌ **SEC-CRIT-03 REFUTADO** — login web tem rate limit (wrapper `[...nextauth]/route.ts`). Era falso positivo.
+  - ✅ **SEC-CRIT-04 CONFIRMADO** — `grep passwordChangedAt` = 0 ocorrências ⇒ invalidação de sessão pós-senha realmente não existe (diverge do STATUS.md:49).
+  - ✅ **SEC-CRIT-05 CONFIRMADO** — sem status nem MIME check (só participante + tamanho).
+  - ⬇️ **SEC-CRIT-06 REBAIXADO p/ Minor** — guard de propriedade já protege; só defesa-em-profundidade.
+  - ❗ **SEC-MIN-05 CONFIRMADO e SOBE p/ MAJOR/CRITICAL** — stored XSS público REAL: título não sanitizado (só length) flui p/ JSON-LD via `dangerouslySetInnerHTML`. **Provavelmente o achado mais sério da auditoria** e estava como "Minor".
+  - ✅ **SEC-MIN-06 CONFIRMADO** — lat/lng exatos no GET público; considerar MAJOR (privacidade/segurança física + LGPD).
+  - ⏳ **Ainda NÃO reverificados (hipóteses até confirmar):** SEC-MAJ-02/03/04/07/09, QA-BUG-04 e os ARQ-* além de A-01/A-02/A-03. O caso SEC-CRIT-03 (refutado) mostra que os subagentes erram por grep estreito — **não tratar severidade não-verificada como fato**.
+- **Estratégicas (decisão sua, não "bug"):** ARQ-A-01 (ADR-007 ISR/SSG), ARQ-M-04/05 (slugs e `/categoria`), SEC-MAJ-05⊕ARQ-M-02 (NextAuth beta).
+- **Bloqueador D4:** SEC-MAJ-06 + LGPD-01/03 são exatamente o que o jurídico vai cobrar — antecipar no dossiê da consulta.
+- **Nada foi corrigido.** Aguardando sua deliberação sobre o que vira P0/P1/P2 e o que é aceito como risco.
 
 ---
 
