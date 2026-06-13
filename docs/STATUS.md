@@ -3,8 +3,8 @@
 **Atualizado em**: 2026-06-13 (sessão s9 — relatórios executivos + auditoria técnica 6 aspectos + execução dos 5 achados sem bloqueador)
 **Ambiente staging**: https://shareo-rouge.vercel.app (push automático → deploy via GitHub webhook)
 **Último commit**: `7eb66c2`
-**Release atual**: [`v1.3.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.3.0) — Lançamento Nacional + Embaixadores (commit `60b5b92`, jun/12) — aguarda D4 para produção
-**Release anterior**: [`v1.2.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.2.0) (a v1.1.0 planejada foi absorvida pela v1.2.0)
+**Release atual**: [`v1.4.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.4.0) — Configurabilidade, Conformidade & Auditoria Técnica (commit `823387b`, jun/13 — 29 commits desde v1.3.0) — aguarda D4 para produção
+**Release anterior**: [`v1.3.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.3.0) — Lançamento Nacional + Embaixadores (commit `60b5b92`, jun/12)
 
 ---
 
