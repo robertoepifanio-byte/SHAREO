@@ -236,7 +236,7 @@
           </ul>
         </div>
       </div>
-      <div class="verdict-note"><strong>Veredito:</strong> "imagens pesadas" do template — mitigado na entrega (next/image resize); ação real é faxina de repo e PWA icons, não experiência do usuário. "SEO fraco por SPA" <strong>não se aplica</strong>: o app é SSR/ISR.</div>
+      <div class="verdict-note"><strong>Veredito:</strong> "imagens pesadas" do template — mitigado na entrega (next/image resize); ação real é faxina de repo e PWA icons, não experiência do usuário. "SEO fraco por SPA" <strong>não se aplica</strong>: o app é SSR/ISR. <strong>Resolvido 13/06:</strong> /icones removido, PWA icons 944 KB→10/64 KB, 10 &lt;img&gt;→next/image. Baseline mobile: <strong>Perf 92 · A11y 97 · SEO 100</strong> · LCP 1.6s · CLS 0.008.</div>
     </div>
   </div>
 
@@ -484,10 +484,14 @@
       Achados Acionáveis (sem bloqueador externo)
     </div>
 
+    <div style="background:#f0faf4;border-left:4px solid #007B3C;padding:11px 18px;border-radius:0 6px 6px 0;margin-bottom:14px;">
+      <span style="font-size:.86rem;color:#166534;"><strong>✅ Os 5 achados foram executados em 2026-06-13</strong> (commits e04d6a1 + 206a259) — nenhum dependia do D4. Status anotado em cada item.</span>
+    </div>
+
     <div class="finding">
       <span class="prio p1">P1</span>
       <div class="fbody">
-        <div class="ftitle">Remover <code>public/icones/</code> não referenciado (~13 MB)</div>
+        <div class="ftitle">✅ Remover <code>public/icones/</code> não referenciado (~13 MB) — feito (e04d6a1)</div>
         <div class="fdesc">Seis PNGs de ~2 MB (<code>eletronicos.png</code>, <code>Moda.png</code>, etc.) + arquivos temp (<code>composite-temp.png.png</code>) com <strong>zero referências</strong> no código. Os ícones realmente usados estão em <code>/icons/</code> (EN). Deletar ou mover para fora do repo + <code>.gitignore</code>. Reduz clone/deploy sem impacto em produção.</div>
       </div>
     </div>
@@ -495,7 +499,7 @@
     <div class="finding">
       <span class="prio p2">P2</span>
       <div class="fbody">
-        <div class="ftitle">Comprimir PWA icons 192/512 (944 KB → ~40 KB)</div>
+        <div class="ftitle">✅ Comprimir PWA icons 192/512 (944 KB → 10/64 KB) — feito (e04d6a1)</div>
         <div class="fdesc">São carregados pelo browser direto do <code>manifest.ts</code> (fora do next/image). Reprocessar com <code>sharp</code> para PNG otimizado/quantizado. Melhora tempo de instalação do PWA e Lighthouse PWA.</div>
       </div>
     </div>
@@ -503,7 +507,7 @@
     <div class="finding">
       <span class="prio p2">P2</span>
       <div class="fbody">
-        <div class="ftitle">Migrar 8 <code>&lt;img&gt;</code> de conteúdo do usuário para next/image</div>
+        <div class="ftitle">✅ Migrar <code>&lt;img&gt;</code> de conteúdo do usuário para next/image (10 migrados; 3 previews blob mantidos) — feito (e04d6a1)</div>
         <div class="fdesc">Avatares e fotos de avaliação em <code>perfil/</code>, <code>reservas/</code>, <code>_ReviewForm.tsx</code>, <code>UserDropdown.tsx</code>. O <code>remotePattern</code> do Supabase já está configurado — habilita avif/webp + lazy + dimensões fixas (reduz CLS futuro).</div>
       </div>
     </div>
@@ -511,7 +515,7 @@
     <div class="finding">
       <span class="prio p3">P3</span>
       <div class="fbody">
-        <div class="ftitle">Circuit-breaker / fallback explícito para Mapbox e Resend</div>
+        <div class="ftitle">✅ Fallback Mapbox (onError, só degrada se não carregar) + retry Resend nos e-mails críticos — feito (e04d6a1)</div>
         <div class="fdesc">Hoje há fallback em geolocalização e allowlist CSP, mas falha de tile Mapbox ou de envio Resend não tem degradação graciosa documentada. Adicionar timeout + estado de erro amigável e retry no envio de e-mail crítico.</div>
       </div>
     </div>
@@ -519,7 +523,7 @@
     <div class="finding">
       <span class="prio p3">P3</span>
       <div class="fbody">
-        <div class="ftitle">Rodar Lighthouse pós-gru1 e arquivar baseline mobile</div>
+        <div class="ftitle">✅ Lighthouse mobile pós-gru1 arquivado como baseline — feito (206a259)</div>
         <div class="fdesc">O relatório atual (97) é de 06/06, antes do pin <code>gru1</code>. Rodar de novo em perfil mobile + throttling 4G e versionar como baseline para o gate de CI comparar regressões.</div>
       </div>
     </div>
@@ -568,7 +572,7 @@
   <!-- ── STATUS GERAL ── -->
   <div class="footer-status">
     ✅ &nbsp;NOTA GERAL A− — PRONTO TÉCNICO, AGUARDANDO D4 (JURÍDICO)
-    <div class="sub">6 aspectos auditados contra o código · 5 achados acionáveis (0 bloqueiam) · Lighthouse 97 · k6 P95 159ms · 6/6 headers · shareo-rouge.vercel.app · 2026-06-13 · commit 033c4c0</div>
+    <div class="sub">6 aspectos auditados · 5 achados executados ✅ (0 dependiam de D4) · Lighthouse mobile 92/97/96/100 · k6 P95 159ms · 6/6 headers · shareo-rouge.vercel.app · 2026-06-13 · commit 206a259</div>
   </div>
 
 </div>
