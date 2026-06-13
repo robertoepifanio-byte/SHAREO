@@ -45,6 +45,7 @@ function buildCsp(nonce: string): string {
       "connect-src 'self' ws: wss: *.supabase.co api.mapbox.com events.mapbox.com *.tiles.mapbox.com https://viacep.com.br",
       "font-src 'self' data:",
       "frame-src 'none'",
+      "frame-ancestors 'self'",
     ].join("; ")
   }
   return [

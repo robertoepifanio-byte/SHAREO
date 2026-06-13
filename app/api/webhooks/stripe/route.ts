@@ -6,8 +6,8 @@ import { prisma } from "@/lib/prisma"
 import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
 import { processAmbassadorOnBookingPaid, cancelAmbassadorCommissions } from "@/lib/ambassador"
 
-// Vercel/Next.js: o body deve ser lido como raw buffer para validar a assinatura
-export const config = { api: { bodyParser: false } }
+// App Router já entrega o body raw via req.text() — não há bodyParser para desabilitar
+// (o `export const config = { api: { bodyParser } }` do Pages Router é ignorado aqui).
 
 export async function POST(req: Request) {
   const body      = await req.text()

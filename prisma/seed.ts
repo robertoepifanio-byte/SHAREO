@@ -179,7 +179,7 @@ async function main() {
       consentVersion: "v1.0",
     },
   })
-  console.log(`✅ Admin criado: ${adminEmail} / ${adminPassword}`)
+  console.log(`✅ Admin criado: ${adminEmail} (senha definida via env/seed)`)
   console.log("⚠️  Troque a senha do admin após o primeiro login!")
 
   // Itens de exemplo para staging/dev

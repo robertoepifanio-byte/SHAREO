@@ -28,8 +28,13 @@
 > - **SEC-MIN-06** — lat/lng truncados a ~110m (3 casas) no GET público `/api/items`. **Caveat p/ deliberar:** a página web `/itens` é SSR e ainda passa coords ao mapa client — avaliar truncar lá também e o nível de precisão (3 vs 2 casas).
 > - **ARQ-A-02** — `viewCount` agora em `after()`.
 > - **SEC-CRIT-04** (invalidação de sessão pós-senha) — **Caminho B, sem migration**: claim `loginAt` fixado no login + epoch no Redis (`invalidateUserSessions`/`isSessionStale`) checado no middleware; disparado na troca de **senha e de e-mail**; `maxAge` explícito de 30d (alinha o TTL da blocklist — corrige de brinde o gap em que blocks de admin expiravam em 1d com token de 30d). Depende de Upstash ativo (fail-open se ausente).
+> - **SEC-MIN-01** (headers) — `Cross-Origin-Opener-Policy: same-origin` no next.config + `frame-ancestors 'self'` na CSP do middleware (COEP omitido de propósito — quebraria Mapbox/GA/Supabase).
+> - **ARQ-Mi-03 / Mi-04 / Mi-12** (código morto) — removidos: `export const config bodyParser` (inerte no App Router), `app/(admin)/layout.tsx` (grupo órfão sem páginas), hook `useChat` (sem call site).
+> - **SEC-MIN-11** (seed) — senha removida do `console.log`; o guard `NODE_ENV==="production"` que o agente disse faltar **já existia** (`prisma/seed.ts:157`).
 >
-> **Permanecem para deliberação (têm dependência):** SEC-CRIT-02 (rotação do secret no Vercel), SEC-MAJ-04 (upgrade de deps), SEC-MAJ-06 + LGPD (D4 jurídico), ARQ-A-01/M-04/M-05 (decisão de produto), NextAuth GA, e os ARQ-Major/Minor ainda não reverificados.
+> **Refutados/não-acionáveis na reverificação (além do SEC-CRIT-03):** **SEC-MIN-10** (disputes) — pela matriz de roles do CLAUDE.md, FINANCEIRO + OPERACIONAL + SUPERADMIN **todos** tratam disputas; o check `role === "ADMIN"` já cobre exatamente esse conjunto — apertar excluiria papéis válidos.
+>
+> **Permanecem para deliberação:** **SEC-CRIT-02** (cerne é a rotação do secret no Vercel — scrub de docs sem rotação é cosmético e arrisca a CI), SEC-MAJ-04 (upgrade de deps), SEC-MAJ-06 + LGPD (D4 jurídico), ARQ-A-01/M-04/M-05 (decisão de produto), **ARQ-M-06** (estratégia de cache — staleness vs. perf, decisão), NextAuth GA, e os demais ARQ-Major/Minor não reverificados.
 
 ### 🔴 CRITICAL — deliberar primeiro
 
