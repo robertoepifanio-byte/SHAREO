@@ -1,8 +1,8 @@
 # ShareO — Status do Projeto
 
-**Atualizado em**: 2026-06-12 (sessão s7b — fix e-mails de verificação + stats homepage reais + sort "Mais alugados" + E2E PriceCalc estável)
+**Atualizado em**: 2026-06-12 (sessão s7c — exibição completa das avaliações + re-auditoria de promessas v2.0)
 **Ambiente staging**: https://shareo-rouge.vercel.app (⚠️ deploys automáticos GitHub→Vercel aparecem **Canceled** — deploy real é manual: `npx vercel --prod`)
-**Último commit**: `1c6a7dc`
+**Último commit**: `409b547`
 **Release atual**: [`v1.3.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.3.0) — Lançamento Nacional + Embaixadores (commit `60b5b92`, jun/12) — aguarda D4 para produção
 **Release anterior**: [`v1.2.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.2.0) (a v1.1.0 planejada foi absorvida pela v1.2.0)
 
@@ -15,6 +15,10 @@
 ---
 
 ## Resumo Executivo
+
+**✅ Avaliações exibidas por completo** (commit `cdf677f`, jun/12). O form de avaliação já coletava emoji de satisfação, critérios por estrela (P3-67/68/69) e foto do item em uso, mas esses dados nunca eram exibidos. Novo `components/reviews/ReviewDetails.tsx` renderiza tudo nos cards de avaliação da página do item e do perfil público. Os demais itens do bloco "features médias" já existiam: badges/Conquistas no perfil público, templates de chat, webhooks PJ.
+
+**✅ Re-auditoria de promessas — v2.0** (commit `409b547`, jun/12). Cada um dos 64 itens da v1.0 foi verificado contra o código: **32 já resolvidos** (a v1.0 ficou obsoleta no mesmo dia e continha erros de catalogação — ex.: webhooks PJ já existiam completos). Doc reorganizado por bloqueador: 9 itens D4, 11 decisão de fundadores, 6 executáveis sem bloqueador (verificação PIX, k6, KPIs GA4, cupom por avaliar, dicas de anfitriões, gate Lighthouse), 6 H2/H3. Regra nova: verificar UI no código antes de declarar item "sem UI".
 
 **✅ Fix crítico — e-mails de verificação não chegavam + links 404** (commits `28ca951`–`5c55582`, jun/12). Duas causas raiz: (1) e-mails disparados fire-and-forget morriam quando a lambda congelava após a resposta — `after()` do `next/server` aplicado em ~30 rotas; (2) `NEXTAUTH_URL` vazia no Vercel + fallback com `??` (que não captura string vazia) gerava links quebrados — criado `lib/app-url.ts` com `||` + strip de barra final, e a var foi recriada limpa no Vercel. UI de reenvio em `/perfil/seguranca` agora mostra o motivo real (429 → "limite atingido, tente em N minutos" via Retry-After; rate limit é 3/hora).
 
@@ -195,6 +199,7 @@ Próximo passo: resolver P0 sem bloqueador externo (hardcoded + scripts) → agu
 | **jun/09** | Multiplicadores semanal (3×) / mensal (15×) configuráveis SuperAdmin; taxa 100% dinâmica (zero hardcode); ajuda page atualizada (seguro/extravio, indicação, limite R$1.000, precificação 3–5%); fotos MVP limitadas a 3 |
 | **jun/12 s7** | Hardcoded P0/P1/P2 → PlatformConfig (cancelamento, tiers embaixador, referral, late fee, auto-cancel, payout window, uploads); CEP ViaCEP no cadastro; RATE_LIMITS nomeado; auditoria de promessas (64 itens); suíte 408 testes verde |
 | **jun/12 s7b** | Fix e-mails (after() em ~30 rotas + NEXTAUTH_URL recriada + lib/app-url.ts); stats homepage reais; sort "Mais alugados"; E2E PriceCalc 18/18 estável + teste teto R$500; UI reenvio de verificação mostra motivo real (429) |
+| **jun/12 s7c** | ReviewDetails.tsx exibe emoji/critérios/foto nos cards de avaliação (item + perfil público); re-auditoria promessas v2.0 — 32/64 resolvidos, doc reorganizado por bloqueador |
 
 ---
 
