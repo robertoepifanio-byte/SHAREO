@@ -13,6 +13,7 @@ import { CANCELLATION_POLICY_LINES } from "@/lib/cancellationPolicy"
 import { getPlatformFeeRate, CHECKOUT_MAX_CENTS } from "@/lib/platform-config"
 import { ItemCard } from "@/components/items/ItemCard"
 import { AvailabilityCalendar } from "@/components/items/AvailabilityCalendar"
+import { ReviewDetails, ReviewSentiment } from "@/components/reviews/ReviewDetails"
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ back?: string }> }
 
@@ -94,7 +95,11 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
         images:  { select: { url: true }, orderBy: { order: "asc" } },
         reviews: {
           where:   { reviewType: "ITEM" },
-          select:  { id: true, rating: true, comment: true, createdAt: true, reviewer: { select: { name: true } } },
+          select:  {
+            id: true, rating: true, comment: true, createdAt: true,
+            sentiment: true, itemAsDescribed: true, conservation: true, photoUrl: true,
+            reviewer: { select: { name: true } },
+          },
           orderBy: { createdAt: "desc" },
           take:    8,
         },
@@ -359,12 +364,14 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
                           {relativeTime(new Date(review.createdAt))}
                         </span>
                       </div>
-                      <div className="mb-1 text-sm text-yellow-500" aria-label={`${review.rating} estrelas`}>
-                        {"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}
+                      <div className="mb-1 flex items-center gap-2 text-sm text-yellow-500" aria-label={`${review.rating} estrelas`}>
+                        <span>{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span>
+                        <ReviewSentiment sentiment={review.sentiment} />
                       </div>
                       {review.comment && (
                         <p className="text-sm text-muted-foreground">{review.comment}</p>
                       )}
+                      <ReviewDetails review={review} />
                     </div>
                   ))}
                 </div>
