@@ -2,6 +2,8 @@
 // (emoji de satisfação, critérios por estrela e foto do item em uso).
 // Server-compatible — sem hooks.
 
+import Image from "next/image"
+
 const SENTIMENT_EMOJI: Record<number, { emoji: string; label: string }> = {
   1: { emoji: "😠", label: "Muito insatisfeito" },
   2: { emoji: "😕", label: "Insatisfeito" },
@@ -55,11 +57,11 @@ export function ReviewDetails({ review }: { review: ReviewDetailsData }) {
         </div>
       )}
       {review.photoUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <Image
           src={review.photoUrl}
           alt="Foto do item em uso enviada na avaliação"
-          loading="lazy"
+          width={80}
+          height={80}
           className="h-20 w-20 rounded-lg border border-border object-cover"
         />
       )}

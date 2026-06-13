@@ -16,6 +16,36 @@ function getResend(): Resend | null {
 // || (não ??): EMAIL_FROM vazio no Vercel não pode virar from inválido
 const FROM = process.env.EMAIL_FROM || "noreply@shareo.com.br"
 
+/**
+ * Envia com 1 retry automático em falha transitória da Resend.
+ * Para e-mails que bloqueiam o usuário (verificação, reset de senha),
+ * uma falha momentânea de rede/API não deve deixá-lo sem o link.
+ * Retorna no padrão { error } da Resend (null em sucesso).
+ */
+async function sendWithRetry(
+  resend: Resend,
+  payload: Parameters<Resend["emails"]["send"]>[0],
+  label: string,
+): Promise<{ error: { message: string } | null }> {
+  const MAX_ATTEMPTS = 2
+  let lastError: { message: string } | null = null
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const { error } = await resend.emails.send(payload)
+      if (!error) return { error: null }
+      lastError = { message: error.message }
+      console.error(`[email:${label}] tentativa ${attempt}/${MAX_ATTEMPTS} falhou: ${error.message}`)
+    } catch (err) {
+      lastError = { message: err instanceof Error ? err.message : "erro desconhecido" }
+      console.error(`[email:${label}] tentativa ${attempt}/${MAX_ATTEMPTS} exceção: ${lastError.message}`)
+    }
+    if (attempt < MAX_ATTEMPTS) await new Promise((r) => setTimeout(r, 400))
+  }
+
+  return { error: lastError }
+}
+
 // ─── Templates ────────────────────────────────────────────────────────────────
 
 function baseLayout(content: string) {
@@ -228,12 +258,12 @@ export async function sendPasswordResetEmail(
   const firstName = name.split(" ")[0]
   const resetUrl  = `${APP_URL}/esqueci-senha/${token}`
 
-  const { error } = await resend.emails.send({
+  const { error } = await sendWithRetry(resend, {
     from:    `ShareO <${FROM}>`,
     to,
     subject: "Redefinir sua senha — ShareO",
     html:    passwordResetHtml(firstName, resetUrl),
-  })
+  }, "password-reset")
 
   if (error) throw new Error(`Resend error: ${error.message}`)
 }
@@ -329,12 +359,12 @@ export async function sendVerificationEmail(
     </p>
   `)
 
-  const { error } = await resend.emails.send({
+  const { error } = await sendWithRetry(resend, {
     from:    `ShareO <${FROM}>`,
     to,
     subject: "Confirme seu e-mail no ShareO",
     html,
-  })
+  }, "verification")
 
   if (error) throw new Error(`Resend error: ${error.message}`)
 }

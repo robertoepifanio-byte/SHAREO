@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
@@ -140,8 +141,9 @@ export default async function BookingSuccessPage({ searchParams }: Props) {
           {/* Resumo da reserva */}
           <div className="mb-6 overflow-hidden rounded-xl border border-border bg-surface">
             {img && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={img} alt={booking.item.title} className="h-40 w-full object-cover" />
+              <div className="relative h-40 w-full">
+                <Image src={img} alt={booking.item.title} fill sizes="(max-width: 768px) 100vw, 640px" className="object-cover" />
+              </div>
             )}
             <div className="p-5">
               <h2 className="mb-4 font-bold text-primary">{booking.item.title}</h2>

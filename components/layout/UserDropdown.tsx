@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
 
@@ -75,8 +76,7 @@ export function UserDropdown({ name, avatarUrl, role }: Props) {
         className="flex h-9 w-9 items-center justify-center rounded-full bg-brand border-2 border-white/30 text-sm font-bold text-white hover:opacity-90 transition-opacity outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary overflow-hidden"
       >
         {avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={avatarUrl} alt={name} className="h-full w-full object-cover" />
+          <Image src={avatarUrl} alt={name} width={36} height={36} className="h-full w-full object-cover" />
         ) : (
           initial
         )}

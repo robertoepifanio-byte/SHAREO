@@ -44,6 +44,8 @@ export function ItemsMap({
   const [popup, setPopup] = useState<ItemPin | null>(null)
   const mapRef   = useRef<MapRef>(null)
   const mounted  = useRef(false)
+  const loaded   = useRef(false)
+  const [mapError, setMapError] = useState(false)
 
   useEffect(() => { setPopup(null) }, [items])
 
@@ -58,25 +60,25 @@ export function ItemsMap({
     })
   }, [mapZoom, defaultLat, defaultLng])
 
-  /* ── Fallback quando token não configurado ─────────────────────────── */
-  if (IS_PLACEHOLDER) {
-    return (
-      <div
-        style={{ height }}
-        className="relative flex w-full items-center justify-center overflow-hidden rounded-lg border border-border bg-gradient-to-br from-[#ccd9e5] to-[#a8c0d4]"
-        role="img"
-        aria-label="Mapa de itens próximos — aguardando configuração"
+  /* ── Fallback: token ausente OU falha de carregamento do mapa ───────── */
+  const fallback = (
+    <div
+      style={{ height }}
+      className="relative flex w-full items-center justify-center overflow-hidden rounded-lg border border-border bg-gradient-to-br from-[#ccd9e5] to-[#a8c0d4]"
+      role="img"
+      aria-label={mapError ? "Mapa indisponível no momento" : "Mapa de itens próximos — aguardando configuração"}
+    >
+      <span className="text-5xl" aria-hidden="true">🗺️</span>
+      <Link
+        href="/itens"
+        className="absolute bottom-3 right-3 rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-primary shadow-sm hover:bg-white/90 transition-colors"
       >
-        <span className="text-5xl" aria-hidden="true">🗺️</span>
-        <Link
-          href="/itens"
-          className="absolute bottom-3 right-3 rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-primary shadow-sm hover:bg-white/90 transition-colors"
-        >
-          Ver anúncios →
-        </Link>
-      </div>
-    )
-  }
+        Ver anúncios →
+      </Link>
+    </div>
+  )
+
+  if (IS_PLACEHOLDER || mapError) return fallback
 
   /* ── Filtra itens com coords válidas ───────────────────────────────── */
   const pins = items.filter((i) => i.lat != null && i.lng != null)
@@ -90,6 +92,15 @@ export function ItemsMap({
         style={{ width: "100%", height: "100%" }}
         mapStyle="mapbox://styles/mapbox/streets-v12"
         onClick={() => setPopup(null)}
+        onLoad={() => { loaded.current = true }}
+        onError={(e) => {
+          // Só degrada se o mapa nem chegou a carregar (token inválido, rede, style).
+          // Erros de tile pós-carga não derrubam o mapa.
+          if (!loaded.current) {
+            console.error("Mapbox falhou ao carregar:", e?.error)
+            setMapError(true)
+          }
+        }}
         aria-label="Mapa de itens disponíveis para aluguel"
       >
         <NavigationControl position="top-right" showCompass={false} />

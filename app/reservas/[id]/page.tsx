@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
@@ -170,8 +171,9 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
           {/* Imagem + datas */}
           <div className="mb-6 overflow-hidden rounded-xl border border-border bg-surface">
             {img && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={img} alt={booking.item.title} className="h-48 w-full object-cover" />
+              <div className="relative h-48 w-full">
+                <Image src={img} alt={booking.item.title} fill sizes="(max-width: 768px) 100vw, 640px" className="object-cover" />
+              </div>
             )}
             <div className="p-5">
               <div className="grid grid-cols-2 gap-4 text-sm">

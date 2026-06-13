@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Image from "next/image"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
@@ -136,10 +137,11 @@ export default async function PublicProfilePage({ params }: Props) {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
               <div className="flex-shrink-0">
                 {user.avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <Image
                     src={user.avatarUrl}
                     alt={user.name}
+                    width={80}
+                    height={80}
                     className="h-20 w-20 rounded-full object-cover"
                   />
                 ) : (

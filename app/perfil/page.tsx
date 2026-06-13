@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Image from "next/image"
 import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
@@ -106,10 +107,11 @@ export default async function ProfilePage() {
                 {/* Avatar grande */}
                 <div className="flex-shrink-0 ring-4 ring-surface rounded-full">
                   {user.avatarUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={user.avatarUrl}
                       alt={user.name}
+                      width={96}
+                      height={96}
                       className="h-24 w-24 rounded-full object-cover"
                     />
                   ) : (
@@ -234,8 +236,7 @@ export default async function ProfilePage() {
                     {/* Avatar do reviewer */}
                     <div className="flex-shrink-0">
                       {review.reviewer.avatarUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={review.reviewer.avatarUrl} alt={review.reviewer.name} className="h-8 w-8 rounded-full object-cover" />
+                        <Image src={review.reviewer.avatarUrl} alt={review.reviewer.name} width={32} height={32} className="h-8 w-8 rounded-full object-cover" />
                       ) : (
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">
                           {review.reviewer.name[0]?.toUpperCase()}
