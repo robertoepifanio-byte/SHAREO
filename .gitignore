@@ -66,3 +66,8 @@ e2e-usability-report.json
 e2e-integration-report.json
 e2e-governance-report.json
 e2e-ajuda-report.json
+
+# Lighthouse — artefatos brutos (baseline humano fica em docs/lighthouse-baseline-mobile.md)
+lighthouse-report.json
+lighthouse-mobile-baseline.report.json
+lighthouse-mobile-baseline.report.html
