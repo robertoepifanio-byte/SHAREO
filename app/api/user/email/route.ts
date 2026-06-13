@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { sendVerificationEmail } from "@/lib/email"
+import { invalidateUserSessions } from "@/lib/redis-admin-blocklist"
 
 const schema = z.object({
   newEmail:        z.string().email("E-mail inválido"),
@@ -68,6 +69,9 @@ export async function PATCH(req: Request) {
       emailTokenExpiresAt: tokenExpiresAt,
     },
   })
+
+  // SEC-CRIT-04: troca de e-mail também invalida sessões anteriores
+  await invalidateUserSessions(session.user.id)
 
   // Envia verificação para o novo endereço — após a resposta
   after(() =>

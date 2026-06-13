@@ -1,6 +1,6 @@
 import { getToken } from "next-auth/jwt"
 import { NextResponse, type NextRequest } from "next/server"
-import { isAdminBlocked } from "@/lib/redis-admin-blocklist"
+import { isAdminBlocked, isSessionStale } from "@/lib/redis-admin-blocklist"
 
 const PROTECTED_PREFIXES = [
   "/dashboard",
@@ -12,6 +12,7 @@ const PROTECTED_PREFIXES = [
   "/api/bookings",
   "/api/conversations",
   "/api/users",
+  "/api/user",          // troca de senha/e-mail e conta PIX (payout) — cobre o check de sessão stale
 ]
 
 const ADMIN_PREFIXES = ["/admin", "/api/admin"]
@@ -125,6 +126,22 @@ export async function middleware(req: NextRequest) {
     const loginUrl = new URL("/login", req.url)
     loginUrl.searchParams.set("callbackUrl", pathname)
     return NextResponse.redirect(loginUrl)
+  }
+
+  // Sessão invalidada por troca de senha/e-mail (SEC-CRIT-04): rejeita tokens
+  // cujo `loginAt` é anterior ao epoch gravado no Redis.
+  if ((isProtectedRoute || isAdminRoute) && token) {
+    const uid     = token.id as string | undefined
+    const loginAt = token.loginAt as number | undefined
+    if (uid && await isSessionStale(uid, loginAt)) {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json(
+          { error: { code: "SESSION_EXPIRED", message: "Sessão expirada. Faça login novamente." } },
+          { status: 401 },
+        )
+      }
+      return NextResponse.redirect(new URL("/sair", req.url))
+    }
   }
 
   if (isAdminRoute && token) {

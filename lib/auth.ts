@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma"
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET,
   trustHost: true,
-  session: { strategy: "jwt" },
+  session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 }, // 30d — alinhado ao TTL da blocklist/epoch Redis
   pages: {
     signIn:  "/login",
     error:   "/login",
@@ -54,6 +54,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.role      = u.role
         token.userType  = u.userType
         token.adminRole = u.adminRole ?? undefined
+        token.loginAt   = Math.floor(Date.now() / 1000)  // SEC-CRIT-04: fixado no login, preservado nos refreshes
       }
       return token
     },

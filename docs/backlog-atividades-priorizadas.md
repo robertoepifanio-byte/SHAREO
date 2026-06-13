@@ -17,7 +17,7 @@
 > IDs: `SEC-*` segurança · `ARQ-*` arquitetura · `QA-*` qa/e2e. ⊕ = item deduplicado (mesmo achado por +1 eixo).
 > ⚠️ Achados são reportados como os subagentes os classificaram. O orquestrador NÃO os reverificou linha-a-linha — ver "Notas do orquestrador" ao final para confiança e ordem sugerida de verificação.
 
-### ✅ Resolvidos neste commit (código puro, sem dependência externa)
+### ✅ Resolvidos na auditoria s13 (código, sem dependência externa)
 
 > Decisão do fundador: "resolva os que não têm dependência externa". Corrigidos e validados (`tsc` + `lint` + `build` ✅):
 > - **SEC-MIN-05** (stored XSS) — novo `lib/jsonLd.ts` escapa `<`/`>`/`&`/U+2028-9; aplicado em `app/itens/[id]/page.tsx` (product+breadcrumb) e `app/layout.tsx` (org). Testado: um título com `</script>` é neutralizado (o `<` vira escape unicode), sem quebrar o bloco ld+json; round-trip JSON OK.
@@ -27,8 +27,9 @@
 > - **SEC-MAJ-09** — `pickupToken` via `crypto.randomInt` (webhook Stripe + bookings PIX).
 > - **SEC-MIN-06** — lat/lng truncados a ~110m (3 casas) no GET público `/api/items`. **Caveat p/ deliberar:** a página web `/itens` é SSR e ainda passa coords ao mapa client — avaliar truncar lá também e o nível de precisão (3 vs 2 casas).
 > - **ARQ-A-02** — `viewCount` agora em `after()`.
+> - **SEC-CRIT-04** (invalidação de sessão pós-senha) — **Caminho B, sem migration**: claim `loginAt` fixado no login + epoch no Redis (`invalidateUserSessions`/`isSessionStale`) checado no middleware; disparado na troca de **senha e de e-mail**; `maxAge` explícito de 30d (alinha o TTL da blocklist — corrige de brinde o gap em que blocks de admin expiravam em 1d com token de 30d). Depende de Upstash ativo (fail-open se ausente).
 >
-> **Permanecem para deliberação (têm dependência):** SEC-CRIT-04 (migration Prisma nos 2 Supabase), SEC-CRIT-02 (rotação do secret no Vercel), SEC-MAJ-04 (upgrade de deps), SEC-MAJ-06 + LGPD (D4 jurídico), ARQ-A-01/M-04/M-05 (decisão de produto), NextAuth GA, e os ARQ-Major/Minor ainda não reverificados.
+> **Permanecem para deliberação (têm dependência):** SEC-CRIT-02 (rotação do secret no Vercel), SEC-MAJ-04 (upgrade de deps), SEC-MAJ-06 + LGPD (D4 jurídico), ARQ-A-01/M-04/M-05 (decisão de produto), NextAuth GA, e os ARQ-Major/Minor ainda não reverificados.
 
 ### 🔴 CRITICAL — deliberar primeiro
 
@@ -37,7 +38,7 @@
 | **SEC-CRIT-01** ✅verificado | Cron routes "abrem por padrão" se `CRON_SECRET` vazio: `if (secret && auth !== Bearer secret)` curto-circuita p/ false quando secret undefined/"" → rota fica **pública**. CONFIRMADO em `reminders/route.ts:36` | 6 rotas `app/api/cron/*` | Disparar cobranças Stripe late fee, cancelar reservas, marcar payout PROCESSING, e-mail em massa. **Correção ao agente:** `middleware.ts:99` na verdade FALHA-FECHADO (bypass só com secret presente) — NÃO é vulnerável. 2 crons (ambassador-decay, reengagement) já usam a forma estrita |
 | **SEC-CRIT-02** | `CRON_SECRET` real (`shareo-cron-2026`) versionado em texto claro | `CLAUDE.md:53`, `docs/STATUS.md:252`, `e2e/cron.spec.ts:16` | Combinado com SEC-CRIT-01, qualquer um com acesso ao repo aciona todos os crons de staging. Rotacionar + usar `process.env` nos specs |
 | ~~**SEC-CRIT-03**~~ ❌**REFUTADO** | Falso positivo. O agente alegou "login web sem rate limit / `loginIp`/`loginEmail` código morto", mas há um wrapper que intercepta o POST do NextAuth e aplica rate limit em `/callback/credentials` (**10/min por IP + 5/5min por e-mail**). O agente grepou só `lib/auth.ts` e não viu o wrapper | `app/api/auth/[...nextauth]/route.ts:14-40` | **Sem risco — login web ESTÁ protegido contra brute force.** Removido dos pendentes |
-| **SEC-CRIT-04** ⚠️ | Invalidação de sessão pós-troca de senha **NÃO implementada** — porém `STATUS.md:49` afirma como entregue (**divergência doc×código**). Sem `passwordChangedAt`/bump de sessionVersion/blocklist | `app/api/user/password/route.ts:42-46`, `lib/auth.ts:50-58` | Sessão JWT comprometida sobrevive até 24h após a vítima trocar senha. Idem mudança de e-mail |
+| ✅ **SEC-CRIT-04 RESOLVIDO** | Invalidação de sessão pós-troca de senha/e-mail implementada (Caminho B, sem migration): claim `loginAt` + epoch no Redis checado no middleware. (Antes: não existia — o `STATUS.md:49` afirmava o contrário.) | `lib/redis-admin-blocklist.ts`, `lib/auth.ts`, `middleware.ts`, `app/api/user/{password,email}/route.ts` | Token roubado deixa de valer ao trocar a senha. Fail-open se Upstash ausente |
 | **SEC-CRIT-05** ✅verificado | Upload de fotos de booking: guard só checa participante, **zero validação de `status`** e **nenhum check de MIME/magic-bytes** (nem content-type — só tamanho) | `app/api/bookings/[id]/photos/route.ts:48-117` | Subir fotos CHECKOUT fora de fase / após COMPLETED → envenenar histórico p/ fraude em disputa. Exige ser participante do booking (severidade real mais p/ Major que Critical) |
 | ~~**SEC-CRIT-06**~~ ⬇️**rebaixado p/ Minor** | Exclusão de imagem sem validar prefixo do path. **Verificado:** o guard de propriedade (`ownerId !== session.user.id → 403`, linha 202) já protege e `image.url` é server-controlled → apenas defesa-em-profundidade, não explorável | `app/api/items/[id]/images/route.ts:202,211` | Baixo |
 | **ARQ-A-01** | **Estratégia de render divergiu do ADR-007**: `/itens`, `/itens/[id]`, `/loja/[slug]`, `/perfil/[id]`, `/sobre` são SSR puro (`auth()` no topo força dynamic); zero ISR/SSG; `/categoria/[slug]` prometida não existe | múltiplas páginas + `app/sitemap.ts` | SEO orgânico capado + custo lambda linear ao crawl + LCP mobile pior em escala. **Decisão estratégica sua** |

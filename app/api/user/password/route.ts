@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
+import { invalidateUserSessions } from "@/lib/redis-admin-blocklist"
 
 const schema = z.object({
   currentPassword: z.string().min(1),
@@ -44,6 +45,9 @@ export async function PATCH(req: Request) {
     where: { id: session.user.id },
     data:  { passwordHash: newHash },
   })
+
+  // SEC-CRIT-04: invalida sessões anteriores — um token roubado deixa de valer
+  await invalidateUserSessions(session.user.id)
 
   return NextResponse.json({ ok: true })
 }
