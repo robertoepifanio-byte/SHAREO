@@ -1,8 +1,8 @@
 # ShareO — Status do Projeto
 
-**Atualizado em**: 2026-06-13 (sessão s9 — relatórios executivos + auditoria técnica 6 aspectos + execução dos 5 achados sem bloqueador)
+**Atualizado em**: 2026-06-13 (sessão s12 — corrigidos e validados verde os 2 bugs funcionais reais da suíte E2E: QA-01 contraste + QA-14 phone-otp 401)
 **Ambiente staging**: https://shareo-rouge.vercel.app (push automático → deploy via GitHub webhook)
-**Último commit**: `7eb66c2`
+**Último commit**: `14c51f2`
 **Release atual**: [`v1.4.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.4.0) — Configurabilidade, Conformidade & Auditoria Técnica (commit `823387b`, jun/13 — 29 commits desde v1.3.0) — aguarda D4 para produção
 **Release anterior**: [`v1.3.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.3.0) — Lançamento Nacional + Embaixadores (commit `60b5b92`, jun/12)
 
@@ -15,6 +15,8 @@
 ---
 
 ## Resumo Executivo
+
+**✅ Os 2 bugs funcionais reais da suíte E2E corrigidos e validados verde** (commits `767d834`→`14c51f2`, jun/13 s12). A triagem da suíte de staging (s11b: 240✅/17❌) tinha isolado apenas **2 falhas reais** — o resto é artefato de ambiente (BASE_URL, dados de teste, rate-limit sequencial). Ambas agora resolvidas e revalidadas (`6 passed` re-rodando `e2e-a11y-plan` + `phone-verification` com `BASE_URL`+`STAGING_URL` corretos). **(QA-14)** `POST /api/auth/phone/send-otp` passou a autenticar **antes** de validar o body → **401** sem sessão (era 400); stub retorna 422 enquanto a integração Zenvia + migration de schema seguem pendentes (decisão Raimundo). **(QA-01)** As 3 violações de contraste WCAG AA eram o **mesmo elemento** — footer "Desenvolvido por Pratika IA" em 3 páginas públicas. Causa: o footer tem fundo **verde `#007B3C`** (não navy) — branco a 80% dá 4,03:1 (reprova os 4,5:1), corrigido para **`text-white/90`** (4,67:1, alinhado ao resto do footer que já passava). `tsc`+`lint`+`build` ✅. Lição reforçada: conferir o fundo real do elemento antes de escolher o alpha (footer = verde; hero/menus = navy). Higiene de repo na mesma sessão: `.gitignore` ampliado para artefatos não-fonte (PDFs na raiz, `k6/last-summary.json`, PNGs de teste de logo, screenshots de debug, `.critique/`, relatório desempacotado).
 
 **✅ Auditoria técnica por 6 aspectos + execução dos 5 achados** (commits `5cf77c1`→`7eb66c2`, jun/13 s9). Novo `relatorio-auditoria-tecnica.html`: cada aspecto (Performance/UX/Design/Funcionalidades/Segurança/Estratégia) verificado contra o código — nota geral **A−**; riscos genéricos de template desmontados com evidência (não é SPA → SEO 100; XSS em forms não se aplica → Zod+CSP). Os 5 achados sem bloqueador foram **todos executados** (`e04d6a1`, `206a259`): **(P1)** `public/icones/` removido (~15 MB, zero refs — os usados ficam em `public/icons/` EN); **(P2)** PWA icons 944 KB→10/64 KB via sharp (fonte era 1254px); **(P2)** 10 `<img>`→`next/image` — 3 previews `blob:` mantidos de propósito (next/image não otimiza object URL); **(P3)** Mapbox `ItemsMap` com `onError` (degrada só se não carregar) + Resend `sendWithRetry` nos e-mails críticos (verificação/reset) em `lib/email.ts`; **(P3)** baseline Lighthouse **mobile** (Perf 92 · A11y 97 · BP 96 · SEO 100 · LCP 1.6s · CLS 0.008) em `docs/lighthouse-baseline-mobile.md` (o anterior era desktop, só perf 97). `tsc`+`lint`+`build` ✅. Os dois relatórios executivos também atualizados (`033c4c0`): **207 funcionalidades / 27 categorias / 52 endpoints**.
 
@@ -203,6 +205,7 @@ Próximo passo: resolver P0 sem bloqueador externo (hardcoded + scripts) → agu
 | **jun/12 s7b** | Fix e-mails (after() em ~30 rotas + NEXTAUTH_URL recriada + lib/app-url.ts); stats homepage reais; sort "Mais alugados"; E2E PriceCalc 18/18 estável + teste teto R$500; UI reenvio de verificação mostra motivo real (429) |
 | **jun/12 s7c** | ReviewDetails.tsx exibe emoji/critérios/foto nos cards de avaliação (item + perfil público); re-auditoria promessas v2.0 — 32/64 resolvidos, doc reorganizado por bloqueador |
 | **jun/13 s8** | P-1..P-6 sem bloqueador (`bd53b26`): PIX checklist admin, k6 50VUs + gru1, GA4 6 eventos, Coupon model/migration/lib + checkout com split-absorção, dicas anfitrião, Lighthouse CI gate |
+| **jun/13 s12** | Corrigidos os 2 bugs funcionais reais da suíte E2E: **QA-14** phone-otp 401 antes do body (`767d834`) e **QA-01** contraste WCAG no footer verde → `text-white/90` (`14c51f2`); revalidados verde (`6 passed`). `.gitignore` ampliado p/ artefatos não-fonte |
 
 ---
 
