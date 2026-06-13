@@ -7,6 +7,7 @@ import { AppFooter } from "@/components/layout/AppFooter"
 import { ServiceWorkerRegister } from "@/components/layout/ServiceWorkerRegister"
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics"
 import { Providers } from "@/components/layout/Providers"
+import { jsonLdScript } from "@/lib/jsonLd"
 import "./globals.css"
 
 const montserrat = Montserrat({
@@ -82,7 +83,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script
           type="application/ld+json"
           suppressHydrationWarning
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: jsonLdScript(orgJsonLd) }}
         />
         {/* Skip link — acessibilidade de teclado */}
         <a

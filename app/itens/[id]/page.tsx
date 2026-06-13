@@ -1,8 +1,10 @@
 import type { Metadata } from "next"
+import { after } from "next/server"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { jsonLdScript } from "@/lib/jsonLd"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { FavoriteButton } from "@/components/items/FavoriteButton"
 import { getOwnerResponseBadge } from "@/lib/ownerStats"
@@ -161,7 +163,7 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
     }),
   ])
 
-  prisma.item.update({ where: { id }, data: { viewCount: { increment: 1 } } }).catch(() => {})
+  after(() => { prisma.item.update({ where: { id }, data: { viewCount: { increment: 1 } } }).catch(() => {}) })
 
   const feeRateBps = await getPlatformFeeRate()   // basis points (ex: 1500 = 15%)
   const feeRatePct = feeRateBps / 100             // 15.0
@@ -247,11 +249,11 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
     <TrackEvent event={{ name: "item_view", params: { item_id: item.id, item_name: item.title, category: item.category?.name ?? "sem-categoria" } }} />
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      dangerouslySetInnerHTML={{ __html: jsonLdScript(productJsonLd) }}
     />
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      dangerouslySetInnerHTML={{ __html: jsonLdScript(breadcrumbJsonLd) }}
     />
     <div className="min-h-screen bg-background">
       <AppHeader />

@@ -9,6 +9,7 @@ import { auth }             from "@/lib/auth"
 import { prisma }           from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getUploadLimits }   from "@/lib/platform-config"
+import { isImageType, isMagicBytesValid } from "@/lib/imageUpload"
 
 export async function POST(req: NextRequest) {
   const supabase = createAdminClient()
@@ -44,13 +45,28 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     )
 
+  if (!isImageType(docFile.type) || !isImageType(selfie.type))
+    return NextResponse.json(
+      { error: { code: "INVALID_TYPE", message: "Documento e selfie devem ser imagens (JPEG, PNG, WebP, HEIC)." } },
+      { status: 415 }
+    )
+
   const userId = session.user.id
   const now    = Date.now()
 
-  const [docBuf, selfieBuf] = await Promise.all([
-    docFile.arrayBuffer().then(Buffer.from),
-    selfie.arrayBuffer().then(Buffer.from),
+  const [docArr, selfieArr] = await Promise.all([
+    docFile.arrayBuffer(),
+    selfie.arrayBuffer(),
   ])
+
+  if (!(await isMagicBytesValid(docArr)) || !(await isMagicBytesValid(selfieArr)))
+    return NextResponse.json(
+      { error: { code: "INVALID_TYPE", message: "Arquivo inválido ou corrompido." } },
+      { status: 415 }
+    )
+
+  const docBuf    = Buffer.from(docArr)
+  const selfieBuf = Buffer.from(selfieArr)
 
   const docExt    = docFile.name.split(".").pop()?.toLowerCase() ?? "jpg"
   const selfieExt = selfie.name.split(".").pop()?.toLowerCase() ?? "jpg"

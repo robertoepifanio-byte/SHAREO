@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
   // Proteção: apenas chamadas com o CRON_SECRET correto
   const auth   = req.headers.get("authorization")
   const secret = process.env.CRON_SECRET
-  if (secret && auth !== `Bearer ${secret}`) {
+  if (!secret || auth !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 

@@ -74,8 +74,16 @@ export async function GET(req: NextRequest) {
       prisma.item.count({ where }),
     ])
 
+    // Privacidade (SEC-MIN-06): trunca coordenadas a ~110m no endpoint público.
+    // O marcador no mapa continua útil, mas não expõe o endereço exato do dono.
+    const publicItems = items.map((it) => ({
+      ...it,
+      latitude:  it.latitude  == null ? it.latitude  : Math.round(it.latitude  * 1000) / 1000,
+      longitude: it.longitude == null ? it.longitude : Math.round(it.longitude * 1000) / 1000,
+    }))
+
     return NextResponse.json({
-      data: items,
+      data: publicItems,
       meta: { total, page, limit, hasNextPage: skip + items.length < total },
     })
   } catch (e) {

@@ -18,12 +18,9 @@ import { NextResponse }     from "next/server"
 import { auth }             from "@/lib/auth"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getUploadLimits } from "@/lib/platform-config"
+import { isImageType, isMagicBytesValid } from "@/lib/imageUpload"
 
 const ALLOWED_BUCKETS = new Set(["booking-photos", "item-images"])
-
-function isImageType(mime: string): boolean {
-  return mime.startsWith("image/") || mime === "application/octet-stream"
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -70,7 +67,14 @@ export async function POST(req: NextRequest) {
 
     const ext      = file.name.split(".").pop()?.toLowerCase() ?? "jpg"
     const path     = `uploads/${session.user.id}/${Date.now()}.${ext}`
-    const buffer   = Buffer.from(await file.arrayBuffer())
+    const arrayBuf = await file.arrayBuffer()
+    if (!(await isMagicBytesValid(arrayBuf))) {
+      return NextResponse.json(
+        { error: { code: "INVALID_TYPE", message: "Arquivo inválido ou corrompido." } },
+        { status: 415 },
+      )
+    }
+    const buffer   = Buffer.from(arrayBuf)
     const supabase = createAdminClient()
 
     const { error: uploadError } = await supabase.storage

@@ -210,7 +210,9 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
     const url = new URL(image.url)
     const storagePath = url.pathname.split(`/${BUCKET}/`)[1]
 
-    if (storagePath) {
+    // Defesa em profundidade (SEC-CRIT-06): só remove se o path pertencer a
+    // este item (prefixo `${id}/`) — o upload sempre grava em `${id}/arquivo`.
+    if (storagePath && storagePath.startsWith(`${id}/`)) {
       const supabase = createAdminClient()
       await supabase.storage.from(BUCKET).remove([storagePath])
     }

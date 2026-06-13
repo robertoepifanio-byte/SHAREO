@@ -1,4 +1,5 @@
 import { NextResponse, after } from "next/server"
+import { randomInt } from "node:crypto"
 import type { Stripe } from "stripe"
 import { stripe } from "@/lib/stripe"
 import { prisma } from "@/lib/prisma"
@@ -99,7 +100,7 @@ export async function POST(req: Request) {
         // Pagamento de aluguel normal — gera token de retirada único de 6 dígitos
         let pickupToken: string
         for (;;) {
-          const candidate = String(Math.floor(100000 + Math.random() * 900000))
+          const candidate = String(randomInt(100000, 1000000))
           const conflict  = await prisma.booking.findFirst({ where: { pickupToken: candidate }, select: { id: true } })
           if (!conflict) { pickupToken = candidate; break }
         }

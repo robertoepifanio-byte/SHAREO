@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
+import { randomInt } from "node:crypto"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
@@ -261,7 +262,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     // Gera pickupToken único no confirm (fluxo PIX/manual — Stripe gera o próprio via webhook).
     if (action === "confirm" && !booking.pickupToken) {
       for (;;) {
-        const candidate = String(Math.floor(100000 + Math.random() * 900000))
+        const candidate = String(randomInt(100000, 1000000))
         const conflict  = await prisma.booking.findFirst({ where: { pickupToken: candidate }, select: { id: true } })
         if (!conflict) { data.pickupToken = candidate; break }
       }

@@ -17,6 +17,19 @@
 > IDs: `SEC-*` segurança · `ARQ-*` arquitetura · `QA-*` qa/e2e. ⊕ = item deduplicado (mesmo achado por +1 eixo).
 > ⚠️ Achados são reportados como os subagentes os classificaram. O orquestrador NÃO os reverificou linha-a-linha — ver "Notas do orquestrador" ao final para confiança e ordem sugerida de verificação.
 
+### ✅ Resolvidos neste commit (código puro, sem dependência externa)
+
+> Decisão do fundador: "resolva os que não têm dependência externa". Corrigidos e validados (`tsc` + `lint` + `build` ✅):
+> - **SEC-MIN-05** (stored XSS) — novo `lib/jsonLd.ts` escapa `<`/`>`/`&`/U+2028-9; aplicado em `app/itens/[id]/page.tsx` (product+breadcrumb) e `app/layout.tsx` (org). Testado: um título com `</script>` é neutralizado (o `<` vira escape unicode), sem quebrar o bloco ld+json; round-trip JSON OK.
+> - **SEC-CRIT-01** — crons fail-closed (`if (!secret || ...)`) nas 6 rotas vulneráveis. (geocode-items e middleware já eram fail-closed.)
+> - **SEC-CRIT-05 / SEC-MAJ-02 / SEC-MAJ-03** — validação MIME + magic-bytes nos 3 uploads via novo `lib/imageUpload.ts` (booking photos, `/api/upload`, id-verification). `/api/upload` deixou de aceitar `application/octet-stream`.
+> - **SEC-CRIT-06** — checagem de prefixo `${id}/` antes do delete no Storage.
+> - **SEC-MAJ-09** — `pickupToken` via `crypto.randomInt` (webhook Stripe + bookings PIX).
+> - **SEC-MIN-06** — lat/lng truncados a ~110m (3 casas) no GET público `/api/items`. **Caveat p/ deliberar:** a página web `/itens` é SSR e ainda passa coords ao mapa client — avaliar truncar lá também e o nível de precisão (3 vs 2 casas).
+> - **ARQ-A-02** — `viewCount` agora em `after()`.
+>
+> **Permanecem para deliberação (têm dependência):** SEC-CRIT-04 (migration Prisma nos 2 Supabase), SEC-CRIT-02 (rotação do secret no Vercel), SEC-MAJ-04 (upgrade de deps), SEC-MAJ-06 + LGPD (D4 jurídico), ARQ-A-01/M-04/M-05 (decisão de produto), NextAuth GA, e os ARQ-Major/Minor ainda não reverificados.
+
 ### 🔴 CRITICAL — deliberar primeiro
 
 | ID | Achado | Local | Risco |
