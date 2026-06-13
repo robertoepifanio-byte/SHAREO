@@ -273,7 +273,7 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
 
                   {/* Atividade / Admin atalhos */}
                   <li>
-                    <p className="px-4 pt-2 pb-1 text-xs font-semibold text-white/50 uppercase tracking-wider">
+                    <p className="px-4 pt-2 pb-1 text-xs font-semibold text-white/80 uppercase tracking-wider">
                       {isAdmin ? "Admin" : "Atividade"}
                     </p>
                   </li>

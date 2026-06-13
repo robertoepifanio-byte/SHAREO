@@ -38,9 +38,9 @@ export function AppFooter() {
               <strong className="text-white">renda</strong>{" "}
               e ajude sua comunidade.
             </p>
-            <p className="mt-5 text-[11px] text-white/50">
+            <p className="mt-5 text-[11px] text-white/80">
               Desenvolvido por{" "}
-              <span className="font-semibold text-white/80">Pratika IA</span>
+              <span className="font-semibold text-white">Pratika IA</span>
             </p>
           </div>
 

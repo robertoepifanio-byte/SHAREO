@@ -322,7 +322,7 @@ export function HelpSearch({ sections }: HelpSearchProps) {
               📋 Ver minhas reservas
             </Link>
           </div>
-          <p className="mt-4 text-xs text-white/50">
+          <p className="mt-4 text-xs text-white/80">
             Para problemas com uma reserva ativa, use a opção &ldquo;Abrir
             disputa&rdquo; na página da reserva — é mais rápido.
           </p>
