@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relatório de Auditoria Técnica — ShareO</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f0f4f8;
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px;
+  }
+
+  .card {
+    width: 920px;
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 6px 32px rgba(0,0,0,.18);
+  }
+
+  /* ── Header ── */
+  .header {
+    background: linear-gradient(135deg, #003366 0%, #144D81 100%);
+    color: #fff;
+    text-align: center;
+    padding: 32px 24px 28px;
+  }
+  .header h1 { font-size: 2rem; font-weight: 800; letter-spacing: -.5px; }
+  .header .subtitle { font-size: 1.45rem; font-weight: 700; color: #59C686; margin-top: 4px; }
+  .header .meta { font-size: .82rem; color: #9ec8f0; margin-top: 10px; letter-spacing: .3px; }
+  .divider-line { width: 60px; height: 3px; background: #59C686; margin: 10px auto 0; border-radius: 2px; }
+
+  /* ── Sections ── */
+  .section { padding: 20px 28px; border-bottom: 1px solid #e5eaf0; }
+  .section:last-child { border-bottom: none; }
+  .section-title {
+    display: flex; align-items: center; gap: 10px;
+    background: #003366; color: #fff;
+    font-size: 1rem; font-weight: 700;
+    padding: 9px 16px; border-radius: 6px; margin-bottom: 16px;
+  }
+  .section-title svg { flex-shrink: 0; }
+
+  .objetivo-text { font-size: .97rem; color: #1a2a3a; line-height: 1.6; }
+  .objetivo-text strong { color: #003366; }
+  .objetivo-text .dot { color: #007B3C; font-size: 1.3em; vertical-align: middle; }
+
+  /* ── KPI Strip ── */
+  .kpi-strip { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+  .kpi {
+    flex: 1; min-width: 90px;
+    background: #f4f8ff; border: 1px solid #c8d8ee;
+    border-radius: 8px; text-align: center; padding: 12px 8px;
+  }
+  .kpi .num { font-size: 1.7rem; font-weight: 800; color: #003366; line-height: 1; }
+  .kpi .num.green { color: #007B3C; }
+  .kpi .num.amber { color: #d97706; }
+  .kpi .label {
+    font-size: .72rem; color: #5a7080; margin-top: 5px;
+    font-weight: 600; text-transform: uppercase; letter-spacing: .4px;
+  }
+
+  /* ── Grade pill ── */
+  .grade {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 34px; height: 26px; padding: 0 8px;
+    border-radius: 6px; font-size: .9rem; font-weight: 800;
+  }
+  .grade.a  { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+  .grade.b  { background: #e0f2fe; color: #075985; border: 1px solid #7dd3fc; }
+  .grade.c  { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+
+  /* ── Aspect block ── */
+  .aspect {
+    border: 1px solid #e5eaf0; border-radius: 10px;
+    margin-bottom: 14px; overflow: hidden;
+  }
+  .aspect-head {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px; background: #f7fafd; border-bottom: 1px solid #e5eaf0;
+  }
+  .aspect-head .ico {
+    width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 1.25rem;
+    background: #eaf2ff;
+  }
+  .aspect-head .atitle { font-size: .98rem; font-weight: 800; color: #003366; flex: 1; }
+  .aspect-body { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+  .aspect-col { padding: 13px 16px; }
+  .aspect-col + .aspect-col { border-left: 1px solid #eef2f8; }
+  .aspect-col .col-title {
+    font-size: .72rem; font-weight: 800; text-transform: uppercase;
+    letter-spacing: .5px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+  }
+  .aspect-col.forte .col-title { color: #166534; }
+  .aspect-col.risco .col-title { color: #9a3412; }
+  .aspect-col ul { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+  .aspect-col li { font-size: .82rem; color: #334155; line-height: 1.4; display: flex; gap: 7px; align-items: flex-start; }
+  .aspect-col.forte li::before { content: "✓"; color: #007B3C; font-weight: 800; flex-shrink: 0; }
+  .aspect-col.risco li::before { content: "▸"; color: #d97706; font-weight: 800; flex-shrink: 0; }
+  .aspect-col code { font-family: monospace; font-size: .76rem; background: #eef2f8; padding: 1px 4px; border-radius: 3px; color: #1e3a5f; }
+  .verdict-note { font-size: .78rem; color: #5a7080; padding: 0 16px 12px; font-style: italic; }
+  .verdict-note strong { color: #166534; font-style: normal; }
+
+  /* ── Tabela resumida ── */
+  table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  thead th { background: #003366; color: #fff; font-weight: 700; padding: 9px 12px; text-align: left; }
+  thead th.center { text-align: center; }
+  tbody tr:nth-child(even) { background: #f5f8fc; }
+  tbody td { padding: 9px 12px; color: #1a2a3a; vertical-align: top; border-bottom: 1px solid #e5eaf0; line-height: 1.45; }
+  tbody td.asp { font-weight: 700; color: #003366; white-space: nowrap; }
+  tbody td.center { text-align: center; }
+
+  /* ── Achados / ações ── */
+  .finding {
+    display: flex; gap: 12px; padding: 12px 14px;
+    border: 1px solid #e5eaf0; border-radius: 8px; margin-bottom: 10px; align-items: flex-start;
+  }
+  .finding .prio {
+    flex-shrink: 0; font-size: .7rem; font-weight: 800; padding: 3px 8px;
+    border-radius: 5px; text-transform: uppercase; letter-spacing: .3px; margin-top: 1px;
+  }
+  .prio.p1 { background: #fee2e2; color: #991b1b; }
+  .prio.p2 { background: #fff7ed; color: #9a3412; }
+  .prio.p3 { background: #e0f2fe; color: #075985; }
+  .finding .fbody { flex: 1; }
+  .finding .ftitle { font-size: .88rem; font-weight: 700; color: #1a2a3a; margin-bottom: 2px; }
+  .finding .fdesc { font-size: .8rem; color: #5a7080; line-height: 1.45; }
+  .finding .fdesc code { font-family: monospace; font-size: .76rem; background: #eef2f8; padding: 1px 4px; border-radius: 3px; color: #1e3a5f; }
+
+  /* ── Recomendações (checklist do framework) ── */
+  .rec-list { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+  .rec-list li { display: flex; gap: 11px; align-items: flex-start; font-size: .86rem; color: #1a2a3a; line-height: 1.45; }
+  .rec-list .rico { flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+  .rico.done { background: #dcfce7; }
+  .rico.partial { background: #fef3c7; }
+  .rec-list .rtag { font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: .3px; margin-left: 4px; }
+  .rtag.done { color: #166534; }
+  .rtag.partial { color: #92400e; }
+
+  /* ── Blocker banner ── */
+  .blocker-banner {
+    background: #fff7ed; border-left: 4px solid #ea580c;
+    padding: 12px 18px; border-radius: 0 6px 6px 0;
+    display: flex; align-items: center; gap: 12px; margin-top: 4px;
+  }
+  .blocker-banner .bi { font-size: 1.4rem; flex-shrink: 0; }
+  .blocker-banner .bt { font-size: .86rem; color: #7c2d12; line-height: 1.5; }
+  .blocker-banner .bt strong { color: #9a3412; }
+
+  /* ── Footer ── */
+  .footer-status {
+    background: linear-gradient(90deg, #007B3C 0%, #059652 100%);
+    color: #fff; text-align: center; padding: 16px 24px;
+    font-size: 1.05rem; font-weight: 800; letter-spacing: .6px; text-transform: uppercase;
+  }
+  .footer-status .sub { font-size: .76rem; font-weight: 500; letter-spacing: .3px; margin-top: 4px; opacity: .9; text-transform: none; }
+
+  @media (max-width: 640px) {
+    .aspect-body { grid-template-columns: 1fr; }
+    .aspect-col + .aspect-col { border-left: none; border-top: 1px solid #eef2f8; }
+  }
+</style>
+</head>
+<body>
+<div class="card">
+
+  <!-- ── HEADER ── -->
+  <div class="header">
+    <h1>Auditoria Técnica</h1>
+    <div class="subtitle">— ShareO · Avaliação Crítica por Aspectos —</div>
+    <div class="divider-line"></div>
+    <div class="meta">Staging · shareo-rouge.vercel.app &nbsp;|&nbsp; 2026-06-13 &nbsp;|&nbsp; Verificado contra o código-fonte · commit 033c4c0 · branch main</div>
+  </div>
+
+  <!-- ── METODOLOGIA ── -->
+  <div class="section">
+    <div class="section-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#59C686" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+      Escopo &amp; Metodologia
+    </div>
+    <p class="objetivo-text">
+      Auditoria do <strong>ShareO</strong><span class="dot"> ● </span>marketplace de economia circular para aluguel local de itens,
+      sob o framework de <strong>6 aspectos</strong> (Performance, Usabilidade, Design, Funcionalidades, Segurança, Estratégia).
+      Diferente de uma avaliação superficial de site, cada afirmação foi <strong>verificada contra o código-fonte</strong>:
+      <code style="font-family:monospace;font-size:.82rem;background:#eef2f8;padding:1px 5px;border-radius:3px">next.config.ts</code>,
+      <code style="font-family:monospace;font-size:.82rem;background:#eef2f8;padding:1px 5px;border-radius:3px">middleware.ts</code>,
+      relatório Lighthouse real, resultado k6, varredura de <code style="font-family:monospace;font-size:.82rem;background:#eef2f8;padding:1px 5px;border-radius:3px">next/image</code> e SEO.
+      O objetivo é separar riscos genéricos de template dos <strong>riscos reais deste produto</strong>.
+    </p>
+
+    <div class="kpi-strip">
+      <div class="kpi"><div class="num green">A−</div><div class="label">Nota Geral</div></div>
+      <div class="kpi"><div class="num green">97</div><div class="label">Lighthouse Perf</div></div>
+      <div class="kpi"><div class="num green">159ms</div><div class="label">k6 P95</div></div>
+      <div class="kpi"><div class="num green">0</div><div class="label">CLS</div></div>
+      <div class="kpi"><div class="num green">6/6</div><div class="label">Headers Seg.</div></div>
+      <div class="kpi"><div class="num amber">1</div><div class="label">Bloqueador (D4)</div></div>
+    </div>
+  </div>
+
+  <!-- ── ASPECTO 1: PERFORMANCE ── -->
+  <div class="section">
+    <div class="section-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#59C686" stroke-width="2.5"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      1 — Performance &amp; Infraestrutura
+    </div>
+    <div class="aspect">
+      <div class="aspect-head">
+        <div class="ico">⚡</div>
+        <div class="atitle">Vercel + CDN global · Next.js 15 App Router (SSR/ISR)</div>
+        <span class="grade a">A</span>
+      </div>
+      <div class="aspect-body">
+        <div class="aspect-col forte">
+          <div class="col-title">Confirmado no código</div>
+          <ul>
+            <li>Lighthouse real <strong>97</strong> · LCP <strong>2.3s</strong> · CLS <strong>0</strong> · TBT 70ms · FCP 1.3s</li>
+            <li>k6: 50 VUs, <code>P95=159ms</code>, 0% falhas (4117 iterações)</li>
+            <li>Region fixada <code>gru1</code> (São Paulo) — latência 71× menor vs iad1</li>
+            <li>next/image com <code>formats: avif, webp</code> + resize on-the-fly (17 componentes)</li>
+            <li>Cache headers + BF Cache nas páginas institucionais</li>
+          </ul>
+        </div>
+        <div class="aspect-col risco">
+          <div class="col-title">Riscos reais</div>
+          <ul>
+            <li><code>public/icones/</code> (PT) ≈ 13 MB de PNGs 2 MB — <strong>zero referências</strong>: peso morto no repo</li>
+            <li>PWA icons 192/512 com <strong>944 KB</strong> cada (esperado ~30–50 KB)</li>
+            <li>8 <code>&lt;img&gt;</code> cru (avatar/foto) fora do next/image em 7 arquivos</li>
+          </ul>
+        </div>
+      </div>
+      <div class="verdict-note"><strong>Veredito:</strong> "imagens pesadas" do template — mitigado na entrega (next/image resize); ação real é faxina de repo e PWA icons, não experiência do usuário. "SEO fraco por SPA" <strong>não se aplica</strong>: o app é SSR/ISR.</div>
+    </div>
+  </div>
+
+  <!-- ── ASPECTO 2: USABILIDADE ── -->
+  <div class="section">
+    <div class="section-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#59C686" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      2 — Usabilidade &amp; Experiência (UX)
+    </div>
+    <div class="aspect">
+      <div class="aspect-head">
+        <div class="ico">🧭</div>
+        <div class="atitle">Mobile-first · WCAG 2.1 AA · navegação clara</div>
+        <span class="grade a">A−</span>
+      </div>
+      <div class="aspect-body">
+        <div class="aspect-col forte">
+          <div class="col-title">Confirmado no código</div>
+          <ul>
+            <li>WCAG 2.1 AA validado com <code>jest-axe</code> + axe-core — 0 violações bloqueantes</li>
+            <li>Mobile-first 375 → 768 → 1280px · BottomNav + MobileMenu</li>
+            <li>Tap targets ≥ 44×44px (<code>min-h-tap</code>) em toda UI interativa</li>
+            <li>Dual CTA na home + proposta clara ("o que está parado na sua casa")</li>
+            <li>Skeletons, estados vazios com CTA, toasts (Sonner), error boundaries</li>
+          </ul>
+        </div>
+        <div class="aspect-col risco">
+          <div class="col-title">Riscos reais</div>
+          <ul>
+            <li>iOS Safari (WebKit real) ainda não validado em device — previsto jul/2026</li>
+            <li>Validação manual Locatário/Proprietário pendente — previsto jul/2026</li>
+            <li>Cross-browser automatizado cobre Chromium/Firefox/Edge/WebKit headless</li>
+          </ul>
+        </div>
+      </div>
+      <div class="verdict-note"><strong>Veredito:</strong> acessibilidade e responsividade são pontos fortes verificados, não promessas. Risco "falta de acessibilidade" do template <strong>não se aplica</strong>. Pendência é validação em device físico, não implementação.</div>
+    </div>
+  </div>
+
+  <!-- ── ASPECTO 3: DESIGN ── -->
+  <div class="section">
+    <div class="section-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#59C686" stroke-width="2.5"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2Z"/></svg>
+      3 — Design &amp; Identidade Visual
+    </div>
+    <div class="aspect">
+      <div class="aspect-head">
+        <div class="ico">🎨</div>
+        <div class="atitle">Design System v2 · tokens Tailwind · Montserrat</div>
+        <span class="grade a">A</span>
+      </div>
+      <div class="aspect-body">
+        <div class="aspect-col forte">
+          <div class="col-title">Confirmado no código</div>
+          <ul>
+            <li>Tokens consistentes: <code>bg-surface</code>, <code>text-brand</code>, <code>text-success</code>, <code>border-border</code></li>
+            <li>Paleta fixa: Navy <code>#003366</code> · Verde <code>#007B3C</code> · Off-white <code>#F8FAFC</code></li>
+            <li>Tipografia única (Montserrat via <code>next/font</code>) — sem FOUT</li>
+            <li>Regra de contraste documentada (verde claro nunca com texto branco)</li>
+            <li>Microinterações leves (hover/transition) sem JS pesado</li>
+          </ul>
+        </div>
+        <div class="aspect-col risco">
+          <div class="col-title">Riscos reais</div>
+          <ul>
+            <li>Protótipo de referência (<code>shareo-prototipo-v3b.html</code>) precisa permanecer sincronizado com o código</li>
+            <li>Dois diretórios de ícones (<code>/icons/</code> EN vs <code>/icones/</code> PT) geram ambiguidade</li>
+          </ul>
+        </div>
+      </div>
+      <div class="verdict-note"><strong>Veredito:</strong> risco "excesso de efeitos" do template <strong>não se aplica</strong> — animações são discretas e baseadas em CSS. Identidade é consistente e tokenizada.</div>
+    </div>
+  </div>
+
+  <!-- ── ASPECTO 4: FUNCIONALIDADES ── -->
+  <div class="section">
+    <div class="section-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#59C686" stroke-width="2.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      4 — Funcionalidades &amp; Integrações
+    </div>
+    <div class="aspect">
+      <div class="aspect-head">
+        <div class="ico">🧩</div>
+        <div class="atitle">207 funcionalidades · 52 endpoints · APIs com fallback</div>
+        <span class="grade a">A</span>
+      </div>
+      <div class="aspect-body">
+        <div class="aspect-col forte">
+          <div class="col-title">Confirmado no código</div>
+          <ul>
+            <li>Ciclo completo: buscar → reservar → pagar → retirar → devolver → avaliar</li>
+            <li>Validação <code>Zod</code> server-side em todos os endpoints</li>
+            <li>Integrações isoladas: Stripe (webhook), Supabase Realtime, ViaCEP, Mapbox, Resend</li>
+            <li>Fallbacks: filtro de distância sem GPS usa cidade do perfil; CSP com allowlist de domínios</li>
+            <li>Modularidade: <code>lib/pricing</code>, <code>lib/platform-config</code>, <code>lib/email</code> desacoplados</li>
+          </ul>
+        </div>
+        <div class="aspect-col risco">
+          <div class="col-title">Riscos reais</div>
+          <ul>
+            <li>NextAuth v5 ainda em <strong>beta</strong> — monitorar breaking changes pré-GA</li>
+            <li>Repasse PIX é manual no MVP (automação bancária só em V1+)</li>
+            <li>Stripe em <strong>Test mode</strong> — Live mode bloqueado por D4</li>
+          </ul>
+        </div>
+      </div>
+      <div class="verdict-note"><strong>Veredito:</strong> risco "falhas de API sem fallback" do template é <strong>parcialmente mitigado</strong> — há fallback em geolocalização e allowlist CSP; recomenda-se circuit-breaker explícito para Mapbox/Resend em produção.</div>
+    </div>
+  </div>
+
+  <!-- ── ASPECTO 5: SEGURANÇA ── -->
+  <div class="section">
+    <div class="section-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#59C686" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      5 — Segurança
+    </div>
+    <div class="aspect">
+      <div class="aspect-head">
+        <div class="ico">🔒</div>
+        <div class="atitle">6 headers · CSP com nonce · guards server-side</div>
+        <span class="grade a">A</span>
+      </div>
+      <div class="aspect-body">
+        <div class="aspect-col forte">
+          <div class="col-title">Confirmado no código</div>
+          <ul>
+            <li>Headers: <code>X-Frame-Options</code>, <code>nosniff</code>, <code>Referrer-Policy</code>, <code>Permissions-Policy</code>, <code>HSTS preload</code></li>
+            <li>CSP gerado por request com <strong>nonce</strong> no <code>middleware.ts</code></li>
+            <li>IDOR: guard <code>ownerId !== session.user.id → 403</code> em todas as rotas de recurso</li>
+            <li>CPF/CNPJ criptografados em repouso (ADR-005) · zero PII em logs/Sentry</li>
+            <li>Rate limiting (Upstash) · CSRF nativo NextAuth · JWT 15min + refresh rotativo 7d</li>
+            <li>37 testes E2E de segurança (XSS, IDOR, anti-enumeração, rate limit)</li>
+          </ul>
+        </div>
+        <div class="aspect-col risco">
+          <div class="col-title">Riscos reais</div>
+          <ul>
+            <li>RLS desabilitado (incompatível com PgBouncer) — segurança depende 100% dos guards</li>
+            <li>Pentest externo ainda não realizado — planejado no roadmap</li>
+            <li>PCI-DSS formal só em H3 (cartão nunca trafega nos servidores ShareO)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="verdict-note"><strong>Veredito:</strong> risco "vulnerabilidades em formulários" do template <strong>não se aplica</strong> — toda entrada passa por Zod + sanitização + CSP. Como RLS está off por design, manter cobertura de teste dos guards é crítico.</div>
+    </div>
+  </div>
+
+  <!-- ── ASPECTO 6: ESTRATÉGIA ── -->
+  <div class="section">
+    <div class="section-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#59C686" stroke-width="2.5"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+      6 — Estratégia &amp; Conteúdo
+    </div>
+    <div class="aspect">
+      <div class="aspect-head">
+        <div class="ico">🎯</div>
+        <div class="atitle">"Use Mais. Possua Menos." · dual CTA · GA4</div>
+        <span class="grade b">B+</span>
+      </div>
+      <div class="aspect-body">
+        <div class="aspect-col forte">
+          <div class="col-title">Confirmado no código</div>
+          <ul>
+            <li>Mensagem central direta + slogan consistente em metadata/OG</li>
+            <li>Dual CTA ("Quero Ganhar Dinheiro" / Explorar) acima da dobra</li>
+            <li>GA4 + 6 eventos customizados (<code>TrackEvent.tsx</code>) para iterar com dados</li>
+            <li>Narrativa: renda → economia → sustentabilidade (CO₂ economizado)</li>
+            <li>Lista VIP de fundadores com consentimento LGPD explícito (v1.1)</li>
+          </ul>
+        </div>
+        <div class="aspect-col risco">
+          <div class="col-title">Riscos reais</div>
+          <ul>
+            <li>Stats da home podem soar aspiracionais — staging tem 2 proprietários reais</li>
+            <li><code>/sobre</code> com equipe fictícia — aguarda aprovação dos fundadores</li>
+            <li>CNPJ/razão social ausentes em <code>/politicas</code> (CDC Art. 44) — pendência jurídica</li>
+            <li>Canal de suporte (SLA/horário) ainda não definido</li>
+          </ul>
+        </div>
+      </div>
+      <div class="verdict-note"><strong>Veredito:</strong> risco "conteúdo desatualizado" do template <strong>aplica-se parcialmente</strong> — decisões de conteúdo (números honestos vs. copy, equipe real, dados da empresa) dependem dos fundadores e do retorno jurídico D4.</div>
+    </div>
+  </div>
+
+  <!-- ── TABELA RESUMIDA ── -->
+  <div class="section">
+    <div class="section-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#59C686" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
+      Tabela Resumida — Veredito por Aspecto
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:140px">Aspecto</th>
+          <th class="center" style="width:62px">Nota</th>
+          <th>Ponto forte (verificado)</th>
+          <th>Risco real (deste produto)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="asp">⚡ Performance</td>
+          <td class="center"><span class="grade a">A</span></td>
+          <td>LH 97 · CLS 0 · k6 P95 159ms · gru1</td>
+          <td>13 MB de ícones não usados no repo; PWA icons 944 KB</td>
+        </tr>
+        <tr>
+          <td class="asp">🧭 Usabilidade</td>
+          <td class="center"><span class="grade a">A−</span></td>
+          <td>WCAG AA (axe) · mobile-first · tap 44px</td>
+          <td>iOS Safari e validação manual — jul/2026</td>
+        </tr>
+        <tr>
+          <td class="asp">🎨 Design</td>
+          <td class="center"><span class="grade a">A</span></td>
+          <td>Design System v2 tokenizado · Montserrat</td>
+          <td>Sincronizar protótipo; unificar /icons vs /icones</td>
+        </tr>
+        <tr>
+          <td class="asp">🧩 Funcionalidades</td>
+          <td class="center"><span class="grade a">A</span></td>
+          <td>207 feats · Zod · integrações isoladas</td>
+          <td>NextAuth beta; Stripe Live bloqueado por D4</td>
+        </tr>
+        <tr>
+          <td class="asp">🔒 Segurança</td>
+          <td class="center"><span class="grade a">A</span></td>
+          <td>6 headers · CSP nonce · guards IDOR · 37 testes</td>
+          <td>RLS off (guards críticos); pentest pendente</td>
+        </tr>
+        <tr>
+          <td class="asp">🎯 Estratégia</td>
+          <td class="center"><span class="grade b">B+</span></td>
+          <td>Mensagem clara · dual CTA · GA4 + eventos</td>
+          <td>Stats aspiracionais; CNPJ/equipe/suporte pendentes</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── ACHADOS ACIONÁVEIS ── -->
+  <div class="section">
+    <div class="section-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#59C686" stroke-width="2.5"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
+      Achados Acionáveis (sem bloqueador externo)
+    </div>
+
+    <div class="finding">
+      <span class="prio p1">P1</span>
+      <div class="fbody">
+        <div class="ftitle">Remover <code>public/icones/</code> não referenciado (~13 MB)</div>
+        <div class="fdesc">Seis PNGs de ~2 MB (<code>eletronicos.png</code>, <code>Moda.png</code>, etc.) + arquivos temp (<code>composite-temp.png.png</code>) com <strong>zero referências</strong> no código. Os ícones realmente usados estão em <code>/icons/</code> (EN). Deletar ou mover para fora do repo + <code>.gitignore</code>. Reduz clone/deploy sem impacto em produção.</div>
+      </div>
+    </div>
+
+    <div class="finding">
+      <span class="prio p2">P2</span>
+      <div class="fbody">
+        <div class="ftitle">Comprimir PWA icons 192/512 (944 KB → ~40 KB)</div>
+        <div class="fdesc">São carregados pelo browser direto do <code>manifest.ts</code> (fora do next/image). Reprocessar com <code>sharp</code> para PNG otimizado/quantizado. Melhora tempo de instalação do PWA e Lighthouse PWA.</div>
+      </div>
+    </div>
+
+    <div class="finding">
+      <span class="prio p2">P2</span>
+      <div class="fbody">
+        <div class="ftitle">Migrar 8 <code>&lt;img&gt;</code> de conteúdo do usuário para next/image</div>
+        <div class="fdesc">Avatares e fotos de avaliação em <code>perfil/</code>, <code>reservas/</code>, <code>_ReviewForm.tsx</code>, <code>UserDropdown.tsx</code>. O <code>remotePattern</code> do Supabase já está configurado — habilita avif/webp + lazy + dimensões fixas (reduz CLS futuro).</div>
+      </div>
+    </div>
+
+    <div class="finding">
+      <span class="prio p3">P3</span>
+      <div class="fbody">
+        <div class="ftitle">Circuit-breaker / fallback explícito para Mapbox e Resend</div>
+        <div class="fdesc">Hoje há fallback em geolocalização e allowlist CSP, mas falha de tile Mapbox ou de envio Resend não tem degradação graciosa documentada. Adicionar timeout + estado de erro amigável e retry no envio de e-mail crítico.</div>
+      </div>
+    </div>
+
+    <div class="finding">
+      <span class="prio p3">P3</span>
+      <div class="fbody">
+        <div class="ftitle">Rodar Lighthouse pós-gru1 e arquivar baseline mobile</div>
+        <div class="fdesc">O relatório atual (97) é de 06/06, antes do pin <code>gru1</code>. Rodar de novo em perfil mobile + throttling 4G e versionar como baseline para o gate de CI comparar regressões.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RECOMENDAÇÕES DO FRAMEWORK ── -->
+  <div class="section">
+    <div class="section-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#59C686" stroke-width="2.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      Recomendações do Framework — Status no ShareO
+    </div>
+    <ul class="rec-list">
+      <li>
+        <span class="rico done"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+        <span><strong>Testar com Lighthouse</strong> performance/acessibilidade/SEO <span class="rtag done">✓ feito + gate de CI bloqueante</span></span>
+      </li>
+      <li>
+        <span class="rico done"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+        <span><strong>Responsividade total em mobile</strong> (70%+ do acesso no BR) <span class="rtag done">✓ mobile-first 375px · tap 44px · BottomNav</span></span>
+      </li>
+      <li>
+        <span class="rico done"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+        <span><strong>Boas práticas de segurança</strong> (sanitização, auth segura) <span class="rtag done">✓ Zod · CSP nonce · JWT rotativo · 6 headers</span></span>
+      </li>
+      <li>
+        <span class="rico partial"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-width="3"><circle cx="12" cy="12" r="9"/><path d="M12 8v4"/></svg></span>
+        <span><strong>Identidade clara</strong> (qual problema, para quem) <span class="rtag partial">parcial — mensagem ok; CNPJ/equipe real pendentes (D4 + fundadores)</span></span>
+      </li>
+      <li>
+        <span class="rico done"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#166534" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></span>
+        <span><strong>Monitorar métricas de uso</strong> (GA, Vercel Analytics) <span class="rtag done">✓ GA4 + 6 eventos custom · Sentry · UptimeRobot</span></span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- ── BLOQUEADOR ── -->
+  <div class="section" style="padding-top:14px;padding-bottom:14px;">
+    <div class="blocker-banner">
+      <div class="bi">⛔</div>
+      <div class="bt">
+        <strong>D4 — BLOQUEADOR ATIVO:</strong> Consulta jurídica pendente. Os achados acima são executáveis sem D4, mas nenhuma atividade de produção (Stripe Live, Supabase production, DNS, go-live) ocorre antes do sign-off jurídico. Os pendentes de Estratégia (CNPJ na <code>/politicas</code>, conteúdo de equipe) também dependem desse retorno.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STATUS GERAL ── -->
+  <div class="footer-status">
+    ✅ &nbsp;NOTA GERAL A− — PRONTO TÉCNICO, AGUARDANDO D4 (JURÍDICO)
+    <div class="sub">6 aspectos auditados contra o código · 5 achados acionáveis (0 bloqueiam) · Lighthouse 97 · k6 P95 159ms · 6/6 headers · shareo-rouge.vercel.app · 2026-06-13 · commit 033c4c0</div>
+  </div>
+
+</div>
+</body>
+</html>
