@@ -1,8 +1,8 @@
 # ShareO — Status do Projeto
 
-**Atualizado em**: 2026-06-13 (sessão s8 — P-1..P-6 sem bloqueador: PIX checklist, k6+gru1, GA4 eventos, cupom por avaliar, dicas anfitrião, Lighthouse CI gate)
+**Atualizado em**: 2026-06-13 (sessão s9 — relatórios executivos + auditoria técnica 6 aspectos + execução dos 5 achados sem bloqueador)
 **Ambiente staging**: https://shareo-rouge.vercel.app (push automático → deploy via GitHub webhook)
-**Último commit**: `bd53b26`
+**Último commit**: `7eb66c2`
 **Release atual**: [`v1.3.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.3.0) — Lançamento Nacional + Embaixadores (commit `60b5b92`, jun/12) — aguarda D4 para produção
 **Release anterior**: [`v1.2.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.2.0) (a v1.1.0 planejada foi absorvida pela v1.2.0)
 
@@ -15,6 +15,8 @@
 ---
 
 ## Resumo Executivo
+
+**✅ Auditoria técnica por 6 aspectos + execução dos 5 achados** (commits `5cf77c1`→`7eb66c2`, jun/13 s9). Novo `relatorio-auditoria-tecnica.html`: cada aspecto (Performance/UX/Design/Funcionalidades/Segurança/Estratégia) verificado contra o código — nota geral **A−**; riscos genéricos de template desmontados com evidência (não é SPA → SEO 100; XSS em forms não se aplica → Zod+CSP). Os 5 achados sem bloqueador foram **todos executados** (`e04d6a1`, `206a259`): **(P1)** `public/icones/` removido (~15 MB, zero refs — os usados ficam em `public/icons/` EN); **(P2)** PWA icons 944 KB→10/64 KB via sharp (fonte era 1254px); **(P2)** 10 `<img>`→`next/image` — 3 previews `blob:` mantidos de propósito (next/image não otimiza object URL); **(P3)** Mapbox `ItemsMap` com `onError` (degrada só se não carregar) + Resend `sendWithRetry` nos e-mails críticos (verificação/reset) em `lib/email.ts`; **(P3)** baseline Lighthouse **mobile** (Perf 92 · A11y 97 · BP 96 · SEO 100 · LCP 1.6s · CLS 0.008) em `docs/lighthouse-baseline-mobile.md` (o anterior era desktop, só perf 97). `tsc`+`lint`+`build` ✅. Os dois relatórios executivos também atualizados (`033c4c0`): **207 funcionalidades / 27 categorias / 52 endpoints**.
 
 **✅ Avaliações exibidas por completo** (commit `cdf677f`, jun/12). O form de avaliação já coletava emoji de satisfação, critérios por estrela (P3-67/68/69) e foto do item em uso, mas esses dados nunca eram exibidos. Novo `components/reviews/ReviewDetails.tsx` renderiza tudo nos cards de avaliação da página do item e do perfil público. Os demais itens do bloco "features médias" já existiam: badges/Conquistas no perfil público, templates de chat, webhooks PJ.
 
