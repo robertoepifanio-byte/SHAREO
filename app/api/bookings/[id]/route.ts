@@ -268,40 +268,61 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       }
     }
 
-    // Ao confirmar: verifica conflito de datas dentro de uma transação para evitar double-booking.
-    // Dois PENDING podem coexistir; o segundo confirm falha se já houver um CONFIRMED/ACTIVE.
+    // Update atômico por ação (S14-A-05/A-06 — evita double-booking e ativação dupla em corrida).
+    const updateSelect = { id: true, status: true, updatedAt: true, ownerNetAmount: true, ownerId: true } as const
+    let updated: { id: string; status: BookingStatus; updatedAt: Date; ownerNetAmount: number | null; ownerId: string }
+
     if (action === "confirm") {
-      const conflict = await prisma.booking.findFirst({
-        where: {
-          id:     { not: id },
-          itemId: booking.itemId,
-          status: { in: ["CONFIRMED", "ACTIVE"] },
-          AND: [
-            { startDate: { lt: booking.endDate } },
-            { endDate:   { gt: booking.startDate } },
-          ],
-        },
-        select: { id: true },
-      })
-      if (conflict) {
+      // Conflito de datas + update na MESMA transação serializável.
+      // Antes o check ficava fora de transação → race de double-booking (dois confirms simultâneos).
+      try {
+        const result = await prisma.$transaction(async (tx) => {
+          const conflict = await tx.booking.findFirst({
+            where: {
+              id:     { not: id },
+              itemId: booking.itemId,
+              status: { in: ["CONFIRMED", "ACTIVE"] },
+              AND: [
+                { startDate: { lt: booking.endDate } },
+                { endDate:   { gt: booking.startDate } },
+              ],
+            },
+            select: { id: true },
+          })
+          if (conflict) return null
+          return tx.booking.update({ where: { id }, data, select: updateSelect })
+        }, { isolationLevel: "Serializable" })
+
+        if (!result) {
+          return NextResponse.json(
+            { error: { code: "DATE_CONFLICT", message: "Item já reservado para este período." } },
+            { status: 409 },
+          )
+        }
+        updated = result
+      } catch (e) {
+        // Falha de serialização (corrida simultânea) → trata como conflito de datas
+        if (e && typeof e === "object" && "code" in e && (e as { code?: string }).code === "P2034") {
+          return NextResponse.json(
+            { error: { code: "DATE_CONFLICT", message: "Item já reservado para este período." } },
+            { status: 409 },
+          )
+        }
+        throw e
+      }
+    } else if (action === "mark_active") {
+      // Update condicional: só ativa se o token ainda não foi consumido (evita ativação dupla em retry/duplo-clique).
+      const res = await prisma.booking.updateMany({ where: { id, pickupTokenUsedAt: null }, data })
+      if (res.count === 0) {
         return NextResponse.json(
-          { error: { code: "DATE_CONFLICT", message: "Item já reservado para este período." } },
+          { error: { code: "TOKEN_ALREADY_USED", message: "Este código já foi utilizado." } },
           { status: 409 },
         )
       }
+      updated = await prisma.booking.findUniqueOrThrow({ where: { id }, select: updateSelect })
+    } else {
+      updated = await prisma.booking.update({ where: { id }, data, select: updateSelect })
     }
-
-    const updated = await prisma.booking.update({
-      where:  { id },
-      data,
-      select: {
-        id:               true,
-        status:           true,
-        updatedAt:        true,
-        ownerNetAmount:   true,
-        ownerId:          true,
-      },
-    })
 
     // FIN-3.3 — criar Payout elegível N dias após devolução confirmada (PlatformConfig: payoutWindowDays)
     if (action === "confirm_return") {

@@ -14,6 +14,8 @@
 > **✅ Resultado-chave:** os 6 fixes do s13 estão tecnicamente corretos e **NENHUMA regressão funcional** foi introduzida (QA validou todos no staging: XSS escape, MIME/magic-bytes, invalidação de sessão, headers, truncamento coord, groupBy). Suíte real ~255/290 — as "65 falhas" do run foram **artefato** (propagação de `BASE_URL` no PowerShell + spec-bugs já conhecidos), não bugs do app.
 > **PORÉM:** 2 fixes do s13 têm cobertura **incompleta**, e há **3 Critical novos**. Quase todos os achados foram **reverificados e CONFIRMADOS** pelo orquestrador lendo o código (a precisão do s14 foi alta — bem melhor que o s13). IDs cruzados deduplicados (⊕).
 > ⚠️ NÃO corrigir sem deliberação. Novas **funcionalidades** exigem aprovação prévia do fundador.
+>
+> ✅ **RESOLVIDOS após deliberação (commit desta sessão):** os **3 Critical** — S14-A-04 (idempotência Stripe via `StripeEventQueue`, dedup por `event.id`), S14-A-05 (confirm de booking em `$transaction` serializável + 409 em P2034), S14-A-06 (`mark_active` via `updateMany` condicional em `pickupTokenUsedAt:null`) — **e os gaps de cobertura dos meus fixes:** lat/lng truncado (~110m) + `address` omitido em `/api/items/[id]` para não-dono/não-admin e nos pins da página SSR `/itens`; invalidação de sessão estendida a **mobile/Bearer** (`resolveUserId` + `mobile/refresh` checam `isSessionStale` via `iat`) e a **reset-password** (`invalidateUserSessions`). `tsc`+`build` verdes. **Permanecem para decisão:** GAP-M-07b (`take` na página SSR — baixo impacto), e os Majors restantes (SSRF, CSV injection, admin-role granular, PlatformConfig cache, `pickupToken @unique`, etc.) + os com dependência.
 
 ### 🟠 Cobertura INCOMPLETA de fixes do s13 (corrigir o que foi marcado "resolvido")
 

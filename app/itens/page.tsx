@@ -407,8 +407,8 @@ export default async function ExplorarPage({ searchParams }: Props) {
                   id:          i.id,
                   title:       i.title,
                   pricePerDay: i.pricePerDay,
-                  lat:         i.latitude!,
-                  lng:         i.longitude!,
+                  lat:         Math.round(i.latitude! * 1000) / 1000,  // ~110m (SEC-MIN-06): não expor coord exata ao client
+                  lng:         Math.round(i.longitude! * 1000) / 1000,
                 }))
 
               const mapView = pins.length > 0 ? (

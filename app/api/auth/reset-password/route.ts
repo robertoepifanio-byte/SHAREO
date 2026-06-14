@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
+import { invalidateUserSessions } from "@/lib/redis-admin-blocklist"
 
 const Schema = z.object({
   token:    z.string().min(1),
@@ -75,6 +76,9 @@ export async function POST(req: NextRequest) {
       prisma.user.update({ where: { id: user.id }, data: { passwordHash } }),
       prisma.passwordResetToken.delete({ where: { token } }),
     ])
+
+    // SEC-CRIT-04 / GAP-CRIT-04b: reset por link também invalida sessões anteriores
+    await invalidateUserSessions(user.id)
 
     return NextResponse.json({ data: { message: "Senha redefinida com sucesso." } })
   } catch (e: unknown) {

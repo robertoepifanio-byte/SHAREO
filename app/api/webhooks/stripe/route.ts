@@ -3,6 +3,7 @@ import { randomInt } from "node:crypto"
 import type { Stripe } from "stripe"
 import { stripe } from "@/lib/stripe"
 import { prisma } from "@/lib/prisma"
+import type { Prisma } from "@prisma/client"
 import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
 import { processAmbassadorOnBookingPaid, cancelAmbassadorCommissions } from "@/lib/ambassador"
 
@@ -31,7 +32,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
   }
 
+  // Idempotência (S14-A-04): Stripe reenvia webhooks em retry — dedup por event.id
+  // usando StripeEventQueue (@unique stripeEventId). Eventos já COMPLETED saem 200.
+  const prior = await prisma.stripeEventQueue
+    .findUnique({ where: { stripeEventId: event.id }, select: { status: true } })
+    .catch(() => null)
+  if (prior?.status === "COMPLETED") {
+    return NextResponse.json({ received: true, duplicate: true })
+  }
+
   try {
+    await prisma.stripeEventQueue.upsert({
+      where:  { stripeEventId: event.id },
+      create: { stripeEventId: event.id, type: event.type, payload: event as unknown as Prisma.InputJsonValue, status: "PROCESSING" },
+      update: { status: "PROCESSING", attempts: { increment: 1 } },
+    })
+
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session
@@ -273,8 +289,17 @@ export async function POST(req: Request) {
         // Ignora eventos não tratados
         break
     }
+
+    await prisma.stripeEventQueue.update({
+      where: { stripeEventId: event.id },
+      data:  { status: "COMPLETED", processedAt: new Date() },
+    })
   } catch (e) {
     console.error(`[stripe webhook] error processing ${event.type}:`, e instanceof Error ? e.message : e)
+    // Marca FAILED para permitir reprocessamento no retry do Stripe (dedup só bloqueia COMPLETED)
+    await prisma.stripeEventQueue
+      .update({ where: { stripeEventId: event.id }, data: { status: "FAILED", lastError: e instanceof Error ? e.message : String(e) } })
+      .catch(() => undefined)
     // Retornar 500 faz o Stripe retentar o webhook
     return NextResponse.json({ error: "Processing error" }, { status: 500 })
   }

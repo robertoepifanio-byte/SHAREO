@@ -60,7 +60,17 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
       prisma.item.update({ where: { id }, data: { viewCount: { increment: 1 } } }).catch((e) => console.error("[viewCount]", e instanceof Error ? e.message : e))
     )
 
-    return NextResponse.json({ data: item })
+    // Privacidade (SEC-MIN-06 / MAJ-S14-04): coordenada exata e endereço só p/ dono/admin.
+    // Público recebe lat/lng truncadas (~110m) e address omitido.
+    const data = (isOwner || isAdmin)
+      ? item
+      : {
+          ...item,
+          address:   null,
+          latitude:  Math.round(item.latitude  * 1000) / 1000,
+          longitude: Math.round(item.longitude * 1000) / 1000,
+        }
+    return NextResponse.json({ data })
   } catch (e) {
     console.error("[GET /api/items/[id]]", e instanceof Error ? e.message : e)
     return NextResponse.json(
