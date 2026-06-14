@@ -77,6 +77,7 @@ export function AppFooter() {
               <Link href="/ganhar"          className="text-sm text-white/90 hover:text-white transition-colors">Como ganhar</Link>
               <Link href="/termos"          className="text-sm text-white/90 hover:text-white transition-colors">Termos de uso</Link>
               <Link href="/privacidade"     className="text-sm text-white/90 hover:text-white transition-colors">Privacidade</Link>
+              <Link href="/seguranca"       className="text-sm text-white/90 hover:text-white transition-colors">Segurança</Link>
             </div>
           </nav>
         </div>
@@ -87,14 +88,14 @@ export function AppFooter() {
             © {year} ShareO · Todos os direitos reservados. · v{APP_VERSION}
           </p>
           <div className="flex flex-wrap gap-3">
-            <span className="flex items-center gap-1.5 rounded-md border border-white/20 px-3 py-1 text-xs font-semibold text-white">
+            <Link href="/seguranca" className="flex items-center gap-1.5 rounded-md border border-white/20 px-3 py-1 text-xs font-semibold text-white hover:border-white/40 transition-colors">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
               Pagamento seguro
-            </span>
-            <span className="flex items-center gap-1.5 rounded-md border border-white/20 px-3 py-1 text-xs font-semibold text-white">
+            </Link>
+            <Link href="/seguranca" className="flex items-center gap-1.5 rounded-md border border-white/20 px-3 py-1 text-xs font-semibold text-white hover:border-white/40 transition-colors">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
               Usuários verificados
-            </span>
+            </Link>
             <span className="flex items-center gap-1.5 rounded-md border border-white/20 px-3 py-1 text-xs font-semibold text-white">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 22c-4-2-8-6-8-11V5l8-3 8 3v6c0 5-4 9-8 11z"/></svg>
               Economia circular
