@@ -1,10 +1,10 @@
 # ShareO — Status do Projeto
 
-**Atualizado em**: 2026-06-14 (sessões s13–s14 — 2 auditorias críticas multi-aspecto read-only + hardening de segurança aplicado e validado)
+**Atualizado em**: 2026-06-14 (sessão s15 — análise read-only da crítica externa Copilot + release v1.5.0 + 4 ondas de melhoria mergeadas; sessões s13–s14 — auditorias críticas + hardening de segurança)
 **Ambiente staging**: https://shareo-rouge.vercel.app (push automático → deploy via GitHub webhook)
-**Último commit**: `e8c54dc`
-**Release atual**: [`v1.4.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.4.0) — Configurabilidade, Conformidade & Auditoria Técnica (commit `823387b`, jun/13 — 29 commits desde v1.3.0) — aguarda D4 para produção
-**Release anterior**: [`v1.3.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.3.0) — Lançamento Nacional + Embaixadores (commit `60b5b92`, jun/12)
+**Último commit**: `538d35c`
+**Release atual**: [`v1.5.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.5.0) — Hardening de Segurança (auditorias s13 + s14) (commit `80946df`, jun/14 — 16 commits desde v1.4.0) — aguarda D4 para produção
+**Release anterior**: [`v1.4.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.4.0) — Configurabilidade, Conformidade & Auditoria Técnica (commit `823387b`, jun/13 — 29 commits desde v1.3.0)
 
 ---
 
@@ -15,6 +15,8 @@
 ---
 
 ## Resumo Executivo
+
+**✅ Crítica externa (Copilot) analisada read-only + release v1.5.0 + 4 ondas de melhoria** (sessão s15, jun/14 — PR [#13](https://github.com/robertoepifanio-byte/SHAREO/pull/13) mergeado via rebase em `main`, commits `ef85d5f`→`538d35c`). Crítica genérica de Design/Usabilidade/Segurança avaliada por **2 subagentes read-only** (designer + segurança) contra o código: **~85% (design) e ~95% (segurança) improcedente** — refutada ponto a ponto com evidências `arquivo:linha`; a única verdade embutida é de **percepção** (o trabalho de design/segurança não é visível a um avaliador externo que só lê o HTML público). Cortada a release **[`v1.5.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.5.0)** como baseline pré-melhorias (consolida hardening s13+s14; `package.json` sincronizado 1.3.0→1.5.0, corrigindo drift herdado da v1.4.0). Os poucos gaps reais corrigidos em **4 ondas**: **(1 — a11y/UI)** token `muted` declarado em `tailwind.config.ts`, `text-accent`→`text-success` no `FounderCaptureForm` (contraste 2.1→5.1:1, WCAG AA), data da privacidade jan/2025→jun/2026; **(2 — UX)** toasts Sonner (estavam montados no layout mas **inertes** — zero `toast()` em runtime) ligados em favoritar, toggle ativo/pausado e ações de booking; **(3 — visibilidade)** nova página `/seguranca` (linguagem leiga, sem expor detalhes sensíveis), `public/.well-known/security.txt` (RFC 9116), link + trust badges no footer; **(4 — hardening)** `lib/ssrfGuard.ts` agora resolve DNS (`dns.promises.lookup`) e valida cada IP → mitiga **DNS rebinding** + 42 testes unitários, e nota no `middleware.ts` documentando por que `style-src 'unsafe-inline'` permanece (Tailwind/Mapbox). **Validação:** `tsc --noEmit` limpo + **42/42 testes ssrfGuard verdes** (inclui DNS rebinding + fail-closed). **Follow-ups pós-MVP:** TOCTOU residual de DNS (exigiria IP pinning), migração `style-src`→hash SHA-256.
 
 **✅ Auditorias críticas s13 + s14 + hardening de segurança aplicado e validado** (commits `26bbeb5`→`e8c54dc`, jun/13–14). Duas auditorias **read-only multi-aspecto** (QA/E2E + Segurança + Arquitetura, delegadas a subagentes), consolidadas em `docs/backlog-atividades-priorizadas.md` v3.8, com **reverificação do orquestrador** antes de agir. **Resolvidos e validados** (todos sem dependência externa, deliberados com o fundador):
 - **s13** — stored XSS no JSON-LD (`lib/jsonLd.ts`), crons **fail-closed**, validação MIME+magic-bytes em uploads (`lib/imageUpload.ts`), **invalidação de sessão pós-troca de senha** (claim `loginAt` + epoch Redis — Caminho B sem migration), headers **COOP + CSP frame-ancestors**, `pickupToken` via `crypto.randomInt`, truncamento de lat/lng, remoção de código morto, + **10 specs E2E** cobrindo gaps (commits `26bbeb5`/`8563b03`/`ef38d34`/`57841b6`/`21ecc69`).
@@ -149,9 +151,12 @@ Próximo passo: resolver P0 sem bloqueador externo (hardcoded + scripts) → agu
 
 | Tag | Commit | Data | Descrição |
 |---|---|---|---|
-| `v1.0` | — | pré-v2 | Estado antes da v2 UX |
+| `v1.5.0` | `80946df` | 2026-06-14 | Hardening de Segurança (auditorias s13+s14) — baseline; +4 ondas pós-crítica Copilot até `538d35c` |
+| `v1.4.0` | `823387b` | 2026-06-13 | Configurabilidade, Conformidade & Auditoria Técnica (29 commits desde v1.3.0) |
+| `v1.3.0` | `60b5b92` | 2026-06-12 | Lançamento Nacional + Programa de Embaixadores |
+| `v1.2.0` | `e20c1e9` | 2026-06-10 | Módulo financeiro + segurança locação + UX |
 | `v1.0.0` | `40d1a2b` | 2026-06-04 | Staging validado — ponto de recuperação estável |
-| *(candidata)* | `31068af` | 2026-06-09 | Taxa 100% dinâmica + multiplicadores configuráveis + ajuda page v2 — candidata a `v1.1.0` |
+| `v1.0` | — | pré-v2 | Estado antes da v2 UX |
 
 ---
 
@@ -213,6 +218,7 @@ Próximo passo: resolver P0 sem bloqueador externo (hardcoded + scripts) → agu
 | **jun/12 s7c** | ReviewDetails.tsx exibe emoji/critérios/foto nos cards de avaliação (item + perfil público); re-auditoria promessas v2.0 — 32/64 resolvidos, doc reorganizado por bloqueador |
 | **jun/13 s8** | P-1..P-6 sem bloqueador (`bd53b26`): PIX checklist admin, k6 50VUs + gru1, GA4 6 eventos, Coupon model/migration/lib + checkout com split-absorção, dicas anfitrião, Lighthouse CI gate |
 | **jun/13 s12** | Corrigidos os 2 bugs funcionais reais da suíte E2E: **QA-14** phone-otp 401 antes do body (`767d834`) e **QA-01** contraste WCAG no footer verde → `text-white/90` (`14c51f2`); revalidados verde (`6 passed`). `.gitignore` ampliado p/ artefatos não-fonte |
+| **jun/14 s15** | Crítica externa (Copilot) analisada read-only por designer+segurança (~85–95% improcedente, refutada com evidência); release **v1.5.0** baseline; **4 ondas** mergeadas (PR #13, rebase): token `muted` + contraste WCAG, toasts Sonner, página `/seguranca` + `security.txt` RFC 9116, `ssrfGuard` DNS anti-rebinding + 42 testes. `tsc` limpo + 42/42 ssrfGuard ✅ |
 
 ---
 
