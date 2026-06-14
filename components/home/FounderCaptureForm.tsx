@@ -94,7 +94,7 @@ export function FounderCaptureForm() {
   if (state === "error-duplicate") {
     return (
       <div className="mx-auto max-w-[400px]">
-        <div role="alert" className="rounded-lg border border-accent/30 bg-accent/10 px-4 py-3 text-center text-sm text-accent">
+        <div role="alert" className="rounded-lg border border-accent/30 bg-accent/10 px-4 py-3 text-center text-sm text-success">
           Você já está na lista! Será um dos primeiros a saber quando abrirmos.
         </div>
       </div>
