@@ -169,13 +169,13 @@ test.describe('Autenticação — cadastro, login, logout e redirect', () => {
     try {
       await page.goto('/dashboard')
 
-      // Logout pode estar em dropdown de perfil
-      const profileMenu = page.getByRole('button', { name: /perfil|conta|avatar/i })
-      if (await profileMenu.isVisible({ timeout: 3000 }).catch(() => false)) {
-        await profileMenu.click()
-      }
+      // Logout vive dentro do UserDropdown — abre pelo botão de avatar (aria-label "Menu do usuário — Nome")
+      const avatarBtn = page.getByRole('button', { name: /menu do usuário/i })
+      await expect(avatarBtn).toBeVisible({ timeout: 8000 })
+      await avatarBtn.click()
 
-      const logoutBtn = page.getByRole('button', { name: /sair|logout/i })
+      // "Sair" é um <button role="menuitem"> dentro do dropdown → o role efetivo é menuitem, não button
+      const logoutBtn = page.getByRole('menuitem', { name: /sair|logout/i })
       await expect(logoutBtn).toBeVisible({ timeout: 8000 })
       await logoutBtn.click()
 
@@ -203,8 +203,9 @@ test.describe('Autenticação — cadastro, login, logout e redirect', () => {
   test('após login com callbackUrl, redireciona de volta para /dashboard', async ({ page }) => {
     test.skip(!hasLocatarioSession, 'Requer fixture de credenciais (FIXTURE_LOCATARIO)')
     await page.goto('/login?callbackUrl=%2Fdashboard')
-    await page.getByLabel(/e-?mail/i).fill(FIXTURE_LOCATARIO.email)
-    await page.getByLabel(/senha/i).fill(FIXTURE_LOCATARIO.password)
+    // getByRole textbox desambigua "Senha" (input) do botão "Mostrar senha" — getByLabel(/senha/i) colide com ambos
+    await page.getByRole('textbox', { name: /e-?mail/i }).fill(FIXTURE_LOCATARIO.email)
+    await page.getByRole('textbox', { name: /senha/i }).fill(FIXTURE_LOCATARIO.password)
     await page.getByRole('button', { name: /entrar|login|acessar/i }).click()
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 })
   })
