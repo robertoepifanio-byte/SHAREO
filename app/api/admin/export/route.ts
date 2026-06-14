@@ -27,8 +27,10 @@ function toCsv(rows: Record<string, unknown>[]): string {
   if (rows.length === 0) return ""
   const headers = Object.keys(rows[0])
   const escape  = (v: unknown) => {
-    const s = v == null ? "" : String(v)
-    return s.includes(",") || s.includes('"') || s.includes("\n")
+    let s = v == null ? "" : String(v)
+    // CSV formula injection (S14-SEC-06): neutraliza células iniciadas por =,+,-,@,TAB,CR
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s
+    return s.includes(",") || s.includes('"') || s.includes("\n") || s.includes("\r")
       ? `"${s.replace(/"/g, '""')}"`
       : s
   }

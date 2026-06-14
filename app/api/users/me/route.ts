@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server"
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
@@ -224,20 +224,22 @@ export async function PATCH(req: NextRequest) {
       },
     })
 
-    // Geocodificar endereço completo do perfil para centrar o mapa corretamente.
-    // Precisa de await: fire-and-forget morre quando a lambda congela após a resposta.
+    // Geocodificar endereço completo do perfil — NÃO bloqueia a resposta.
+    // S14-M-19: after() mantém a lambda viva até concluir (antes era await, ~3-5s no PATCH).
     const addressChanged = d.city !== undefined || d.state !== undefined
                         || d.street !== undefined || d.neighborhood !== undefined
     if (addressChanged) {
       const city  = d.city  ?? updated.city
       const state = d.state ?? updated.state
       if (city && state) {
-        await geocodeUserLocation(session.user.id, {
-          street:       d.street       ?? updated.street,
-          neighborhood: d.neighborhood ?? updated.neighborhood,
-          city,
-          state,
-        })
+        after(() =>
+          geocodeUserLocation(session.user.id, {
+            street:       d.street       ?? updated.street,
+            neighborhood: d.neighborhood ?? updated.neighborhood,
+            city,
+            state,
+          }).catch((e) => console.error("[geocodeUserLocation]", e instanceof Error ? e.message : e))
+        )
       }
     }
 

@@ -5,6 +5,7 @@
  */
 import { NextResponse, type NextRequest } from "next/server"
 import { auth } from "@/lib/auth"
+import { hasAdminRole } from "@/lib/auth/admin-guards"
 import { prisma } from "@/lib/prisma"
 
 export const runtime   = "nodejs"
@@ -32,7 +33,8 @@ export async function POST(req: NextRequest) {
 
   if (!isSecret) {
     const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
+    // S14-M-14: geocode de itens é domínio Operacional (+Superadmin)
+    if (!hasAdminRole(session, "ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
   }

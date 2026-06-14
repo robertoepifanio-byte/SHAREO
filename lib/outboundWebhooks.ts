@@ -1,5 +1,6 @@
 import crypto from "crypto"
 import { prisma } from "@/lib/prisma"
+import { isUrlSafeForWebhook } from "@/lib/ssrfGuard"
 
 // ─── Eventos suportados ───────────────────────────────────────────────────────
 
@@ -34,6 +35,16 @@ async function fireOne(
   const signature = sign(body, secret)
 
   let statusCode: number | null = null
+
+  // SSRF guard (S14-SEC-03): bloqueia URL que resolve p/ IP privado/loopback/metadata.
+  if (!(await isUrlSafeForWebhook(url))) {
+    console.error(`[webhook] URL bloqueada (SSRF guard): ${url}`)
+    await prisma.outboundWebhook.update({
+      where: { id: webhookId },
+      data:  { lastFiredAt: new Date(), lastStatusCode: null, failureCount: { increment: 1 } },
+    }).catch(() => void 0)
+    return
+  }
 
   try {
     const res = await fetch(url, {
