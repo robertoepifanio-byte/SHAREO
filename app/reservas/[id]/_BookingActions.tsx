@@ -3,6 +3,7 @@
 import { useState, useTransition, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { toast } from "sonner"
 import type { BookingStatus } from "@prisma/client"
 
 interface Props {
@@ -78,17 +79,40 @@ export function BookingActions({
     try {
       const res  = await fetch(url, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
       const json = await res.json()
-      if (!res.ok) { setError(json.error?.message ?? "Erro ao executar ação."); return false }
+      if (!res.ok) {
+        const msg = json.error?.message ?? "Erro ao executar ação."
+        setError(msg)
+        toast.error(msg)
+        return false
+      }
       startTransition(() => router.refresh())
       return true
+    } catch {
+      const msg = "Erro de conexão. Tente novamente."
+      setError(msg)
+      toast.error(msg)
+      return false
     } finally {
       setLoading(false)
     }
   }
 
+  const ACTION_SUCCESS_MESSAGES: Partial<Record<CoreAction, string>> = {
+    confirm:        "Reserva confirmada",
+    cancel:         "Reserva cancelada",
+    mark_active:    "Retirada confirmada",
+    mark_returned:  "Devolução confirmada",
+    confirm_return: "Recebimento confirmado",
+    open_dispute:   "Problema reportado",
+  }
+
   async function execCore(action: CoreAction, extra?: object) {
     const ok = await callApi(`/api/bookings/${bookingId}`, { action, ...extra })
-    if (ok) reset()
+    if (ok) {
+      const msg = ACTION_SUCCESS_MESSAGES[action]
+      if (msg) toast.success(msg)
+      reset()
+    }
   }
 
   async function submitCancel() {
@@ -105,9 +129,19 @@ export function BookingActions({
         body: JSON.stringify({ newEndDate }),
       })
       const json = await res.json()
-      if (!res.ok) { setError(json.error?.message ?? "Erro ao solicitar extensão."); return }
+      if (!res.ok) {
+        const msg = json.error?.message ?? "Erro ao solicitar extensão."
+        setError(msg)
+        toast.error(msg)
+        return
+      }
+      toast.success("Solicitação de extensão enviada")
       startTransition(() => router.refresh())
       reset()
+    } catch {
+      const msg = "Erro de conexão. Tente novamente."
+      setError(msg)
+      toast.error(msg)
     } finally {
       setLoading(false)
     }
@@ -123,9 +157,19 @@ export function BookingActions({
         body: JSON.stringify({ action }),
       })
       const json = await res.json()
-      if (!res.ok) { setError(json.error?.message ?? "Erro ao responder extensão."); return }
+      if (!res.ok) {
+        const msg = json.error?.message ?? "Erro ao responder extensão."
+        setError(msg)
+        toast.error(msg)
+        return
+      }
+      toast.success(action === "approve" ? "Extensão aprovada" : "Extensão recusada")
       startTransition(() => router.refresh())
       reset()
+    } catch {
+      const msg = "Erro de conexão. Tente novamente."
+      setError(msg)
+      toast.error(msg)
     } finally {
       setLoading(false)
     }
