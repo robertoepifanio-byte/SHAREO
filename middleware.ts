@@ -53,7 +53,13 @@ function buildCsp(nonce: string): string {
     // nonce cobre scripts inline do Next.js, JSON-LD e GA4; wasm-unsafe-eval é exigido pelo Mapbox GL
     `script-src 'self' 'nonce-${nonce}' 'wasm-unsafe-eval' blob: https://www.googletagmanager.com`,
     "worker-src blob: 'self'",
-    // unsafe-inline para styles permanece — Tailwind e Mapbox GL injetam estilos inline
+    // unsafe-inline para styles permanece por dependência de duas bibliotecas:
+    //  • Tailwind CSS (JIT) injeta <style> inline no documento em runtime.
+    //  • Mapbox GL JS injeta estilos inline em elementos de mapa dinamicamente.
+    // Remover 'unsafe-inline' quebraria o CSS de toda a aplicação e o mapa.
+    // Caminho seguro futuro: gerar hash SHA-256 de cada bloco <style> conhecido
+    // em build-time e incluí-los explicitamente aqui. Rastreado como item de
+    // hardening pós-MVP (follow-up CSP style-src sem unsafe-inline).
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: *.supabase.co *.mapbox.com https://www.google-analytics.com",
     "connect-src 'self' wss://*.supabase.co api.mapbox.com events.mapbox.com *.tiles.mapbox.com *.sentry.io https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://viacep.com.br",
