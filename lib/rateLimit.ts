@@ -4,6 +4,11 @@
  * When UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN are set, uses Upstash
  * sliding-window algorithm shared across all Vercel instances.
  * Otherwise falls back to a per-process Map (acceptable for dev/staging).
+ *
+ * ⚠️ NODE.JS RUNTIME ONLY (ARQ-Mi-11). Usa os SDKs @upstash/ratelimit + @upstash/redis,
+ * que dependem de APIs Node e são incompatíveis com o Edge Runtime. NÃO importar este
+ * módulo em rota/middleware com `runtime = "edge"` — o build quebra. Para rate limit no
+ * Edge, reimplementar via fetch à REST do Upstash (padrão de lib/redis-admin-blocklist.ts).
  */
 
 import { Ratelimit } from "@upstash/ratelimit"

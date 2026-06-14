@@ -116,24 +116,17 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
 
   const [responseBadge, ownerStats, similarItems] = await Promise.all([
     getOwnerResponseBadge(item.ownerId),
-    // P1-23 — taxa de resposta e locações concluídas do proprietário
-    prisma.booking.aggregate({
+    // P1-23 — taxa de resposta e locações concluídas (ARQ-M-10: 1 groupBy em vez de 1 aggregate + 2 counts)
+    prisma.booking.groupBy({
+      by: ["status"],
       where: { ownerId: item.ownerId, deletedAt: null },
-      _count: { id: true },
-    }).then(async (total) => {
-      const [completed, responded] = await Promise.all([
-        prisma.booking.count({
-          where: { ownerId: item.ownerId, status: "COMPLETED", deletedAt: null },
-        }),
-        prisma.booking.count({
-          where: {
-            ownerId: item.ownerId,
-            status: { in: ["CONFIRMED", "ACTIVE", "RETURNED", "COMPLETED"] },
-            deletedAt: null,
-          },
-        }),
-      ])
-      const totalCount = total._count.id
+      _count: true,
+    }).then((rows) => {
+      const byStatus   = new Map(rows.map((r) => [r.status, r._count]))
+      const totalCount = rows.reduce((s, r) => s + r._count, 0)
+      const completed  = byStatus.get("COMPLETED") ?? 0
+      const responded  = (["CONFIRMED", "ACTIVE", "RETURNED", "COMPLETED"] as const)
+        .reduce((s, k) => s + (byStatus.get(k) ?? 0), 0)
       return {
         completedCount: completed,
         responseRate: totalCount > 0 ? Math.round((responded / totalCount) * 100) : null,

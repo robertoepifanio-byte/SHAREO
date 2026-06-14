@@ -24,7 +24,7 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
             city: true, state: true, createdAt: true,
           },
         },
-        images:  { orderBy: { order: "asc" } },
+        images:  { orderBy: { order: "asc" }, take: 24 },  // bound de payload (ARQ-M-07)
         reviews: {
           where: { reviewType: "ITEM" },
           select: {
