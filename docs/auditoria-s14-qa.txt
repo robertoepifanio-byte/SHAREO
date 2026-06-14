@@ -381,3 +381,796 @@ Running 290 tests using 1 worker
   ok 255 [chromium] › e2e\review.spec.ts:154:7 › smoke #6 — proprietário avalia BORROWER (→ auto-COMPLETED) › proprietário avalia o BORROWER → 201 (ou 409 idempotente) (336ms)
   booking → COMPLETED (auto)
   ok 256 [chromium] › e2e\review.spec.ts:178:7 › smoke #6 — proprietário avalia BORROWER (→ auto-COMPLETED) › booking auto-completa para COMPLETED após 3 reviews (1.4s)
+  ok 257 [chromium] › e2e\review.spec.ts:202:7 › smoke #6 — UI mostra booking COMPLETED › /reservas exibe status Concluída para o locatário (2.0s)
+  ok 258 [chromium] › e2e\search-filter.spec.ts:14:7 › Busca e filtros — lista de itens › busca por texto "câmera" filtra a lista de resultados (1.2s)
+  ok 259 [chromium] › e2e\search-filter.spec.ts:41:7 › Busca e filtros — lista de itens › filtro por categoria atualiza URL com categoryId (943ms)
+  ok 260 [chromium] › e2e\search-filter.spec.ts:93:7 › Busca e filtros — lista de itens › filtro preço máximo oculta itens acima do valor informado (991ms)
+  ok 261 [chromium] › e2e\search-filter.spec.ts:152:7 › Busca e filtros — lista de itens › acesso direto a /itens?search=câmera pré-aplica a busca (801ms)
+  ok 262 [chromium] › e2e\search-filter.spec.ts:176:7 › Busca e filtros — lista de itens › filtro persiste ao navegar para detalhe e voltar com browser back (2.5s)
+  -  263 [chromium] › e2e\search-filter.spec.ts:226:8 › Busca e filtros — lista de itens › clicar em X em um filtro ativo remove o filtro e atualiza a URL
+  ok 264 [chromium] › e2e\search-filter.spec.ts:266:7 › Busca e filtros — lista de itens › filtro atualiza URL sem recarregar a página inteira (navegação SPA) (1.4s)
+  booking criado para teste IDOR: cmqdjfrhm00e9lb04eyzx74jr
+  GET /api/bookings/cmqdjfrhm00e9lb04eyzx74jr como admin → 403
+  GET booking alheio → 403 ✅
+  PATCH /api/bookings/cmqdjfrhm00e9lb04eyzx74jr como admin → 403
+  PATCH booking alheio → 403 ✅
+  ok 265 [chromium] › e2e\security.spec.ts:47:7 › smoke #13 — IDOR: acesso cruzado a recursos alheios › admin não consegue ler nem modificar booking entre locatário e proprietário (952ms)
+  GET /api/admin/platform-config como locatário → 403
+  /api/admin/platform-config → 403 ✅
+  POST /api/admin/export como locatário → 403
+  /api/admin/export → 403 ✅
+  GET /api/admin/usuarios como locatário → 403
+  /api/admin/usuarios → 403 ✅
+  ok 266 [chromium] › e2e\security.spec.ts:116:7 › smoke #14 — Admin routes bloqueadas para usuário comum › locatário não acessa /api/admin/* — deve receber 403 (347ms)
+  GET /api/admin/platform-config sem sessão → 401 (raw, sem seguir redirect)
+  sem sessão → 401 ✅ (middleware/guard bloqueou antes de entregar dados)
+  ok 267 [chromium] › e2e\security.spec.ts:145:7 › smoke #14 — Admin routes bloqueadas para usuário comum › requisição sem sessão para /api/admin/* → redirect (307) ou 401/403 (295ms)
+  POST booking próprio item → 403 {"error":{"code":"CANNOT_BOOK_OWN_ITEM","message":"Você não pode alugar o próprio item."}}
+  booking próprio item → 403 CANNOT_BOOK_OWN_ITEM ✅
+  ok 268 [chromium] › e2e\security.spec.ts:171:7 › smoke #15 — Proprietário não reserva o próprio item › POST /api/bookings com próprio item → 403 CANNOT_BOOK_OWN_ITEM (253ms)
+  booking criado: totalPrice=10000 dailyPrice=5000
+  totalPrice=10000 (> 1 e correto) ✅ — manipulação bloqueada pelo servidor
+  ok 269 [chromium] › e2e\security.spec.ts:205:7 › smoke #16 — Manipulação de preço: servidor recalcula e ignora campo cliente › totalPrice no body é ignorado — servidor calcula pelo pricePerDay do item (568ms)
+  item de teste criado: cmqdjftdl00eplb04kosgwn1s
+  SVG (image/svg+xml) → 415 {"error":{"code":"INVALID_TYPE","message":"Selecione uma imagem (JPEG, PNG, WebP, HEIC)."}}
+  SVG image/svg+xml → 415 ✅ (XSS bloqueado)
+  application/octet-stream → 415 {"error":{"code":"INVALID_TYPE","message":"Selecione uma imagem (JPEG, PNG, WebP, HEIC)."}}
+  application/octet-stream → 415 ✅
+  SVG disfarçado de JPEG (magic bytes inválidos) → 415 {"error":{"code":"INVALID_TYPE","message":"Arquivo inválido ou corrompido."}}
+  SVG/JPEG (magic bytes inválidos) → 415 ✅ (defesa em profundidade)
+  image/gif (válido) → 201
+  image/gif → 201 ✅ (tipo legítimo aceito)
+  item cmqdjftdl00eplb04kosgwn1s removido (cleanup) ✅
+  ok 270 [chromium] › e2e\security.spec.ts:268:7 › smoke #17 — Upload MIME bypass: tipos perigosos bloqueados › SVG (svg+xml), octet-stream bloqueados; jpeg e gif aceitos (1.9s)
+  CSRF token: 7728562b…
+  CSRF cookie: __Host-authjs.csrf-token=7728562b6334ffe…
+  tentativa 1 → 302
+  tentativa 2 → 302
+  tentativa 3 → 302
+  tentativa 4 → 302
+  tentativa 5 → 302
+  tentativa 6 → 429
+  rate limit ativo em tentativa 6 → 429 ✅
+  brute force bloqueado em tentativa 6 ✅
+  ok 271 [chromium] › e2e\security2.spec.ts:31:7 › smoke #18 — Brute force login bloqueado por rate limit › 10 tentativas de login com senha errada → rate limited (credenciais recusadas) (1.7s)
+  forgot-password (email inexistente) → 200
+  resposta genérica (não vaza existência do email) ✅
+  ok 272 [chromium] › e2e\security2.spec.ts:91:7 › smoke #19 — Password reset: fluxo e segurança do token › forgot-password retorna 200 independente do email existir (não vaza info) (373ms)
+  reset-password (token inválido) → 400
+  token inválido → 400 ✅ (rejeitado corretamente)
+  ok 273 [chromium] › e2e\security2.spec.ts:112:7 › smoke #19 — Password reset: fluxo e segurança do token › reset-password com token inválido → 400/404 (130ms)
+  forgot-password tentativa 1 → 200
+  forgot-password tentativa 2 → 200
+  forgot-password tentativa 3 → 429
+  rate limit forgot-password → 429 ✅
+  ok 274 [chromium] › e2e\security2.spec.ts:129:7 › smoke #19 — Password reset: fluxo e segurança do token › rate limit em forgot-password: mais de 3/min → 429 (485ms)
+  GET id-docs public URL → 400
+  id-docs não acessível publicamente (400) ✅ — bucket privado confirmado
+  ok 275 [chromium] › e2e\security2.spec.ts:157:7 › smoke #20 — id-docs: documentos de identidade não acessíveis publicamente › URL pública de id-docs retorna erro sem autenticação (524ms)
+  booking criado: cmqdjfxcv00etlb04noh21ox5
+  review em PENDING → 422
+  review em PENDING → 422 BOOKING_NOT_REVIEWABLE ✅
+  booking avançado para RETURNED → 422
+  proprietário review ITEM (tipo errado) → 422
+  tipo errado → 422 ✅
+  locatário review ITEM → 422
+  x  276 [chromium] › e2e\security2.spec.ts:183:7 › smoke #21 — Review flow: avaliações após booking COMPLETED › review em booking ativo é bloqueado; avaliação duplicada bloqueada; roles respeitados (1.2s)
+  x  277 [chromium] › e2e\security2.spec.ts:183:7 › smoke #21 — Review flow: avaliações após booking COMPLETED › review em booking ativo é bloqueado; avaliação duplicada bloqueada; roles respeitados (retry #1) (642ms)
+  Booking A (dias 9050→9053) criado: cmqdjg04200f1lb040wwq6p0f ✅
+  Booking B adjacente (dias 9053→9056) → 201
+  Booking B adjacente → 201 ✅ (datas adjacentes permitidas)
+  Booking C sobreposição (dias 9051→9054) → 409
+  Booking C sobreposição → 409 DATE_CONFLICT ✅
+  Booking D 1 dia (dias 9060→9061) → 201
+  Booking D 1 dia → 201 ✅
+  ok 278 [chromium] › e2e\security2.spec.ts:282:7 › smoke #22 — Booking boundary: casos limítrofes de datas › datas adjacentes permitidas; sobreposição bloqueada; booking de 1 dia aceito (2.1s)
+  DELETE com ACTIVE booking → 409
+  409 ACTIVE_BOOKING ✅ — conta não excluída
+  Booking A levado até COMPLETED para liberar locatário
+  Booking B PENDING criado: cmqdjg2in00g5lb046rs8bc97
+  Booking B cancelado manualmente (fixture preservado) ✅
+  DELETE sem bookings ativos: verificado por cobertura de código ✅
+  ok 279 [chromium] › e2e\security3.spec.ts:36:7 › smoke #23 — Exclusão de conta: bloqueio com ACTIVE booking; cleanup de PENDING › DELETE /api/users/me — bloqueado com ACTIVE booking; PENDING cancelado; sem booking → 200 (1.9s)
+  GET /api/admin/export → 200 text/csv; charset=utf-8
+  CSV recebido: 85284 chars, primeiras linhas:
+    id,data,status,pagamento,item,proprietario,email_proprietario,locatario,email_locatario,total_brl,taxa_plataforma_brl,repasse_liquido_brl,stripe_fee_brl,taxa_pct,dispute_id
+    cmqbf6ko40032tvhkodl6pd8h,2026-05-19,COMPLETED,PAID,Teste,Financeiro,financeiro@shareo.com.br,Indicado Bronze 2,ref-b2@shareo-demo.com,100.00,15.00,85.00,,15.00%,
+    cmqbf6vbl004etvhkcu7zavwn,2026-05-19,COMPLETED,PAID,Teste,Financeiro,financeiro@shareo.com.br,Indicado Prata 9,ref-s9@shareo-demo.com,100.00,15.00,85.00,,15.00%,
+  Sem CPF/senha no CSV ✅  |  388 linhas
+  ok 280 [chromium] › e2e\security3.spec.ts:117:7 › smoke #24 — Exportação CSV admin: formato e segurança › GET /api/admin/export → 200 text/csv sem CPF/senha expostos (264ms)
+  POST /api/admin/export sem auth → 401
+  401 ✅
+  ok 281 [chromium] › e2e\security3.spec.ts:154:7 › smoke #24 — Exportação CSV admin: formato e segurança › POST /api/admin/export sem auth → 401 (229ms)
+  GET /api/items (sem filtro) → 200
+  Total sem filtro: 20 itens
+  Itens com coordenadas: 20/20
+  GET /api/items (city=Natal, state=RN) → 200
+  Itens em Natal/RN: 5
+  GET /api/items (city inexistente) → 200
+  0 itens para cidade inexistente ✅
+  GET /api/items (limit=999) → 400
+  Paginação respeitada ✅
+  ok 282 [chromium] › e2e\security3.spec.ts:171:7 › smoke #25 — Filtro de itens: city/state e paginação respeitam schema › GET /api/items — city filter, city inexistente retorna 0 itens, page/limit validados (690ms)
+  GET /api/users/me/export sem auth → 401
+  401 ✅
+  GET /api/users/me/export (locatario) → 200
+  Campos no export: exportedAt, user, items, bookings, reviews, favorites
+  Email próprio presente ✅  |  passwordHash ausente ✅
+  Sem dados de outro usuário ✅
+  ok 283 [chromium] › e2e\security3.spec.ts:238:7 › smoke #26 — LGPD data export: isolamento e campos corretos › GET /api/users/me/export — 401 sem auth; 200 com dados próprios; não expõe passwordHash (378ms)
+  GET /api/admin/payouts → 404
+  PATCH payout inexistente → 404
+  404 para payout inexistente ✅
+  PATCH payout sem auth → 401
+  401 ✅ — endpoint protegido
+  PATCH payout como locatario → 403
+  403 ✅ — acesso bloqueado para não-admin
+  ok 284 [chromium] › e2e\security3.spec.ts:285:7 › smoke #27 — Four-eyes payout: integridade do fluxo de aprovação › PATCH /api/admin/payouts/[id] — apenas FINANCEIRO pode aprovar; sem payout inválido (607ms)
+  POST /api/payments/checkout sem auth → 401
+  401 ✅
+  ok 285 [chromium] › e2e\security4.spec.ts:43:7 › smoke #28 — Checkout Stripe: guards e criação de sessão › POST /api/payments/checkout sem auth → 401 (100ms)
+  Booking PENDING criado: cmqdjg4vp00gflb044o9a3k1a
+  POST checkout como proprietário → 403
+  403 FORBIDDEN ✅ — apenas o locatário pode pagar
+  ok 286 [chromium] › e2e\security4.spec.ts:56:7 › smoke #28 — Checkout Stripe: guards e criação de sessão › POST /api/payments/checkout com proprietário → 403 (só locatário paga) (757ms)
+  Booking PENDING criado: cmqdjg5fy00gnlb04n6b63em4
+  POST checkout com PENDING → 422
+  422 BOOKING_NOT_CONFIRMED ✅
+  ok 287 [chromium] › e2e\security4.spec.ts:97:7 › smoke #28 — Checkout Stripe: guards e criação de sessão › POST /api/payments/checkout com booking PENDING → 422 BOOKING_NOT_CONFIRMED (617ms)
+  Booking PENDING criado: cmqdjg5yq00gvlb048u238j1g
+  Booking CONFIRMED ✅
+  POST /api/payments/checkout → 200
+  URL Stripe recebida: https://checkout.stripe.com/c/pay/cs_test_a1YgA3yTHjd1ylEHXU…
+  URL checkout.stripe.com ✅
+  Segunda chamada checkout → 200
+  Segunda sessão Stripe criada ✅
+  Booking cancelado (cleanup) ✅
+  ok 288 [chromium] › e2e\security4.spec.ts:136:7 › smoke #28 — Checkout Stripe: guards e criação de sessão › POST /api/payments/checkout com CONFIRMED → 200 + URL Stripe válida (2.2s)
+  POST /api/webhooks/stripe sem signature → 400
+  400 — assinatura ausente rejeitada ✅
+  ok 289 [chromium] › e2e\security4.spec.ts:202:7 › smoke #28 — Checkout Stripe: guards e criação de sessão › POST /api/webhooks/stripe sem stripe-signature → 400 (106ms)
+  POST /api/webhooks/stripe com assinatura inválida → 400
+  400 — assinatura inválida rejeitada ✅
+  ok 290 [chromium] › e2e\security4.spec.ts:217:7 › smoke #28 — Checkout Stripe: guards e criação de sessão › POST /api/webhooks/stripe com assinatura inválida → 400 (111ms)
+  POST reviews sem auth → 401
+  401 ✅
+  ok 291 [chromium] › e2e\security5.spec.ts:48:7 › smoke #29 — Review após COMPLETED: guards, roles e auto-complete › 401 sem auth em POST /api/bookings/:id/reviews (83ms)
+  Booking criado: cmqdjg7ys00h5lb04ybsb4e52
+  Review em PENDING → 422
+  422 BOOKING_NOT_REVIEWABLE em PENDING ✅
+  Booking avançado para RETURNED
+  Proprietário avalia ITEM (tipo errado) → 422
+  422 INVALID_REVIEW_TYPE para proprietário→ITEM ✅
+  Locatário avalia BORROWER (tipo errado) → 422
+  422 INVALID_REVIEW_TYPE para locatário→BORROWER ✅
+  Locatário avalia ITEM → 201
+  Review ITEM 201 ✅
+  Locatário avalia OWNER → 201
+  Review OWNER 201 ✅
+  Proprietário avalia BORROWER → 201
+  Review BORROWER 201 ✅
+  Review duplicada → 409
+  409 ALREADY_REVIEWED ✅
+  GET reviews → 3 reviews (ITEM, OWNER, BORROWER) ✅
+  Booking status após 3 reviews: COMPLETED
+  Auto-complete verificado ✅
+  ok 292 [chromium] › e2e\security5.spec.ts:61:7 › smoke #29 — Review após COMPLETED: guards, roles e auto-complete › ciclo completo: locatário e proprietário avaliam → booking COMPLETED (4.4s)
+  GET /api/conversations sem auth → 401
+  401 ✅
+  GET /api/conversations (locatario) → 200
+  493 conversas retornadas ✅
+  ok 293 [chromium] › e2e\security5.spec.ts:191:7 › smoke #30 — Chat: guards, envio de mensagem e sanitização XSS › GET /api/conversations → 401 sem auth; 200 com lista do locatário (545ms)
+  Booking criado: cmqdjgbs300hzlb04yl04z8ux
+  conversationId: cmqdjgbt500i1lb0406707cj0
+  POST mensagem → 201
+  Mensagem criada: "Olá! Smoke #30 — mensagem de teste." ✅
+  POST mensagem com XSS → 201
+  XSS sanitizado: "Mensagem legítima" ✅
+  Admin (não participante) → 403
+  403 — acesso bloqueado ✅
+  POST mensagem sem auth → 401
+  401 ✅
+  ok 294 [chromium] › e2e\security5.spec.ts:215:7 › smoke #30 — Chat: guards, envio de mensagem e sanitização XSS › POST mensagem: 201 com conteúdo; HTML sanitizado; terceiro → 403 (1.3s)
+  PATCH cep com letra → 400
+  400 VALIDATION_ERROR para cep inválido ✅
+  PATCH cep com 7 dígitos → 400
+  400 VALIDATION_ERROR para cep curto ✅
+  PATCH cep=59114270 + street → 200
+  CEP salvo: 59114270, street: "Rua das Dunas" ✅
+  GET /api/users/me → cep=undefined, street="Rua das Dunas"
+  Isolamento de dados verificado (email correto) ✅
+  PATCH cep=null (limpar) → 200
+  CEP opcional (null aceito) ✅
+  ok 295 [chromium] › e2e\security5.spec.ts:305:7 › smoke #31 — CEP auto-fill: validação, persistência e leitura › PATCH /api/users/me com cep válido → salvo; cep inválido → 400 (710ms)
+  sessão fresca → /api/users/me 200 ✅
+  troca de senha → 200 (epoch gravado) ✅
+  ✅ sessão antiga REJEITADA (401 SESSION_EXPIRED)
+  ok 296 [chromium] › e2e\session-invalidation.spec.ts:36:5 › GAP-05 / SEC-CRIT-04 — sessão é invalidada após troca de senha (3.7s)
+  ok 297 [chromium] › e2e\smoke.spec.ts:4:7 › Smoke tests › landing page carrega corretamente (956ms)
+  ok 298 [chromium] › e2e\smoke.spec.ts:11:7 › Smoke tests › página de login é acessível (706ms)
+  ok 299 [chromium] › e2e\smoke.spec.ts:16:7 › Smoke tests › rota de API de auth responde (110ms)
+
+
+  1) [chromium] › e2e\admin-usuarios.spec.ts:106:7 › Grupo 2 — CRUD de admins › 2.1 criar novo admin com dados válidos aparece na tabela 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m201[39m
+    Received: [31m429[39m
+
+      124 |       page.getByRole('button', { name: /Criar administrador/i }).click(),
+      125 |     ])
+    > 126 |     expect(response.status()).toBe(201)
+          |                               ^
+      127 |
+      128 |     // Tabela deve exibir o novo admin (refresh automático)
+      129 |     await expect(page.locator('td', { hasText: uniqueEmail })).toBeVisible({ timeout: 10000 })
+        at C:\Users\Roberto\Documents\2026\ShareO\e2e\admin-usuarios.spec.ts:126:31
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\admin-usuarios-Grupo-2-—-C-1b118-s-válidos-aparece-na-tabela-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\admin-usuarios-Grupo-2-—-C-1b118-s-válidos-aparece-na-tabela-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\admin-usuarios-Grupo-2-—-C-1b118-s-válidos-aparece-na-tabela-chromium\error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m201[39m
+    Received: [31m429[39m
+
+      124 |       page.getByRole('button', { name: /Criar administrador/i }).click(),
+      125 |     ])
+    > 126 |     expect(response.status()).toBe(201)
+          |                               ^
+      127 |
+      128 |     // Tabela deve exibir o novo admin (refresh automático)
+      129 |     await expect(page.locator('td', { hasText: uniqueEmail })).toBeVisible({ timeout: 10000 })
+        at C:\Users\Roberto\Documents\2026\ShareO\e2e\admin-usuarios.spec.ts:126:31
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\admin-usuarios-Grupo-2-—-C-1b118-s-válidos-aparece-na-tabela-chromium-retry1\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\admin-usuarios-Grupo-2-—-C-1b118-s-válidos-aparece-na-tabela-chromium-retry1\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\admin-usuarios-Grupo-2-—-C-1b118-s-válidos-aparece-na-tabela-chromium-retry1\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\admin-usuarios-Grupo-2-—-C-1b118-s-válidos-aparece-na-tabela-chromium-retry1\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\admin-usuarios-Grupo-2-—-C-1b118-s-válidos-aparece-na-tabela-chromium-retry1\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium] › e2e\admin-usuarios.spec.ts:132:7 › Grupo 2 — CRUD de admins › 2.2 criar admin com e-mail já existente exibe erro "Já existe" 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m409[39m
+    Received: [31m429[39m
+
+      145 |       page.getByRole('button', { name: /Criar administrador/i }).click(),
+      146 |     ])
+    > 147 |     expect(response.status()).toBe(409)
+          |                               ^
+      148 |
+      149 |     await expect(page.locator('p.text-xs.text-red-600')).toContainText(/Já existe/, { timeout: 8000 })
+      150 |   })
+        at C:\Users\Roberto\Documents\2026\ShareO\e2e\admin-usuarios.spec.ts:147:31
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\admin-usuarios-Grupo-2-—-C-244a0-tente-exibe-erro-Já-existe--chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\admin-usuarios-Grupo-2-—-C-244a0-tente-exibe-erro-Já-existe--chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\admin-usuarios-Grupo-2-—-C-244a0-tente-exibe-erro-Já-existe--chromium\error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m409[39m
+    Received: [31m429[39m
+
+      145 |       page.getByRole('button', { name: /Criar administrador/i }).click(),
+      146 |     ])
+    > 147 |     expect(response.status()).toBe(409)
+          |                               ^
+      148 |
+      149 |     await expect(page.locator('p.text-xs.text-red-600')).toContainText(/Já existe/, { timeout: 8000 })
+      150 |   })
+        at C:\Users\Roberto\Documents\2026\ShareO\e2e\admin-usuarios.spec.ts:147:31
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\admin-usuarios-Grupo-2-—-C-244a0-tente-exibe-erro-Já-existe--chromium-retry1\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\admin-usuarios-Grupo-2-—-C-244a0-tente-exibe-erro-Já-existe--chromium-retry1\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\admin-usuarios-Grupo-2-—-C-244a0-tente-exibe-erro-Já-existe--chromium-retry1\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\admin-usuarios-Grupo-2-—-C-244a0-tente-exibe-erro-Já-existe--chromium-retry1\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\admin-usuarios-Grupo-2-—-C-244a0-tente-exibe-erro-Já-existe--chromium-retry1\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [chromium] › e2e\admin-usuarios.spec.ts:152:7 › Grupo 2 — CRUD de admins › 2.3 senha fraca (< 10 chars) retorna erro de validação 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m400[39m
+    Received: [31m429[39m
+
+      163 |       page.getByRole('button', { name: /Criar administrador/i }).click(),
+      164 |     ])
+    > 165 |     expect(response.status()).toBe(400)
+          |                               ^
+      166 |
+      167 |     await expect(page.locator('p.text-xs.text-red-600')).toBeVisible({ timeout: 8000 })
+      168 |   })
+        at C:\Users\Roberto\Documents\2026\ShareO\e2e\admin-usuarios.spec.ts:165:31
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\admin-usuarios-Grupo-2-—-C-be706-s-retorna-erro-de-validação-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\admin-usuarios-Grupo-2-—-C-be706-s-retorna-erro-de-validação-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\admin-usuarios-Grupo-2-—-C-be706-s-retorna-erro-de-validação-chromium\error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m400[39m
+    Received: [31m429[39m
+
+      163 |       page.getByRole('button', { name: /Criar administrador/i }).click(),
+      164 |     ])
+    > 165 |     expect(response.status()).toBe(400)
+          |                               ^
+      166 |
+      167 |     await expect(page.locator('p.text-xs.text-red-600')).toBeVisible({ timeout: 8000 })
+      168 |   })
+        at C:\Users\Roberto\Documents\2026\ShareO\e2e\admin-usuarios.spec.ts:165:31
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\admin-usuarios-Grupo-2-—-C-be706-s-retorna-erro-de-validação-chromium-retry1\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\admin-usuarios-Grupo-2-—-C-be706-s-retorna-erro-de-validação-chromium-retry1\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\admin-usuarios-Grupo-2-—-C-be706-s-retorna-erro-de-validação-chromium-retry1\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\admin-usuarios-Grupo-2-—-C-be706-s-retorna-erro-de-validação-chromium-retry1\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\admin-usuarios-Grupo-2-—-C-be706-s-retorna-erro-de-validação-chromium-retry1\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [chromium] › e2e\admin-usuarios.spec.ts:170:7 › Grupo 2 — CRUD de admins › 2.4 senha sem caractere especial retorna erro de validação 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m400[39m
+    Received: [31m429[39m
+
+      180 |       page.getByRole('button', { name: /Criar administrador/i }).click(),
+      181 |     ])
+    > 182 |     expect(response.status()).toBe(400)
+          |                               ^
+      183 |
+      184 |     await expect(page.locator('p.text-xs.text-red-600')).toBeVisible({ timeout: 8000 })
+      185 |   })
+        at C:\Users\Roberto\Documents\2026\ShareO\e2e\admin-usuarios.spec.ts:182:31
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\admin-usuarios-Grupo-2-—-C-17e25-l-retorna-erro-de-validação-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\admin-usuarios-Grupo-2-—-C-17e25-l-retorna-erro-de-validação-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\admin-usuarios-Grupo-2-—-C-17e25-l-retorna-erro-de-validação-chromium\error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m400[39m
+    Received: [31m429[39m
+
+      180 |       page.getByRole('button', { name: /Criar administrador/i }).click(),
+      181 |     ])
+    > 182 |     expect(response.status()).toBe(400)
+          |                               ^
+      183 |
+      184 |     await expect(page.locator('p.text-xs.text-red-600')).toBeVisible({ timeout: 8000 })
+      185 |   })
+        at C:\Users\Roberto\Documents\2026\ShareO\e2e\admin-usuarios.spec.ts:182:31
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\admin-usuarios-Grupo-2-—-C-17e25-l-retorna-erro-de-validação-chromium-retry1\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\admin-usuarios-Grupo-2-—-C-17e25-l-retorna-erro-de-validação-chromium-retry1\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\admin-usuarios-Grupo-2-—-C-17e25-l-retorna-erro-de-validação-chromium-retry1\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\admin-usuarios-Grupo-2-—-C-17e25-l-retorna-erro-de-validação-chromium-retry1\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\admin-usuarios-Grupo-2-—-C-17e25-l-retorna-erro-de-validação-chromium-retry1\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) [chromium] › e2e\auth.spec.ts:165:7 › Autenticação — cadastro, login, logout e redirect › usuário logado faz logout e é redirecionado 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('button', { name: /sair|logout/i })
+    Expected: visible
+    Timeout: 8000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 8000ms[22m
+    [2m  - waiting for getByRole('button', { name: /sair|logout/i })[22m
+
+
+      177 |
+      178 |       const logoutBtn = page.getByRole('button', { name: /sair|logout/i })
+    > 179 |       await expect(logoutBtn).toBeVisible({ timeout: 8000 })
+          |                               ^
+      180 |       await logoutBtn.click()
+      181 |
+      182 |       await expect(page).toHaveURL(/\/(login|$)/, { timeout: 8000 })
+        at C:\Users\Roberto\Documents\2026\ShareO\e2e\auth.spec.ts:179:31
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\auth-Autenticação-—-cadast-ec4b7-az-logout-e-é-redirecionado-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\auth-Autenticação-—-cadast-ec4b7-az-logout-e-é-redirecionado-chromium\error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('button', { name: /sair|logout/i })
+    Expected: visible
+    Timeout: 8000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 8000ms[22m
+    [2m  - waiting for getByRole('button', { name: /sair|logout/i })[22m
+
+
+      177 |
+      178 |       const logoutBtn = page.getByRole('button', { name: /sair|logout/i })
+    > 179 |       await expect(logoutBtn).toBeVisible({ timeout: 8000 })
+          |                               ^
+      180 |       await logoutBtn.click()
+      181 |
+      182 |       await expect(page).toHaveURL(/\/(login|$)/, { timeout: 8000 })
+        at C:\Users\Roberto\Documents\2026\ShareO\e2e\auth.spec.ts:179:31
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\auth-Autenticação-—-cadast-ec4b7-az-logout-e-é-redirecionado-chromium-retry1\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\auth-Autenticação-—-cadast-ec4b7-az-logout-e-é-redirecionado-chromium-retry1\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\auth-Autenticação-—-cadast-ec4b7-az-logout-e-é-redirecionado-chromium-retry1\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\auth-Autenticação-—-cadast-ec4b7-az-logout-e-é-redirecionado-chromium-retry1\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6) [chromium] › e2e\auth.spec.ts:203:7 › Autenticação — cadastro, login, logout e redirect › após login com callbackUrl, redireciona de volta para /dashboard 
+
+    Error: locator.fill: Error: strict mode violation: getByLabel(/senha/i) resolved to 2 elements:
+        1) <input value="" required="" id="password" type="password" placeholder="Sua senha" autocomplete="current-password" class="h-11 w-full rounded-md border border-input bg-surface px-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground transition-colors outline-none focus:border-ring focus:ring-2 focus:ring-ring/20 disabled:opacity-50"/> aka getByRole('textbox', { name: 'Senha' })
+        2) <button type="button" aria-label="Mostrar senha" class="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground outline-none focus-visible:ring-1 focus-visible:ring-brand">…</button> aka getByRole('button', { name: 'Mostrar senha' })
+
+    Call log:
+    [2m  - waiting for getByLabel(/senha/i)[22m
+
+
+      205 |     await page.goto('/login?callbackUrl=%2Fdashboard')
+      206 |     await page.getByLabel(/e-?mail/i).fill(FIXTURE_LOCATARIO.email)
+    > 207 |     await page.getByLabel(/senha/i).fill(FIXTURE_LOCATARIO.password)
+          |                                     ^
+      208 |     await page.getByRole('button', { name: /entrar|login|acessar/i }).click()
+      209 |     await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 })
+      210 |   })
+        at C:\Users\Roberto\Documents\2026\ShareO\e2e\auth.spec.ts:207:37
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\auth-Autenticação-—-cadast-49c80-ona-de-volta-para-dashboard-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\auth-Autenticação-—-cadast-49c80-ona-de-volta-para-dashboard-chromium\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\auth-Autenticação-—-cadast-49c80-ona-de-volta-para-dashboard-chromium\error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: locator.fill: Error: strict mode violation: getByLabel(/senha/i) resolved to 2 elements:
+        1) <input value="" required="" id="password" type="password" placeholder="Sua senha" autocomplete="current-password" class="h-11 w-full rounded-md border border-input bg-surface px-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground transition-colors outline-none focus:border-ring focus:ring-2 focus:ring-ring/20 disabled:opacity-50"/> aka getByRole('textbox', { name: 'Senha' })
+        2) <button type="button" aria-label="Mostrar senha" class="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground outline-none focus-visible:ring-1 focus-visible:ring-brand">…</button> aka getByRole('button', { name: 'Mostrar senha' })
+
+    Call log:
+    [2m  - waiting for getByLabel(/senha/i)[22m
+
+
+      205 |     await page.goto('/login?callbackUrl=%2Fdashboard')
+      206 |     await page.getByLabel(/e-?mail/i).fill(FIXTURE_LOCATARIO.email)
+    > 207 |     await page.getByLabel(/senha/i).fill(FIXTURE_LOCATARIO.password)
+          |                                     ^
+      208 |     await page.getByRole('button', { name: /entrar|login|acessar/i }).click()
+      209 |     await expect(page).toHaveURL(/\/dashboard/, { timeout: 15000 })
+      210 |   })
+        at C:\Users\Roberto\Documents\2026\ShareO\e2e\auth.spec.ts:207:37
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\auth-Autenticação-—-cadast-49c80-ona-de-volta-para-dashboard-chromium-retry1\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\auth-Autenticação-—-cadast-49c80-ona-de-volta-para-dashboard-chromium-retry1\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\auth-Autenticação-—-cadast-49c80-ona-de-volta-para-dashboard-chromium-retry1\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\auth-Autenticação-—-cadast-49c80-ona-de-volta-para-dashboard-chromium-retry1\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\auth-Autenticação-—-cadast-49c80-ona-de-volta-para-dashboard-chromium-retry1\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  7) [chromium] › e2e\double-booking.spec.ts:46:7 › smoke #10A — double-booking: dois PENDING, proprietário confirma os dois? › segundo confirm deve falhar — proprietário não pode confirmar duas reservas para as mesmas datas 
+
+    Error: Locatário deve conseguir criar PENDING
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31mfalse[39m
+
+      68 |       ])
+      69 |
+    > 70 |       expect(res1.ok(), 'Locatário deve conseguir criar PENDING').toBeTruthy()
+         |                                                                   ^
+      71 |       expect(res2.ok(), 'Admin deve conseguir criar PENDING nas mesmas datas (PENDING não bloqueia PENDING)').toBeTruthy()
+      72 |
+      73 |       const { data: b1 } = await res1.json() as { data: { id: string; status: string } }
+        at C:\Users\Roberto\Documents\2026\ShareO\e2e\double-booking.spec.ts:70:67
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\double-booking-smoke-10A-—-8e72e-servas-para-as-mesmas-datas-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\double-booking-smoke-10A-—-8e72e-servas-para-as-mesmas-datas-chromium\test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\double-booking-smoke-10A-—-8e72e-servas-para-as-mesmas-datas-chromium\test-failed-3.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\double-booking-smoke-10A-—-8e72e-servas-para-as-mesmas-datas-chromium\error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: Locatário deve conseguir criar PENDING
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31mfalse[39m
+
+      68 |       ])
+      69 |
+    > 70 |       expect(res1.ok(), 'Locatário deve conseguir criar PENDING').toBeTruthy()
+         |                                                                   ^
+      71 |       expect(res2.ok(), 'Admin deve conseguir criar PENDING nas mesmas datas (PENDING não bloqueia PENDING)').toBeTruthy()
+      72 |
+      73 |       const { data: b1 } = await res1.json() as { data: { id: string; status: string } }
+        at C:\Users\Roberto\Documents\2026\ShareO\e2e\double-booking.spec.ts:70:67
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\double-booking-smoke-10A-—-8e72e-servas-para-as-mesmas-datas-chromium-retry1\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\double-booking-smoke-10A-—-8e72e-servas-para-as-mesmas-datas-chromium-retry1\test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\double-booking-smoke-10A-—-8e72e-servas-para-as-mesmas-datas-chromium-retry1\test-failed-3.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\double-booking-smoke-10A-—-8e72e-servas-para-as-mesmas-datas-chromium-retry1\error-context.md
+
+    attachment #5: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\double-booking-smoke-10A-—-8e72e-servas-para-as-mesmas-datas-chromium-retry1\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\double-booking-smoke-10A-—-8e72e-servas-para-as-mesmas-datas-chromium-retry1\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  8) [chromium] › e2e\double-booking.spec.ts:130:7 › smoke #10B — double-booking: POST com datas sobrepostas a CONFIRMED › POST /api/bookings retorna ITEM_UNAVAILABLE para datas sobrepostas a reserva CONFIRMED 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31mfalse[39m
+
+      149 |         data: { itemId, startDate: start.toISOString(), endDate: end.toISOString(), borrowerNote: 'Smoke #10B base booking' },
+      150 |       })
+    > 151 |       expect(createRes.ok()).toBeTruthy()
+          |                              ^
+      152 |       const { data: base } = await createRes.json() as { data: { id: string } }
+      153 |
+      154 |       const confirmRes = await prop.request.patch(`/api/bookings/${base.id}`, { data: { action: 'confirm' } })
+        at C:\Users\Roberto\Documents\2026\ShareO\e2e\double-booking.spec.ts:151:30
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\double-booking-smoke-10B-—-05d0d-epostas-a-reserva-CONFIRMED-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\double-booking-smoke-10B-—-05d0d-epostas-a-reserva-CONFIRMED-chromium\test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\double-booking-smoke-10B-—-05d0d-epostas-a-reserva-CONFIRMED-chromium\test-failed-3.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\double-booking-smoke-10B-—-05d0d-epostas-a-reserva-CONFIRMED-chromium\error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31mfalse[39m
+
+      149 |         data: { itemId, startDate: start.toISOString(), endDate: end.toISOString(), borrowerNote: 'Smoke #10B base booking' },
+      150 |       })
+    > 151 |       expect(createRes.ok()).toBeTruthy()
+          |                              ^
+      152 |       const { data: base } = await createRes.json() as { data: { id: string } }
+      153 |
+      154 |       const confirmRes = await prop.request.patch(`/api/bookings/${base.id}`, { data: { action: 'confirm' } })
+        at C:\Users\Roberto\Documents\2026\ShareO\e2e\double-booking.spec.ts:151:30
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\double-booking-smoke-10B-—-05d0d-epostas-a-reserva-CONFIRMED-chromium-retry1\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\double-booking-smoke-10B-—-05d0d-epostas-a-reserva-CONFIRMED-chromium-retry1\test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #3: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\double-booking-smoke-10B-—-05d0d-epostas-a-reserva-CONFIRMED-chromium-retry1\test-failed-3.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\double-booking-smoke-10B-—-05d0d-epostas-a-reserva-CONFIRMED-chromium-retry1\error-context.md
+
+    attachment #5: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\double-booking-smoke-10B-—-05d0d-epostas-a-reserva-CONFIRMED-chromium-retry1\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\double-booking-smoke-10B-—-05d0d-epostas-a-reserva-CONFIRMED-chromium-retry1\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  9) [chromium] › e2e\security2.spec.ts:183:7 › smoke #21 — Review flow: avaliações após booking COMPLETED › review em booking ativo é bloqueado; avaliação duplicada bloqueada; roles respeitados 
+
+    Error: Review de ITEM falhou
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m201[39m
+    Received: [31m422[39m
+
+      242 |       })
+      243 |       console.log(`  locatário review ITEM → ${reviewItemRes.status()}`)
+    > 244 |       expect(reviewItemRes.status(), 'Review de ITEM falhou').toBe(201)
+          |                                                               ^
+      245 |       console.log('  locatário review ITEM → 201 ✅')
+      246 |
+      247 |       // ── D) Locatário tenta avaliar o mesmo item novamente → 409 ──
+        at C:\Users\Roberto\Documents\2026\ShareO\e2e\security2.spec.ts:244:63
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\security2-smoke-21-—-Revie-befca-bloqueada-roles-respeitados-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\security2-smoke-21-—-Revie-befca-bloqueada-roles-respeitados-chromium\test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\security2-smoke-21-—-Revie-befca-bloqueada-roles-respeitados-chromium\error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: Criação do booking falhou: 409
+
+    [2mexpect([22m[31mreceived[39m[2m).[22mtoBeTruthy[2m()[22m
+
+    Received: [31mfalse[39m
+
+      202 |         data: { itemId, startDate: start, endDate: end, borrowerNote: 'Smoke #21 review flow' },
+      203 |       })
+    > 204 |       expect(createRes.ok(), `Criação do booking falhou: ${createRes.status()}`).toBeTruthy()
+          |                                                                                  ^
+      205 |       const { data: booking } = await createRes.json() as { data: { id: string } }
+      206 |       bookingId = booking.id
+      207 |       console.log(`  booking criado: ${bookingId}`)
+        at C:\Users\Roberto\Documents\2026\ShareO\e2e\security2.spec.ts:204:82
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\security2-smoke-21-—-Revie-befca-bloqueada-roles-respeitados-chromium-retry1\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\security2-smoke-21-—-Revie-befca-bloqueada-roles-respeitados-chromium-retry1\test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\security2-smoke-21-—-Revie-befca-bloqueada-roles-respeitados-chromium-retry1\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\security2-smoke-21-—-Revie-befca-bloqueada-roles-respeitados-chromium-retry1\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\security2-smoke-21-—-Revie-befca-bloqueada-roles-respeitados-chromium-retry1\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  9 failed
+    [chromium] › e2e\admin-usuarios.spec.ts:106:7 › Grupo 2 — CRUD de admins › 2.1 criar novo admin com dados válidos aparece na tabela 
+    [chromium] › e2e\admin-usuarios.spec.ts:132:7 › Grupo 2 — CRUD de admins › 2.2 criar admin com e-mail já existente exibe erro "Já existe" 
+    [chromium] › e2e\admin-usuarios.spec.ts:152:7 › Grupo 2 — CRUD de admins › 2.3 senha fraca (< 10 chars) retorna erro de validação 
+    [chromium] › e2e\admin-usuarios.spec.ts:170:7 › Grupo 2 — CRUD de admins › 2.4 senha sem caractere especial retorna erro de validação 
+    [chromium] › e2e\auth.spec.ts:165:7 › Autenticação — cadastro, login, logout e redirect › usuário logado faz logout e é redirecionado 
+    [chromium] › e2e\auth.spec.ts:203:7 › Autenticação — cadastro, login, logout e redirect › após login com callbackUrl, redireciona de volta para /dashboard 
+    [chromium] › e2e\double-booking.spec.ts:46:7 › smoke #10A — double-booking: dois PENDING, proprietário confirma os dois? › segundo confirm deve falhar — proprietário não pode confirmar duas reservas para as mesmas datas 
+    [chromium] › e2e\double-booking.spec.ts:130:7 › smoke #10B — double-booking: POST com datas sobrepostas a CONFIRMED › POST /api/bookings retorna ITEM_UNAVAILABLE para datas sobrepostas a reserva CONFIRMED 
+    [chromium] › e2e\security2.spec.ts:183:7 › smoke #21 — Review flow: avaliações após booking COMPLETED › review em booking ativo é bloqueado; avaliação duplicada bloqueada; roles respeitados 
+  19 skipped
+  262 passed (7.5m)
