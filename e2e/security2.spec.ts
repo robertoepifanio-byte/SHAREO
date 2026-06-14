@@ -219,11 +219,18 @@ test.describe('smoke #21 — Review flow: avaliações após booking COMPLETED',
       expect(pendingBody.error?.code).toBe('BOOKING_NOT_REVIEWABLE')
       console.log('  review em PENDING → 422 BOOKING_NOT_REVIEWABLE ✅')
 
-      // — Avança booking para RETURNED: confirm → mark_active → mark_returned —
+      // — Avança booking para RETURNED: confirm → mark_active (com pickupToken) → mark_returned —
       await prop.request.patch(`/api/bookings/${bookingId}`, { data: { action: 'confirm' } })
-      await prop.request.patch(`/api/bookings/${bookingId}`, { data: { action: 'mark_active' } })
+      // pickupToken é gerado no confirm e visível apenas para o borrower (locatário) — obrigatório no mark_active
+      const detailRes = await loc.request.get(`/api/bookings/${bookingId}`)
+      const { data: detail } = await detailRes.json() as { data: { pickupToken: string | null } }
+      const activeRes = await prop.request.patch(`/api/bookings/${bookingId}`, {
+        data: { action: 'mark_active', pickupToken: detail.pickupToken },
+      })
+      expect(activeRes.ok(), `mark_active falhou: ${activeRes.status()}`).toBeTruthy()
       const returnRes = await loc.request.patch(`/api/bookings/${bookingId}`, { data: { action: 'mark_returned' } })
       console.log(`  booking avançado para RETURNED → ${returnRes.status()}`)
+      expect(returnRes.ok(), `mark_returned falhou: ${returnRes.status()}`).toBeTruthy()
 
       // ── B) Proprietário tenta avaliar como ITEM (tipo não permitido) → 422 ──
       const wrongTypeRes = await prop.request.post(`/api/bookings/${bookingId}/reviews`, {

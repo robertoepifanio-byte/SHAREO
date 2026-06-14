@@ -76,7 +76,7 @@ test.describe('resend-verification — autenticação obrigatória', () => {
     console.log('  401 ✅')
   })
 
-  test('4. POST /api/auth/resend-verification com auth → 200 | 409 | 429', async ({ browser }) => {
+  test('4. POST /api/auth/resend-verification com auth → 200 | 400 | 409 | 429', async ({ browser }) => {
     test.skip(!hasLocatarioSession, 'Requer session-locatario.json')
     test.skip(test.info().project.name !== 'chromium', 'Verificado apenas em chromium')
     test.setTimeout(20000)
@@ -86,9 +86,10 @@ test.describe('resend-verification — autenticação obrigatória', () => {
     try {
       const res = await page.request.post(`${BASE}/api/auth/resend-verification`)
       console.log(`  POST resend com auth → ${res.status()}`)
+      // 400 = ALREADY_VERIFIED (fixture locatário já tem o e-mail verificado) — ver route.ts
       expect(
-        [200, 409, 429],
-        '200 enviado | 409 já verificado | 429 rate limit',
+        [200, 400, 409, 429],
+        '200 enviado | 400 já verificado (ALREADY_VERIFIED) | 409 | 429 rate limit',
       ).toContain(res.status())
       console.log(`  ${res.status()} ✅`)
     } finally {
