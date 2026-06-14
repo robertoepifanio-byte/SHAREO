@@ -31,10 +31,14 @@
 > - **SEC-MIN-01** (headers) — `Cross-Origin-Opener-Policy: same-origin` no next.config + `frame-ancestors 'self'` na CSP do middleware (COEP omitido de propósito — quebraria Mapbox/GA/Supabase).
 > - **ARQ-Mi-03 / Mi-04 / Mi-12** (código morto) — removidos: `export const config bodyParser` (inerte no App Router), `app/(admin)/layout.tsx` (grupo órfão sem páginas), hook `useChat` (sem call site).
 > - **SEC-MIN-11** (seed) — senha removida do `console.log`; o guard `NODE_ENV==="production"` que o agente disse faltar **já existia** (`prisma/seed.ts:157`).
+> - **ARQ-M-10** (perf) — detalhe do item: 1 `groupBy` por status em vez de 1 aggregate + 2 counts (3 queries → 1).
+> - **ARQ-M-07** (perf) — `GET /api/items/[id]` com `take:24` nas imagens (bound de payload; shape preservado).
+> - **ARQ-Mi-11** — `lib/rateLimit.ts` documentado como **Node-only** (não reimplementei o sliding-window via REST — alto risco de errar o rate limiting; doc resolve a regressão silenciosa).
+> - **QA-GAP-01..10** (cobertura E2E) — 3 specs novos: `session-invalidation` (fluxo completo, **guarda o SEC-CRIT-04** — sessão antiga → 401 SESSION_EXPIRED), `price-suggestion` e `audit-gaps-s13` (guards/validação de cupom, embaixador, extensão, disputa, fotos de booking, auth mobile, founder leads, notificação individual). **14/14 verde no staging.** Happy-paths que exigem booking em estado específico ficam anotados p/ fixture dedicado.
 >
 > **Refutados/não-acionáveis na reverificação (além do SEC-CRIT-03):** **SEC-MIN-10** (disputes) — pela matriz de roles do CLAUDE.md, FINANCEIRO + OPERACIONAL + SUPERADMIN **todos** tratam disputas; o check `role === "ADMIN"` já cobre exatamente esse conjunto — apertar excluiria papéis válidos.
 >
-> **Permanecem para deliberação:** **SEC-CRIT-02** (cerne é a rotação do secret no Vercel — scrub de docs sem rotação é cosmético e arrisca a CI), SEC-MAJ-04 (upgrade de deps), SEC-MAJ-06 + LGPD (D4 jurídico), ARQ-A-01/M-04/M-05 (decisão de produto), **ARQ-M-06** (estratégia de cache — staleness vs. perf, decisão), NextAuth GA, e os demais ARQ-Major/Minor não reverificados.
+> **Permanecem para deliberação (dependência ou decisão):** **SEC-CRIT-02** (rotação do secret no Vercel — sua ação), SEC-MAJ-04 (upgrade de deps), SEC-MAJ-06 + LGPD (D4 jurídico), ARQ-A-01/M-04/M-05 (decisão de produto: ISR/SSG, slugs, `/categoria`), **ARQ-M-06** (estratégia de cache — staleness vs. perf), **ARQ-M-03** (SessionProvider — recomendação do agente está ERRADA: o header global usa `signOut`/`useSession`, então o provider PRECISA ser global; a versão correta exigiria reescrever `signOut` — refactor grande por ganho marginal de LCP), NextAuth GA.
 
 ### 🔴 CRITICAL — deliberar primeiro
 
