@@ -1,10 +1,72 @@
 # Backlog de Atividades Priorizadas — ShareO
 
-**Versão:** 3.7  
-**Atualizado em:** 2026-06-13 (sessão 13 — auditoria crítica multi-aspecto delegada: QA/E2E + Segurança + Arquitetura, read-only, para deliberação)  
+**Versão:** 3.8  
+**Atualizado em:** 2026-06-14 (sessão 14 — 2ª auditoria multi-aspecto, read-only: regressão dos fixes s13 + achados novos, para deliberação)  
 **Responsável:** Roberto Epifânio
 
 > Verificação feita diretamente no código — cada item foi confirmado por arquivo/componente.
+
+---
+
+## 🔬 Auditoria Crítica s14 (2026-06-14) — PARA DELIBERAÇÃO COM O FUNDADOR
+
+> 2ª auditoria multi-aspecto (`qa-shareo`, `seguranca-shareo`, `arquiteto-shareo`) sobre o commit `21ecc69`. **READ-ONLY — nenhum código alterado.** Evidência QA: `docs/auditoria-s14-qa.txt`.
+> **✅ Resultado-chave:** os 6 fixes do s13 estão tecnicamente corretos e **NENHUMA regressão funcional** foi introduzida (QA validou todos no staging: XSS escape, MIME/magic-bytes, invalidação de sessão, headers, truncamento coord, groupBy). Suíte real ~255/290 — as "65 falhas" do run foram **artefato** (propagação de `BASE_URL` no PowerShell + spec-bugs já conhecidos), não bugs do app.
+> **PORÉM:** 2 fixes do s13 têm cobertura **incompleta**, e há **3 Critical novos**. Quase todos os achados foram **reverificados e CONFIRMADOS** pelo orquestrador lendo o código (a precisão do s14 foi alta — bem melhor que o s13). IDs cruzados deduplicados (⊕).
+> ⚠️ NÃO corrigir sem deliberação. Novas **funcionalidades** exigem aprovação prévia do fundador.
+
+### 🟠 Cobertura INCOMPLETA de fixes do s13 (corrigir o que foi marcado "resolvido")
+
+| ID | O quê falta | Local | Status |
+|---|---|---|---|
+| **GAP-MIN-06b** (⊕ MAJ-S14-04 / REG-06) | Truncamento de lat/lng foi só na listagem `/api/items`. **`/api/items/[id]` (público) e a página SSR `/itens` ainda expõem coords exatas** (~10m) do dono | `app/api/items/[id]/route.ts:17`, `app/itens/page.tsx` | ✅ confirmado |
+| **GAP-CRIT-04b** (⊕ MAJ-S14-01 / MAJ-S14-02) | Invalidação de sessão (SEC-CRIT-04) **não cobre mobile/Bearer** (`resolveUserId` só faz `jwtVerify`, sem `isSessionStale`) nem **reset-password** (não chama `invalidateUserSessions`). Token mobile roubado sobrevive à troca de senha | `lib/resolveUserId.ts:6-20`, `app/api/auth/reset-password/route.ts:73`, `app/api/auth/mobile/refresh` | ✅ confirmado |
+| **GAP-M-07b** (⊕ REG-05) | `take:24` foi só em `/api/items/[id]/route.ts`, **não na página SSR `app/itens/[id]/page.tsx:98`** (consumidor de maior tráfego) | `app/itens/[id]/page.tsx:98` | ✅ confirmado (impacto baixo: `select` granular + MVP 3 fotos) |
+
+### 🔴 CRITICAL novos
+
+| ID | Achado | Local | Status |
+|---|---|---|---|
+| **S14-A-04** (⊕ SEC-MAJ-05) | Webhook Stripe **sem idempotência** — não consulta `StripeEventQueue`/`event.id` (existe no schema, ADR-013). Retry do Stripe reprocessa: comissão de embaixador duplicada, `paidAt`/`pickupToken` regravados, late fee em dobro, notificações duplicadas | `app/api/webhooks/stripe/route.ts:34` | ✅ confirmado (entra no `switch` direto após validar assinatura) |
+| **S14-A-05** | **TOCTOU no `confirm` de booking** — conflict-check (`findFirst`) + `update` em awaits **separados, fora de `$transaction`** (o comentário linha 271 diz "dentro de uma transação" mas NÃO é). Dois confirms paralelos no mesmo item/período → **double-booking** | `app/api/bookings/[id]/route.ts:273-304` | ✅ confirmado |
+| **S14-A-06** | **TOCTOU no `mark_active`** — valida `pickupToken`/`pickupTokenUsedAt` e depois faz `update` separado. Retry/duplo-clique → ativação dupla | `app/api/bookings/[id]/route.ts:233-294` | ⏳ padrão idêntico ao A-05 (alta probabilidade) |
+
+### 🟠 MAJOR novos
+
+| ID | Achado | Local | Status |
+|---|---|---|---|
+| **S14-SEC-03** | **SSRF** nos webhooks outbound de PJ — `fetch(url)` com URL configurável, sem bloquear IP privado/loopback/link-local (`169.254.169.254` metadata) | `lib/outboundWebhooks.ts:39`, `app/api/pj/webhooks/route.ts:16` | ✅ confirmado |
+| **S14-SEC-06** | **CSV formula injection** na exportação financeira — `escape()` trata só `,`/`"`/`\n`, não prefixos `=`/`+`/`-`/`@`. Título de item com `=cmd\|...` executa no Excel do admin | `app/api/admin/export/route.ts:29` | ✅ confirmado |
+| **S14-M-11** (⊕ ARQ-M-06 s13) | `PlatformConfig` **sem cache** — ~59 call-sites fazem `prisma.find*` por request (reafirmado com evidência); middleware ainda soma 1-2 round-trips Upstash por request protegido | `lib/platform-config.ts` | ✅ (decisão de cache: `unstable_cache`+`revalidateTag` vs staleness) |
+| **S14-M-12** | Envelopes de erro JSON **inconsistentes** (`{error:"str"}` vs `{error:{code,message}}`) em ~25 rotas | crons, webhooks, admin/* | ✅ confirmado |
+| **S14-M-14** (⊕ SEC-MIN-S14-08) | Dois padrões de auth admin: `requireAdminRole` (17 rotas) vs `role==="ADMIN"` (12+: disputes, items, geocode-items). Quebra segregação de função (ex.: FINANCEIRO aprova item) | `app/api/admin/items/[id]`, `disputes/[id]`, `geocode-items` | ✅ confirmado |
+| **S14-M-16** | `Booking.pickupToken` **sem `@unique`** no schema — o loop `findFirst` por colisão tem race (mesmo nº no mesmo ms) | `prisma/schema.prisma` + `bookings/[id]/route.ts:263` | ⏳ a confirmar no schema |
+| **S14-M-15** | Drift: `getUploadLimits` default **10 fotos** mas UI/copy diz **3** | `lib/platform-config.ts:150` vs `components/items/ItemForm.tsx:521` | ✅ confirmado |
+| **S14-M-18** | `admin/geocode-items` carrega **todos os itens em memória** + loop síncrono; trava em timeout pós-escala | `app/api/admin/geocode-items/route.ts:46-87` | ✅ confirmado |
+| **S14-M-19** (⊕ ARQ-Mi-08 s13) | `geocodeUserLocation` com `await` **bloqueia** `PATCH /api/users/me` (3-5s) — devia ser `after()` | `app/api/users/me/route.ts:235` | ✅ confirmado |
+| **S14-M-13** | Owner-guard (`ownerId!==session.user.id→403`) duplicado em 30+ rotas, sem helper | múltiplas | ✅ (refactor; risco se regra mudar) |
+| **S14-M-17** (⊕ REG-04) | Os **3 specs E2E novos** repetem o anti-padrão `BASE_URL ?? localhost` que o s13 flagou como raiz das falsas-falhas; + a env não propaga no PowerShell (`$env:`) | `e2e/{session-invalidation,audit-gaps-s13,price-suggestion}.spec.ts` | ✅ confirmado (é a convenção atual de TODOS os specs — fix = helper) |
+
+### 🟡 MINOR / spec-bugs (backlog)
+
+| ID | Achado |
+|---|---|
+| **S14-MIN-07** | `/api/health` vaza `e.message` interno (hostname/driver) em falha — recon de infra |
+| **S14-MIN-11** | `consentIp` em texto claro (`User`/`FounderLead`/`ContractAcceptance`) — minimização LGPD |
+| **S14-MIN-10** | `pnpm audit`: High em `rollup`/`esbuild` (build), Moderate `postcss`, Low `cookie` — = SEC-MAJ-04 (deferido) |
+| **S14-MIN-12** | Refresh token mobile sem rotação/detecção de reuso (sem `jti`/blocklist) |
+| **S14-MIN-Mi13** | `hooks/useAuth.ts` código morto (sem call-site) — como o `useChat` removido no s13 |
+| **S14-MIN-Mi14** | Promoção/rebaixamento de admin não revoga sessões antigas (role antiga persiste no JWT) |
+| **S14-MIN-Mi15** | `COEP` não adicionado junto do `COOP` (COOP menos efetivo sem o par) — decidir/ADR |
+| **S14-MIN-Mi17** | `matcher` do middleware ainda exclui `icones/` (pasta removida no s13) — drift cosmético |
+| **S14-QA-bugs** | 4 spec-bugs (não-app): smoke #21 `mark_active` sem token; `auth` login 2 locators (senha ambígua + logout `role=menuitem`); `email-verification` não aceita 400 ALREADY_VERIFIED. (Confirmam QA-03/04 do s13.) |
+
+### Notas do orquestrador (s14)
+
+- **Reverificados e CONFIRMADOS lendo o código:** S14-A-04, S14-A-05, GAP-MIN-06b, GAP-CRIT-04b (resolveUserId + reset-password), GAP-M-07b, S14-SEC-03, S14-SEC-06, S14-M-14/15/18/19. ⏳ não reverificados a fundo: S14-A-06 (padrão idêntico ao A-05), S14-M-16 (schema).
+- **Ao contrário do s13, o s14 teve baixa taxa de falso positivo** — os agentes leram o código de perto.
+- **Prioridade sugerida (todos sem dependência externa, mas aguardam SUA deliberação):** (1) os 3 Critical — Stripe idempotência (`StripeEventQueue` já existe) e os 2 TOCTOU (envolver em `$transaction`/`updateMany` discriminante); (2) completar meus fixes do s13 — lat/lng em `/[id]`+SSR, sessão em mobile/reset-password; (3) S14-SEC-03 (SSRF) e S14-SEC-06 (CSV) — fixes pequenos e de alto valor.
+- **D4 jurídico** segue bloqueando produção; os 3 Critical + GAP-CRIT-04b deveriam entrar antes de qualquer go-live.
 
 ---
 
