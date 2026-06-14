@@ -1,8 +1,8 @@
 # ShareO — Status do Projeto
 
-**Atualizado em**: 2026-06-13 (sessão s12 — corrigidos e validados verde os 2 bugs funcionais reais da suíte E2E: QA-01 contraste + QA-14 phone-otp 401)
+**Atualizado em**: 2026-06-14 (sessões s13–s14 — 2 auditorias críticas multi-aspecto read-only + hardening de segurança aplicado e validado)
 **Ambiente staging**: https://shareo-rouge.vercel.app (push automático → deploy via GitHub webhook)
-**Último commit**: `14c51f2`
+**Último commit**: `e8c54dc`
 **Release atual**: [`v1.4.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.4.0) — Configurabilidade, Conformidade & Auditoria Técnica (commit `823387b`, jun/13 — 29 commits desde v1.3.0) — aguarda D4 para produção
 **Release anterior**: [`v1.3.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.3.0) — Lançamento Nacional + Embaixadores (commit `60b5b92`, jun/12)
 
@@ -15,6 +15,13 @@
 ---
 
 ## Resumo Executivo
+
+**✅ Auditorias críticas s13 + s14 + hardening de segurança aplicado e validado** (commits `26bbeb5`→`e8c54dc`, jun/13–14). Duas auditorias **read-only multi-aspecto** (QA/E2E + Segurança + Arquitetura, delegadas a subagentes), consolidadas em `docs/backlog-atividades-priorizadas.md` v3.8, com **reverificação do orquestrador** antes de agir. **Resolvidos e validados** (todos sem dependência externa, deliberados com o fundador):
+- **s13** — stored XSS no JSON-LD (`lib/jsonLd.ts`), crons **fail-closed**, validação MIME+magic-bytes em uploads (`lib/imageUpload.ts`), **invalidação de sessão pós-troca de senha** (claim `loginAt` + epoch Redis — Caminho B sem migration), headers **COOP + CSP frame-ancestors**, `pickupToken` via `crypto.randomInt`, truncamento de lat/lng, remoção de código morto, + **10 specs E2E** cobrindo gaps (commits `26bbeb5`/`8563b03`/`ef38d34`/`57841b6`/`21ecc69`).
+- **s14** — **3 Critical**: idempotência do webhook Stripe via `StripeEventQueue`; **TOCTOU** no booking `confirm` (`$transaction` serializável); TOCTOU no `mark_active` (`updateMany` condicional). Gaps de cobertura completados: lat/lng em `/api/items/[id]`+SSR; invalidação de sessão estendida a **mobile/Bearer** e **reset-password**. 2ª onda: **SSRF guard** em webhooks PJ (`lib/ssrfGuard.ts`), **CSV formula-injection** no export, **admin-role granular**, `geocodeUserLocation` via `after()` (commits `8eaf50b`/`e8c54dc`).
+- **Validação:** ciclo booking PENDING→COMPLETED verde no staging; lat/lng truncada confirmada via curl; SSRF guard 9 casos unit; `session-invalidation` E2E verde. `tsc`+`build` verdes em todas as ondas.
+- **Lição reforçada:** sempre reverificar achados de subagente — o s13 teve 3 falsos positivos (SEC-CRIT-03, SEC-MIN-10, middleware:99); o s14 foi bem mais preciso.
+- **Permanecem para deliberação:** `pickupToken @unique` (migration), PlatformConfig cache (staleness×perf), error-envelopes/ownership-helper (refactor amplo), upload-limit drift (copy/produto), GAP-M-07b, + dependência externa (D4, rotação de secret no Vercel, upgrade de deps, decisões de produto, NextAuth GA).
 
 **✅ Os 2 bugs funcionais reais da suíte E2E corrigidos e validados verde** (commits `767d834`→`14c51f2`, jun/13 s12). A triagem da suíte de staging (s11b: 240✅/17❌) tinha isolado apenas **2 falhas reais** — o resto é artefato de ambiente (BASE_URL, dados de teste, rate-limit sequencial). Ambas agora resolvidas e revalidadas (`6 passed` re-rodando `e2e-a11y-plan` + `phone-verification` com `BASE_URL`+`STAGING_URL` corretos). **(QA-14)** `POST /api/auth/phone/send-otp` passou a autenticar **antes** de validar o body → **401** sem sessão (era 400); stub retorna 422 enquanto a integração Zenvia + migration de schema seguem pendentes (decisão Raimundo). **(QA-01)** As 3 violações de contraste WCAG AA eram o **mesmo elemento** — footer "Desenvolvido por Pratika IA" em 3 páginas públicas. Causa: o footer tem fundo **verde `#007B3C`** (não navy) — branco a 80% dá 4,03:1 (reprova os 4,5:1), corrigido para **`text-white/90`** (4,67:1, alinhado ao resto do footer que já passava). `tsc`+`lint`+`build` ✅. Lição reforçada: conferir o fundo real do elemento antes de escolher o alpha (footer = verde; hero/menus = navy). Higiene de repo na mesma sessão: `.gitignore` ampliado para artefatos não-fonte (PDFs na raiz, `k6/last-summary.json`, PNGs de teste de logo, screenshots de debug, `.critique/`, relatório desempacotado).
 
