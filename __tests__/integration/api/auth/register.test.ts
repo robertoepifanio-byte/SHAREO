@@ -41,8 +41,7 @@ jest.mock("bcryptjs", () => ({
 }))
 
 jest.mock("@/lib/email", () => ({
-  sendWelcomeEmail:       jest.fn().mockResolvedValue(undefined),
-  sendVerificationEmail:  jest.fn().mockResolvedValue(undefined),
+  sendVerificationEmail: jest.fn().mockResolvedValue(undefined),
 }))
 
 jest.mock("@/lib/slugify", () => ({
