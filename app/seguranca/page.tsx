@@ -26,7 +26,7 @@ export default function SegurancaPage() {
               mensagens e informações pessoais trafegam de forma segura, sem que terceiros possam
               interceptar ou alterar o conteúdo. Adicionalmente, configuramos HSTS (HTTP Strict
               Transport Security) para garantir que o navegador nunca abra o ShareO sem criptografia,
-              mesmo se você digitar o endereço sem o "https://".
+              mesmo se você digitar o endereço sem o {'"https://"'}.
             </p>
           </section>
 
