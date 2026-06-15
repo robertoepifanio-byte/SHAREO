@@ -1,0 +1,35 @@
+-- Migration: add_item_status_deleted_value
+--
+-- Adiciona o valor 'DELETED' ao enum "ItemStatus" em sua PRÓPRIA transação,
+-- ANTES da migration 20260603100000_consolidate_item_status, que usa esse valor
+-- em comandos UPDATE.
+--
+-- Por que essa migration existe (resumo):
+--   O PostgreSQL não permite usar um valor de enum recém-adicionado por
+--   ALTER TYPE ... ADD VALUE na MESMA transação em que ele foi adicionado
+--   (erro 55P04 "unsafe use of new value of enum type"). A migration
+--   20260603100000_consolidate_item_status fazia exatamente isso: adicionava
+--   'DELETED' e em seguida rodava UPDATE "items" SET "status" = 'DELETED' ...
+--   no mesmo arquivo (= mesma transação Prisma). Em bancos já migrados (local
+--   e staging) a migration já consta como aplicada em _prisma_migrations e não
+--   roda de novo, então o defeito passou despercebido. Mas num banco FRESCO
+--   (cenário de criação do banco de PRODUÇÃO via `prisma migrate deploy` após
+--   D4) ela falha e trava a criação do schema.
+--
+-- Estratégia adotada (ver docs/adr/ADR-023):
+--   - NÃO editar a migration 20260603100000 (preserva checksums em local e
+--     staging).
+--   - Adicionar esta migration com timestamp ANTERIOR a 20260603100000, contendo
+--     APENAS o ALTER TYPE ... ADD VALUE em sua própria transação. Em DB fresco,
+--     o Prisma aplica esta primeiro; quando 20260603100000 roda, o ALTER TYPE
+--     dela vira no-op (IF NOT EXISTS) e o UPDATE encontra o valor 'DELETED' já
+--     commitado em transação anterior — Postgres aceita.
+--   - Em bancos local/staging, esta migration é idempotente (IF NOT EXISTS) e
+--     pode ser tanto aplicada (no-op real) quanto reconciliada via
+--     `prisma migrate resolve --applied 20260603050000_add_item_status_deleted_value`.
+--
+-- IMPORTANTE: este arquivo contém APENAS o ALTER TYPE. Não acrescentar nenhum
+-- statement que use 'DELETED' como literal aqui — quebraria a separação de
+-- transação que é a razão de ser desta migration.
+
+ALTER TYPE "ItemStatus" ADD VALUE IF NOT EXISTS 'DELETED';
