@@ -29,6 +29,7 @@ import {
   Wrench,
   Gift,
   ShoppingBag,
+  Refrigerator,
   type LucideIcon,
 } from "lucide-react"
 
@@ -49,30 +50,41 @@ const HAS_PNG = new Set<string>([
 
 /* ── Mapeamentos ────────────────────────────────────────────────── */
 
-const SLUG_MAP: Record<string, string> = {
-  "Todos":         "todas",
-  "Casa e Cozinha": "casa-jardim",
-  "Construção":    "construcao",
-  "Eletrônicos":   "eletronicos",
-  "Esporte":       "esporte",
-  "Ferramentas":   "ferramentas",
-  "Festas":        "festas",
-  "Moda":          "moda",
+/** slug → ícone Lucide (fallback quando não há PNG). Resolução primária por slug. */
+const LUCIDE_BY_SLUG: Record<string, LucideIcon> = {
+  "todas":       Home,
+  "casa-jardim": Refrigerator,
+  "construcao":  Hammer,
+  "eletronicos": Smartphone,
+  "esporte":     Dumbbell,
+  "ferramentas": Wrench,
+  "festas":      Gift,
+  "moda":        ShoppingBag,
 }
 
-const LUCIDE_MAP: Record<string, LucideIcon> = {
-  "Casa e Cozinha": Home,
-  "Construção":    Hammer,
-  "Eletrônicos":   Smartphone,
-  "Esporte":       Dumbbell,
-  "Ferramentas":   Wrench,
-  "Festas":        Gift,
-  "Moda":          ShoppingBag,
-  "Todos":         Home, // fallback — PNG sempre disponível
+/**
+ * Compatibilidade para chamadas que só têm o nome de exibição (ex.: "Todos").
+ * Prefira passar `slug`: assim renomear o rótulo da categoria nunca quebra o ícone.
+ */
+const SLUG_BY_NAME: Record<string, string> = {
+  "Todos":            "todas",
+  "Todas":            "todas",
+  "Eletrodomésticos": "casa-jardim",
+  "Construção":       "construcao",
+  "Eletrônicos":      "eletronicos",
+  "Esporte":          "esporte",
+  "Ferramentas":      "ferramentas",
+  "Festas":           "festas",
+  "Moda":             "moda",
 }
 
 interface CategoryIconProps {
   name:        string
+  /**
+   * slug da categoria (ex.: "casa-jardim"). Quando presente, resolve o ícone
+   * por slug — independente do rótulo exibido. Renomear o `name` não quebra o ícone.
+   */
+  slug?:       string
   size?:       number
   className?:  string
   /**
@@ -86,10 +98,10 @@ interface CategoryIconProps {
 
 /* ── Componente ─────────────────────────────────────────────────── */
 
-export function CategoryIcon({ name, size = 64, className = "", monochrome = false }: CategoryIconProps) {
-  const slug      = SLUG_MAP[name]
-  const Icon      = LUCIDE_MAP[name]
-  const usePng    = slug && HAS_PNG.has(slug)
+export function CategoryIcon({ name, slug: slugProp, size = 64, className = "", monochrome = false }: CategoryIconProps) {
+  const slug      = slugProp ?? SLUG_BY_NAME[name]
+  const Icon      = slug ? LUCIDE_BY_SLUG[slug] : undefined
+  const usePng    = !!slug && HAS_PNG.has(slug)
 
   if (!slug && !Icon) return null
 

@@ -99,7 +99,7 @@ export default async function HomePage() {
     prisma.category
       .findMany({
         where: { parentId: null },
-        select: { id: true, name: true },
+        select: { id: true, name: true, slug: true },
         orderBy: { name: "asc" },
       })
       .catch(() => []),
@@ -174,7 +174,7 @@ export default async function HomePage() {
 
             {/* Subtítulo */}
             <p className="mb-8 text-base leading-relaxed text-white/75 md:text-[17px]">
-              Ferramentas, eletrônicos, itens para festas, esportes, casa e cozinha.
+              Ferramentas, eletrônicos, itens para festas, esportes, eletrodomésticos.
               <br />
               Tudo perto de você.
             </p>
@@ -288,7 +288,7 @@ export default async function HomePage() {
                     className="flex min-w-[110px] flex-shrink-0 flex-col items-center gap-2 rounded-lg border-2 border-border bg-surface px-3 py-3 text-xs font-semibold text-primary transition-colors hover:border-brand hover:shadow-sm"
                     aria-label={cat.name}
                   >
-                    <CategoryIcon name={cat.name} size={96} />
+                    <CategoryIcon name={cat.name} slug={cat.slug} size={96} />
                     <span>{cat.name}</span>
                   </Link>
                 ))}

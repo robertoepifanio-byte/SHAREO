@@ -10,7 +10,7 @@ const CATEGORIAS = [
   { slug: "festas",      label: "Festas",          icon: "🎉", diaria: 80,  exemplos: "som, tendas, mesas" },
   { slug: "construcao",  label: "Construção",      icon: "🏗️", diaria: 45,  exemplos: "escada, betoneira, andaime" },
   { slug: "moda",        label: "Moda",            icon: "👗", diaria: 50,  exemplos: "roupa de festa, fantasia" },
-  { slug: "casa-jardim", label: "Casa e Cozinha",  icon: "🏠", diaria: 30,  exemplos: "eletrodomésticos, jardim" },
+  { slug: "casa-jardim", label: "Eletrodomésticos", icon: "🔌", diaria: 30,  exemplos: "geladeira, micro-ondas, lavadora" },
 ]
 
 const DIAS_MES = [2, 4, 6, 8, 10, 15, 20]

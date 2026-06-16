@@ -101,7 +101,7 @@ const DEMO_ITEMS: DemoItem[] = [
     imageUrls: [u('photo-1473968512647-3e447244af8f')],
   },
 
-  // ── Casa e Cozinha (diária ref. R$30) ──
+  // ── Eletrodomésticos (diária ref. R$30) ──
   {
     category: 'casa-jardim',
     title: 'Batedeira Planetária KitchenAid Vermelha',
