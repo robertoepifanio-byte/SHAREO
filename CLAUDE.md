@@ -5,7 +5,7 @@ Marketplace de economia circular para aluguel local de itens. Lançamento nacion
 ## Repositório e ambientes
 
 - **Código:** `C:\Users\Roberto\Documents\2026\ShareO`
-- **Staging:** `https://shareo-rouge.vercel.app` — NÃO é produção
+- **Staging:** `https://staging.shareo.com.br` (canônico desde 15/06/2026; `shareo-rouge.vercel.app` segue como alias) — NÃO é produção
 - **Produção:** ainda não existe — só após D4 (consulta jurídica) + validação total staging
 
 ## Stack
