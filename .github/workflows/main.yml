@@ -161,7 +161,22 @@ jobs:
           DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/shareo_test"
           NODE_ENV: test
       - run: pnpm playwright install --with-deps chromium
-      - run: pnpm test:e2e
+      # Espelha a lista curada da "Regressão Contínua (Staging)" (deploy.yml): specs de
+      # fluxo de app/a11y. Specs orientados a staging (security*, cron, etc.) ficam fora
+      # deste smoke local — são cobertos pela regressão contra o ambiente real.
+      - name: Run E2E (specs estáveis de fluxo de app)
+        run: |
+          pnpm test:e2e \
+            e2e/e2e-plan.spec.ts \
+            e2e/e2e-auth-plan.spec.ts \
+            e2e/e2e-share-plan.spec.ts \
+            e2e/e2e-suite.spec.ts \
+            e2e/e2e-a11y-plan.spec.ts \
+            e2e/e2e-home-plan.spec.ts \
+            e2e/e2e-integration-plan.spec.ts \
+            e2e/e2e-governance-plan.spec.ts \
+            e2e/e2e-usability-plan.spec.ts
         env:
           BASE_URL: http://localhost:3000
           SKIP_RATE_LIMIT: "true"
+          CRON_SECRET: shareo-cron-2026
