@@ -229,6 +229,11 @@ jobs:
             --config=playwright.staging.config.ts --workers=1
         env:
           STAGING_URL: ${{ secrets.STAGING_URL }}
+          # Faz o Playwright enviar o header x-e2e-token (playwright.staging.config.ts) —
+          # o servidor staging (runtime) compara com E2E_SECRET e libera o bypass de
+          # rate-limit nas rotas que repassam `req` (ex.: register), eliminando os 429
+          # da rajada da suíte. Deve ser o MESMO valor do E2E_SECRET no Vercel staging.
+          E2E_SECRET: ${{ secrets.E2E_SECRET }}
 
       - name: Upload E2E reports
         if: always()
