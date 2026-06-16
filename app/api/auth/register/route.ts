@@ -18,7 +18,9 @@ export async function POST(req: NextRequest) {
       req.headers.get("x-real-ip") ??
       "unknown"
 
-    const rl = await checkRateLimit(`register:${ip}`, RATE_LIMITS.register.limit, RATE_LIMITS.register.windowMs)
+    // `req` passado p/ honrar o bypass de E2E (header x-e2e-token + E2E_SECRET) na suíte
+    // de regressão — sem afrouxar o rate limit em produção (bypass só com o secret correto).
+    const rl = await checkRateLimit(`register:${ip}`, RATE_LIMITS.register.limit, RATE_LIMITS.register.windowMs, req)
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const body = await req.json()

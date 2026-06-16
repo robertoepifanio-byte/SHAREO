@@ -14,7 +14,7 @@ export async function apiWithRetry(
   fn: () => Promise<APIResponse>,
   opts: { retries?: number; retryOn?: number[]; baseDelayMs?: number } = {},
 ): Promise<APIResponse> {
-  const { retries = 3, retryOn = [429, 500, 502, 503, 504], baseDelayMs = 800 } = opts
+  const { retries = 4, retryOn = [429, 500, 502, 503, 504], baseDelayMs = 1200 } = opts
   let res = await fn()
   for (let attempt = 1; attempt <= retries && retryOn.includes(res.status()); attempt++) {
     await new Promise((r) => setTimeout(r, baseDelayMs * attempt))
