@@ -84,9 +84,9 @@ const config: Config = {
           foreground: "#FFFFFF",
         },
         destructive: {
-          DEFAULT:    "#E74C3C",   // vermelho suave
-          hover:      "#C0392B",
-          light:      "#FDEDEC",
+          DEFAULT:    "#C0392B",   // vermelho — contraste WCAG AA (5.44:1 sobre branco, como texto e como bg)
+          hover:      "#A93226",   // hover mais escuro (6.62:1)
+          light:      "#FDEDEC",   // fundo sutil (chips/alertas)
           foreground: "#FFFFFF",
         },
 

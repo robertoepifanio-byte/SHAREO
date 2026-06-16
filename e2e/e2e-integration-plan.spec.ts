@@ -110,9 +110,9 @@ test.describe('Plano E2E Integração — ShareO', () => {
       await test.step(STEPS[0].name, () =>
         runStep(STEPS[0], async () => {
           // Busca o primeiro item aprovado via API pública
-          const itemsResp = await page.request.get(`${BASE_URL}/api/items?limit=1`, {
+          const itemsResp = await apiWithRetry(() => page.request.get(`${BASE_URL}/api/items?limit=1`, {
             failOnStatusCode: false,
-          })
+          }))
 
           expect(itemsResp.status(), '/api/items deve retornar 200').toBe(200)
 
@@ -204,9 +204,9 @@ test.describe('Plano E2E Integração — ShareO', () => {
           })
 
           // ── 2c: /api/items?limit=6 ─────────────────────────────────────────
-          const itemsResp = await page.request.get(`${BASE_URL}/api/items?limit=6`, {
+          const itemsResp = await apiWithRetry(() => page.request.get(`${BASE_URL}/api/items?limit=6`, {
             failOnStatusCode: false,
-          })
+          }))
           expect(itemsResp.status(), '/api/items deve retornar 200').toBe(200)
 
           const itemsBody = await itemsResp.json() as { data: ApiItem[]; meta: { total: number; hasNextPage: boolean } }
@@ -240,9 +240,9 @@ test.describe('Plano E2E Integração — ShareO', () => {
       await test.step(STEPS[2].name, () =>
         runStep(STEPS[2], async () => {
           // Busca itens via API
-          const itemsResp = await page.request.get(`${BASE_URL}/api/items?limit=6`, {
+          const itemsResp = await apiWithRetry(() => page.request.get(`${BASE_URL}/api/items?limit=6`, {
             failOnStatusCode: false,
-          })
+          }))
           expect(itemsResp.status(), '/api/items deve retornar 200').toBe(200)
 
           const itemsBody = await itemsResp.json() as { data: ApiItem[] }
@@ -300,9 +300,9 @@ test.describe('Plano E2E Integração — ShareO', () => {
           // Verificação de preços: se item compartilhado foi encontrado no step 1,
           // o preço deve ser consistente entre API e detalhe da página
           if (sharedItemId && sharedItemTitle) {
-            const itemDetailResp = await page.request.get(`${BASE_URL}/api/items/${sharedItemId}`, {
+            const itemDetailResp = await apiWithRetry(() => page.request.get(`${BASE_URL}/api/items/${sharedItemId}`, {
               failOnStatusCode: false,
-            })
+            }))
 
             if (itemDetailResp.status() === 200) {
               const detailBody = await itemDetailResp.json() as { data: ApiItem }

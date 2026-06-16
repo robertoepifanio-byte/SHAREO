@@ -46,10 +46,9 @@ export function ItensProcurados() {
           className="grid grid-cols-2 gap-2.5 xl:grid-cols-5 xl:gap-3"
         >
           {ITEMS.map((item) => (
+            <div key={item.name} role="listitem" className="contents">
             <Link
-              key={item.name}
               href={`/itens?search=${encodeURIComponent(item.name)}`}
-              role="listitem"
               aria-label={`Buscar ${item.name}`}
               className="flex min-h-tap flex-col items-center gap-2 rounded-xl border-[1.5px] border-border bg-white px-3 py-4 text-center font-sans transition-all hover:-translate-y-0.5 hover:border-brand hover:bg-[#F0FBF5] hover:shadow-[0_4px_12px_rgba(0,123,60,0.12)]"
             >
@@ -60,6 +59,7 @@ export function ItensProcurados() {
                 {item.name}
               </span>
               <span
+                aria-hidden="true"
                 className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                   item.demand === "alta"
                     ? "bg-brand-light text-brand-link"
@@ -69,6 +69,7 @@ export function ItensProcurados() {
                 {item.demand === "alta" ? "Alta demanda" : "Demanda moderada"}
               </span>
             </Link>
+            </div>
           ))}
         </div>
       </div>

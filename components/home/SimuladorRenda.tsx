@@ -271,7 +271,6 @@ export function SimuladorRenda({ data = DEFAULT_DATA }: { data?: SimuladorItem[]
             <Link
               href="/itens/novo"
               className="mt-5 inline-flex min-h-tap w-full items-center justify-center rounded-lg bg-brand px-6 py-3 text-sm font-semibold uppercase tracking-[0.4px] text-white transition-colors hover:bg-brand-hover"
-              aria-label="Cadastrar item para anunciar"
             >
               Cadastrar meu item agora
             </Link>
