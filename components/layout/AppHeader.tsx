@@ -32,7 +32,7 @@ export async function AppHeader() {
               priority
             />
           </div>
-          <span className="hidden md:block mt-0.5 text-[10px] text-white/85 font-medium leading-none text-center">
+          <span aria-hidden="true" className="hidden md:block mt-0.5 text-[10px] text-white/85 font-medium leading-none text-center">
             Use Mais. Possua Menos.
           </span>
         </Link>

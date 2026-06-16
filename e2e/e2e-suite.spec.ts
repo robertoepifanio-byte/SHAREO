@@ -17,6 +17,7 @@
 import fs from 'fs'
 import path from 'path'
 import { test, expect } from '@playwright/test'
+import { apiWithRetry } from './_support'
 import { SESSION_PATHS } from './fixtures/test-credentials'
 
 // ---------------------------------------------------------------------------
@@ -129,14 +130,14 @@ function makePlanRunner(results: StepResult[]) {
 
 // helper para registar + logar usuário novo
 async function registerAndLogin(page: Parameters<Parameters<typeof test>[1]>[0], user: ReturnType<typeof makeUser>) {
-  const regRes = await page.request.post('/api/auth/register', {
+  const regRes = await apiWithRetry(() => page.request.post('/api/auth/register', {
     data: {
       name: user.name, email: user.email, password: user.password,
       userType: 'PF', cpf: user.cpf,
       city: user.city, state: user.state,
       phone: '+5584999999999', consentVersion: user.consentVersion,
     },
-  })
+  }))
   const regBody = await regRes.json() as { data?: { id: string }; error?: unknown }
   expect(regRes.status(), `Cadastro falhou (${regRes.status()}): ${JSON.stringify(regBody.error ?? regBody)}`).toBe(201)
 
@@ -270,13 +271,13 @@ test.describe.serial('Plano 2 — Compartilhamento', () => {
       await runStep(2, '2. Criar item', 'critical', async () => {
         const catRes = await page.request.get('/api/categories')
         const { data: cats } = await catRes.json() as { data: { id: string }[] }
-        const res = await page.request.post('/api/items', {
+        const res = await apiWithRetry(() => page.request.post('/api/items', {
           data: {
             title, description: 'Item de teste da suíte E2E — pode ser removido',
             categoryId: cats[0].id, condition: 'GOOD', pricePerDay: 4500,
             city: 'Natal', state: 'RN', latitude: -5.7945, longitude: -35.211,
           },
-        })
+        }))
         const body = await res.json() as { data?: { id: string; title: string }; error?: unknown }
         expect(res.status(), `Criar item falhou: ${JSON.stringify(body.error ?? body)}`).toBe(201)
         itemId = body.data!.id
@@ -445,13 +446,13 @@ test.describe.serial('Plano 4 — Geral', () => {
       await runStep(2, '2. Criar item', 'high', async () => {
         const catRes = await page.request.get('/api/categories')
         const { data: cats } = await catRes.json() as { data: { id: string }[] }
-        const res = await page.request.post('/api/items', {
+        const res = await apiWithRetry(() => page.request.post('/api/items', {
           data: {
             title, description: 'CRUD geral da suíte E2E — pode ser removido',
             categoryId: cats[0].id, condition: 'GOOD', pricePerDay: 3000,
             city: 'Natal', state: 'RN', latitude: -5.7945, longitude: -35.211,
           },
-        })
+        }))
         const body = await res.json() as { data?: { id: string }; error?: unknown }
         expect(res.status(), `Criar item falhou: ${JSON.stringify(body.error ?? body)}`).toBe(201)
         itemId = body.data!.id

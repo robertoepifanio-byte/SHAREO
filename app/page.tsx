@@ -281,16 +281,15 @@ export default async function HomePage() {
                 aria-label="Categorias de itens"
               >
                 {categories.map((cat) => (
-                  <Link
-                    key={cat.id}
-                    href={`/itens?categoryId=${cat.id}`}
-                    role="listitem"
-                    className="flex min-w-[110px] flex-shrink-0 flex-col items-center gap-2 rounded-lg border-2 border-border bg-surface px-3 py-3 text-xs font-semibold text-primary transition-colors hover:border-brand hover:shadow-sm"
-                    aria-label={cat.name}
-                  >
-                    <CategoryIcon name={cat.name} slug={cat.slug} size={96} />
-                    <span>{cat.name}</span>
-                  </Link>
+                  <div key={cat.id} role="listitem" className="contents">
+                    <Link
+                      href={`/itens?categoryId=${cat.id}`}
+                      className="flex min-w-[110px] flex-shrink-0 flex-col items-center gap-2 rounded-lg border-2 border-border bg-surface px-3 py-3 text-xs font-semibold text-primary transition-colors hover:border-brand hover:shadow-sm"
+                    >
+                      <CategoryIcon name={cat.name} slug={cat.slug} size={96} decorative />
+                      <span>{cat.name}</span>
+                    </Link>
+                  </div>
                 ))}
               </div>
             </div>

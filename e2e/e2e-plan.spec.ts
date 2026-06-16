@@ -15,6 +15,7 @@
 import fs from 'fs'
 import path from 'path'
 import { test, expect } from '@playwright/test'
+import { apiWithRetry } from './_support'
 import { SESSION_PATHS } from './fixtures/test-credentials'
 
 // ---------------------------------------------------------------------------
@@ -139,7 +140,7 @@ test('Plano E2E Completo — Registro · Login · CRUD item · Logout', async ({
 
     // Step 2 — critical
     await runStep(2, '2. Cadastro de novo usuário', 'critical', async () => {
-      const res = await page.request.post('/api/auth/register', {
+      const res = await apiWithRetry(() => page.request.post('/api/auth/register', {
         data: {
           name:           TEST_USER.name,
           email:          TEST_USER.email,
@@ -151,7 +152,7 @@ test('Plano E2E Completo — Registro · Login · CRUD item · Logout', async ({
           phone:          '+5584999999999',
           consentVersion: TEST_USER.consentVersion,
         },
-      })
+      }))
       const body = await res.json() as { data?: { id: string }; error?: unknown }
       expect(
         res.status(),

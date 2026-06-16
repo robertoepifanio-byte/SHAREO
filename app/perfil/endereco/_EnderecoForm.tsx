@@ -218,7 +218,7 @@ export function EnderecoForm({ cep, street, city, state, neighborhood }: Props) 
           Usar minha localização
         </button>
       </div>
-      {locError && <p className="text-xs text-red-500">{locError}</p>}
+      {locError && <p className="text-xs text-destructive">{locError}</p>}
 
       {/* ── CEP ── */}
       <div>
@@ -247,7 +247,7 @@ export function EnderecoForm({ cep, street, city, state, neighborhood }: Props) 
           )}
         </div>
         {cepError && (
-          <p className="mt-1 text-xs text-red-500">{cepError}</p>
+          <p className="mt-1 text-xs text-destructive">{cepError}</p>
         )}
         {cepFilled && !cepError && (
           <p className="mt-1 text-xs text-success">✓ Endereço preenchido automaticamente</p>
