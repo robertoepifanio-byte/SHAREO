@@ -73,6 +73,7 @@ export function AppFooter() {
                 Suporte
               </p>
               <Link href="/sobre"           className="text-sm text-white/90 hover:text-white transition-colors">Sobre o Shareo</Link>
+              <Link href="/comunidade"      className="text-sm text-white/90 hover:text-white transition-colors">Comunidade</Link>
               <Link href="/ajuda"           className="text-sm text-white/90 hover:text-white transition-colors">Central de ajuda</Link>
               <Link href="/ganhar"          className="text-sm text-white/90 hover:text-white transition-colors">Como ganhar</Link>
               <Link href="/termos"          className="text-sm text-white/90 hover:text-white transition-colors">Termos de uso</Link>

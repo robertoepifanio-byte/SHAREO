@@ -1,10 +1,29 @@
 # Backlog de Atividades Priorizadas — ShareO
 
-**Versão:** 3.8  
-**Atualizado em:** 2026-06-14 (sessão 14 — 2ª auditoria multi-aspecto, read-only: regressão dos fixes s13 + achados novos, para deliberação)  
+**Versão:** 3.9  
+**Atualizado em:** 2026-06-16 (sessão 19 — deltas s15–s19: staging desbloqueado e ao vivo, e-mail do app funcionando, domínio próprio do staging, categoria Eletrodomésticos, ícones PWA)  
 **Responsável:** Roberto Epifânio
 
 > Verificação feita diretamente no código — cada item foi confirmado por arquivo/componente.
+
+---
+
+## 🚀 Deltas s15–s19 (2026-06-14 → 2026-06-16) — CONCLUÍDOS
+
+> Resumo do que andou desde a auditoria s14. Tudo já mesclado em `main` e validado no staging.
+
+| Item | Status | Evidência |
+|---|---|---|
+| **Deploy staging desbloqueado e AO VIVO** | ✅ 2026-06-15 | PR #17 + #18 + #19 mesclados → staging ao vivo via GH Actions (Deploy Staging por token, sem dashboard Vercel). `/seguranca` + `/.well-known/security.txt` + `/api/items` = 200. CI da main: Lint/Tests/Security ✅ |
+| **Migration `ItemStatus` DELETED** | ✅ #18 | `ALTER TYPE ... ADD VALUE 'DELETED'` separado em migration própria (não pode coexistir com `UPDATE` na mesma transação PG) — desbloqueia DB novo pós-D4 |
+| **E-mail transacional do app funcionando** | ✅ 2026-06-15 | Domínio `shareo.com.br` verificado no Resend (DKIM+SPF via GoDaddy) + `EMAIL_FROM=noreply@shareo.com.br` (Production) + redeploy → sandbox liberado, entrega p/ **qualquer** destinatário (antes só e-mails de teste do dono) |
+| **Welcome email removido + reengajamento unificado** | ✅ PR #16 (9ffa609) | `sendWelcomeEmail`/`welcomeHtml` removidos; cron de reengajamento via novo `sendAppEmail()` = 1 ponto de integração; mock `register.test` corrigido |
+| **Domínio próprio do staging** | ✅ 2026-06-15 | Staging agora é `https://staging.shareo.com.br` (A staging→76.76.21.21 na GoDaddy + SSL Vercel + `AUTH_URL`/`NEXTAUTH_URL` atualizados + redeploy). `rouge.vercel.app` segue como alias. Apex+www RESERVADOS p/ prod pós-D4 |
+| **Bug NextResponse singleton (forgot-password)** | ✅ s17 | 2ª req da lambda quente retornava 200 com body vazio (Response é stream consumível 1×) → função `ok()`; anti-padrão grepado e limpo no app |
+| **Categoria "Casa e Cozinha" → "Eletrodomésticos"** | ✅ s19 (064fb74) | Rename do rótulo (slug `casa-jardim` preservado) nos 2 Supabase + deploy; `CategoryIcon` resolve ícone por **slug** (não pelo nome) → renomear rótulo nunca derruba ícone |
+| **Ícones PWA / apple-touch** | ✅ s19 | `scripts/generate-pwa-icons.mjs` gera 192/512/maskable-512 + apple-touch (estava 404); fonte `public/logos/pwa-icon-source.png`; `app/manifest.ts` |
+| **Higiene de repo (.obsidian)** | ✅ s19 (064fb74) | `.obsidian` removido do versionamento + adicionado ao `.gitignore` |
+| **Suíte E2E — bateria geral** | ✅ s17 | 255✅ / 16❌ / 19skip (290 testes, 8.6min), **0 bugs de app** — 16 falhas = rate-limit/locators obsoletos/contaminação de dados de teste; PR #15 (forgot-password + correções de spec) |
 
 ---
 
@@ -315,10 +334,10 @@
 
 | # | Atividade | Detalhe |
 |---|---|---|
-| 7 | **PWA ícones** | `pwa-icon-192.png` e `pwa-icon-512.png` — substituir por assets finais (1024×1024 ideal); dependem do Roberto |
-| 8 | **PWA screenshots** | `manifest.ts` pede `wide` + `mobile`; dependem do Roberto |
-| 9 | **Página `/sobre`** | Prioritária entre os stubs — missão, história, equipe do ShareO |
-| 10 | **Stubs com conteúdo** | `/politicas`, `/suporte`, `/comunidade` — páginas existem sem conteúdo real |
+| 7 | ✅ **PWA ícones** | Resolvido 2026-06-16 (s19): `scripts/generate-pwa-icons.mjs` gera 192/512/maskable-512 + apple-touch a partir de `public/logos/pwa-icon-source.png`; wired no `app/manifest.ts`. |
+| 8 | ✅ **PWA screenshots** | Resolvido: `public/logos/pwa-screenshot-mobile.png` (390×844, 159KB) + `pwa-screenshot-wide.png` (1280×800, 297KB), ambos `narrow`/`wide` wired no `app/manifest.ts`. |
+| 9 | ✅ **Página `/sobre`** | Conteúdo completo: hero, stats, missão, história, valores, equipe, desenvolvimento (Pratika IA) e CTA. Linkada no footer e MobileMenu. |
+| 10 | ✅ **Stubs com conteúdo** | Resolvido 2026-06-16 (s19): `/politicas` (termos, privacidade LGPD c/ DPO, responsabilidade, cancelamento, cookies, contato), `/suporte` (central de ajuda, atendimento, segurança) e `/comunidade` (conexão local, benefícios, participação) já com conteúdo real. **Discoverability:** `/comunidade` adicionada ao footer (decisão do fundador: `/suporte` e `/politicas` ficam acessíveis por URL direta por serem consolidações redundantes com `/ajuda`, `/termos`, `/privacidade` já no footer). |
 | 11 | ✅ **Jest global `next-auth@5`** | `transformIgnorePatterns` atualizado para `@upstash\|next-auth\|@auth`; testes de badge corrigidos; 21 suítes / 355 testes / 0 falhas |
 | 12 | ✅ **Sentry source maps + alertas** | Source maps chegando (184–248 arquivos por build); alertas criados: novo issue + erros acima de 10/hora |
 | 13 | ✅ **Countdown devolução** | `components/booking/ReturnCountdown.tsx` — já wired em `app/reservas/[id]/page.tsx` |
