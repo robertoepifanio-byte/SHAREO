@@ -4,7 +4,7 @@ import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { requireAdminRole } from "@/lib/auth/admin-guards"
-import { blockAdminToken, unblockAdminToken } from "@/lib/redis-admin-blocklist"
+import { invalidateUserSessions } from "@/lib/redis-admin-blocklist"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -62,11 +62,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       select: { id: true, role: true, adminRole: true, isActive: true },
     })
 
-    // Revogar JWT imediatamente se rebaixado, removido de admin ou desativado; limpar se reativado
+    // Rebaixou role/adminRole, desativou ou removeu do admin → invalida as sessões
+    // ANTIGAS via epoch: o token atual morre no middleware (loginAt < epoch), mas
+    // um login novo reflete o estado atual (e o authorize() barra conta inativa).
+    // "activate" não exige nada — o usuário simplesmente loga de novo.
     if ("adminRole" in parsed.data || parsed.data.action === "deactivate" || parsed.data.action === "demote_to_user") {
-      await blockAdminToken(id)
-    } else if (parsed.data.action === "activate") {
-      await unblockAdminToken(id)
+      await invalidateUserSessions(id)
     }
 
     const auditAction =
