@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 import { prisma } from "@/lib/prisma"
 import { getPlatformFeeRate } from "@/lib/platform-config"
 
@@ -83,9 +84,9 @@ export default async function AdminOverviewPage() {
           <p className="text-sm font-semibold text-destructive">
             🔴 {disputes} {disputes === 1 ? "disputa aberta" : "disputas abertas"}
           </p>
-          <a href="/admin/disputas" className="mt-1 text-sm text-destructive underline hover:no-underline">
+          <Link href="/admin/disputas" className="mt-1 text-sm text-destructive underline hover:no-underline">
             Resolver disputas →
-          </a>
+          </Link>
         </div>
       )}
     </div>
