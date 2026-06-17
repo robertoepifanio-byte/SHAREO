@@ -59,7 +59,9 @@ export function SetPasswordForm({ token }: { token: string }) {
       }
 
       setSuccess(true)
-      setTimeout(() => router.push("/login"), 2500)
+      // Após o login, cai no onboarding do piloto (explica navegar × anunciar/alugar
+      // e oferece o link de indicação).
+      setTimeout(() => router.push("/login?callbackUrl=/bem-vindo"), 2500)
     } catch {
       setError("Falha de conexão. Tente novamente.")
     } finally {

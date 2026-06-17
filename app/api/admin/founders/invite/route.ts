@@ -4,8 +4,8 @@
  * para definir senha no 1º acesso). Domínio Operacional (+Superadmin).
  *
  * Body: { leadIds?: string[] }  — convida os ids informados; ou
- *       { wave?: "WAVE_1"|"WAVE_2"|"WAVE_3", state?: "RN", limit?: number } — convida
- *       leads PENDING por região/onda (para abrir "Piloto 1", "Piloto 2"…).
+ *       { wave?, state?: "RN", city?: "Natal", limit?: number } — convida leads PENDING
+ *       por região/cidade/onda (para abrir a(s) cidade(s)-piloto, "Piloto 1", "Piloto 2"…).
  */
 import { NextResponse, type NextRequest } from "next/server"
 import { z } from "zod"
@@ -20,6 +20,7 @@ const Schema = z.object({
   leadIds: z.array(z.string()).max(200).optional(),
   wave:    z.enum(["WAVE_1", "WAVE_2", "WAVE_3"]).optional(),
   state:   z.string().length(2).optional(),
+  city:    z.string().min(1).max(120).optional(),
   limit:   z.number().int().min(1).max(200).optional(),
 })
 
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     )
   }
-  const { leadIds, wave, state, limit } = parsed.data
+  const { leadIds, wave, state, city, limit } = parsed.data
 
   // Resolve a lista de leads a convidar
   let ids: string[]
@@ -50,6 +51,7 @@ export async function POST(req: NextRequest) {
         deletedAt: null,
         ...(wave  && { wave }),
         ...(state && { state: state.toUpperCase() }),
+        ...(city  && { city: { equals: city, mode: "insensitive" } }),
       },
       orderBy: { queuePosition: "asc" },
       take:    limit ?? 50,
