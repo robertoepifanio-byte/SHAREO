@@ -51,7 +51,7 @@ export function CasosRenda() {
           </h2>
         </div>
         <p className="mb-6 text-sm text-slate-600">
-          Proprietários reais que transformaram itens parados em renda extra.
+          Veja o potencial de quem transforma itens parados em renda extra.
         </p>
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-3 xl:gap-4">
@@ -104,6 +104,11 @@ export function CasosRenda() {
             </article>
           ))}
         </div>
+
+        <p className="mt-4 text-xs leading-relaxed text-slate-500">
+          Personagens e valores ilustrativos, baseados em estimativas de uso típico
+          (3–4 locações/mês). Resultados reais variam conforme o item, a demanda e a região.
+        </p>
       </div>
     </section>
   )

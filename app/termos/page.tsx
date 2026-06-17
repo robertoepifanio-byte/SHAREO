@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { AppHeader } from "@/components/layout/AppHeader"
+import { POLICY_UPDATED_AT } from "@/lib/legal-config"
 
 export const metadata: Metadata = {
   title: "Termos de Uso — ShareO",
@@ -13,7 +14,7 @@ export default function TermosPage() {
       <AppHeader />
       <main className="container py-10 max-w-3xl">
         <h1 className="text-3xl font-extrabold text-primary mb-2">Termos de Uso</h1>
-        <p className="text-sm text-muted-foreground mb-8">Última atualização: janeiro de 2025</p>
+        <p className="text-sm text-muted-foreground mb-8">Última atualização: {POLICY_UPDATED_AT}</p>
 
         <div className="prose prose-sm max-w-none text-foreground space-y-6">
 
