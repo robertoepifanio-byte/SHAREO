@@ -1,6 +1,6 @@
 import { getToken } from "next-auth/jwt"
 import { NextResponse, type NextRequest } from "next/server"
-import { isAdminBlocked, isSessionStale } from "@/lib/redis-admin-blocklist"
+import { isSessionStale } from "@/lib/redis-admin-blocklist"
 
 const PROTECTED_PREFIXES = [
   "/dashboard",
@@ -158,9 +158,10 @@ export async function middleware(req: NextRequest) {
   }
 
   if (isAdminRoute && token) {
-    const role   = token.role as string | undefined
-    const userId = token.id  as string | undefined
-
+    const role = token.role as string | undefined
+    // Sessões de admin rebaixado/desativado/removido são mortas pelo epoch
+    // (isSessionStale, acima); o login novo reflete o role atual. Aqui só
+    // barramos quem não é (mais) ADMIN segundo o token vigente.
     if (role !== "ADMIN") {
       if (pathname.startsWith("/api/")) {
         return NextResponse.json(
@@ -169,16 +170,6 @@ export async function middleware(req: NextRequest) {
         )
       }
       return NextResponse.redirect(new URL("/dashboard", req.url))
-    }
-
-    if (userId && await isAdminBlocked(userId)) {
-      if (pathname.startsWith("/api/")) {
-        return NextResponse.json(
-          { error: { code: "FORBIDDEN", message: "Conta de administrador desativada ou rebaixada." } },
-          { status: 403 },
-        )
-      }
-      return NextResponse.redirect(new URL("/sair", req.url))
     }
   }
 

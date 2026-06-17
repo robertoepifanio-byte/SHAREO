@@ -4,7 +4,6 @@ import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { requireAdminRole } from "@/lib/auth/admin-guards"
-import { unblockAdminToken } from "@/lib/redis-admin-blocklist"
 
 const PromoteSchema = z.object({
   email:     z.string().email().transform((e) => e.toLowerCase()),
@@ -59,9 +58,6 @@ export async function POST(req: NextRequest) {
       data:   { role: "ADMIN", adminRole, isActive: true },
       select: { id: true, name: true, email: true, adminRole: true, isActive: true, createdAt: true },
     })
-
-    // Garantir que o token não esteja bloqueado
-    await unblockAdminToken(updated.id)
 
     after(() =>
       prisma.adminLog.create({
