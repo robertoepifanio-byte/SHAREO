@@ -163,6 +163,12 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
   const [pricePerDay,   setPricePerDay]   = useState(toDisplay(initialData?.pricePerDay))
   const [pricePerWeek,  setPricePerWeek]  = useState(toDisplay(initialData?.pricePerWeek))
   const [pricePerMonth, setPricePerMonth] = useState(toDisplay(initialData?.pricePerMonth))
+  // "Customizado" = o anunciante digitou um preço semanal/mensal próprio. Enquanto
+  // não customizado, o campo acompanha automaticamente a diária (× multiplicador);
+  // ao editar a mão, paramos de sobrescrever. Em modo edição, valores já salvos
+  // entram como customizados (não mexemos neles ao alterar a diária).
+  const [weekTouched,   setWeekTouched]   = useState(!!toCents(toDisplay(initialData?.pricePerWeek)))
+  const [monthTouched,  setMonthTouched]  = useState(!!toCents(toDisplay(initialData?.pricePerMonth)))
   const [depositAmount,        _setDepositAmount]       = useState(toDisplay(initialData?.depositAmount))
   const [estimatedRetailPrice, setEstimatedRetailPrice] = useState(toDisplay(initialData?.estimatedRetailPrice))
   const [address,       setAddress]       = useState(initialData?.address       ?? "")
@@ -239,16 +245,33 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
     }
   }
 
+  const centsToDisplay = (cents: number) => (cents / 100).toFixed(2).replace(".", ",")
+
+  // Alteração da diária: além de setar o valor, atualiza automaticamente o preço
+  // semanal/mensal AINDA NÃO customizado (× multiplicador) — o anunciante não
+  // precisa clicar em "Recalcular". Campos que ele já editou à mão são preservados.
+  function handleDayChange(v: string) {
+    setPricePerDay(v)
+    setErrors((p) => ({ ...p, pricePerDay: undefined! }))
+    const cents = toCents(v)
+    if (cents > 0) {
+      if (!weekTouched)  setPricePerWeek(centsToDisplay(cents * weeklyMultiplier))
+      if (!monthTouched) setPricePerMonth(centsToDisplay(cents * monthlyMultiplier))
+    }
+  }
+
   function autoWeekly() {
     const cents = toCents(pricePerDay)
     if (!cents) return
-    setPricePerWeek(((cents * weeklyMultiplier) / 100).toFixed(2).replace(".", ","))
+    setPricePerWeek(centsToDisplay(cents * weeklyMultiplier))
+    setWeekTouched(false) // voltou a seguir a diária
   }
 
   function autoMonthly() {
     const cents = toCents(pricePerDay)
     if (!cents) return
-    setPricePerMonth(((cents * monthlyMultiplier) / 100).toFixed(2).replace(".", ","))
+    setPricePerMonth(centsToDisplay(cents * monthlyMultiplier))
+    setMonthTouched(false)
   }
 
   // Load categories on mount
@@ -664,7 +687,7 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
               id="price-per-day"
               label="Preço por dia"
               value={pricePerDay}
-              onChange={(v) => { setPricePerDay(v); setErrors((p) => ({ ...p, pricePerDay: undefined! })) }}
+              onChange={handleDayChange}
               onFocus={() => setActiveTip("pricePerDay")}
               onBlur={() => setActiveTip(null)}
               required
@@ -705,7 +728,7 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
               id="price-per-week"
               label="Preço por semana"
               value={pricePerWeek}
-              onChange={setPricePerWeek}
+              onChange={(v) => { setPricePerWeek(v); setWeekTouched(true) }}
             />
             {(() => {
               // Sugestão baseada na DIÁRIA atual (digitada); só cai na diária
@@ -747,7 +770,7 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
               id="price-per-month"
               label="Preço por mês"
               value={pricePerMonth}
-              onChange={setPricePerMonth}
+              onChange={(v) => { setPricePerMonth(v); setMonthTouched(true) }}
             />
             {(() => {
               const dayCents = toCents(pricePerDay)
