@@ -267,6 +267,12 @@ model User {
   consentAt      DateTime?
   consentIp      String?
   consentVersion String? // versão da política aceita (ex.: "v1.0")
+  ageDeclaredAt  DateTime? // declaração de 18+ persistida (trilha de auditoria LGPD)
+
+  // Cadastro progressivo — signup mínimo (nome/e-mail/senha/cidade/estado) habilita navegar;
+  // null = cadastro incompleto. Preenchido ao concluir o cadastro completo (CPF/CNPJ + endereço),
+  // exigido só ao Anunciar ou Alugar.
+  profileCompletedAt DateTime?
 
   // Programa Fundadores (não ativar customFeeRate/searchBoost antes do D4 jurídico)
   isFounder        Boolean     @default(false)
@@ -851,6 +857,10 @@ model FounderLead {
   wave          FounderWave @default(WAVE_1)          // atualizado pela API após create
   status        LeadStatus  @default(PENDING)
   source        SignupSource @default(VIP_LANDING)
+
+  // Localização do interessado — define a região dos pilotos (Piloto 1, Piloto 2…)
+  city  String?
+  state String? @db.Char(2)
 
   // LGPD — consentimento explícito (LGPD Art. 7 + ANPD)
   marketingConsentAt DateTime

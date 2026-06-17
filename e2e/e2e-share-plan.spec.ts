@@ -155,6 +155,16 @@ test('Plano E2E Compartilhamento — Login · Criar · Link · Externo · Permis
       await page.locator('input[type="password"]').fill(TEST_USER.password)
       await page.getByRole('button', { name: /entrar|login|acessar/i }).click()
       await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 })
+
+      // Cadastro progressivo: conclui o cadastro completo (CPF/endereço) para liberar
+      // a criação de anúncio no Step 2 (gate REGISTRATION_INCOMPLETE).
+      const compRes = await apiWithRetry(() => page.request.patch('/api/users/me/complete-registration', {
+        data: { userType: 'PF', cpf: TEST_USER.cpf, city: TEST_USER.city, state: TEST_USER.state, phone: '+5584999999999' },
+      }))
+      expect(
+        compRes.status(),
+        `Completar cadastro falhou (${compRes.status()})`,
+      ).toBe(200)
     })
 
     // -----------------------------------------------------------------------

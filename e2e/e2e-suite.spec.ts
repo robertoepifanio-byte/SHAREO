@@ -151,6 +151,13 @@ async function registerAndLogin(page: Parameters<Parameters<typeof test>[1]>[0],
   await page.getByRole('button', { name: /entrar|login|acessar/i }).click()
   await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 })
 
+  // Cadastro progressivo: o signup mínimo não coleta CPF/endereço — conclui o cadastro
+  // completo para liberar Anunciar/Alugar (gate REGISTRATION_INCOMPLETE).
+  const compRes = await apiWithRetry(() => page.request.patch('/api/users/me/complete-registration', {
+    data: { userType: 'PF', cpf: user.cpf, city: user.city, state: user.state, phone: '+5584999999999' },
+  }))
+  expect(compRes.status(), `Completar cadastro falhou (${compRes.status()})`).toBe(200)
+
   return userId
 }
 

@@ -5,14 +5,17 @@ import { revalidateTag } from "next/cache"
 import { prisma } from "@/lib/prisma"
 import { assignWave } from "@/lib/founders"
 import { sendFounderWelcomeEmail } from "@/lib/email"
+import { CONSENT_VERSION } from "@/lib/legal-config"
 
 const Schema = z.object({
   email:            z.string().email({ message: "E-mail inválido" }),
   name:             z.string().min(2).max(100).optional(),
   intent:           z.enum(["proprietario", "locatario", "ambos"]).default("proprietario"),
   marketingConsent: z.literal(true, { errorMap: () => ({ message: "Consentimento obrigatório" }) }),
-  consentVersion:   z.string().default("v1.0"),
+  consentVersion:   z.string().default(CONSENT_VERSION),
   source:           z.string().default("VIP_LANDING"),
+  city:             z.string().max(100).optional(),
+  state:            z.string().length(2).optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -26,7 +29,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { email, name, intent, consentVersion } = parsed.data
+    const { email, name, intent, consentVersion, city, state } = parsed.data
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
            ?? req.headers.get("x-real-ip")
            ?? "unknown"
@@ -62,6 +65,8 @@ export async function POST(req: NextRequest) {
         consentUserAgent:   ua,
         status:             "PENDING",
         source:             "VIP_LANDING",
+        city:               city?.trim() || null,
+        state:              state?.trim().toUpperCase() || null,
       },
       select: { id: true, queuePosition: true },
     })

@@ -80,6 +80,15 @@ export async function POST(req: NextRequest) {
     // SEC-CRIT-04 / GAP-CRIT-04b: reset por link também invalida sessões anteriores
     await invalidateUserSessions(user.id)
 
+    // Convite-piloto: ao definir a senha no 1º acesso, o lead convidado vira CONVERTED.
+    // No-op para resets normais (nenhum lead INVITED apontando para este usuário).
+    await prisma.founderLead
+      .updateMany({
+        where: { convertedUserId: user.id, status: "INVITED" },
+        data:  { status: "CONVERTED", convertedAt: new Date() },
+      })
+      .catch((e) => console.error("[reset-password] lead convert", e instanceof Error ? e.message : e))
+
     return NextResponse.json({ data: { message: "Senha redefinida com sucesso." } })
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "unknown"
