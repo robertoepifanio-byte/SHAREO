@@ -76,7 +76,7 @@ export default async function AdminDisputaConversaPage({ params }: Props) {
         </div>
         {conv.booking && (
           <Link
-            href={`/reservas/${conv.booking.id}`}
+            href={`/admin/reservas/${conv.booking.id}`}
             className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-background transition-colors"
           >
             Ver reserva

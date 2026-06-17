@@ -174,9 +174,8 @@ export default async function AdminFinanceiroPage() {
                 <div className="text-right flex-shrink-0">
                   <p className="text-lg font-bold text-success">{fmt(p.amount)}</p>
                   <Link
-                    href={`/reservas/${p.booking.id}`}
+                    href={`/admin/reservas/${p.booking.id}`}
                     className="text-xs text-brand hover:underline"
-                    target="_blank"
                   >
                     Ver reserva →
                   </Link>
@@ -217,9 +216,8 @@ export default async function AdminFinanceiroPage() {
                 <div className="text-right flex-shrink-0">
                   <p className="text-lg font-bold text-destructive">{fmt(b.totalPrice)}</p>
                   <Link
-                    href={`/reservas/${b.id}`}
+                    href={`/admin/reservas/${b.id}`}
                     className="text-xs text-brand hover:underline"
-                    target="_blank"
                   >
                     Ver reserva →
                   </Link>
