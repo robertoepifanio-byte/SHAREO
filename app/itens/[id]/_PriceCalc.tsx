@@ -80,6 +80,7 @@ export function PriceCalc({
   const [note,      setNote]      = useState("")
   const [coupon,    setCoupon]    = useState("")
   const [error,     setError]     = useState("")
+  const [needsComplete, setNeedsComplete] = useState(false)
   const [pending,   startTransition] = useTransition()
 
   // Data de devolução calculada automaticamente
@@ -129,6 +130,7 @@ export function PriceCalc({
 
   async function solicitar() {
     setError("")
+    setNeedsComplete(false)
     startTransition(async () => {
       const res = await fetch("/api/bookings", {
         method:  "POST",
@@ -143,6 +145,11 @@ export function PriceCalc({
       })
       const json = await res.json()
       if (!res.ok) {
+        if (json.error?.code === "REGISTRATION_INCOMPLETE") {
+          setNeedsComplete(true)
+          setError(json.error?.message ?? "Complete seu cadastro para alugar.")
+          return
+        }
         const detail = json.error?.details
           ? Object.values(json.error.details).flat().join(" ")
           : json.error?.message ?? "Erro ao solicitar reserva."
@@ -396,7 +403,17 @@ export function PriceCalc({
       )}
 
       {error && (
-        <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{error}</p>
+        <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">
+          <p>{error}</p>
+          {needsComplete && (
+            <Link
+              href={`/cadastro/completar?callbackUrl=${encodeURIComponent(`/itens/${itemId}`)}`}
+              className="mt-1.5 inline-block font-semibold text-brand hover:underline"
+            >
+              Completar cadastro →
+            </Link>
+          )}
+        </div>
       )}
 
       {/* CTA */}

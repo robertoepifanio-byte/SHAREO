@@ -105,6 +105,18 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Cadastro progressivo — anunciar exige cadastro completo (reforço server-side do gate da página)
+    const me = await prisma.user.findUnique({
+      where:  { id: session.user.id },
+      select: { profileCompletedAt: true },
+    })
+    if (!me?.profileCompletedAt) {
+      return NextResponse.json(
+        { error: { code: "REGISTRATION_INCOMPLETE", message: "Complete seu cadastro para anunciar." } },
+        { status: 403 }
+      )
+    }
+
     const body = await req.json()
     const parsed = CreateItemSchema.safeParse(body)
 

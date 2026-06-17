@@ -4,12 +4,21 @@ import { redirect } from "next/navigation"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { ItemForm } from "@/components/items/ItemForm"
 import { getPricingMultipliers } from "@/lib/platform-config"
+import { prisma } from "@/lib/prisma"
+import { completeRegistrationPath } from "@/lib/registration"
 
 export const metadata: Metadata = { title: "Novo anúncio" }
 
 export default async function NovoItemPage() {
   const session = await auth()
   if (!session) redirect("/login?callbackUrl=/itens/novo")
+
+  // Cadastro progressivo — anunciar exige cadastro completo
+  const me = await prisma.user.findUnique({
+    where:  { id: session.user.id },
+    select: { profileCompletedAt: true },
+  })
+  if (!me?.profileCompletedAt) redirect(completeRegistrationPath("/itens/novo"))
 
   const { weeklyMultiplier, monthlyMultiplier } = await getPricingMultipliers()
 

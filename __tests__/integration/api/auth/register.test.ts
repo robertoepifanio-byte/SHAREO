@@ -41,7 +41,8 @@ jest.mock("bcryptjs", () => ({
 }))
 
 jest.mock("@/lib/email", () => ({
-  sendWelcomeEmail: jest.fn().mockResolvedValue(undefined),
+  sendWelcomeEmail:       jest.fn().mockResolvedValue(undefined),
+  sendVerificationEmail:  jest.fn().mockResolvedValue(undefined),
 }))
 
 jest.mock("@/lib/slugify", () => ({
@@ -190,21 +191,8 @@ describe("POST /api/auth/register", () => {
     })
   })
 
-  describe("conflito — CPF duplicado", () => {
-    it("retorna 409 com code CPF_ALREADY_EXISTS", async () => {
-      // Primeiro findUnique (email) → null (não existe)
-      // Segundo findUnique (cpfHash) → usuário existente
-      mockFindUnique
-        .mockResolvedValueOnce(null)          // e-mail livre
-        .mockResolvedValueOnce({ id: "outro-user" }) // CPF já cadastrado
-
-      const res  = await POST(makeRequest(BASE_PF))
-      const body = await res.json() as { error: { code: string } }
-
-      expect(res.status).toBe(409)
-      expect(body.error.code).toBe("CPF_ALREADY_EXISTS")
-    })
-  })
+  // Cadastro progressivo: o signup mínimo NÃO coleta CPF/CNPJ — a unicidade do
+  // documento passou para PATCH /api/users/me/complete-registration.
 
   describe("conflito — email duplicado", () => {
     it("retorna 409 com code EMAIL_ALREADY_EXISTS", async () => {
@@ -236,8 +224,10 @@ describe("POST /api/auth/register", () => {
       expect(res.status).toBe(400)
     })
 
-    it("retorna 400 quando CPF é inválido para PF", async () => {
-      const res  = await POST(makeRequest({ ...BASE_PF, cpf: "000.000.000-00" }))
+    it("retorna 400 quando cidade está ausente (localização exigida no mínimo)", async () => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { city: _city, ...payload } = BASE_PF
+      const res  = await POST(makeRequest(payload as Record<string, unknown>))
       const body = await res.json() as { error: { code: string } }
 
       expect(res.status).toBe(400)

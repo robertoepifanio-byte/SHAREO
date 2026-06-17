@@ -621,6 +621,53 @@ export async function sendFounderWelcomeEmail(
   if (error) throw new Error(`Resend error: ${error.message}`)
 }
 
+function founderInviteHtml(firstName: string, setPasswordUrl: string) {
+  return baseLayout(`
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
+      Bem-vindo ao piloto do ShareO, ${firstName}!
+    </h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
+      Sua vaga no piloto está confirmada. Para começar a explorar, defina sua senha de acesso
+      no primeiro acesso — leva menos de um minuto.
+    </p>
+
+    <div style="text-align:center;">
+      ${ctaButton(setPasswordUrl, "Definir minha senha")}
+    </div>
+
+    <p style="margin:20px 0 0;font-size:13px;color:#64748B;line-height:1.6;">
+      Depois de entrar, você poderá navegar livremente. Pediremos seu CPF e endereço apenas
+      quando quiser anunciar ou alugar um item.
+    </p>
+
+    <p style="margin:16px 0 0;font-size:12px;color:#94A3B8;line-height:1.6;">
+      Se você não solicitou este convite, ignore este e-mail. O link expira em 14 dias.
+    </p>
+  `)
+}
+
+/** Convite-piloto: cria a conta do interessado e o leva a definir a senha no 1º acesso. */
+export async function sendFounderInviteEmail(
+  to: string,
+  name: string,
+  token: string,
+): Promise<void> {
+  const resend = getResend()
+  if (!resend) return
+
+  const firstName      = name.split(" ")[0]
+  const setPasswordUrl = `${APP_URL}/definir-senha/${token}`
+
+  const { error } = await sendWithRetry(resend, {
+    from:    `ShareO <${FROM}>`,
+    to,
+    subject: "Seu acesso ao piloto do ShareO — defina sua senha",
+    html:    founderInviteHtml(firstName, setPasswordUrl),
+  }, "founder-invite")
+
+  if (error) throw new Error(`Resend error: ${error.message}`)
+}
+
 /** Lembrete: item em atraso — enviado ao locatário e ao locador */
 export async function sendReminderOverdue(
   borrowerEmail:    string, borrowerName: string,

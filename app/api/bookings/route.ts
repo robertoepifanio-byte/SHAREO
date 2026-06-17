@@ -93,11 +93,18 @@ export async function POST(req: NextRequest) {
 
     const userCheck = await prisma.user.findUnique({
       where:  { id: borrowerId },
-      select: { emailVerified: true },
+      select: { emailVerified: true, profileCompletedAt: true },
     })
     if (!userCheck?.emailVerified) {
       return NextResponse.json(
         { error: { code: "EMAIL_NOT_VERIFIED", message: "Confirme seu e-mail antes de realizar uma reserva." } },
+        { status: 403 },
+      )
+    }
+    // Cadastro progressivo — alugar exige cadastro completo (CPF + endereço)
+    if (!userCheck.profileCompletedAt) {
+      return NextResponse.json(
+        { error: { code: "REGISTRATION_INCOMPLETE", message: "Complete seu cadastro para alugar." } },
         { status: 403 },
       )
     }

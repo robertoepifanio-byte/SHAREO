@@ -94,9 +94,14 @@ export async function middleware(req: NextRequest) {
   const isProtectedRoute = PROTECTED_PREFIXES.some((p) =>
     p === "/perfil" ? pathname === "/perfil" : pathname.startsWith(p)
   )
+  // /cadastro/completar é guardada pela própria página (exige login) — não é guest-only,
+  // senão usuários logados (que são justamente quem precisa concluir o cadastro) seriam
+  // redirecionados para /dashboard antes da página rodar.
   const isAuthRoute =
-    AUTH_ROUTES.some((p) => pathname.startsWith(p)) ||
-    AUTH_EXACT.some((p)  => pathname === p || pathname === p + "/")
+    !pathname.startsWith("/cadastro/completar") && (
+      AUTH_ROUTES.some((p) => pathname.startsWith(p)) ||
+      AUTH_EXACT.some((p)  => pathname === p || pathname === p + "/")
+    )
 
   if (!isAdminRoute && !isProtectedRoute && !isAuthRoute) {
     return nextWithCsp()

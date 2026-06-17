@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
+import { CONSENT_VERSION } from "@/lib/legal-config"
 
 type IntentOption = "proprietario" | "locatario"
 type State  = "collapsed" | "expanded" | "loading" | "success" | "error-network" | "error-duplicate"
@@ -16,6 +17,8 @@ export function FounderCaptureForm() {
   const [selected, setSelected]   = useState<Set<IntentOption>>(new Set(["proprietario"]))
   const [name, setName]           = useState("")
   const [email, setEmail]         = useState("")
+  const [city, setCity]           = useState("")
+  const [uf, setUf]               = useState("")
   const [lgpdConsent, setLgpdConsent] = useState(false)
   const [position, setPosition]   = useState(0)
 
@@ -44,8 +47,10 @@ export function FounderCaptureForm() {
           name:             name.trim() || undefined,
           intent:           resolveIntent(selected),
           marketingConsent: lgpdConsent,
-          consentVersion:   "v1.1",
+          consentVersion:   CONSENT_VERSION,
           source:           "VIP_LANDING",
+          city:             city.trim() || undefined,
+          state:            uf.trim().length === 2 ? uf.trim().toUpperCase() : undefined,
         }),
       })
 
@@ -180,6 +185,36 @@ export function FounderCaptureForm() {
           disabled={state === "loading"}
           className="h-11 w-full rounded-lg border border-white/20 bg-white/[0.08] px-4 text-sm text-white placeholder:text-white/40 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
         />
+      </div>
+
+      <div className="grid grid-cols-[1fr_auto] gap-2">
+        <div>
+          <label htmlFor="founder-city" className="sr-only">Cidade</label>
+          <input
+            id="founder-city"
+            type="text"
+            autoComplete="address-level2"
+            placeholder="Sua cidade (opcional)"
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            disabled={state === "loading"}
+            className="h-11 w-full rounded-lg border border-white/20 bg-white/[0.08] px-4 text-sm text-white placeholder:text-white/40 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
+          />
+        </div>
+        <div>
+          <label htmlFor="founder-uf" className="sr-only">Estado (UF)</label>
+          <input
+            id="founder-uf"
+            type="text"
+            autoComplete="address-level1"
+            placeholder="UF"
+            maxLength={2}
+            value={uf}
+            onChange={(e) => setUf(e.target.value.toUpperCase())}
+            disabled={state === "loading"}
+            className="h-11 w-16 rounded-lg border border-white/20 bg-white/[0.08] px-3 text-center text-sm uppercase text-white placeholder:text-white/40 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
+          />
+        </div>
       </div>
 
       {state === "error-network" && (

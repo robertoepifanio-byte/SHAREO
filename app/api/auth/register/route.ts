@@ -2,8 +2,7 @@ import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
-import { hashDocument, encryptDocument } from "@/lib/crypto"
-import { RegisterSchema } from "@/lib/validations/auth"
+import { RegisterMinimalSchema } from "@/lib/validations/auth"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { sendVerificationEmail } from "@/lib/email"
 import crypto from "crypto"
@@ -24,7 +23,7 @@ export async function POST(req: NextRequest) {
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const body = await req.json()
-    const parsed = RegisterSchema.safeParse(body)
+    const parsed = RegisterMinimalSchema.safeParse(body)
 
     if (!parsed.success) {
       const details: Record<string, string[]> = {}
@@ -49,30 +48,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Uniqueness: CPF
-    if (d.userType === "PF" && d.cpf) {
-      const cpfHash = hashDocument(d.cpf)
-      const exists = await prisma.user.findUnique({ where: { cpfHash }, select: { id: true } })
-      if (exists) {
-        return NextResponse.json(
-          { error: { code: "CPF_ALREADY_EXISTS", message: "CPF já cadastrado." } },
-          { status: 409 },
-        )
-      }
-    }
-
-    // Uniqueness: CNPJ
-    if (d.userType === "PJ" && d.cnpj) {
-      const cnpjHash = hashDocument(d.cnpj)
-      const exists = await prisma.user.findUnique({ where: { cnpjHash }, select: { id: true } })
-      if (exists) {
-        return NextResponse.json(
-          { error: { code: "CNPJ_ALREADY_EXISTS", message: "CNPJ já cadastrado." } },
-          { status: 409 },
-        )
-      }
-    }
-
     const passwordHash = await bcrypt.hash(d.password, 12)
 
     // $transaction: criar user → gerar slug com o ID real → atualizar
@@ -82,20 +57,13 @@ export async function POST(req: NextRequest) {
           name:           d.name,
           email:          d.email,
           passwordHash,
-          phone:          d.phone || null,
-          userType:       d.userType,
-          cpfHash:        d.cpf  ? hashDocument(d.cpf)    : null,
-          cpfEncrypted:   d.cpf  ? encryptDocument(d.cpf)  : null,
-          cnpjHash:       d.cnpj ? hashDocument(d.cnpj)   : null,
-          cnpjEncrypted:  d.cnpj ? encryptDocument(d.cnpj) : null,
           city:           d.city,
           state:          d.state,
-          cep:            d.zipCode || null,
-          street:         d.street || null,
-          neighborhood:   d.neighborhood || null,
           consentVersion: d.consentVersion,
           consentAt:      new Date(),
           consentIp:      ip,
+          ageDeclaredAt:  new Date(), // 18+ declarado no signup mínimo (trilha LGPD)
+          // profileCompletedAt permanece null — cadastro completo exigido só ao Anunciar/Alugar
         },
         select: { id: true, name: true, email: true },
       })

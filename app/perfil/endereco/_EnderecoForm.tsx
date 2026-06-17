@@ -2,6 +2,8 @@
 
 import { useState, useTransition, useRef } from "react"
 import { useRouter } from "next/navigation"
+import { maskCEP } from "@/lib/forms/masks"
+import { fetchAddressByCep } from "@/lib/forms/address"
 
 const BR_STATES = [
   "AC","AL","AM","AP","BA","CE","DF","ES","GO","MA",
@@ -18,20 +20,6 @@ interface Props {
 }
 
 const inputCls = "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-brand transition-colors placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
-
-// Formata CEP enquanto o usuário digita: "12345678" → "12345-678"
-function fmtCep(raw: string) {
-  const digits = raw.replace(/\D/g, "").slice(0, 8)
-  return digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits
-}
-
-interface ViaCepResponse {
-  erro?:        boolean
-  logradouro:   string
-  bairro:       string
-  localidade:   string
-  uf:           string
-}
 
 export function EnderecoForm({ cep, street, city, state, neighborhood }: Props) {
   const router = useRouter()
@@ -64,21 +52,18 @@ export function EnderecoForm({ cep, street, city, state, neighborhood }: Props) 
     setCepError("")
     setCepFilled(false)
     try {
-      const res  = await fetch(`https://viacep.com.br/ws/${digits}/json/`)
-      const data = await res.json() as ViaCepResponse
-
-      if (data.erro) {
+      const addr = await fetchAddressByCep(digits)
+      if (!addr) {
         setCepError("CEP não encontrado. Verifique e tente novamente.")
         return
       }
 
       lastFetchedCep.current = digits
 
-      if (data.logradouro) setStreetVal(data.logradouro)
-      if (data.bairro)     setNeighVal(data.bairro)
-      // Cidade e estado sempre sobrescritos — vêm sempre preenchidos no ViaCEP
-      setStateVal(data.uf        ?? stateVal)
-      setCityVal(data.localidade ?? cityVal)
+      if (addr.street)       setStreetVal(addr.street)
+      if (addr.neighborhood) setNeighVal(addr.neighborhood)
+      if (addr.state)        setStateVal(addr.state)
+      if (addr.city)         setCityVal(addr.city)
       setCepFilled(true)
     } catch {
       setCepError("Erro ao consultar o CEP. Verifique sua conexão.")
@@ -232,7 +217,7 @@ export function EnderecoForm({ cep, street, city, state, neighborhood }: Props) 
             inputMode="numeric"
             value={cepVal}
             onChange={(e) => {
-              setCepVal(fmtCep(e.target.value))
+              setCepVal(maskCEP(e.target.value))
               setCepError("")
             }}
             onBlur={handleCepBlur}
