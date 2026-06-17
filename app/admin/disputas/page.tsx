@@ -80,7 +80,7 @@ export default async function AdminDisputasPage() {
 
                   {d.conversation && (
                     <a
-                      href={`/mensagens/${d.conversation.id}`}
+                      href={`/admin/disputas/${d.conversation.id}`}
                       className="mt-2 inline-block text-xs text-brand hover:underline"
                     >
                       Ver conversa →
