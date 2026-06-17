@@ -90,3 +90,6 @@ scripts/debug-*.png
 # Artefatos de ferramentas (code-review/critique, relatórios desempacotados)
 .critique/
 docs/relatorio-pagamentos-unpacked/
+
+# Robô de validação diária — logs/relatórios/estado (dados de simulação)
+scripts/daily-sim-logs/
