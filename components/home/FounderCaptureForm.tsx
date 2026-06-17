@@ -49,8 +49,8 @@ export function FounderCaptureForm() {
           marketingConsent: lgpdConsent,
           consentVersion:   CONSENT_VERSION,
           source:           "VIP_LANDING",
-          city:             city.trim() || undefined,
-          state:            uf.trim().length === 2 ? uf.trim().toUpperCase() : undefined,
+          city:             city.trim(),
+          state:            uf.trim().toUpperCase(),
         }),
       })
 
@@ -194,9 +194,10 @@ export function FounderCaptureForm() {
             id="founder-city"
             type="text"
             autoComplete="address-level2"
-            placeholder="Sua cidade (opcional)"
+            placeholder="Sua cidade *"
             value={city}
             onChange={(e) => setCity(e.target.value)}
+            required
             disabled={state === "loading"}
             className="h-11 w-full rounded-lg border border-white/20 bg-white/[0.08] px-4 text-sm text-white placeholder:text-white/40 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
           />
@@ -207,10 +208,11 @@ export function FounderCaptureForm() {
             id="founder-uf"
             type="text"
             autoComplete="address-level1"
-            placeholder="UF"
+            placeholder="UF *"
             maxLength={2}
             value={uf}
             onChange={(e) => setUf(e.target.value.toUpperCase())}
+            required
             disabled={state === "loading"}
             className="h-11 w-16 rounded-lg border border-white/20 bg-white/[0.08] px-3 text-center text-sm uppercase text-white placeholder:text-white/40 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
           />
@@ -245,7 +247,7 @@ export function FounderCaptureForm() {
 
       <button
         type="submit"
-        disabled={state === "loading" || !email.trim() || !lgpdConsent}
+        disabled={state === "loading" || !email.trim() || !city.trim() || uf.trim().length !== 2 || !lgpdConsent}
         aria-busy={state === "loading"}
         className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg bg-brand px-6 py-3 text-sm font-semibold uppercase tracking-[0.4px] text-white transition-colors hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary disabled:cursor-not-allowed disabled:opacity-70"
       >
