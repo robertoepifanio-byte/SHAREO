@@ -27,16 +27,11 @@ export function AppFooter() {
               />
             </div>
             <p className="mt-3 text-sm text-white">
-              Compartilhe. Economize. Sustentável.
+              Por que comprar se você pode alugar?
             </p>
             <p className="mt-3 text-xs text-white/90">
-              <strong className="text-white">Marketplace circular</strong>{" "}
-              para aluguel de itens locais.
-            </p>
-            <p className="mt-1 text-xs text-white/90 whitespace-nowrap">
-              Transforme itens parados em{" "}
-              <strong className="text-white">renda</strong>{" "}
-              e ajude sua comunidade.
+              <strong className="text-white">Marketplace de geração de renda.</strong>{" "}
+              Anuncie o que você tem e alugue o que você precisa.
             </p>
             <p className="mt-5 text-[11px] text-white/90">
               Desenvolvido por{" "}
