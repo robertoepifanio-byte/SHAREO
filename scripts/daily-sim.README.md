@@ -38,8 +38,13 @@ repasse ao dono — o mesmo do checkout).
 | `staging` | `.env.staging-migrate` (`fflpuoluiqmhpvcxubqi`) | `https://staging.shareo.com.br` |
 
 > **local** exige o dev server rodando (`npm run dev`).
-> **staging** exige `E2E_SECRET` no ambiente (bypass de rate-limit); sem ele a
-> rajada da execução pode tomar 429. Os dados ficam visíveis no banco de homologação.
+> **staging** insere dados no banco de homologação (visíveis no app).
+>
+> **Rate-limit (429):** o robô é **resiliente** — ao tomar 429 (ex.: register é
+> 5/min por IP), ele respeita o `Retry-After` e re-tenta automaticamente (até 5×).
+> O `E2E_SECRET` é **opcional**: se presente (e correto), faz o **bypass** do limite
+> e o run fica mais rápido; se ausente/errado, o robô só fica mais lento (aguarda a
+> janela), mas **não pula** cadastros.
 
 ## Uso
 
