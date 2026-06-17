@@ -64,6 +64,18 @@ const NAV: { href: string; label: string; roles: AdminRole[]; icon: React.ReactN
     ),
   },
   {
+    href:  "/admin/fundadores",
+    label: "Interessados",
+    roles: ["ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL"],
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+        <path d="M18 21a8 8 0 0 0-16 0"/>
+        <circle cx="10" cy="8" r="5"/>
+        <path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/>
+      </svg>
+    ),
+  },
+  {
     href:  "/admin/financeiro",
     label: "Financeiro",
     roles: ["ADMIN_SUPERADMIN", "ADMIN_FINANCEIRO"],

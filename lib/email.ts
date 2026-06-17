@@ -640,6 +640,11 @@ function founderInviteHtml(firstName: string, setPasswordUrl: string) {
       quando quiser anunciar ou alugar um item.
     </p>
 
+    <p style="margin:16px 0 0;font-size:13px;color:#64748B;line-height:1.6;">
+      💚 <strong>Convide amigos:</strong> ao entrar, gere seu link de indicação e compartilhe.
+      A cada locação de quem você indicar, você acumula uma parte da nossa taxa.
+    </p>
+
     <p style="margin:16px 0 0;font-size:12px;color:#94A3B8;line-height:1.6;">
       Se você não solicitou este convite, ignore este e-mail. O link expira em 14 dias.
     </p>
