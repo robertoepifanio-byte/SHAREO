@@ -69,7 +69,9 @@ SQL de manutenção/migration para staging → sempre usar `fflpuoluiqmhpvcxubqi
 | `ADMIN_FINANCEIRO` | Financeiro + Disputas + Usuários |
 | `ADMIN_OPERACIONAL` | Itens + Usuários + Disputas + Verificações |
 
-Admins seed em staging: `admin@shareo.com.br`, `financeiro@shareo.com.br`, `operacional@shareo.com.br` (senha `ShareO@2026`).
+Admins em staging:
+- `admin@shareo.com.br` (`ADMIN_SUPERADMIN`) — vem do **seed** (`prisma/seed.ts`), senha **`Admin@shareo2026`**.
+- `financeiro@shareo.com.br`, `operacional@shareo.com.br` — criados via **UI** `/admin/usuarios/admins` (commit `d9b763a`), **não** estão no seed; senha definida na criação (não hardcoded — fixtures E2E leem de `FIXTURE_FINANCEIRO_PASSWORD`/`FIXTURE_OPERACIONAL_PASSWORD`).
 
 ## CSP — regra importante
 
