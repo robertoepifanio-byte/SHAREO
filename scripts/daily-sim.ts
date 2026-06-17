@@ -269,16 +269,27 @@ class HttpClient {
   }
 
   async json(method: string, pathname: string, body?: unknown) {
-    const res = await fetch(this.baseUrl + pathname, {
-      method,
-      headers: this.headers(body ? { "content-type": "application/json" } : undefined),
-      body: body ? JSON.stringify(body) : undefined,
-      redirect: "manual",
-    })
-    this.absorb(res)
-    let data: any = null
-    try { data = await res.json() } catch { /* no body */ }
-    return { status: res.status, ok: res.ok, data }
+    // Resiliente a rate-limit (429): sem o bypass do E2E_SECRET, o staging limita
+    // register a 5/min, login a 10/min etc. Em 429, respeita o Retry-After e re-tenta.
+    for (let attempt = 0; ; attempt++) {
+      const res = await fetch(this.baseUrl + pathname, {
+        method,
+        headers: this.headers(body ? { "content-type": "application/json" } : undefined),
+        body: body ? JSON.stringify(body) : undefined,
+        redirect: "manual",
+      })
+      this.absorb(res)
+      if (res.status === 429 && attempt < 5) {
+        const ra = Number(res.headers.get("retry-after"))
+        const waitS = Math.min(Number.isFinite(ra) && ra > 0 ? ra : 20, 65)
+        console.log(`    ⏳ rate-limit (429) em ${method} ${pathname} — aguardando ${waitS}s e re-tentando (${attempt + 1}/5)…`)
+        await new Promise((r) => setTimeout(r, waitS * 1000 + 500))
+        continue
+      }
+      let data: any = null
+      try { data = await res.json() } catch { /* no body */ }
+      return { status: res.status, ok: res.ok, data }
+    }
   }
 
   /** Login por NextAuth credentials → guarda o cookie de sessão no jar. */
@@ -765,7 +776,8 @@ async function main() {
 
     // ── Resumo ──
     const byOutcome: Record<string, number> = {}
-    for (const b of state.bookings.slice(-made)) byOutcome[b.outcome] = (byOutcome[b.outcome] ?? 0) + 1
+    // slice(-0) pegaria TODO o histórico — só conta as locações DESTE run
+    for (const b of (made > 0 ? state.bookings.slice(-made) : [])) byOutcome[b.outcome] = (byOutcome[b.outcome] ?? 0) + 1
 
     log.head("📊 Resumo do dia")
     log.log(`Usuários novos:  ${newUsers.length}  (acumulado ${state.userIds.length})`)
