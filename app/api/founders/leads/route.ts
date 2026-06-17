@@ -14,8 +14,9 @@ const Schema = z.object({
   marketingConsent: z.literal(true, { errorMap: () => ({ message: "Consentimento obrigatório" }) }),
   consentVersion:   z.string().default(CONSENT_VERSION),
   source:           z.string().default("VIP_LANDING"),
-  city:             z.string().max(100).optional(),
-  state:            z.string().length(2).optional(),
+  // Obrigatórios: a cidade/UF definem onde os Pilotos serão implantados.
+  city:             z.string().min(2, "Cidade obrigatória").max(100),
+  state:            z.string().length(2, "UF obrigatória (2 letras)"),
 })
 
 export async function POST(req: NextRequest) {
@@ -65,8 +66,8 @@ export async function POST(req: NextRequest) {
         consentUserAgent:   ua,
         status:             "PENDING",
         source:             "VIP_LANDING",
-        city:               city?.trim() || null,
-        state:              state?.trim().toUpperCase() || null,
+        city:               city.trim(),
+        state:              state.trim().toUpperCase(),
       },
       select: { id: true, queuePosition: true },
     })

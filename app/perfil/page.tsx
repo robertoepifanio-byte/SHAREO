@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { UpgradePjForm } from "./_UpgradePjForm"
+import { displayPhone } from "@/lib/forms/masks"
 import Link from "next/link"
 
 export const metadata: Metadata = { title: "Meu Perfil" }
@@ -153,7 +154,7 @@ export default async function ProfilePage() {
                 {(user.city || user.state) && (
                   <span>📍 {[user.neighborhood, user.city, user.state].filter(Boolean).join(", ")}</span>
                 )}
-                {user.phone && <span>📞 {user.phone}</span>}
+                {user.phone && <span>📞 {displayPhone(user.phone)}</span>}
                 <span>🗓 Membro desde {fmtMemberSince}</span>
               </div>
 

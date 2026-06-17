@@ -30,3 +30,14 @@ export function maskPhone(value: string): string {
   if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`
 }
+
+/**
+ * Exibe um telefone E.164 brasileiro SEM o código do país (+55), só DDD + número.
+ * "+5584999990000" → "(84) 99999-0000". Preserva DDDs como 55 (só remove o 55 de país).
+ */
+export function displayPhone(value: string | null | undefined): string {
+  if (!value) return ""
+  let d = value.replace(/\D/g, "")
+  if (d.startsWith("55") && d.length > 11) d = d.slice(2) // remove o código do país (+55)
+  return maskPhone(d)
+}

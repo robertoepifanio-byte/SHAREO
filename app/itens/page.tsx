@@ -65,9 +65,6 @@ export default async function ExplorarPage({ searchParams }: Props) {
     auth().catch(() => null),
   ])
   const profileCoords = await getUserCoords(session?.user?.id)
-  const userLoc = profileCoords
-    ? { lat: profileCoords.lat, lng: profileCoords.lng, zoom: profileCoords.source === "profile" ? 15 : 12 }
-    : BRAZIL_DEFAULT
   const page       = Math.max(1, Number(sp.page ?? 1))
   const search     = sp.search?.trim() || undefined
   const categoryId = sp.categoryId    || undefined
@@ -78,6 +75,14 @@ export default async function ExplorarPage({ searchParams }: Props) {
   // Sem GPS na URL, a distância é medida a partir da localização do perfil
   const userLat    = sp.ulat ? Number(sp.ulat) : (dist ? profileCoords?.lat : undefined)
   const userLng    = sp.ulng ? Number(sp.ulng) : (dist ? profileCoords?.lng : undefined)
+  // Centro do mapa: com filtro de distância ativo, centra na ORIGEM do filtro (GPS da URL
+  // ou localização do perfil); senão no perfil; senão no Brasil. (Antes ignorava o GPS → mapa estático.)
+  const userLoc =
+    userLat !== undefined && userLng !== undefined && Number.isFinite(userLat) && Number.isFinite(userLng)
+      ? { lat: userLat as number, lng: userLng as number, zoom: 13 }
+      : profileCoords
+        ? { lat: profileCoords.lat, lng: profileCoords.lng, zoom: profileCoords.source === "profile" ? 15 : 12 }
+        : BRAZIL_DEFAULT
   const minRating  = sp.minRating ? Number(sp.minRating) : undefined
   const skip       = (page - 1) * PAGE_SIZE
 
@@ -386,9 +391,9 @@ export default async function ExplorarPage({ searchParams }: Props) {
             {/* Resultado count + ordenação */}
             <div className="mb-4 flex items-center justify-between gap-3">
               <p className="text-sm text-muted-foreground" aria-live="polite">
-                {total === 0
+                {filteredTotal === 0
                   ? "Nenhum anúncio encontrado"
-                  : `${total} anúncio${total !== 1 ? "s" : ""} encontrado${total !== 1 ? "s" : ""}`}
+                  : `${filteredTotal} anúncio${filteredTotal !== 1 ? "s" : ""} encontrado${filteredTotal !== 1 ? "s" : ""}`}
               </p>
               <Suspense fallback={
                 <select disabled className="h-10 rounded-lg border border-input bg-surface px-3 text-sm opacity-50">

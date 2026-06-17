@@ -36,7 +36,11 @@ export function DistanceFilter({ dist, userLat, userLng, hasProfileLocation, onA
   // Sem GPS e sem localização de perfil: o filtro não tem ponto de origem
   const needsLocation = selected !== "" && !hasLocation && !hasProfileLocation
 
-  function handleGetLocation() {
+  function requestLocation(distValue: string) {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setError("Seu navegador não suporta localização.")
+      return
+    }
     setLoading(true)
     setError("")
     navigator.geolocation.getCurrentPosition(
@@ -46,7 +50,7 @@ export function DistanceFilter({ dist, userLat, userLng, hasProfileLocation, onA
         const newLng = String(pos.coords.longitude)
         setLat(newLat)
         setLng(newLng)
-        if (selected && onAutoSubmit) onAutoSubmit(selected, newLat, newLng)
+        if (distValue) onAutoSubmit?.(distValue, newLat, newLng)
       },
       () => {
         setLoading(false)
@@ -80,8 +84,10 @@ export function DistanceFilter({ dist, userLat, userLng, hasProfileLocation, onA
                 } else if (hasProfileLocation) {
                   // Sem GPS: navega só com dist — o servidor usa a localização do perfil
                   onAutoSubmit?.(opt.value, "", "")
+                } else {
+                  // Sem GPS e sem perfil: pede a localização na hora (o filtro precisa de origem)
+                  requestLocation(opt.value)
                 }
-                // sem GPS e sem perfil: aguarda clique em "Usar minha localização"
               }}
               className="accent-brand"
             />
@@ -102,7 +108,7 @@ export function DistanceFilter({ dist, userLat, userLng, hasProfileLocation, onA
       {!hasLocation && hasProfileLocation && selected !== "" && (
         <button
           type="button"
-          onClick={handleGetLocation}
+          onClick={() => requestLocation(selected)}
           disabled={loading}
           className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-muted/50 transition-colors disabled:opacity-50"
         >
@@ -114,7 +120,7 @@ export function DistanceFilter({ dist, userLat, userLng, hasProfileLocation, onA
       {needsLocation && (
         <button
           type="button"
-          onClick={handleGetLocation}
+          onClick={() => requestLocation(selected)}
           disabled={loading}
           className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-brand/40 bg-brand/5 px-3 py-2 text-xs font-semibold text-brand hover:bg-brand/10 transition-colors disabled:opacity-50"
         >

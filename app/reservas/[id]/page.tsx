@@ -278,8 +278,8 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
             </div>
           )}
 
-          {/* ── Token de retirada — exibido ao locatário enquanto não foi usado ── */}
-          {isBorrower && booking.pickupToken && !booking.pickupTokenUsedAt && (
+          {/* ── Token de retirada — só após o pagamento confirmado, e enquanto não foi usado ── */}
+          {isBorrower && booking.paymentStatus === "PAID" && booking.pickupToken && !booking.pickupTokenUsedAt && (
             <div className="mb-6 rounded-xl border-2 border-brand/40 bg-brand/5 p-5">
               <div className="mb-3 flex items-center gap-2">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-brand" aria-hidden="true">

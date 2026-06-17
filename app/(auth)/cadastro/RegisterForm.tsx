@@ -302,23 +302,32 @@ export function RegisterForm() {
           Dados de pagamento e documento (CPF) só serão pedidos quando você anunciar ou alugar.
         </p>
 
-        {/* Consentimento LGPD */}
+        {/* Consentimento LGPD — card clicável, obrigatório */}
         <div>
-          <label className="flex cursor-pointer items-start gap-3">
+          <label
+            className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
+              errors.consent
+                ? "border-destructive bg-destructive/5"
+                : consent
+                  ? "border-brand bg-brand/5"
+                  : "border-input hover:border-brand/50 hover:bg-muted/40"
+            }`}
+          >
             <input
               type="checkbox"
               checked={consent}
               onChange={(e) => { setConsent(e.target.checked); setErrors((p) => ({ ...p, consent: undefined })) }}
               disabled={loading}
-              className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-brand"
+              className="mt-0.5 h-5 w-5 shrink-0 rounded border-input accent-brand"
               aria-describedby={errors.consent ? "consent-error" : undefined}
+              aria-invalid={!!errors.consent}
             />
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-foreground">
               Li e aceito os{" "}
-              <Link href="/termos" className="text-brand hover:underline" target="_blank">Termos de Uso</Link>
+              <Link href="/termos" className="font-medium text-brand hover:underline" target="_blank">Termos de Uso</Link>
               {" "}e a{" "}
-              <Link href="/privacidade" className="text-brand hover:underline" target="_blank">Política de Privacidade</Link>
-              {" "}({CONSENT_VERSION})
+              <Link href="/privacidade" className="font-medium text-brand hover:underline" target="_blank">Política de Privacidade</Link>
+              {" "}({CONSENT_VERSION}) <span className="text-destructive" aria-hidden="true">*</span>
             </span>
           </label>
           {errors.consent && (
@@ -328,19 +337,29 @@ export function RegisterForm() {
           )}
         </div>
 
-        {/* Confirmação de idade */}
+        {/* Confirmação de idade — card clicável, obrigatório */}
         <div>
-          <label className="flex cursor-pointer items-start gap-3">
+          <label
+            className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
+              errors.ageConfirmed
+                ? "border-destructive bg-destructive/5"
+                : ageConfirmed
+                  ? "border-brand bg-brand/5"
+                  : "border-input hover:border-brand/50 hover:bg-muted/40"
+            }`}
+          >
             <input
               type="checkbox"
               checked={ageConfirmed}
               onChange={(e) => { setAgeConfirmed(e.target.checked); setErrors((p) => ({ ...p, ageConfirmed: undefined })) }}
               disabled={loading}
-              className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-brand"
+              className="mt-0.5 h-5 w-5 shrink-0 rounded border-input accent-brand"
               aria-describedby={errors.ageConfirmed ? "age-error" : undefined}
+              aria-invalid={!!errors.ageConfirmed}
             />
-            <span className="text-sm text-muted-foreground">
-              Declaro que tenho <span className="font-medium text-foreground">18 anos ou mais</span>
+            <span className="text-sm text-foreground">
+              Declaro que tenho <span className="font-semibold">18 anos ou mais</span>
+              {" "}<span className="text-destructive" aria-hidden="true">*</span>
             </span>
           </label>
           {errors.ageConfirmed && (
