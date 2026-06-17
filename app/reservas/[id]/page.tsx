@@ -14,7 +14,7 @@ import { BookingProgressBar }  from "@/components/booking/BookingProgressBar"
 import { ReturnCountdown }    from "@/components/booking/ReturnCountdown"
 import { ReturnChecklist }    from "@/components/booking/ReturnChecklist"
 import { ReturnConditionForm } from "@/components/booking/ReturnConditionForm"
-import { getPlatformFeeRate } from "@/lib/platform-config"
+import { getPlatformFeeRate, calcSplit } from "@/lib/platform-config"
 
 type Props = {
   params:       Promise<{ id: string }>
@@ -81,6 +81,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
       totalDays:     true,
       dailyPrice:    true,
       totalPrice:    true,
+      discountCents: true,
       depositAmount: true,
       borrowerNote:  true,
       ownerNote:     true,
@@ -124,6 +125,15 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
 
   const feeRateBps = await getPlatformFeeRate()
   const feeRatePct = feeRateBps / 100
+  const feeRateLabel = feeRatePct % 1 === 0 ? feeRatePct.toFixed(0) : String(feeRatePct)
+
+  // Split da plataforma — espelha exatamente o checkout (lib/platform-config.calcSplit):
+  // o locatário paga booking.totalPrice; a taxa é RETIDA do repasse ao proprietário
+  // (não somada). platformFee + ownerNet = totalPrice. Cupom é absorvido pela taxa.
+  const discountCents = booking.discountCents ?? 0
+  const grossSplit    = calcSplit(booking.totalPrice + discountCents, feeRateBps)
+  const platformFee   = Math.max(0, grossSplit.platformFeeAmount - discountCents)
+  const ownerNet      = grossSplit.ownerNetAmount
 
   const isOwner    = booking.owner.id    === userId
   const isBorrower = booking.borrower.id === userId
@@ -205,20 +215,34 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                   <span>{booking.totalDays} dia{booking.totalDays !== 1 ? "s" : ""} × {fmt(booking.dailyPrice)}</span>
                   <span>{fmt(booking.dailyPrice * booking.totalDays)}</span>
                 </div>
-                <div className="flex justify-between text-muted-foreground">
-                  <span>Taxa Shareo ({feeRatePct % 1 === 0 ? feeRatePct.toFixed(0) : feeRatePct}%)</span>
-                  <span>{fmt(booking.totalPrice - booking.dailyPrice * booking.totalDays)}</span>
-                </div>
-                {booking.depositAmount && (
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>Caução</span>
-                    <span>{fmt(booking.depositAmount)}</span>
+                {discountCents > 0 && (
+                  <div className="flex justify-between text-success">
+                    <span>Desconto (cupom)</span>
+                    <span>− {fmt(discountCents)}</span>
                   </div>
                 )}
                 <div className="my-1 h-px bg-border" />
                 <div className="flex justify-between font-bold text-foreground">
-                  <span>Total</span>
+                  <span>Total da locação</span>
                   <span>{fmt(booking.totalPrice)}</span>
+                </div>
+                {booking.depositAmount && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Caução (reembolsável)</span>
+                    <span>{fmt(booking.depositAmount)}</span>
+                  </div>
+                )}
+
+                {/* Repartição — a taxa é retida do repasse ao proprietário, não somada ao locatário */}
+                <div className="mt-3 space-y-1.5 rounded-lg bg-background p-3">
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Taxa Shareo ({feeRateLabel}%)</span>
+                    <span className="text-destructive">− {fmt(platformFee)}</span>
+                  </div>
+                  <div className="flex justify-between font-semibold text-foreground">
+                    <span>{isOwner ? "Você recebe" : "Proprietário recebe"}</span>
+                    <span className="text-brand">{fmt(ownerNet)}</span>
+                  </div>
                 </div>
               </div>
 

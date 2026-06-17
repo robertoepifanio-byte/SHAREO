@@ -105,8 +105,10 @@ export function PriceCalc({
 
   const subtotal  = subtotalCents / 100
   const savings   = savingsCents  / 100
-  const fee       = subtotal * (feeRatePct / 100)
-  const total     = subtotal + fee
+  // O locatário paga apenas o valor da locação. A taxa da ShareO é retida do
+  // repasse ao proprietário (não é somada ao que o locatário paga) — igual ao checkout.
+  const total     = subtotal
+  const feeLabel  = feeRatePct % 1 === 0 ? feeRatePct.toFixed(0) : String(feeRatePct)
   const breakdown = days > 0
     ? buildBreakdown(days, pricePerDay, pricePerWeek, pricePerMonth)
     : ""
@@ -310,11 +312,6 @@ export function PriceCalc({
               </div>
             )}
 
-            <div className="mb-1.5 flex justify-between text-muted-foreground">
-              <span>Taxa Shareo ({feeRatePct % 1 === 0 ? feeRatePct.toFixed(0) : feeRatePct}%)</span>
-              <span>{fmt(fee)}</span>
-            </div>
-
             {depositAmount != null && depositAmount > 0 && (
               <div className="mb-1.5 flex justify-between text-xs text-amber-700">
                 <span className="flex items-center gap-1">
@@ -339,6 +336,9 @@ export function PriceCalc({
                 <span>{fmt(total + depositAmount / 100)}</span>
               </div>
             )}
+            <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
+              Você paga apenas o valor da locação. A ShareO retém {feeLabel}% do repasse ao proprietário.
+            </p>
           </>
         ) : (
           <div className="flex justify-between text-muted-foreground">
