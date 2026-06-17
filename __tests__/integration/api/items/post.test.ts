@@ -17,9 +17,10 @@ import { POST } from "@/app/api/items/route"
 // Mocks
 // ---------------------------------------------------------------------------
 
-const mockItemCreate   = jest.fn()
-const mockItemFindMany = jest.fn()
-const mockItemCount    = jest.fn()
+const mockItemCreate     = jest.fn()
+const mockItemFindMany   = jest.fn()
+const mockItemCount      = jest.fn()
+const mockUserFindUnique = jest.fn()
 
 jest.mock("@/lib/prisma", () => ({
   prisma: {
@@ -27,6 +28,9 @@ jest.mock("@/lib/prisma", () => ({
       create:   (...args: unknown[]) => mockItemCreate(...args),
       findMany: (...args: unknown[]) => mockItemFindMany(...args),
       count:    (...args: unknown[]) => mockItemCount(...args),
+    },
+    user: {
+      findUnique: (...args: unknown[]) => mockUserFindUnique(...args),
     },
   },
 }))
@@ -77,6 +81,8 @@ function makeSession(userId = OWNER_ID, role = "USER") {
 beforeEach(() => {
   jest.clearAllMocks()
   mockAuth.mockResolvedValue(makeSession())
+  // Cadastro progressivo: por padrão o usuário tem cadastro completo (gate liberado)
+  mockUserFindUnique.mockResolvedValue({ profileCompletedAt: new Date() })
 })
 
 // ---------------------------------------------------------------------------
@@ -158,6 +164,22 @@ describe("POST /api/items — regra de status por presença de fotos", () => {
 
       expect(res.status).toBe(401)
       expect(body.error.code).toBe("UNAUTHORIZED")
+    })
+  })
+
+  // --------------------------------------------------------------------------
+  // Cadastro progressivo — anunciar exige cadastro completo
+  // --------------------------------------------------------------------------
+  describe("cadastro incompleto", () => {
+    it("retorna 403 REGISTRATION_INCOMPLETE quando profileCompletedAt é null", async () => {
+      mockUserFindUnique.mockResolvedValue({ profileCompletedAt: null })
+
+      const res  = await POST(makeRequest(BASE_ITEM_PAYLOAD))
+      const body = await res.json() as { error: { code: string } }
+
+      expect(res.status).toBe(403)
+      expect(body.error.code).toBe("REGISTRATION_INCOMPLETE")
+      expect(mockItemCreate).not.toHaveBeenCalled()
     })
   })
 
