@@ -211,20 +211,6 @@ jobs:
       - name: Install Playwright browsers (Chromium)
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: "DIAGNOSTIC (temp) — bypass do runner com o secret do CI"
-        run: |
-          echo "E2E_SECRET length: ${#E2E_SECRET}"
-          echo "STAGING_URL: $STAGING_URL"
-          for i in 1 2 3 4 5 6 7; do
-            code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$STAGING_URL/api/auth/register" \
-              -H "Content-Type: application/json" -H "x-e2e-token: $E2E_SECRET" \
-              -d "{\"name\":\"diag\",\"email\":\"diag-$i-$(date +%s%N)@shareo-test.com\",\"password\":\"ShareO@2026\",\"userType\":\"PF\",\"cpf\":\"39053344705\",\"city\":\"Natal\",\"state\":\"RN\",\"phone\":\"+5584999999999\",\"consentVersion\":\"1.0\"}")
-            echo "req$i -> $code"
-          done
-        env:
-          STAGING_URL: ${{ secrets.STAGING_URL }}
-          E2E_SECRET: ${{ secrets.E2E_SECRET }}
-
       - name: Run E2E suite against staging
         run: |
           pnpm playwright test \
