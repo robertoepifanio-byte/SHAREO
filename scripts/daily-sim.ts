@@ -207,7 +207,10 @@ function loadEnvFile(file: string) {
     if (!m) continue
     let v = m[2].trim()
     if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1)
-    if (process.env[m[1]] === undefined) process.env[m[1]] = v
+    // SOBRESCREVE: o arquivo do --env escolhido é a fonte da verdade do alvo.
+    // (Não usar "primeiro-vence": o shell pode ter DATABASE_URL/DIRECT_URL de outro
+    // ambiente — ex.: local — e o robô acabaria gravando no banco errado.)
+    process.env[m[1]] = v
   }
   return true
 }
@@ -307,6 +310,24 @@ async function withRetry<T>(fn: () => Promise<T>, label: string, tries = 3): Pro
   throw new Error(`${label} falhou após ${tries} tentativas: ${String(lastErr)}`)
 }
 
+// Re-tenta ops Prisma que dependem de uma linha recém-criada pela API.
+// O pooler do Supabase pode atrasar a visibilidade da linha entre conexões
+// distintas (a API grava de um lado; o robô lê de outro). Absorve P2025
+// ("registro não encontrado") e P2003 ("FK ainda não visível").
+async function dbRetry<T>(fn: () => Promise<T>, label: string, tries = 6): Promise<T> {
+  let lastErr: unknown
+  for (let i = 0; i < tries; i++) {
+    try { return await fn() }
+    catch (e) {
+      const code = (e as { code?: string })?.code
+      if (code !== "P2025" && code !== "P2003") throw e
+      lastErr = e
+      await new Promise((r) => setTimeout(r, 500 * (i + 1)))
+    }
+  }
+  throw new Error(`${label}: registro ainda não visível após ${tries} tentativas (${String(lastErr)})`)
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 5. Logger + estado persistente entre execuções
 // ─────────────────────────────────────────────────────────────────────────────
@@ -364,7 +385,7 @@ async function getCategories(prisma: PrismaClient) {
 }
 
 async function markEmailVerified(prisma: PrismaClient, userId: string) {
-  await prisma.user.update({ where: { id: userId }, data: { emailVerified: new Date() } })
+  await dbRetry(() => prisma.user.update({ where: { id: userId }, data: { emailVerified: new Date() } }), "markEmailVerified")
 }
 
 async function ensureOwnerPaymentAccount(prisma: PrismaClient, userId: string, name: string, cpf: string) {
@@ -379,21 +400,23 @@ async function ensureOwnerPaymentAccount(prisma: PrismaClient, userId: string, n
 
 /** Publica o item: insere foto (DRAFT→AVAILABLE) — espelha POST /api/items/[id]/images. */
 async function publishItemWithPhoto(prisma: PrismaClient, itemId: string, slug: string) {
-  await prisma.itemImage.create({ data: { itemId, url: placeholderImage(slug, ri(0, 1)), order: 0 } })
-  await prisma.item.update({ where: { id: itemId }, data: { status: "AVAILABLE", isApproved: true } })
+  await dbRetry(async () => {
+    await prisma.itemImage.create({ data: { itemId, url: placeholderImage(slug, ri(0, 1)), order: 0 } })
+    await prisma.item.update({ where: { id: itemId }, data: { status: "AVAILABLE", isApproved: true } })
+  }, "publishItemWithPhoto")
 }
 
 /** Pix fictício: marca pago + grava o split (espelha o checkout). */
 async function markBookingPaid(prisma: PrismaClient, bookingId: string, totalPrice: number, feeBps: number) {
   const split = calcSplit(totalPrice, feeBps)
-  await prisma.booking.update({
+  await dbRetry(() => prisma.booking.update({
     where: { id: bookingId },
     data: {
       paymentStatus: "PAID", paidAt: new Date(),
       platformFeeRate: split.platformFeeRate, platformFeeAmount: split.platformFeeAmount,
       ownerNetAmount: split.ownerNetAmount,
     },
-  })
+  }), "markBookingPaid")
   return split
 }
 
@@ -592,7 +615,11 @@ async function runBooking(
   log.event("payment.paid", { id: bookingId, ...split })
 
   // Retirada (precisa do pickupToken gerado no confirm)
-  const tokenRow = await prisma.booking.findUnique({ where: { id: bookingId }, select: { pickupToken: true } })
+  const tokenRow = await dbRetry(async () => {
+    const r = await prisma.booking.findUnique({ where: { id: bookingId }, select: { pickupToken: true } })
+    if (!r?.pickupToken) throw Object.assign(new Error("pickupToken ainda não visível"), { code: "P2025" })
+    return r
+  }, "pickupToken")
   const active = await act(owner, { action: "mark_active", pickupToken: tokenRow?.pickupToken })
   if (active.status !== 200) { log.log(`✗ retirar → ${active.status} ${JSON.stringify(active.data?.error ?? "")}`); return { id: bookingId, outcome: "ERROR" } }
 
@@ -662,7 +689,11 @@ async function main() {
     if (!e2eToken) console.log("⚠  E2E_SECRET ausente — rate-limit pode bloquear a rajada no staging.")
   }
 
-  const prisma = new PrismaClient()
+  // Conexão DIRETA (não-pooler) p/ leitura-após-escrita consistente com o que a
+  // API acabou de gravar — o pooler do Supabase pode atrasar a visibilidade da
+  // linha entre conexões distintas. Cai no DATABASE_URL se não houver DIRECT_URL.
+  const directUrl = process.env.DIRECT_URL || process.env.DATABASE_URL
+  const prisma = directUrl ? new PrismaClient({ datasourceUrl: directUrl }) : new PrismaClient()
   const log = new Logger()
 
   try {
