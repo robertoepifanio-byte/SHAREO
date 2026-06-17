@@ -14,11 +14,34 @@ export function AmbassadorConfigForm({ bronzeRate: b0, silverRate: s0, goldRate:
   const [silver,        setSilver]        = useState(s0 / 100)
   const [gold,          setGold]          = useState(g0 / 100)
   const [payoutEnabled, setPayoutEnabled] = useState(p0)
+  // Baseline do que está salvo no banco — atualizado após cada save bem-sucedido.
+  const [saved,         setSaved]         = useState({ bronze: b0 / 100, silver: s0 / 100, gold: g0 / 100, payoutEnabled: p0 })
   const [saving,        setSaving]        = useState(false)
   const [msg,           setMsg]           = useState("")
   const [error,         setError]         = useState("")
 
+  // "Sujo" = algum campo difere do estado salvo. O botão só habilita quando há
+  // o que salvar — evita regravar valores idênticos sem querer.
+  const isDirty =
+    bronze !== saved.bronze ||
+    silver !== saved.silver ||
+    gold   !== saved.gold   ||
+    payoutEnabled !== saved.payoutEnabled
+
+  function togglePayout(checked: boolean) {
+    // Habilitar o payout é uma ação sensível (libera pagamento de comissões) e
+    // só pode ocorrer após o sign-off D4 jurídico — exige confirmação explícita.
+    if (checked && !window.confirm(
+      "Habilitar o payout libera o PAGAMENTO das comissões de embaixador.\n\n" +
+      "Só ative após o sign-off D4 (jurídico). Deseja realmente habilitar?"
+    )) {
+      return
+    }
+    setPayoutEnabled(checked)
+  }
+
   async function save() {
+    if (!isDirty) return
     setSaving(true)
     setMsg("")
     setError("")
@@ -37,6 +60,8 @@ export function AmbassadorConfigForm({ bronzeRate: b0, silverRate: s0, goldRate:
         })
         if (!res.ok) { setError("Não foi possível salvar. Tente novamente."); return }
       }
+      // Atualiza a baseline para o novo estado salvo → botão volta a desabilitar.
+      setSaved({ bronze, silver, gold, payoutEnabled })
       setMsg("Configurações salvas. Aplicam-se apenas a comissões geradas daqui em diante.")
     } finally {
       setSaving(false)
@@ -56,7 +81,7 @@ export function AmbassadorConfigForm({ bronzeRate: b0, silverRate: s0, goldRate:
           id="payout-toggle"
           type="checkbox"
           checked={payoutEnabled}
-          onChange={(e) => setPayoutEnabled(e.target.checked)}
+          onChange={(e) => togglePayout(e.target.checked)}
           className="h-4 w-4 rounded border-border text-brand accent-brand"
         />
         <label htmlFor="payout-toggle" className="text-sm font-medium text-foreground cursor-pointer">
@@ -72,10 +97,11 @@ export function AmbassadorConfigForm({ bronzeRate: b0, silverRate: s0, goldRate:
 
       <button
         onClick={save}
-        disabled={saving}
-        className="rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity disabled:opacity-50"
+        disabled={saving || !isDirty}
+        title={!isDirty ? "Nenhuma alteração para salvar" : undefined}
+        className="rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {saving ? "Salvando…" : "Salvar configurações"}
+        {saving ? "Salvando…" : isDirty ? "Salvar configurações" : "Sem alterações"}
       </button>
 
       <p className="text-xs text-muted-foreground">
