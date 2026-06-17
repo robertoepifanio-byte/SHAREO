@@ -573,7 +573,6 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
                 <p className="mb-3 text-xs font-bold text-brand">🔒 Sua locação está protegida</p>
                 <ul className="space-y-2">
                   {[
-                    "Pagamento liberado só após confirmação da retirada",
                     "Cancelamento gratuito até 24h antes",
                     "Item protegido durante a locação",
                     "Suporte ShareO disponível 7 dias por semana",
