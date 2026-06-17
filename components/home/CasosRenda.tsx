@@ -105,7 +105,7 @@ export function CasosRenda() {
           ))}
         </div>
 
-        <p className="mt-4 text-xs leading-relaxed text-slate-500">
+        <p className="mt-4 text-xs leading-relaxed text-slate-600">
           Personagens e valores ilustrativos, baseados em estimativas de uso típico
           (3–4 locações/mês). Resultados reais variam conforme o item, a demanda e a região.
         </p>
