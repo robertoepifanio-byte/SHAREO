@@ -176,6 +176,10 @@ export default function SobrePage() {
                   proprietários e locatários de forma prática, segura e transparente, permitindo que
                   bens parados se transformem em lucro e necessidade em economia.
                 </p>
+                <p>
+                  Porque acreditamos que, no futuro, gerar renda com o que você já tem será tão
+                  comum quanto vender ou comprar online.
+                </p>
               </div>
             </div>
           </div>
