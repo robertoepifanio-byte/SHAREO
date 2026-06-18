@@ -19,6 +19,8 @@
     "seed-staging-demo.ts",
     "daily-sim.ts",
     "topup-staging-demo.ts",
+    "fix-incomplete-pf.ts",
+    "../lib/crypto.ts",
     "../node_modules/@prisma/client/index.d.ts"
   ],
   "exclude": ["node_modules"]
