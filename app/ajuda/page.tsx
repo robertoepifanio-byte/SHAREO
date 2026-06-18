@@ -559,7 +559,7 @@ export default async function AjudaPage() {
                 {
                   emoji: "🤝",
                   title: "Combine retirada e devolução com clareza",
-                  body: "Confira o item junto com o locatário na entrega, use o código de retirada e registre fotos do estado. Na devolução, confirme pela plataforma no mesmo dia — o repasse via PIX conta a partir da confirmação.",
+                  body: "Confira o item junto com o locatário na entrega, use o código de retirada e registre fotos do estado. Na devolução, confirme pela plataforma no mesmo dia.",
                 },
                 {
                   emoji: "⭐",
