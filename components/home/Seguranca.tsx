@@ -62,7 +62,7 @@ export async function Seguranca() {
       icon: LockIcon,
       bullets: [
         "Você só paga depois que o proprietário confirma a reserva.",
-        "O valor fica retido na plataforma até a devolução — repasse via PIX em até 3 dias.",
+        "O valor fica retido na plataforma até o repasse semanal via PIX — toda segunda-feira.",
         `Taxa transparente de ${feePct}% e limite de R$ ${maxBRL} por locação no MVP.`,
       ],
     },

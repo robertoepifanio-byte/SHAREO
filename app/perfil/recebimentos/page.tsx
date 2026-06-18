@@ -44,7 +44,7 @@ export default async function RecebimentosPage() {
             <h1 className="text-xl font-bold text-primary">Conta de Recebimento PIX</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Cadastre a chave PIX para receber os repasses das suas locações.
-              O valor é liberado 3 dias após a devolução confirmada.
+              O valor fica retido na plataforma até o repasse semanal (toda segunda-feira).
             </p>
           </div>
 
@@ -57,7 +57,7 @@ export default async function RecebimentosPage() {
             <h2 className="font-semibold text-foreground">Como funciona o repasse</h2>
             {[
               { icon: "✅", title: "Devolução confirmada", desc: "Locatário e você confirmam a devolução do item." },
-              { icon: "⏳", title: "Prazo de 3 dias", desc: "Período de segurança antes de liberar o pagamento." },
+              { icon: "⏳", title: "Repasse semanal", desc: "O valor fica retido até a próxima segunda-feira (feriado: primeiro dia útil seguinte)." },
               { icon: "💸", title: "Repasse via PIX", desc: `O valor líquido (após a taxa ShareO de ${feeLabel}) é enviado para a sua chave cadastrada.` },
             ].map((item) => (
               <div key={item.title} className="flex gap-3">
