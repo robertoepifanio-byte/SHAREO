@@ -2,11 +2,9 @@
 
 import {
   createContext,
-  useCallback,
   useContext,
-  useEffect,
   useId,
-  useRef,
+  useMemo,
   useState,
 } from "react"
 import Link from "next/link"
@@ -27,31 +25,9 @@ export interface HelpSection {
   faqs: FaqEntry[]
 }
 
-/* ── Contexto compartilhado (campo no hero ↔ resultados abaixo) ─────── */
-
-interface HelpSearchCtx {
-  query: string
-  setQuery: (v: string) => void
-  sections: HelpSection[]
-}
-
-const Ctx = createContext<HelpSearchCtx | null>(null)
-
-function useHelpSearch(): HelpSearchCtx {
-  const ctx = useContext(Ctx)
-  if (!ctx) throw new Error("useHelpSearch deve ser usado dentro de <HelpSearchProvider>")
-  return ctx
-}
-
-export function HelpSearchProvider({
-  sections,
-  children,
-}: {
-  sections: HelpSection[]
-  children: React.ReactNode
-}) {
-  const [query, setQuery] = useState("")
-  return <Ctx.Provider value={{ query, setQuery, sections }}>{children}</Ctx.Provider>
+interface FilteredSection {
+  section: HelpSection
+  faqs: FaqEntry[]
 }
 
 /* ── Helpers ───────────────────────────────────────────────────────── */
@@ -80,79 +56,159 @@ function highlight(text: string, term: string): React.ReactNode {
   )
 }
 
+function scrollToResults() {
+  document.getElementById("faq-results")?.scrollIntoView({ behavior: "smooth", block: "start" })
+}
+
+/* ── Contexto compartilhado (campo no hero ↔ resultados abaixo) ─────── */
+
+interface HelpSearchCtx {
+  query: string
+  trimmed: string
+  setQuery: (v: string) => void
+  filtered: FilteredSection[]
+  totalMatches: number
+  hasResults: boolean
+}
+
+const Ctx = createContext<HelpSearchCtx | null>(null)
+
+function useHelpSearch(): HelpSearchCtx {
+  const ctx = useContext(Ctx)
+  if (!ctx) throw new Error("useHelpSearch deve ser usado dentro de <HelpSearchProvider>")
+  return ctx
+}
+
+export function HelpSearchProvider({
+  sections,
+  children,
+}: {
+  sections: HelpSection[]
+  children: React.ReactNode
+}) {
+  const [query, setQuery] = useState("")
+  const trimmed = query.trim()
+
+  const filtered = useMemo<FilteredSection[]>(() => {
+    if (!trimmed) return sections.map((section) => ({ section, faqs: section.faqs }))
+    const n = normalize(trimmed)
+    return sections
+      .map((section) => ({
+        section,
+        faqs: section.faqs.filter(
+          (faq) => normalize(faq.q).includes(n) || normalize(faq.a).includes(n),
+        ),
+      }))
+      .filter(({ faqs }) => faqs.length > 0)
+  }, [sections, trimmed])
+
+  const totalMatches = filtered.reduce((acc, { faqs }) => acc + faqs.length, 0)
+  const hasResults = filtered.length > 0
+
+  return (
+    <Ctx.Provider value={{ query, trimmed, setQuery, filtered, totalMatches, hasResults }}>
+      {children}
+    </Ctx.Provider>
+  )
+}
+
 /* ── Campo de busca — usado no hero ────────────────────────────────── */
 
 export function HelpSearchInput() {
-  const { query, setQuery } = useHelpSearch()
+  const { query, setQuery, trimmed, totalMatches, hasResults } = useHelpSearch()
   const inputId = useId()
-  const trimmed = query.trim()
 
   return (
-    <div className="relative mx-auto mt-8 w-full max-w-xl">
-      <label htmlFor={inputId} className="sr-only">
-        Pesquisar na Central de Ajuda
-      </label>
+    <form
+      role="search"
+      className="mx-auto mt-8 w-full max-w-xl"
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (trimmed) scrollToResults()
+      }}
+    >
+      <div className="relative">
+        <label htmlFor={inputId} className="sr-only">
+          Pesquisar na Central de Ajuda
+        </label>
 
-      {/* Ícone de lupa */}
-      <svg
-        className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        aria-hidden="true"
-      >
-        <circle cx="11" cy="11" r="8" />
-        <line x1="21" y1="21" x2="16.65" y2="16.65" />
-      </svg>
+        {/* Ícone de lupa */}
+        <svg
+          className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          aria-hidden="true"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
 
-      <input
-        id={inputId}
-        type="search"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Pesquisar na ajuda... Ex: cancelar, pagamento, caução"
-        autoComplete="off"
-        spellCheck={false}
-        aria-label="Pesquisar perguntas frequentes"
-        aria-controls="faq-results"
-        className={[
-          "h-12 w-full rounded-xl border border-white/20 bg-white shadow-lg",
-          "pl-12 pr-12 text-sm text-foreground placeholder:text-muted-foreground",
-          "outline-none transition-shadow duration-fast",
-          "focus:ring-2 focus:ring-white/50",
-          // Remove o ícone nativo de limpar do input[type=search] em WebKit
-          "[&::-webkit-search-cancel-button]:hidden",
-        ].join(" ")}
-      />
+        <input
+          id={inputId}
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Pesquisar na ajuda... Ex: cancelar, pagamento, caução"
+          autoComplete="off"
+          spellCheck={false}
+          aria-label="Pesquisar perguntas frequentes"
+          aria-controls="faq-results"
+          className={[
+            "h-12 w-full rounded-xl border border-white/20 bg-white shadow-lg",
+            "pl-12 pr-12 text-sm text-foreground placeholder:text-muted-foreground",
+            "outline-none transition-shadow duration-fast",
+            "focus:ring-2 focus:ring-white/50",
+            // Remove o ícone nativo de limpar do input[type=search] em WebKit
+            "[&::-webkit-search-cancel-button]:hidden",
+          ].join(" ")}
+        />
 
-      {/* Botão de limpar — só aparece quando há texto */}
+        {/* Botão de limpar — só aparece quando há texto */}
+        {trimmed && (
+          <button
+            type="button"
+            onClick={() => setQuery("")}
+            aria-label="Limpar busca"
+            className={[
+              "absolute right-3 top-1/2 -translate-y-1/2",
+              "flex h-7 w-7 items-center justify-center rounded-full",
+              "bg-border text-muted-foreground hover:bg-input hover:text-foreground transition-colors",
+              "focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 outline-none",
+            ].join(" ")}
+          >
+            <svg
+              className="h-3.5 w-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              aria-hidden="true"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        )}
+      </div>
+
+      {/* Contagem clicável — feedback sem roubar a posição enquanto digita.
+          A rolagem só acontece aqui (clique) ou no Enter (submit). */}
       {trimmed && (
         <button
           type="button"
-          onClick={() => setQuery("")}
-          aria-label="Limpar busca"
-          className={[
-            "absolute right-3 top-1/2 -translate-y-1/2",
-            "flex h-7 w-7 items-center justify-center rounded-full",
-            "bg-border text-muted-foreground hover:bg-input hover:text-foreground transition-colors",
-            "focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 outline-none",
-          ].join(" ")}
+          onClick={scrollToResults}
+          aria-live="polite"
+          className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-white/85 underline-offset-4 hover:text-white hover:underline"
         >
-          <svg
-            className="h-3.5 w-3.5"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            aria-hidden="true"
-          >
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
+          {hasResults
+            ? `Ver ${totalMatches} resultado${totalMatches !== 1 ? "s" : ""}`
+            : "Nenhuma pergunta encontrada"}
+          {hasResults && <span aria-hidden="true">↓</span>}
         </button>
       )}
-    </div>
+    </form>
   )
 }
 
@@ -234,50 +290,11 @@ function SectionBlock({
 /* ── Resultados — renderizados abaixo das seções ───────────────────── */
 
 export function HelpResults() {
-  const { query, sections } = useHelpSearch()
-  const trimmed = query.trim()
-
-  const resultsRef = useRef<HTMLDivElement>(null)
-  const wasActive  = useRef(false)
-
-  // Quando a busca passa de vazia → ativa, rola até os resultados (o campo
-  // fica no hero, então sem isso o usuário digitaria sem ver o resultado).
-  useEffect(() => {
-    const active = trimmed.length > 0
-    if (active && !wasActive.current) {
-      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-    }
-    wasActive.current = active
-  }, [trimmed])
-
-  // Filtra seções e FAQs — memo inline é suficiente para 21 itens
-  type FilteredSection = { section: HelpSection; faqs: FaqEntry[] }
-
-  const filtered: FilteredSection[] = trimmed
-    ? sections
-        .map((section) => ({
-          section,
-          faqs: section.faqs.filter((faq) => {
-            const n = normalize(trimmed)
-            return normalize(faq.q).includes(n) || normalize(faq.a).includes(n)
-          }),
-        }))
-        .filter(({ faqs }) => faqs.length > 0)
-    : sections.map((section) => ({ section, faqs: section.faqs }))
-
-  const totalMatches = filtered.reduce((acc, { faqs }) => acc + faqs.length, 0)
-  const hasResults = filtered.length > 0
-
-  const handleClear = useCallback(() => {
-    resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-  }, [])
-
-  const { setQuery } = useHelpSearch()
+  const { trimmed, filtered, totalMatches, hasResults, setQuery } = useHelpSearch()
 
   return (
     <div
       id="faq-results"
-      ref={resultsRef}
       className="container mx-auto max-w-3xl scroll-mt-20 px-4 py-12 space-y-10"
     >
       {/* Contagem de resultados — acessível por aria-live */}
@@ -324,7 +341,7 @@ export function HelpResults() {
           </p>
           <button
             type="button"
-            onClick={() => { setQuery(""); handleClear() }}
+            onClick={() => setQuery("")}
             className={[
               "inline-flex h-11 items-center gap-2 rounded-lg",
               "bg-brand px-6 text-sm font-bold text-white",
