@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
 import { UpdateProfileSchema } from "@/lib/validations/users"
 import { geocodeUserLocation } from "@/lib/geocodeUser"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 // LGPD art. 18 — direito ao esquecimento
 export async function DELETE() {
@@ -41,38 +42,93 @@ export async function DELETE() {
       )
     }
 
-    // Cancelar reservas pendentes / confirmadas do usuário
-    await prisma.booking.updateMany({
-      where: {
-        status: { in: ["PENDING", "CONFIRMED"] },
-        OR: [{ borrowerId: userId }, { ownerId: userId }],
-      },
-      data: { status: "CANCELLED" },
-    })
+    // SEC-MAJ-06 (LGPD art. 18): scrub atômico de TODA a PII do usuário.
+    // Dados de transações concluídas (valores, datas, splits) são mantidos por
+    // obrigação fiscal (art. 9 LGPD c/c art. 37 Código Comercial), mas o texto
+    // livre e os identificadores pessoais são anonimizados.
+    await prisma.$transaction([
+      // Cancelar reservas pendentes / confirmadas do usuário
+      prisma.booking.updateMany({
+        where: {
+          status: { in: ["PENDING", "CONFIRMED"] },
+          OR: [{ borrowerId: userId }, { ownerId: userId }],
+        },
+        data: { status: "CANCELLED" },
+      }),
 
-    // Anonimizar PII e soft-delete — dados de transações concluídas são mantidos
-    // por obrigação fiscal (art. 9 LGPD c/c art. 37 Código Comercial).
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        name:         "Usuário removido",
-        email:        `removed-${userId}@shareo.invalid`,
-        passwordHash: null,
-        phone:        null,
-        bio:          null,
-        avatarUrl:    null,
-        city:         null,
-        state:        null,
-        neighborhood: null,
-        latitude:     null,
-        longitude:    null,
-        cpfHash:      null,
-        cpfEncrypted: null,
-        cnpjHash:     null,
-        cnpjEncrypted:null,
-        isActive:     false,
-        deletedAt:    new Date(),
-      },
+      // Anonimizar o registro do usuário (PII direta + documentos de identidade)
+      prisma.user.update({
+        where: { id: userId },
+        data: {
+          name:                 "Usuário removido",
+          email:                `removed-${userId}@shareo.invalid`,
+          passwordHash:         null,
+          phone:                null,
+          bio:                  null,
+          avatarUrl:            null,
+          city:                 null,
+          state:                null,
+          neighborhood:         null,
+          latitude:             null,
+          longitude:            null,
+          cpfHash:              null,
+          cpfEncrypted:         null,
+          cnpjHash:             null,
+          cnpjEncrypted:        null,
+          // Verificação de identidade — remove referências aos documentos
+          idDocumentUrl:        null,
+          idSelfieUrl:          null,
+          idRejectionReason:    null,
+          idVerificationStatus: "UNVERIFIED",
+          isActive:             false,
+          deletedAt:            new Date(),
+        },
+      }),
+
+      // Texto livre escrito pelo usuário em avaliações
+      prisma.review.updateMany({
+        where: { reviewerId: userId },
+        data:  { comment: null },
+      }),
+
+      // Mensagens privadas enviadas pelo usuário (content é obrigatório → placeholder + soft-delete)
+      prisma.message.updateMany({
+        where: { senderId: userId },
+        data:  { content: "[mensagem removida]", deletedAt: new Date() },
+      }),
+
+      // Observações de reserva (texto livre)
+      prisma.booking.updateMany({
+        where: { borrowerId: userId },
+        data:  { borrowerNote: null },
+      }),
+      prisma.booking.updateMany({
+        where: { ownerId: userId },
+        data:  { ownerNote: null },
+      }),
+
+      // Dados de pagamento (chave PIX é PII financeira) — mantém o registro
+      // para integridade do histórico de payouts, mas remove os identificadores.
+      prisma.ownerPaymentAccount.updateMany({
+        where: { userId },
+        data:  { pixKey: "REMOVIDO", holderName: "Removido", bankName: null },
+      }),
+    ])
+
+    // Best-effort: remover os documentos privados de identidade do Storage.
+    // Não bloqueia a resposta; falha de Storage não deve impedir a exclusão.
+    after(async () => {
+      try {
+        const supabase = createAdminClient()
+        const { data: files } = await supabase.storage.from("id-docs").list(userId)
+        if (files && files.length > 0) {
+          await supabase.storage
+            .from("id-docs")
+            .remove(files.map((f) => `${userId}/${f.name}`))
+        }
+      } catch (e) {
+        console.warn("[DELETE /api/users/me] limpeza id-docs falhou:", e instanceof Error ? e.message : e)
+      }
     })
 
     return NextResponse.json({ data: { message: "Conta excluída com sucesso." } })
