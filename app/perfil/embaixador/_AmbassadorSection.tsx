@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { copyToClipboard } from "@/lib/copy-to-clipboard"
 import type { AmbassadorStats } from "@/lib/ambassador"
-import { getTierLabel, tierProgress } from "@/lib/ambassador"
+import { getTierLabel, tierProgress, getAmbassadorTier } from "@/lib/ambassador"
 import type { AmbassadorTier } from "@prisma/client"
 
 const fmt = (cents: number) =>
@@ -23,6 +23,8 @@ const TIER_ICONS: Record<AmbassadorTier, string> = {
 
 const TIER_RATES: Record<AmbassadorTier, number> = { BRONZE: 3, SILVER: 5, GOLD: 7 }
 
+const TIER_ORDER: AmbassadorTier[] = ["BRONZE", "SILVER", "GOLD"]
+
 interface Props {
   stats:        AmbassadorStats
   hasConsented: boolean
@@ -36,7 +38,9 @@ export function AmbassadorSection({ stats: initialStats, hasConsented: initialCo
   const [loading,     setLoading]     = useState(false)
   const [error,       setError]       = useState("")
 
-  const currentTier  = stats.profile?.currentTier ?? null
+  // Deriva o nível atual a partir dos indicados ativos (o campo armazenado no
+  // perfil nasce com default BRONZE e ficaria inconsistente com 0 ativos).
+  const currentTier  = getAmbassadorTier(stats.activeReferrals)
   const progress     = tierProgress(stats.activeReferrals)
   const shareLink    = stats.referralCode
     ? `${typeof window !== "undefined" ? window.location.origin : "https://shareo.com.br"}/cadastro?ref=${stats.referralCode}`
@@ -87,19 +91,32 @@ export function AmbassadorSection({ stats: initialStats, hasConsented: initialCo
     <section className="space-y-5">
       {/* Cabeçalho tier */}
       <div className="rounded-xl border border-border bg-surface p-5">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div>
-            <h2 className="text-lg font-bold text-primary">Programa Embaixadores</h2>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              Ganhe uma parte da nossa taxa por cada locação dos seus indicados.
-            </p>
-          </div>
-          {currentTier && (
-            <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold ${TIER_COLORS[currentTier]}`}>
-              {TIER_ICONS[currentTier]} {getTierLabel(currentTier)}
-              <span className="opacity-70">· {TIER_RATES[currentTier]}%</span>
-            </span>
-          )}
+        <div>
+          <h2 className="text-lg font-bold text-primary">Programa Embaixadores</h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            Ganhe uma parte da nossa taxa por cada locação dos seus indicados.
+          </p>
+        </div>
+
+        {/* Tiers do programa — destaca o nível atual */}
+        <div className="mt-3 flex flex-wrap gap-2">
+          {TIER_ORDER.map((t) => {
+            const active = t === currentTier
+            return (
+              <span
+                key={t}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold ${
+                  active
+                    ? TIER_COLORS[t]
+                    : "border-border bg-background text-muted-foreground"
+                }`}
+                title={active ? "Seu nível atual" : undefined}
+              >
+                {TIER_ICONS[t]} {getTierLabel(t)}
+                <span className="opacity-70">· {TIER_RATES[t]}%</span>
+              </span>
+            )
+          })}
         </div>
 
         {/* Banner pré-D4 */}
@@ -165,7 +182,9 @@ export function AmbassadorSection({ stats: initialStats, hasConsented: initialCo
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Faltam <strong>{progress.needed}</strong> indicados ativos para o nível{" "}
+                {progress.needed === 1 ? "Falta" : "Faltam"}{" "}
+                <strong>{progress.needed}</strong>{" "}
+                {progress.needed === 1 ? "indicado ativo" : "indicados ativos"} para o nível{" "}
                 {getTierLabel(progress.nextTier)}.
               </p>
             </div>

@@ -11,6 +11,7 @@ import { useState, useEffect, useRef } from "react"
 import Map, { Marker, Popup, NavigationControl } from "react-map-gl"
 import type { MapRef } from "react-map-gl"
 import Link from "next/link"
+import Image from "next/image"
 import "mapbox-gl/dist/mapbox-gl.css"
 
 export type ItemPin = {
@@ -118,7 +119,7 @@ export function ItemsMap({
             }}
           >
             <div
-              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-brand text-white shadow-md transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              className="cursor-pointer drop-shadow-md transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:rounded-full"
               tabIndex={0}
               role="button"
               aria-label={item.title}
@@ -126,16 +127,15 @@ export function ItemsMap({
                 if (e.key === "Enter" || e.key === " ") setPopup(item)
               }}
             >
-              {/* Pin icon */}
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="currentColor"
+              {/* Pin ShareO */}
+              <Image
+                src="/icons/pin-shareo.png"
+                alt=""
+                width={96}
+                height={132}
+                className="h-9 w-auto"
                 aria-hidden="true"
-              >
-                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-              </svg>
+              />
             </div>
           </Marker>
         ))}

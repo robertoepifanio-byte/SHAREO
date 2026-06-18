@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import type { ReactNode } from "react"
 import { AppHeader } from "@/components/layout/AppHeader"
-import { HelpSearch } from "@/components/ajuda/HelpSearch"
+import { HelpSearchProvider, HelpSearchInput, HelpResults } from "@/components/ajuda/HelpSearch"
 import { getPlatformFeeRate } from "@/lib/platform-config"
 
 export const metadata: Metadata = {
@@ -407,6 +407,7 @@ export default async function AjudaPage() {
       <AppHeader />
 
       <main>
+       <HelpSearchProvider sections={sections}>
         {/* Hero */}
         <section className="bg-gradient-to-br from-primary to-[#144D81] px-4 py-14 text-center">
           <div className="mx-auto max-w-xl">
@@ -417,7 +418,11 @@ export default async function AjudaPage() {
             <p className="text-base text-white/75">
               Tudo o que você precisa saber para alugar ou anunciar no ShareO — do zero ao primeiro aluguel.
             </p>
-            <div className="mt-8 flex flex-wrap justify-center gap-2">
+
+            {/* Busca — campo principal da Central de Ajuda */}
+            <HelpSearchInput />
+
+            <div className="mt-6 flex flex-wrap justify-center gap-2">
               {[
                 { href: "#primeiros-passos", label: "🚀 Primeiros passos" },
                 { href: "#locatario",        label: "🛒 Quero alugar" },
@@ -559,7 +564,7 @@ export default async function AjudaPage() {
                 {
                   emoji: "🤝",
                   title: "Combine retirada e devolução com clareza",
-                  body: "Confira o item junto com o locatário na entrega, use o código de retirada e registre fotos do estado. Na devolução, confirme pela plataforma no mesmo dia — o repasse via PIX conta a partir da confirmação.",
+                  body: "Confira o item junto com o locatário na entrega, use o código de retirada e registre fotos do estado. Na devolução, confirme pela plataforma no mesmo dia.",
                 },
                 {
                   emoji: "⭐",
@@ -624,9 +629,9 @@ export default async function AjudaPage() {
           </div>
         </section>
 
-        {/* Busca + FAQs filtradas — Client Component */}
-        <HelpSearch sections={sections} />
-
+        {/* FAQs filtradas pela busca do hero — Client Component */}
+        <HelpResults />
+       </HelpSearchProvider>
       </main>
     </div>
   )
