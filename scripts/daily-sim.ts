@@ -36,6 +36,20 @@ import { PrismaClient } from "@prisma/client"
 import { randomInt } from "node:crypto"
 import fs from "node:fs"
 import path from "node:path"
+import {
+  loadEnvFile as _loadEnvFile,
+  HttpClient as _HttpClient,
+  withRetry as _withRetry,
+  dbRetry as _dbRetry,
+  generateValidCPF as _generateValidCPF,
+  markEmailVerified as _markEmailVerified,
+  ensureOwnerPaymentAccount as _ensureOwnerPaymentAccount,
+  markBookingPaid as _markBookingPaid,
+  calcSplit as _calcSplit,
+} from "./lib/sim-shared"
+
+// Re-exportações dos helpers de sim-shared (backward-compat com este módulo)
+// As implementações locais abaixo são mantidas para não alterar a lógica do daily-sim.
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 0. Constantes de simulação
