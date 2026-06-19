@@ -46,6 +46,27 @@ async function sendWithRetry(
   return { error: lastError }
 }
 
+/**
+ * Envio genérico de baixo nível, com retry. É o ÚNICO ponto de integração com o
+ * provedor para e-mails sem template dedicado (ex.: cron de reengajamento).
+ */
+export async function sendAppEmail(opts: {
+  to: string
+  subject: string
+  html: string
+}): Promise<{ error: { message: string } | null }> {
+  const resend = getResend()
+  if (!resend) {
+    console.warn(`[email] sem RESEND_API_KEY — "${opts.subject}" não enviado`)
+    return { error: { message: "RESEND_API_KEY ausente" } }
+  }
+  return sendWithRetry(
+    resend,
+    { from: `ShareO <${FROM}>`, to: opts.to, subject: opts.subject, html: opts.html },
+    "app",
+  )
+}
+
 // ─── Templates ────────────────────────────────────────────────────────────────
 
 function baseLayout(content: string) {
@@ -133,50 +154,6 @@ function passwordResetHtml(firstName: string, resetUrl: string) {
       Ou acesse o link diretamente:<br/>
       <a href="${resetUrl}" style="color:#007B3C;word-break:break-all;">${resetUrl}</a>
     </p>
-  `)
-}
-
-function welcomeHtml(name: string) {
-  const firstName = name.split(" ")[0]
-  return baseLayout(`
-    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
-      Bem-vindo ao ShareO, ${firstName}! 🎉
-    </h1>
-    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
-      Sua conta foi criada com sucesso. Agora você pode alugar o que precisa ou
-      anunciar o que tem parado em casa — tudo de forma simples e segura.
-    </p>
-
-    <div style="text-align:center;">
-      ${ctaButton(`${APP_URL}/itens`, "Explorar itens disponíveis")}
-    </div>
-
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:28px;border-top:1px solid #E2E8F0;padding-top:24px;">
-      <tr>
-        <td style="padding:0 0 16px;">
-          <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#003366;">📦 Anuncie seu item</p>
-          <p style="margin:0;font-size:13px;color:#64748B;line-height:1.5;">
-            Tem uma furadeira, câmera ou barraca parada? Anuncie em minutos e comece a ganhar.
-          </p>
-        </td>
-      </tr>
-      <tr>
-        <td style="padding:0 0 16px;">
-          <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#003366;">🔍 Encontre o que precisa</p>
-          <p style="margin:0;font-size:13px;color:#64748B;line-height:1.5;">
-            Filtre por categoria, preço e localização. Fale diretamente com o proprietário pelo chat.
-          </p>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#003366;">⭐ Avalie e construa reputação</p>
-          <p style="margin:0;font-size:13px;color:#64748B;line-height:1.5;">
-            Após cada locação, avalie a experiência. Uma boa reputação abre mais oportunidades.
-          </p>
-        </td>
-      </tr>
-    </table>
   `)
 }
 
@@ -305,22 +282,6 @@ export async function sendExportReadyEmail(
     to,
     subject: "Sua exportação financeira está pronta — ShareO",
     html,
-  })
-
-  if (error) throw new Error(`Resend error: ${error.message}`)
-}
-
-export async function sendWelcomeEmail(to: string, name: string): Promise<void> {
-  const resend = getResend()
-  if (!resend) return
-
-  const firstName = name.split(" ")[0]
-
-  const { error } = await resend.emails.send({
-    from:    `ShareO <${FROM}>`,
-    to,
-    subject: `Bem-vindo ao ShareO, ${firstName}!`,
-    html:    welcomeHtml(name),
   })
 
   if (error) throw new Error(`Resend error: ${error.message}`)
