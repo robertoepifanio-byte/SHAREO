@@ -26,7 +26,7 @@ export default async function AdminFundadoresPage() {
   if (!session || session.user.role !== "ADMIN") redirect("/dashboard")
   if (!hasAdminRole(session, "ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL")) redirect("/admin")
 
-  const [leads, referredUsers] = await Promise.all([
+  const [leads, referredUsers, bySource, byCampaign] = await Promise.all([
     prisma.founderLead.findMany({
       where:  { deletedAt: null },
       select: { city: true, state: true, status: true, intent: true },
@@ -37,7 +37,29 @@ export default async function AdminFundadoresPage() {
       where:   { referredById: { not: null }, deletedAt: null },
       _count:  { _all: true },
     }),
+    // Atribuição: leads por canal (enum source)
+    prisma.founderLead.groupBy({
+      by:      ["source"],
+      where:   { deletedAt: null },
+      _count:  { _all: true },
+    }),
+    // Atribuição: leads por campanha (utm_campaign) — só os que têm campanha
+    prisma.founderLead.groupBy({
+      by:      ["utmCampaign"],
+      where:   { deletedAt: null, utmCampaign: { not: null } },
+      _count:  { _all: true },
+    }),
   ])
+
+  const SOURCE_LABELS: Record<string, string> = {
+    ORGANIC:     "Orgânico",
+    VIP_LANDING: "Landing VIP",
+    REFERRAL:    "Indicação",
+    GOOGLE_ADS:  "Google Ads",
+    META_ADS:    "Meta Ads",
+  }
+  const channelRows  = [...bySource].sort((a, b) => b._count._all - a._count._all)
+  const campaignRows = [...byCampaign].sort((a, b) => b._count._all - a._count._all)
 
   const referredByCity = new Map<string, number>()
   for (const r of referredUsers) {
@@ -97,6 +119,36 @@ export default async function AdminFundadoresPage() {
             <p className="mt-0.5 text-sm font-medium text-foreground">{s.label}</p>
           </div>
         ))}
+      </div>
+
+      {/* Atribuição por canal / campanha */}
+      <div className="mb-6 grid gap-4 md:grid-cols-2">
+        <div className="rounded-xl border border-border bg-surface p-4">
+          <h2 className="mb-3 text-sm font-semibold text-foreground">Por canal</h2>
+          <ul className="space-y-1.5 text-sm">
+            {channelRows.map((c) => (
+              <li key={c.source} className="flex items-center justify-between">
+                <span className="text-muted-foreground">{SOURCE_LABELS[c.source] ?? c.source}</span>
+                <span className="font-semibold text-foreground">{c._count._all}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="rounded-xl border border-border bg-surface p-4">
+          <h2 className="mb-3 text-sm font-semibold text-foreground">Por campanha (UTM)</h2>
+          {campaignRows.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhuma campanha rastreada ainda.</p>
+          ) : (
+            <ul className="space-y-1.5 text-sm">
+              {campaignRows.map((c) => (
+                <li key={c.utmCampaign} className="flex items-center justify-between">
+                  <span className="truncate text-muted-foreground" title={c.utmCampaign ?? ""}>{c.utmCampaign}</span>
+                  <span className="ml-2 shrink-0 font-semibold text-foreground">{c._count._all}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
 
       {ranked.length === 0 ? (

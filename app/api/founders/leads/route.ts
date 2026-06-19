@@ -7,16 +7,24 @@ import { assignWave } from "@/lib/founders"
 import { sendFounderWelcomeEmail } from "@/lib/email"
 import { CONSENT_VERSION } from "@/lib/legal-config"
 
+const SOURCE_VALUES = ["ORGANIC", "VIP_LANDING", "REFERRAL", "GOOGLE_ADS", "META_ADS"] as const
+type SourceValue = (typeof SOURCE_VALUES)[number]
+
 const Schema = z.object({
   email:            z.string().email({ message: "E-mail inválido" }),
   name:             z.string().min(2).max(100).optional(),
   intent:           z.enum(["proprietario", "locatario", "ambos"]).default("proprietario"),
   marketingConsent: z.literal(true, { errorMap: () => ({ message: "Consentimento obrigatório" }) }),
   consentVersion:   z.string().default(CONSENT_VERSION),
-  source:           z.string().default("VIP_LANDING"),
+  source:           z.enum(SOURCE_VALUES).default("VIP_LANDING"),
   // Obrigatórios: a cidade/UF definem onde os Pilotos serão implantados.
   city:             z.string().min(2, "Cidade obrigatória").max(100),
   state:            z.string().length(2, "UF obrigatória (2 letras)"),
+  // Atribuição de campanha (opcional) — lidos da URL pelo formulário.
+  utmSource:        z.string().max(200).optional(),
+  utmMedium:        z.string().max(200).optional(),
+  utmCampaign:      z.string().max(200).optional(),
+  referrerUrl:      z.string().max(500).optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -30,7 +38,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { email, name, intent, consentVersion, city, state } = parsed.data
+    const { email, name, intent, consentVersion, source, city, state,
+            utmSource, utmMedium, utmCampaign, referrerUrl } = parsed.data
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
            ?? req.headers.get("x-real-ip")
            ?? "unknown"
@@ -65,9 +74,13 @@ export async function POST(req: NextRequest) {
         consentIp:          ip,
         consentUserAgent:   ua,
         status:             "PENDING",
-        source:             "VIP_LANDING",
+        source:             source as SourceValue,
         city:               city.trim(),
         state:              state.trim().toUpperCase(),
+        utmSource:          utmSource ?? null,
+        utmMedium:          utmMedium ?? null,
+        utmCampaign:        utmCampaign ?? null,
+        referrerUrl:        referrerUrl ?? null,
       },
       select: { id: true, queuePosition: true },
     })

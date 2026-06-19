@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next"
 import { prisma } from "@/lib/prisma"
+import { PILOT_CITIES } from "@/lib/pilot-cities"
 
 export const dynamic = "force-dynamic"
 
@@ -51,5 +52,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority:        0.6,
     }))
 
-  return [...staticRoutes, ...categoryRoutes, ...itemRoutes, ...lojaRoutes]
+  const pilotRoutes: MetadataRoute.Sitemap = PILOT_CITIES.map((c) => ({
+    url:             `${BASE}/pilotos/${c.slug}`,
+    lastModified:    new Date(),
+    changeFrequency: "weekly" as const,
+    priority:        0.7,
+  }))
+
+  return [...staticRoutes, ...categoryRoutes, ...itemRoutes, ...lojaRoutes, ...pilotRoutes]
 }

@@ -862,6 +862,13 @@ model FounderLead {
   city  String?
   state String? @db.Char(2)
 
+  // Atribuição de campanha (UTM) — mede canal/cidade de origem dos leads pagos/orgânicos.
+  // `source` (enum acima) é derivado destes na API; estes guardam o detalhe bruto.
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  referrerUrl String? @db.VarChar(500)
+
   // LGPD — consentimento explícito (LGPD Art. 7 + ANPD)
   marketingConsentAt DateTime
   consentVersion     String   @default("v1.0")

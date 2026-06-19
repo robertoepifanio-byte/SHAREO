@@ -1,10 +1,19 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import { useEffect, useState, type FormEvent } from "react"
 import { CONSENT_VERSION } from "@/lib/legal-config"
 
 type IntentOption = "proprietario" | "locatario"
 type State  = "collapsed" | "expanded" | "loading" | "success" | "error-network" | "error-duplicate"
+type SourceValue = "ORGANIC" | "VIP_LANDING" | "REFERRAL" | "GOOGLE_ADS" | "META_ADS"
+
+type Attribution = {
+  source:      SourceValue
+  utmSource?:  string
+  utmMedium?:  string
+  utmCampaign?: string
+  referrerUrl?: string
+}
 
 function resolveIntent(selected: Set<IntentOption>): "proprietario" | "locatario" | "ambos" {
   if (selected.has("proprietario") && selected.has("locatario")) return "ambos"
@@ -12,15 +21,56 @@ function resolveIntent(selected: Set<IntentOption>): "proprietario" | "locatario
   return "proprietario"
 }
 
-export function FounderCaptureForm() {
-  const [state, setState]         = useState<State>("collapsed")
+// Deriva o canal (enum SignupSource) a partir dos parâmetros da URL.
+// Indicação (ref) tem prioridade; depois utm_source conhecido; senão landing VIP.
+function deriveSource(utmSource: string | null, ref: string | null): SourceValue {
+  if (ref) return "REFERRAL"
+  const s = utmSource?.toLowerCase() ?? ""
+  if (s.includes("meta") || s.includes("facebook") || s.includes("instagram") || s === "fb" || s === "ig") return "META_ADS"
+  if (s.includes("google") || s === "adwords") return "GOOGLE_ADS"
+  return "VIP_LANDING"
+}
+
+function readAttribution(): Attribution {
+  if (typeof window === "undefined") return { source: "VIP_LANDING" }
+  const p = new URLSearchParams(window.location.search)
+  const utmSource   = p.get("utm_source")
+  const utmMedium   = p.get("utm_medium")
+  const utmCampaign = p.get("utm_campaign")
+  const ref         = p.get("ref")
+  return {
+    source:      deriveSource(utmSource, ref),
+    utmSource:   utmSource   ?? undefined,
+    utmMedium:   utmMedium   ?? undefined,
+    utmCampaign: utmCampaign ?? undefined,
+    referrerUrl: document.referrer || undefined,
+  }
+}
+
+type Props = {
+  /** Pré-preenche a cidade (ex.: landing /pilotos/[cidade]). */
+  defaultCity?: string
+  /** Pré-preenche a UF. */
+  defaultUf?: string
+  /** Campanha-padrão (ex.: "piloto-recife") — usada se a URL não trouxer utm_campaign. */
+  campaign?: string
+  /** Começa expandido (landings de cidade abrem o form direto). */
+  startExpanded?: boolean
+}
+
+export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpanded }: Props = {}) {
+  const [state, setState]         = useState<State>(startExpanded ? "expanded" : "collapsed")
   const [selected, setSelected]   = useState<Set<IntentOption>>(new Set(["proprietario"]))
   const [name, setName]           = useState("")
   const [email, setEmail]         = useState("")
-  const [city, setCity]           = useState("")
-  const [uf, setUf]               = useState("")
+  const [city, setCity]           = useState(defaultCity ?? "")
+  const [uf, setUf]               = useState(defaultUf ?? "")
   const [lgpdConsent, setLgpdConsent] = useState(false)
   const [position, setPosition]   = useState(0)
+  const [attribution, setAttribution] = useState<Attribution>({ source: "VIP_LANDING" })
+
+  // Captura atribuição (UTM/ref) uma vez, no cliente — define o canal de origem do lead.
+  useEffect(() => { setAttribution(readAttribution()) }, [])
 
   function toggleIntent(opt: IntentOption) {
     setSelected((prev) => {
@@ -48,9 +98,13 @@ export function FounderCaptureForm() {
           intent:           resolveIntent(selected),
           marketingConsent: lgpdConsent,
           consentVersion:   CONSENT_VERSION,
-          source:           "VIP_LANDING",
+          source:           attribution.source,
           city:             city.trim(),
           state:            uf.trim().toUpperCase(),
+          utmSource:        attribution.utmSource,
+          utmMedium:        attribution.utmMedium,
+          utmCampaign:      attribution.utmCampaign ?? campaign,
+          referrerUrl:      attribution.referrerUrl,
         }),
       })
 
