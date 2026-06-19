@@ -17,7 +17,7 @@
 
 import { test, expect, request as pwRequest } from '@playwright/test'
 
-const BASE = process.env.BASE_URL ?? 'http://localhost:3000'
+const BASE = process.env.BASE_URL ?? process.env.STAGING_URL ?? 'http://localhost:3000'
 
 // CPF válido (algoritmo) para o registro
 function genCPF(): string {

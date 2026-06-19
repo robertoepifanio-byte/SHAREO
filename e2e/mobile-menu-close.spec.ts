@@ -13,7 +13,7 @@
  */
 import { test, expect } from '@playwright/test'
 
-const BASE = process.env.BASE_URL ?? 'http://localhost:3000'
+const BASE = process.env.BASE_URL ?? process.env.STAGING_URL ?? 'http://localhost:3000'
 const MOBILE_NAV = '#mobile-nav'
 const HAMBURGER_OPEN = 'button[aria-label="Abrir menu"]'
 

@@ -15,7 +15,7 @@ import fs from 'fs'
 import { test, expect } from '@playwright/test'
 import { SESSION_PATHS } from './fixtures/test-credentials'
 
-const BASE = process.env.BASE_URL ?? 'http://localhost:3000'
+const BASE = process.env.BASE_URL ?? process.env.STAGING_URL ?? 'http://localhost:3000'
 const FAKE = 'clfakebooking000000000000'
 const hasLocatario = fs.existsSync(SESSION_PATHS.locatario)
 
