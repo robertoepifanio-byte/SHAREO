@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { toast } from "sonner"
 import { ItemCard } from "@/components/items/ItemCard"
 
 interface ItemSummary {
@@ -39,12 +40,16 @@ export function MyItemsGrid({ initialItems }: MyItemsGridProps) {
       const res = await fetch(`/api/items/${id}`, { method: "DELETE" })
       if (res.ok || res.status === 204) {
         setItems((prev) => prev.filter((item) => item.id !== id))
+        toast.success("Anúncio removido com sucesso")
       } else {
         const json = await res.json()
-        setError(json.error?.message ?? "Erro ao remover anúncio.")
+        const msg = json.error?.message ?? "Erro ao remover anúncio."
+        setError(msg)
+        toast.error(msg)
       }
     } catch {
       setError("Erro inesperado. Tente novamente.")
+      toast.error("Erro inesperado. Tente novamente.")
     } finally {
       setDeleting(null)
     }
@@ -67,12 +72,16 @@ export function MyItemsGrid({ initialItems }: MyItemsGridProps) {
         setItems((prev) =>
           prev.map((item) => item.id === id ? { ...item, status: newStatus } : item)
         )
+        toast.success(newStatus === "PAUSED" ? "Anúncio pausado" : "Anúncio reativado")
       } else {
         const json = await res.json()
-        setError(json.error?.message ?? "Erro ao atualizar anúncio.")
+        const msg = json.error?.message ?? "Erro ao atualizar anúncio."
+        setError(msg)
+        toast.error(msg)
       }
     } catch {
       setError("Erro inesperado. Tente novamente.")
+      toast.error("Erro inesperado. Tente novamente.")
     } finally {
       setToggling(null)
     }

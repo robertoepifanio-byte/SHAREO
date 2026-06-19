@@ -13,7 +13,7 @@ import { HeroSearch } from "@/components/home/HeroSearch"
 
 export const metadata: Metadata = {
   title: "ShareO — Use Mais. Possua Menos.",
-  description: "Alugue o que precisa de quem já tem. Marketplace de economia circular em Natal/RN.",
+  description: "Alugue o que precisa de quem já tem. Marketplace de economia circular em todo o Brasil.",
 }
 
 export const revalidate = 60
@@ -86,28 +86,45 @@ const steps = [
 export default async function HomePage() {
   const session = await auth().catch(() => null)
 
-  const cityName = session?.user?.id
+  const cityName: string | null = session?.user?.id
     ? await prisma.user
         .findUnique({ where: { id: session.user.id }, select: { city: true } })
-        .then((u) => u?.city ?? "Natal")
-        .catch(() => "Natal")
-    : "Natal"
+        .then((u) => u?.city ?? null)
+        .catch(() => null)
+    : null
 
-  const [categories, cityItemCount] = await Promise.all([
+  const AVAILABLE = { status: "AVAILABLE" as const, isApproved: true, deletedAt: null }
+
+  const [categories, cityItemCount, itemCount, ownerGroups, ratingAgg] = await Promise.all([
     prisma.category
       .findMany({
         where: { parentId: null },
-        select: { id: true, name: true },
+        select: { id: true, name: true, slug: true },
         orderBy: { name: "asc" },
       })
       .catch(() => []),
 
     prisma.item
-      .count({
-        where: { status: "AVAILABLE", isApproved: true, deletedAt: null, city: cityName },
-      })
+      .count({ where: { ...AVAILABLE, ...(cityName ? { city: cityName } : {}) } })
       .catch(() => 0),
+
+    prisma.item.count({ where: AVAILABLE }).catch(() => 0),
+
+    prisma.item
+      .groupBy({ by: ["ownerId"], where: AVAILABLE })
+      .catch(() => [] as { ownerId: string }[]),
+
+    prisma.review
+      .aggregate({ _avg: { rating: true }, _count: { rating: true } })
+      .catch(() => ({ _avg: { rating: null }, _count: { rating: 0 } })),
   ])
+
+  const ownerCount = ownerGroups.length
+  // Avaliação média real só com amostra mínima; antes disso, destaque institucional
+  const avgRating =
+    ratingAgg._count.rating >= 5 && ratingAgg._avg.rating
+      ? `${ratingAgg._avg.rating.toFixed(1).replace(".", ",")} ★`
+      : null
 
   return (
     <div className="min-h-screen bg-background">
@@ -157,7 +174,7 @@ export default async function HomePage() {
 
             {/* Subtítulo */}
             <p className="mb-8 text-base leading-relaxed text-white/75 md:text-[17px]">
-              Ferramentas, eletrônicos, itens para festas, esportes, casa e cozinha.
+              Ferramentas, eletrônicos, itens para festas, esportes, eletrodomésticos.
               <br />
               Tudo perto de você.
             </p>
@@ -190,7 +207,7 @@ export default async function HomePage() {
                 Quero Ganhar Dinheiro
               </Link>
               <Link
-                href="/itens"
+                href="/itens?intent=rent"
                 className="inline-flex min-h-tap w-full items-center justify-center gap-2 rounded-lg border-2 border-white/60 bg-transparent px-6 py-3 text-sm font-semibold uppercase tracking-[0.4px] text-white transition-all hover:border-white hover:bg-white/10 md:w-auto md:min-w-[200px]"
                 aria-label="Quero alugar um item"
               >
@@ -222,12 +239,14 @@ export default async function HomePage() {
               className="mt-9 flex flex-wrap justify-center gap-5 xl:gap-8"
             >
               {[
-                { num: "2.400+", label: "Itens disponíveis" },
-                { num: "R$2.000", label: "Renda média/mês" },
-                { num: "4,8 ★", label: "Avaliação média" },
+                { num: itemCount.toLocaleString("pt-BR"), label: "Itens disponíveis" },
+                { num: ownerCount.toLocaleString("pt-BR"), label: "Proprietários ativos" },
+                avgRating
+                  ? { num: avgRating, label: "Avaliação média" }
+                  : { num: "0%", label: "Custo para anunciar" },
                 {
-                  num: cityItemCount >= 20 ? `${cityItemCount}` : "890+",
-                  label: cityItemCount >= 20 ? `Itens em ${cityName}` : "Proprietários ativos",
+                  num: cityName && cityItemCount >= 20 ? `${cityItemCount}` : `${categories.length}`,
+                  label: cityName && cityItemCount >= 20 ? `Itens em ${cityName}` : "Categorias",
                 },
               ].map((stat) => (
                 <div key={stat.label} role="listitem" className="text-center text-white">
@@ -262,16 +281,15 @@ export default async function HomePage() {
                 aria-label="Categorias de itens"
               >
                 {categories.map((cat) => (
-                  <Link
-                    key={cat.id}
-                    href={`/itens?categoryId=${cat.id}`}
-                    role="listitem"
-                    className="flex min-w-[110px] flex-shrink-0 flex-col items-center gap-2 rounded-lg border-2 border-border bg-surface px-3 py-3 text-xs font-semibold text-primary transition-colors hover:border-brand hover:shadow-sm"
-                    aria-label={cat.name}
-                  >
-                    <CategoryIcon name={cat.name} size={96} />
-                    <span>{cat.name}</span>
-                  </Link>
+                  <div key={cat.id} role="listitem" className="contents">
+                    <Link
+                      href={`/itens?categoryId=${cat.id}`}
+                      className="flex min-w-[110px] flex-shrink-0 flex-col items-center gap-2 rounded-lg border-2 border-border bg-surface px-3 py-3 text-xs font-semibold text-primary transition-colors hover:border-brand hover:shadow-sm"
+                    >
+                      <CategoryIcon name={cat.name} slug={cat.slug} size={96} decorative />
+                      <span>{cat.name}</span>
+                    </Link>
+                  </div>
                 ))}
               </div>
             </div>

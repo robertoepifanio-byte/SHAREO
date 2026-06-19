@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server"
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import { auth } from "@/lib/auth"
+import { hasAdminRole } from "@/lib/auth/admin-guards"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 
@@ -13,9 +14,10 @@ const PatchSchema = z.object({
 export async function PATCH(req: NextRequest, { params }: Params) {
   try {
     const session = await auth()
-    if (!session || session.user.role !== "ADMIN") {
+    // S14-M-14: itens pertencem a OPERACIONAL (+SUPERADMIN), não a FINANCEIRO
+    if (!session || !hasAdminRole(session, "ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL")) {
       return NextResponse.json(
-        { error: { code: "FORBIDDEN", message: "Acesso restrito a administradores." } },
+        { error: { code: "FORBIDDEN", message: "Acesso restrito a Operacional/Superadmin." } },
         { status: 403 },
       )
     }
@@ -63,15 +65,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       select: { id: true, isApproved: true, status: true, updatedAt: true },
     })
 
-    // Log admin action (fire-and-forget)
-    prisma.adminLog.create({
-      data: {
-        adminId,
-        action:     action.toUpperCase(),
-        entityType: "Item",
-        entityId:   id,
-      },
-    }).catch((e) => console.error("[adminLog]", e instanceof Error ? e.message : e))
+    // Log admin action — após a resposta
+    after(() =>
+      prisma.adminLog.create({
+        data: {
+          adminId,
+          action:     action.toUpperCase(),
+          entityType: "Item",
+          entityId:   id,
+        },
+      }).catch((e) => console.error("[adminLog]", e instanceof Error ? e.message : e))
+    )
 
     return NextResponse.json({ data: updated })
   } catch (e) {

@@ -3,7 +3,8 @@ import { z } from "zod"
 import bcrypt from "bcryptjs"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
+import { invalidateUserSessions } from "@/lib/redis-admin-blocklist"
 
 const schema = z.object({
   currentPassword: z.string().min(1),
@@ -16,7 +17,7 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
   }
 
-  const rl = await checkRateLimit(`pwd-change:${session.user.id}`, 5, 15 * 60 * 1000)
+  const rl = await checkRateLimit(`pwd-change:${session.user.id}`, RATE_LIMITS.passwordChange.limit, RATE_LIMITS.passwordChange.windowMs)
   if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
   const body = await req.json()
@@ -44,6 +45,9 @@ export async function PATCH(req: Request) {
     where: { id: session.user.id },
     data:  { passwordHash: newHash },
   })
+
+  // SEC-CRIT-04: invalida sessões anteriores — um token roubado deixa de valer
+  await invalidateUserSessions(session.user.id)
 
   return NextResponse.json({ ok: true })
 }

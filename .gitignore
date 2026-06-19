@@ -32,6 +32,7 @@ prisma/migrations/dev.db-journal
 # IDE
 .vscode/
 .idea/
+.obsidian/
 *.swp
 *.swo
 
@@ -66,3 +67,29 @@ e2e-usability-report.json
 e2e-integration-report.json
 e2e-governance-report.json
 e2e-ajuda-report.json
+
+# Lighthouse — artefatos brutos (baseline humano fica em docs/lighthouse-baseline-mobile.md)
+lighthouse-report.json
+lighthouse-mobile-baseline.report.json
+lighthouse-mobile-baseline.report.html
+
+# k6 — saída bruta de run de carga
+k6/last-summary.json
+
+# Relatórios PDF exportados na raiz (versão fonte é o .html em docs/)
+/*.pdf
+
+# Pasta residual de ícones em PT (substituída por public/icons/ em EN — s9)
+icones/
+
+# Experimentos de recorte de logo / screenshots de debug (não-fonte)
+public/logos/pratika-ia-*.png
+scripts/*.fixture.png
+scripts/debug-*.png
+
+# Artefatos de ferramentas (code-review/critique, relatórios desempacotados)
+.critique/
+docs/relatorio-pagamentos-unpacked/
+
+# Robô de validação diária — logs/relatórios/estado (dados de simulação)
+scripts/daily-sim-logs/

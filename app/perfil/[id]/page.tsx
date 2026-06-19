@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Image from "next/image"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
@@ -6,6 +7,7 @@ import { AppHeader } from "@/components/layout/AppHeader"
 import { ItemCard } from "@/components/items/ItemCard"
 import { getOwnerResponseBadge } from "@/lib/ownerStats"
 import { getBorrowerBadge, getNextBorrowerBadge, isActiveReviewer, ACTIVE_REVIEWER_BADGE } from "@/lib/badges"
+import { ReviewDetails, ReviewSentiment } from "@/components/reviews/ReviewDetails"
 
 type Props = { params: Promise<{ id: string }> }
 
@@ -65,11 +67,17 @@ export default async function PublicProfilePage({ params }: Props) {
         },
         reviewsReceived: {
           select: {
-            rating:     true,
-            comment:    true,
-            reviewType: true,
-            reviewer:   { select: { name: true } },
-            createdAt:  true,
+            rating:          true,
+            comment:         true,
+            reviewType:      true,
+            sentiment:       true,
+            itemAsDescribed: true,
+            punctuality:     true,
+            communication:   true,
+            conservation:    true,
+            photoUrl:        true,
+            reviewer:        { select: { name: true } },
+            createdAt:       true,
           },
           orderBy: { createdAt: "desc" },
           take:    5,
@@ -129,10 +137,11 @@ export default async function PublicProfilePage({ params }: Props) {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
               <div className="flex-shrink-0">
                 {user.avatarUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <Image
                     src={user.avatarUrl}
                     alt={user.name}
+                    width={80}
+                    height={80}
                     className="h-20 w-20 rounded-full object-cover"
                   />
                 ) : (
@@ -279,8 +288,9 @@ export default async function PublicProfilePage({ params }: Props) {
                 {user.reviewsReceived.map((review, i) => (
                   <div key={i} className="border-b border-border pb-4 last:border-0 last:pb-0">
                     <div className="flex items-start justify-between gap-2">
-                      <span className="text-yellow-400">
-                        {"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}
+                      <span className="flex items-center gap-2 text-yellow-400">
+                        <span>{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span>
+                        <ReviewSentiment sentiment={review.sentiment} />
                       </span>
                       <span className="whitespace-nowrap text-xs text-muted-foreground">
                         {new Intl.DateTimeFormat("pt-BR", {
@@ -291,6 +301,7 @@ export default async function PublicProfilePage({ params }: Props) {
                     {review.comment && (
                       <p className="mt-1 text-sm text-foreground">{review.comment}</p>
                     )}
+                    <ReviewDetails review={review} />
                     <p className="mt-1 text-xs text-muted-foreground">— {review.reviewer.name}</p>
                   </div>
                 ))}

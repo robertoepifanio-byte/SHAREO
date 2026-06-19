@@ -7,6 +7,7 @@ import { AppFooter } from "@/components/layout/AppFooter"
 import { ServiceWorkerRegister } from "@/components/layout/ServiceWorkerRegister"
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics"
 import { Providers } from "@/components/layout/Providers"
+import { jsonLdScript } from "@/lib/jsonLd"
 import "./globals.css"
 
 const montserrat = Montserrat({
@@ -31,7 +32,7 @@ export const metadata: Metadata = {
     template: "%s | ShareO",
   },
   description:
-    "Marketplace de economia circular para aluguel local de itens entre pessoas e empresas em Natal/RN.",
+    "Marketplace de economia circular para aluguel local de itens entre pessoas e empresas em todo o Brasil.",
   metadataBase: new URL(BASE),
   openGraph: {
     type:     "website",
@@ -62,7 +63,7 @@ const orgJsonLd = {
   name:         "ShareO",
   url:          BASE,
   logo:         `${BASE}/shareo-logo.png`,
-  description:  "Marketplace de economia circular para aluguel local de itens em Natal/RN.",
+  description:  "Marketplace de economia circular para aluguel local de itens em todo o Brasil.",
   sameAs:       [],
   contactPoint: {
     "@type":       "ContactPoint",
@@ -78,10 +79,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="pt-BR" className={`${montserrat.variable} ${inter.variable}`}>
       <body className="min-h-screen bg-background font-sans antialiased">
+        {/* JSON-LD é data block (não executado) — CSP script-src não se aplica, nonce dispensável */}
         <script
           type="application/ld+json"
-          nonce={nonce}
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{ __html: jsonLdScript(orgJsonLd) }}
         />
         {/* Skip link — acessibilidade de teclado */}
         <a

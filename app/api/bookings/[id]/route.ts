@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server"
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
+import { randomInt } from "node:crypto"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
@@ -9,6 +10,8 @@ import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
 import type { WebhookEvent } from "@/lib/outboundWebhooks"
 import { sendBookingConfirmedEmail, sendBookingCancelledEmail } from "@/lib/email"
 import { calcRefund } from "@/lib/cancellationPolicy"
+import { getCancellationConfig, getPayoutWindowDays } from "@/lib/platform-config"
+import { releaseCouponForBooking } from "@/lib/coupons"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -52,7 +55,8 @@ export async function GET(req: NextRequest, { params }: Params) {
         borrower:     { select: { id: true, name: true, avatarUrl: true } },
         owner:        { select: { id: true, name: true, avatarUrl: true } },
         conversation: { select: { id: true } },
-        reviews:      {
+        pickupToken:  true,
+      reviews:      {
           select: {
             id:         true,
             reviewType: true,
@@ -122,14 +126,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       )
     }
 
-    const { action, reason } = parsed.data
+    const { action, reason, actualTime, pickupToken } = parsed.data
+    // Horário efetivo: usa o informado pelo usuário (se válido e no passado), senão o momento atual
+    const effectiveTime = actualTime ? new Date(actualTime) : new Date()
     const userId = session.user.id
 
     const booking = await prisma.booking.findUnique({
       where:  { id },
       select: {
         id: true, status: true, borrowerId: true, ownerId: true,
-        itemId: true, startDate: true, endDate: true, totalPrice: true,
+        itemId: true, startDate: true, endDate: true, totalPrice: true, totalDays: true,
+        pickupToken: true, pickupTokenUsedAt: true,
         item:     { select: { title: true } },
         borrower: { select: { email: true, name: true } },
         owner:    { select: { email: true, name: true } },
@@ -196,10 +203,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       data.cancelReason  = reason
 
       // Calcula o reembolso com base na política de cancelamento do ShareO
+      const cancelConfig = await getCancellationConfig()
       const refund = calcRefund(
         new Date(booking.startDate),
         now,
         booking.totalPrice,
+        cancelConfig,
       )
       data.refundAmount  = refund.refundAmount
       data.refundPercent = refund.refundPercent
@@ -219,50 +228,113 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       data.respondedAt = now
     }
 
-    // Ao confirmar: verifica conflito de datas dentro de uma transação para evitar double-booking.
-    // Dois PENDING podem coexistir; o segundo confirm falha se já houver um CONFIRMED/ACTIVE.
-    if (action === "confirm") {
-      const conflict = await prisma.booking.findFirst({
-        where: {
-          id:     { not: id },
-          itemId: booking.itemId,
-          status: { in: ["CONFIRMED", "ACTIVE"] },
-          AND: [
-            { startDate: { lt: booking.endDate } },
-            { endDate:   { gt: booking.startDate } },
-          ],
-        },
-        select: { id: true },
-      })
-      if (conflict) {
+    // Grava horário real de retirada — exige token válido e o consome.
+    // Regra: prazo de devolução = mesmo horário da retirada + totalDays.
+    if (action === "mark_active") {
+      if (!pickupToken) {
         return NextResponse.json(
-          { error: { code: "DATE_CONFLICT", message: "Item já reservado para este período." } },
+          { error: { code: "TOKEN_REQUIRED", message: "Código de retirada obrigatório." } },
+          { status: 400 },
+        )
+      }
+      if (booking.pickupTokenUsedAt) {
+        return NextResponse.json(
+          { error: { code: "TOKEN_ALREADY_USED", message: "Este código já foi utilizado." } },
           { status: 409 },
         )
       }
+      if (booking.pickupToken !== pickupToken) {
+        return NextResponse.json(
+          { error: { code: "TOKEN_INVALID", message: "Código de retirada inválido. Verifique com o locatário." } },
+          { status: 422 },
+        )
+      }
+      data.activatedAt      = effectiveTime
+      data.pickupTokenUsedAt = effectiveTime
+      data.endDate           = new Date(effectiveTime.getTime() + booking.totalDays * 24 * 60 * 60 * 1000)
     }
 
-    const updated = await prisma.booking.update({
-      where:  { id },
-      data,
-      select: {
-        id:               true,
-        status:           true,
-        updatedAt:        true,
-        ownerNetAmount:   true,
-        ownerId:          true,
-      },
-    })
+    // Grava horário real de devolução (informado pelo locatário ou server time).
+    if (action === "mark_returned" || action === "confirm_return") {
+      data.returnedAt = effectiveTime
+    }
 
-    // FIN-3.3 — criar Payout elegível 3 dias após devolução confirmada
+    // Gera pickupToken único no confirm (fluxo PIX/manual — Stripe gera o próprio via webhook).
+    if (action === "confirm" && !booking.pickupToken) {
+      for (;;) {
+        const candidate = String(randomInt(100000, 1000000))
+        const conflict  = await prisma.booking.findFirst({ where: { pickupToken: candidate }, select: { id: true } })
+        if (!conflict) { data.pickupToken = candidate; break }
+      }
+    }
+
+    // Update atômico por ação (S14-A-05/A-06 — evita double-booking e ativação dupla em corrida).
+    const updateSelect = { id: true, status: true, updatedAt: true, ownerNetAmount: true, ownerId: true } as const
+    let updated: { id: string; status: BookingStatus; updatedAt: Date; ownerNetAmount: number | null; ownerId: string }
+
+    if (action === "confirm") {
+      // Conflito de datas + update na MESMA transação serializável.
+      // Antes o check ficava fora de transação → race de double-booking (dois confirms simultâneos).
+      try {
+        const result = await prisma.$transaction(async (tx) => {
+          const conflict = await tx.booking.findFirst({
+            where: {
+              id:     { not: id },
+              itemId: booking.itemId,
+              status: { in: ["CONFIRMED", "ACTIVE"] },
+              AND: [
+                { startDate: { lt: booking.endDate } },
+                { endDate:   { gt: booking.startDate } },
+              ],
+            },
+            select: { id: true },
+          })
+          if (conflict) return null
+          return tx.booking.update({ where: { id }, data, select: updateSelect })
+        }, { isolationLevel: "Serializable" })
+
+        if (!result) {
+          return NextResponse.json(
+            { error: { code: "DATE_CONFLICT", message: "Item já reservado para este período." } },
+            { status: 409 },
+          )
+        }
+        updated = result
+      } catch (e) {
+        // Falha de serialização (corrida simultânea) → trata como conflito de datas
+        if (e && typeof e === "object" && "code" in e && (e as { code?: string }).code === "P2034") {
+          return NextResponse.json(
+            { error: { code: "DATE_CONFLICT", message: "Item já reservado para este período." } },
+            { status: 409 },
+          )
+        }
+        throw e
+      }
+    } else if (action === "mark_active") {
+      // Update condicional: só ativa se o token ainda não foi consumido (evita ativação dupla em retry/duplo-clique).
+      const res = await prisma.booking.updateMany({ where: { id, pickupTokenUsedAt: null }, data })
+      if (res.count === 0) {
+        return NextResponse.json(
+          { error: { code: "TOKEN_ALREADY_USED", message: "Este código já foi utilizado." } },
+          { status: 409 },
+        )
+      }
+      updated = await prisma.booking.findUniqueOrThrow({ where: { id }, select: updateSelect })
+    } else {
+      updated = await prisma.booking.update({ where: { id }, data, select: updateSelect })
+    }
+
+    // FIN-3.3 — criar Payout elegível N dias após devolução confirmada (PlatformConfig: payoutWindowDays)
     if (action === "confirm_return") {
-      const eligibleAfter = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
+      const payoutWindowDays = await getPayoutWindowDays()
+      const eligibleAfter = new Date(now.getTime() + payoutWindowDays * 24 * 60 * 60 * 1000)
       const ownerAccount  = await prisma.ownerPaymentAccount.findUnique({
         where:  { userId: booking.ownerId },
         select: { id: true },
       })
       if (ownerAccount && updated.ownerNetAmount) {
-        prisma.payout.create({
+        // await obrigatório — fire-and-forget morre quando a lambda congela e o payout se perde
+        await prisma.payout.create({
           data: {
             ownerPaymentAccountId: ownerAccount.id,
             bookingId:             id,
@@ -274,25 +346,31 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       }
     }
 
-    // E-mails transacionais (fire-and-forget)
+    // E-mails transacionais — após a resposta
     if (action === "confirm") {
-      sendBookingConfirmedEmail(
-        booking.borrower.email, booking.borrower.name,
-        booking.item.title, id,
-        booking.startDate, booking.endDate,
-      ).catch((e) => console.error("[email] booking confirmed:", e instanceof Error ? e.message : e))
+      after(() =>
+        sendBookingConfirmedEmail(
+          booking.borrower.email, booking.borrower.name,
+          booking.item.title, id,
+          booking.startDate, booking.endDate,
+        ).catch((e) => console.error("[email] booking confirmed:", e instanceof Error ? e.message : e))
+      )
     }
     if (action === "cancel") {
       const notifyEmail = isOwner ? booking.borrower.email : booking.owner.email
       const notifyName  = isOwner ? booking.borrower.name  : booking.owner.name
       const notifyRole  = isOwner ? "borrower" as const    : "owner" as const
-      sendBookingCancelledEmail(
-        notifyEmail, notifyName, notifyRole,
-        booking.item.title, id, reason ?? undefined,
-      ).catch((e) => console.error("[email] booking cancelled:", e instanceof Error ? e.message : e))
+      after(() =>
+        sendBookingCancelledEmail(
+          notifyEmail, notifyName, notifyRole,
+          booking.item.title, id, reason ?? undefined,
+        ).catch((e) => console.error("[email] booking cancelled:", e instanceof Error ? e.message : e))
+      )
+      // P3-20: devolve o cupom usado nesta reserva — após a resposta
+      after(() => releaseCouponForBooking(id))
     }
 
-    // Webhooks de saída (fire-and-forget)
+    // Webhooks de saída — após a resposta
     const webhookEventMap: Partial<Record<typeof action, WebhookEvent>> = {
       confirm:        "booking.confirmed",
       cancel:         "booking.cancelled",
@@ -302,15 +380,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
     const webhookEvent = webhookEventMap[action]
     if (webhookEvent) {
-      dispatchWebhookEvent(booking.ownerId, webhookEvent, {
-        bookingId: id,
-        itemTitle: booking.item.title,
-        status:    transition.nextStatus,
-        reason,
-      })
+      after(() =>
+        dispatchWebhookEvent(booking.ownerId, webhookEvent, {
+          bookingId: id,
+          itemTitle: booking.item.title,
+          status:    transition.nextStatus,
+          reason,
+        })
+      )
     }
 
-    // Notificações (fire-and-forget)
+    // Notificações — após a resposta
     const notifyUserId = isOwner ? booking.borrowerId : booking.ownerId
     const notifMap: Partial<Record<typeof action, { type: string; title: string; body: string }>> = {
       confirm:        { type: "BOOKING_CONFIRMED",  title: "Reserva confirmada!",        body: `Sua reserva de "${booking.item.title}" foi confirmada.` },
@@ -320,9 +400,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
     const notif = notifMap[action]
     if (notif) {
-      prisma.notification.create({
-        data: { userId: notifyUserId, type: notif.type as never, title: notif.title, body: notif.body, data: { bookingId: id } },
-      }).catch((e) => console.error(`[notification] ${action}:`, e instanceof Error ? e.message : e))
+      after(() =>
+        prisma.notification.create({
+          data: { userId: notifyUserId, type: notif.type as never, title: notif.title, body: notif.body, data: { bookingId: id } },
+        }).catch((e) => console.error(`[notification] ${action}:`, e instanceof Error ? e.message : e))
+      )
     }
 
     return NextResponse.json({ data: updated })

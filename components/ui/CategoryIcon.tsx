@@ -29,6 +29,7 @@ import {
   Wrench,
   Gift,
   ShoppingBag,
+  Refrigerator,
   type LucideIcon,
 } from "lucide-react"
 
@@ -49,30 +50,41 @@ const HAS_PNG = new Set<string>([
 
 /* ── Mapeamentos ────────────────────────────────────────────────── */
 
-const SLUG_MAP: Record<string, string> = {
-  "Todos":         "todas",
-  "Casa e Cozinha": "casa-jardim",
-  "Construção":    "construcao",
-  "Eletrônicos":   "eletronicos",
-  "Esporte":       "esporte",
-  "Ferramentas":   "ferramentas",
-  "Festas":        "festas",
-  "Moda":          "moda",
+/** slug → ícone Lucide (fallback quando não há PNG). Resolução primária por slug. */
+const LUCIDE_BY_SLUG: Record<string, LucideIcon> = {
+  "todas":       Home,
+  "casa-jardim": Refrigerator,
+  "construcao":  Hammer,
+  "eletronicos": Smartphone,
+  "esporte":     Dumbbell,
+  "ferramentas": Wrench,
+  "festas":      Gift,
+  "moda":        ShoppingBag,
 }
 
-const LUCIDE_MAP: Record<string, LucideIcon> = {
-  "Casa e Cozinha": Home,
-  "Construção":    Hammer,
-  "Eletrônicos":   Smartphone,
-  "Esporte":       Dumbbell,
-  "Ferramentas":   Wrench,
-  "Festas":        Gift,
-  "Moda":          ShoppingBag,
-  "Todos":         Home, // fallback — PNG sempre disponível
+/**
+ * Compatibilidade para chamadas que só têm o nome de exibição (ex.: "Todos").
+ * Prefira passar `slug`: assim renomear o rótulo da categoria nunca quebra o ícone.
+ */
+const SLUG_BY_NAME: Record<string, string> = {
+  "Todos":            "todas",
+  "Todas":            "todas",
+  "Eletrodomésticos": "casa-jardim",
+  "Construção":       "construcao",
+  "Eletrônicos":      "eletronicos",
+  "Esporte":          "esporte",
+  "Ferramentas":      "ferramentas",
+  "Festas":           "festas",
+  "Moda":             "moda",
 }
 
 interface CategoryIconProps {
   name:        string
+  /**
+   * slug da categoria (ex.: "casa-jardim"). Quando presente, resolve o ícone
+   * por slug — independente do rótulo exibido. Renomear o `name` não quebra o ícone.
+   */
+  slug?:       string
   size?:       number
   className?:  string
   /**
@@ -82,33 +94,44 @@ interface CategoryIconProps {
    * Manter false (padrão) para a seção hero/categorias da homepage.
    */
   monochrome?: boolean
+  /**
+   * decorative — quando true, o ícone é puramente decorativo (aria-hidden, sem
+   * role="img"/aria-label). Use quando o rótulo da categoria já aparece como
+   * texto adjacente, evitando rótulo duplicado (WCAG 2.5.3 label-content).
+   */
+  decorative?: boolean
 }
 
 /* ── Componente ─────────────────────────────────────────────────── */
 
-export function CategoryIcon({ name, size = 64, className = "", monochrome = false }: CategoryIconProps) {
-  const slug      = SLUG_MAP[name]
-  const Icon      = LUCIDE_MAP[name]
-  const usePng    = slug && HAS_PNG.has(slug)
+export function CategoryIcon({ name, slug: slugProp, size = 64, className = "", monochrome = false, decorative = false }: CategoryIconProps) {
+  const slug      = slugProp ?? SLUG_BY_NAME[name]
+  const Icon      = slug ? LUCIDE_BY_SLUG[slug] : undefined
+  const usePng    = !!slug && HAS_PNG.has(slug)
 
   if (!slug && !Icon) return null
 
   const borderWidth = size >= 64 ? 2 : 1.5
   const iconSize    = Math.round(size * 0.46)
 
+  // a11y: rotulado (role="img" + aria-label) por padrão; decorativo (aria-hidden)
+  // quando o nome já aparece como texto adjacente.
+  const a11yProps = decorative
+    ? { "aria-hidden": true as const }
+    : { role: "img", "aria-label": name }
+
   // PNGs já têm o círculo embutido — exibe direto sem container extra
   if (usePng && slug) {
     return (
       <span
-        role="img"
-        aria-label={name}
+        {...a11yProps}
         className={`inline-flex flex-shrink-0
           transition-transform duration-200 hover:scale-105 ${className}`}
         style={{ width: size, height: size }}
       >
         <Image
           src={`/icons/${slug}.png`}
-          alt={name}
+          alt=""
           width={size}
           height={size}
           className={`object-contain${monochrome ? " grayscale" : ""}`}
@@ -120,8 +143,7 @@ export function CategoryIcon({ name, size = 64, className = "", monochrome = fal
   // Fallback Lucide: círculo branco com borda #144D81
   return (
     <span
-      role="img"
-      aria-label={name}
+      {...a11yProps}
       className={`inline-flex items-center justify-center rounded-full bg-white
         transition-transform duration-200 hover:scale-105 flex-shrink-0 ${className}`}
       style={{

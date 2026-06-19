@@ -1,12 +1,14 @@
 import type { NextRequest } from "next/server"
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
-import { hashDocument, encryptDocument } from "@/lib/crypto"
-import { RegisterSchema } from "@/lib/validations/auth"
-import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
-import { sendWelcomeEmail } from "@/lib/email"
+import { RegisterMinimalSchema } from "@/lib/validations/auth"
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
+import { sendVerificationEmail } from "@/lib/email"
+import crypto from "crypto"
 import { generateUserSlug } from "@/lib/slugify"
+import { applyReferralCode } from "@/lib/referral"
+import { EMAIL_VERIFY_TOKEN_TTL_MS } from "@/lib/auth-config"
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,11 +17,13 @@ export async function POST(req: NextRequest) {
       req.headers.get("x-real-ip") ??
       "unknown"
 
-    const rl = await checkRateLimit(`register:${ip}`, 5, 60_000) // 5 por minuto por IP
+    // `req` passado p/ honrar o bypass de E2E (header x-e2e-token + E2E_SECRET) na suíte
+    // de regressão — sem afrouxar o rate limit em produção (bypass só com o secret correto).
+    const rl = await checkRateLimit(`register:${ip}`, RATE_LIMITS.register.limit, RATE_LIMITS.register.windowMs, req)
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const body = await req.json()
-    const parsed = RegisterSchema.safeParse(body)
+    const parsed = RegisterMinimalSchema.safeParse(body)
 
     if (!parsed.success) {
       const details: Record<string, string[]> = {}
@@ -44,30 +48,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Uniqueness: CPF
-    if (d.userType === "PF" && d.cpf) {
-      const cpfHash = hashDocument(d.cpf)
-      const exists = await prisma.user.findUnique({ where: { cpfHash }, select: { id: true } })
-      if (exists) {
-        return NextResponse.json(
-          { error: { code: "CPF_ALREADY_EXISTS", message: "CPF já cadastrado." } },
-          { status: 409 },
-        )
-      }
-    }
-
-    // Uniqueness: CNPJ
-    if (d.userType === "PJ" && d.cnpj) {
-      const cnpjHash = hashDocument(d.cnpj)
-      const exists = await prisma.user.findUnique({ where: { cnpjHash }, select: { id: true } })
-      if (exists) {
-        return NextResponse.json(
-          { error: { code: "CNPJ_ALREADY_EXISTS", message: "CNPJ já cadastrado." } },
-          { status: 409 },
-        )
-      }
-    }
-
     const passwordHash = await bcrypt.hash(d.password, 12)
 
     // $transaction: criar user → gerar slug com o ID real → atualizar
@@ -77,18 +57,13 @@ export async function POST(req: NextRequest) {
           name:           d.name,
           email:          d.email,
           passwordHash,
-          phone:          d.phone || null,
-          userType:       d.userType,
-          cpfHash:        d.cpf  ? hashDocument(d.cpf)    : null,
-          cpfEncrypted:   d.cpf  ? encryptDocument(d.cpf)  : null,
-          cnpjHash:       d.cnpj ? hashDocument(d.cnpj)   : null,
-          cnpjEncrypted:  d.cnpj ? encryptDocument(d.cnpj) : null,
           city:           d.city,
           state:          d.state,
-          neighborhood:   d.neighborhood || null,
           consentVersion: d.consentVersion,
           consentAt:      new Date(),
           consentIp:      ip,
+          ageDeclaredAt:  new Date(), // 18+ declarado no signup mínimo (trilha LGPD)
+          // profileCompletedAt permanece null — cadastro completo exigido só ao Anunciar/Alugar
         },
         select: { id: true, name: true, email: true },
       })
@@ -113,9 +88,29 @@ export async function POST(req: NextRequest) {
       })
     })
 
-    // Boas-vindas — fire-and-forget
-    sendWelcomeEmail(user.email, user.name).catch((err) =>
-      console.error("[register] welcome email error:", err instanceof Error ? err.message : err)
+    // Aplicar código de indicação — após a resposta (não bloqueia registro)
+    const referralCode = d.referralCode
+    if (referralCode) {
+      after(() =>
+        applyReferralCode(user.id, referralCode).catch((err) =>
+          console.error("[register] referral apply error:", err instanceof Error ? err.message : err)
+        )
+      )
+    }
+
+    // Token de verificação de e-mail — após a resposta (não bloqueia registro)
+    const verifyToken   = crypto.randomBytes(32).toString("hex")
+    const tokenExpiresAt = new Date(Date.now() + EMAIL_VERIFY_TOKEN_TTL_MS)
+    after(() =>
+      prisma.user
+        .update({
+          where: { id: user.id },
+          data:  { emailVerifyToken: verifyToken, emailTokenExpiresAt: tokenExpiresAt },
+        })
+        .then(() => sendVerificationEmail(user.email, user.name, verifyToken))
+        .catch((err) =>
+          console.error("[register] verification email error:", err instanceof Error ? err.message : err)
+        )
     )
 
     return NextResponse.json({ data: user }, { status: 201 })

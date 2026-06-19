@@ -1,4 +1,5 @@
 import { Resend } from "resend"
+import { APP_URL } from "@/lib/app-url"
 
 const hasResendKey =
   typeof process.env.RESEND_API_KEY === "string" &&
@@ -12,8 +13,59 @@ function getResend(): Resend | null {
   return _resend
 }
 
-const FROM    = process.env.EMAIL_FROM    ?? "noreply@shareo.com.br"
-const APP_URL = process.env.NEXTAUTH_URL  ?? "https://shareo-rouge.vercel.app"
+// || (não ??): EMAIL_FROM vazio no Vercel não pode virar from inválido
+const FROM = process.env.EMAIL_FROM || "noreply@shareo.com.br"
+
+/**
+ * Envia com 1 retry automático em falha transitória da Resend.
+ * Para e-mails que bloqueiam o usuário (verificação, reset de senha),
+ * uma falha momentânea de rede/API não deve deixá-lo sem o link.
+ * Retorna no padrão { error } da Resend (null em sucesso).
+ */
+async function sendWithRetry(
+  resend: Resend,
+  payload: Parameters<Resend["emails"]["send"]>[0],
+  label: string,
+): Promise<{ error: { message: string } | null }> {
+  const MAX_ATTEMPTS = 2
+  let lastError: { message: string } | null = null
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const { error } = await resend.emails.send(payload)
+      if (!error) return { error: null }
+      lastError = { message: error.message }
+      console.error(`[email:${label}] tentativa ${attempt}/${MAX_ATTEMPTS} falhou: ${error.message}`)
+    } catch (err) {
+      lastError = { message: err instanceof Error ? err.message : "erro desconhecido" }
+      console.error(`[email:${label}] tentativa ${attempt}/${MAX_ATTEMPTS} exceção: ${lastError.message}`)
+    }
+    if (attempt < MAX_ATTEMPTS) await new Promise((r) => setTimeout(r, 400))
+  }
+
+  return { error: lastError }
+}
+
+/**
+ * Envio genérico de baixo nível, com retry. É o ÚNICO ponto de integração com o
+ * provedor para e-mails sem template dedicado (ex.: cron de reengajamento).
+ */
+export async function sendAppEmail(opts: {
+  to: string
+  subject: string
+  html: string
+}): Promise<{ error: { message: string } | null }> {
+  const resend = getResend()
+  if (!resend) {
+    console.warn(`[email] sem RESEND_API_KEY — "${opts.subject}" não enviado`)
+    return { error: { message: "RESEND_API_KEY ausente" } }
+  }
+  return sendWithRetry(
+    resend,
+    { from: `ShareO <${FROM}>`, to: opts.to, subject: opts.subject, html: opts.html },
+    "app",
+  )
+}
 
 // ─── Templates ────────────────────────────────────────────────────────────────
 
@@ -105,50 +157,6 @@ function passwordResetHtml(firstName: string, resetUrl: string) {
   `)
 }
 
-function welcomeHtml(name: string) {
-  const firstName = name.split(" ")[0]
-  return baseLayout(`
-    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
-      Bem-vindo ao ShareO, ${firstName}! 🎉
-    </h1>
-    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
-      Sua conta foi criada com sucesso. Agora você pode alugar o que precisa ou
-      anunciar o que tem parado em casa — tudo de forma simples e segura.
-    </p>
-
-    <div style="text-align:center;">
-      ${ctaButton(`${APP_URL}/itens`, "Explorar itens disponíveis")}
-    </div>
-
-    <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:28px;border-top:1px solid #E2E8F0;padding-top:24px;">
-      <tr>
-        <td style="padding:0 0 16px;">
-          <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#003366;">📦 Anuncie seu item</p>
-          <p style="margin:0;font-size:13px;color:#64748B;line-height:1.5;">
-            Tem uma furadeira, câmera ou barraca parada? Anuncie em minutos e comece a ganhar.
-          </p>
-        </td>
-      </tr>
-      <tr>
-        <td style="padding:0 0 16px;">
-          <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#003366;">🔍 Encontre o que precisa</p>
-          <p style="margin:0;font-size:13px;color:#64748B;line-height:1.5;">
-            Filtre por categoria, preço e localização. Fale diretamente com o proprietário pelo chat.
-          </p>
-        </td>
-      </tr>
-      <tr>
-        <td>
-          <p style="margin:0 0 4px;font-size:14px;font-weight:700;color:#003366;">⭐ Avalie e construa reputação</p>
-          <p style="margin:0;font-size:13px;color:#64748B;line-height:1.5;">
-            Após cada locação, avalie a experiência. Uma boa reputação abre mais oportunidades.
-          </p>
-        </td>
-      </tr>
-    </table>
-  `)
-}
-
 function bookingConfirmedHtml(firstName: string, itemTitle: string, startDate: Date, endDate: Date, bookingUrl: string) {
   return baseLayout(`
     <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
@@ -227,28 +235,97 @@ export async function sendPasswordResetEmail(
   const firstName = name.split(" ")[0]
   const resetUrl  = `${APP_URL}/esqueci-senha/${token}`
 
-  const { error } = await resend.emails.send({
+  const { error } = await sendWithRetry(resend, {
     from:    `ShareO <${FROM}>`,
     to,
     subject: "Redefinir sua senha — ShareO",
     html:    passwordResetHtml(firstName, resetUrl),
+  }, "password-reset")
+
+  if (error) throw new Error(`Resend error: ${error.message}`)
+}
+
+export async function sendExportReadyEmail(
+  to: string,
+  name: string,
+  periodStart: Date,
+  periodEnd: Date,
+): Promise<void> {
+  const resend = getResend()
+  if (!resend) return
+
+  const firstName = name.split(" ")[0]
+  const fmtBr     = (d: Date) => d.toLocaleDateString("pt-BR")
+  const url       = `${APP_URL}/admin/financeiro/exportar`
+
+  const html = baseLayout(`
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
+      Exportação concluída
+    </h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
+      Olá, ${firstName}! A exportação financeira do período
+      <strong>${fmtBr(periodStart)} a ${fmtBr(periodEnd)}</strong> foi concluída
+      e está disponível para download no painel administrativo.
+    </p>
+
+    <div style="text-align:center;">
+      ${ctaButton(url, "Baixar exportação")}
+    </div>
+
+    <p style="margin:0;font-size:13px;color:#64748B;line-height:1.6;">
+      O arquivo fica disponível na página de exportações do painel financeiro.
+    </p>
+  `)
+
+  const { error } = await resend.emails.send({
+    from:    `ShareO <${FROM}>`,
+    to,
+    subject: "Sua exportação financeira está pronta — ShareO",
+    html,
   })
 
   if (error) throw new Error(`Resend error: ${error.message}`)
 }
 
-export async function sendWelcomeEmail(to: string, name: string): Promise<void> {
+export async function sendVerificationEmail(
+  to: string,
+  name: string,
+  token: string,
+): Promise<void> {
   const resend = getResend()
   if (!resend) return
 
-  const firstName = name.split(" ")[0]
+  const firstName  = name.split(" ")[0]
+  const verifyUrl  = `${APP_URL}/verify-email?token=${token}`
 
-  const { error } = await resend.emails.send({
+  const html = baseLayout(`
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
+      Confirme seu e-mail
+    </h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
+      Olá, ${firstName}! Clique no botão abaixo para confirmar seu endereço de e-mail.
+      O link expira em <strong>48 horas</strong>.
+    </p>
+
+    <div style="text-align:center;">
+      ${ctaButton(verifyUrl, "Confirmar e-mail")}
+    </div>
+
+    <p style="margin:20px 0 0;font-size:12px;color:#94A3B8;">
+      Se o botão não funcionar, acesse o link diretamente:<br/>
+      <a href="${verifyUrl}" style="color:#007B3C;word-break:break-all;">${verifyUrl}</a>
+    </p>
+    <p style="margin:12px 0 0;font-size:12px;color:#94A3B8;">
+      Se você não criou uma conta no ShareO, ignore este e-mail.
+    </p>
+  `)
+
+  const { error } = await sendWithRetry(resend, {
     from:    `ShareO <${FROM}>`,
     to,
-    subject: `Bem-vindo ao ShareO, ${firstName}!`,
-    html:    welcomeHtml(name),
-  })
+    subject: "Confirme seu e-mail no ShareO",
+    html,
+  }, "verification")
 
   if (error) throw new Error(`Resend error: ${error.message}`)
 }
@@ -386,17 +463,189 @@ export async function sendLateFeeEmail(
   if (error) throw new Error(`Resend error: ${error.message}`)
 }
 
+function idVerifiedHtml(firstName: string) {
+  return baseLayout(`
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
+      ✅ Identidade verificada!
+    </h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
+      Olá, ${firstName}! Sua identidade foi verificada com sucesso pela equipe ShareO.
+      Agora você pode alugar e anunciar itens com o selo de verificação na sua conta.
+    </p>
+
+    <div style="margin-bottom:24px;padding:16px 20px;background:#F0FDF4;border-radius:8px;border:1px solid #BBF7D0;">
+      <p style="margin:0;font-size:14px;color:#15803D;">
+        <strong>✓ Conta verificada</strong> — Usuários verificados têm maior credibilidade e mais chances de fechar locações.
+      </p>
+    </div>
+
+    <div style="text-align:center;">
+      ${ctaButton(`${APP_URL}/perfil`, "Ver meu perfil")}
+    </div>
+  `)
+}
+
+function idRejectedHtml(firstName: string, reason: string) {
+  return baseLayout(`
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#B91C1C;">
+      Verificação não aprovada
+    </h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
+      Olá, ${firstName}! Infelizmente não foi possível verificar sua identidade com os documentos enviados.
+    </p>
+
+    <div style="margin-bottom:24px;padding:16px 20px;background:#FFF7ED;border-radius:8px;border:1px solid #FED7AA;">
+      <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#C2410C;text-transform:uppercase;letter-spacing:0.5px;">Motivo</p>
+      <p style="margin:0;font-size:14px;color:#C2410C;">${reason}</p>
+    </div>
+
+    <p style="margin:0 0 20px;font-size:14px;color:#475569;line-height:1.6;">
+      Você pode reenviar seus documentos corrigindo o problema indicado acima.
+      Certifique-se de que a foto está nítida e o documento está válido e legível.
+    </p>
+
+    <div style="text-align:center;">
+      ${ctaButton(`${APP_URL}/perfil/documentos`, "Reenviar documentos")}
+    </div>
+
+    <p style="margin:20px 0 0;font-size:12px;color:#94A3B8;">
+      Se acredita que houve um engano, entre em contato com nosso suporte.
+    </p>
+  `)
+}
+
+export async function sendIdVerifiedEmail(to: string, name: string): Promise<void> {
+  const resend = getResend()
+  if (!resend) return
+  const firstName = name.split(" ")[0]
+  const { error } = await resend.emails.send({
+    from:    `ShareO <${FROM}>`,
+    to,
+    subject: "✅ Sua identidade foi verificada — ShareO",
+    html:    idVerifiedHtml(firstName),
+  })
+  if (error) throw new Error(`Resend error: ${error.message}`)
+}
+
+export async function sendIdRejectedEmail(to: string, name: string, reason: string): Promise<void> {
+  const resend = getResend()
+  if (!resend) return
+  const firstName = name.split(" ")[0]
+  const { error } = await resend.emails.send({
+    from:    `ShareO <${FROM}>`,
+    to,
+    subject: "Verificação de identidade — ShareO",
+    html:    idRejectedHtml(firstName, reason),
+  })
+  if (error) throw new Error(`Resend error: ${error.message}`)
+}
+
+function founderWelcomeHtml(firstName: string, queuePosition: number) {
+  return baseLayout(`
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
+      Você está na lista, ${firstName}!
+    </h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
+      Você é o <strong>#${queuePosition}°</strong> na lista de fundadores do ShareO.
+      Avisaremos você em primeira mão quando abrirmos — antes de qualquer anúncio público.
+    </p>
+
+    <div style="margin-bottom:24px;padding:16px 20px;background:#F0FDF4;border-radius:8px;border:1px solid #BBF7D0;">
+      <p style="margin:0;font-size:14px;color:#15803D;line-height:1.5;">
+        <strong>O que esperar:</strong> Um e-mail com link de acesso exclusivo assim que o ShareO
+        abrir. Nenhum spam até lá.
+      </p>
+    </div>
+
+    <p style="margin:0;font-size:12px;color:#94A3B8;line-height:1.6;">
+      Para sair da lista a qualquer momento, envie um e-mail para
+      <a href="mailto:privacidade@shareo.com.br" style="color:#007B3C;">privacidade@shareo.com.br</a>.
+    </p>
+  `)
+}
+
+export async function sendFounderWelcomeEmail(
+  to: string,
+  name: string,
+  queuePosition: number,
+): Promise<void> {
+  const resend = getResend()
+  if (!resend) return
+
+  const firstName = name.split(" ")[0]
+  const { error } = await resend.emails.send({
+    from:    `ShareO <${FROM}>`,
+    to,
+    subject: `Você é o #${queuePosition}° na lista de fundadores do ShareO!`,
+    html:    founderWelcomeHtml(firstName, queuePosition),
+  })
+  if (error) throw new Error(`Resend error: ${error.message}`)
+}
+
+function founderInviteHtml(firstName: string, setPasswordUrl: string) {
+  return baseLayout(`
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
+      Bem-vindo ao piloto do ShareO, ${firstName}!
+    </h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
+      Sua vaga no piloto está confirmada. Para começar a explorar, defina sua senha de acesso
+      no primeiro acesso — leva menos de um minuto.
+    </p>
+
+    <div style="text-align:center;">
+      ${ctaButton(setPasswordUrl, "Definir minha senha")}
+    </div>
+
+    <p style="margin:20px 0 0;font-size:13px;color:#64748B;line-height:1.6;">
+      Depois de entrar, você poderá navegar livremente. Pediremos seu CPF e endereço apenas
+      quando quiser anunciar ou alugar um item.
+    </p>
+
+    <p style="margin:16px 0 0;font-size:13px;color:#64748B;line-height:1.6;">
+      💚 <strong>Convide amigos:</strong> ao entrar, gere seu link de indicação e compartilhe.
+      A cada locação de quem você indicar, você acumula uma parte da nossa taxa.
+    </p>
+
+    <p style="margin:16px 0 0;font-size:12px;color:#94A3B8;line-height:1.6;">
+      Se você não solicitou este convite, ignore este e-mail. O link expira em 14 dias.
+    </p>
+  `)
+}
+
+/** Convite-piloto: cria a conta do interessado e o leva a definir a senha no 1º acesso. */
+export async function sendFounderInviteEmail(
+  to: string,
+  name: string,
+  token: string,
+): Promise<void> {
+  const resend = getResend()
+  if (!resend) return
+
+  const firstName      = name.split(" ")[0]
+  const setPasswordUrl = `${APP_URL}/definir-senha/${token}`
+
+  const { error } = await sendWithRetry(resend, {
+    from:    `ShareO <${FROM}>`,
+    to,
+    subject: "Seu acesso ao piloto do ShareO — defina sua senha",
+    html:    founderInviteHtml(firstName, setPasswordUrl),
+  }, "founder-invite")
+
+  if (error) throw new Error(`Resend error: ${error.message}`)
+}
+
 /** Lembrete: item em atraso — enviado ao locatário e ao locador */
 export async function sendReminderOverdue(
-  borrowerEmail: string, borrowerName: string,
-  ownerEmail:    string, ownerName:    string,
-  itemTitle:     string, bookingId:    string,
-  endDate:       Date,   daysLate:     number,
-  dailyPriceCents: number,
+  borrowerEmail:    string, borrowerName: string,
+  ownerEmail:       string, ownerName:    string,
+  itemTitle:        string, bookingId:    string,
+  endDate:          Date,   daysLate:     number,
+  dailyPriceCents:  number,
+  lateFeeMultiplier = 1.5,
 ): Promise<void> {
   const url       = `${APP_URL}/reservas/${bookingId}`
   const lateFee   = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" })
-                      .format((dailyPriceCents * 1.5 * daysLate) / 100)
+                      .format((dailyPriceCents * lateFeeMultiplier * daysLate) / 100)
 
   const html = (firstName: string, role: "borrower" | "owner") => baseLayout(`
     <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#B91C1C;">

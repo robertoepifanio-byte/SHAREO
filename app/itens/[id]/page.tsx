@@ -1,8 +1,10 @@
 import type { Metadata } from "next"
+import { after } from "next/server"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { jsonLdScript } from "@/lib/jsonLd"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { FavoriteButton } from "@/components/items/FavoriteButton"
 import { getOwnerResponseBadge } from "@/lib/ownerStats"
@@ -10,8 +12,11 @@ import { Gallery } from "./_Gallery"
 import { PriceCalc } from "./_PriceCalc"
 import { StickyBookingCTA } from "./_StickyBookingCTA"
 import { CANCELLATION_POLICY_LINES } from "@/lib/cancellationPolicy"
+import { getPlatformFeeRate, CHECKOUT_MAX_CENTS } from "@/lib/platform-config"
 import { ItemCard } from "@/components/items/ItemCard"
 import { AvailabilityCalendar } from "@/components/items/AvailabilityCalendar"
+import { ReviewDetails, ReviewSentiment } from "@/components/reviews/ReviewDetails"
+import { TrackEvent } from "@/components/analytics/TrackEvent"
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ back?: string }> }
 
@@ -90,10 +95,14 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
             city: true, neighborhood: true, createdAt: true,
           },
         },
-        images:  { select: { url: true }, orderBy: { order: "asc" } },
+        images:  { select: { url: true }, orderBy: { order: "asc" }, take: 24 },
         reviews: {
           where:   { reviewType: "ITEM" },
-          select:  { id: true, rating: true, comment: true, createdAt: true, reviewer: { select: { name: true } } },
+          select:  {
+            id: true, rating: true, comment: true, createdAt: true,
+            sentiment: true, itemAsDescribed: true, conservation: true, photoUrl: true,
+            reviewer: { select: { name: true } },
+          },
           orderBy: { createdAt: "desc" },
           take:    8,
         },
@@ -107,24 +116,17 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
 
   const [responseBadge, ownerStats, similarItems] = await Promise.all([
     getOwnerResponseBadge(item.ownerId),
-    // P1-23 — taxa de resposta e locações concluídas do proprietário
-    prisma.booking.aggregate({
+    // P1-23 — taxa de resposta e locações concluídas (ARQ-M-10: 1 groupBy em vez de 1 aggregate + 2 counts)
+    prisma.booking.groupBy({
+      by: ["status"],
       where: { ownerId: item.ownerId, deletedAt: null },
-      _count: { id: true },
-    }).then(async (total) => {
-      const [completed, responded] = await Promise.all([
-        prisma.booking.count({
-          where: { ownerId: item.ownerId, status: "COMPLETED", deletedAt: null },
-        }),
-        prisma.booking.count({
-          where: {
-            ownerId: item.ownerId,
-            status: { in: ["CONFIRMED", "ACTIVE", "RETURNED", "COMPLETED"] },
-            deletedAt: null,
-          },
-        }),
-      ])
-      const totalCount = total._count.id
+      _count: true,
+    }).then((rows) => {
+      const byStatus   = new Map(rows.map((r) => [r.status, r._count]))
+      const totalCount = rows.reduce((s, r) => s + r._count, 0)
+      const completed  = byStatus.get("COMPLETED") ?? 0
+      const responded  = (["CONFIRMED", "ACTIVE", "RETURNED", "COMPLETED"] as const)
+        .reduce((s, k) => s + (byStatus.get(k) ?? 0), 0)
       return {
         completedCount: completed,
         responseRate: totalCount > 0 ? Math.round((responded / totalCount) * 100) : null,
@@ -154,7 +156,10 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
     }),
   ])
 
-  prisma.item.update({ where: { id }, data: { viewCount: { increment: 1 } } }).catch(() => {})
+  after(() => { prisma.item.update({ where: { id }, data: { viewCount: { increment: 1 } } }).catch(() => {}) })
+
+  const feeRateBps = await getPlatformFeeRate()   // basis points (ex: 1500 = 15%)
+  const feeRatePct = feeRateBps / 100             // 15.0
 
   const isOwner   = session?.user.id === item.ownerId
   const avgRating = item.reviews.length
@@ -234,13 +239,14 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
 
   return (
     <>
+    <TrackEvent event={{ name: "item_view", params: { item_id: item.id, item_name: item.title, category: item.category?.name ?? "sem-categoria" } }} />
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      dangerouslySetInnerHTML={{ __html: jsonLdScript(productJsonLd) }}
     />
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      dangerouslySetInnerHTML={{ __html: jsonLdScript(breadcrumbJsonLd) }}
     />
     <div className="min-h-screen bg-background">
       <AppHeader />
@@ -289,16 +295,20 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
 
       <main className="container py-8">
         <h1 className="sr-only">{item.title}</h1>
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+        {/* Mobile: galeria → card de reserva (preço+CTA acima da dobra) → descrição.
+            Desktop (lg): coluna esquerda galeria+descrição, card sticky à direita. */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
 
-          {/* ─── ESQUERDA: Galeria + Descrição + Avaliações ─── */}
-          <div className="min-w-0 flex-1">
-
-            {/* Galeria interativa (client component) */}
+          {/* ─── Galeria ─── */}
+          <div className="order-1 min-w-0 lg:col-start-1 lg:row-start-1">
             <Gallery images={item.images} title={item.title} />
+          </div>
+
+          {/* ─── Descrição + Disponibilidade + Avaliações ─── */}
+          <div className="order-3 min-w-0 lg:col-start-1 lg:row-start-2">
 
             {/* Descrição */}
-            <div className="mt-6">
+            <div>
               <h2 className="mb-3 text-lg font-bold text-primary">Sobre o item</h2>
               <p className="text-sm leading-relaxed text-muted-foreground">
                 {item.description}
@@ -351,12 +361,14 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
                           {relativeTime(new Date(review.createdAt))}
                         </span>
                       </div>
-                      <div className="mb-1 text-sm text-yellow-500" aria-label={`${review.rating} estrelas`}>
-                        {"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}
+                      <div className="mb-1 flex items-center gap-2 text-sm text-yellow-500" aria-label={`${review.rating} estrelas`}>
+                        <span>{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span>
+                        <ReviewSentiment sentiment={review.sentiment} />
                       </div>
                       {review.comment && (
                         <p className="text-sm text-muted-foreground">{review.comment}</p>
                       )}
+                      <ReviewDetails review={review} />
                     </div>
                   ))}
                 </div>
@@ -368,9 +380,9 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
             </div>
           </div>
 
-          {/* ─── DIREITA: Card de locação (sticky) ─── */}
-          <div className="w-full lg:w-[360px] lg:flex-shrink-0">
-            <div className="sticky top-20 rounded-xl border border-border bg-surface p-6">
+          {/* ─── Card de locação (mobile: logo após a galeria · lg: sticky à direita) ─── */}
+          <div className="order-2 w-full lg:col-start-2 lg:row-span-2 lg:row-start-1">
+            <div className="lg:sticky lg:top-20 rounded-xl border border-border bg-surface p-6">
 
               {/* Categoria */}
               <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-brand">
@@ -485,6 +497,8 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
                     depositAmount={item.depositAmount}
                     itemId={item.id}
                     isLoggedIn={!!session}
+                    feeRatePct={feeRatePct}
+                    checkoutMaxCents={CHECKOUT_MAX_CENTS}
                   />
                 </div>
               )}
@@ -559,7 +573,6 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
                 <p className="mb-3 text-xs font-bold text-brand">🔒 Sua locação está protegida</p>
                 <ul className="space-y-2">
                   {[
-                    "Pagamento liberado só após confirmação da retirada",
                     "Cancelamento gratuito até 24h antes",
                     "Item protegido durante a locação",
                     "Suporte ShareO disponível 7 dias por semana",

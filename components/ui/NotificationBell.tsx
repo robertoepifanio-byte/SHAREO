@@ -95,6 +95,12 @@ export function NotificationBell() {
     setNotifs((prev) => prev.map((n) => ({ ...n, readAt: n.readAt ?? new Date().toISOString() })))
   }
 
+  const markRead = (n: Notif) => {
+    if (n.readAt) return
+    setNotifs((prev) => prev.map((x) => (x.id === n.id ? { ...x, readAt: new Date().toISOString() } : x)))
+    fetch(`/api/notifications/${n.id}/read`, { method: "PATCH" }).catch(() => {})
+  }
+
   const dropdown = (
     <div
       ref={dropdownRef}
@@ -123,7 +129,7 @@ export function NotificationBell() {
             <li key={n.id}>
               <Link
                 href={getLink(n)}
-                onClick={() => setOpen(false)}
+                onClick={() => { markRead(n); setOpen(false) }}
                 className={`flex items-start gap-3 px-4 py-3 hover:bg-muted/50 transition-colors ${!n.readAt ? "bg-brand/5" : ""}`}
               >
                 <div className="flex-1 min-w-0">

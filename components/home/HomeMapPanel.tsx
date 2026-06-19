@@ -101,7 +101,7 @@ export function HomeMapPanel({ items, defaultLat, defaultLng, defaultZoom, userC
           <div className="flex items-center gap-1.5">
             <span className="text-brand text-sm">📍</span>
             <span className="text-sm font-bold text-primary">
-              {userCity ?? "Natal, RN"}
+              {userCity ?? "Brasil"}
             </span>
           </div>
           <p className="text-[11px] text-muted-foreground mt-1">Baseado na sua conta</p>

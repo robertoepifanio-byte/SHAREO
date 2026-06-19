@@ -1,6 +1,8 @@
 "use client"
 
 import { useRef, useState } from "react"
+import Image from "next/image"
+import { trackEvent } from "@/components/analytics/GoogleAnalytics"
 
 type ReviewType = "ITEM" | "OWNER" | "BORROWER"
 
@@ -143,6 +145,7 @@ export function ReviewForm({ bookingId, reviewType, targetName, existing }: Prop
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok) { setError((json as { error?: { message?: string } }).error?.message ?? "Erro ao enviar avaliação."); return }
+      trackEvent({ name: "review_submitted", params: { review_type: reviewType, rating } })
       setDone(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao enviar avaliação.")
@@ -240,8 +243,7 @@ export function ReviewForm({ bookingId, reviewType, targetName, existing }: Prop
           <p className="mb-2 text-sm font-medium text-foreground">Foto do item em uso <span className="text-muted-foreground">(opcional)</span></p>
           {photoUrl ? (
             <div className="relative inline-block">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={photoUrl} alt="Foto do item em uso" className="h-24 w-24 rounded-lg object-cover" />
+              <Image src={photoUrl} alt="Foto do item em uso" width={96} height={96} className="h-24 w-24 rounded-lg object-cover" />
               <button
                 type="button"
                 onClick={() => setPhotoUrl(null)}

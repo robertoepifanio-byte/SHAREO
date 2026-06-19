@@ -84,9 +84,9 @@ const config: Config = {
           foreground: "#FFFFFF",
         },
         destructive: {
-          DEFAULT:    "#E74C3C",   // vermelho suave
-          hover:      "#C0392B",
-          light:      "#FDEDEC",
+          DEFAULT:    "#C0392B",   // vermelho — contraste WCAG AA (5.44:1 sobre branco, como texto e como bg)
+          hover:      "#A93226",   // hover mais escuro (6.62:1)
+          light:      "#FDEDEC",   // fundo sutil (chips/alertas)
           foreground: "#FFFFFF",
         },
 
@@ -96,7 +96,12 @@ const config: Config = {
 
         // Texto
         foreground: "#0F172A",           // slate-900 — texto principal
-        "muted-foreground": "#64748B",   // slate-500 — texto secundário
+        "muted-foreground": "#64748B",   // slate-500 — texto secundário (alias plano para compatibilidade)
+        // Token `muted` como objeto para suportar bg-muted / text-muted-foreground via objeto
+        muted: {
+          DEFAULT:    "#E2E8F0",   // slate-200 — fundo sutil (placeholders, skeletons)
+          foreground: "#64748B",   // slate-500 — texto secundário (mesmo valor que "muted-foreground")
+        },
 
         // Bordas
         border: "#E2E8F0",               // slate-200

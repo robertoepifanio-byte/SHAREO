@@ -10,14 +10,15 @@ import { CategoryIcon } from "@/components/ui/CategoryIcon"
 import { SortSelect } from "./_SortSelect"
 import { ItemsMapLoader } from "@/components/items/ItemsMapLoader"
 import type { ItemPin } from "@/components/items/ItemsMap"
-import { DistanceFilter } from "./_DistanceFilter"
+import { FilterForm } from "./_FilterForm"
 import { FilterTrigger } from "./_FilterTrigger"
 import { ActiveFilterChips } from "./_ActiveFilterChips"
 import { haversineKm } from "@/lib/haversine"
-import { getUserMapLocation } from "@/lib/userLocation"
+import { getUserCoords, BRAZIL_DEFAULT } from "@/lib/userLocation"
 import { MapToggle } from "./_MapToggle"
 import { PullToRefresh } from "@/components/items/PullToRefresh"
 import { FloatingCTA } from "@/components/items/FloatingCTA"
+import { TrackEvent } from "@/components/analytics/TrackEvent"
 import { RentBanner } from "./_RentBanner"
 
 export const metadata: Metadata = {
@@ -53,6 +54,7 @@ function getOrderBy(sort?: string) {
     case "price_asc":  return [{ pricePerDay: "asc"  as const }, id]
     case "price_desc": return [{ pricePerDay: "desc" as const }, id]
     case "views":      return [{ viewCount:   "desc" as const }, id]
+    case "rented":     return [{ bookings: { _count: "desc" as const } }, id]
     default:           return [{ createdAt:   "desc" as const }, id]
   }
 }
@@ -62,7 +64,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
     searchParams,
     auth().catch(() => null),
   ])
-  const userLoc = await getUserMapLocation(session?.user?.id)
+  const profileCoords = await getUserCoords(session?.user?.id)
   const page       = Math.max(1, Number(sp.page ?? 1))
   const search     = sp.search?.trim() || undefined
   const categoryId = sp.categoryId    || undefined
@@ -70,8 +72,17 @@ export default async function ExplorarPage({ searchParams }: Props) {
   const sort       = sp.sort          || undefined
   const priceMaxR  = sp.priceMax ? Number(sp.priceMax) : undefined // reais
   const dist       = sp.dist     || undefined
-  const userLat    = sp.ulat ? Number(sp.ulat) : undefined
-  const userLng    = sp.ulng ? Number(sp.ulng) : undefined
+  // Sem GPS na URL, a distância é medida a partir da localização do perfil
+  const userLat    = sp.ulat ? Number(sp.ulat) : (dist ? profileCoords?.lat : undefined)
+  const userLng    = sp.ulng ? Number(sp.ulng) : (dist ? profileCoords?.lng : undefined)
+  // Centro do mapa: com filtro de distância ativo, centra na ORIGEM do filtro (GPS da URL
+  // ou localização do perfil); senão no perfil; senão no Brasil. (Antes ignorava o GPS → mapa estático.)
+  const userLoc =
+    userLat !== undefined && userLng !== undefined && Number.isFinite(userLat) && Number.isFinite(userLng)
+      ? { lat: userLat as number, lng: userLng as number, zoom: 13 }
+      : profileCoords
+        ? { lat: profileCoords.lat, lng: profileCoords.lng, zoom: profileCoords.source === "profile" ? 15 : 12 }
+        : BRAZIL_DEFAULT
   const minRating  = sp.minRating ? Number(sp.minRating) : undefined
   const skip       = (page - 1) * PAGE_SIZE
 
@@ -134,7 +145,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
     prisma.item.count({ where }),
     prisma.category.findMany({
       where:   { parentId: null },
-      select:  { id: true, name: true },
+      select:  { id: true, name: true, slug: true },
       orderBy: { name: "asc" },
     }),
   ]).catch((err) => {
@@ -284,7 +295,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
                   : "border-border bg-surface text-muted-foreground hover:border-brand/40 hover:text-foreground"
               }`}
             >
-              <CategoryIcon name="Todos" size={52} />
+              <CategoryIcon name="Todos" slug="todas" size={52} />
               <span className="flex flex-col items-center leading-tight">
                 <span>Todas</span>
                 <span>Categorias</span>
@@ -301,7 +312,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
                     : "border-border bg-surface text-muted-foreground hover:border-brand/40 hover:text-foreground"
                 }`}
               >
-                <CategoryIcon name={cat.name} size={52} />
+                <CategoryIcon name={cat.name} slug={cat.slug} size={52} />
                 <span className="flex flex-col items-center leading-tight text-center max-w-[72px]">
                   {cat.name.split(" ").length > 1
                     ? (() => {
@@ -334,6 +345,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
             userLng={sp.ulng}
             minRating={sp.minRating}
             view={sp.view}
+            hasProfileLocation={!!profileCoords}
           />
         </FilterTrigger>
 
@@ -356,12 +368,20 @@ export default async function ExplorarPage({ searchParams }: Props) {
                 userLng={sp.ulng}
                 minRating={sp.minRating}
                 view={sp.view}
+                hasProfileLocation={!!profileCoords}
               />
             </div>
           </aside>
 
           {/* Área de resultados */}
           <div className="min-w-0 flex-1">
+
+            {search && (
+              <TrackEvent
+                key={`search-${search}-${total}`}
+                event={{ name: "search", params: { search_term: search, results_count: total } }}
+              />
+            )}
 
             {/* Chips de filtros ativos — Suspense obrigatório: useSearchParams no interior */}
             <Suspense fallback={null}>
@@ -371,9 +391,9 @@ export default async function ExplorarPage({ searchParams }: Props) {
             {/* Resultado count + ordenação */}
             <div className="mb-4 flex items-center justify-between gap-3">
               <p className="text-sm text-muted-foreground" aria-live="polite">
-                {total === 0
+                {filteredTotal === 0
                   ? "Nenhum anúncio encontrado"
-                  : `${total} anúncio${total !== 1 ? "s" : ""} encontrado${total !== 1 ? "s" : ""}`}
+                  : `${filteredTotal} anúncio${filteredTotal !== 1 ? "s" : ""} encontrado${filteredTotal !== 1 ? "s" : ""}`}
               </p>
               <Suspense fallback={
                 <select disabled className="h-10 rounded-lg border border-input bg-surface px-3 text-sm opacity-50">
@@ -392,8 +412,8 @@ export default async function ExplorarPage({ searchParams }: Props) {
                   id:          i.id,
                   title:       i.title,
                   pricePerDay: i.pricePerDay,
-                  lat:         i.latitude!,
-                  lng:         i.longitude!,
+                  lat:         Math.round(i.latitude! * 1000) / 1000,  // ~110m (SEC-MIN-06): não expor coord exata ao client
+                  lng:         Math.round(i.longitude! * 1000) / 1000,
                 }))
 
               const mapView = pins.length > 0 ? (
@@ -474,127 +494,3 @@ export default async function ExplorarPage({ searchParams }: Props) {
   )
 }
 
-/* ─── Sub-componente: formulário de filtros (reutilizado mobile e desktop) ─── */
-function FilterForm({
-  categories,
-  categoryId,
-  priceMax,
-  search,
-  sort,
-  dist,
-  userLat,
-  userLng,
-  minRating,
-  view,
-}: {
-  categories: { id: string; name: string }[]
-  categoryId?: string
-  priceMax?:   string
-  search?:     string
-  sort?:       string
-  dist?:       string
-  userLat?:    string
-  userLng?:    string
-  minRating?:  string
-  view?:       string
-}) {
-  return (
-    <form method="GET" action="/itens" className="space-y-5">
-      {search   && <input type="hidden" name="search" value={search} />}
-      {sort     && <input type="hidden" name="sort"   value={sort} />}
-      {view     && <input type="hidden" name="view"   value={view} />}
-      {/* ulat/ulng são gerenciados pelo DistanceFilter (client) para suportar geolocalização dinâmica */}
-
-      {/* Categoria */}
-      <fieldset>
-        <legend className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Categoria
-        </legend>
-        <div className="space-y-0.5">
-          <label className="flex cursor-pointer items-center gap-2 py-1 text-sm text-foreground">
-            <input
-              type="radio"
-              name="categoryId"
-              value=""
-              defaultChecked={!categoryId}
-              className="accent-brand"
-            />
-            Todas
-          </label>
-          {categories.map((cat) => (
-            <label key={cat.id} className="flex cursor-pointer items-center gap-2 py-1 text-sm text-foreground">
-              <input
-                type="radio"
-                name="categoryId"
-                value={cat.id}
-                defaultChecked={categoryId === cat.id}
-                className="accent-brand"
-              />
-              {cat.name}
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
-      {/* Preço máximo / dia */}
-      <fieldset>
-        <legend className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Preço máx./dia
-        </legend>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">R$0</span>
-          <input
-            type="range"
-            name="priceMax"
-            min="0"
-            max="500"
-            step="10"
-            defaultValue={priceMax ?? "500"}
-            aria-label="Preço máximo por dia em reais"
-            className="flex-1 accent-brand"
-          />
-          <span className="min-w-[44px] text-right text-xs font-semibold text-foreground">
-            R${priceMax ?? "500"}
-          </span>
-        </div>
-      </fieldset>
-
-      {/* Distância — componente cliente com geolocalização */}
-      <Suspense fallback={null}>
-        <DistanceFilter dist={dist} userLat={userLat} userLng={userLng} />
-      </Suspense>
-
-      {/* Avaliação mínima */}
-      <fieldset>
-        <legend className="mb-2 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Avaliação mínima
-        </legend>
-        <div className="space-y-0.5">
-          {[
-            { label: "★★★★★ 5 estrelas", value: "5" },
-            { label: "★★★★+ 4+",          value: "4" },
-            { label: "★★★+  3+",           value: "3" },
-          ].map((opt) => (
-            <label key={opt.value} className="flex cursor-pointer items-center gap-2 py-1 text-sm text-foreground">
-              <input
-                type="radio"
-                name="minRating"
-                value={opt.value}
-                defaultChecked={minRating === opt.value}
-                className="accent-brand"
-              />
-              {opt.label}
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
-      <button
-        type="submit"
-        className="w-full h-11 rounded-lg bg-brand text-sm font-semibold text-white hover:opacity-90 transition-opacity"
-      >
-        Aplicar filtros
-      </button>
-    </form>
-  )
-}

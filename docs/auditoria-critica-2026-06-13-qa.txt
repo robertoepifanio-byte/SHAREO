@@ -1,0 +1,45 @@
+AUDITORIA CRITICA S13 — ShareO QA/E2E
+Data: 2026-06-13
+Run completo: BASE_URL=https://shareo-rouge.vercel.app STAGING_URL=https://shareo-rouge.vercel.app npx playwright test --config=playwright.staging.config.ts --workers=1
+
+RESULTADO DO RUN COMPLETO (com BASE_URL no comando):
+- 248 passed
+- 9 failed (reportados pelo Playwright)
+- 19 skipped
+- Duração: ~7.5 minutos
+
+FALHAS REPORTADAS NO RUN COMPLETO:
+1. admin-usuarios.spec.ts:106 (2.1 criar admin) → 429 rate limit (limit: 5/dia, estouro acumulado)
+2. admin-usuarios.spec.ts:132 (2.2 email duplicado) → 429 rate limit  
+3. admin-usuarios.spec.ts:152 (2.3 senha fraca) → 429 rate limit
+4. admin-usuarios.spec.ts:170 (2.4 sem especial) → 429 rate limit
+5. auth.spec.ts:165 (logout) → botão /sair/ não encontrado (dropdown não abre — locator errado)
+6. auth.spec.ts:203 (callbackUrl) → strict mode: getByLabel(/senha/i) resolve 2 elementos (input + botão "Mostrar senha")
+7. email-verification.spec.ts:79 (resend com auth) → 400 (fixture tem email verificado — spec não inclui 400 no array esperado)
+8. security2.spec.ts:91 (forgot-password anti-enum) → SyntaxError body vazio (rate-limit acumulado do run, res.json() em body vazio/429)
+9. security2.spec.ts:183 (smoke #21 review flow) → 422 (mark_active sem pickupToken → booking não avança para RETURNED)
+
+FALHAS ADICIONAIS OBSERVADAS NO OUTPUT (não no summary final):
+- email-verification.spec.ts:56, :62 (token tests) → timeout/redirect indevido (BASE_URL issue em run completo)
+- id-verification.spec.ts:37,:52,:84,:141 → 404 (BASE_URL não propagado no run completo — isolado: 4 passed)
+- notifications.spec.ts:25,:31,:41,:66 → 404/falha (BASE_URL não propagado — isolado: 5 passed)
+- mobile-menu-close.spec.ts:39,:62 → localhost URLs (BASE_URL não propagado — isolado: 2 passed)
+- phone-verification.spec.ts:130,:175 → falha (BASE_URL não propagado — isolado: 5 passed)
+- booking-cancel-ui.spec.ts:80 → 404 sem auth (BASE_URL issue no run completo — isolado: 6 passed)
+
+CAUSA RAIZ SISTÊMICA: BASE_URL não é propagado consistentemente para todos os specs durante o run completo.
+Os specs que usam `const BASE = process.env.BASE_URL ?? 'http://localhost:3000'` recebem o valor correto
+quando rodados isolados, mas no run completo de 276 testes há alguma inconsistência de propagação.
+
+RERUN ISOLADO DE CONFIRMAÇÃO:
+- mobile-menu-close.spec.ts: 2/2 passed
+- notifications.spec.ts: 5/5 passed
+- id-verification.spec.ts: 4/4 passed
+- phone-verification.spec.ts: 5/5 passed
+- email-verification.spec.ts: 5/6 (1 flaky - resend retorna 400 primeiro, 429 no retry)
+- security2.spec.ts smoke#19: 3/3 passed (isolado)
+- security2.spec.ts smoke#21: 0/1 failed (bug real — mark_active sem pickupToken)
+- auth.spec.ts logout + callbackUrl: 2/8 failed (bugs de spec persistentes)
+- admin-usuarios.spec.ts Grupo2: 429 rate limit (5/dia esgotado em staging)
+
+EVIDENCIAS: screenshots em test-results/

@@ -5,6 +5,7 @@
  */
 import { NextResponse, type NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { APP_URL } from "@/lib/app-url"
 import {
   sendReminderStartTomorrow,
   sendReminderReturnTomorrow,
@@ -12,6 +13,7 @@ import {
   sendLateFeeEmail,
 } from "@/lib/email"
 import { getStripe } from "@/lib/stripe"
+import { getLateFeeMultiplier } from "@/lib/platform-config"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
@@ -31,9 +33,11 @@ export async function GET(req: NextRequest) {
   // Proteção: apenas Vercel Cron ou CRON_SECRET correto
   const auth = req.headers.get("authorization")
   const secret = process.env.CRON_SECRET
-  if (secret && auth !== `Bearer ${secret}`) {
+  if (!secret || auth !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  const lateFeeMultiplier = await getLateFeeMultiplier()
 
   const today    = new Date()
   const tomorrow = new Date(today); tomorrow.setUTCDate(today.getUTCDate() + 1)
@@ -106,7 +110,7 @@ export async function GET(req: NextRequest) {
     sent.push(`return:${b.id}`)
   }
 
-  const appUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "https://shareo-rouge.vercel.app"
+  const appUrl = APP_URL
 
   for (const b of overdueBookings) {
     const daysLate = Math.ceil(
@@ -115,7 +119,7 @@ export async function GET(req: NextRequest) {
 
     // Primeira detecção de atraso: grava lateFeeAmount + cria cobrança Stripe
     if (b.lateFeeAmount == null) {
-      const lateFeeAmount = Math.round(b.dailyPrice * 1.5 * daysLate)
+      const lateFeeAmount = Math.round(b.dailyPrice * lateFeeMultiplier * daysLate)
 
       try {
         await prisma.booking.update({
@@ -163,7 +167,7 @@ export async function GET(req: NextRequest) {
       b.owner.email,    b.owner.name,
       b.item.title,     b.id,
       b.endDate,        daysLate,
-      b.dailyPrice,
+      b.dailyPrice,     lateFeeMultiplier,
     ).catch((e) => console.error("[cron] overdue reminder", b.id, e))
     sent.push(`overdue:${b.id}`)
   }

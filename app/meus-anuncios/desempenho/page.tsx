@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { PjGate } from "@/components/premium/PjGate"
@@ -244,8 +245,7 @@ export default async function DesempenhoPage() {
                             <div className="flex items-center gap-3">
                               <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
                                 {img ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img src={img} alt="" className="h-full w-full object-cover" />
+                                  <Image src={img} alt="" width={40} height={40} className="h-full w-full object-cover" />
                                 ) : (
                                   <div className="flex h-full w-full items-center justify-center text-muted-foreground/30">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
@@ -312,8 +312,7 @@ export default async function DesempenhoPage() {
                       <div className="mb-3 flex items-center gap-3">
                         <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
                           {img ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={img} alt="" className="h-full w-full object-cover" />
+                            <Image src={img} alt="" width={40} height={40} className="h-full w-full object-cover" />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center text-muted-foreground/30">
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">

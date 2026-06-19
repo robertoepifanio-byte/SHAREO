@@ -13,6 +13,7 @@ export const CreateBookingSchema = z
     startDate:   z.string().datetime({ message: "startDate inválida" }),
     endDate:     z.string().datetime({ message: "endDate inválida" }),
     borrowerNote: z.string().max(500, "Nota: máximo 500 caracteres").optional(),
+    couponCode:   z.string().trim().min(4).max(30).optional(),
   })
   .refine((d) => new Date(d.startDate) >= tomorrow(), {
     message: "A data de início deve ser a partir de amanhã",
@@ -38,8 +39,12 @@ export type ListBookingsQuery = z.infer<typeof ListBookingsQuerySchema>
 
 export const PatchBookingSchema = z
   .object({
-    action: z.enum(["confirm", "cancel", "mark_active", "mark_returned", "confirm_return", "open_dispute"]),
-    reason: z.string().max(500).optional(),
+    action:      z.enum(["confirm", "cancel", "mark_active", "mark_returned", "confirm_return", "open_dispute"]),
+    reason:      z.string().max(500).optional(),
+    // Horário real de retirada (mark_active) ou devolução (mark_returned/confirm_return)
+    actualTime:  z.string().datetime({ message: "actualTime inválido" }).optional(),
+    // Token de segurança obrigatório no mark_active
+    pickupToken: z.string().length(6).regex(/^\d{6}$/, "Token deve ter 6 dígitos numéricos").optional(),
   })
   .superRefine((data, ctx) => {
     if (
@@ -50,6 +55,13 @@ export const PatchBookingSchema = z
         code: z.ZodIssueCode.custom,
         message: "Motivo obrigatório para esta ação.",
         path: ["reason"],
+      })
+    }
+    if (data.actualTime && new Date(data.actualTime) > new Date()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "O horário informado não pode ser no futuro.",
+        path: ["actualTime"],
       })
     }
   })

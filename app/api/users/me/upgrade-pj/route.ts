@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { hashDocument, encryptDocument } from "@/lib/crypto"
 import { validateCNPJ } from "@/utils/cnpj"
-import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 
 const Schema = z.object({
   cnpj: z
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const rl = await checkRateLimit(`upgrade-pj:${session.user.id}`, 5, 60_000)
+    const rl = await checkRateLimit(`upgrade-pj:${session.user.id}`, RATE_LIMITS.upgradePj.limit, RATE_LIMITS.upgradePj.windowMs)
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     // Apenas contas PF podem fazer upgrade

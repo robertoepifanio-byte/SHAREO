@@ -214,6 +214,11 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
                 <NavLink href="/" className={topItem}>Início</NavLink>
               </li>
 
+              {/* Sobre */}
+              <li>
+                <NavLink href="/sobre" className={topItem}>Sobre</NavLink>
+              </li>
+
               {/* Explorar — expansível */}
               <li>
                 <button
@@ -268,7 +273,7 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
 
                   {/* Atividade / Admin atalhos */}
                   <li>
-                    <p className="px-4 pt-2 pb-1 text-xs font-semibold text-white/50 uppercase tracking-wider">
+                    <p className="px-4 pt-2 pb-1 text-xs font-semibold text-white/80 uppercase tracking-wider">
                       {isAdmin ? "Admin" : "Atividade"}
                     </p>
                   </li>

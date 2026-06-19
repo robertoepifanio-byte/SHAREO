@@ -1,5 +1,7 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 import { prisma } from "@/lib/prisma"
+import { getPlatformFeeRate } from "@/lib/platform-config"
 
 export const metadata: Metadata = { title: "Admin — Visão Geral" }
 
@@ -8,6 +10,7 @@ const fmt = (cents: number) =>
 
 export default async function AdminOverviewPage() {
   const [
+    currentFeeRate,
     totalUsers,
     totalItems,
     pendingItems,
@@ -17,6 +20,7 @@ export default async function AdminOverviewPage() {
     gmvResult,
     feeResult,
   ] = await Promise.all([
+    getPlatformFeeRate(),
     prisma.user.count({ where: { deletedAt: null } }),
     prisma.item.count({ where: { status: "AVAILABLE", isApproved: true, deletedAt: null } }),
     prisma.item.count({ where: { isApproved: false, deletedAt: null } }),
@@ -47,7 +51,7 @@ export default async function AdminOverviewPage() {
     { label: "Disputas abertas", value: disputes,                       sub: "bookings em disputa",            color: disputes > 0 ? "text-[#9A4700]" : "text-primary" },
     { label: "Concluídas",     value: byStatus["COMPLETED"] ?? 0,                    sub: "reservas concluídas",        color: "text-success" },
     { label: "GMV",            value: fmt(gmvResult._sum.totalPrice ?? 0),        sub: "volume total de aluguéis",   color: "text-success", isString: true },
-    { label: "Receita ShareO", value: fmt(feeResult._sum.platformFeeAmount ?? 0), sub: "taxa 15% sobre locações",    color: "text-success", isString: true },
+    { label: "Receita ShareO", value: fmt(feeResult._sum.platformFeeAmount ?? 0), sub: `taxa ${currentFeeRate / 100}% sobre locações`, color: "text-success", isString: true },
   ]
 
   return (
@@ -80,9 +84,9 @@ export default async function AdminOverviewPage() {
           <p className="text-sm font-semibold text-destructive">
             🔴 {disputes} {disputes === 1 ? "disputa aberta" : "disputas abertas"}
           </p>
-          <a href="/admin/disputas" className="mt-1 text-sm text-destructive underline hover:no-underline">
+          <Link href="/admin/disputas" className="mt-1 text-sm text-destructive underline hover:no-underline">
             Resolver disputas →
-          </a>
+          </Link>
         </div>
       )}
     </div>

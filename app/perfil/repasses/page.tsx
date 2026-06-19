@@ -73,7 +73,7 @@ export default async function RepassesPage() {
             <div>
               <h1 className="text-xl font-bold text-primary">Meus Repasses</h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Histórico de repasses das suas locações. Liberados 3 dias após a devolução confirmada.
+                Histórico de repasses das suas locações. O valor fica retido na plataforma até o repasse semanal (toda segunda-feira).
               </p>
             </div>
             <Link

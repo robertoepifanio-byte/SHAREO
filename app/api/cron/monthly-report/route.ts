@@ -15,7 +15,7 @@ const fmt = (cents: number) =>
 export async function GET(req: NextRequest) {
   const auth   = req.headers.get("authorization")
   const secret = process.env.CRON_SECRET
-  if (secret && auth !== `Bearer ${secret}`) {
+  if (!secret || auth !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -81,17 +81,19 @@ export async function GET(req: NextRequest) {
     `Novas contas PIX: ${report.newPixAccounts}`,
   ].join(" · ")
 
-  for (const admin of admins) {
-    prisma.notification.create({
-      data: {
-        userId: admin.id,
-        type:   "BOOKING_CONFIRMED" as never,
-        title:  `📊 Relatório financeiro — ${monthLabel}`,
-        body:   summaryText,
-        data:   report as never,
-      },
-    }).catch(() => undefined)
-  }
+  await Promise.all(
+    admins.map((admin) =>
+      prisma.notification.create({
+        data: {
+          userId: admin.id,
+          type:   "BOOKING_CONFIRMED" as never,
+          title:  `📊 Relatório financeiro — ${monthLabel}`,
+          body:   summaryText,
+          data:   report as never,
+        },
+      }).catch(() => undefined)
+    )
+  )
 
   console.warn(`[cron/monthly-report] ${monthLabel} — GMV ${fmt(report.gmvCents)}, receita ${fmt(report.feeCents)}, ${admins.length} admin(s) notificado(s)`)
 

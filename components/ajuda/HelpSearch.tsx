@@ -1,6 +1,12 @@
 "use client"
 
-import { useState, useCallback, useId } from "react"
+import {
+  createContext,
+  useContext,
+  useId,
+  useMemo,
+  useState,
+} from "react"
 import Link from "next/link"
 
 /* ── Tipos ─────────────────────────────────────────────────────────── */
@@ -19,8 +25,9 @@ export interface HelpSection {
   faqs: FaqEntry[]
 }
 
-interface HelpSearchProps {
-  sections: HelpSection[]
+interface FilteredSection {
+  section: HelpSection
+  faqs: FaqEntry[]
 }
 
 /* ── Helpers ───────────────────────────────────────────────────────── */
@@ -46,6 +53,162 @@ function highlight(text: string, term: string): React.ReactNode {
       </mark>
       {text.slice(idx + term.length)}
     </>
+  )
+}
+
+function scrollToResults() {
+  document.getElementById("faq-results")?.scrollIntoView({ behavior: "smooth", block: "start" })
+}
+
+/* ── Contexto compartilhado (campo no hero ↔ resultados abaixo) ─────── */
+
+interface HelpSearchCtx {
+  query: string
+  trimmed: string
+  setQuery: (v: string) => void
+  filtered: FilteredSection[]
+  totalMatches: number
+  hasResults: boolean
+}
+
+const Ctx = createContext<HelpSearchCtx | null>(null)
+
+function useHelpSearch(): HelpSearchCtx {
+  const ctx = useContext(Ctx)
+  if (!ctx) throw new Error("useHelpSearch deve ser usado dentro de <HelpSearchProvider>")
+  return ctx
+}
+
+export function HelpSearchProvider({
+  sections,
+  children,
+}: {
+  sections: HelpSection[]
+  children: React.ReactNode
+}) {
+  const [query, setQuery] = useState("")
+  const trimmed = query.trim()
+
+  const filtered = useMemo<FilteredSection[]>(() => {
+    if (!trimmed) return sections.map((section) => ({ section, faqs: section.faqs }))
+    const n = normalize(trimmed)
+    return sections
+      .map((section) => ({
+        section,
+        faqs: section.faqs.filter(
+          (faq) => normalize(faq.q).includes(n) || normalize(faq.a).includes(n),
+        ),
+      }))
+      .filter(({ faqs }) => faqs.length > 0)
+  }, [sections, trimmed])
+
+  const totalMatches = filtered.reduce((acc, { faqs }) => acc + faqs.length, 0)
+  const hasResults = filtered.length > 0
+
+  return (
+    <Ctx.Provider value={{ query, trimmed, setQuery, filtered, totalMatches, hasResults }}>
+      {children}
+    </Ctx.Provider>
+  )
+}
+
+/* ── Campo de busca — usado no hero ────────────────────────────────── */
+
+export function HelpSearchInput() {
+  const { query, setQuery, trimmed, totalMatches, hasResults } = useHelpSearch()
+  const inputId = useId()
+
+  return (
+    <form
+      role="search"
+      className="mx-auto mt-8 w-full max-w-xl"
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (trimmed) scrollToResults()
+      }}
+    >
+      <div className="relative">
+        <label htmlFor={inputId} className="sr-only">
+          Pesquisar na Central de Ajuda
+        </label>
+
+        {/* Ícone de lupa */}
+        <svg
+          className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          aria-hidden="true"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+
+        <input
+          id={inputId}
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Pesquisar na ajuda... Ex: cancelar, pagamento, caução"
+          autoComplete="off"
+          spellCheck={false}
+          aria-label="Pesquisar perguntas frequentes"
+          aria-controls="faq-results"
+          className={[
+            "h-12 w-full rounded-xl border border-white/20 bg-white shadow-lg",
+            "pl-12 pr-12 text-sm text-foreground placeholder:text-muted-foreground",
+            "outline-none transition-shadow duration-fast",
+            "focus:ring-2 focus:ring-white/50",
+            // Remove o ícone nativo de limpar do input[type=search] em WebKit
+            "[&::-webkit-search-cancel-button]:hidden",
+          ].join(" ")}
+        />
+
+        {/* Botão de limpar — só aparece quando há texto */}
+        {trimmed && (
+          <button
+            type="button"
+            onClick={() => setQuery("")}
+            aria-label="Limpar busca"
+            className={[
+              "absolute right-3 top-1/2 -translate-y-1/2",
+              "flex h-7 w-7 items-center justify-center rounded-full",
+              "bg-border text-muted-foreground hover:bg-input hover:text-foreground transition-colors",
+              "focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 outline-none",
+            ].join(" ")}
+          >
+            <svg
+              className="h-3.5 w-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              aria-hidden="true"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        )}
+      </div>
+
+      {/* Contagem clicável — feedback sem roubar a posição enquanto digita.
+          A rolagem só acontece aqui (clique) ou no Enter (submit). */}
+      {trimmed && (
+        <button
+          type="button"
+          onClick={scrollToResults}
+          aria-live="polite"
+          className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-white/85 underline-offset-4 hover:text-white hover:underline"
+        >
+          {hasResults
+            ? `Ver ${totalMatches} resultado${totalMatches !== 1 ? "s" : ""}`
+            : "Nenhuma pergunta encontrada"}
+          {hasResults && <span aria-hidden="true">↓</span>}
+        </button>
+      )}
+    </form>
   )
 }
 
@@ -99,7 +262,7 @@ function SectionBlock({
   return (
     <section
       id={section.id}
-      className={`rounded-2xl border p-6 ${section.color}`}
+      className={`rounded-2xl border p-6 scroll-mt-24 ${section.color}`}
     >
       <h2 className="mb-6 font-display flex items-center gap-3 text-xl font-bold text-primary">
         <span
@@ -124,210 +287,106 @@ function SectionBlock({
   )
 }
 
-/* ── Componente principal ──────────────────────────────────────────── */
+/* ── Resultados — renderizados abaixo das seções ───────────────────── */
 
-export function HelpSearch({ sections }: HelpSearchProps) {
-  const [query, setQuery] = useState("")
-  const inputId = useId()
-
-  const trimmed = query.trim()
-
-  // Filtra seções e FAQs — memo inline é suficiente para 21 itens
-  type FilteredSection = { section: HelpSection; faqs: FaqEntry[] }
-
-  const filtered: FilteredSection[] = trimmed
-    ? sections
-        .map((section) => ({
-          section,
-          faqs: section.faqs.filter((faq) => {
-            const n = normalize(trimmed)
-            return normalize(faq.q).includes(n) || normalize(faq.a).includes(n)
-          }),
-        }))
-        .filter(({ faqs }) => faqs.length > 0)
-    : sections.map((section) => ({ section, faqs: section.faqs }))
-
-  const totalMatches = filtered.reduce((acc, { faqs }) => acc + faqs.length, 0)
-  const hasResults = filtered.length > 0
-
-  const handleClear = useCallback(() => {
-    setQuery("")
-  }, [])
+export function HelpResults() {
+  const { trimmed, filtered, totalMatches, hasResults, setQuery } = useHelpSearch()
 
   return (
-    <>
-      {/* ── Campo de busca — faixa sobre fundo branco abaixo do hero ── */}
-      <div className="border-b border-border bg-surface px-4 py-5 shadow-sm">
-        <div className="relative mx-auto w-full max-w-lg">
-          <label htmlFor={inputId} className="sr-only">
-            Pesquisar na Central de Ajuda
-          </label>
+    <div
+      id="faq-results"
+      className="container mx-auto max-w-3xl scroll-mt-20 px-4 py-12 space-y-10"
+    >
+      {/* Contagem de resultados — acessível por aria-live */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {trimmed && hasResults
+          ? `${totalMatches} pergunta${totalMatches !== 1 ? "s" : ""} encontrada${totalMatches !== 1 ? "s" : ""} para "${trimmed}"`
+          : trimmed && !hasResults
+          ? `Nenhuma pergunta encontrada para "${trimmed}"`
+          : "Mostrando todas as perguntas frequentes"}
+      </div>
 
-          {/* Ícone de lupa */}
-          <svg
-            className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            aria-hidden="true"
-          >
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-
-          <input
-            id={inputId}
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Pesquisar na ajuda... Ex: cancelar, pagamento, caução"
-            autoComplete="off"
-            spellCheck={false}
-            aria-label="Pesquisar perguntas frequentes"
-            aria-controls="faq-results"
-            className={[
-              "h-12 w-full rounded-xl border border-input bg-background",
-              "pl-12 pr-12 text-sm text-foreground placeholder:text-muted-foreground",
-              "outline-none transition-colors duration-fast",
-              "focus:border-ring focus:ring-2 focus:ring-ring/20",
-              // Remove o ícone nativo de limpar do input[type=search] em WebKit
-              "[&::-webkit-search-cancel-button]:hidden",
-            ].join(" ")}
-          />
-
-          {/* Botão de limpar — só aparece quando há texto */}
+      {hasResults ? (
+        <>
+          {/* Indicador visual de resultado quando há busca ativa */}
           {trimmed && (
-            <button
-              type="button"
-              onClick={handleClear}
-              aria-label="Limpar busca"
-              className={[
-                "absolute right-3 top-1/2 -translate-y-1/2",
-                "flex h-7 w-7 items-center justify-center rounded-full",
-                "bg-border text-muted-foreground hover:bg-input hover:text-foreground transition-colors",
-                "focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 outline-none",
-              ].join(" ")}
-            >
-              <svg
-                className="h-3.5 w-3.5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                aria-hidden="true"
-              >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
+            <p className="text-sm text-muted-foreground" aria-hidden="true">
+              <span className="font-semibold text-primary">{totalMatches}</span>{" "}
+              pergunta{totalMatches !== 1 ? "s" : ""} encontrada{totalMatches !== 1 ? "s" : ""} para{" "}
+              <span className="font-semibold text-primary">&ldquo;{trimmed}&rdquo;</span>
+            </p>
           )}
-        </div>
 
-        {/* Contagem de resultados — accessível por aria-live */}
-        <div
-          aria-live="polite"
-          aria-atomic="true"
-          className="sr-only"
-        >
-          {trimmed && hasResults
-            ? `${totalMatches} pergunta${totalMatches !== 1 ? "s" : ""} encontrada${totalMatches !== 1 ? "s" : ""} para "${trimmed}"`
-            : trimmed && !hasResults
-            ? `Nenhuma pergunta encontrada para "${trimmed}"`
-            : "Mostrando todas as perguntas frequentes"}
+          {filtered.map(({ section, faqs }) => (
+            <SectionBlock
+              key={section.id}
+              section={section}
+              matchedFaqs={faqs}
+              term={trimmed}
+            />
+          ))}
+        </>
+      ) : (
+        /* Estado vazio */
+        <div className="rounded-2xl border border-border bg-surface p-12 text-center">
+          <div className="mb-4 text-5xl" aria-hidden="true">
+            🔍
+          </div>
+          <p className="mb-1 text-base font-semibold text-primary">
+            Nenhuma pergunta encontrada para{" "}
+            <span className="text-brand">&ldquo;{trimmed}&rdquo;</span>
+          </p>
+          <p className="mb-6 text-sm text-muted-foreground">
+            Tente palavras diferentes ou veja todas as perguntas.
+          </p>
+          <button
+            type="button"
+            onClick={() => setQuery("")}
+            className={[
+              "inline-flex h-11 items-center gap-2 rounded-lg",
+              "bg-brand px-6 text-sm font-bold text-white",
+              "hover:bg-brand-hover transition-colors",
+              "focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 outline-none",
+            ].join(" ")}
+          >
+            Ver todas as perguntas
+          </button>
         </div>
-      </div>
+      )}
 
-      {/* ── FAQs filtradas ── */}
-      <div
-        id="faq-results"
-        className="container mx-auto max-w-3xl px-4 py-12 space-y-10"
+      {/* Seção de contato — sempre visível */}
+      <section
+        id="contato"
+        className="rounded-2xl bg-primary p-8 text-center text-white"
       >
-        {hasResults ? (
-          <>
-            {/* Indicador visual de resultado quando há busca ativa */}
-            {trimmed && (
-              <p
-                className="text-sm text-muted-foreground"
-                aria-hidden="true"
-              >
-                <span className="font-semibold text-primary">{totalMatches}</span>{" "}
-                pergunta{totalMatches !== 1 ? "s" : ""} encontrada{totalMatches !== 1 ? "s" : ""} para{" "}
-                <span className="font-semibold text-primary">&ldquo;{trimmed}&rdquo;</span>
-              </p>
-            )}
-
-            {filtered.map(({ section, faqs }) => (
-              <SectionBlock
-                key={section.id}
-                section={section}
-                matchedFaqs={faqs}
-                term={trimmed}
-              />
-            ))}
-          </>
-        ) : (
-          /* Estado vazio */
-          <div className="rounded-2xl border border-border bg-surface p-12 text-center">
-            <div className="mb-4 text-5xl" aria-hidden="true">
-              🔍
-            </div>
-            <p className="mb-1 text-base font-semibold text-primary">
-              Nenhuma pergunta encontrada para{" "}
-              <span className="text-brand">&ldquo;{trimmed}&rdquo;</span>
-            </p>
-            <p className="mb-6 text-sm text-muted-foreground">
-              Tente palavras diferentes ou veja todas as perguntas.
-            </p>
-            <button
-              type="button"
-              onClick={handleClear}
-              className={[
-                "inline-flex h-11 items-center gap-2 rounded-lg",
-                "bg-brand px-6 text-sm font-bold text-white",
-                "hover:bg-brand-hover transition-colors",
-                "focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 outline-none",
-              ].join(" ")}
-            >
-              Ver todas as perguntas
-            </button>
-          </div>
-        )}
-
-        {/* Seção de contato — sempre visível */}
-        <section
-          id="contato"
-          className="rounded-2xl bg-primary p-8 text-center text-white"
-        >
-          <div className="mb-3 text-4xl" aria-hidden="true">
-            💬
-          </div>
-          <h2 className="mb-2 font-display text-xl font-bold">
-            Ainda precisa de ajuda?
-          </h2>
-          <p className="mb-6 text-sm text-white/75">
-            Nossa equipe está disponível 7 dias por semana para te ajudar.
-          </p>
-          <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <a
-              href="mailto:suporte@shareo.com.br"
-              className="inline-flex h-11 items-center gap-2 rounded-lg bg-brand px-6 text-sm font-bold text-white hover:opacity-90 transition-opacity"
-            >
-              ✉️ suporte@shareo.com.br
-            </a>
-            <Link
-              href="/reservas"
-              className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/30 bg-white/10 px-6 text-sm font-semibold text-white hover:bg-white/20 transition-colors"
-            >
-              📋 Ver minhas reservas
-            </Link>
-          </div>
-          <p className="mt-4 text-xs text-white/50">
-            Para problemas com uma reserva ativa, use a opção &ldquo;Abrir
-            disputa&rdquo; na página da reserva — é mais rápido.
-          </p>
-        </section>
-      </div>
-    </>
+        <div className="mb-3 text-4xl" aria-hidden="true">
+          💬
+        </div>
+        <h2 className="mb-2 font-display text-xl font-bold">
+          Ainda precisa de ajuda?
+        </h2>
+        <p className="mb-6 text-sm text-white/75">
+          Nossa equipe está disponível 7 dias por semana para te ajudar.
+        </p>
+        <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+          <a
+            href="mailto:suporte@shareo.com.br"
+            className="inline-flex h-11 items-center gap-2 rounded-lg bg-brand px-6 text-sm font-bold text-white hover:opacity-90 transition-opacity"
+          >
+            ✉️ suporte@shareo.com.br
+          </a>
+          <Link
+            href="/reservas"
+            className="inline-flex h-11 items-center gap-2 rounded-lg border border-white/30 bg-white/10 px-6 text-sm font-semibold text-white hover:bg-white/20 transition-colors"
+          >
+            📋 Ver minhas reservas
+          </Link>
+        </div>
+        <p className="mt-4 text-xs text-white/80">
+          Para problemas com uma reserva ativa, use a opção &ldquo;Abrir
+          disputa&rdquo; na página da reserva — é mais rápido.
+        </p>
+      </section>
+    </div>
   )
 }

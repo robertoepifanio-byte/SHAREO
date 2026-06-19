@@ -15,7 +15,7 @@ export interface Badge {
 }
 
 // P3-71: badges de locatário por quantidade de aluguéis concluídos
-const BORROWER_BADGES: (Badge & { minBookings: number })[] = [
+export const BORROWER_BADGES: (Badge & { minBookings: number })[] = [
   { key: "diamond",  label: "Diamante",  emoji: "💎", color: "text-blue-400",   minBookings: 50 },
   { key: "gold",     label: "Ouro",      emoji: "🥇", color: "text-yellow-500", minBookings: 25 },
   { key: "silver",   label: "Prata",     emoji: "🥈", color: "text-slate-400",  minBookings: 10 },

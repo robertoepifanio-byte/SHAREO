@@ -9,7 +9,7 @@
 
 ## 1. Objetivo do H1
 
-Lançar o MVP do ShareO em Natal/RN com o conjunto mínimo de funcionalidades que permita a uma pessoa publicar um item para alugar, a outra pessoa encontrá-lo, solicitar o aluguel, combinar a entrega via chat in-app e concluir a locação com avaliação bilateral — tudo dentro da plataforma, sem dependência de canais externos (WhatsApp, pagamento externo ou apps nativos).
+Lançar o MVP do ShareO em âmbito nacional com o conjunto mínimo de funcionalidades que permita a uma pessoa publicar um item para alugar, a outra pessoa encontrá-lo, solicitar o aluguel, combinar a entrega via chat in-app e concluir a locação com avaliação bilateral — tudo dentro da plataforma, sem dependência de canais externos (WhatsApp, pagamento externo ou apps nativos).
 
 **Declaração de visão do H1:**
 Entregar a experiência central de aluguel local — do cadastro ao feedback pós-devolução — com confiança, usabilidade mobile-first e base técnica que suporte o crescimento do H2.
@@ -196,7 +196,7 @@ Para evitar scope creep, os itens abaixo estao explicitamente fora do H1:
 Este documento deve ser revisado:
 
 - Ao final de cada Sprint, para ajustar estimativas e prioridades com base na velocidade real do time.
-- Apos cada sessao de feedback com usuarios piloto em Natal/RN.
+- Apos cada sessao de feedback com usuarios piloto.
 - Antes do Planning da Sprint 5, para decidir se itens P2 (qualidade pre-lancamento) serao puxados para o H1 ou postergados para o H1.5.
 
 ---

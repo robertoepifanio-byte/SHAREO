@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server"
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
@@ -70,30 +70,35 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       select: { id: true, status: true, updatedAt: true },
     })
 
-    prisma.adminLog.create({
-      data: {
-        adminId,
-        action:     action.toUpperCase(),
-        entityType: "Booking",
-        entityId:   id,
-        metadata:   { adminNote: adminNote ?? null },
-      },
-    }).catch((e) => console.error("[adminLog]", e instanceof Error ? e.message : e))
-
-    // Notificar ambas as partes (fire-and-forget)
-    const resolution = nextStatus === "COMPLETED" ? "concluída" : "cancelada"
-    const notifs = [booking.borrowerId, booking.ownerId].map((userId) =>
-      prisma.notification.create({
+    after(() =>
+      prisma.adminLog.create({
         data: {
-          userId,
-          type:  "BOOKING_CANCELLED",
-          title: "Disputa resolvida",
-          body:  `A reserva de "${booking.item.title}" foi ${resolution} pelo administrador.`,
-          data:  { bookingId: id },
+          adminId,
+          action:     action.toUpperCase(),
+          entityType: "Booking",
+          entityId:   id,
+          metadata:   { adminNote: adminNote ?? null },
         },
-      }).catch((e) => console.error("[notification dispute resolved]", e instanceof Error ? e.message : e))
+      }).catch((e) => console.error("[adminLog]", e instanceof Error ? e.message : e))
     )
-    void Promise.allSettled(notifs)
+
+    // Notificar ambas as partes — após a resposta
+    const resolution = nextStatus === "COMPLETED" ? "concluída" : "cancelada"
+    after(() =>
+      Promise.allSettled(
+        [booking.borrowerId, booking.ownerId].map((userId) =>
+          prisma.notification.create({
+            data: {
+              userId,
+              type:  "BOOKING_CANCELLED",
+              title: "Disputa resolvida",
+              body:  `A reserva de "${booking.item.title}" foi ${resolution} pelo administrador.`,
+              data:  { bookingId: id },
+            },
+          }).catch((e) => console.error("[notification dispute resolved]", e instanceof Error ? e.message : e))
+        )
+      )
+    )
 
     return NextResponse.json({ data: updated })
   } catch (e) {

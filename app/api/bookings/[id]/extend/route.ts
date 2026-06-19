@@ -10,7 +10,7 @@
  * $queryRaw / $executeRaw para acessar esses campos.
  */
 
-import { NextResponse, type NextRequest } from "next/server"
+import { NextResponse, after, type NextRequest } from "next/server"
 import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
@@ -133,16 +133,18 @@ export async function POST(req: NextRequest, { params }: Params) {
       WHERE id = ${id}
     `
 
-    // Notifica o proprietário
-    prisma.notification.create({
-      data: {
-        userId: booking.ownerId,
-        type:   "BOOKING_CONFIRMED",
-        title:  "Solicitação de extensão",
-        body:   `O locatário solicitou estender a devolução de "${booking.itemTitle}" até ${new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(requestedDate)}.`,
-        data:   { bookingId: id },
-      },
-    }).catch((e) => console.error("[extend] notification owner:", e instanceof Error ? e.message : e))
+    // Notifica o proprietário — após a resposta
+    after(() =>
+      prisma.notification.create({
+        data: {
+          userId: booking.ownerId,
+          type:   "BOOKING_CONFIRMED",
+          title:  "Solicitação de extensão",
+          body:   `O locatário solicitou estender a devolução de "${booking.itemTitle}" até ${new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(requestedDate)}.`,
+          data:   { bookingId: id },
+        },
+      }).catch((e) => console.error("[extend] notification owner:", e instanceof Error ? e.message : e))
+    )
 
     return NextResponse.json(
       { data: { id, extensionStatus: "PENDING", extensionRequestedEndDate: requestedDate } },
@@ -254,15 +256,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       ? `Sua extensão de prazo para "${booking.itemTitle}" até ${dateStr} foi aprovada.`
       : `Sua solicitação de extensão para "${booking.itemTitle}" foi recusada pelo proprietário.`
 
-    prisma.notification.create({
-      data: {
-        userId: booking.borrowerId,
-        type:   "BOOKING_CONFIRMED",
-        title:  isApproved ? "Extensão aprovada" : "Extensão recusada",
-        body:   notifBody,
-        data:   { bookingId: id },
-      },
-    }).catch((e) => console.error("[extend] notification borrower:", e instanceof Error ? e.message : e))
+    after(() =>
+      prisma.notification.create({
+        data: {
+          userId: booking.borrowerId,
+          type:   "BOOKING_CONFIRMED",
+          title:  isApproved ? "Extensão aprovada" : "Extensão recusada",
+          body:   notifBody,
+          data:   { bookingId: id },
+        },
+      }).catch((e) => console.error("[extend] notification borrower:", e instanceof Error ? e.message : e))
+    )
 
     return NextResponse.json(
       {

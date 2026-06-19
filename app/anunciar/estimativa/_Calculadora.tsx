@@ -10,7 +10,7 @@ const CATEGORIAS = [
   { slug: "festas",      label: "Festas",          icon: "🎉", diaria: 80,  exemplos: "som, tendas, mesas" },
   { slug: "construcao",  label: "Construção",      icon: "🏗️", diaria: 45,  exemplos: "escada, betoneira, andaime" },
   { slug: "moda",        label: "Moda",            icon: "👗", diaria: 50,  exemplos: "roupa de festa, fantasia" },
-  { slug: "casa-jardim", label: "Casa e Cozinha",  icon: "🏠", diaria: 30,  exemplos: "eletrodomésticos, jardim" },
+  { slug: "casa-jardim", label: "Eletrodomésticos", icon: "🔌", diaria: 30,  exemplos: "geladeira, micro-ondas, lavadora" },
 ]
 
 const DIAS_MES = [2, 4, 6, 8, 10, 15, 20]
@@ -19,7 +19,7 @@ function fmt(val: number) {
   return val.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 })
 }
 
-export function Calculadora() {
+export function Calculadora({ feeRatePct = 15 }: { feeRatePct?: number }) {
   const [catSlug,  setCatSlug]  = useState("ferramentas")
   const [diasMes,  setDiasMes]  = useState(6)
   const [preco,    setPreco]    = useState<number | "">("")
@@ -31,7 +31,7 @@ export function Calculadora() {
 
   const ganhoMes     = diaria * diasMes
   const ganhoAno     = ganhoMes * 12
-  const taxaPlat     = ganhoMes * 0.10   // 10% plataforma
+  const taxaPlat     = ganhoMes * (feeRatePct / 100)
   const ganhoLiquido = ganhoMes - taxaPlat
 
   return (
@@ -69,7 +69,8 @@ export function Calculadora() {
           2. Qual será o preço por diária?
         </h2>
         <p className="text-xs text-muted-foreground mb-3">
-          Sugestão para {cat.label}: <strong className="text-foreground">{fmt(cat.diaria)}/dia</strong>
+          Sugestão para {cat.label}: <strong className="text-foreground">{fmt(cat.diaria)}/dia</strong>{" "}
+          <span className="text-muted-foreground/70">(3–5% do valor do bem · semana = 3× diária · mês = 15× diária)</span>
         </p>
         <div className="flex items-center gap-3 max-w-xs">
           <span className="text-sm font-medium text-muted-foreground">R$</span>
@@ -126,7 +127,7 @@ export function Calculadora() {
           <div className="rounded-xl bg-brand border border-brand p-4 text-center">
             <p className="text-xs text-white/80 mb-1">Você recebe</p>
             <p className="text-2xl font-bold text-white">{fmt(ganhoLiquido)}</p>
-            <p className="text-xs text-white/70 mt-1">após taxa de 10%</p>
+            <p className="text-xs text-white/70 mt-1">após taxa de {feeRatePct}%</p>
           </div>
 
           {/* Por ano */}
@@ -152,7 +153,7 @@ export function Calculadora() {
             <span className="font-medium">{fmt(ganhoMes)}</span>
           </div>
           <div className="flex justify-between px-4 py-2.5">
-            <span className="text-muted-foreground">Taxa da plataforma (10%)</span>
+            <span className="text-muted-foreground">Taxa da plataforma ({feeRatePct}%)</span>
             <span className="font-medium text-destructive">− {fmt(taxaPlat)}</span>
           </div>
           <div className="flex justify-between px-4 py-2.5 font-semibold">

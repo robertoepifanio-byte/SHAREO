@@ -1,30 +1,11 @@
 import type { NextRequest } from "next/server"
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
 import { UpdateProfileSchema } from "@/lib/validations/users"
-
-/** Geocodifica cidade+estado do usuário e salva lat/lng no perfil (fire-and-forget) */
-async function geocodeUserLocation(userId: string, city: string, state: string) {
-  try {
-    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
-    if (!token) return
-    const query = `${city.trim()}, ${state.trim()}, Brasil`
-    const url   = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${token}&country=BR&language=pt&limit=1&types=place,locality`
-    const res   = await fetch(url)
-    const data  = await res.json() as { features?: { center: [number, number] }[] }
-    const feat  = data.features?.[0]
-    if (!feat) return
-    const [lng, lat] = feat.center
-    await prisma.user.update({
-      where: { id: userId },
-      data:  { latitude: lat, longitude: lng },
-    })
-  } catch (e) {
-    console.error("[geocodeUserLocation]", userId, e instanceof Error ? e.message : e)
-  }
-}
+import { geocodeUserLocation } from "@/lib/geocodeUser"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 // LGPD art. 18 — direito ao esquecimento
 export async function DELETE() {
@@ -61,38 +42,93 @@ export async function DELETE() {
       )
     }
 
-    // Cancelar reservas pendentes / confirmadas do usuário
-    await prisma.booking.updateMany({
-      where: {
-        status: { in: ["PENDING", "CONFIRMED"] },
-        OR: [{ borrowerId: userId }, { ownerId: userId }],
-      },
-      data: { status: "CANCELLED" },
-    })
+    // SEC-MAJ-06 (LGPD art. 18): scrub atômico de TODA a PII do usuário.
+    // Dados de transações concluídas (valores, datas, splits) são mantidos por
+    // obrigação fiscal (art. 9 LGPD c/c art. 37 Código Comercial), mas o texto
+    // livre e os identificadores pessoais são anonimizados.
+    await prisma.$transaction([
+      // Cancelar reservas pendentes / confirmadas do usuário
+      prisma.booking.updateMany({
+        where: {
+          status: { in: ["PENDING", "CONFIRMED"] },
+          OR: [{ borrowerId: userId }, { ownerId: userId }],
+        },
+        data: { status: "CANCELLED" },
+      }),
 
-    // Anonimizar PII e soft-delete — dados de transações concluídas são mantidos
-    // por obrigação fiscal (art. 9 LGPD c/c art. 37 Código Comercial).
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        name:         "Usuário removido",
-        email:        `removed-${userId}@shareo.invalid`,
-        passwordHash: null,
-        phone:        null,
-        bio:          null,
-        avatarUrl:    null,
-        city:         null,
-        state:        null,
-        neighborhood: null,
-        latitude:     null,
-        longitude:    null,
-        cpfHash:      null,
-        cpfEncrypted: null,
-        cnpjHash:     null,
-        cnpjEncrypted:null,
-        isActive:     false,
-        deletedAt:    new Date(),
-      },
+      // Anonimizar o registro do usuário (PII direta + documentos de identidade)
+      prisma.user.update({
+        where: { id: userId },
+        data: {
+          name:                 "Usuário removido",
+          email:                `removed-${userId}@shareo.invalid`,
+          passwordHash:         null,
+          phone:                null,
+          bio:                  null,
+          avatarUrl:            null,
+          city:                 null,
+          state:                null,
+          neighborhood:         null,
+          latitude:             null,
+          longitude:            null,
+          cpfHash:              null,
+          cpfEncrypted:         null,
+          cnpjHash:             null,
+          cnpjEncrypted:        null,
+          // Verificação de identidade — remove referências aos documentos
+          idDocumentUrl:        null,
+          idSelfieUrl:          null,
+          idRejectionReason:    null,
+          idVerificationStatus: "UNVERIFIED",
+          isActive:             false,
+          deletedAt:            new Date(),
+        },
+      }),
+
+      // Texto livre escrito pelo usuário em avaliações
+      prisma.review.updateMany({
+        where: { reviewerId: userId },
+        data:  { comment: null },
+      }),
+
+      // Mensagens privadas enviadas pelo usuário (content é obrigatório → placeholder + soft-delete)
+      prisma.message.updateMany({
+        where: { senderId: userId },
+        data:  { content: "[mensagem removida]", deletedAt: new Date() },
+      }),
+
+      // Observações de reserva (texto livre)
+      prisma.booking.updateMany({
+        where: { borrowerId: userId },
+        data:  { borrowerNote: null },
+      }),
+      prisma.booking.updateMany({
+        where: { ownerId: userId },
+        data:  { ownerNote: null },
+      }),
+
+      // Dados de pagamento (chave PIX é PII financeira) — mantém o registro
+      // para integridade do histórico de payouts, mas remove os identificadores.
+      prisma.ownerPaymentAccount.updateMany({
+        where: { userId },
+        data:  { pixKey: "REMOVIDO", holderName: "Removido", bankName: null },
+      }),
+    ])
+
+    // Best-effort: remover os documentos privados de identidade do Storage.
+    // Não bloqueia a resposta; falha de Storage não deve impedir a exclusão.
+    after(async () => {
+      try {
+        const supabase = createAdminClient()
+        const { data: files } = await supabase.storage.from("id-docs").list(userId)
+        if (files && files.length > 0) {
+          await supabase.storage
+            .from("id-docs")
+            .remove(files.map((f) => `${userId}/${f.name}`))
+        }
+      } catch (e) {
+        console.warn("[DELETE /api/users/me] limpeza id-docs falhou:", e instanceof Error ? e.message : e)
+      }
     })
 
     return NextResponse.json({ data: { message: "Conta excluída com sucesso." } })
@@ -126,6 +162,7 @@ export async function GET(req: NextRequest) {
         city:         true,
         state:        true,
         neighborhood: true,
+        street:       true,
         avatarUrl:    true,
         userType:     true,
         isVerified:   true,
@@ -205,14 +242,22 @@ export async function PATCH(req: NextRequest) {
       },
     })
 
-    // Geocodificar cidade/estado do perfil (fire-and-forget) para centrar o mapa corretamente
-    const cityChanged  = d.city  !== undefined
-    const stateChanged = d.state !== undefined
-    if (cityChanged || stateChanged) {
+    // Geocodificar endereço completo do perfil — NÃO bloqueia a resposta.
+    // S14-M-19: after() mantém a lambda viva até concluir (antes era await, ~3-5s no PATCH).
+    const addressChanged = d.city !== undefined || d.state !== undefined
+                        || d.street !== undefined || d.neighborhood !== undefined
+    if (addressChanged) {
       const city  = d.city  ?? updated.city
       const state = d.state ?? updated.state
       if (city && state) {
-        void geocodeUserLocation(session.user.id, city, state)
+        after(() =>
+          geocodeUserLocation(session.user.id, {
+            street:       d.street       ?? updated.street,
+            neighborhood: d.neighborhood ?? updated.neighborhood,
+            city,
+            state,
+          }).catch((e) => console.error("[geocodeUserLocation]", e instanceof Error ? e.message : e))
+        )
       }
     }
 

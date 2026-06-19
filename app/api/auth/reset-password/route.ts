@@ -3,7 +3,8 @@ import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
-import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
+import { invalidateUserSessions } from "@/lib/redis-admin-blocklist"
 
 const Schema = z.object({
   token:    z.string().min(1),
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
       req.headers.get("x-real-ip") ??
       "unknown"
 
-    const rl = await checkRateLimit(`reset-password:${ip}`, 10, 60_000) // 10 por minuto por IP
+    const rl = await checkRateLimit(`reset-password:${ip}`, RATE_LIMITS.resetPassword.limit, RATE_LIMITS.resetPassword.windowMs)
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const body   = await req.json()
@@ -75,6 +76,18 @@ export async function POST(req: NextRequest) {
       prisma.user.update({ where: { id: user.id }, data: { passwordHash } }),
       prisma.passwordResetToken.delete({ where: { token } }),
     ])
+
+    // SEC-CRIT-04 / GAP-CRIT-04b: reset por link também invalida sessões anteriores
+    await invalidateUserSessions(user.id)
+
+    // Convite-piloto: ao definir a senha no 1º acesso, o lead convidado vira CONVERTED.
+    // No-op para resets normais (nenhum lead INVITED apontando para este usuário).
+    await prisma.founderLead
+      .updateMany({
+        where: { convertedUserId: user.id, status: "INVITED" },
+        data:  { status: "CONVERTED", convertedAt: new Date() },
+      })
+      .catch((e) => console.error("[reset-password] lead convert", e instanceof Error ? e.message : e))
 
     return NextResponse.json({ data: { message: "Senha redefinida com sucesso." } })
   } catch (e: unknown) {

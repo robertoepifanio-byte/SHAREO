@@ -1,4 +1,4 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { type NextRequest, NextResponse, after } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { checkRateLimit } from "@/lib/rateLimit"
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   const session = await auth()
   if (!session) {
     return NextResponse.json(
-      { error: { message: "Não autenticado." } },
+      { error: { code: "UNAUTHORIZED", message: "Não autenticado." } },
       { status: 401 },
     )
   }
@@ -66,21 +66,21 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 
   if (!booking) {
     return NextResponse.json(
-      { error: { message: "Reserva não encontrada." } },
+      { error: { code: "NOT_FOUND", message: "Reserva não encontrada." } },
       { status: 404 },
     )
   }
 
   if (booking.ownerId !== uid) {
     return NextResponse.json(
-      { error: { message: "Acesso negado." } },
+      { error: { code: "FORBIDDEN", message: "Acesso negado." } },
       { status: 403 },
     )
   }
 
   if (booking.status !== "ACTIVE") {
     return NextResponse.json(
-      { error: { message: "Lembrete só pode ser enviado para reservas ativas." } },
+      { error: { code: "INVALID_STATE", message: "Lembrete só pode ser enviado para reservas ativas." } },
       { status: 422 },
     )
   }
@@ -98,17 +98,19 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     console.error("[reminder] notification error:", err instanceof Error ? err.message : "unknown")
   })
 
-  // Email opcional — best-effort, não bloqueia resposta
+  // Email opcional — após a resposta, best-effort
   if (booking.borrower.email) {
-    sendReminderReturnTomorrow(
-      booking.borrower.email,
-      booking.borrower.name,
-      booking.item.title,
-      bookingId,
-      new Date(booking.endDate),
-    ).catch((err) => {
-      console.error("[reminder] email error:", err instanceof Error ? err.message : "unknown")
-    })
+    after(() =>
+      sendReminderReturnTomorrow(
+        booking.borrower.email,
+        booking.borrower.name,
+        booking.item.title,
+        bookingId,
+        new Date(booking.endDate),
+      ).catch((err) => {
+        console.error("[reminder] email error:", err instanceof Error ? err.message : "unknown")
+      })
+    )
   }
 
   return NextResponse.json({ success: true, message: "Lembrete enviado." })

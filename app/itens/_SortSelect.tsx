@@ -7,6 +7,7 @@ const OPTIONS = [
   { value: "price_asc",  label: "Menor preço" },
   { value: "price_desc", label: "Maior preço" },
   { value: "views",      label: "Mais vistos" },
+  { value: "rented",     label: "Mais alugados" },
 ]
 
 export function SortSelect({ current }: { current?: string }) {

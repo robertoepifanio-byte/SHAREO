@@ -4,8 +4,9 @@ import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { stripe } from "@/lib/stripe"
-import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
-import { getPlatformFeeRate, calcSplit, CHECKOUT_MAX_CENTS } from "@/lib/platform-config"
+import { APP_URL } from "@/lib/app-url"
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
+import { getPlatformFeeRate, calcSplit, CHECKOUT_MAX_CENTS, STRIPE_CHECKOUT_EXPIRES_SECONDS } from "@/lib/platform-config"
 
 const Schema = z.object({
   bookingId: z.string().min(1),
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const rl = await checkRateLimit(`checkout:${session.user.id}`, 10, 60_000)
+    const rl = await checkRateLimit(`checkout:${session.user.id}`, RATE_LIMITS.checkout.limit, RATE_LIMITS.checkout.windowMs)
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const body   = await req.json()
@@ -43,6 +44,7 @@ export async function POST(req: NextRequest) {
         status:        true,
         paymentStatus: true,
         totalPrice:    true,
+        discountCents: true,
         totalDays:     true,
         startDate:     true,
         endDate:       true,
@@ -89,11 +91,19 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // FIN-2.2: calcular split da plataforma antes de criar a Checkout Session
-    const feeRate = await getPlatformFeeRate()
-    const split   = calcSplit(booking.totalPrice, feeRate)
+    // FIN-2.2: calcular split da plataforma antes de criar a Checkout Session.
+    // P3-20: o split usa o valor BRUTO (sem cupom) — o proprietário recebe o valor cheio
+    // e o desconto é deduzido da taxa da plataforma.
+    const feeRate  = await getPlatformFeeRate()
+    const discount = booking.discountCents ?? 0
+    const grossSplit = calcSplit(booking.totalPrice + discount, feeRate)
+    const split = {
+      platformFeeRate:   grossSplit.platformFeeRate,
+      platformFeeAmount: Math.max(0, grossSplit.platformFeeAmount - discount),
+      ownerNetAmount:    grossSplit.ownerNetAmount,
+    }
 
-    const appUrl = process.env.AUTH_URL ?? process.env.NEXTAUTH_URL ?? "http://localhost:3000"
+    const appUrl = APP_URL
 
     const fmtDate = (d: Date) =>
       new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(d)
@@ -122,7 +132,7 @@ export async function POST(req: NextRequest) {
       },
       success_url: `${appUrl}/reservas/sucesso?bookingId=${bookingId}`,
       cancel_url:  `${appUrl}/reservas/${bookingId}?payment=cancelled`,
-      expires_at:  Math.floor(Date.now() / 1000) + 30 * 60, // 30 min
+      expires_at:  Math.floor(Date.now() / 1000) + STRIPE_CHECKOUT_EXPIRES_SECONDS,
     })
 
     // Salva Session ID + valores financeiros do split (FIN-2.2)

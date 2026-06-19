@@ -1,55 +1,22 @@
 "use client"
 
-import { useState, type FormEvent, type ChangeEvent } from "react"
+import { useState, type FormEvent } from "react"
 import { signIn } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
-
-type UserType = "PF" | "PJ"
+import { CONSENT_VERSION, DPO_EMAIL } from "@/lib/legal-config"
 
 interface FormErrors {
   name?:         string
   email?:        string
   password?:     string
-  cpf?:          string
-  cnpj?:         string
-  phone?:        string
   city?:         string
   state?:        string
   consent?:      string
   ageConfirmed?: string
   form?:         string
-}
-
-const CONSENT_VERSION = "v1.0"
-
-// ─── Máscaras ────────────────────────────────────────────────────────────────
-
-function maskCPF(value: string): string {
-  const d = value.replace(/\D/g, "").slice(0, 11)
-  return d
-    .replace(/^(\d{3})(\d)/, "$1.$2")
-    .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
-    .replace(/^(\d{3})\.(\d{3})\.(\d{3})(\d)/, "$1.$2.$3-$4")
-}
-
-function maskCNPJ(value: string): string {
-  const d = value.replace(/\D/g, "").slice(0, 14)
-  return d
-    .replace(/^(\d{2})(\d)/, "$1.$2")
-    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
-    .replace(/^(\d{2})\.(\d{3})\.(\d{3})(\d)/, "$1.$2.$3/$4")
-    .replace(/^(\d{2})\.(\d{3})\.(\d{3})\/(\d{4})(\d)/, "$1.$2.$3/$4-$5")
-}
-
-function maskPhone(value: string): string {
-  const d = value.replace(/\D/g, "").slice(0, 11)
-  if (d.length <= 2)  return d
-  if (d.length <= 7)  return `(${d.slice(0, 2)}) ${d.slice(2)}`
-  if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`
-  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`
 }
 
 // ─── Indicador de força de senha ─────────────────────────────────────────────
@@ -80,52 +47,33 @@ function PasswordHints({ password }: { password: string }) {
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export function RegisterForm() {
-  const router = useRouter()
+  const router       = useRouter()
+  const searchParams = useSearchParams()
+  const referralCode = searchParams.get("ref")?.trim().toUpperCase() || ""
 
-  const [userType,     setUserType]     = useState<UserType>("PF")
   const [name,         setName]         = useState("")
   const [email,        setEmail]        = useState("")
   const [password,     setPassword]     = useState("")
   const [showPassword, setShowPassword] = useState(false)
-  const [cpf,          setCpf]          = useState("")
-  const [cnpj,         setCnpj]         = useState("")
-  const [phone,        setPhone]        = useState("")
-  const [city,         setCity]         = useState(process.env.NEXT_PUBLIC_DEFAULT_CITY ?? "")
-  const [state,        setState]        = useState(process.env.NEXT_PUBLIC_DEFAULT_STATE ?? "")
-  const [neighborhood, setNeighborhood] = useState("")
+  const [city,         setCity]         = useState("")
+  const [state,        setState]        = useState("")
   const [consent,      setConsent]      = useState(false)
   const [ageConfirmed, setAgeConfirmed] = useState(false)
   const [errors,       setErrors]       = useState<FormErrors>({})
   const [loading,      setLoading]      = useState(false)
   const [success,      setSuccess]      = useState(false)
 
-  function handleCPF(e: ChangeEvent<HTMLInputElement>) {
-    setCpf(maskCPF(e.target.value))
-    setErrors((p) => ({ ...p, cpf: undefined }))
-  }
-
-  function handleCNPJ(e: ChangeEvent<HTMLInputElement>) {
-    setCnpj(maskCNPJ(e.target.value))
-    setErrors((p) => ({ ...p, cnpj: undefined }))
-  }
-
-  function handlePhone(e: ChangeEvent<HTMLInputElement>) {
-    setPhone(maskPhone(e.target.value))
-  }
-
   function validate(): FormErrors {
     const errs: FormErrors = {}
-    if (!name.trim())                        errs.name     = "Nome obrigatório"
-    if (!email.includes("@"))                errs.email    = "E-mail inválido"
-    if (password.length < 8)                 errs.password = "Senha muito curta"
-    if (!/[A-Z]/.test(password))             errs.password = "Precisa de letra maiúscula"
-    if (!/[0-9]/.test(password))             errs.password = "Precisa de número"
-    if (userType === "PF" && !cpf)           errs.cpf      = "CPF obrigatório"
-    if (userType === "PJ" && !cnpj)          errs.cnpj     = "CNPJ obrigatório"
-    if (!city.trim())                        errs.city         = "Cidade obrigatória"
-    if (state.length !== 2)                  errs.state        = "UF inválida (ex: RN)"
-    if (!consent)                            errs.consent      = "Aceite os termos para continuar"
-    if (!ageConfirmed)                       errs.ageConfirmed = "Confirme que você tem 18 anos ou mais"
+    if (!name.trim())            errs.name     = "Nome obrigatório"
+    if (!email.includes("@"))    errs.email    = "E-mail inválido"
+    if (password.length < 8)     errs.password = "Senha muito curta"
+    if (!/[A-Z]/.test(password)) errs.password = "Precisa de letra maiúscula"
+    if (!/[0-9]/.test(password)) errs.password = "Precisa de número"
+    if (!city.trim())            errs.city         = "Cidade obrigatória"
+    if (state.length !== 2)      errs.state        = "UF inválida (2 letras)"
+    if (!consent)                errs.consent      = "Aceite os termos para continuar"
+    if (!ageConfirmed)           errs.ageConfirmed = "Confirme que você tem 18 anos ou mais"
     return errs
   }
 
@@ -140,19 +88,13 @@ export function RegisterForm() {
     setErrors({})
     setLoading(true)
 
-    const phoneE164 = phone ? `+55${phone.replace(/\D/g, "")}` : undefined
-
     const body = {
       name:           name.trim(),
       email:          email.trim().toLowerCase(),
       password,
-      phone:          phoneE164,
-      userType,
-      cpf:            userType === "PF" ? cpf : undefined,
-      cnpj:           userType === "PJ" ? cnpj : undefined,
       city:           city.trim(),
       state:          state.trim().toUpperCase(),
-      neighborhood:   neighborhood.trim() || undefined,
+      referralCode:   referralCode || undefined,
       consentVersion: CONSENT_VERSION,
     }
 
@@ -170,7 +112,7 @@ export function RegisterForm() {
       const details = json.error?.details as Record<string, string[]> | undefined
 
       if (code === "VALIDATION_ERROR" && details) {
-        const fieldKeys = new Set(["name", "email", "password", "cpf", "cnpj", "phone", "city", "state", "consent", "ageConfirmed"])
+        const fieldKeys = new Set(["name", "email", "password", "city", "state", "consent", "ageConfirmed"])
         const mapped: FormErrors = {}
         for (const [k, msgs] of Object.entries(details)) {
           if (fieldKeys.has(k)) {
@@ -185,8 +127,6 @@ export function RegisterForm() {
 
       const MSG: Record<string, string> = {
         EMAIL_ALREADY_EXISTS: "E-mail já cadastrado. Tente fazer login.",
-        CPF_ALREADY_EXISTS:   "CPF já cadastrado.",
-        CNPJ_ALREADY_EXISTS:  "CNPJ já cadastrado.",
         RATE_LIMITED:         "Muitas tentativas. Aguarde um momento e tente novamente.",
       }
       setErrors({ form: MSG[code] ?? "Erro ao criar conta. Tente novamente." })
@@ -246,7 +186,23 @@ export function RegisterForm() {
       </div>
 
       <h1 className="mb-1 font-display text-center text-2xl font-bold text-primary">Criar conta</h1>
-      <p className="mb-6 text-center text-sm text-muted-foreground">É grátis e leva menos de 2 minutos</p>
+      <p className="mb-4 text-center text-sm text-muted-foreground">
+        É grátis e leva menos de 1 minuto — só o essencial para começar a explorar.
+      </p>
+
+      {referralCode && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-brand/30 bg-brand/5 px-4 py-3 text-sm text-brand">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <span>
+            Você foi convidado com o código <strong>{referralCode}</strong>. A indicação será registrada automaticamente.
+          </span>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
         {errors.form && (
@@ -255,34 +211,11 @@ export function RegisterForm() {
           </div>
         )}
 
-        {/* Tipo de conta */}
-        <div>
-          <p className="mb-2 text-sm font-medium text-foreground">Tipo de conta</p>
-          <div className="grid grid-cols-2 gap-2">
-            {(["PF", "PJ"] as const).map((type) => (
-              <button
-                key={type}
-                type="button"
-                onClick={() => { setUserType(type); setErrors({}) }}
-                className={[
-                  "h-11 rounded-md border text-sm font-medium transition-colors outline-none",
-                  "focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2",
-                  userType === type
-                    ? "border-brand bg-brand/10 text-brand"
-                    : "border-border bg-surface text-muted-foreground hover:border-brand/40",
-                ].join(" ")}
-              >
-                {type === "PF" ? "Pessoa Física" : "Empresa (PJ)"}
-              </button>
-            ))}
-          </div>
-        </div>
-
         <Input
           label="Nome completo"
           type="text"
           autoComplete="name"
-          placeholder={userType === "PF" ? "Ana Souza" : "Ferramentas Nordeste Ltda"}
+          placeholder="Ana Souza"
           value={name}
           onChange={(e) => { setName(e.target.value); setErrors((p) => ({ ...p, name: undefined })) }}
           error={errors.name}
@@ -330,53 +263,14 @@ export function RegisterForm() {
           <PasswordHints password={password} />
         </div>
 
-        {/* CPF / CNPJ */}
-        {userType === "PF" ? (
-          <Input
-            label="CPF"
-            type="text"
-            inputMode="numeric"
-            autoComplete="off"
-            placeholder="000.000.000-00"
-            value={cpf}
-            onChange={handleCPF}
-            error={errors.cpf}
-            required
-            disabled={loading}
-          />
-        ) : (
-          <Input
-            label="CNPJ"
-            type="text"
-            inputMode="numeric"
-            autoComplete="off"
-            placeholder="00.000.000/0001-00"
-            value={cnpj}
-            onChange={handleCNPJ}
-            error={errors.cnpj}
-            required
-            disabled={loading}
-          />
-        )}
-
-        <Input
-          label="Telefone"
-          type="tel"
-          autoComplete="tel"
-          placeholder="(84) 99999-0000"
-          value={phone}
-          onChange={handlePhone}
-          helper="Opcional — incluir DDD"
-          disabled={loading}
-        />
-
+        {/* Localização — habilita a busca local desde o 1º acesso */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="col-span-2">
             <Input
               label="Cidade"
               type="text"
               autoComplete="address-level2"
-              placeholder="Natal"
+              placeholder="Sua cidade"
               value={city}
               onChange={(e) => { setCity(e.target.value); setErrors((p) => ({ ...p, city: undefined })) }}
               error={errors.city}
@@ -389,7 +283,7 @@ export function RegisterForm() {
               label="Estado"
               type="text"
               autoComplete="address-level1"
-              placeholder="RN"
+              placeholder="UF"
               maxLength={2}
               value={state}
               onChange={(e) => { setState(e.target.value.toUpperCase()); setErrors((p) => ({ ...p, state: undefined })) }}
@@ -400,34 +294,40 @@ export function RegisterForm() {
           </div>
         </div>
 
-        <Input
-          label="Bairro"
-          type="text"
-          autoComplete="address-level3"
-          placeholder="Ex: Ponta Negra"
-          value={neighborhood}
-          onChange={(e) => setNeighborhood(e.target.value)}
-          helper="Opcional"
-          disabled={loading}
-        />
+        {/* LGPD — finalidade no ponto de coleta */}
+        <p className="rounded-md bg-muted/40 px-3 py-2 text-xs leading-snug text-muted-foreground">
+          Usamos seus dados apenas para criar e manter sua conta, viabilizar locações e garantir
+          segurança jurídica — detalhes na{" "}
+          <Link href="/privacidade" className="text-brand hover:underline" target="_blank">Política de Privacidade</Link>.
+          Dados de pagamento e documento (CPF) só serão pedidos quando você anunciar ou alugar.
+        </p>
 
-        {/* Consentimento LGPD */}
+        {/* Consentimento LGPD — card clicável, obrigatório */}
         <div>
-          <label className="flex cursor-pointer items-start gap-3">
+          <label
+            className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
+              errors.consent
+                ? "border-destructive bg-destructive/5"
+                : consent
+                  ? "border-brand bg-brand/5"
+                  : "border-input hover:border-brand/50 hover:bg-muted/40"
+            }`}
+          >
             <input
               type="checkbox"
               checked={consent}
               onChange={(e) => { setConsent(e.target.checked); setErrors((p) => ({ ...p, consent: undefined })) }}
               disabled={loading}
-              className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-brand"
+              className="mt-0.5 h-5 w-5 shrink-0 rounded border-input accent-brand"
               aria-describedby={errors.consent ? "consent-error" : undefined}
+              aria-invalid={!!errors.consent}
             />
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-foreground">
               Li e aceito os{" "}
-              <Link href="/termos" className="text-brand hover:underline" target="_blank">Termos de Uso</Link>
+              <Link href="/termos" className="font-medium text-brand hover:underline" target="_blank">Termos de Uso</Link>
               {" "}e a{" "}
-              <Link href="/privacidade" className="text-brand hover:underline" target="_blank">Política de Privacidade</Link>
-              {" "}({CONSENT_VERSION})
+              <Link href="/privacidade" className="font-medium text-brand hover:underline" target="_blank">Política de Privacidade</Link>
+              {" "}({CONSENT_VERSION}) <span className="text-destructive" aria-hidden="true">*</span>
             </span>
           </label>
           {errors.consent && (
@@ -437,19 +337,29 @@ export function RegisterForm() {
           )}
         </div>
 
-        {/* Confirmação de idade */}
+        {/* Confirmação de idade — card clicável, obrigatório */}
         <div>
-          <label className="flex cursor-pointer items-start gap-3">
+          <label
+            className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
+              errors.ageConfirmed
+                ? "border-destructive bg-destructive/5"
+                : ageConfirmed
+                  ? "border-brand bg-brand/5"
+                  : "border-input hover:border-brand/50 hover:bg-muted/40"
+            }`}
+          >
             <input
               type="checkbox"
               checked={ageConfirmed}
               onChange={(e) => { setAgeConfirmed(e.target.checked); setErrors((p) => ({ ...p, ageConfirmed: undefined })) }}
               disabled={loading}
-              className="mt-0.5 h-4 w-4 shrink-0 rounded border-border accent-brand"
+              className="mt-0.5 h-5 w-5 shrink-0 rounded border-input accent-brand"
               aria-describedby={errors.ageConfirmed ? "age-error" : undefined}
+              aria-invalid={!!errors.ageConfirmed}
             />
-            <span className="text-sm text-muted-foreground">
-              Declaro que tenho <span className="font-medium text-foreground">18 anos ou mais</span>
+            <span className="text-sm text-foreground">
+              Declaro que tenho <span className="font-semibold">18 anos ou mais</span>
+              {" "}<span className="text-destructive" aria-hidden="true">*</span>
             </span>
           </label>
           {errors.ageConfirmed && (
@@ -462,6 +372,12 @@ export function RegisterForm() {
         <Button type="submit" size="lg" loading={loading} className="mt-1 w-full">
           Criar conta
         </Button>
+
+        {/* LGPD — canal do Encarregado de Dados (DPO) */}
+        <p className="text-center text-xs text-muted-foreground">
+          Encarregado de Dados (DPO):{" "}
+          <a href={`mailto:${DPO_EMAIL}`} className="text-brand hover:underline">{DPO_EMAIL}</a>
+        </p>
       </form>
 
       <p className="mt-6 text-center text-sm text-muted-foreground">

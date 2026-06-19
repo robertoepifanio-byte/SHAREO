@@ -3,6 +3,7 @@
 import { useState, useTransition, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { toast } from "sonner"
 import type { BookingStatus } from "@prisma/client"
 
 interface Props {
@@ -18,7 +19,7 @@ interface Props {
 }
 
 type CoreAction = "confirm" | "cancel" | "mark_active" | "mark_returned" | "confirm_return" | "open_dispute"
-type Panel = "cancel" | "dispute" | "extend_request" | "extend_respond" | "report"
+type Panel = "cancel" | "dispute" | "extend_request" | "extend_respond" | "report" | "pickup_time" | "return_time"
 
 const REPORT_CATEGORIES = [
   { value: "NOT_WORKING",  label: "Item não funciona" },
@@ -47,6 +48,16 @@ export function BookingActions({
   // extend request
   const [newEndDate, setNewEndDate] = useState("")
 
+  // horário real de retirada / devolução
+  const nowLocal = () => {
+    const d = new Date()
+    d.setSeconds(0, 0)
+    return d.toISOString().slice(0, 16) // "YYYY-MM-DDTHH:MM"
+  }
+  const [pickupTime,  setPickupTime]  = useState("")
+  const [pickupTokenInput, setPickupTokenInput] = useState("")
+  const [returnTime,  setReturnTime]  = useState("")
+
   // report problem
   const [reportCategory, setReportCategory] = useState("")
   const [reportDesc,     setReportDesc]     = useState("")
@@ -68,17 +79,40 @@ export function BookingActions({
     try {
       const res  = await fetch(url, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
       const json = await res.json()
-      if (!res.ok) { setError(json.error?.message ?? "Erro ao executar ação."); return false }
+      if (!res.ok) {
+        const msg = json.error?.message ?? "Erro ao executar ação."
+        setError(msg)
+        toast.error(msg)
+        return false
+      }
       startTransition(() => router.refresh())
       return true
+    } catch {
+      const msg = "Erro de conexão. Tente novamente."
+      setError(msg)
+      toast.error(msg)
+      return false
     } finally {
       setLoading(false)
     }
   }
 
+  const ACTION_SUCCESS_MESSAGES: Partial<Record<CoreAction, string>> = {
+    confirm:        "Reserva confirmada",
+    cancel:         "Reserva cancelada",
+    mark_active:    "Retirada confirmada",
+    mark_returned:  "Devolução confirmada",
+    confirm_return: "Recebimento confirmado",
+    open_dispute:   "Problema reportado",
+  }
+
   async function execCore(action: CoreAction, extra?: object) {
     const ok = await callApi(`/api/bookings/${bookingId}`, { action, ...extra })
-    if (ok) reset()
+    if (ok) {
+      const msg = ACTION_SUCCESS_MESSAGES[action]
+      if (msg) toast.success(msg)
+      reset()
+    }
   }
 
   async function submitCancel() {
@@ -95,9 +129,19 @@ export function BookingActions({
         body: JSON.stringify({ newEndDate }),
       })
       const json = await res.json()
-      if (!res.ok) { setError(json.error?.message ?? "Erro ao solicitar extensão."); return }
+      if (!res.ok) {
+        const msg = json.error?.message ?? "Erro ao solicitar extensão."
+        setError(msg)
+        toast.error(msg)
+        return
+      }
+      toast.success("Solicitação de extensão enviada")
       startTransition(() => router.refresh())
       reset()
+    } catch {
+      const msg = "Erro de conexão. Tente novamente."
+      setError(msg)
+      toast.error(msg)
     } finally {
       setLoading(false)
     }
@@ -113,9 +157,19 @@ export function BookingActions({
         body: JSON.stringify({ action }),
       })
       const json = await res.json()
-      if (!res.ok) { setError(json.error?.message ?? "Erro ao responder extensão."); return }
+      if (!res.ok) {
+        const msg = json.error?.message ?? "Erro ao responder extensão."
+        setError(msg)
+        toast.error(msg)
+        return
+      }
+      toast.success(action === "approve" ? "Extensão aprovada" : "Extensão recusada")
       startTransition(() => router.refresh())
       reset()
+    } catch {
+      const msg = "Erro de conexão. Tente novamente."
+      setError(msg)
+      toast.error(msg)
     } finally {
       setLoading(false)
     }
@@ -148,6 +202,24 @@ export function BookingActions({
     }
   }
 
+  async function submitPickupTime() {
+    if (pickupTokenInput.replace(/\s/g, "").length !== 6) {
+      setError("Informe o código de 6 dígitos apresentado pelo locatário.")
+      return
+    }
+    const actualTime = pickupTime
+      ? new Date(pickupTime).toISOString()
+      : new Date().toISOString()
+    await execCore("mark_active", { actualTime, pickupToken: pickupTokenInput.replace(/\s/g, "") })
+  }
+
+  async function submitReturnTime() {
+    const actualTime = returnTime
+      ? new Date(returnTime).toISOString()
+      : new Date().toISOString()
+    await execCore("mark_returned", { actualTime })
+  }
+
   // ─── Botões principais ────────────────────────────────────────────────────
 
   const buttons: { label: string; variant: "primary" | "danger" | "ghost"; onClick: () => void }[] = []
@@ -156,13 +228,13 @@ export function BookingActions({
     if (status === "PENDING")
       buttons.push({ label: "✅ Confirmar reserva",    variant: "primary", onClick: () => execCore("confirm") })
     if (status === "CONFIRMED")
-      buttons.push({ label: "▶️ Marcar como ativo",    variant: "primary", onClick: () => execCore("mark_active") })
+      buttons.push({ label: "▶️ Marcar como ativo",    variant: "primary", onClick: () => { setPickupTime(nowLocal()); setPanel("pickup_time") } })
     if (status === "RETURNED" && !hideReturnActions)
       buttons.push({ label: "📦 Confirmar recebimento", variant: "primary", onClick: () => execCore("confirm_return") })
   }
   if (isBorrower) {
     if (status === "ACTIVE" && !hideReturnActions)
-      buttons.push({ label: "📦 Confirmar devolução",   variant: "primary", onClick: () => execCore("mark_returned") })
+      buttons.push({ label: "📦 Confirmar devolução",   variant: "primary", onClick: () => { setReturnTime(nowLocal()); setPanel("return_time") } })
     if (status === "ACTIVE")
       buttons.push({ label: "📅 Solicitar extensão de prazo", variant: "ghost", onClick: () => setPanel("extend_request") })
   }
@@ -205,6 +277,94 @@ export function BookingActions({
             </button>
             <button onClick={reset} className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-background transition-colors">
               Voltar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Painel: Confirmar retirada — valida token + horário ── */}
+      {panel === "pickup_time" && (
+        <div className="rounded-xl border border-brand/40 bg-brand/5 p-4">
+          <p className="mb-1 text-sm font-semibold text-foreground">Confirmar retirada do item</p>
+          <p className="mb-4 text-xs text-muted-foreground">
+            Solicite o código de retirada ao locatário e informe abaixo para confirmar a entrega.
+          </p>
+
+          <label htmlFor="pickup-token-input" className="mb-1 block text-xs font-semibold text-foreground">
+            Código do locatário <span className="text-destructive">*</span>
+          </label>
+          <input
+            id="pickup-token-input"
+            type="text"
+            inputMode="numeric"
+            maxLength={6}
+            placeholder="000000"
+            value={pickupTokenInput}
+            onChange={(e) => setPickupTokenInput(e.target.value.replace(/\D/g, ""))}
+            className="mb-3 w-full rounded-lg border border-input bg-white px-3 py-2.5 text-center text-2xl font-bold tracking-[0.3em] text-primary outline-none focus:border-brand"
+          />
+
+          <label htmlFor="pickup-time-input" className="mb-1 block text-xs font-semibold text-foreground">
+            Horário da retirada <span className="text-destructive">*</span>
+          </label>
+          <input
+            id="pickup-time-input"
+            type="datetime-local"
+            value={pickupTime}
+            max={nowLocal()}
+            onChange={(e) => setPickupTime(e.target.value)}
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-brand"
+          />
+          <p className="mt-1 mb-3 text-[10px] text-muted-foreground">
+            Não pode ser no futuro. Se não alterar, usa o horário atual.
+          </p>
+
+          <div className="flex gap-2">
+            <button
+              onClick={submitPickupTime}
+              disabled={loading || pickupTokenInput.length !== 6}
+              className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
+            >
+              Confirmar retirada
+            </button>
+            <button onClick={reset} className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-background transition-colors">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Painel: Confirmar devolução com horário ── */}
+      {panel === "return_time" && (
+        <div className="rounded-xl border border-brand/40 bg-brand/5 p-4">
+          <p className="mb-1 text-sm font-semibold text-foreground">Confirmar devolução do item</p>
+          <p className="mb-3 text-xs text-muted-foreground">
+            Informe o horário exato da devolução. Este registro fica vinculado à reserva.
+          </p>
+          <label htmlFor="return-time-input" className="mb-1 block text-xs font-medium text-foreground">
+            Horário da devolução <span className="text-destructive">*</span>
+          </label>
+          <input
+            id="return-time-input"
+            type="datetime-local"
+            value={returnTime}
+            max={nowLocal()}
+            onChange={(e) => setReturnTime(e.target.value)}
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-brand"
+          />
+          <p className="mt-1 text-[10px] text-muted-foreground">
+            Não pode ser no futuro. Se não alterar, usa o horário atual.
+          </p>
+          <div className="mt-3 flex gap-2">
+            <button
+              onClick={submitReturnTime}
+              disabled={loading}
+              className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
+            >
+              Confirmar devolução
+            </button>
+            <button onClick={reset} className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-background transition-colors">
+              Cancelar
             </button>
           </div>
         </div>

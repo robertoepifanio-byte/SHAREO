@@ -166,9 +166,9 @@ export default async function DashboardPage() {
   const earningsCents = monthEarnings._sum.totalPrice ?? 0
   const firstName     = session.user.name?.split(" ")[0] ?? "você"
 
-  const userCity     = userProfile?.city  ?? "Natal"
-  const userState    = userProfile?.state ?? "RN"
-  const userLocation = userState ? `${userCity}, ${userState}` : userCity
+  const userCity     = userProfile?.city  ?? null
+  const userState    = userProfile?.state ?? null
+  const userLocation = userCity ? (userState ? `${userCity}, ${userState}` : userCity) : "Brasil"
 
   return (
     <div className="min-h-screen bg-background">
@@ -360,7 +360,7 @@ export default async function DashboardPage() {
             {[
               { icon: "👕", title: "Troca Circular",  desc: "Troque roupas que não usa com vizinhos da sua região." },
               { icon: "🔧", title: "Eco Centro",      desc: "Doe ou repare equipamentos. Evite o descarte desnecessário." },
-              { icon: "♻️", title: `Recicla ${userCity}`,   desc: "Descubra pontos de coleta seletiva perto de você." },
+              { icon: "♻️", title: userCity ? `Recicla ${userCity}` : "Reciclagem Local",   desc: "Descubra pontos de coleta seletiva perto de você." },
             ].map((card) => (
               <div key={card.title} className="rounded-lg bg-white/10 p-4">
                 <div className="mb-2 text-2xl">{card.icon}</div>
@@ -379,7 +379,7 @@ export default async function DashboardPage() {
               {co2Kg > 0 ? `${co2Kg} kg CO₂` : "Comece a alugar e economize CO₂"}
             </p>
             <p className="text-sm text-white/65">
-              economizados em {userCity}
+              economizados {userCity ? `em ${userCity}` : "com o ShareO"}
               {co2Kg > 0 && treesEquivalent >= 0.01 && (
                 <> · equivale a <strong className="text-white">{treesEquivalent >= 1 ? `${Math.floor(treesEquivalent)} árvore${Math.floor(treesEquivalent) !== 1 ? "s" : ""}` : `${(treesEquivalent * 100).toFixed(0)}% de uma árvore`}</strong> plantada</>
               )}

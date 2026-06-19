@@ -85,7 +85,10 @@ enum NotificationType {
   LATE_FEE_APPLIED
   ID_VERIFIED
   ID_REJECTED
-  RETURN_REMINDER // P2-59 — lembrete manual de devolução enviado pelo proprietário
+  RETURN_REMINDER          // P2-59 — lembrete manual de devolução enviado pelo proprietário
+  AMBASSADOR_COMMISSION    // ADR-022 — comissão gerada por locação de indicado
+  AMBASSADOR_TIER_UP       // ADR-022 — embaixador subiu de tier
+  COUPON_EARNED            // P3-20 — cupom de desconto ganho por avaliar
 }
 
 enum CheckPhase {
@@ -127,6 +130,28 @@ enum TransactionType {
   OWNER_PAYOUT
   REFUND
   DISPUTE_HOLD
+  AMBASSADOR_COMMISSION // ADR-022 — custo de comissão de embaixador (sai do bolso da plataforma)
+}
+
+// ─── Programa de Embaixadores (ADR-022) ──────────────────────────
+
+enum AmbassadorTier {
+  BRONZE // 1–10 indicados ativos — 3% da taxa
+  SILVER // 11–50 indicados ativos — 5% da taxa
+  GOLD   // 51+ indicados ativos — 7% da taxa
+}
+
+enum ReferralStatus {
+  PENDING // indicado se cadastrou, ainda sem reserva paga
+  ACTIVE  // primeira reserva paga concluída — conta no tier
+  EXPIRED // sem reserva paga nos últimos 12 meses
+}
+
+enum CommissionStatus {
+  PENDING   // criada no webhook Stripe (checkout.session.completed)
+  APPROVED  // T+7 dias após COMPLETED do booking — janela anti-dispute
+  PAID      // pago via PIX/Connect — BLOQUEADO até D4 jurídico
+  CANCELLED // booking refunded, cancelled ou dispute lost
 }
 
 enum PayoutStatus {
@@ -151,12 +176,35 @@ enum EventQueueStatus {
   FAILED
 }
 
+enum FounderWave {
+  WAVE_1 // Posições 1–500   — primeiros fundadores
+  WAVE_2 // Posições 501–1500
+  WAVE_3 // Posições 1501+
+}
+
+enum LeadStatus {
+  PENDING      // E-mail cadastrado, aguardando convite
+  INVITED      // Link de convite enviado
+  CONVERTED    // Usuário criou conta via convite
+  UNSUBSCRIBED // Pediu exclusão
+}
+
+enum SignupSource {
+  ORGANIC     // Acesso direto / orgânico
+  VIP_LANDING // Formulário "Entrar na Lista"
+  REFERRAL    // Indicação de outro usuário
+  GOOGLE_ADS
+  META_ADS
+}
+
 // ─── Models ──────────────────────────────────────────────
 
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
-  emailVerified DateTime?
+  emailVerified       DateTime?
+  emailVerifyToken    String?   @unique
+  emailTokenExpiresAt DateTime?
   passwordHash  String?
   name          String
   phone         String?
@@ -187,12 +235,19 @@ model User {
   latitude     Float?
   longitude    Float?
 
-  // Programa de indicação
-  referralCode    String?          @unique // código único gerado no cadastro (ex.: "JOAO-X4K2")
-  referredById    String? // quem indicou este usuário
+  // Programa de indicação / Embaixadores (ADR-022)
+  // referralCode: slug único do link de indicação (mantido por compatibilidade — ex.: "JOAO-X4K2")
+  referralCode    String?          @unique
+  referredById    String? // quem indicou este usuário (atribuição direta no User)
   referredBy      User?            @relation("Referrals", fields: [referredById], references: [id])
   referrals       User[]           @relation("Referrals")
-  referralCredits ReferralCredit[]
+  // Perfil de embaixador (opt-in explícito, criado quando o usuário aceita o termo do programa)
+  ambassadorProfile     AmbassadorProfile?
+  // Arestas do grafo de indicações (ADR-022) — denormalizadas além do referredById para suportar
+  // status (PENDING/ACTIVE/EXPIRED) e janela de 12 meses para cálculo de tier
+  referralsAsReferrer   Referral[]              @relation("ReferralsAsReferrer")
+  referralAsReferred    Referral?               @relation("ReferralAsReferred")
+  ambassadorCommissions AmbassadorCommission[]  @relation("AmbassadorCommissions")
 
   isVerified Boolean @default(false)
   isActive   Boolean @default(true)
@@ -212,6 +267,21 @@ model User {
   consentAt      DateTime?
   consentIp      String?
   consentVersion String? // versão da política aceita (ex.: "v1.0")
+  ageDeclaredAt  DateTime? // declaração de 18+ persistida (trilha de auditoria LGPD)
+
+  // Cadastro progressivo — signup mínimo (nome/e-mail/senha/cidade/estado) habilita navegar;
+  // null = cadastro incompleto. Preenchido ao concluir o cadastro completo (CPF/CNPJ + endereço),
+  // exigido só ao Anunciar ou Alugar.
+  profileCompletedAt DateTime?
+
+  // Programa Fundadores (não ativar customFeeRate/searchBoost antes do D4 jurídico)
+  isFounder        Boolean     @default(false)
+  founderWave      FounderWave?
+  founderJoinedAt  DateTime?
+  customFeeRate    Int?         // basis points; null → usa taxa global
+  searchBoost      Float?       // multiplicador de relevância; null → 1.0
+  signupSource     SignupSource @default(ORGANIC)
+  signupSourceMeta Json?
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -234,6 +304,8 @@ model User {
   accounts            Account[]
   sessions            Session[]
   ownerPaymentAccount OwnerPaymentAccount?
+  founderLead         FounderLead?
+  coupons             Coupon[]
 
   @@index([email])
   @@index([latitude, longitude])
@@ -369,6 +441,13 @@ model Booking {
   // Resposta do proprietário (para cálculo do badge de responsividade)
   respondedAt DateTime? // quando o dono aceitou ou recusou (primeira ação sobre PENDING)
 
+  // Retirada real — gravada no mark_active; endDate é recalculado a partir daqui
+  activatedAt DateTime? // horário real de retirada confirmada pelo locador
+
+  // Token de segurança para retirada — gerado no pagamento, validado pelo proprietário na entrega
+  pickupToken       String?   @unique // código de 6 dígitos exibido ao locatário
+  pickupTokenUsedAt DateTime? // quando foi validado (mark_active)
+
   // Devolução e taxa de atraso
   returnedAt    DateTime? // data real de devolução (pode ser após endDate)
   lateFeeAmount Int? // cents — calculado se returnedAt > endDate
@@ -390,17 +469,22 @@ model Booking {
   depositStatus        DepositStatus @default(NONE)
   stripeDisputeId      String?
 
+  // P3-20 — desconto de cupom aplicado na criação (absorvido pela taxa da plataforma, não pelo proprietário)
+  discountCents Int?
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime? // soft delete — LGPD obrigatório em dados transacionais
 
   // Relações
-  reviews              Review[]
-  conversation         Conversation?
-  photos               BookingPhoto[]
-  contractAcceptance   ContractAcceptance?
-  platformTransactions PlatformTransaction[]
-  payouts              Payout[]
+  reviews               Review[]
+  conversation          Conversation?
+  photos                BookingPhoto[]
+  contractAcceptance    ContractAcceptance?
+  platformTransactions  PlatformTransaction[]
+  payouts               Payout[]
+  ambassadorCommissions AmbassadorCommission[]
+  couponUsed            Coupon?                @relation("CouponUsedInBooking")
 
   @@index([borrowerId])
   @@index([ownerId])
@@ -410,6 +494,32 @@ model Booking {
   @@index([itemId, status, startDate, endDate])
   @@index([ownerId, paymentStatus, paidAt])
   @@map("bookings")
+}
+
+// P3-20 — cupom de desconto ganho ao avaliar (1 por reserva avaliada por usuário).
+// O desconto é absorvido pela taxa da plataforma; o proprietário recebe o valor cheio.
+model Coupon {
+  id         String  @id @default(cuid())
+  userId     String
+  user       User    @relation(fields: [userId], references: [id])
+  code       String  @unique
+  percentOff Int // ex.: 10 = 10%
+  source     String  @default("review_reward")
+
+  // Reserva que originou o cupom (impede cupom duplicado pela mesma reserva)
+  sourceBookingId String?
+
+  expiresAt DateTime
+  usedAt    DateTime?
+  // Reserva onde o cupom foi usado
+  bookingId String?  @unique
+  booking   Booking? @relation("CouponUsedInBooking", fields: [bookingId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, sourceBookingId])
+  @@index([userId, usedAt])
+  @@map("coupons")
 }
 
 model Review {
@@ -594,22 +704,8 @@ model OutboundWebhook {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Créditos do programa de indicação
-model ReferralCredit {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  amountCents Int // valor em centavos (ex.: 1500 = R$15)
-  reason      String // ex.: "Indicação aceita — João Silva", "Primeiro aluguel concluído"
-  usedAt      DateTime? // null = disponível, não null = já usado
-  expiresAt   DateTime? // validade opcional
-
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-  @@map("referral_credits")
-}
+// Model ReferralCredit removido (ADR-022 — substituído por programa de embaixadores).
+// Tabela "referral_credits" é dropada na migration add-ambassador-program.sql.
 
 model AdminLog {
   id         String   @id @default(cuid())
@@ -748,4 +844,172 @@ model StripeEventQueue {
 
   @@index([status, createdAt])
   @@map("stripe_event_queue")
+}
+
+// ─── Programa Fundadores ──────────────────────────────────
+
+model FounderLead {
+  id            String      @id @default(cuid())
+  email         String      @unique
+  name          String?
+  intent        String      @default("proprietario") // "proprietario" | "locatario"
+  queuePosition Int         @unique @default(autoincrement())
+  wave          FounderWave @default(WAVE_1)          // atualizado pela API após create
+  status        LeadStatus  @default(PENDING)
+  source        SignupSource @default(VIP_LANDING)
+
+  // Localização do interessado — define a região dos pilotos (Piloto 1, Piloto 2…)
+  city  String?
+  state String? @db.Char(2)
+
+  // LGPD — consentimento explícito (LGPD Art. 7 + ANPD)
+  marketingConsentAt DateTime
+  consentVersion     String   @default("v1.0")
+  consentIp          String?
+  consentUserAgent   String?  @db.VarChar(500)
+
+  // Conversão: preenchido quando lead cria conta via link de convite
+  convertedUserId String?  @unique
+  convertedUser   User?    @relation(fields: [convertedUserId], references: [id])
+  invitedAt       DateTime?
+  convertedAt     DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("founder_leads")
+}
+
+model FounderBenefit {
+  id          String      @id @default(cuid())
+  wave        FounderWave
+  key         String      // "feeRate" | "searchBoost" | "freeVerification"
+  value       String      // string-encoded (basis points, float, "true"/"false")
+  description String?
+  active      Boolean     @default(true)
+  effectiveFrom  DateTime @default(now())
+  effectiveUntil DateTime?
+  createdAt      DateTime @default(now())
+
+  @@unique([wave, key])
+  @@map("founder_benefits")
+}
+
+model FounderAuditLog {
+  id        String   @id @default(cuid())
+  leadId    String?
+  userId    String?
+  action    String   // "LEAD_CREATED" | "INVITED" | "CONVERTED" | "UNSUBSCRIBED"
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([leadId])
+  @@index([userId])
+  @@map("founder_audit_logs")
+}
+
+// ─── Programa de Embaixadores (ADR-022) ──────────────────────────
+
+/// Vínculo 1:1 com User. Criado no opt-in do programa.
+/// Mantém estado denormalizado (tier vigente, totais acumulados) para leitura O(1) no painel.
+/// Tier vigente é atualizado pelo webhook que cria AmbassadorCommission — não há cron noturno
+/// para tier; apenas para EXPIRED em Referral.
+model AmbassadorProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Tier vigente — recalculado a cada nova ACTIVE/EXPIRED em Referral.
+  // Fonte da verdade é a contagem em Referral; este campo é cache.
+  currentTier        AmbassadorTier @default(BRONZE)
+  activeReferralsCnt Int            @default(0) // denormalizado — usado para badge no painel
+
+  // Totais acumulados em centavos (denormalizados para dashboard).
+  // Recalculáveis a partir de AmbassadorCommission — campos são cache.
+  totalCommissionPendingCents  Int @default(0) // soma de PENDING + APPROVED ainda não pagas
+  totalCommissionPaidCents     Int @default(0) // soma de PAID (zero no MVP até D4)
+  totalCommissionCancelledCents Int @default(0) // soma de CANCELLED — métrica de qualidade
+
+  // Conta de payout — preenchido quando D4 destravar
+  pixKey                  String?
+  pixKeyType              PixKeyType?
+  stripeConnectAccountId  String?     // reservado para evolução pós-dez/2026
+
+  // LGPD — opt-in auditável
+  consentAt        DateTime
+  consentVersion   String   @default("v1.0")
+  consentIp        String?
+  consentUserAgent String?  @db.VarChar(500)
+  revokedAt        DateTime? // null = ativo; preencher encerra atribuição futura
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  commissions AmbassadorCommission[]
+
+  @@index([currentTier])
+  @@map("ambassador_profiles")
+}
+
+/// Aresta do grafo de indicações (referrer → referred).
+/// Único por par — bloqueia duplicação. Persiste após EXPIRED para auditoria.
+/// Status PENDING vira ACTIVE no primeiro booking pago do indicado; EXPIRED após 12 meses sem atividade.
+model Referral {
+  id           String         @id @default(cuid())
+  referrerId   String
+  referrer     User           @relation("ReferralsAsReferrer", fields: [referrerId], references: [id])
+  referredId   String         @unique // 1:1 — um usuário só pode ter sido indicado uma vez
+  referred     User           @relation("ReferralAsReferred", fields: [referredId], references: [id])
+  status       ReferralStatus @default(PENDING)
+  activatedAt  DateTime?      // preenchido quando vira ACTIVE
+  expiredAt    DateTime?      // preenchido quando vira EXPIRED
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  commissions AmbassadorCommission[]
+
+  @@unique([referrerId, referredId])
+  @@index([referrerId, status])
+  @@index([status, activatedAt])
+  @@map("referrals")
+}
+
+/// Snapshot imutável de cada comissão gerada por uma reserva paga.
+/// Vinculada a Booking (FK), Referral (FK) e AmbassadorProfile (FK).
+/// Tier e taxa são capturados no momento da criação — auditoria garantida mesmo após
+/// embaixador subir/descer de tier ou taxa da plataforma mudar.
+model AmbassadorCommission {
+  id                  String           @id @default(cuid())
+  ambassadorProfileId String
+  ambassadorProfile   AmbassadorProfile @relation(fields: [ambassadorProfileId], references: [id])
+  ambassadorUserId    String           // denormalizado para joins rápidos
+  ambassadorUser      User             @relation("AmbassadorCommissions", fields: [ambassadorUserId], references: [id])
+  referralId          String
+  referral            Referral         @relation(fields: [referralId], references: [id])
+  bookingId           String
+  booking             Booking          @relation(fields: [bookingId], references: [id])
+
+  // Snapshot — imutável após criação
+  tierSnapshot        AmbassadorTier   // tier vigente no momento da geração
+  tierPercentBp       Int              // 300 | 500 | 700
+  platformFeeAmount   Int              // centavos — capturado do Booking
+  amountCents         Int              // platformFeeAmount * tierPercentBp / 10000
+
+  status              CommissionStatus @default(PENDING)
+  approvedAt          DateTime?        // marcado pelo cron T+7 após Booking COMPLETED
+  paidAt              DateTime?        // bloqueado até D4 — sempre null no MVP
+  cancelledAt         DateTime?
+  cancelReason        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([bookingId, referralId]) // uma comissão por par booking+referral — idempotência do webhook
+  @@index([ambassadorProfileId, status])
+  @@index([status, approvedAt])
+  @@index([bookingId])
+  @@map("ambassador_commissions")
 }

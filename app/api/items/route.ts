@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server"
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { CreateItemSchema, ListItemsQuerySchema } from "@/lib/validations/items"
@@ -74,8 +74,16 @@ export async function GET(req: NextRequest) {
       prisma.item.count({ where }),
     ])
 
+    // Privacidade (SEC-MIN-06): trunca coordenadas a ~110m no endpoint público.
+    // O marcador no mapa continua útil, mas não expõe o endereço exato do dono.
+    const publicItems = items.map((it) => ({
+      ...it,
+      latitude:  it.latitude  == null ? it.latitude  : Math.round(it.latitude  * 1000) / 1000,
+      longitude: it.longitude == null ? it.longitude : Math.round(it.longitude * 1000) / 1000,
+    }))
+
     return NextResponse.json({
-      data: items,
+      data: publicItems,
       meta: { total, page, limit, hasNextPage: skip + items.length < total },
     })
   } catch (e) {
@@ -94,6 +102,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 }
+      )
+    }
+
+    // Cadastro progressivo — anunciar exige cadastro completo (reforço server-side do gate da página)
+    const me = await prisma.user.findUnique({
+      where:  { id: session.user.id },
+      select: { profileCompletedAt: true },
+    })
+    if (!me?.profileCompletedAt) {
+      return NextResponse.json(
+        { error: { code: "REGISTRATION_INCOMPLETE", message: "Complete seu cadastro para anunciar." } },
+        { status: 403 }
       )
     }
 
@@ -151,9 +171,12 @@ export async function POST(req: NextRequest) {
     })
 
     // Geocodifica em background se o formulário não forneceu coords reais
+    // after() garante execução mesmo depois da resposta (fire-and-forget puro morre no Vercel)
     if (!d.latitude || !d.longitude || (d.latitude === 0 && d.longitude === 0)) {
-      geocodeItem(item.id, { neighborhood: d.neighborhood, city: d.city, state: d.state })
-        .catch((e) => console.error("[geocodeItem POST]", e instanceof Error ? e.message : e))
+      after(() =>
+        geocodeItem(item.id, { neighborhood: d.neighborhood, city: d.city, state: d.state })
+          .catch((e) => console.error("[geocodeItem POST]", e instanceof Error ? e.message : e))
+      )
     }
 
     return NextResponse.json({ data: item }, { status: 201 })

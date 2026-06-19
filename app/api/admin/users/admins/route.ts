@@ -1,12 +1,11 @@
 import type { NextRequest } from "next/server"
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { requireAdminRole } from "@/lib/auth/admin-guards"
-import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
-import { unblockAdminToken } from "@/lib/redis-admin-blocklist"
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 
 const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*]).{10,}$/
 
@@ -25,7 +24,7 @@ export async function POST(req: NextRequest) {
     const session = await auth()
     requireAdminRole(session, "ADMIN_SUPERADMIN")
 
-    const rl = await checkRateLimit(`admin-create:${session!.user.id}`, 5, 24 * 60 * 60 * 1000, req)
+    const rl = await checkRateLimit(`admin-create:${session!.user.id}`, RATE_LIMITS.adminCreate.limit, RATE_LIMITS.adminCreate.windowMs, req)
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const body   = await req.json()
@@ -54,17 +53,17 @@ export async function POST(req: NextRequest) {
       select: { id: true, name: true, email: true, adminRole: true, isActive: true, createdAt: true },
     })
 
-    await unblockAdminToken(user.id)
-
-    prisma.adminLog.create({
-      data: {
-        adminId:    session!.user.id,
-        action:     "CREATE_ADMIN",
-        entityType: "User",
-        entityId:   user.id,
-        metadata:   JSON.stringify({ adminRole }),
-      },
-    }).catch((e) => console.warn("[adminLog]", e instanceof Error ? e.message : e))
+    after(() =>
+      prisma.adminLog.create({
+        data: {
+          adminId:    session!.user.id,
+          action:     "CREATE_ADMIN",
+          entityType: "User",
+          entityId:   user.id,
+          metadata:   JSON.stringify({ adminRole }),
+        },
+      }).catch((e) => console.warn("[adminLog]", e instanceof Error ? e.message : e))
+    )
 
     return NextResponse.json({ data: user }, { status: 201 })
   } catch (e) {

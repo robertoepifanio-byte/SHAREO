@@ -1,10 +1,11 @@
 import type { NextRequest } from "next/server"
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
 import { CreateBookingSchema, ListBookingsQuerySchema } from "@/lib/validations/bookings"
 import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
 import { calcBookingTotal } from "@/lib/pricing"
+import { validateCoupon } from "@/lib/coupons"
 
 export async function GET(req: NextRequest) {
   try {
@@ -90,6 +91,24 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const userCheck = await prisma.user.findUnique({
+      where:  { id: borrowerId },
+      select: { emailVerified: true, profileCompletedAt: true },
+    })
+    if (!userCheck?.emailVerified) {
+      return NextResponse.json(
+        { error: { code: "EMAIL_NOT_VERIFIED", message: "Confirme seu e-mail antes de realizar uma reserva." } },
+        { status: 403 },
+      )
+    }
+    // Cadastro progressivo — alugar exige cadastro completo (CPF + endereço)
+    if (!userCheck.profileCompletedAt) {
+      return NextResponse.json(
+        { error: { code: "REGISTRATION_INCOMPLETE", message: "Complete seu cadastro para alugar." } },
+        { status: 403 },
+      )
+    }
+
     const body   = await req.json()
     const parsed = CreateBookingSchema.safeParse(body)
     if (!parsed.success) {
@@ -104,7 +123,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { itemId, startDate, endDate, borrowerNote } = parsed.data
+    const { itemId, startDate, endDate, borrowerNote, couponCode } = parsed.data
 
     // Carrega item e valida disponibilidade
     const [item, borrower] = await Promise.all([
@@ -155,9 +174,28 @@ export async function POST(req: NextRequest) {
     const totalDays  = Math.ceil(
       (new Date(endDate).getTime() - new Date(startDate).getTime()) / 86_400_000,
     )
-    const { totalPrice } = calcBookingTotal(
+    const { totalPrice: grossPrice } = calcBookingTotal(
       totalDays, item.pricePerDay, item.pricePerWeek, item.pricePerMonth,
     )
+
+    // P3-20: cupom de desconto — absorvido pela taxa da plataforma (proprietário recebe o valor cheio)
+    let couponId: string | null = null
+    let discountCents = 0
+    if (couponCode) {
+      const validation = await validateCoupon(couponCode, borrowerId)
+      if (!validation.ok) {
+        const msg = validation.reason === "USED"    ? "Este cupom já foi utilizado."
+                  : validation.reason === "EXPIRED" ? "Este cupom expirou."
+                  : "Cupom não encontrado. Confira o código."
+        return NextResponse.json(
+          { error: { code: "COUPON_INVALID", message: msg } },
+          { status: 422 },
+        )
+      }
+      couponId      = validation.couponId
+      discountCents = Math.round(grossPrice * validation.percentOff / 100)
+    }
+    const totalPrice = grossPrice - discountCents
 
     // Cria booking + conversation atomicamente (conflict check dentro da transação evita double-booking)
     const booking = await prisma.$transaction(async (tx) => {
@@ -184,6 +222,7 @@ export async function POST(req: NextRequest) {
           totalDays,
           dailyPrice:    item.pricePerDay,
           totalPrice,
+          discountCents: discountCents || null,
           depositAmount: item.depositAmount ?? null,
           borrowerNote:  borrowerNote ?? null,
         },
@@ -208,6 +247,15 @@ export async function POST(req: NextRequest) {
         },
       })
 
+      // Consome o cupom na mesma transação (corrida: condição usedAt null garante uso único)
+      if (couponId) {
+        const consumed = await tx.coupon.updateMany({
+          where: { id: couponId, usedAt: null },
+          data:  { usedAt: new Date(), bookingId: b.id },
+        })
+        if (consumed.count === 0) throw Object.assign(new Error("COUPON_RACE"), { code: "COUPON_RACE" })
+      }
+
       const conv = await tx.conversation.create({
         data: {
           bookingId:    b.id,
@@ -224,26 +272,30 @@ export async function POST(req: NextRequest) {
       return { ...b, conversationId: conv.id }
     }, { timeout: 5000 })
 
-    // Webhook de saída para o locador (fire-and-forget)
-    dispatchWebhookEvent(item.ownerId, "booking.created", {
-      bookingId:  booking.id,
-      itemTitle:  booking.item.title,
-      borrower:   booking.item.owner.name,
-      startDate:  booking.startDate,
-      endDate:    booking.endDate,
-      totalPrice: booking.totalPrice,
-    })
+    // Webhook de saída para o locador — após a resposta
+    after(() =>
+      dispatchWebhookEvent(item.ownerId, "booking.created", {
+        bookingId:  booking.id,
+        itemTitle:  booking.item.title,
+        borrower:   booking.item.owner.name,
+        startDate:  booking.startDate,
+        endDate:    booking.endDate,
+        totalPrice: booking.totalPrice,
+      })
+    )
 
-    // Notificação para o locador (fire-and-forget)
-    prisma.notification.create({
-      data: {
-        userId: item.ownerId,
-        type:   "BOOKING_REQUEST",
-        title:  "Nova solicitação de aluguel",
-        body:   `${borrower?.name ?? "Um usuário"} quer alugar "${booking.item.title}"`,
-        data:   { bookingId: booking.id },
-      },
-    }).catch((e) => console.error("[notification] BOOKING_REQUEST:", e instanceof Error ? e.message : e))
+    // Notificação para o locador — após a resposta
+    after(() =>
+      prisma.notification.create({
+        data: {
+          userId: item.ownerId,
+          type:   "BOOKING_REQUEST",
+          title:  "Nova solicitação de aluguel",
+          body:   `${borrower?.name ?? "Um usuário"} quer alugar "${booking.item.title}"`,
+          data:   { bookingId: booking.id },
+        },
+      }).catch((e) => console.error("[notification] BOOKING_REQUEST:", e instanceof Error ? e.message : e))
+    )
 
     return NextResponse.json({ data: booking }, { status: 201 })
   } catch (e) {
@@ -251,6 +303,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: { code: "DATE_CONFLICT", message: "Item indisponível no período selecionado." } },
         { status: 409 },
+      )
+    }
+    if (e instanceof Error && (e as NodeJS.ErrnoException).code === "COUPON_RACE") {
+      return NextResponse.json(
+        { error: { code: "COUPON_INVALID", message: "Este cupom já foi utilizado." } },
+        { status: 422 },
       )
     }
     console.error("[POST /api/bookings]", e instanceof Error ? e.message : e)

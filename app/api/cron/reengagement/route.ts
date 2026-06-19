@@ -10,12 +10,17 @@
 
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { Resend } from "resend"
+import { sendAppEmail } from "@/lib/email"
+import { APP_URL } from "@/lib/app-url"
 
 export const dynamic = "force-dynamic"
 
-const FROM = "ShareO <noreply@shareo.com.br>"
-function getResend() { return new Resend(process.env.RESEND_API_KEY) }
+// Único ponto de integração com o provedor fica em lib/email.ts (sendAppEmail).
+// `send` lança em erro para preservar a contagem via Promise.allSettled abaixo.
+async function send(payload: { to: string; subject: string; html: string }) {
+  const { error } = await sendAppEmail(payload)
+  if (error) throw new Error(error.message)
+}
 
 function daysAgo(n: number) {
   const d = new Date()
@@ -49,15 +54,14 @@ async function sendReviewReminders() {
   const results = await Promise.allSettled(
     bookings.map(async (b) => {
       if (!b.borrower.email) return
-      await getResend().emails.send({
-        from:    FROM,
+      await send({
         to:      b.borrower.email,
         subject: `Como foi alugar "${b.item.title}"? Deixe sua avaliação`,
         html: `
           <p>Olá, ${b.borrower.name?.split(" ")[0] ?? ""}!</p>
           <p>Sua locação de <strong>${b.item.title}</strong> foi concluída.</p>
           <p>Avaliações ajudam a comunidade — leva menos de 1 minuto!</p>
-          <p><a href="${process.env.NEXTAUTH_URL}/reservas/${b.id}">Avaliar agora →</a></p>
+          <p><a href="${APP_URL}/reservas/${b.id}">Avaliar agora →</a></p>
           <p>Obrigado por usar o ShareO!</p>
         `,
       })
@@ -95,18 +99,17 @@ async function sendSimilarItemSuggestions() {
       if (similar.length === 0) return
 
       const itemLinks = similar
-        .map((i) => `<li><a href="${process.env.NEXTAUTH_URL}/itens/${i.slug ?? i.id}">${i.title} — R$ ${(i.pricePerDay / 100).toFixed(2)}/dia</a></li>`)
+        .map((i) => `<li><a href="${APP_URL}/itens/${i.slug ?? i.id}">${i.title} — R$ ${(i.pricePerDay / 100).toFixed(2)}/dia</a></li>`)
         .join("")
 
-      await getResend().emails.send({
-        from:    FROM,
+      await send({
         to:      b.borrower.email,
         subject: `Você pode gostar: itens similares ao "${b.item.title}"`,
         html: `
           <p>Olá, ${b.borrower.name?.split(" ")[0] ?? ""}!</p>
           <p>Com base na sua última locação, selecionamos alguns itens em <strong>${b.item.city}</strong>:</p>
           <ul>${itemLinks}</ul>
-          <p><a href="${process.env.NEXTAUTH_URL}/itens">Ver mais →</a></p>
+          <p><a href="${APP_URL}/itens">Ver mais →</a></p>
         `,
       })
     }),
@@ -135,15 +138,14 @@ async function sendFavoriteAvailableReminders() {
   const results = await Promise.allSettled(
     favorites.map(async (f) => {
       if (!f.user.email) return
-      await getResend().emails.send({
-        from:    FROM,
+      await send({
         to:      f.user.email,
         subject: `"${f.item.title}" que você salvou está disponível!`,
         html: `
           <p>Olá, ${f.user.name?.split(" ")[0] ?? ""}!</p>
           <p>O item <strong>${f.item.title}</strong> que você adicionou aos favoritos está disponível por
              <strong>R$ ${(f.item.pricePerDay / 100).toFixed(2)}/dia</strong>.</p>
-          <p><a href="${process.env.NEXTAUTH_URL}/itens/${f.item.slug ?? f.item.id}">Ver item →</a></p>
+          <p><a href="${APP_URL}/itens/${f.item.slug ?? f.item.id}">Ver item →</a></p>
         `,
       })
     }),

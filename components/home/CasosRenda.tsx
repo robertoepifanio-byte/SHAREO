@@ -2,7 +2,7 @@ const CASES = [
   {
     initial: "C",
     name: "Carlos Souza",
-    role: "Proprietário · Natal, RN",
+    role: "Proprietário · São Paulo, SP",
     item: "Furadeira Bosch",
     itemEmoji: "🔧",
     renda: "R$ 135",
@@ -13,7 +13,7 @@ const CASES = [
   {
     initial: "F",
     name: "Fernanda Lima",
-    role: "Proprietária · Ponta Negra",
+    role: "Proprietária · Belo Horizonte, MG",
     item: "Caixa de Som JBL",
     itemEmoji: "🔊",
     renda: "R$ 420",
@@ -24,7 +24,7 @@ const CASES = [
   {
     initial: "M",
     name: "Marcos Silva",
-    role: "Proprietário · Capim Macio",
+    role: "Proprietário · Curitiba, PR",
     item: "Projetor Epson Full HD",
     itemEmoji: "📽️",
     renda: "R$ 280",
@@ -51,7 +51,7 @@ export function CasosRenda() {
           </h2>
         </div>
         <p className="mb-6 text-sm text-slate-600">
-          Proprietários reais que transformaram itens parados em renda extra.
+          Veja o potencial de quem transforma itens parados em renda extra.
         </p>
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-3 xl:gap-4">
@@ -104,6 +104,11 @@ export function CasosRenda() {
             </article>
           ))}
         </div>
+
+        <p className="mt-4 text-xs leading-relaxed text-slate-600">
+          Personagens e valores ilustrativos, baseados em estimativas de uso típico
+          (3–4 locações/mês). Resultados reais variam conforme o item, a demanda e a região.
+        </p>
       </div>
     </section>
   )

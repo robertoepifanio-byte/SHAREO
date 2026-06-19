@@ -11,6 +11,8 @@ import { NextResponse }     from "next/server"
 import { auth }             from "@/lib/auth"
 import { prisma }           from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { getUploadLimits }   from "@/lib/platform-config"
+import { isImageType, isMagicBytesValid } from "@/lib/imageUpload"
 
 type Ctx = { params: Promise<{ id: string }> }
 
@@ -77,15 +79,28 @@ export async function POST(req: NextRequest, { params }: Ctx) {
       { status: 400 }
     )
 
-  if (file.size > 10 * 1024 * 1024)
+  const { maxUploadSizeMB } = await getUploadLimits()
+  if (file.size > maxUploadSizeMB * 1024 * 1024)
     return NextResponse.json(
-      { error: { code: "VALIDATION_ERROR", message: "Arquivo muito grande (máx 10 MB)." } },
+      { error: { code: "VALIDATION_ERROR", message: `Arquivo muito grande (máx ${maxUploadSizeMB} MB).` } },
       { status: 400 }
+    )
+
+  if (!isImageType(file.type))
+    return NextResponse.json(
+      { error: { code: "INVALID_TYPE", message: "Selecione uma imagem (JPEG, PNG, WebP, HEIC)." } },
+      { status: 415 }
     )
 
   const ext      = file.name.split(".").pop()?.toLowerCase() ?? "jpg"
   const path     = `bookings/${id}/${phase.toLowerCase()}/${Date.now()}-${session.user.id}.${ext}`
-  const buffer   = Buffer.from(await file.arrayBuffer())
+  const arrayBuf = await file.arrayBuffer()
+  if (!(await isMagicBytesValid(arrayBuf)))
+    return NextResponse.json(
+      { error: { code: "INVALID_TYPE", message: "Arquivo inválido ou corrompido." } },
+      { status: 415 }
+    )
+  const buffer   = Buffer.from(arrayBuf)
 
   const supabase = createAdminClient()
 

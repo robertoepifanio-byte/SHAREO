@@ -8,6 +8,8 @@ import { NextResponse }     from "next/server"
 import { auth }             from "@/lib/auth"
 import { prisma }           from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { getUploadLimits }   from "@/lib/platform-config"
+import { isImageType, isMagicBytesValid } from "@/lib/imageUpload"
 
 export async function POST(req: NextRequest) {
   const supabase = createAdminClient()
@@ -35,20 +37,36 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     )
 
-  const MAX = 10 * 1024 * 1024
+  const { maxUploadSizeMB } = await getUploadLimits()
+  const MAX = maxUploadSizeMB * 1024 * 1024
   if (docFile.size > MAX || selfie.size > MAX)
     return NextResponse.json(
-      { error: { code: "VALIDATION_ERROR", message: "Arquivo muito grande (máx 10 MB)." } },
+      { error: { code: "VALIDATION_ERROR", message: `Arquivo muito grande (máx ${maxUploadSizeMB} MB).` } },
       { status: 400 }
+    )
+
+  if (!isImageType(docFile.type) || !isImageType(selfie.type))
+    return NextResponse.json(
+      { error: { code: "INVALID_TYPE", message: "Documento e selfie devem ser imagens (JPEG, PNG, WebP, HEIC)." } },
+      { status: 415 }
     )
 
   const userId = session.user.id
   const now    = Date.now()
 
-  const [docBuf, selfieBuf] = await Promise.all([
-    docFile.arrayBuffer().then(Buffer.from),
-    selfie.arrayBuffer().then(Buffer.from),
+  const [docArr, selfieArr] = await Promise.all([
+    docFile.arrayBuffer(),
+    selfie.arrayBuffer(),
   ])
+
+  if (!(await isMagicBytesValid(docArr)) || !(await isMagicBytesValid(selfieArr)))
+    return NextResponse.json(
+      { error: { code: "INVALID_TYPE", message: "Arquivo inválido ou corrompido." } },
+      { status: 415 }
+    )
+
+  const docBuf    = Buffer.from(docArr)
+  const selfieBuf = Buffer.from(selfieArr)
 
   const docExt    = docFile.name.split(".").pop()?.toLowerCase() ?? "jpg"
   const selfieExt = selfie.name.split(".").pop()?.toLowerCase() ?? "jpg"
@@ -61,8 +79,10 @@ export async function POST(req: NextRequest) {
   ])
 
   if (docUpload.error || selfieUpload.error) {
+    const detail = docUpload.error?.message ?? selfieUpload.error?.message ?? "unknown"
+    console.error("[id-verification upload]", detail)
     return NextResponse.json(
-      { error: { code: "UPLOAD_ERROR", message: "Falha ao enviar arquivos." } },
+      { error: { code: "UPLOAD_ERROR", message: `Falha ao enviar arquivos: ${detail}` } },
       { status: 500 }
     )
   }

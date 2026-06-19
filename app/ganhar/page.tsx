@@ -1,13 +1,17 @@
 import type { Metadata } from "next"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { EarningsCalc } from "./_EarningsCalc"
+import { getPlatformFeeRate } from "@/lib/platform-config"
 
 export const metadata: Metadata = {
   title:       "Quanto posso ganhar?",
   description: "Simule seus ganhos alugando itens parados em casa. Descubra quanto você pode faturar por mês.",
 }
 
-export default function EarningsPage() {
+export default async function EarningsPage() {
+  const feeRateBps = await getPlatformFeeRate()
+  const feeLabel   = `${feeRateBps / 100}%`
+
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
@@ -43,7 +47,7 @@ export default function EarningsPage() {
                   &ldquo;Anunciei minha furadeira e câmera fotográfica. Em 2 meses já paguei metade do valor que gastei nelas.&rdquo;
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  — Marcelo S., Natal/RN
+                  — Marcelo S., Porto Alegre/RS
                 </p>
               </div>
             </div>
@@ -54,7 +58,7 @@ export default function EarningsPage() {
             {[
               {
                 q: "O ShareO cobra alguma taxa?",
-                a: "Sim, uma taxa de serviço de 15% sobre o valor da locação, cobrada do locatário. Você recebe o valor líquido diretamente via PIX, sem nenhuma mensalidade ou custo para anunciar.",
+                a: `Sim, uma taxa de serviço de ${feeLabel} sobre o valor da locação, cobrada do locatário. Você recebe o valor líquido diretamente via PIX, sem nenhuma mensalidade ou custo para anunciar.`,
               },
               {
                 q: "Preciso estar disponível para entregas?",

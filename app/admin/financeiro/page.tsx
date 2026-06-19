@@ -6,7 +6,8 @@ import { prisma } from "@/lib/prisma"
 import { hasAdminRole } from "@/lib/auth/admin-guards"
 import { PayoutActions } from "./_PayoutActions"
 import { FeeRateForm } from "./_FeeRateForm"
-import { getPlatformFeeRate } from "@/lib/platform-config"
+import { PricingMultipliersForm } from "./_PricingMultipliersForm"
+import { getPlatformFeeRate, getPricingMultipliers } from "@/lib/platform-config"
 
 export const metadata: Metadata = { title: "Admin — Financeiro" }
 
@@ -24,6 +25,7 @@ export default async function AdminFinanceiroPage() {
 
   const [
     currentFeeRate,
+    pricingMultipliers,
     gmvResult,
     feeResult,
     payoutStats,
@@ -34,6 +36,7 @@ export default async function AdminFinanceiroPage() {
   ] = await Promise.all([
 
     getPlatformFeeRate(),
+    getPricingMultipliers(),
     // GMV — volume total de aluguéis concluídos
     prisma.booking.aggregate({
       where: { status: "COMPLETED" },
@@ -171,9 +174,8 @@ export default async function AdminFinanceiroPage() {
                 <div className="text-right flex-shrink-0">
                   <p className="text-lg font-bold text-success">{fmt(p.amount)}</p>
                   <Link
-                    href={`/reservas/${p.booking.id}`}
+                    href={`/admin/reservas/${p.booking.id}`}
                     className="text-xs text-brand hover:underline"
-                    target="_blank"
                   >
                     Ver reserva →
                   </Link>
@@ -214,9 +216,8 @@ export default async function AdminFinanceiroPage() {
                 <div className="text-right flex-shrink-0">
                   <p className="text-lg font-bold text-destructive">{fmt(b.totalPrice)}</p>
                   <Link
-                    href={`/reservas/${b.id}`}
+                    href={`/admin/reservas/${b.id}`}
                     className="text-xs text-brand hover:underline"
-                    target="_blank"
                   >
                     Ver reserva →
                   </Link>
@@ -240,9 +241,23 @@ export default async function AdminFinanceiroPage() {
 
       {/* ── Configurações (SUPERADMIN only) ── */}
       {isSuperAdmin && (
-        <div className="rounded-xl border border-border bg-surface p-5">
-          <h2 className="mb-4 text-sm font-semibold text-foreground">Configurações da plataforma</h2>
-          <FeeRateForm currentRate={currentFeeRate} />
+        <div className="rounded-xl border border-border bg-surface p-5 space-y-6">
+          <h2 className="text-sm font-semibold text-foreground">Configurações da plataforma</h2>
+          <div>
+            <p className="mb-2 text-xs text-muted-foreground font-medium">Taxa da plataforma</p>
+            <FeeRateForm currentRate={currentFeeRate} />
+          </div>
+          <div>
+            <p className="mb-1 text-xs text-muted-foreground font-medium">Multiplicadores de precificação sugerida</p>
+            <p className="mb-3 text-xs text-muted-foreground">
+              Usados no botão &quot;Calcular&quot; do formulário de anúncio (semanal = N× diária, mensal = N× diária).
+              Recomendado: semanal 3×, mensal 15×.
+            </p>
+            <PricingMultipliersForm
+              weeklyMultiplier={pricingMultipliers.weeklyMultiplier}
+              monthlyMultiplier={pricingMultipliers.monthlyMultiplier}
+            />
+          </div>
         </div>
       )}
 

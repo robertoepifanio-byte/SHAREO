@@ -14,6 +14,13 @@ export default defineConfig({
     video: 'retain-on-failure',
     actionTimeout: 25000,
     navigationTimeout: 30000,
+    // Bypassa rate limit nas requisições funcionais (page.request + form do navegador), igual ao
+    // playwright.config.ts base. Só vale onde a rota repassa `req` ao checkRateLimit (ex.: admin-create).
+    // Os testes que VERIFICAM rate limit usam fetch() nativo (sem este header) ou rota que ignora `req`
+    // (ex.: /api/user/password) — ver security2 #18/#19 e admin-usuarios 5.1.
+    extraHTTPHeaders: process.env.E2E_SECRET
+      ? { 'x-e2e-token': process.env.E2E_SECRET }
+      : {},
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },

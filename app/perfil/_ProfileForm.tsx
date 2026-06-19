@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { maskPhone, displayPhone } from "@/lib/forms/masks"
 
 interface UserData {
   name:      string
@@ -20,7 +21,7 @@ export function ProfileForm({ user, redirectOnSave }: { user: UserData; redirect
 
   const [name,      setName]      = useState(user.name)
   const [bio,       setBio]       = useState(user.bio       ?? "")
-  const [phone,     setPhone]     = useState(user.phone     ?? "")
+  const [phone,     setPhone]     = useState(displayPhone(user.phone))
   const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl ?? "")
 
   const [loading, setLoading] = useState(false)
@@ -37,7 +38,8 @@ export function ProfileForm({ user, redirectOnSave }: { user: UserData; redirect
         body:    JSON.stringify({
           name:      name.trim()      || undefined,
           bio:       bio.trim()       || null,
-          phone:     phone.trim()     || null,
+          // Telefone digitado é local (DDD + número); a API exige E.164 com +55.
+          phone:     phone.replace(/\D/g, "") ? `+55${phone.replace(/\D/g, "")}` : null,
           avatarUrl: avatarUrl.trim() || null,
         }),
       })
@@ -95,15 +97,15 @@ export function ProfileForm({ user, redirectOnSave }: { user: UserData; redirect
 
         <div className="sm:col-span-2">
           <label htmlFor="profile-phone" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Telefone <span className="font-normal normal-case">(ex: +5584999999999)</span>
+            Telefone <span className="font-normal normal-case">(DDD + número)</span>
           </label>
           <input
             id="profile-phone"
             type="tel"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="+5584999999999"
-            maxLength={14}
+            onChange={(e) => setPhone(maskPhone(e.target.value))}
+            placeholder="(84) 99999-0000"
+            maxLength={16}
             className={inputCls}
           />
         </div>

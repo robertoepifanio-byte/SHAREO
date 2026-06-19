@@ -8,13 +8,29 @@ import { UserActions } from "./_Actions"
 
 export const metadata: Metadata = { title: "Admin — Usuários" }
 
-export default async function AdminUsuariosPage() {
+export default async function AdminUsuariosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>
+}) {
   const session = await auth()
   if (!session || session.user.role !== "ADMIN") redirect("/dashboard")
   if (!hasAdminRole(session, "ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL", "ADMIN_FINANCEIRO")) redirect("/admin")
 
+  const q = (await searchParams).q?.trim() ?? ""
+
   const users = await prisma.user.findMany({
-    where:   { deletedAt: null },
+    where: {
+      deletedAt: null,
+      ...(q
+        ? {
+            OR: [
+              { name:  { contains: q, mode: "insensitive" } },
+              { email: { contains: q, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+    },
     orderBy: { createdAt: "desc" },
     take:    200,
     select: {
@@ -45,7 +61,7 @@ export default async function AdminUsuariosPage() {
         <h1 className="text-xl font-bold text-primary">
           Usuários
           <span className="ml-2 text-sm font-normal text-muted-foreground">
-            ({users.length} total)
+            ({users.length}{users.length === 200 ? "+" : ""}{q ? " encontrados" : " total"})
           </span>
         </h1>
         {hasAdminRole(session, "ADMIN_SUPERADMIN") && (
@@ -57,6 +73,31 @@ export default async function AdminUsuariosPage() {
           </Link>
         )}
       </div>
+
+      <form method="GET" className="mb-4 flex flex-wrap items-center gap-2">
+        <input
+          type="search"
+          name="q"
+          defaultValue={q}
+          placeholder="Buscar por nome ou e-mail…"
+          aria-label="Buscar usuário por nome ou e-mail"
+          className="min-h-11 flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+        />
+        <button
+          type="submit"
+          className="min-h-11 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 transition-colors"
+        >
+          Buscar
+        </button>
+        {q && (
+          <Link
+            href="/admin/usuarios"
+            className="min-h-11 flex items-center rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold text-foreground hover:border-primary hover:text-primary transition-colors"
+          >
+            Limpar
+          </Link>
+        )}
+      </form>
 
       <div className="overflow-hidden rounded-xl border border-border bg-surface">
         <table className="w-full">
@@ -70,6 +111,13 @@ export default async function AdminUsuariosPage() {
             </tr>
           </thead>
           <tbody>
+            {users.length === 0 && (
+              <tr>
+                <td colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
+                  Nenhum usuário encontrado para “{q}”.
+                </td>
+              </tr>
+            )}
             {users.map((user) => (
               <tr key={user.id} className="border-b border-border last:border-0">
                 <td className="py-3 pr-3">

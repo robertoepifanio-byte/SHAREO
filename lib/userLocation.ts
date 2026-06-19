@@ -4,7 +4,7 @@
  * Prioridade:
  * 1. latitude/longitude do perfil (preenchido via geocoding ao cadastrar item)
  * 2. city do perfil → lookup de capitais/cidades brasileiras (normalizado)
- * 3. Natal, RN como default (mercado principal do ShareO)
+ * 3. Brasil inteiro como default (lançamento nacional — zoom de país)
  */
 
 import { prisma } from "@/lib/prisma"
@@ -41,7 +41,9 @@ const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
   "natal/rn":          { lat: -5.7945,  lng: -35.2110 },
 }
 
-const DEFAULT = { lat: -5.7945, lng: -35.2110, zoom: 12 }
+// Centro geográfico do Brasil — zoom de país para usuários sem localização
+export const BRAZIL_DEFAULT = { lat: -14.235, lng: -51.9253, zoom: 4 }
+const DEFAULT = BRAZIL_DEFAULT
 
 /** Remove acentos e normaliza string para lookup */
 function normalize(s: string): string {
@@ -84,23 +86,30 @@ export interface UserMapLocation {
   zoom: number
 }
 
+export interface UserCoords {
+  lat:    number
+  lng:    number
+  source: "profile" | "city"
+}
+
 /**
- * Retorna as coordenadas do usuário logado para inicializar o mapa.
- * @param userId - ID do usuário autenticado (ou null/undefined se não logado)
+ * Coordenadas conhecidas do usuário (perfil geocodificado ou lookup da cidade).
+ * Retorna null quando não há como saber — NÃO usa o default do Brasil, para que
+ * filtros de distância não calculem a partir de um ponto fictício.
  */
-export async function getUserMapLocation(userId?: string | null): Promise<UserMapLocation> {
-  if (!userId) return DEFAULT
+export async function getUserCoords(userId?: string | null): Promise<UserCoords | null> {
+  if (!userId) return null
 
   const user = await prisma.user.findUnique({
     where:  { id: userId },
     select: { latitude: true, longitude: true, city: true },
   }).catch(() => null)
 
-  if (!user) return DEFAULT
+  if (!user) return null
 
-  // 1. Coords salvas no perfil (preenchidas via geocoding de item)
+  // 1. Coords salvas no perfil
   if (user.latitude && user.longitude) {
-    return { lat: user.latitude, lng: user.longitude, zoom: 13 }
+    return { lat: user.latitude, lng: user.longitude, source: "profile" }
   }
 
   // 2. Lookup pela cidade com normalização e matching parcial
@@ -109,15 +118,25 @@ export async function getUserMapLocation(userId?: string | null): Promise<UserMa
     for (const key of candidates) {
       // match exato normalizado
       if (CITY_COORDS[key]) {
-        return { ...CITY_COORDS[key], zoom: 12 }
+        return { ...CITY_COORDS[key], source: "city" }
       }
       // match parcial: chave da tabela contida na string do usuário
       const match = Object.entries(CITY_COORDS).find(([k]) => key.includes(k) || k.includes(key))
       if (match) {
-        return { ...match[1], zoom: 12 }
+        return { ...match[1], source: "city" }
       }
     }
   }
 
-  return DEFAULT
+  return null
+}
+
+/**
+ * Retorna as coordenadas do usuário logado para inicializar o mapa.
+ * @param userId - ID do usuário autenticado (ou null/undefined se não logado)
+ */
+export async function getUserMapLocation(userId?: string | null): Promise<UserMapLocation> {
+  const coords = await getUserCoords(userId)
+  if (!coords) return DEFAULT
+  return { lat: coords.lat, lng: coords.lng, zoom: coords.source === "profile" ? 15 : 12 }
 }

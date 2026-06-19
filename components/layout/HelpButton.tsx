@@ -8,6 +8,7 @@ const HELP_ITEMS = [
   { href: "/ajuda#primeiros-passos", label: "Primeiros passos", icon: "🚀" },
   { href: "/ajuda#locatario",        label: "Quero alugar",     icon: "🛒" },
   { href: "/ajuda#locador",          label: "Quero anunciar",   icon: "📦" },
+  { href: "/ajuda#dicas-anfitrioes", label: "Dicas para anfitriões", icon: "💡" },
   { href: "/ajuda#taxas-secao",      label: "Taxas",            icon: "🧾" },
   { href: "/ajuda#disputas",         label: "Disputas",         icon: "⚖️" },
   { href: "/ajuda#suporte",          label: "Suporte",          icon: "🎧" },

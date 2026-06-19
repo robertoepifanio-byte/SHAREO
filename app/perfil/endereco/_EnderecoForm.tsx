@@ -2,6 +2,8 @@
 
 import { useState, useTransition, useRef } from "react"
 import { useRouter } from "next/navigation"
+import { maskCEP } from "@/lib/forms/masks"
+import { fetchAddressByCep } from "@/lib/forms/address"
 
 const BR_STATES = [
   "AC","AL","AM","AP","BA","CE","DF","ES","GO","MA",
@@ -19,20 +21,6 @@ interface Props {
 
 const inputCls = "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-brand transition-colors placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
 
-// Formata CEP enquanto o usuário digita: "12345678" → "12345-678"
-function fmtCep(raw: string) {
-  const digits = raw.replace(/\D/g, "").slice(0, 8)
-  return digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits
-}
-
-interface ViaCepResponse {
-  erro?:        boolean
-  logradouro:   string
-  bairro:       string
-  localidade:   string
-  uf:           string
-}
-
 export function EnderecoForm({ cep, street, city, state, neighborhood }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
@@ -43,11 +31,14 @@ export function EnderecoForm({ cep, street, city, state, neighborhood }: Props) 
   const [cityVal,   setCityVal]   = useState(city         ?? "")
   const [stateVal,  setStateVal]  = useState(state        ?? "")
 
-  const [cepLoading, setCepLoading] = useState(false)
-  const [cepError,   setCepError]   = useState("")
-  const [saving,     setSaving]     = useState(false)
-  const [saveError,  setSaveError]  = useState("")
-  const [success,    setSuccess]    = useState(false)
+  const [cepLoading,  setCepLoading]  = useState(false)
+  const [cepError,    setCepError]    = useState("")
+  const [cepFilled,   setCepFilled]   = useState(false)
+  const [saving,      setSaving]      = useState(false)
+  const [saveError,   setSaveError]   = useState("")
+  const [success,     setSuccess]     = useState(false)
+  const [gettingLoc,  setGettingLoc]  = useState(false)
+  const [locError,    setLocError]    = useState("")
 
   // Evita busca duplicada se o usuário sair/entrar no campo sem mudar o valor
   const lastFetchedCep = useRef("")
@@ -59,29 +50,96 @@ export function EnderecoForm({ cep, street, city, state, neighborhood }: Props) 
 
     setCepLoading(true)
     setCepError("")
+    setCepFilled(false)
     try {
-      const res  = await fetch(`https://viacep.com.br/ws/${digits}/json/`)
-      const data = await res.json() as ViaCepResponse
-
-      if (data.erro) {
+      const addr = await fetchAddressByCep(digits)
+      if (!addr) {
         setCepError("CEP não encontrado. Verifique e tente novamente.")
         return
       }
 
       lastFetchedCep.current = digits
 
-      // Preenche apenas campos que estejam vazios OU que foram preenchidos
-      // automaticamente antes — não sobrescreve edições manuais.
-      // (regra simples: preenche sempre, pois o usuário pode corrigir depois)
-      if (data.logradouro) setStreetVal(data.logradouro)
-      if (data.bairro)     setNeighVal(data.bairro)
-      if (data.localidade) setCityVal(data.localidade)
-      if (data.uf)         setStateVal(data.uf)
+      if (addr.street)       setStreetVal(addr.street)
+      if (addr.neighborhood) setNeighVal(addr.neighborhood)
+      if (addr.state)        setStateVal(addr.state)
+      if (addr.city)         setCityVal(addr.city)
+      setCepFilled(true)
     } catch {
       setCepError("Erro ao consultar o CEP. Verifique sua conexão.")
     } finally {
       setCepLoading(false)
     }
+  }
+
+  // ── Geolocalização GPS → Mapbox geocoding reverso ─────────────────────────
+  function handleGetLocation() {
+    if (!navigator.geolocation) {
+      setLocError("Geolocalização não suportada neste navegador.")
+      return
+    }
+    setGettingLoc(true)
+    setLocError("")
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude: lat, longitude: lng } = pos.coords
+          const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+          if (!token || token.endsWith("...")) {
+            setLocError("Token de mapa não configurado.")
+            return
+          }
+          const url =
+            `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json` +
+            `?access_token=${token}&country=BR&language=pt&types=place,locality,neighborhood,address&limit=1`
+          const res  = await fetch(url)
+          const data = await res.json() as {
+            features?: {
+              place_type: string[]
+              text: string
+              context?: { id: string; text: string }[]
+            }[]
+          }
+          const feature = data?.features?.[0]
+          if (feature) {
+            const ctx = feature.context ?? []
+            const place  = ctx.find((c) => c.id.startsWith("place"))?.text
+            const region = ctx.find((c) => c.id.startsWith("region"))?.text
+            const neigh  = ctx.find((c) => c.id.startsWith("neighborhood"))?.text
+                        ?? (feature.place_type.includes("neighborhood") ? feature.text : "")
+            if (place)  setCityVal(place)
+            if (region) setStateVal(stateAbbr(region))
+            if (neigh)  setNeighVal(neigh)
+          } else {
+            setLocError("Não foi possível identificar o endereço a partir do GPS.")
+          }
+        } catch {
+          setLocError("Erro ao buscar localização. Tente novamente.")
+        } finally {
+          setGettingLoc(false)
+        }
+      },
+      () => {
+        setGettingLoc(false)
+        setLocError("Não foi possível obter a localização. Permita o acesso ao GPS.")
+      },
+      { timeout: 8000 }
+    )
+  }
+
+  // Converte nome do estado (ex.: "Rio Grande do Norte") para sigla (ex.: "RN")
+  function stateAbbr(name: string): string {
+    const map: Record<string, string> = {
+      "Acre": "AC", "Alagoas": "AL", "Amapá": "AP", "Amazonas": "AM",
+      "Bahia": "BA", "Ceará": "CE", "Distrito Federal": "DF", "Espírito Santo": "ES",
+      "Goiás": "GO", "Maranhão": "MA", "Mato Grosso": "MT", "Mato Grosso do Sul": "MS",
+      "Minas Gerais": "MG", "Pará": "PA", "Paraíba": "PB", "Paraná": "PR",
+      "Pernambuco": "PE", "Piauí": "PI", "Rio de Janeiro": "RJ",
+      "Rio Grande do Norte": "RN", "Rio Grande do Sul": "RS", "Rondônia": "RO",
+      "Roraima": "RR", "Santa Catarina": "SC", "São Paulo": "SP", "Sergipe": "SE",
+      "Tocantins": "TO",
+    }
+    return map[name] ?? name.slice(0, 2).toUpperCase()
   }
 
   // ── Salva no banco ────────────────────────────────────────────────────────
@@ -121,6 +179,32 @@ export function EnderecoForm({ cep, street, city, state, neighborhood }: Props) 
   return (
     <form onSubmit={save} className="space-y-4">
 
+      {/* ── Usar minha localização ── */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          Sua localização é usada para centralizar o mapa e exibir itens próximos.
+        </p>
+        <button
+          type="button"
+          onClick={handleGetLocation}
+          disabled={gettingLoc}
+          className="flex shrink-0 items-center gap-1.5 text-xs text-brand hover:underline disabled:opacity-50 outline-none focus-visible:ring-1 focus-visible:ring-brand rounded ml-3"
+        >
+          {gettingLoc ? (
+            <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
+          ) : (
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+            </svg>
+          )}
+          Usar minha localização
+        </button>
+      </div>
+      {locError && <p className="text-xs text-destructive">{locError}</p>}
+
       {/* ── CEP ── */}
       <div>
         <label htmlFor="end-cep" className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -133,7 +217,7 @@ export function EnderecoForm({ cep, street, city, state, neighborhood }: Props) 
             inputMode="numeric"
             value={cepVal}
             onChange={(e) => {
-              setCepVal(fmtCep(e.target.value))
+              setCepVal(maskCEP(e.target.value))
               setCepError("")
             }}
             onBlur={handleCepBlur}
@@ -148,10 +232,10 @@ export function EnderecoForm({ cep, street, city, state, neighborhood }: Props) 
           )}
         </div>
         {cepError && (
-          <p className="mt-1 text-xs text-red-500">{cepError}</p>
+          <p className="mt-1 text-xs text-destructive">{cepError}</p>
         )}
-        {!cepError && !cepLoading && cepVal.replace(/\D/g, "").length === 8 && (
-          <p className="mt-1 text-xs text-success">✓ CEP válido — campos preenchidos automaticamente</p>
+        {cepFilled && !cepError && (
+          <p className="mt-1 text-xs text-success">✓ Endereço preenchido automaticamente</p>
         )}
       </div>
 
@@ -165,7 +249,6 @@ export function EnderecoForm({ cep, street, city, state, neighborhood }: Props) 
           type="text"
           value={streetVal}
           onChange={(e) => setStreetVal(e.target.value)}
-          placeholder="Ex: Avenida Engenheiro Roberto Freire"
           maxLength={200}
           className={inputCls}
         />
@@ -181,7 +264,6 @@ export function EnderecoForm({ cep, street, city, state, neighborhood }: Props) 
           type="text"
           value={neighVal}
           onChange={(e) => setNeighVal(e.target.value)}
-          placeholder="Ex: Ponta Negra"
           maxLength={100}
           className={inputCls}
         />
@@ -198,7 +280,6 @@ export function EnderecoForm({ cep, street, city, state, neighborhood }: Props) 
             type="text"
             value={cityVal}
             onChange={(e) => setCityVal(e.target.value)}
-            placeholder="Ex: Natal"
             maxLength={100}
             className={inputCls}
           />

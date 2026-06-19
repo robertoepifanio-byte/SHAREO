@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server"
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { UpdateItemSchema } from "@/lib/validations/items"
@@ -24,7 +24,7 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
             city: true, state: true, createdAt: true,
           },
         },
-        images:  { orderBy: { order: "asc" } },
+        images:  { orderBy: { order: "asc" }, take: 24 },  // bound de payload (ARQ-M-07)
         reviews: {
           where: { reviewType: "ITEM" },
           select: {
@@ -55,10 +55,22 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
       )
     }
 
-    // Fire-and-forget view count increment (só conta para itens públicos)
-    prisma.item.update({ where: { id }, data: { viewCount: { increment: 1 } } }).catch((e) => console.error("[viewCount]", e instanceof Error ? e.message : e))
+    // Incremento de viewCount após a resposta (só conta para itens públicos)
+    after(() =>
+      prisma.item.update({ where: { id }, data: { viewCount: { increment: 1 } } }).catch((e) => console.error("[viewCount]", e instanceof Error ? e.message : e))
+    )
 
-    return NextResponse.json({ data: item })
+    // Privacidade (SEC-MIN-06 / MAJ-S14-04): coordenada exata e endereço só p/ dono/admin.
+    // Público recebe lat/lng truncadas (~110m) e address omitido.
+    const data = (isOwner || isAdmin)
+      ? item
+      : {
+          ...item,
+          address:   null,
+          latitude:  Math.round(item.latitude  * 1000) / 1000,
+          longitude: Math.round(item.longitude * 1000) / 1000,
+        }
+    return NextResponse.json({ data })
   } catch (e) {
     console.error("[GET /api/items/[id]]", e instanceof Error ? e.message : e)
     return NextResponse.json(
@@ -144,12 +156,15 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
     })
 
     // Regeocodifica em background quando endereço muda
+    // after() garante execução mesmo depois da resposta (fire-and-forget puro morre no Vercel)
     if (d.city || d.state || d.neighborhood) {
-      prisma.item.findUnique({ where: { id }, select: { city: true, state: true, neighborhood: true } })
-        .then((it) => {
-          if (it) geocodeItem(id, { city: it.city, state: it.state, neighborhood: it.neighborhood })
-        })
-        .catch(() => undefined)
+      after(() =>
+        prisma.item.findUnique({ where: { id }, select: { city: true, state: true, neighborhood: true } })
+          .then((it) => {
+            if (it) return geocodeItem(id, { city: it.city, state: it.state, neighborhood: it.neighborhood })
+          })
+          .catch((e) => console.error("[geocodeItem PUT]", e instanceof Error ? e.message : e))
+      )
     }
 
     return NextResponse.json({ data: updated })

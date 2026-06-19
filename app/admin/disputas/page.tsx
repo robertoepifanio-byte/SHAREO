@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
+import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { DisputeActions } from "./_Actions"
@@ -79,12 +80,12 @@ export default async function AdminDisputasPage() {
                   )}
 
                   {d.conversation && (
-                    <a
-                      href={`/mensagens/${d.conversation.id}`}
+                    <Link
+                      href={`/admin/disputas/${d.conversation.id}`}
                       className="mt-2 inline-block text-xs text-brand hover:underline"
                     >
                       Ver conversa →
-                    </a>
+                    </Link>
                   )}
                 </div>
 

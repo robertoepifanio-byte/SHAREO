@@ -1,10 +1,12 @@
 import type { Metadata } from "next"
 import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { BookingProgressBar } from "@/components/booking/BookingProgressBar"
+import { TrackEvent } from "@/components/analytics/TrackEvent"
 
 export const metadata: Metadata = { title: "Reserva confirmada! — ShareO" }
 
@@ -72,6 +74,7 @@ export default async function BookingSuccessPage({ searchParams }: Props) {
 
   return (
     <div className="min-h-screen bg-background">
+      <TrackEvent event={{ name: "booking_completed", params: { booking_id: booking.id, value: booking.totalPrice / 100 } }} />
       <AppHeader />
 
       <main className="container py-10">
@@ -138,8 +141,9 @@ export default async function BookingSuccessPage({ searchParams }: Props) {
           {/* Resumo da reserva */}
           <div className="mb-6 overflow-hidden rounded-xl border border-border bg-surface">
             {img && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={img} alt={booking.item.title} className="h-40 w-full object-cover" />
+              <div className="relative h-40 w-full">
+                <Image src={img} alt={booking.item.title} fill sizes="(max-width: 768px) 100vw, 640px" className="object-cover" />
+              </div>
             )}
             <div className="p-5">
               <h2 className="mb-4 font-bold text-primary">{booking.item.title}</h2>
@@ -174,7 +178,6 @@ export default async function BookingSuccessPage({ searchParams }: Props) {
             <p className="mb-2 text-xs font-bold text-brand">🔒 Sua locação está protegida</p>
             <ul className="space-y-1.5 text-xs text-foreground">
               {[
-                "O valor é repassado ao proprietário via PIX 3 dias após a devolução confirmada",
                 "Cancelamento gratuito até 24h antes da data de retirada",
                 "Suporte ShareO disponível 7 dias por semana",
               ].map((item) => (

@@ -196,9 +196,10 @@ test.describe('Plano E2E Central de Ajuda — ShareO', () => {
           const temExemploMulta = /R\$\s*\d+.*atraso|atraso.*R\$\s*\d+/i.test(bodyText)
           expect(temExemploMulta, 'Deve existir exemplo prático com valor monetário para multa').toBe(true)
 
-          // Verifica que taxa de serviço (10%) está mencionada
-          const temTaxaServico = /10%/.test(bodyText)
-          expect(temTaxaServico, 'Taxa de serviço de 10% deve estar mencionada').toBe(true)
+          // Verifica que a taxa de serviço está mencionada com percentual
+          // (valor é dinâmico via getPlatformFeeRate — nunca validar número fixo)
+          const temTaxaServico = /taxa[\s\S]{0,200}?\d+(,\d+)?%|\d+(,\d+)?%[\s\S]{0,200}?taxa/i.test(bodyText)
+          expect(temTaxaServico, 'Taxa de serviço com percentual deve estar mencionada').toBe(true)
 
           // Verifica que caução com prazo de devolução está explicada
           const temCaucaoPrazo = /7 dias/.test(bodyText)

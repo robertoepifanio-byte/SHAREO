@@ -1,6 +1,6 @@
 import { getToken } from "next-auth/jwt"
 import { NextResponse, type NextRequest } from "next/server"
-import { isAdminBlocked } from "@/lib/redis-admin-blocklist"
+import { isSessionStale } from "@/lib/redis-admin-blocklist"
 
 const PROTECTED_PREFIXES = [
   "/dashboard",
@@ -12,6 +12,7 @@ const PROTECTED_PREFIXES = [
   "/api/bookings",
   "/api/conversations",
   "/api/users",
+  "/api/user",          // troca de senha/e-mail e conta PIX (payout) — cobre o check de sessão stale
 ]
 
 const ADMIN_PREFIXES = ["/admin", "/api/admin"]
@@ -41,9 +42,10 @@ function buildCsp(nonce: string): string {
       "worker-src blob: 'self'",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: *.supabase.co *.mapbox.com",
-      "connect-src 'self' ws: wss: *.supabase.co api.mapbox.com events.mapbox.com *.tiles.mapbox.com",
+      "connect-src 'self' ws: wss: *.supabase.co api.mapbox.com events.mapbox.com *.tiles.mapbox.com https://viacep.com.br",
       "font-src 'self' data:",
       "frame-src 'none'",
+      "frame-ancestors 'self'",
     ].join("; ")
   }
   return [
@@ -51,12 +53,19 @@ function buildCsp(nonce: string): string {
     // nonce cobre scripts inline do Next.js, JSON-LD e GA4; wasm-unsafe-eval é exigido pelo Mapbox GL
     `script-src 'self' 'nonce-${nonce}' 'wasm-unsafe-eval' blob: https://www.googletagmanager.com`,
     "worker-src blob: 'self'",
-    // unsafe-inline para styles permanece — Tailwind e Mapbox GL injetam estilos inline
+    // unsafe-inline para styles permanece por dependência de duas bibliotecas:
+    //  • Tailwind CSS (JIT) injeta <style> inline no documento em runtime.
+    //  • Mapbox GL JS injeta estilos inline em elementos de mapa dinamicamente.
+    // Remover 'unsafe-inline' quebraria o CSS de toda a aplicação e o mapa.
+    // Caminho seguro futuro: gerar hash SHA-256 de cada bloco <style> conhecido
+    // em build-time e incluí-los explicitamente aqui. Rastreado como item de
+    // hardening pós-MVP (follow-up CSP style-src sem unsafe-inline).
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: *.supabase.co *.mapbox.com https://www.google-analytics.com",
-    "connect-src 'self' wss://*.supabase.co api.mapbox.com events.mapbox.com *.tiles.mapbox.com *.sentry.io https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com",
+    "connect-src 'self' wss://*.supabase.co api.mapbox.com events.mapbox.com *.tiles.mapbox.com *.sentry.io https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://viacep.com.br",
     "font-src 'self' data:",
     "frame-src 'none'",
+    "frame-ancestors 'self'",
   ].join("; ")
 }
 
@@ -85,9 +94,14 @@ export async function middleware(req: NextRequest) {
   const isProtectedRoute = PROTECTED_PREFIXES.some((p) =>
     p === "/perfil" ? pathname === "/perfil" : pathname.startsWith(p)
   )
+  // /cadastro/completar é guardada pela própria página (exige login) — não é guest-only,
+  // senão usuários logados (que são justamente quem precisa concluir o cadastro) seriam
+  // redirecionados para /dashboard antes da página rodar.
   const isAuthRoute =
-    AUTH_ROUTES.some((p) => pathname.startsWith(p)) ||
-    AUTH_EXACT.some((p)  => pathname === p || pathname === p + "/")
+    !pathname.startsWith("/cadastro/completar") && (
+      AUTH_ROUTES.some((p) => pathname.startsWith(p)) ||
+      AUTH_EXACT.some((p)  => pathname === p || pathname === p + "/")
+    )
 
   if (!isAdminRoute && !isProtectedRoute && !isAuthRoute) {
     return nextWithCsp()
@@ -127,10 +141,27 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
-  if (isAdminRoute && token) {
-    const role   = token.role as string | undefined
-    const userId = token.id  as string | undefined
+  // Sessão invalidada por troca de senha/e-mail (SEC-CRIT-04): rejeita tokens
+  // cujo `loginAt` é anterior ao epoch gravado no Redis.
+  if ((isProtectedRoute || isAdminRoute) && token) {
+    const uid     = token.id as string | undefined
+    const loginAt = token.loginAt as number | undefined
+    if (uid && await isSessionStale(uid, loginAt)) {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json(
+          { error: { code: "SESSION_EXPIRED", message: "Sessão expirada. Faça login novamente." } },
+          { status: 401 },
+        )
+      }
+      return NextResponse.redirect(new URL("/sair", req.url))
+    }
+  }
 
+  if (isAdminRoute && token) {
+    const role = token.role as string | undefined
+    // Sessões de admin rebaixado/desativado/removido são mortas pelo epoch
+    // (isSessionStale, acima); o login novo reflete o role atual. Aqui só
+    // barramos quem não é (mais) ADMIN segundo o token vigente.
     if (role !== "ADMIN") {
       if (pathname.startsWith("/api/")) {
         return NextResponse.json(
@@ -140,21 +171,11 @@ export async function middleware(req: NextRequest) {
       }
       return NextResponse.redirect(new URL("/dashboard", req.url))
     }
-
-    if (userId && await isAdminBlocked(userId)) {
-      if (pathname.startsWith("/api/")) {
-        return NextResponse.json(
-          { error: { code: "FORBIDDEN", message: "Conta de administrador desativada ou rebaixada." } },
-          { status: 403 },
-        )
-      }
-      return NextResponse.redirect(new URL("/sair", req.url))
-    }
   }
 
   return nextWithCsp()
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icones/|images/).*)" ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|images/).*)" ],
 }

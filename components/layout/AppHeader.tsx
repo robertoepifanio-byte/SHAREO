@@ -5,9 +5,7 @@ import { NotificationBell } from "@/components/ui/NotificationBell"
 import { MobileMenu } from "@/components/layout/MobileMenu"
 import { UserDropdown } from "@/components/layout/UserDropdown"
 import { HelpButton } from "@/components/layout/HelpButton"
-import { HomeDropdown } from "@/components/layout/HomeDropdown"
-import { ExplorarDropdown } from "@/components/layout/ExplorarDropdown"
-import { AnunciarDropdown } from "@/components/layout/AnunciarDropdown"
+import { NavLinks } from "@/components/layout/NavLinks"
 
 export async function AppHeader() {
   const session = await auth().catch(() => null)
@@ -34,18 +32,14 @@ export async function AppHeader() {
               priority
             />
           </div>
-          <span className="hidden md:block mt-0.5 text-[10px] text-white/85 font-medium leading-none text-center">
+          <span aria-hidden="true" className="hidden md:block mt-0.5 text-[10px] text-white/85 font-medium leading-none text-center">
             Use Mais. Possua Menos.
           </span>
         </Link>
 
         {/* Nav desktop — oculta em mobile */}
         <nav className="hidden md:flex items-center gap-1 ml-6" aria-label="Navegação principal">
-          <HomeDropdown />
-          <ExplorarDropdown />
-          {(session?.user?.role == null || session.user.role === "USER") && (
-            <AnunciarDropdown />
-          )}
+          <NavLinks hideAnunciar={session?.user?.role != null && session.user.role !== "USER"} />
         </nav>
 
         {/* Ações de autenticação */}

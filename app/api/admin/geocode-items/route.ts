@@ -5,6 +5,7 @@
  */
 import { NextResponse, type NextRequest } from "next/server"
 import { auth } from "@/lib/auth"
+import { hasAdminRole } from "@/lib/auth/admin-guards"
 import { prisma } from "@/lib/prisma"
 
 export const runtime   = "nodejs"
@@ -32,7 +33,8 @@ export async function POST(req: NextRequest) {
 
   if (!isSecret) {
     const session = await auth()
-    if (session?.user?.role !== "ADMIN") {
+    // S14-M-14: geocode de itens é domínio Operacional (+Superadmin)
+    if (!hasAdminRole(session, "ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
   }
@@ -42,13 +44,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "NEXT_PUBLIC_MAPBOX_TOKEN não configurado" }, { status: 500 })
   }
 
-  // Busca itens sem coordenadas
-  const allItems = await prisma.item.findMany({
-    where: { deletedAt: null },
-    select: { id: true, title: true, neighborhood: true, city: true, state: true, latitude: true, longitude: true },
+  // S14-M-18: filtra no banco (não carrega TODOS os itens em memória) e processa
+  // em lote limitado — cada chamada geocodifica até BATCH_SIZE itens, respeitando
+  // o maxDuration de 60s + a pausa de 120ms/req da Mapbox. Reexecutar a rota
+  // processa o próximo lote (hasMore indica que ainda restam itens).
+  // Item.latitude/longitude são Float NÃO-nulos; o sentinela de "sem coordenadas"
+  // é 0,0 (mesmo critério do create em app/api/items/route.ts) — o antigo filtro
+  // `== null` em JS nunca casava (no-op latente).
+  const BATCH_SIZE = 100
+  const items = await prisma.item.findMany({
+    where:  { deletedAt: null, OR: [{ latitude: 0 }, { longitude: 0 }] },
+    select: { id: true, title: true, neighborhood: true, city: true, state: true },
+    take:   BATCH_SIZE,
   })
-
-  const items = allItems.filter((i) => i.latitude == null || i.longitude == null)
 
   if (items.length === 0) {
     return NextResponse.json({ ok: true, processed: 0, message: "Nenhum item sem coordenadas." })
@@ -83,6 +91,7 @@ export async function POST(req: NextRequest) {
     await new Promise((r) => setTimeout(r, 120))
   }
 
-  console.warn(`[geocode-items] updated=${updated} failed=${failed}`)
-  return NextResponse.json({ ok: true, processed: items.length, updated, failed, results })
+  const hasMore = items.length === BATCH_SIZE
+  console.warn(`[geocode-items] updated=${updated} failed=${failed} hasMore=${hasMore}`)
+  return NextResponse.json({ ok: true, processed: items.length, updated, failed, hasMore, results })
 }

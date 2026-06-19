@@ -4,7 +4,7 @@
  * Muda o status para DISPUTED e registra o motivo e descrição.
  */
 
-import { NextResponse, type NextRequest } from "next/server"
+import { NextResponse, after, type NextRequest } from "next/server"
 import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
@@ -118,15 +118,17 @@ export async function POST(req: NextRequest, { params }: Params) {
     const notifyUserId = isOwner ? booking.borrowerId : booking.ownerId
     const notifyRole   = isOwner ? "locatário" : "locador"
 
-    prisma.notification.create({
-      data: {
-        userId: notifyUserId,
-        type:   "BOOKING_CANCELLED", // reutiliza tipo existente; o body indica disputa
-        title:  "Disputa aberta",
-        body:   `O ${notifyRole} abriu uma disputa em "${booking.item.title}": ${reasonLabel}.`,
-        data:   { bookingId: id, photoUrl: photoUrl ?? null },
-      },
-    }).catch((e) => console.error("[dispute] notification:", e instanceof Error ? e.message : e))
+    after(() =>
+      prisma.notification.create({
+        data: {
+          userId: notifyUserId,
+          type:   "BOOKING_CANCELLED", // reutiliza tipo existente; o body indica disputa
+          title:  "Disputa aberta",
+          body:   `O ${notifyRole} abriu uma disputa em "${booking.item.title}": ${reasonLabel}.`,
+          data:   { bookingId: id, photoUrl: photoUrl ?? null },
+        },
+      }).catch((e) => console.error("[dispute] notification:", e instanceof Error ? e.message : e))
+    )
 
     return NextResponse.json({ data: updated }, { status: 200 })
   } catch (e) {

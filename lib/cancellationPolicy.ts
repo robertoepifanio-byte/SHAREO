@@ -1,68 +1,64 @@
-/**
- * Política de cancelamento ShareO
- *
- * Regras:
- *   - Cancelamento até 24h antes do início: 100% de reembolso
- *   - Cancelamento entre 24h e 6h antes do início: 70% de reembolso
- *   - Cancelamento com menos de 6h antes do início: 50% de reembolso
- *
- * Todos os valores monetários são inteiros em centavos (ex: R$ 10,00 = 1000).
- */
+import type { CancellationConfig } from "@/lib/platform-config"
+
+export type { CancellationConfig }
 
 export interface RefundResult {
-  /** Valor a ser reembolsado, em centavos */
-  refundAmount: number
-  /** Percentual aplicado (100 | 70 | 50) */
-  refundPercent: 100 | 70 | 50
-  /** Descrição legível da regra aplicada */
-  reason: string
+  refundAmount:  number
+  refundPercent: number
+  reason:        string
+}
+
+const DEFAULTS: CancellationConfig = {
+  fullRefundHours:    24,
+  partialRefundHours: 6,
+  partialPercent:     70,
+  latePercent:        50,
 }
 
 /**
- * Calcula o valor de reembolso com base no momento do cancelamento.
- *
- * @param startDate  Data/hora de início da locação
- * @param canceledAt Data/hora em que o cancelamento foi solicitado
- * @param totalPrice Valor total da locação em centavos
+ * Calcula o reembolso com base na política de cancelamento.
+ * Aceita config opcional (lida do banco via getCancellationConfig()).
+ * Quando omitida, usa os valores padrão.
  */
 export function calcRefund(
-  startDate: Date,
-  canceledAt: Date,
-  totalPrice: number,
+  startDate:   Date,
+  canceledAt:  Date,
+  totalPrice:  number,
+  cfg:         CancellationConfig = DEFAULTS,
 ): RefundResult {
-  const hoursUntilStart =
-    (startDate.getTime() - canceledAt.getTime()) / (1000 * 60 * 60)
+  const hoursUntilStart = (startDate.getTime() - canceledAt.getTime()) / 3_600_000
 
-  if (hoursUntilStart >= 24) {
+  if (hoursUntilStart >= cfg.fullRefundHours) {
     return {
       refundAmount:  totalPrice,
       refundPercent: 100,
-      reason:        "Cancelamento até 24h antes do início — reembolso total.",
+      reason:        `Cancelamento até ${cfg.fullRefundHours}h antes do início — reembolso total.`,
     }
   }
 
-  if (hoursUntilStart >= 6) {
-    const refundAmount = Math.round(totalPrice * 0.7)
+  if (hoursUntilStart >= cfg.partialRefundHours) {
     return {
-      refundAmount,
-      refundPercent: 70,
-      reason:        "Cancelamento entre 24h e 6h antes do início — reembolso de 70%.",
+      refundAmount:  Math.round(totalPrice * cfg.partialPercent / 100),
+      refundPercent: cfg.partialPercent,
+      reason:        `Cancelamento entre ${cfg.fullRefundHours}h e ${cfg.partialRefundHours}h antes do início — reembolso de ${cfg.partialPercent}%.`,
     }
   }
 
-  const refundAmount = Math.round(totalPrice * 0.5)
   return {
-    refundAmount,
-    refundPercent: 50,
-    reason:        "Cancelamento com menos de 6h antes do início — reembolso de 50%.",
+    refundAmount:  Math.round(totalPrice * cfg.latePercent / 100),
+    refundPercent: cfg.latePercent,
+    reason:        `Cancelamento com menos de ${cfg.partialRefundHours}h antes do início — reembolso de ${cfg.latePercent}%.`,
   }
 }
 
-/**
- * Descrição textual da política para exibição em UI.
- */
-export const CANCELLATION_POLICY_LINES = [
-  { label: "Até 24h antes",          detail: "reembolso total (100%)" },
-  { label: "Entre 24h e 6h antes",   detail: "70% de reembolso" },
-  { label: "Menos de 6h antes",      detail: "50% de reembolso" },
-] as const
+/** Descrição textual da política para exibição em UI. */
+export function getCancellationPolicyLines(cfg: CancellationConfig = DEFAULTS) {
+  return [
+    { label: `Até ${cfg.fullRefundHours}h antes`,                                          detail: `reembolso total (100%)` },
+    { label: `Entre ${cfg.fullRefundHours}h e ${cfg.partialRefundHours}h antes`,            detail: `${cfg.partialPercent}% de reembolso` },
+    { label: `Menos de ${cfg.partialRefundHours}h antes`,                                  detail: `${cfg.latePercent}% de reembolso` },
+  ]
+}
+
+/** @deprecated Use getCancellationPolicyLines() para receber config dinâmica */
+export const CANCELLATION_POLICY_LINES = getCancellationPolicyLines()

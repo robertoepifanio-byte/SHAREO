@@ -5,7 +5,8 @@ import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { WEBHOOK_EVENTS } from "@/lib/outboundWebhooks"
-import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
+import { isUrlSafeForWebhook } from "@/lib/ssrfGuard"
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 
 const MAX_WEBHOOKS_PER_USER = 5
 
@@ -82,7 +83,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const rl = await checkRateLimit(`pj-webhooks:${session.user.id}`, 10, 60_000)
+    const rl = await checkRateLimit(`pj-webhooks:${session.user.id}`, RATE_LIMITS.pjWebhooks.limit, RATE_LIMITS.pjWebhooks.windowMs)
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const body   = await req.json()
@@ -96,6 +97,14 @@ export async function POST(req: NextRequest) {
       }
       return NextResponse.json(
         { error: { code: "VALIDATION_ERROR", message: "Dados inválidos.", details } },
+        { status: 400 },
+      )
+    }
+
+    // SSRF guard (S14-SEC-03): rejeita URL interna/privada na criação
+    if (!(await isUrlSafeForWebhook(parsed.data.url))) {
+      return NextResponse.json(
+        { error: { code: "INVALID_URL", message: "URL não permitida (endereço interno/privado bloqueado)." } },
         { status: 400 },
       )
     }

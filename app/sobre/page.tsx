@@ -1,11 +1,12 @@
 import type { Metadata } from "next"
+import Image from "next/image"
 import Link from "next/link"
 import { AppHeader } from "@/components/layout/AppHeader"
 
 export const metadata: Metadata = {
   title: "Sobre o ShareO",
   description:
-    "Conheça a missão, história e valores do ShareO — marketplace de economia circular para aluguel local de itens em Natal/RN.",
+    "Conheça a missão, história e valores do ShareO — marketplace de economia circular para aluguel local de itens em todo o Brasil.",
 }
 
 const VALORES = [
@@ -57,7 +58,6 @@ const STATS = [
   { value: "2.400+", label: "itens cadastrados" },
   { value: "R$2.000", label: "renda média/mês por proprietário" },
   { value: "2026", label: "ano de fundação" },
-  { value: "Natal/RN", label: "cidade de origem" },
 ]
 
 const EQUIPE = [
@@ -108,7 +108,7 @@ export default function SobrePage() {
         {/* ── Stats ────────────────────────────────────────────────────── */}
         <section className="border-b border-border bg-surface">
           <div className="container py-12">
-            <dl className="grid grid-cols-2 gap-8 md:grid-cols-4">
+            <dl className="grid grid-cols-2 gap-8 md:grid-cols-3">
               {STATS.map((s) => (
                 <div key={s.label} className="text-center">
                   <dt className="font-display text-3xl font-bold text-brand">{s.value}</dt>
@@ -127,17 +127,28 @@ export default function SobrePage() {
               <h2 className="font-display text-2xl font-bold text-primary">Missão</h2>
             </div>
             <p className="mb-4 text-lg font-semibold text-foreground">
-              &ldquo;Use mais. Possua menos.&rdquo;
+              &ldquo;Transformar o que está parado em oportunidade de renda.&rdquo;
             </p>
-            <p className="mb-4 text-muted-foreground leading-relaxed">
-              O ShareO nasceu com o propósito de promover uma economia circular acessível e prática.
-              Nossa missão é transformar itens parados em renda e, ao mesmo tempo, facilitar o acesso
-              a recursos para quem precisa, sem necessidade de compra.
-            </p>
-            <p className="text-muted-foreground leading-relaxed">
-              Incentivamos o consumo consciente, a colaboração entre vizinhos e a sustentabilidade,
-              reduzindo desperdícios e fortalecendo comunidades locais.
-            </p>
+            <div className="space-y-4 text-muted-foreground leading-relaxed">
+              <p>
+                O ShareO nasceu para ajudar pessoas a monetizar bens que já possuem, criando uma
+                nova fonte de renda de forma simples, acessível e segura.
+              </p>
+              <p>
+                Nossa missão é conectar quem tem itens sem uso com quem precisa utilizá-los por um
+                período, tornando o aluguel uma alternativa inteligente ao consumo tradicional.
+              </p>
+              <p>
+                Mais do que uma plataforma de locação, queremos criar um ecossistema onde qualquer
+                pessoa possa gerar renda extra com seu próprio patrimônio, enquanto outras economizam
+                ao acessar o que precisam sem precisar comprar.
+              </p>
+              <p>
+                Ao incentivar o uso compartilhado de bens, fortalecemos comunidades locais, reduzimos
+                desperdícios e promovemos um modelo de consumo mais eficiente, sustentável e
+                colaborativo.
+              </p>
+            </div>
           </div>
         </section>
 
@@ -151,20 +162,23 @@ export default function SobrePage() {
               </div>
               <div className="space-y-4 text-muted-foreground leading-relaxed">
                 <p>
-                  O ShareO surgiu em 2026, inspirado pelo movimento crescente de compartilhamento
-                  de bens e pela necessidade de soluções econômicas e sustentáveis.
+                  O ShareO surgiu em 2026 a partir de uma constatação simples: milhões de pessoas
+                  possuem itens de valor parados em casa — ferramentas, equipamentos, eletrônicos,
+                  artigos para festas, esportes e muito mais — sem perceber que esses bens podem
+                  gerar renda.
                 </p>
                 <p>
-                  A ideia nasceu ao observar que milhares de itens — ferramentas, eletrônicos,
-                  equipamentos esportivos e objetos para festas — permaneciam guardados, usados
-                  apenas ocasionalmente.
+                  Percebemos também que muitas pessoas precisam desses mesmos itens por poucas horas
+                  ou poucos dias, mas acabam gastando alto para comprar algo que usarão raramente.
                 </p>
                 <p>
-                  A plataforma foi criada para conectar proprietários e locatários de forma simples,
-                  segura e transparente. Desde o lançamento, já são{" "}
-                  <strong className="text-foreground">2.400+ itens cadastrados</strong>, com
-                  proprietários transformando objetos ociosos em{" "}
-                  <strong className="text-foreground">renda média de R$2.000/mês</strong>.
+                  Foi dessa oportunidade que nasceu o ShareO: uma plataforma criada para conectar
+                  proprietários e locatários de forma prática, segura e transparente, permitindo que
+                  bens parados se transformem em lucro e necessidade em economia.
+                </p>
+                <p>
+                  Porque acreditamos que, no futuro, gerar renda com o que você já tem será tão
+                  comum quanto vender ou comprar online.
                 </p>
               </div>
             </div>
@@ -216,6 +230,36 @@ export default function SobrePage() {
                     <p className="text-sm text-muted-foreground leading-relaxed">{e.description}</p>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Desenvolvimento ──────────────────────────────────────────── */}
+        <section className="container py-16">
+          <div className="mx-auto max-w-4xl">
+            <div className="mb-10 text-center">
+              <div className="mb-3 flex items-center justify-center gap-2">
+                <span className="text-2xl" aria-hidden="true">💻</span>
+                <h2 className="font-display text-2xl font-bold text-primary">Desenvolvimento</h2>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                O ShareO foi concebido e desenvolvido com parceria técnica especializada.
+              </p>
+            </div>
+            <div className="flex justify-center">
+              <div className="flex flex-col items-center gap-5 rounded-2xl border border-border bg-surface p-8 text-center">
+                <Image
+                  src="/logos/pratika-ia-sobre.png"
+                  alt="Pratika-IA"
+                  width={480}
+                  height={145}
+                  className="h-auto w-full max-w-sm"
+                />
+                <p className="max-w-sm text-sm text-muted-foreground leading-relaxed">
+                  Responsável pelo desenvolvimento completo da plataforma ShareO — da arquitetura
+                  ao produto final, com foco em experiência do usuário, segurança e escalabilidade.
+                </p>
               </div>
             </div>
           </div>

@@ -53,6 +53,11 @@ jest.mock("@/lib/geocodeItem", () => ({
   geocodeItem: jest.fn().mockResolvedValue(undefined),
 }))
 
+// file-type é ESM puro — o Jest não transforma node_modules por padrão
+jest.mock("file-type", () => ({
+  fileTypeFromBuffer: jest.fn().mockResolvedValue({ mime: "image/jpeg" }),
+}))
+
 // Mock do Supabase admin (usado pelo upload de imagens)
 const mockStorageUpload    = jest.fn()
 const mockStorageRemove    = jest.fn()

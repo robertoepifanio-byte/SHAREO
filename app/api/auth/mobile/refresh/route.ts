@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { jwtVerify, SignJWT } from "jose"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
+import { isSessionStale } from "@/lib/redis-admin-blocklist"
 
 const Schema = z.object({
   refreshToken: z.string().min(1),
@@ -41,6 +42,15 @@ export async function POST(req: NextRequest) {
     if (payload.type !== "refresh" || !payload.sub) {
       return NextResponse.json(
         { error: { code: "INVALID_TOKEN", message: "Token inválido." } },
+        { status: 401 },
+      )
+    }
+
+    // GAP-CRIT-04b: refresh token emitido antes de troca de senha/e-mail é rejeitado
+    const iat = typeof (payload as { iat?: number }).iat === "number" ? (payload as { iat?: number }).iat : undefined
+    if (await isSessionStale(payload.sub, iat)) {
+      return NextResponse.json(
+        { error: { code: "INVALID_TOKEN", message: "Sessão expirada. Faça login novamente." } },
         { status: 401 },
       )
     }

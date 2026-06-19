@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import { trackEvent } from "@/components/analytics/GoogleAnalytics"
 
 interface FavoriteButtonProps {
   itemId:           string
@@ -21,7 +23,19 @@ export function FavoriteButton({ itemId, initialFavorited = false }: FavoriteBut
       const res  = await fetch(`/api/items/${itemId}/favorite`, { method: "POST" })
       if (res.status === 401) { router.push("/login?callbackUrl=/favoritos"); return }
       const json = await res.json()
-      if (res.ok) setFaved(json.data.favorited)
+      if (res.ok) {
+        setFaved(json.data.favorited)
+        if (json.data.favorited) {
+          trackEvent({ name: "favorite_added", params: { item_id: itemId } })
+          toast.success("Adicionado aos favoritos")
+        } else {
+          toast.success("Removido dos favoritos")
+        }
+      } else {
+        toast.error("Não foi possível atualizar favorito")
+      }
+    } catch {
+      toast.error("Erro ao conectar. Tente novamente.")
     } finally {
       setLoading(false)
     }

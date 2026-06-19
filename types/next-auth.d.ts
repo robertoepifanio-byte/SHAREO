@@ -23,5 +23,6 @@ declare module "next-auth/jwt" {
     role:      "USER" | "ADMIN"
     userType:  "PF" | "PJ"
     adminRole?: "ADMIN_SUPERADMIN" | "ADMIN_FINANCEIRO" | "ADMIN_OPERACIONAL"
+    loginAt?:  number   // epoch (s) fixado no login — invalidação de sessão (SEC-CRIT-04)
   }
 }

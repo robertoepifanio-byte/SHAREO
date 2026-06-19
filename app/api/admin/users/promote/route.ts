@@ -1,10 +1,9 @@
 import type { NextRequest } from "next/server"
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { requireAdminRole } from "@/lib/auth/admin-guards"
-import { unblockAdminToken } from "@/lib/redis-admin-blocklist"
 
 const PromoteSchema = z.object({
   email:     z.string().email().transform((e) => e.toLowerCase()),
@@ -60,18 +59,17 @@ export async function POST(req: NextRequest) {
       select: { id: true, name: true, email: true, adminRole: true, isActive: true, createdAt: true },
     })
 
-    // Garantir que o token não esteja bloqueado
-    await unblockAdminToken(updated.id)
-
-    prisma.adminLog.create({
-      data: {
-        adminId:    session!.user.id,
-        action:     "PROMOTE_TO_ADMIN",
-        entityType: "User",
-        entityId:   updated.id,
-        metadata:   JSON.stringify({ adminRole, previousRole: target.role }),
-      },
-    }).catch((e) => console.warn("[adminLog]", e instanceof Error ? e.message : e))
+    after(() =>
+      prisma.adminLog.create({
+        data: {
+          adminId:    session!.user.id,
+          action:     "PROMOTE_TO_ADMIN",
+          entityType: "User",
+          entityId:   updated.id,
+          metadata:   JSON.stringify({ adminRole, previousRole: target.role }),
+        },
+      }).catch((e) => console.warn("[adminLog]", e instanceof Error ? e.message : e))
+    )
 
     return NextResponse.json({ data: updated }, { status: 200 })
   } catch (e) {

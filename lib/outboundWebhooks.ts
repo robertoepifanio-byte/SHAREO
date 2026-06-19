@@ -1,5 +1,6 @@
 import crypto from "crypto"
 import { prisma } from "@/lib/prisma"
+import { isUrlSafeForWebhook } from "@/lib/ssrfGuard"
 
 // ─── Eventos suportados ───────────────────────────────────────────────────────
 
@@ -34,6 +35,16 @@ async function fireOne(
   const signature = sign(body, secret)
 
   let statusCode: number | null = null
+
+  // SSRF guard (S14-SEC-03): bloqueia URL que resolve p/ IP privado/loopback/metadata.
+  if (!(await isUrlSafeForWebhook(url))) {
+    console.error(`[webhook] URL bloqueada (SSRF guard): ${url}`)
+    await prisma.outboundWebhook.update({
+      where: { id: webhookId },
+      data:  { lastFiredAt: new Date(), lastStatusCode: null, failureCount: { increment: 1 } },
+    }).catch(() => void 0)
+    return
+  }
 
   try {
     const res = await fetch(url, {
@@ -90,26 +101,28 @@ async function fireOne(
 }
 
 // ─── Ponto de entrada público ─────────────────────────────────────────────────
-// Chame esta função em qualquer evento de booking. É fire-and-forget:
-// não bloqueia a resposta da API e os erros são apenas logados.
+// Chame esta função em qualquer evento de booking, dentro de after() de
+// "next/server" — a promise retornada mantém a lambda viva até o término.
+// Erros são apenas logados; nunca propaga exceção.
 
-export function dispatchWebhookEvent(
+export async function dispatchWebhookEvent(
   ownerId: string,
   event: WebhookEvent,
   data: unknown,
-): void {
-  // Busca os webhooks ativos do owner e dispara sem await
-  prisma.outboundWebhook
-    .findMany({
+): Promise<void> {
+  try {
+    const hooks = await prisma.outboundWebhook.findMany({
       where: { userId: ownerId, isActive: true, events: { has: event } },
       select: { id: true, url: true, secret: true },
     })
-    .then((hooks) => {
-      for (const hook of hooks) {
+    await Promise.all(
+      hooks.map((hook) =>
         fireOne(hook.id, hook.url, hook.secret, event, data).catch((e) =>
           console.error("[webhook] unexpected error:", e instanceof Error ? e.message : e),
-        )
-      }
-    })
-    .catch((e) => console.error("[webhook] db query error:", e instanceof Error ? e.message : e))
+        ),
+      ),
+    )
+  } catch (e) {
+    console.error("[webhook] db query error:", e instanceof Error ? e.message : e)
+  }
 }

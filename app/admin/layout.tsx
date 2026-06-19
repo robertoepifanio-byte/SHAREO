@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { auth } from "@/lib/auth"
+import { APP_VERSION, BUILD_SHA, BUILD_ENV } from "@/lib/version"
 
 type AdminRole = "ADMIN_SUPERADMIN" | "ADMIN_FINANCEIRO" | "ADMIN_OPERACIONAL"
 
@@ -63,6 +64,18 @@ const NAV: { href: string; label: string; roles: AdminRole[]; icon: React.ReactN
     ),
   },
   {
+    href:  "/admin/fundadores",
+    label: "Interessados",
+    roles: ["ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL"],
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+        <path d="M18 21a8 8 0 0 0-16 0"/>
+        <circle cx="10" cy="8" r="5"/>
+        <path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"/>
+      </svg>
+    ),
+  },
+  {
     href:  "/admin/financeiro",
     label: "Financeiro",
     roles: ["ADMIN_SUPERADMIN", "ADMIN_FINANCEIRO"],
@@ -70,6 +83,17 @@ const NAV: { href: string; label: string; roles: AdminRole[]; icon: React.ReactN
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
         <line x1="12" y1="1" x2="12" y2="23"/>
         <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+      </svg>
+    ),
+  },
+  {
+    href:  "/admin/embaixadores",
+    label: "Embaixadores",
+    roles: ["ADMIN_SUPERADMIN", "ADMIN_FINANCEIRO"],
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+        <circle cx="12" cy="8" r="4"/>
+        <path d="M8 14l-4 8M16 14l4 8M12 14v8M9 17h6"/>
       </svg>
     ),
   },
@@ -129,6 +153,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             {children}
           </main>
         </div>
+
+        {/* Build info — referência para QA/suporte ("bug em qual build?") */}
+        <p className="mt-10 border-t border-border pt-4 text-center text-xs text-muted-foreground">
+          ShareO v{APP_VERSION} · <code className="font-mono">{BUILD_SHA}</code> · {BUILD_ENV === "production" ? "staging" : BUILD_ENV}
+        </p>
       </div>
     </div>
   )

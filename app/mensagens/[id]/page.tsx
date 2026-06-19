@@ -51,16 +51,27 @@ export default async function ChatPage({ params }: Props) {
   if (!conv) notFound()
   if (!conv.participants.some((p) => p.userId === userId)) notFound()
 
-  // Marca como lido (fire-and-forget) — o polling do cliente repete a cada 3s
-  prisma.message.updateMany({
-    where: { conversationId: id, senderId: { not: userId }, readAt: null },
-    data:  { readAt: new Date() },
-  }).then(() =>
-    prisma.conversationParticipant.update({
-      where: { conversationId_userId: { conversationId: id, userId } },
-      data:  { lastReadAt: new Date() },
-    })
-  ).catch((e) => console.error("[mark-as-read SSR]", e instanceof Error ? e.message : e))
+  // Marca mensagens, participante e notificações da conversa como lidos
+  await Promise.all([
+    prisma.message.updateMany({
+      where: { conversationId: id, senderId: { not: userId }, readAt: null },
+      data:  { readAt: new Date() },
+    }).then(() =>
+      prisma.conversationParticipant.update({
+        where: { conversationId_userId: { conversationId: id, userId } },
+        data:  { lastReadAt: new Date() },
+      })
+    ),
+    prisma.notification.updateMany({
+      where: {
+        userId,
+        type:   "NEW_MESSAGE",
+        readAt: null,
+        data:   { path: ["conversationId"], equals: id },
+      },
+      data: { readAt: new Date() },
+    }),
+  ]).catch((e) => console.error("[mark-as-read SSR]", e instanceof Error ? e.message : e))
 
   const other = conv.participants.find((p) => p.userId !== userId)
 

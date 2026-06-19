@@ -4,19 +4,22 @@ import { useState, useTransition, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { calcBookingTotal } from "@/lib/pricing"
+import { trackEvent } from "@/components/analytics/GoogleAnalytics"
 
 interface Props {
-  pricePerDay:    number
-  pricePerWeek?:  number | null
-  pricePerMonth?: number | null
-  depositAmount?: number | null
-  itemId:         string
-  isLoggedIn:     boolean
+  pricePerDay:      number
+  pricePerWeek?:    number | null
+  pricePerMonth?:   number | null
+  depositAmount?:   number | null
+  itemId:           string
+  isLoggedIn:       boolean
+  feeRatePct:       number   // ex: 15.0 para 15%
+  checkoutMaxCents: number   // teto por transação (D2) — ex: 50000 = R$500
 }
 
 type Mode = "daily" | "weekly" | "monthly"
 
-const COMMISSION = 0.10
+// feeRatePct vem como prop do Server Component pai (ex: 15.0)
 
 const fmt = (v: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v)
@@ -60,7 +63,7 @@ function buildBreakdown(
 
 export function PriceCalc({
   pricePerDay, pricePerWeek, pricePerMonth,
-  depositAmount, itemId, isLoggedIn,
+  depositAmount, itemId, isLoggedIn, feeRatePct, checkoutMaxCents,
 }: Props) {
   const router = useRouter()
   const today  = new Date().toISOString().split("T")[0]
@@ -75,7 +78,9 @@ export function PriceCalc({
   const [startDate, setStartDate] = useState("")
   const [numDays,   setNumDays]   = useState(1)
   const [note,      setNote]      = useState("")
+  const [coupon,    setCoupon]    = useState("")
   const [error,     setError]     = useState("")
+  const [needsComplete, setNeedsComplete] = useState(false)
   const [pending,   startTransition] = useTransition()
 
   // Data de devolução calculada automaticamente
@@ -100,13 +105,19 @@ export function PriceCalc({
 
   const subtotal  = subtotalCents / 100
   const savings   = savingsCents  / 100
-  const fee       = subtotal * COMMISSION
-  const total     = subtotal + fee
+  // O locatário paga apenas o valor da locação. A taxa da ShareO é retida do
+  // repasse ao proprietário (não é somada ao que o locatário paga) — igual ao checkout.
+  const total     = subtotal
+  const feeLabel  = feeRatePct % 1 === 0 ? feeRatePct.toFixed(0) : String(feeRatePct)
   const breakdown = days > 0
     ? buildBreakdown(days, pricePerDay, pricePerWeek, pricePerMonth)
     : ""
 
-  const isReady = !!startDate && days > 0
+  // Teto D2: o checkout compara booking.totalPrice (subtotal, sem taxa) com o teto
+  const overLimit      = subtotalCents > checkoutMaxCents
+  const checkoutMaxFmt = fmt(checkoutMaxCents / 100)
+
+  const isReady = !!startDate && days > 0 && !overLimit
 
   function handleModeChange(m: Mode) {
     setMode(m)
@@ -121,6 +132,7 @@ export function PriceCalc({
 
   async function solicitar() {
     setError("")
+    setNeedsComplete(false)
     startTransition(async () => {
       const res = await fetch("/api/bookings", {
         method:  "POST",
@@ -130,16 +142,23 @@ export function PriceCalc({
           startDate: new Date(`${startDate}T12:00:00`).toISOString(),
           endDate:   new Date(`${endDate}T12:00:00`).toISOString(),
           borrowerNote: note || undefined,
+          couponCode:   coupon.trim() || undefined,
         }),
       })
       const json = await res.json()
       if (!res.ok) {
+        if (json.error?.code === "REGISTRATION_INCOMPLETE") {
+          setNeedsComplete(true)
+          setError(json.error?.message ?? "Complete seu cadastro para alugar.")
+          return
+        }
         const detail = json.error?.details
           ? Object.values(json.error.details).flat().join(" ")
           : json.error?.message ?? "Erro ao solicitar reserva."
         setError(detail)
         return
       }
+      trackEvent({ name: "booking_started", params: { item_id: itemId, price: subtotalCents / 100 } })
       router.push(`/reservas/${json.data.id}`)
     })
   }
@@ -269,10 +288,10 @@ export function PriceCalc({
         {endDate && (
           <p className="mt-1 text-[10px] text-muted-foreground">
             {mode === "daily"
-              ? `Retirada + ${numDays} dia${numDays > 1 ? "s" : ""}`
+              ? `Retirada + ${numDays} dia${numDays > 1 ? "s" : ""} — devolução no mesmo horário da retirada`
               : mode === "weekly"
-              ? "Retirada + 7 dias"
-              : "Retirada + 30 dias"}
+              ? "Retirada + 7 dias — devolução no mesmo horário da retirada"
+              : "Retirada + 30 dias — devolução no mesmo horário da retirada"}
           </p>
         )}
       </div>
@@ -292,11 +311,6 @@ export function PriceCalc({
                 <span>-{fmt(savings)}</span>
               </div>
             )}
-
-            <div className="mb-1.5 flex justify-between text-muted-foreground">
-              <span>Taxa Shareo (10%)</span>
-              <span>{fmt(fee)}</span>
-            </div>
 
             {depositAmount != null && depositAmount > 0 && (
               <div className="mb-1.5 flex justify-between text-xs text-amber-700">
@@ -322,6 +336,9 @@ export function PriceCalc({
                 <span>{fmt(total + depositAmount / 100)}</span>
               </div>
             )}
+            <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
+              Você paga apenas o valor da locação. A ShareO retém {feeLabel}% do repasse ao proprietário.
+            </p>
           </>
         ) : (
           <div className="flex justify-between text-muted-foreground">
@@ -349,8 +366,54 @@ export function PriceCalc({
         </div>
       )}
 
+      {/* P3-20 — Cupom de desconto (ganho ao avaliar locações anteriores) */}
+      {isReady && isLoggedIn && (
+        <div className="mb-4">
+          <label htmlFor="coupon-code" className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Cupom de desconto (opcional)
+          </label>
+          <input
+            id="coupon-code"
+            type="text"
+            value={coupon}
+            onChange={(e) => setCoupon(e.target.value.toUpperCase())}
+            maxLength={30}
+            autoComplete="off"
+            placeholder="Ex.: SHARE10-AB2CD"
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm uppercase text-foreground outline-none focus:border-brand transition-colors placeholder:normal-case placeholder:text-muted-foreground"
+          />
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            O desconto é aplicado no valor final da reserva.
+          </p>
+        </div>
+      )}
+
+      {/* Aviso de teto por transação (D2) */}
+      {overLimit && (
+        <div role="alert" className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 shrink-0" aria-hidden="true">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <span>
+            O total excede o limite de <strong>{checkoutMaxFmt}</strong> por locação.
+            Reduza a quantidade de dias ou escolha outra modalidade.
+          </span>
+        </div>
+      )}
+
       {error && (
-        <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">{error}</p>
+        <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">
+          <p>{error}</p>
+          {needsComplete && (
+            <Link
+              href={`/cadastro/completar?callbackUrl=${encodeURIComponent(`/itens/${itemId}`)}`}
+              className="mt-1.5 inline-block font-semibold text-brand hover:underline"
+            >
+              Completar cadastro →
+            </Link>
+          )}
+        </div>
       )}
 
       {/* CTA */}
