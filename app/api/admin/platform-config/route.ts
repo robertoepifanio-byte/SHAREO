@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { requireAdminRole } from "@/lib/auth/admin-guards"
 import { auditLog } from "@/lib/audit"
+import { clearPlatformConfigCache } from "@/lib/platform-config"
 
 const PatchSchema = z.object({
   value:       z.string().min(1),
@@ -49,6 +50,10 @@ export async function PATCH(req: NextRequest) {
     create: { key, value: parsed.data.value, description: parsed.data.description, updatedBy: session!.user.id },
     update: { value: parsed.data.value, description: parsed.data.description, updatedBy: session!.user.id },
   })
+
+  // S14-M-11: invalida o cache em memória para refletir a mudança imediatamente
+  // (nesta instância; outras instâncias serverless propagam dentro do TTL).
+  clearPlatformConfigCache()
 
   auditLog(session!.user.id, "PLATFORM_CONFIG_UPDATED", "PlatformConfig", config.id, {
     key, value: parsed.data.value,

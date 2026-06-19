@@ -2,6 +2,33 @@ import { prisma } from "@/lib/prisma"
 
 const DEFAULT_FEE_RATE = 1500 // 15% em basis points
 
+// ─── Cache do PlatformConfig (S14-M-11) ───────────────────────────────────────
+// Antes, ~59 call-sites faziam um `prisma.find*` por request no caminho crítico
+// (item/booking/webhook/cron). Como esses valores mudam raramente (~1×/mês),
+// cacheamos TODAS as chaves em memória por um TTL curto. A rota admin de escrita
+// chama `clearPlatformConfigCache()` para invalidar na hora; entre instâncias
+// serverless a propagação leva no máximo `CONFIG_TTL_MS`.
+const CONFIG_TTL_MS = 60_000
+let configCache: { map: Record<string, string>; expires: number } | null = null
+
+async function loadConfig(): Promise<Record<string, string>> {
+  if (configCache && configCache.expires > Date.now()) return configCache.map
+  const rows = await prisma.platformConfig.findMany()
+  const map  = Object.fromEntries(rows.map((r) => [r.key, r.value]))
+  configCache = { map, expires: Date.now() + CONFIG_TTL_MS }
+  return map
+}
+
+/** Invalida o cache em memória — chamada após escrita em /api/admin/platform-config. */
+export function clearPlatformConfigCache(): void {
+  configCache = null
+}
+
+/** parseInt seguro a partir do mapa de config (string|undefined → number|NaN). */
+function intFrom(map: Record<string, string>, key: string): number {
+  return parseInt(map[key] ?? "", 10)
+}
+
 // ─── Política de cancelamento ─────────────────────────────────────────────────
 
 export interface CancellationConfig {
@@ -20,14 +47,16 @@ const DEFAULT_CANCELLATION: CancellationConfig = {
 
 export async function getCancellationConfig(): Promise<CancellationConfig> {
   try {
-    const keys = ["cancelationFullRefundHours", "cancelationPartialRefundHours", "cancelationPartialPercent", "cancelationLatePercent"]
-    const rows = await prisma.platformConfig.findMany({ where: { key: { in: keys } } })
-    const map  = Object.fromEntries(rows.map((r) => [r.key, parseInt(r.value, 10)]))
+    const map = await loadConfig()
+    const full    = intFrom(map, "cancelationFullRefundHours")
+    const partial = intFrom(map, "cancelationPartialRefundHours")
+    const pPct    = intFrom(map, "cancelationPartialPercent")
+    const lPct    = intFrom(map, "cancelationLatePercent")
     return {
-      fullRefundHours:    Number.isFinite(map.cancelationFullRefundHours)    ? map.cancelationFullRefundHours    : DEFAULT_CANCELLATION.fullRefundHours,
-      partialRefundHours: Number.isFinite(map.cancelationPartialRefundHours) ? map.cancelationPartialRefundHours : DEFAULT_CANCELLATION.partialRefundHours,
-      partialPercent:     Number.isFinite(map.cancelationPartialPercent)     ? map.cancelationPartialPercent     : DEFAULT_CANCELLATION.partialPercent,
-      latePercent:        Number.isFinite(map.cancelationLatePercent)        ? map.cancelationLatePercent        : DEFAULT_CANCELLATION.latePercent,
+      fullRefundHours:    Number.isFinite(full)    ? full    : DEFAULT_CANCELLATION.fullRefundHours,
+      partialRefundHours: Number.isFinite(partial) ? partial : DEFAULT_CANCELLATION.partialRefundHours,
+      partialPercent:     Number.isFinite(pPct)    ? pPct    : DEFAULT_CANCELLATION.partialPercent,
+      latePercent:        Number.isFinite(lPct)    ? lPct    : DEFAULT_CANCELLATION.latePercent,
     }
   } catch {
     return DEFAULT_CANCELLATION
@@ -46,12 +75,9 @@ const DEFAULT_REVIEW_COUPON: ReviewCouponConfig = { enabled: true, percentOff: 1
 
 export async function getReviewCouponConfig(): Promise<ReviewCouponConfig> {
   try {
-    const rows = await prisma.platformConfig.findMany({
-      where: { key: { in: ["reviewCouponEnabled", "reviewCouponPercent", "reviewCouponValidityDays"] } },
-    })
-    const map = Object.fromEntries(rows.map((r) => [r.key, r.value]))
-    const percent  = parseInt(map.reviewCouponPercent ?? "", 10)
-    const validity = parseInt(map.reviewCouponValidityDays ?? "", 10)
+    const map = await loadConfig()
+    const percent  = intFrom(map, "reviewCouponPercent")
+    const validity = intFrom(map, "reviewCouponValidityDays")
     return {
       enabled:      map.reviewCouponEnabled !== undefined ? map.reviewCouponEnabled === "true" : DEFAULT_REVIEW_COUPON.enabled,
       percentOff:   Number.isFinite(percent)  && percent  > 0 ? percent  : DEFAULT_REVIEW_COUPON.percentOff,
@@ -73,13 +99,12 @@ const DEFAULT_AMBASSADOR_THRESHOLDS: AmbassadorThresholds = { silverThreshold: 1
 
 export async function getAmbassadorThresholds(): Promise<AmbassadorThresholds> {
   try {
-    const rows = await prisma.platformConfig.findMany({
-      where: { key: { in: ["ambassadorSilverThreshold", "ambassadorGoldThreshold"] } },
-    })
-    const map = Object.fromEntries(rows.map((r) => [r.key, parseInt(r.value, 10)]))
+    const map = await loadConfig()
+    const silver = intFrom(map, "ambassadorSilverThreshold")
+    const gold   = intFrom(map, "ambassadorGoldThreshold")
     return {
-      silverThreshold: Number.isFinite(map.ambassadorSilverThreshold) ? map.ambassadorSilverThreshold : DEFAULT_AMBASSADOR_THRESHOLDS.silverThreshold,
-      goldThreshold:   Number.isFinite(map.ambassadorGoldThreshold)   ? map.ambassadorGoldThreshold   : DEFAULT_AMBASSADOR_THRESHOLDS.goldThreshold,
+      silverThreshold: Number.isFinite(silver) ? silver : DEFAULT_AMBASSADOR_THRESHOLDS.silverThreshold,
+      goldThreshold:   Number.isFinite(gold)   ? gold   : DEFAULT_AMBASSADOR_THRESHOLDS.goldThreshold,
     }
   } catch {
     return DEFAULT_AMBASSADOR_THRESHOLDS
@@ -92,9 +117,8 @@ const DEFAULT_REFERRAL_WINDOW_DAYS = 30
 
 export async function getReferralWindowDays(): Promise<number> {
   try {
-    const row = await prisma.platformConfig.findUnique({ where: { key: "referralWindowDays" } })
-    if (!row) return DEFAULT_REFERRAL_WINDOW_DAYS
-    const v = parseInt(row.value, 10)
+    const map = await loadConfig()
+    const v = intFrom(map, "referralWindowDays")
     return Number.isFinite(v) && v > 0 ? v : DEFAULT_REFERRAL_WINDOW_DAYS
   } catch {
     return DEFAULT_REFERRAL_WINDOW_DAYS
@@ -112,13 +136,12 @@ const DEFAULT_AUTO_CANCEL: AutoCancelConfig = { pendingHours: 2, ownerHours: 48 
 
 export async function getAutoCancelConfig(): Promise<AutoCancelConfig> {
   try {
-    const rows = await prisma.platformConfig.findMany({
-      where: { key: { in: ["autoCancelPendingHours", "autoCancelOwnerHours"] } },
-    })
-    const map = Object.fromEntries(rows.map((r) => [r.key, parseInt(r.value, 10)]))
+    const map = await loadConfig()
+    const pending = intFrom(map, "autoCancelPendingHours")
+    const owner   = intFrom(map, "autoCancelOwnerHours")
     return {
-      pendingHours: Number.isFinite(map.autoCancelPendingHours) && map.autoCancelPendingHours > 0 ? map.autoCancelPendingHours : DEFAULT_AUTO_CANCEL.pendingHours,
-      ownerHours:   Number.isFinite(map.autoCancelOwnerHours)   && map.autoCancelOwnerHours   > 0 ? map.autoCancelOwnerHours   : DEFAULT_AUTO_CANCEL.ownerHours,
+      pendingHours: Number.isFinite(pending) && pending > 0 ? pending : DEFAULT_AUTO_CANCEL.pendingHours,
+      ownerHours:   Number.isFinite(owner)   && owner   > 0 ? owner   : DEFAULT_AUTO_CANCEL.ownerHours,
     }
   } catch {
     return DEFAULT_AUTO_CANCEL
@@ -131,9 +154,8 @@ const DEFAULT_PAYOUT_WINDOW_DAYS = 3
 
 export async function getPayoutWindowDays(): Promise<number> {
   try {
-    const row = await prisma.platformConfig.findUnique({ where: { key: "payoutWindowDays" } })
-    if (!row) return DEFAULT_PAYOUT_WINDOW_DAYS
-    const v = parseInt(row.value, 10)
+    const map = await loadConfig()
+    const v = intFrom(map, "payoutWindowDays")
     return Number.isFinite(v) && v >= 0 ? v : DEFAULT_PAYOUT_WINDOW_DAYS
   } catch {
     return DEFAULT_PAYOUT_WINDOW_DAYS
@@ -151,13 +173,12 @@ const DEFAULT_UPLOAD_LIMITS: UploadLimits = { maxImagesPerItem: 10, maxUploadSiz
 
 export async function getUploadLimits(): Promise<UploadLimits> {
   try {
-    const rows = await prisma.platformConfig.findMany({
-      where: { key: { in: ["maxImagesPerItem", "maxUploadSizeMB"] } },
-    })
-    const map = Object.fromEntries(rows.map((r) => [r.key, parseInt(r.value, 10)]))
+    const map = await loadConfig()
+    const maxImages = intFrom(map, "maxImagesPerItem")
+    const maxSize   = intFrom(map, "maxUploadSizeMB")
     return {
-      maxImagesPerItem: Number.isFinite(map.maxImagesPerItem) && map.maxImagesPerItem > 0 ? map.maxImagesPerItem : DEFAULT_UPLOAD_LIMITS.maxImagesPerItem,
-      maxUploadSizeMB:  Number.isFinite(map.maxUploadSizeMB)  && map.maxUploadSizeMB  > 0 ? map.maxUploadSizeMB  : DEFAULT_UPLOAD_LIMITS.maxUploadSizeMB,
+      maxImagesPerItem: Number.isFinite(maxImages) && maxImages > 0 ? maxImages : DEFAULT_UPLOAD_LIMITS.maxImagesPerItem,
+      maxUploadSizeMB:  Number.isFinite(maxSize)   && maxSize   > 0 ? maxSize   : DEFAULT_UPLOAD_LIMITS.maxUploadSizeMB,
     }
   } catch {
     return DEFAULT_UPLOAD_LIMITS
@@ -171,9 +192,8 @@ const DEFAULT_LATE_FEE_MULTIPLIER_X100 = 150
 
 export async function getLateFeeMultiplier(): Promise<number> {
   try {
-    const row = await prisma.platformConfig.findUnique({ where: { key: "lateFeeMultiplierX100" } })
-    if (!row) return DEFAULT_LATE_FEE_MULTIPLIER_X100 / 100
-    const v = parseInt(row.value, 10)
+    const map = await loadConfig()
+    const v = intFrom(map, "lateFeeMultiplierX100")
     return Number.isFinite(v) && v > 0 ? v / 100 : DEFAULT_LATE_FEE_MULTIPLIER_X100 / 100
   } catch {
     return DEFAULT_LATE_FEE_MULTIPLIER_X100 / 100
@@ -186,9 +206,9 @@ export async function getLateFeeMultiplier(): Promise<number> {
  */
 export async function getPlatformFeeRate(): Promise<number> {
   try {
-    const config = await prisma.platformConfig.findUnique({ where: { key: "platformFeeRate" } })
-    if (!config) return DEFAULT_FEE_RATE
-    const rate = parseInt(config.value, 10)
+    const map = await loadConfig()
+    if (map.platformFeeRate === undefined) return DEFAULT_FEE_RATE
+    const rate = parseInt(map.platformFeeRate, 10)
     return isNaN(rate) || rate < 0 || rate > 10000 ? DEFAULT_FEE_RATE : rate
   } catch {
     return DEFAULT_FEE_RATE
@@ -216,12 +236,9 @@ const DEFAULT_MONTHLY_MULTIPLIER = 15  // preço mensal  = 15× diária
  */
 export async function getPricingMultipliers(): Promise<{ weeklyMultiplier: number; monthlyMultiplier: number }> {
   try {
-    const [weekly, monthly] = await Promise.all([
-      prisma.platformConfig.findUnique({ where: { key: "pricingWeeklyMultiplier" } }),
-      prisma.platformConfig.findUnique({ where: { key: "pricingMonthlyMultiplier" } }),
-    ])
-    const w = weekly  ? parseInt(weekly.value,  10) : DEFAULT_WEEKLY_MULTIPLIER
-    const m = monthly ? parseInt(monthly.value, 10) : DEFAULT_MONTHLY_MULTIPLIER
+    const map = await loadConfig()
+    const w = map.pricingWeeklyMultiplier  !== undefined ? parseInt(map.pricingWeeklyMultiplier,  10) : DEFAULT_WEEKLY_MULTIPLIER
+    const m = map.pricingMonthlyMultiplier !== undefined ? parseInt(map.pricingMonthlyMultiplier, 10) : DEFAULT_MONTHLY_MULTIPLIER
     return {
       weeklyMultiplier:  isNaN(w) || w < 1 || w > 52 ? DEFAULT_WEEKLY_MULTIPLIER  : w,
       monthlyMultiplier: isNaN(m) || m < 1 || m > 90 ? DEFAULT_MONTHLY_MULTIPLIER : m,
