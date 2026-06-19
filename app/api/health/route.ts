@@ -48,12 +48,17 @@ export async function GET() {
   const allOk  = Object.values(checks).every((v) => v === "ok")
   const status = allOk ? 200 : 503
 
+  // S14-MIN-07: a mensagem crua (hostname/driver/etc.) só é exposta fora de
+  // produção. Em produção retornamos apenas o mapa `checks` (qual dependência
+  // está degradada), sem detalhes internos que sirvam de recon de infra.
+  const exposeErrors = process.env.NODE_ENV !== "production"
+
   return NextResponse.json(
     {
       status:    allOk ? "healthy" : "degraded",
       timestamp: new Date().toISOString(),
       checks,
-      ...(Object.keys(errors).length > 0 && { errors }),
+      ...(exposeErrors && Object.keys(errors).length > 0 && { errors }),
     },
     { status },
   )

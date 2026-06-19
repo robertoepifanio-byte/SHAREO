@@ -95,7 +95,7 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
             city: true, neighborhood: true, createdAt: true,
           },
         },
-        images:  { select: { url: true }, orderBy: { order: "asc" } },
+        images:  { select: { url: true }, orderBy: { order: "asc" }, take: 24 },
         reviews: {
           where:   { reviewType: "ITEM" },
           select:  {
