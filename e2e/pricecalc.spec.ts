@@ -25,7 +25,7 @@
 import fs from 'fs'
 import { test, expect } from '@playwright/test'
 
-const BASE = process.env.BASE_URL ?? 'http://localhost:3000'
+const BASE = process.env.BASE_URL ?? process.env.STAGING_URL ?? 'http://localhost:3000'
 
 function addDays(iso: string, days: number): string {
   const d = new Date(`${iso}T12:00:00`)

@@ -30,7 +30,7 @@ const hasSessions =
 
 const hasTestItem = fs.existsSync(TEST_ITEM_PATH)
 
-const BASE = process.env.BASE_URL ?? 'http://localhost:3000'
+const BASE = process.env.BASE_URL ?? process.env.STAGING_URL ?? 'http://localhost:3000'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Smoke #28 — Checkout Stripe: guards de auth/estado + criação de session

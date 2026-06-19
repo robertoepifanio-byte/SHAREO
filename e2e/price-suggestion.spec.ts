@@ -11,7 +11,7 @@
 
 import { test, expect } from '@playwright/test'
 
-const BASE = process.env.BASE_URL ?? 'http://localhost:3000'
+const BASE = process.env.BASE_URL ?? process.env.STAGING_URL ?? 'http://localhost:3000'
 
 test.describe('price-suggestion API (GAP-06)', () => {
   test('1. sem parâmetros obrigatórios → 400', async ({ request }) => {

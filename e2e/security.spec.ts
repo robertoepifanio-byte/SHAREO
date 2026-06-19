@@ -148,7 +148,7 @@ test.describe('smoke #14 — Admin routes bloqueadas para usuário comum', () =>
     // Playwright segue redirects por padrão → veria 200 da página /login.
     // Por isso verificamos os status ANTES do follow: 307 = middleware bloqueou ✅
     // Para simular o comportamento real usamos fetch nativo com redirect:'manual'
-    const BASE = process.env.BASE_URL ?? 'http://localhost:3000'
+    const BASE = process.env.BASE_URL ?? process.env.STAGING_URL ?? 'http://localhost:3000'
     const response = await fetch(`${BASE}/api/admin/platform-config`, { redirect: 'manual' })
     const status = response.status
     console.log(`  GET /api/admin/platform-config sem sessão → ${status} (raw, sem seguir redirect)`)
