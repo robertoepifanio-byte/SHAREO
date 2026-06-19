@@ -2,9 +2,9 @@
 
 **Atualizado em**: 2026-06-18 (sessão s28 — merge de TODOS os PRs abertos: auditoria s14 #46/#47/#48 + email #16 + 5 Dependabot + fix de deploy #49; histórico s13–s27 abaixo)
 **Ambiente staging**: https://staging.shareo.com.br (canônico desde 15/06; `shareo-rouge.vercel.app` segue como alias) — deploy via GitHub Actions "Deploy - ShareO" (token); projeto Vercel **shareo**, Production = staging
-**Último commit**: `133bfe8` (s28 — fix `--archive=tgz` no deploy.yml). **Nenhum PR aberto restante.** CI da main 100% verde + staging redeployado + E2E de Regressão de Staging verde.
-**Release atual**: [`v1.6.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.6.0) — Cadastro Progressivo + LGPD + Convite-piloto (PR [#26](https://github.com/robertoepifanio-byte/SHAREO/pull/26), merge `66bcef7`) — aguarda D4 para produção
-**Release anterior**: [`v1.5.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.5.0) — Hardening de Segurança (auditorias s13 + s14) (commit `80946df`, jun/14 — 16 commits desde v1.4.0)
+**Último commit**: `88e6703` (s28 — bump v1.7.0). **Nenhum PR aberto restante.** CI da main 100% verde + staging redeployado + E2E de Regressão de Staging verde.
+**Release atual**: [`v1.7.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.7.0) — Pré-lançamento de pilotos + hardening s14 + saúde do pipeline (tag `ae950c8`, s22–s28) — aguarda D4 para produção
+**Release anterior**: [`v1.6.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.6.0) — Cadastro Progressivo + LGPD + Convite-piloto (PR [#26](https://github.com/robertoepifanio-byte/SHAREO/pull/26), merge `66bcef7`)
 
 ---
 
