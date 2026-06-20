@@ -141,8 +141,8 @@
     --orange-light:       38 18 4;       /* fundo sutil laranja escuro no dark */
 
     /* ── Blue medium ─────────────────────────────────────── */
-    --blue-medium:        91 163 224;    /* #5BA3E0 — clarificado para dark (8.6:1 ✅) */
-    --blue-medium-foreground: 11 21 36;  /* texto escuro sobre azul claro */
+    --blue-medium:        20 77 129;     /* #144D81 — FILL navy no dark (texto branco 8.97:1); como TEXTO clareia via override .dark .text-blue-medium */
+    --blue-medium-foreground: 255 255 255; /* branco sobre o fill navy */
 
     /* ── Destructive ─────────────────────────────────────── */
     --destructive:        209 68 56;     /* #D14438 — fill (branco 4.57:1 ✅) */
@@ -195,6 +195,27 @@
     --icon-color:         91 208 139;    /* #5BD08B — verde claro no dark */
     --icon-accent:        89 198 134;    /* #59C686 */
     --icon-border:        91 163 224;    /* #5BA3E0 — azul claro no dark */
+  }
+
+  /* ── Dark a11y: marca usada como TEXTO precisa clarear (contraste AA) ──────
+     `primary`/`brand` são tokens de FILL (bg-*); seu valor escuro reprova como
+     TEXTO sobre superfície escura (navy #1E4D80 e verde #007B3C ~3:1). Aqui só
+     a COR DE TEXTO clareia no dark — bg-primary/bg-brand seguem o fill correto,
+     e o modo claro fica intacto (regra .dark vence por especificidade).
+     Cobre a utility base e a variante hover (as formas usadas no app). */
+  .dark .text-primary,
+  .dark .hover\:text-primary:hover {
+    color: rgb(74 144 217 / var(--tw-text-opacity, 1));  /* #4A90D9 — 7.1:1 */
+  }
+  .dark .text-brand,
+  .dark .hover\:text-brand:hover,
+  .dark .group:hover .group-hover\:text-brand {
+    color: rgb(91 208 139 / var(--tw-text-opacity, 1));  /* #5BD08B — 9.45:1 */
+  }
+  /* blue-medium é FILL navy no dark (acima); como TEXTO clareia p/ #5BA3E0 (8.6:1) */
+  .dark .text-blue-medium,
+  .dark .hover\:text-blue-medium:hover {
+    color: rgb(91 163 224 / var(--tw-text-opacity, 1));  /* #5BA3E0 — 8.6:1 */
   }
 }
 
