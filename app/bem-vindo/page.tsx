@@ -31,10 +31,7 @@ export default async function BemVindoPage() {
 
       <main className="container py-10">
         <div className="mx-auto max-w-2xl">
-          <span className="inline-block rounded-full bg-brand/10 px-3 py-1 text-xs font-semibold text-brand">
-            Você é um dos primeiros 🎉
-          </span>
-          <h1 className="mt-3 text-2xl font-bold text-primary">
+          <h1 className="text-2xl font-bold text-primary">
             Bem-vindo ao ShareO, {firstName}!
           </h1>
           <p className="mt-2 text-muted-foreground">
@@ -56,18 +53,28 @@ export default async function BemVindoPage() {
               </Link>
             </div>
 
-            <div className="rounded-xl border border-border bg-surface p-5">
+            <div
+              className={
+                isComplete
+                  ? "rounded-xl border border-border bg-surface p-5"
+                  : "rounded-xl border-2 border-primary/40 bg-primary/5 p-5"
+              }
+            >
               <h2 className="font-semibold text-foreground">Anunciar ou alugar</h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 {isComplete
                   ? "Seu cadastro já está completo — pode anunciar e alugar quando quiser."
-                  : "Para anunciar ou alugar, é rápido: completamos seu cadastro (CPF e endereço) no momento em que você for usar."}
+                  : "Para anunciar ou alugar, complete seu cadastro (CPF e endereço). Leva 1 minuto e já libera tudo."}
               </p>
               <Link
                 href={isComplete ? "/itens/novo" : "/cadastro/completar?callbackUrl=/itens/novo"}
-                className="mt-4 inline-flex h-10 items-center justify-center rounded-lg border border-border px-4 text-sm font-semibold text-foreground hover:bg-background transition-colors"
+                className={
+                  isComplete
+                    ? "mt-4 inline-flex h-10 items-center justify-center rounded-lg border border-border px-4 text-sm font-semibold text-foreground hover:bg-background transition-colors"
+                    : "mt-4 inline-flex h-11 items-center justify-center rounded-lg bg-primary px-5 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+                }
               >
-                {isComplete ? "Anunciar um item" : "Completar cadastro"}
+                {isComplete ? "Anunciar um item" : "Completar cadastro →"}
               </Link>
             </div>
           </div>
