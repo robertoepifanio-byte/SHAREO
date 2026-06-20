@@ -5,17 +5,196 @@
 /* ── ShareO Design System — CSS custom properties ── */
 @layer base {
   :root {
-  --primary:#003366;
-  --brand:#007B3C;
-  --accent:#59C686;
-  --destructive:#C0392B;
-  --background:#F8FAFC;
-  --surface:#FFFFFF;
-    /* Icon theme — modo claro */
-    --icon-bg:    #FFFFFF;
-    --icon-color: #007B3C;
-    --icon-accent: #59C686;
-    --icon-border: #144D81;
+    /* ── Identidade Shareo ──────────────────────────────── */
+    --shareo-navy:        0 51 102;      /* #003366 */
+    --shareo-green-dark:  0 123 60;      /* #007B3C */
+    --shareo-green-light: 89 198 134;    /* #59C686 */
+    --shareo-blue-medium: 20 77 129;     /* #144D81 */
+    --shareo-off-white:   255 255 255;   /* #FFFFFF */
+
+    /* ── Brand (verde) ──────────────────────────────────── */
+    --brand:              0 123 60;      /* #007B3C — fill botão principal */
+    --brand-hover:        0 95 46;       /* #005F2E */
+    --brand-light:        212 237 225;   /* #D4EDE1 — fundo sutil */
+    --brand-foreground:   255 255 255;
+    --brand-cta:          0 123 60;      /* #007B3C — CTA WCAG AA (5.1:1 sobre branco) */
+    --brand-cta-hover:    0 95 46;       /* #005F2E */
+    --brand-link:         0 95 46;       /* #005F2E — texto/link sobre branco */
+
+    /* ── Primary (navy) ─────────────────────────────────── */
+    --primary:            0 51 102;      /* #003366 */
+    --primary-hover:      0 61 122;      /* #003D7A */
+    --primary-foreground: 255 255 255;
+
+    /* ── Success ─────────────────────────────────────────── */
+    --success:            0 123 60;      /* #007B3C */
+    --success-hover:      0 95 46;       /* #005F2E */
+    --success-light:      212 237 225;   /* #D4EDE1 */
+    --success-foreground: 255 255 255;
+
+    /* ── Accent (verde claro decorativo) ─────────────────── */
+    --accent:             89 198 134;    /* #59C686 — NÃO como texto no claro (2.07:1) */
+    --accent-foreground:  0 51 102;      /* #003366 — texto SOBRE fundo accent (8.4:1 ✅) */
+
+    /* ── Orange ──────────────────────────────────────────── */
+    --orange:             249 115 22;    /* #F97316 — decorativo */
+    --orange-cta:         192 88 0;      /* #C05800 — botão com texto branco (4.47:1 ✅) */
+    --orange-link:        154 71 0;      /* #9A4700 — texto sobre branco (6.5:1 ✅) */
+    --orange-hover:       163 71 0;      /* #A34700 */
+    --orange-light:       255 247 237;   /* #FFF7ED — fundo sutil */
+
+    /* ── Blue medium ─────────────────────────────────────── */
+    --blue-medium:        20 77 129;     /* #144D81 */
+    --blue-medium-foreground: 255 255 255;
+
+    /* ── Destructive ─────────────────────────────────────── */
+    --destructive:        192 57 43;     /* #C0392B — WCAG AA (5.44:1 sobre branco) */
+    --destructive-hover:  169 50 38;     /* #A93226 */
+    --destructive-light:  253 237 236;   /* #FDEDEC — fundo sutil */
+    --destructive-foreground: 255 255 255;
+
+    /* ── Superfícies ─────────────────────────────────────── */
+    --background:         255 255 255;   /* #FFFFFF — fundo da página */
+    --surface:            255 255 255;   /* #FFFFFF — cards, modais */
+    --surface-muted:      248 250 252;   /* #F8FAFC — seções alternadas */
+
+    /* ── Texto ───────────────────────────────────────────── */
+    --foreground:         15 23 42;      /* #0F172A — slate-900 */
+    --muted-foreground:   100 116 139;   /* #64748B — slate-500 */
+    --muted:              226 232 240;   /* #E2E8F0 — slate-200 (skeletons) */
+
+    /* ── Bordas / Input / Ring ───────────────────────────── */
+    --border:             226 232 240;   /* #E2E8F0 — slate-200 */
+    --input:              226 232 240;   /* #E2E8F0 */
+    --ring:               0 123 60;      /* #007B3C — focus ring verde */
+    --ring-offset-background: 255 255 255;
+
+    /* ── Status de booking ───────────────────────────────── */
+    --booking-pending:    245 158 11;    /* #F59E0B — amber */
+    --booking-confirmed:  20 77 129;     /* #144D81 — azul médio */
+    --booking-active:     0 123 60;      /* #007B3C — verde */
+    --booking-returned:   139 92 246;    /* #8B5CF6 — violet */
+    --booking-completed:  100 116 139;   /* #64748B — slate */
+    --booking-cancelled:  231 76 60;     /* #E74C3C — vermelho */
+    --booking-disputed:   192 88 0;      /* #C05800 — laranja WCAG AA */
+
+    /* ── Status de item ──────────────────────────────────── */
+    --item-available:     0 123 60;      /* #007B3C */
+    --item-rented:        245 158 11;    /* #F59E0B */
+    --item-inactive:      148 163 184;   /* #94A3B8 — slate-400 */
+
+    /* ── Disabled ────────────────────────────────────────── */
+    --disabled-bg:        226 232 240;   /* #E2E8F0 */
+    --disabled-text:      148 163 184;   /* #94A3B8 */
+    --disabled-border:    203 213 225;   /* #CBD5E1 */
+
+    /* ── Misc ────────────────────────────────────────────── */
+    --gold:               255 215 0;     /* #FFD700 — hero badge dourado */
+    --navy-deep:          0 31 64;       /* #001F40 — VIP section */
+    --sim-border:         167 215 188;   /* #A7D7BC — simulador output */
+
+    /* ── Icon theme (compat) ─────────────────────────────── */
+    --icon-bg:            255 255 255;
+    --icon-color:         0 123 60;
+    --icon-accent:        89 198 134;
+    --icon-border:        20 77 129;
+  }
+
+  /* ── DARK (inerte até Fase 2 — next-themes adiciona .dark no <html>) ── */
+  .dark {
+    /* ── Identidade (canais idênticos — fills preservados) ── */
+    --shareo-navy:        0 51 102;      /* #003366 — fill preservado */
+    --shareo-green-dark:  0 123 60;      /* #007B3C — fill preservado */
+    --shareo-green-light: 89 198 134;    /* #59C686 */
+    --shareo-blue-medium: 20 77 129;     /* #144D81 */
+    --shareo-off-white:   255 255 255;
+
+    /* ── Brand (verde) ──────────────────────────────────── */
+    --brand:              0 123 60;      /* #007B3C — fill MANTIDO (branco 5.39:1 ✅) */
+    --brand-hover:        0 105 47;      /* #00692F — hover no dark */
+    --brand-light:        0 51 25;       /* fundo sutil verde escuro no dark */
+    --brand-foreground:   255 255 255;
+    --brand-cta:          0 123 60;      /* fill mantido */
+    --brand-cta-hover:    0 105 47;
+    --brand-link:         91 208 139;    /* #5BD08B — verde como texto no dark (9.45:1 ✅) */
+
+    /* ── Primary (navy → clareia no dark) ───────────────── */
+    --primary:            30 77 128;     /* #1E4D80 — fill chips/badges (branco 9.2:1 ✅) */
+    --primary-hover:      40 97 160;     /* #2861A0 — hover ligeiramente mais claro */
+    --primary-foreground: 255 255 255;
+
+    /* ── Success ─────────────────────────────────────────── */
+    --success:            91 208 139;    /* #5BD08B — texto verde no dark (9.45:1 ✅) */
+    --success-hover:      70 185 115;    /* #46B973 */
+    --success-light:      3 25 14;       /* fundo sutil verde escuro */
+    --success-foreground: 11 21 36;      /* #0B1524 — texto escuro sobre verde claro */
+
+    /* ── Accent (verde claro — no dark PODE ser texto 8.58:1 ✅) ─ */
+    --accent:             89 198 134;    /* #59C686 — ok como texto no dark */
+    --accent-foreground:  0 51 102;      /* #003366 */
+
+    /* ── Orange ──────────────────────────────────────────── */
+    --orange:             249 115 22;    /* #F97316 — decorativo, mantido */
+    --orange-cta:         192 88 0;      /* #C05800 — fill mantido */
+    --orange-link:        240 163 94;    /* #F0A35E — clarificado para dark (7.8:1 ✅) */
+    --orange-hover:       220 100 10;    /* hover no dark */
+    --orange-light:       38 18 4;       /* fundo sutil laranja escuro no dark */
+
+    /* ── Blue medium ─────────────────────────────────────── */
+    --blue-medium:        91 163 224;    /* #5BA3E0 — clarificado para dark (8.6:1 ✅) */
+    --blue-medium-foreground: 11 21 36;  /* texto escuro sobre azul claro */
+
+    /* ── Destructive ─────────────────────────────────────── */
+    --destructive:        209 68 56;     /* #D14438 — fill (branco 4.57:1 ✅) */
+    --destructive-hover:  192 57 43;     /* #C0392B */
+    --destructive-light:  50 15 12;      /* fundo sutil vermelho escuro */
+    --destructive-foreground: 255 255 255;
+
+    /* ── Superfícies (elevação por luminância) ───────────── */
+    --background:         11 21 36;      /* #0B1524 — base */
+    --surface:            21 35 59;      /* #15233B — cards, modais */
+    --surface-muted:      17 27 47;      /* #111B2F — seções alternadas */
+
+    /* ── Texto ───────────────────────────────────────────── */
+    --foreground:         232 238 246;   /* #E8EEF6 — 15.7:1 sobre bg ✅ */
+    --muted-foreground:   148 163 184;   /* #94A3B8 — 7.1:1 sobre bg ✅ */
+    --muted:              38 57 90;      /* #26395A — skeletons navy-tintado */
+
+    /* ── Bordas / Input / Ring ───────────────────────────── */
+    --border:             38 57 90;      /* #26395A — navy-tintado */
+    --input:              38 57 90;      /* #26395A */
+    --ring:               91 208 139;    /* #5BD08B — foco visível no dark (9.45:1 ✅) */
+    --ring-offset-background: 21 35 59;  /* surface (não branco) */
+
+    /* ── Status de booking (texto clareado, verificado WCAG) */
+    --booking-pending:    251 191 119;   /* #FBBF77 — 11.2:1 ✅ */
+    --booking-confirmed:  91 163 224;    /* #5BA3E0 — 8.6:1 ✅ */
+    --booking-active:     91 208 139;    /* #5BD08B — 9.45:1 ✅ */
+    --booking-returned:   180 154 245;   /* #B49AF5 — 9.2:1 ✅ */
+    --booking-completed:  148 163 184;   /* #94A3B8 — 7.1:1 ✅ */
+    --booking-cancelled:  240 140 132;   /* #F08C84 — 7.66:1 ✅ */
+    --booking-disputed:   240 163 94;    /* #F0A35E — 7.8:1 ✅ */
+
+    /* ── Status de item ──────────────────────────────────── */
+    --item-available:     91 208 139;    /* #5BD08B — verde claro no dark ✅ */
+    --item-rented:        251 191 119;   /* #FBBF77 — amber claro no dark ✅ */
+    --item-inactive:      176 190 197;   /* #B0BEC5 — doc §0 explícito */
+
+    /* ── Disabled ────────────────────────────────────────── */
+    --disabled-bg:        38 57 90;      /* #26395A */
+    --disabled-text:      74 94 122;     /* #4A5E7A — visível mas claramente desabilitado */
+    --disabled-border:    38 57 90;      /* #26395A */
+
+    /* ── Misc ────────────────────────────────────────────── */
+    --gold:               255 215 0;     /* #FFD700 — dourado sobre dark (14.3:1 ✅) */
+    --navy-deep:          0 15 32;       /* #000F20 — versão ainda mais escura no dark */
+    --sim-border:         0 74 42;       /* borda simulador verde-escuro no dark */
+
+    /* ── Icon theme (compat) ─────────────────────────────── */
+    --icon-bg:            21 35 59;      /* surface dark */
+    --icon-color:         91 208 139;    /* #5BD08B — verde claro no dark */
+    --icon-accent:        89 198 134;    /* #59C686 */
+    --icon-border:        91 163 224;    /* #5BA3E0 — azul claro no dark */
   }
 }
 
