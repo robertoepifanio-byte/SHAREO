@@ -1,6 +1,6 @@
 # ShareO — Plano & Especificação do Modo Escuro (Dark Mode)
 
-**Versão:** 0.2 (revisada por designer-shareo + fullstack-dev-shareo) · **Data:** 2026-06-19
+**Versão:** 0.3 (risco do `@tailwindcss/forms` destacado p/ a Fase 1) · **Data:** 2026-06-19
 **Autores/Revisão:** orquestração técnica + papéis `designer-shareo` (UI/UX) e `fullstack-dev-shareo` (front-end). Pendente de validação com usuários e especialistas antes da implementação.
 **Escopo:** site web responsivo **mobile-first** (Next.js App Router). O app mobile Expo (`apps/mobile/`) e os e-mails transacionais (Resend) **ficam fora** deste plano.
 
@@ -211,6 +211,15 @@ Inventário priorizado (P0 = aparece em quase toda tela). Cada item indica a aç
 
 **Sequência crítica:** Fase 1 **antes** de qualquer `dark:` — sem a fundação de tokens, nada cascateia. Fase 3 pode rodar em paralelo a 4.
 
+> ### ⚠️ ATENÇÃO FASE 1 — o `@tailwindcss/forms` é o maior risco de regressão no **modo claro**
+>
+> Trocar o plugin para `{ strategy: 'class' }` faz ele **deixar de injetar estilos globais** em `[type=...]`/`select`/`textarea`. Hoje vários campos dependem desse reset automático — sem ele, inputs **sem classe explícita podem mudar de aparência no claro** (não só no escuro). Este é o único passo da Fase 1 que pode quebrar o claro; o resto é troca de valor idêntico.
+>
+> **Antes de mergear a Fase 1, obrigatório:**
+> 1. **Varrer todos os formulários** (login, cadastro, cadastro/completar, recuperar senha, anunciar item, `_PriceCalc`, filtros de `/itens`, admin, `FounderCaptureForm`, `ListaVIP`) e garantir que cada `input/select/textarea` tenha estilo explícito (classe `form-input`/`form-select`/`form-textarea` do plugin **ou** classes Tailwind próprias).
+> 2. **Diff visual dos campos no claro antes/depois** — qualquer diferença de borda, padding, cor de fundo ou foco é regressão, não feature.
+> 3. Conferir os componentes shadcn/ui que envolvem inputs (`Input`, `Select`, `Checkbox`, `Switch`) — confirmar que já trazem classes próprias e não herdam só do plugin.
+
 ---
 
 ## 8. Protótipos (Figma) — processo de validação
@@ -243,7 +252,8 @@ Inventário priorizado (P0 = aparece em quase toda tela). Cada item indica a aç
 - [ ] Mapbox carrega o style dark; markers/popups legíveis.
 - [ ] Lighthouse mobile mantém baseline (Perf ≥ 90, A11y ≥ 95) nos dois temas.
 - [ ] Responsivo validado em **375 / 768 / 1280**.
-- [ ] Regressão visual do **modo claro** = zero (a Fase 1 é refactor puro).
+- [ ] **⚠️ `@tailwindcss/forms` em `strategy:'class'`** — todos os `input/select/textarea` conferidos no claro **e** no escuro. O plugin deixa de aplicar estilo global; campos sem classe explícita podem regredir no **claro**. Varrer login, cadastro, cadastro/completar, recuperar senha, anunciar, `_PriceCalc`, filtros de `/itens`, admin, `FounderCaptureForm`, `ListaVIP`.
+- [ ] Regressão visual do **modo claro** = zero (a Fase 1 é refactor puro — exceto o ponto acima, que exige varredura ativa).
 
 **Testes de usabilidade:**
 - [ ] Usuários encontram o toggle sem ajuda (mobile e desktop).
@@ -256,6 +266,7 @@ Inventário priorizado (P0 = aparece em quase toda tela). Cada item indica a aç
 
 | Risco | Mitigação |
 |---|---|
+| **🔴 `@tailwindcss/forms` → `strategy:'class'` muda inputs no CLARO** (maior risco de regressão da Fase 1) | Varredura de **todos** os formulários + visual diff dos campos no claro antes/depois; adicionar `form-input`/`form-select`/`form-textarea` (ou classes próprias) onde o estilo automático era usado; conferir wrappers shadcn/ui antes de mergear |
 | **Cor fixa espalhada** deixa o dark "remendado" | Fase 3 obrigatória (varredura + migração para tokens) antes do go-live do dark |
 | **CSP bloquear** o no-FOUC | Nonce no `script-src`; validar no staging |
 | **Mapbox** ilegível no dark | Style `dark-v11` + cor de pin própria |
