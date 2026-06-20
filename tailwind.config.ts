@@ -1,6 +1,8 @@
 import type { Config } from "tailwindcss"
 
 const config: Config = {
+  darkMode: 'class',
+
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -36,114 +38,114 @@ const config: Config = {
       colors: {
         // Identidade Shareo (v1.0 — Maio 2026)
         shareo: {
-          navy:          "#003366",   // Azul Marinho oficial (DID v1.0)
-          "green-dark":  "#007B3C",   // Verde Escuro — botões, ação
-          "green-light": "#59C686",   // Verde Claro de Apoio — decorativo
-          "blue-medium": "#144D81",   // Azul Médio — seções intermediárias
-          "off-white":   "#FFFFFF",
+          navy:          "rgb(var(--shareo-navy) / <alpha-value>)",
+          "green-dark":  "rgb(var(--shareo-green-dark) / <alpha-value>)",
+          "green-light": "rgb(var(--shareo-green-light) / <alpha-value>)",
+          "blue-medium": "rgb(var(--shareo-blue-medium) / <alpha-value>)",
+          "off-white":   "rgb(var(--shareo-off-white) / <alpha-value>)",
         },
 
         // Aliases semânticos — usar nos componentes
         brand: {
-          DEFAULT:    "#007B3C",   // verde escuro — ação principal (WCAG 5.1:1 sobre branco)
-          hover:      "#005F2E",   // verde escurecido ~20%
-          light:      "#D4EDE1",   // verde claro (backgrounds sutis)
-          foreground: "#FFFFFF",
-          cta:        "#007B3C",   // verde WCAG AA sobre branco (5.1:1)
-          ctaHover:   "#005F2E",   // hover do CTA
-          link:       "#005F2E",   // verde para texto/link sobre fundo branco
+          DEFAULT:    "rgb(var(--brand) / <alpha-value>)",
+          hover:      "rgb(var(--brand-hover) / <alpha-value>)",
+          light:      "rgb(var(--brand-light) / <alpha-value>)",
+          foreground: "rgb(var(--brand-foreground) / <alpha-value>)",
+          cta:        "rgb(var(--brand-cta) / <alpha-value>)",
+          ctaHover:   "rgb(var(--brand-cta-hover) / <alpha-value>)",
+          link:       "rgb(var(--brand-link) / <alpha-value>)",
         },
         primary: {
-          DEFAULT:    "#003366",   // azul marinho oficial (DID v1.0)
-          hover:      "#003D7A",   // azul marinho claro
-          foreground: "#FFFFFF",
+          DEFAULT:    "rgb(var(--primary) / <alpha-value>)",
+          hover:      "rgb(var(--primary-hover) / <alpha-value>)",
+          foreground: "rgb(var(--primary-foreground) / <alpha-value>)",
         },
         success: {
-          DEFAULT:    "#007B3C",   // verde escuro WCAG-safe (5.1:1) — textos e ícones
-          hover:      "#005F2E",
-          light:      "#D4EDE1",   // fundo sutil para badges
-          foreground: "#FFFFFF",
+          DEFAULT:    "rgb(var(--success) / <alpha-value>)",
+          hover:      "rgb(var(--success-hover) / <alpha-value>)",
+          light:      "rgb(var(--success-light) / <alpha-value>)",
+          foreground: "rgb(var(--success-foreground) / <alpha-value>)",
         },
         // Verde claro decorativo — apenas fundos/ícones, NÃO texto em fundo branco (2.1:1)
-        // Em fundo escuro (#003366): ratio 8.4:1 ✅
+        // Em fundo escuro (#003366): ratio 8.4:1 ✅ | no dark pode ser texto ✅
         accent: {
-          DEFAULT:    "#59C686",
-          foreground: "#003366",   // texto SOBRE fundo accent (8.4:1 ✅)
+          DEFAULT:    "rgb(var(--accent) / <alpha-value>)",
+          foreground: "rgb(var(--accent-foreground) / <alpha-value>)",
         },
-        // Laranja — identidade Shareo (via prototipo.html tokens)
+        // Laranja — identidade Shareo
         orange: {
-          DEFAULT:  "#F97316", // decorativo apenas — fills, sem texto direto
-          cta:      "#C05800", // botões com texto branco — ratio 4.47:1 WCAG AA ✅
-          link:     "#9A4700", // texto laranja sobre branco — ratio 6.5:1 WCAG AA ✅
-          hover:    "#A34700", // hover do CTA
-          light:    "#FFF7ED", // fundo sutil (backgrounds, chips ativos)
+          DEFAULT:  "rgb(var(--orange) / <alpha-value>)",
+          cta:      "rgb(var(--orange-cta) / <alpha-value>)",
+          link:     "rgb(var(--orange-link) / <alpha-value>)",
+          hover:    "rgb(var(--orange-hover) / <alpha-value>)",
+          light:    "rgb(var(--orange-light) / <alpha-value>)",
         },
         // Azul médio — seções intermediárias, bordas de ícones
         "blue-medium": {
-          DEFAULT:    "#144D81",
-          foreground: "#FFFFFF",
+          DEFAULT:    "rgb(var(--blue-medium) / <alpha-value>)",
+          foreground: "rgb(var(--blue-medium-foreground) / <alpha-value>)",
         },
         destructive: {
-          DEFAULT:    "#C0392B",   // vermelho — contraste WCAG AA (5.44:1 sobre branco, como texto e como bg)
-          hover:      "#A93226",   // hover mais escuro (6.62:1)
-          light:      "#FDEDEC",   // fundo sutil (chips/alertas)
-          foreground: "#FFFFFF",
+          DEFAULT:    "rgb(var(--destructive) / <alpha-value>)",
+          hover:      "rgb(var(--destructive-hover) / <alpha-value>)",
+          light:      "rgb(var(--destructive-light) / <alpha-value>)",
+          foreground: "rgb(var(--destructive-foreground) / <alpha-value>)",
         },
 
         // Superfícies e fundos
-        background: "#FFFFFF",  // branco puro (identidade visual v1.0)
-        surface:    "#FFFFFF",  // branco — cards, modais
+        background:     "rgb(var(--background) / <alpha-value>)",
+        surface:        "rgb(var(--surface) / <alpha-value>)",
 
         // Texto
-        foreground: "#0F172A",           // slate-900 — texto principal
-        "muted-foreground": "#64748B",   // slate-500 — texto secundário (alias plano para compatibilidade)
+        foreground:           "rgb(var(--foreground) / <alpha-value>)",
+        "muted-foreground":   "rgb(var(--muted-foreground) / <alpha-value>)",
         // Token `muted` como objeto para suportar bg-muted / text-muted-foreground via objeto
         muted: {
-          DEFAULT:    "#E2E8F0",   // slate-200 — fundo sutil (placeholders, skeletons)
-          foreground: "#64748B",   // slate-500 — texto secundário (mesmo valor que "muted-foreground")
+          DEFAULT:    "rgb(var(--muted) / <alpha-value>)",
+          foreground: "rgb(var(--muted-foreground) / <alpha-value>)",
         },
 
         // Bordas
-        border: "#E2E8F0",               // slate-200
-        input:  "#E2E8F0",
-        ring:   "#007B3C",               // verde para focus ring
+        border: "rgb(var(--border) / <alpha-value>)",
+        input:  "rgb(var(--input) / <alpha-value>)",
+        ring:   "rgb(var(--ring) / <alpha-value>)",
 
         // Status de booking
         booking: {
-          pending:   "#F59E0B",   // amber — aguardando
-          confirmed: "#144D81",   // azul médio DID v1.0 — confirmado
-          active:    "#007B3C",   // verde escuro DID v1.0 — em andamento
-          returned:  "#8B5CF6",   // violet — devolvido
-          completed: "#64748B",   // slate — concluído
-          cancelled: "#E74C3C",   // vermelho DID v1.0 — cancelado
-          disputed:  "#C05800",   // laranja WCAG AA — em disputa
+          pending:   "rgb(var(--booking-pending) / <alpha-value>)",
+          confirmed: "rgb(var(--booking-confirmed) / <alpha-value>)",
+          active:    "rgb(var(--booking-active) / <alpha-value>)",
+          returned:  "rgb(var(--booking-returned) / <alpha-value>)",
+          completed: "rgb(var(--booking-completed) / <alpha-value>)",
+          cancelled: "rgb(var(--booking-cancelled) / <alpha-value>)",
+          disputed:  "rgb(var(--booking-disputed) / <alpha-value>)",
         },
 
         // Status de item
         item: {
-          available: "#007B3C",
-          rented: "#F59E0B",
-          inactive: "#94A3B8",
+          available: "rgb(var(--item-available) / <alpha-value>)",
+          rented:    "rgb(var(--item-rented) / <alpha-value>)",
+          inactive:  "rgb(var(--item-inactive) / <alpha-value>)",
         },
 
         // Estado desabilitado
         disabled: {
-          bg: "#E2E8F0",
-          text: "#94A3B8",
-          border: "#CBD5E1",
+          bg:     "rgb(var(--disabled-bg) / <alpha-value>)",
+          text:   "rgb(var(--disabled-text) / <alpha-value>)",
+          border: "rgb(var(--disabled-border) / <alpha-value>)",
         },
 
         // Hero badge dourado
-        gold: "#FFD700",
+        gold: "rgb(var(--gold) / <alpha-value>)",
 
         // VIP section deep navy (gradiente)
-        "navy-deep": "#001f40",
+        "navy-deep": "rgb(var(--navy-deep) / <alpha-value>)",
 
-        // Simulador output border (usado no PR-2)
-        "sim-border": "#A7D7BC",
+        // Simulador output border
+        "sim-border": "rgb(var(--sim-border) / <alpha-value>)",
 
         // Background sutil de seções alternadas
-        "surface-muted": "#F8FAFC",
+        "surface-muted": "rgb(var(--surface-muted) / <alpha-value>)",
       },
 
       // ─── Tipografia ─────────────────────────────────────
@@ -224,6 +226,7 @@ const config: Config = {
       },
 
       // ─── Sombras ─────────────────────────────────────────
+      // Fase 1: navy hardcoded mantido — elevação dark é Fase 4
       boxShadow: {
         sm:    "0 1px 2px 0 rgb(0 51 102 / 0.05)",
         DEFAULT:"0 1px 3px 0 rgb(0 51 102 / 0.10), 0 1px 2px -1px rgb(0 51 102 / 0.10)",
@@ -237,13 +240,13 @@ const config: Config = {
 
       // ─── Ring (focus) ────────────────────────────────────
       ringColor: {
-        DEFAULT: "#007B3C",
-        brand:   "#007B3C",
-        primary: "#003366",
-        orange:  "#9A4700",
+        DEFAULT: "rgb(var(--ring) / <alpha-value>)",
+        brand:   "rgb(var(--ring) / <alpha-value>)",
+        primary: "rgb(var(--primary) / <alpha-value>)",
+        orange:  "rgb(var(--orange-link) / <alpha-value>)",
       },
       ringOffsetColor: {
-        background: "#FFFFFF",
+        background: "rgb(var(--ring-offset-background) / <alpha-value>)",
       },
       ringWidth: {
         DEFAULT: "2px",
@@ -324,6 +327,7 @@ const config: Config = {
   },
   plugins: [
     require('tailwindcss-animate'),
+    // Fase 1: estratégia base mantida — flip p/ { strategy: 'class' } virá com auditoria de inputs (pré-Fase 2)
     require('@tailwindcss/forms'),
   ],
 }
