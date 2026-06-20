@@ -6,6 +6,7 @@ import { MobileMenu } from "@/components/layout/MobileMenu"
 import { UserDropdown } from "@/components/layout/UserDropdown"
 import { HelpButton } from "@/components/layout/HelpButton"
 import { NavLinks } from "@/components/layout/NavLinks"
+import { ThemeToggle } from "@/components/layout/ThemeToggle"
 
 export async function AppHeader() {
   const session = await auth().catch(() => null)
@@ -44,9 +45,10 @@ export async function AppHeader() {
 
         {/* Ações de autenticação */}
         <div className="flex flex-shrink-0 items-center gap-2 ml-auto">
-          {/* HelpButton — desktop only, logado ou não */}
-          <div className="hidden md:block">
+          {/* HelpButton + ThemeToggle — desktop only, logado ou não */}
+          <div className="hidden md:flex items-center gap-2">
             <HelpButton />
+            <ThemeToggle variant="header" />
           </div>
 
           {session ? (

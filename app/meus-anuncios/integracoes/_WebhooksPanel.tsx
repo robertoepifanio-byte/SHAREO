@@ -186,7 +186,7 @@ export function WebhooksPanel({ initialWebhooks }: Props) {
                     type="checkbox"
                     checked={newEvents.includes(ev)}
                     onChange={() => toggleEvent(ev)}
-                    className="h-4 w-4 rounded border-input accent-brand"
+                    className="form-checkbox h-4 w-4 rounded border-input accent-brand"
                   />
                   <span className="text-sm text-foreground">{EVENT_LABELS[ev]}</span>
                 </label>

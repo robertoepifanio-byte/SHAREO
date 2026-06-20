@@ -124,7 +124,7 @@ export function ReturnChecklist({ bookingId }: Props) {
                 type="checkbox"
                 checked={checked[i]}
                 onChange={() => toggle(i)}
-                className="h-5 w-5 flex-shrink-0 rounded accent-brand focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 cursor-pointer"
+                className="form-checkbox h-5 w-5 flex-shrink-0 rounded accent-brand focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 cursor-pointer"
                 aria-label={label}
               />
               <span className={[

@@ -224,7 +224,7 @@ export function PriceCalc({
           min={today}
           value={startDate}
           onChange={(e) => handleStartChange(e.target.value)}
-          className="h-10 w-full rounded-lg border border-input px-2.5 text-sm text-foreground outline-none focus:border-brand transition-colors"
+          className="h-10 w-full rounded-lg border border-input bg-surface px-2.5 text-sm text-foreground outline-none focus:border-brand transition-colors"
         />
       </div>
 
@@ -253,7 +253,7 @@ export function PriceCalc({
               max={365}
               value={numDays}
               onChange={(e) => setNumDays(Math.max(1, parseInt(e.target.value) || 1))}
-              className="h-10 w-full rounded-lg border border-input px-2.5 text-center text-sm font-semibold text-foreground outline-none focus:border-brand transition-colors"
+              className="h-10 w-full rounded-lg border border-input bg-surface px-2.5 text-center text-sm font-semibold text-foreground outline-none focus:border-brand transition-colors"
             />
             <button
               type="button"

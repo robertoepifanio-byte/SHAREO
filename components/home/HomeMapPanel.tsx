@@ -72,7 +72,7 @@ export function HomeMapPanel({ items, defaultLat, defaultLng, defaultZoom, userC
                     checked={maxKm === opt.value}
                     onChange={() => !disabled && setMaxKm(opt.value)}
                     disabled={disabled}
-                    className="accent-brand w-4 h-4"
+                    className="form-radio accent-brand w-4 h-4"
                   />
                   {opt.label}
                 </span>

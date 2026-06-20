@@ -318,7 +318,7 @@ export function RegisterForm() {
               checked={consent}
               onChange={(e) => { setConsent(e.target.checked); setErrors((p) => ({ ...p, consent: undefined })) }}
               disabled={loading}
-              className="mt-0.5 h-5 w-5 shrink-0 rounded border-input accent-brand"
+              className="form-checkbox mt-0.5 h-5 w-5 shrink-0 rounded border-input accent-brand"
               aria-describedby={errors.consent ? "consent-error" : undefined}
               aria-invalid={!!errors.consent}
             />
@@ -353,7 +353,7 @@ export function RegisterForm() {
               checked={ageConfirmed}
               onChange={(e) => { setAgeConfirmed(e.target.checked); setErrors((p) => ({ ...p, ageConfirmed: undefined })) }}
               disabled={loading}
-              className="mt-0.5 h-5 w-5 shrink-0 rounded border-input accent-brand"
+              className="form-checkbox mt-0.5 h-5 w-5 shrink-0 rounded border-input accent-brand"
               aria-describedby={errors.ageConfirmed ? "age-error" : undefined}
               aria-invalid={!!errors.ageConfirmed}
             />

@@ -1060,7 +1060,7 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
               checked={requireIdVerification}
               onChange={(e) => setRequireIdVerification(e.target.checked)}
               disabled={loading}
-              className="mt-0.5 h-4 w-4 cursor-pointer rounded border-input accent-brand"
+              className="form-checkbox mt-0.5 h-4 w-4 cursor-pointer rounded border-input accent-brand"
             />
             <div>
               <label htmlFor="req-id-verification" className="cursor-pointer text-sm font-medium text-foreground">
@@ -1079,7 +1079,7 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
               checked={requirePhone}
               onChange={(e) => setRequirePhone(e.target.checked)}
               disabled={loading}
-              className="mt-0.5 h-4 w-4 cursor-pointer rounded border-input accent-brand"
+              className="form-checkbox mt-0.5 h-4 w-4 cursor-pointer rounded border-input accent-brand"
             />
             <div>
               <label htmlFor="req-phone" className="cursor-pointer text-sm font-medium text-foreground">
