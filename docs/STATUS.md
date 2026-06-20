@@ -3,8 +3,8 @@
 **Atualizado em**: 2026-06-20 (sessão s31 — **modo escuro IMPLEMENTADO e no ar no staging** (Fases 1–5 + elevação + teste a11y); s30 = planejamento do dark mode; s29 = campanha #50 + migração Vercel corporativa + Zoho + release v1.8.0; histórico s13–s29 abaixo)
 **Ambiente staging**: https://staging.shareo.com.br (canônico desde 15/06; `shareo-rouge.vercel.app` segue como alias) — deploy via GitHub Actions "Deploy - ShareO" (token); projeto Vercel **shareo** agora no Team **shareo-marketplace** (Pro), Production = staging
 **Último commit**: dark mode mesclado na `main` (Fase 1 `#52` + integração `#60` + docs `#51`/`#61`); E2E de regressão pós-deploy verde no staging. CI da main verde + Deploy Staging verde sob o Team corporativo.
-**Release atual**: [`v1.8.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.8.0) — Campanha: atribuição UTM + landings de cidade (PR [#50](https://github.com/robertoepifanio-byte/SHAREO/pull/50), merge `33601cb`) — aguarda D4 para produção
-**Release anterior**: [`v1.7.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.7.0) — Pré-lançamento de pilotos + hardening s14 + saúde do pipeline (tag `ae950c8`, s22–s28)
+**Release atual**: [`v1.9.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.9.0) — **Modo Escuro (dark mode)**: tokens CSS vars `:root`/`.dark`, toggle tri-state, next-themes (nonce CSP), migração de cores, Mapbox/Sonner dark, a11y de contraste, sombras theme-aware (PRs #51–#62) — no ar no staging; aguarda D4 para produção
+**Release anterior**: [`v1.8.0`](https://github.com/robertoepifanio-byte/SHAREO/releases/tag/v1.8.0) — Campanha: atribuição UTM + landings de cidade (PR [#50](https://github.com/robertoepifanio-byte/SHAREO/pull/50), merge `33601cb`)
 
 ---
 
