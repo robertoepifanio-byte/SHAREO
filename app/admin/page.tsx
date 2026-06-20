@@ -46,9 +46,9 @@ export default async function AdminOverviewPage() {
 
   const stats = [
     { label: "Usuários",         value: totalUsers,                     sub: `${inactiveUsers} desativados`,   color: "text-primary" },
-    { label: "Itens ativos",     value: totalItems,                     sub: `${pendingItems} aguardando aprovação`, color: pendingItems > 0 ? "text-[#9A4700]" : "text-primary" },
+    { label: "Itens ativos",     value: totalItems,                     sub: `${pendingItems} aguardando aprovação`, color: pendingItems > 0 ? "text-orange-link" : "text-primary" },
     { label: "Reservas ativas",  value: byStatus["ACTIVE"]    ?? 0,     sub: `${byStatus["PENDING"] ?? 0} pendentes`, color: "text-primary" },
-    { label: "Disputas abertas", value: disputes,                       sub: "bookings em disputa",            color: disputes > 0 ? "text-[#9A4700]" : "text-primary" },
+    { label: "Disputas abertas", value: disputes,                       sub: "bookings em disputa",            color: disputes > 0 ? "text-orange-link" : "text-primary" },
     { label: "Concluídas",     value: byStatus["COMPLETED"] ?? 0,                    sub: "reservas concluídas",        color: "text-success" },
     { label: "GMV",            value: fmt(gmvResult._sum.totalPrice ?? 0),        sub: "volume total de aluguéis",   color: "text-success", isString: true },
     { label: "Receita ShareO", value: fmt(feeResult._sum.platformFeeAmount ?? 0), sub: `taxa ${currentFeeRate / 100}% sobre locações`, color: "text-success", isString: true },
@@ -70,10 +70,10 @@ export default async function AdminOverviewPage() {
 
       {pendingItems > 0 && (
         <div className="mt-6 rounded-xl border border-orange/20 bg-orange-light p-4">
-          <p className="text-sm font-semibold text-[#9A4700]">
+          <p className="text-sm font-semibold text-orange-link">
             ⚠ {pendingItems} {pendingItems === 1 ? "item aguarda" : "itens aguardam"} aprovação
           </p>
-          <a href="/admin/itens" className="mt-1 text-sm text-[#9A4700] underline hover:no-underline">
+          <a href="/admin/itens" className="mt-1 text-sm text-orange-link underline hover:no-underline">
             Revisar itens →
           </a>
         </div>

@@ -15,7 +15,7 @@ const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   PROCESSING: { label: "Em processo",  color: "text-blue-700 bg-blue-50 border-blue-200" },
   COMPLETED:  { label: "Pago",         color: "text-green-700 bg-green-50 border-green-200" },
   FAILED:     { label: "Falhou",       color: "text-red-600 bg-red-50 border-red-200" },
-  BLOCKED:    { label: "Bloqueado",    color: "text-gray-600 bg-gray-50 border-gray-200" },
+  BLOCKED:    { label: "Bloqueado",    color: "text-muted-foreground bg-surface-muted border-border" },
 }
 
 export default async function RepassesPage() {

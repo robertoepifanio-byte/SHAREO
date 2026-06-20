@@ -272,7 +272,7 @@ function SectionBlock({
         </span>
         {section.title}
       </h2>
-      <div className="rounded-xl bg-white px-4 py-2 shadow-sm">
+      <div className="rounded-xl bg-surface px-4 py-2 shadow-sm">
         {matchedFaqs.map((faq) => (
           <FaqItem
             key={faq.q}

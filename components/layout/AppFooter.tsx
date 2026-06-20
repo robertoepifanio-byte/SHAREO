@@ -11,7 +11,7 @@ export function AppFooter() {
   const year = new Date().getFullYear()
 
   return (
-    <footer className="bg-[#007B3C]" aria-label="Rodapé ShareO">
+    <footer className="bg-brand" aria-label="Rodapé ShareO">
       <div className="container py-10">
         <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
 

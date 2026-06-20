@@ -46,7 +46,7 @@ export function VerificationActions({ userId }: Props) {
       <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3">
         <p className="mb-2 text-xs font-semibold text-red-700">Motivo da rejeição</p>
         <textarea
-          className="w-full rounded border border-red-200 bg-white px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-red-400"
+          className="w-full rounded border border-red-200 bg-surface px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-red-400"
           rows={3}
           placeholder={`Ex: Documento ilegível, selfie não corresponde ao documento, etc.`}
           value={reason}

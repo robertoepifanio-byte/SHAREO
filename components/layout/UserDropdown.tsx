@@ -86,7 +86,7 @@ export function UserDropdown({ name, avatarUrl, role }: Props) {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-11 z-[300] w-52 overflow-hidden rounded-xl border border-border bg-white shadow-xl"
+          className="absolute right-0 top-11 z-[300] w-52 overflow-hidden rounded-xl border border-border bg-surface shadow-xl"
         >
           {/* Header com nome */}
           <div className="border-b border-border bg-muted/40 px-4 py-3">

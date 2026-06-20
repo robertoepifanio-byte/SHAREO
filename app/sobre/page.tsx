@@ -92,7 +92,7 @@ export default function SobrePage() {
         {/* ── Hero ─────────────────────────────────────────────────────── */}
         <section className="bg-primary py-20 text-white">
           <div className="container text-center">
-            <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-[#59C686]">
+            <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-accent">
               Sobre o ShareO
             </p>
             <h1 className="font-display text-4xl font-bold leading-tight md:text-5xl">
@@ -277,7 +277,7 @@ export default function SobrePage() {
             <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <Link
                 href="/itens/novo"
-                className="inline-flex h-11 items-center rounded-lg bg-[#007B3C] px-6 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+                className="inline-flex h-11 items-center rounded-lg bg-brand px-6 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
               >
                 Cadastrar meu item
               </Link>

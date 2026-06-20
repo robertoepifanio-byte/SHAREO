@@ -261,7 +261,7 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
                       onClick={() => setAnunciarOpen((v) => !v)}
                       aria-expanded={anunciarOpen}
                       aria-haspopup="menu"
-                      className="flex h-12 w-full items-center justify-between rounded-lg px-4 text-base font-bold bg-accent text-[#003366] hover:brightness-105 transition-colors"
+                      className="flex h-12 w-full items-center justify-between rounded-lg px-4 text-base font-bold bg-accent text-accent-foreground hover:brightness-105 transition-colors"
                     >
                       <span>Anunciar</span>
                       <Chevron open={anunciarOpen} />

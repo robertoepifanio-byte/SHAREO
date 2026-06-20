@@ -57,7 +57,7 @@ export function FilterBottomSheet({ isOpen, onClose, children, title = "Filtros"
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
-        className={`fixed bottom-0 left-0 right-0 z-[400] max-h-[88vh] overflow-y-auto rounded-t-2xl bg-white px-5 pb-8 pt-4 shadow-2xl outline-none transition-transform duration-300 ease-out lg:hidden ${
+        className={`fixed bottom-0 left-0 right-0 z-[400] max-h-[88vh] overflow-y-auto rounded-t-2xl bg-surface px-5 pb-8 pt-4 shadow-2xl outline-none transition-transform duration-300 ease-out lg:hidden ${
           isOpen ? "translate-y-0" : "translate-y-full"
         }`}
       >

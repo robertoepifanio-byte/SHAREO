@@ -50,7 +50,7 @@ export function ItensProcurados() {
             <Link
               href={`/itens?search=${encodeURIComponent(item.name)}`}
               aria-label={`Buscar ${item.name}`}
-              className="flex min-h-tap flex-col items-center gap-2 rounded-xl border-[1.5px] border-border bg-white px-3 py-4 text-center font-sans transition-all hover:-translate-y-0.5 hover:border-brand hover:bg-[#F0FBF5] hover:shadow-[0_4px_12px_rgba(0,123,60,0.12)]"
+              className="flex min-h-tap flex-col items-center gap-2 rounded-xl border-[1.5px] border-border bg-surface px-3 py-4 text-center font-sans transition-all hover:-translate-y-0.5 hover:border-brand hover:bg-brand-light/40 hover:shadow-[0_4px_12px_rgba(0,123,60,0.12)]"
             >
               <span className="flex h-10 w-10 items-center justify-center">
                 <ProcuradoIcon name={item.icon} size={40} className="text-brand" />
@@ -63,7 +63,7 @@ export function ItensProcurados() {
                 className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                   item.demand === "alta"
                     ? "bg-brand-light text-brand-link"
-                    : "bg-[#FEF3C7] text-[#92400E]"
+                    : "bg-orange-light text-orange-link"
                 }`}
               >
                 {item.demand === "alta" ? "Alta demanda" : "Demanda moderada"}

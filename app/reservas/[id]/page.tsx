@@ -25,12 +25,12 @@ export const metadata: Metadata = { title: "Detalhe da Reserva" }
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   PENDING:   { label: "Aguardando resposta", color: "bg-amber-100 text-amber-800" },
-  CONFIRMED: { label: "Confirmada",          color: "bg-[#144D81]/10 text-[#144D81]" },
+  CONFIRMED: { label: "Confirmada",          color: "bg-blue-medium/10 text-blue-medium" },
   ACTIVE:    { label: "Em andamento",        color: "bg-brand/10 text-brand" },
   RETURNED:  { label: "Devolvido",           color: "bg-purple-100 text-purple-700" },
   COMPLETED: { label: "Concluída",           color: "bg-success/10 text-success" },
   CANCELLED: { label: "Cancelada",           color: "bg-destructive/10 text-destructive" },
-  DISPUTED:  { label: "Em disputa",          color: "bg-orange-100 text-[#9A4700]" },
+  DISPUTED:  { label: "Em disputa",          color: "bg-orange-light text-orange-link" },
 }
 
 const fmt = (cents: number) =>
@@ -293,7 +293,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                 Apresente este código ao proprietário na retirada
               </p>
               <div className="my-3 flex justify-center">
-                <span className="rounded-xl bg-white border-2 border-brand/30 px-8 py-4 text-4xl font-extrabold tracking-[0.35em] text-primary shadow-sm select-all">
+                <span className="rounded-xl bg-surface border-2 border-brand/30 px-8 py-4 text-4xl font-extrabold tracking-[0.35em] text-primary shadow-sm select-all">
                   {booking.pickupToken}
                 </span>
               </div>
