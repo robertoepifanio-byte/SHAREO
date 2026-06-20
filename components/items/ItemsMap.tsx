@@ -8,6 +8,7 @@
  */
 
 import { useState, useEffect, useRef } from "react"
+import { useTheme } from "next-themes"
 import Map, { Marker, Popup, NavigationControl } from "react-map-gl"
 import type { MapRef } from "react-map-gl"
 import Link from "next/link"
@@ -47,6 +48,16 @@ export function ItemsMap({
   const mounted  = useRef(false)
   const loaded   = useRef(false)
   const [mapError, setMapError] = useState(false)
+
+  // Guard de montagem para tema — evita mismatch SSR/cliente com next-themes
+  const [themeMounted, setThemeMounted] = useState(false)
+  const { resolvedTheme } = useTheme()
+  useEffect(() => { setThemeMounted(true) }, [])
+
+  const mapStyle =
+    themeMounted && resolvedTheme === "dark"
+      ? "mapbox://styles/mapbox/dark-v11"
+      : "mapbox://styles/mapbox/streets-v12"
 
   useEffect(() => { setPopup(null) }, [items])
 
@@ -91,7 +102,7 @@ export function ItemsMap({
         mapboxAccessToken={TOKEN}
         initialViewState={{ latitude: defaultLat, longitude: defaultLng, zoom: defaultZoom }}
         style={{ width: "100%", height: "100%" }}
-        mapStyle="mapbox://styles/mapbox/streets-v12"
+        mapStyle={mapStyle}
         onClick={() => setPopup(null)}
         onLoad={() => { loaded.current = true }}
         onError={(e) => {
