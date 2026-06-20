@@ -76,7 +76,7 @@ export function FilterForm(props: FilterFormProps) {
               value=""
               checked={!props.categoryId}
               onChange={() => navigate({ categoryId: "" })}
-              className="accent-brand"
+              className="form-radio accent-brand"
             />
             Todas
           </label>
@@ -88,7 +88,7 @@ export function FilterForm(props: FilterFormProps) {
                 value={cat.id}
                 checked={props.categoryId === cat.id}
                 onChange={() => navigate({ categoryId: cat.id })}
-                className="accent-brand"
+                className="form-radio accent-brand"
               />
               {cat.name}
             </label>
@@ -111,7 +111,7 @@ export function FilterForm(props: FilterFormProps) {
             value={priceDisplay}
             aria-label="Preço máximo por dia em reais"
             onChange={(e) => handlePriceChange(e.target.value)}
-            className="flex-1 accent-brand"
+            className="form-range flex-1 accent-brand"
           />
           <span className="min-w-[44px] text-right text-xs font-semibold text-foreground">
             R${priceDisplay}
@@ -147,7 +147,7 @@ export function FilterForm(props: FilterFormProps) {
                 value={opt.value}
                 checked={(props.minRating ?? "") === opt.value}
                 onChange={() => navigate({ minRating: opt.value })}
-                className="accent-brand"
+                className="form-radio accent-brand"
               />
               {opt.label}
             </label>

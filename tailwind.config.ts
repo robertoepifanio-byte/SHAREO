@@ -327,8 +327,9 @@ const config: Config = {
   },
   plugins: [
     require('tailwindcss-animate'),
-    // Fase 1: estratégia base mantida — flip p/ { strategy: 'class' } virá com auditoria de inputs (pré-Fase 2)
-    require('@tailwindcss/forms'),
+    // Fase 2: strategy 'class' após auditoria completa de inputs (todos os controles crus
+    // receberam classes de bg/cor/borda explícitas — ver relatório Fase 2 no dark-mode-plan.md)
+    require('@tailwindcss/forms')({ strategy: 'class' }),
   ],
 }
 

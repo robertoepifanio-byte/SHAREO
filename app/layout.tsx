@@ -77,7 +77,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const nonce = headersList.get("x-nonce") ?? undefined
 
   return (
-    <html lang="pt-BR" className={`${montserrat.variable} ${inter.variable}`}>
+    <html lang="pt-BR" className={`${montserrat.variable} ${inter.variable}`} suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans antialiased">
         {/* JSON-LD é data block (não executado) — CSP script-src não se aplica, nonce dispensável */}
         <script
@@ -93,7 +93,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           Pular para o conteúdo principal
         </a>
         {/* Padding bottom garante que o BottomNav não tape o conteúdo no mobile */}
-        <Providers>
+        <Providers nonce={nonce}>
           <div id="main-content" className="pb-[72px] md:pb-0">
             {children}
             <AppFooter />

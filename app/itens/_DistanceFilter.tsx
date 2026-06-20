@@ -89,7 +89,7 @@ export function DistanceFilter({ dist, userLat, userLng, hasProfileLocation, onA
                   requestLocation(opt.value)
                 }
               }}
-              className="accent-brand"
+              className="form-radio accent-brand"
             />
             {opt.label}
           </label>

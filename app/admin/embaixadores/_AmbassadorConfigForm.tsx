@@ -82,7 +82,7 @@ export function AmbassadorConfigForm({ bronzeRate: b0, silverRate: s0, goldRate:
           type="checkbox"
           checked={payoutEnabled}
           onChange={(e) => togglePayout(e.target.checked)}
-          className="h-4 w-4 rounded border-border text-brand accent-brand"
+          className="form-checkbox h-4 w-4 rounded border-border text-brand accent-brand"
         />
         <label htmlFor="payout-toggle" className="text-sm font-medium text-foreground cursor-pointer">
           Payout habilitado{" "}
