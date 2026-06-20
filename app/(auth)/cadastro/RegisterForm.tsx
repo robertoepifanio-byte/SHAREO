@@ -149,7 +149,8 @@ export function RegisterForm() {
         return
       }
 
-      router.push("/dashboard")
+      // Boas-vindas: oferece explorar × completar cadastro (opcional) logo após criar a conta.
+      router.push("/bem-vindo")
       router.refresh()
     } catch {
       // signIn lançou exceção — conta foi criada, mas sessão falhou
