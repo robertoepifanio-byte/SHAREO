@@ -487,3 +487,62 @@ test('Plano E2E Acessibilidade — Contraste · Teclado · ARIA · Formulários'
     if (abortError) throw abortError
   }
 })
+
+// ---------------------------------------------------------------------------
+// Suite — Acessibilidade no MODO ESCURO (dark mode)
+//
+// Emula prefers-color-scheme: dark → next-themes (defaultTheme="system")
+// aplica a classe .dark no <html>, sem precisar de localStorage. Audita
+// contraste (WCAG 1.4.3) e ARIA nas mesmas páginas públicas, agora no tema
+// escuro. Pula automaticamente se o dark mode ainda não estiver no ambiente
+// (ex.: staging antes do deploy dos PRs do dark mode).
+// ---------------------------------------------------------------------------
+test('Acessibilidade — Modo Escuro (contraste + ARIA WCAG AA)', async ({ page }) => {
+  test.setTimeout(120_000)
+
+  // Força o tema do SO para escuro; next-themes resolve "system" → dark.
+  await page.emulateMedia({ colorScheme: 'dark' })
+
+  // Guard: se .dark não for aplicado, o dark mode não está neste ambiente.
+  await page.goto('/', { waitUntil: 'networkidle' })
+  const darkActive = await page.evaluate(() =>
+    document.documentElement.classList.contains('dark'),
+  )
+  test.skip(
+    !darkActive,
+    'Dark mode não ativo neste ambiente (PRs do dark mode ainda não deployados).',
+  )
+
+  const DARK_RULES = [
+    'color-contrast',
+    'image-alt', 'label', 'button-name', 'link-name',
+    'landmark-one-main', 'region', 'aria-valid-attr-value',
+    'aria-hidden-focus',
+  ]
+
+  const audits: PageAudit[] = []
+  for (const url of PUBLIC_PAGES) {
+    const audit = await auditPage(page, url, DARK_RULES)
+    audits.push(audit)
+    const isDark = await page.evaluate(() =>
+      document.documentElement.classList.contains('dark'),
+    )
+    expect(isDark, `página ${url} deve renderizar no tema escuro`).toBe(true)
+  }
+
+  test.info().annotations.push({
+    type: 'dark-a11y',
+    description: audits.map(summaryLine).join('\n'),
+  })
+
+  const blocking = audits
+    .flatMap((a) => a.violations)
+    .filter((v) => v.impact === 'critical' || v.impact === 'serious')
+
+  if (blocking.length > 0) {
+    const details = blocking
+      .map((v) => `  [${v.impact}] ${v.id}: ${v.description} — ${v.nodes[0]?.target[0] ?? '?'}`)
+      .join('\n')
+    throw new Error(`${blocking.length} violação(ões) WCAG AA no MODO ESCURO:\n${details}`)
+  }
+})
