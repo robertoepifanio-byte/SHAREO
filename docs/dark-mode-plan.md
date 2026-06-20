@@ -1,10 +1,39 @@
 # ShareO — Plano & Especificação do Modo Escuro (Dark Mode)
 
-**Versão:** 0.1 (rascunho para validação) · **Data:** 2026-06-19
+**Versão:** 0.2 (revisada por designer-shareo + fullstack-dev-shareo) · **Data:** 2026-06-19
 **Autores/Revisão:** orquestração técnica + papéis `designer-shareo` (UI/UX) e `fullstack-dev-shareo` (front-end). Pendente de validação com usuários e especialistas antes da implementação.
 **Escopo:** site web responsivo **mobile-first** (Next.js App Router). O app mobile Expo (`apps/mobile/`) e os e-mails transacionais (Resend) **ficam fora** deste plano.
 
 > Mobile-first é requisito do produto (CLAUDE.md). Toda decisão aqui é validada primeiro em **375px** e só então escalada para 768px/1280px.
+
+---
+
+## 0. Decisões incorporadas na v0.2 (revisão dos especialistas)
+
+Consolidação das duas revisões. **Estas decisões fecham os pontos marcados ⚠️ nas seções abaixo.**
+
+### Tokens fechados (revisão UI/UX)
+- **`primary` separado em dois tokens:** `primary` (fill) = `#1E4D80` (texto branco 9.2:1) **e** `primary-text` (navy como texto) = `#4A90D9` (7.1:1 sobre bg). O `#1E4D80` reprova como texto (3.6:1) — usar só como fundo.
+- **Status fechados** (texto sobre bg `#0B1524`): `confirmed #5BA3E0` (8.6:1), `returned #B49AF5` (9.2:1), `disputed #F0A35E` (7.8:1) — todos AA. `item.inactive` clareia p/ `#B0BEC5` (5.2:1 sobre surface).
+- **Tokens `orange`** entram na paleta dark: `orange.link #9A4700` (9.6:1) e `orange.cta #C05800` (6.7:1) passam como texto; `#F97316` segue só decorativo.
+- **`accent #59C686` como texto é permitido SÓ no dark** (8.5:1); em modo claro continua proibido como texto (2.1:1).
+- **`ringOffsetColor` dark = a superfície** (`#15233B`), não branco — senão halo branco no foco.
+- **`muted` dark:** `muted.DEFAULT #26395A` (skeletons), `muted.foreground #94A3B8`.
+- **Header no dark = `surface #15233B` + borda inferior `#26395A`** (NÃO o navy, que some no fundo: navy×bg = 2.1:1).
+- **Estados de componente** (antes ausentes): Button hover dark `#008C43`; Button disabled `bg #26395A`/`text #4A5E7A`; Input erro usa borda `#F08C84`; ItemCard hover = borda `#26395A`→`#4A90D9` (sombra some no dark).
+
+### Arquitetura fechada (revisão front-end)
+- **~40 CSS variables** no total: tokens-objeto (`brand`*5, `primary`*3, `booking`*7, `orange`*5, `destructive`*4, `success`*3, `item`*3, `disabled`*3, `muted`*2…) viram **uma var por sub-chave** em canais RGB. A Fase 1 precisa da tabela exaustiva, não "idem para os demais".
+- **`@tailwindcss/forms` → `{ strategy: 'class' }`** na Fase 1: por padrão o plugin injeta `background/border/color` hex fixos em `[type=...]` e **ignora CSS vars** → inputs ficariam brancos no dark.
+- **CSP/no-FOUC — a infra de nonce já existe** (`middleware.ts`: `generateNonce`/`buildCsp(nonce)`/header `x-nonce`; `app/layout.tsx` lê o nonce e já passa p/ `GoogleAnalytics`). Fix concreto: `<ThemeProvider nonce={nonce} attribute="class" …>` com `nonce = headers().get("x-nonce")`. Prod tem `script-src 'self' 'nonce-…'` **sem** `'unsafe-inline'` → sem o nonce o script do `next-themes` é bloqueado. Dev já tem `'unsafe-inline'`.
+- **`suppressHydrationWarning` no `<html>`** (hoje só está no `<body>`, `app/layout.tsx`) — é no `<html>` que o `next-themes` troca a classe.
+- **Mapbox** (`components/items/ItemsMap.tsx:94`, hoje `streets-v12` fixo): `const mapStyle = (resolvedTheme ?? "light") === "dark" ? "…/dark-v11" : "…/streets-v12"` via `useTheme()` (já é client). `?? "light"` evita flash no 1º render SSR.
+- **Sonner** (`<Toaster>` em `app/layout.tsx`, Server Component): mover p/ um **client leaf** que use `useTheme()` e passe `theme={resolvedTheme}` (ou `theme="system"` com a ressalva de ignorar o toggle manual).
+- **Dívida de cor fixa medida:** **~383 ocorrências em 45+ arquivos** (75 hex, 267 `text-white`/`bg-white`, 41 classes arbitrárias). Top ofensores: `AppFooter.tsx` (`bg-[#007B3C]` + 27×`text-white`), `ListaVIP.tsx` (gradiente `to-[#001f40]`→`navy-deep`), `FounderCaptureForm.tsx`, `MobileMenu.tsx`, `ajuda/page.tsx`+`SimuladorRenda.tsx` (`#144D81`→`blue-medium`). A Fase 3 deve ser **subdividida por grupo** (componentes navy-escuros × hex arbitrários × componentes comuns).
+
+### Riscos adicionados
+- **Monotonia do verde:** com superfícies navy escuras, o verde de ação vira o único tom quente — validar com **screenshots reais** (hero + página de item), não só swatches.
+- **`disableTransitionOnChange` × `slide-up` do MobileMenu:** a supressão de transição na troca de tema pode causar flash de layout se o toggle estiver no menu animado — testar o fluxo abrir-menu→trocar→fechar.
 
 ---
 
@@ -65,7 +94,9 @@ Levantado no código em 2026-06-19:
 
 ### 3.3 ⚠️ Gotcha ShareO — CSP do middleware
 
-O `next-themes` injeta um **`<script>` inline**. O `middleware.ts` do ShareO tem CSP restritiva (dois blocos, dev ~linha 44 / prod ~linha 57). Será preciso permitir esse inline via **nonce** ou um hash `sha256-…` em `script-src` (preferir nonce; não afrouxar para `'unsafe-inline'`). **Validar no staging** que o tema aplica sem violar CSP (checar console por bloqueio de script).
+O `next-themes` injeta um **`<script>` inline** no `<html>`. O `middleware.ts` do ShareO já tem **infra de nonce completa** (`generateNonce`, `buildCsp(nonce)`, header `x-nonce`) e o `app/layout.tsx` já lê o nonce e o passa para o `GoogleAnalytics`. Em **produção** o `script-src` é `'self' 'nonce-…'` **sem** `'unsafe-inline'` → sem o nonce o script do `next-themes` é bloqueado (em **dev** há `'unsafe-inline'`, então o problema só aparece no staging/prod).
+
+**Fix concreto (não afrouxar a CSP):** passar o nonce ao provider — `<ThemeProvider nonce={nonce} attribute="class" …>`, com `nonce = headers().get("x-nonce")` (mesmo mecanismo já usado pelo GA). `next-themes` ≥ 0.3 injeta o `nonce` no script inline. **Validar no staging** (console limpo, sem bloqueio de script).
 
 ### 3.4 Persistência e SSR
 
@@ -101,7 +132,8 @@ Valores de partida, com contraste **computado** (algoritmo WCAG 2.1). Marcados �
 | `brand-link` (verde como **texto/link**) **novo** | `#005F2E` | `#5BD08B` | **9.45:1** sobre bg ✅ |
 | `accent` (verde claro decorativo/ícone) | `#59C686` | `#59C686` | como texto no escuro = **8.58:1** ✅ |
 | `accent-foreground` (texto sobre accent) | `#003366` | `#003366` | manter texto escuro sobre verde claro |
-| `primary` (navy — chips/realces) | `#003366` | ⚠️ `#1E4D80` | navy puro some no fundo escuro; clarear p/ chips/badges |
+| `primary` (navy — **fill** chips/badges) | `#003366` | `#1E4D80` | texto branco sobre ele = 9.2:1 ✅ |
+| `primary-text` (navy como **texto**) **novo** | `#003366` | `#4A90D9` | 7.1:1 sobre bg ✅ (o `#1E4D80` reprova como texto: 3.6:1) |
 | `primary-foreground` | `#FFFFFF` | `#FFFFFF` | — |
 | `destructive` (fill) | `#C0392B` | `#D14438` | texto branco = **4.57:1** ✅ |
 | `destructive-text` (vermelho como texto) **novo** | `#C0392B` | `#F08C84` | **7.66:1** sobre bg ✅ |
@@ -114,9 +146,10 @@ No claro são fills/badges; no dark, quando usados como **texto**, precisam clar
 |---|---|---|---|
 | pending (amber) | `#F59E0B` | `#FBBF77` | 11.2:1 ✅ |
 | active (verde) | `#007B3C` | `#5BD08B` | 9.45:1 ✅ |
-| confirmed (azul) | `#144D81` | ⚠️ `#5BA3E0` (clarear) | validar |
-| returned (violet) | `#8B5CF6` | ⚠️ `#B49AF5` | validar |
-| disputed (laranja) | `#C05800` | ⚠️ `#F0A35E` | validar |
+| confirmed (azul) | `#144D81` | `#5BA3E0` | 8.6:1 ✅ |
+| returned (violet) | `#8B5CF6` | `#B49AF5` | 9.2:1 ✅ |
+| disputed (laranja) | `#C05800` | `#F0A35E` | 7.8:1 ✅ |
+| inactive (item) | `#94A3B8` | `#B0BEC5` | 5.2:1 sobre surface ✅ |
 
 > Toda a tabela completa de tokens entra no arquivo de design tokens na implementação; aqui ficam os representativos + os que já têm contraste fechado.
 
