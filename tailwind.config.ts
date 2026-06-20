@@ -227,14 +227,15 @@ const config: Config = {
 
       // ─── Sombras ─────────────────────────────────────────
       // Fase 1: navy hardcoded mantido — elevação dark é Fase 4
+      // Cor base via --shadow-rgb (navy no claro, preto no dark — ver globals.css)
       boxShadow: {
-        sm:    "0 1px 2px 0 rgb(0 51 102 / 0.05)",
-        DEFAULT:"0 1px 3px 0 rgb(0 51 102 / 0.10), 0 1px 2px -1px rgb(0 51 102 / 0.10)",
-        md:    "0 4px 6px -1px rgb(0 51 102 / 0.10), 0 2px 4px -2px rgb(0 51 102 / 0.10)",
-        lg:    "0 10px 15px -3px rgb(0 51 102 / 0.10), 0 4px 6px -4px rgb(0 51 102 / 0.10)",
-        xl:    "0 20px 25px -5px rgb(0 51 102 / 0.10), 0 8px 10px -6px rgb(0 51 102 / 0.10)",
-        card:  "0 2px 8px 0 rgb(0 51 102 / 0.08)",      // sombra padrão de cards
-        modal: "0 25px 50px -12px rgb(0 51 102 / 0.25)",
+        sm:    "0 1px 2px 0 rgb(var(--shadow-rgb) / 0.05)",
+        DEFAULT:"0 1px 3px 0 rgb(var(--shadow-rgb) / 0.10), 0 1px 2px -1px rgb(var(--shadow-rgb) / 0.10)",
+        md:    "0 4px 6px -1px rgb(var(--shadow-rgb) / 0.10), 0 2px 4px -2px rgb(var(--shadow-rgb) / 0.10)",
+        lg:    "0 10px 15px -3px rgb(var(--shadow-rgb) / 0.10), 0 4px 6px -4px rgb(var(--shadow-rgb) / 0.10)",
+        xl:    "0 20px 25px -5px rgb(var(--shadow-rgb) / 0.10), 0 8px 10px -6px rgb(var(--shadow-rgb) / 0.10)",
+        card:  "0 2px 8px 0 rgb(var(--shadow-rgb) / 0.08)",      // sombra padrão de cards
+        modal: "0 25px 50px -12px rgb(var(--shadow-rgb) / 0.25)",
         none:  "none",
       },
 
