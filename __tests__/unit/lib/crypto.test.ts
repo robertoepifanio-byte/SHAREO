@@ -3,6 +3,8 @@ import {
   verifyDocument,
   encryptDocument,
   decryptDocument,
+  encryptPII,
+  decryptPII,
   maskCPF,
   maskCNPJ,
 } from "@/lib/crypto"
@@ -149,6 +151,36 @@ describe("encryptDocument / decryptDocument", () => {
     const encrypted = encryptDocument("12345678900")
     delete process.env.ENCRYPTION_KEY
     expect(() => decryptDocument(encrypted)).toThrow("ENCRYPTION_KEY não definida")
+  })
+})
+
+// ---------------------------------------------------------------------------
+// encryptPII + decryptPII (round-trip) — KYB leve PJ (ADR-024)
+// ---------------------------------------------------------------------------
+
+describe("encryptPII / decryptPII", () => {
+  it("preserva texto com acentos e espaços (ao contrário de encryptDocument)", () => {
+    const nome = "José da Silva Conceição"
+    expect(decryptPII(encryptPII(nome))).toBe(nome)
+  })
+
+  it("NÃO remove dígitos/pontuação do texto", () => {
+    const nome = "Maria 2ª Aparecida-Souza"
+    expect(decryptPII(encryptPII(nome))).toBe(nome)
+  })
+
+  it("encryptDocument destruiria o nome (contraste que justifica encryptPII)", () => {
+    // encryptDocument filtra não-dígitos: um nome puramente textual vira string vazia.
+    expect(decryptDocument(encryptDocument("José Silva"))).toBe("")
+  })
+
+  it("dois encryptPII do mesmo input produzem ciphertexts diferentes (IV aleatório)", () => {
+    const nome = "João Responsável"
+    const a = encryptPII(nome)
+    const b = encryptPII(nome)
+    expect(a).not.toBe(b)
+    expect(decryptPII(a)).toBe(nome)
+    expect(decryptPII(b)).toBe(nome)
   })
 })
 

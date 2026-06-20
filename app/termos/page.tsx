@@ -45,6 +45,13 @@ export default async function TermosPage() {
             <p className="text-muted-foreground leading-relaxed">
               Para utilizar os serviços completos do ShareO, é necessário criar uma conta fornecendo informações verdadeiras e atualizadas. Você é responsável por manter a confidencialidade de sua senha e por todas as atividades realizadas em sua conta.
             </p>
+            <p className="text-muted-foreground leading-relaxed mt-2">
+              <strong>Contas Pessoa Jurídica (PJ):</strong> ao cadastrar uma empresa, o ShareO valida a situação cadastral do
+              CNPJ junto à Receita Federal, e quem realiza o cadastro declara, sob as penas da lei (art. 299 do Código Penal),
+              ser o representante legal da pessoa jurídica ou possuir poderes para representá-la. Essa declaração é registrada
+              com data, hora e endereço IP. CNPJs inativos, baixados ou suspensos não são aceitos, e o ShareO pode encerrar
+              contas cujo vínculo se mostre falso.
+            </p>
           </section>
 
           <section>

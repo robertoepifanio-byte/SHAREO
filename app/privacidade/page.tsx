@@ -37,6 +37,34 @@ export default function PrivacidadePage() {
           </section>
 
           <section>
+            <h2 className="text-lg font-bold text-primary">2.1. Dados de Contas Pessoa Jurídica (PJ)</h2>
+            <p className="text-muted-foreground leading-relaxed mb-2">
+              Ao cadastrar uma empresa, coletamos e tratamos dados adicionais para prevenção a fraude e segurança jurídica das transações:
+            </p>
+            <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+              <li>
+                <strong>Situação cadastral do CNPJ</strong> (razão social, situação na Receita Federal e data de abertura),
+                consultada em fontes públicas da Receita — dado público, tratado para cumprimento de obrigação legal e
+                regulatória (LGPD art. 7º, II).
+              </li>
+              <li>
+                <strong>Nome do responsável legal</strong> da empresa — necessário para identificar quem responde pela conta,
+                com base na execução do contrato (LGPD art. 7º, V) e no legítimo interesse de prevenção a fraude (art. 7º, IX).
+                É armazenado com criptografia.
+              </li>
+              <li>
+                <strong>Registro da declaração de vínculo</strong> (data, hora e endereço IP em que o responsável legal declarou
+                representar a empresa) — tratado com base no legítimo interesse, como evidência em eventual processo (art. 7º, IX).
+                O endereço IP da declaração é retido por até 5 anos.
+              </li>
+            </ul>
+            <p className="text-muted-foreground leading-relaxed mt-2">
+              Por não se basearem em consentimento, esses dados não podem ser revogados isoladamente — apenas mediante exclusão
+              da conta, respeitados os prazos legais de retenção.
+            </p>
+          </section>
+
+          <section>
             <h2 className="text-lg font-bold text-primary">3. Finalidade do Tratamento</h2>
             <p className="text-muted-foreground leading-relaxed mb-2">Usamos seus dados para:</p>
             <ul className="list-disc pl-5 space-y-1 text-muted-foreground">

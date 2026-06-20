@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
 import { maskCPF, maskCNPJ, maskCEP, maskPhone } from "@/lib/forms/masks"
 import { fetchAddressByCep } from "@/lib/forms/address"
-import { DPO_EMAIL } from "@/lib/legal-config"
+import { DPO_EMAIL, PJ_DECLARATION_TEXT } from "@/lib/legal-config"
 
 type UserType = "PF" | "PJ"
 
@@ -22,12 +22,15 @@ interface Initial {
 }
 
 interface FormErrors {
-  cpf?:   string
-  cnpj?:  string
-  phone?: string
-  city?:  string
-  state?: string
-  form?:  string
+  cpf?:              string
+  cnpj?:             string
+  cpfResponsavel?:   string
+  responsavelLegal?: string
+  declaracaoVinculoPJ?: string
+  phone?:            string
+  city?:             string
+  state?:            string
+  form?:             string
 }
 
 function initialPhoneMask(stored: string): string {
@@ -48,6 +51,9 @@ export function CompleteRegistrationForm({
   const [userType,     setUserType]     = useState<UserType>(initial.userType)
   const [cpf,          setCpf]          = useState("")
   const [cnpj,         setCnpj]         = useState("")
+  const [cpfResponsavel,   setCpfResponsavel]   = useState("")
+  const [responsavelLegal, setResponsavelLegal] = useState("")
+  const [declaracaoPJ,     setDeclaracaoPJ]     = useState(false)
   const [phone,        setPhone]        = useState(initialPhoneMask(initial.phone))
   const [zipCode,      setZipCode]      = useState(initial.cep ? maskCEP(initial.cep) : "")
   const [zipLoading,   setZipLoading]   = useState(false)
@@ -99,7 +105,12 @@ export function CompleteRegistrationForm({
   function validate(): FormErrors {
     const errs: FormErrors = {}
     if (userType === "PF" && !cpf)  errs.cpf   = "CPF obrigatório"
-    if (userType === "PJ" && !cnpj) errs.cnpj  = "CNPJ obrigatório"
+    if (userType === "PJ") {
+      if (!cnpj)                            errs.cnpj             = "CNPJ obrigatório"
+      if (!cpfResponsavel)                  errs.cpfResponsavel   = "CPF do responsável legal obrigatório"
+      if (responsavelLegal.trim().length < 3) errs.responsavelLegal = "Informe o nome do responsável legal"
+      if (!declaracaoPJ)                    errs.declaracaoVinculoPJ = "É necessário aceitar a declaração."
+    }
     if (!city.trim())               errs.city  = "Cidade obrigatória"
     if (state.length !== 2)         errs.state = "UF inválida (2 letras)"
     return errs
@@ -121,6 +132,9 @@ export function CompleteRegistrationForm({
       userType,
       cpf:          userType === "PF" ? cpf : undefined,
       cnpj:         userType === "PJ" ? cnpj : undefined,
+      cpfResponsavel:      userType === "PJ" ? cpfResponsavel : undefined,
+      responsavelLegal:    userType === "PJ" ? responsavelLegal.trim() : undefined,
+      declaracaoVinculoPJ: userType === "PJ" ? declaracaoPJ : undefined,
       phone:        phoneE164,
       city:         city.trim(),
       state:        state.trim().toUpperCase(),
@@ -142,7 +156,7 @@ export function CompleteRegistrationForm({
       const code    = json.error?.code as string
       const details = json.error?.details as Record<string, string[]> | undefined
       if (code === "VALIDATION_ERROR" && details) {
-        const fieldKeys = new Set(["cpf", "cnpj", "phone", "city", "state"])
+        const fieldKeys = new Set(["cpf", "cnpj", "cpfResponsavel", "responsavelLegal", "declaracaoVinculoPJ", "phone", "city", "state"])
         const mapped: FormErrors = {}
         for (const [k, msgs] of Object.entries(details)) {
           if (fieldKeys.has(k)) (mapped as Record<string, string>)[k] = msgs[0]
@@ -154,6 +168,8 @@ export function CompleteRegistrationForm({
       const MSG: Record<string, string> = {
         CPF_ALREADY_EXISTS:  "CPF já cadastrado em outra conta.",
         CNPJ_ALREADY_EXISTS: "CNPJ já cadastrado em outra conta.",
+        CNPJ_INACTIVE:       "Este CNPJ não está ativo na Receita Federal.",
+        CNPJ_NOT_FOUND:      "CNPJ não encontrado na Receita Federal.",
         RATE_LIMITED:        "Muitas tentativas. Aguarde um momento e tente novamente.",
       }
       setErrors({ form: MSG[code] ?? "Erro ao concluir o cadastro. Tente novamente." })
@@ -226,9 +242,52 @@ export function CompleteRegistrationForm({
             value={cnpj}
             onChange={handleCNPJ}
             error={errors.cnpj}
+            helper="Validamos a situação cadastral na Receita Federal."
             required
             disabled={loading}
           />
+        )}
+
+        {/* Responsável legal — exigido para PJ (KYB leve, ADR-024) */}
+        {userType === "PJ" && (
+          <>
+            <Input
+              label="CPF do responsável legal"
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              placeholder="000.000.000-00"
+              value={cpfResponsavel}
+              onChange={(e) => { setCpfResponsavel(maskCPF(e.target.value)); setErrors((p) => ({ ...p, cpfResponsavel: undefined })) }}
+              error={errors.cpfResponsavel}
+              required
+              disabled={loading}
+            />
+            <Input
+              label="Nome do responsável legal"
+              type="text"
+              autoComplete="name"
+              placeholder="Nome completo de quem representa a empresa"
+              value={responsavelLegal}
+              onChange={(e) => { setResponsavelLegal(e.target.value); setErrors((p) => ({ ...p, responsavelLegal: undefined })) }}
+              error={errors.responsavelLegal}
+              required
+              disabled={loading}
+            />
+            <label className="flex cursor-pointer items-start gap-2.5 rounded-md border border-border bg-background px-3 py-2.5">
+              <input
+                type="checkbox"
+                checked={declaracaoPJ}
+                onChange={(e) => { setDeclaracaoPJ(e.target.checked); setErrors((p) => ({ ...p, declaracaoVinculoPJ: undefined })) }}
+                disabled={loading}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-brand"
+              />
+              <span className="text-xs leading-snug text-muted-foreground">{PJ_DECLARATION_TEXT}</span>
+            </label>
+            {errors.declaracaoVinculoPJ && (
+              <p role="alert" className="-mt-2 text-xs text-destructive">{errors.declaracaoVinculoPJ}</p>
+            )}
+          </>
         )}
 
         <Input

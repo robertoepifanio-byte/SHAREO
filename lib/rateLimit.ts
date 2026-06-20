@@ -72,6 +72,7 @@ export const RATE_LIMITS = {
   passwordChange: { limit: 5,  windowMs: 15 * 60 * 1000 },      // 5/15min por usuário
   checkout:       { limit: 10, windowMs: 60_000 },              // 10/min por usuário
   upgradePj:      { limit: 5,  windowMs: 60_000 },              // 5/min por usuário
+  upgradePjCnpj:  { limit: 3,  windowMs: 24 * 60 * 60 * 1000 }, // 3/dia por CNPJ (anti-abuso fail-open, ADR-024)
   pjWebhooks:     { limit: 10, windowMs: 60_000 },              // 10/min por usuário
   adminCreate:    { limit: 5,  windowMs: 24 * 60 * 60 * 1000 }, // 5/dia por admin
 } as const
