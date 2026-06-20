@@ -20,6 +20,15 @@ enum UserType {
   PJ // Pessoa Jurídica — usa CNPJ
 }
 
+// Situação cadastral do CNPJ na Receita Federal (KYB leve PJ, ADR-024).
+enum CnpjSituacao {
+  ATIVA
+  SUSPENSA
+  INAPTA
+  BAIXADA
+  NULA
+}
+
 enum UserRole {
   USER
   ADMIN
@@ -39,10 +48,10 @@ enum ItemCondition {
 }
 
 enum ItemStatus {
-  DRAFT     // Rascunho — sem fotos; não aparece em listagens públicas
+  DRAFT // Rascunho — sem fotos; não aparece em listagens públicas
   AVAILABLE // Publicado e disponível para reserva
-  PAUSED    // Pausado pelo proprietário
-  DELETED   // Soft-delete — fonte de verdade para exclusão lógica
+  PAUSED // Pausado pelo proprietário
+  DELETED // Soft-delete — fonte de verdade para exclusão lógica
 }
 
 enum BookingStatus {
@@ -85,10 +94,10 @@ enum NotificationType {
   LATE_FEE_APPLIED
   ID_VERIFIED
   ID_REJECTED
-  RETURN_REMINDER          // P2-59 — lembrete manual de devolução enviado pelo proprietário
-  AMBASSADOR_COMMISSION    // ADR-022 — comissão gerada por locação de indicado
-  AMBASSADOR_TIER_UP       // ADR-022 — embaixador subiu de tier
-  COUPON_EARNED            // P3-20 — cupom de desconto ganho por avaliar
+  RETURN_REMINDER // P2-59 — lembrete manual de devolução enviado pelo proprietário
+  AMBASSADOR_COMMISSION // ADR-022 — comissão gerada por locação de indicado
+  AMBASSADOR_TIER_UP // ADR-022 — embaixador subiu de tier
+  COUPON_EARNED // P3-20 — cupom de desconto ganho por avaliar
 }
 
 enum CheckPhase {
@@ -138,19 +147,19 @@ enum TransactionType {
 enum AmbassadorTier {
   BRONZE // 1–10 indicados ativos — 3% da taxa
   SILVER // 11–50 indicados ativos — 5% da taxa
-  GOLD   // 51+ indicados ativos — 7% da taxa
+  GOLD // 51+ indicados ativos — 7% da taxa
 }
 
 enum ReferralStatus {
   PENDING // indicado se cadastrou, ainda sem reserva paga
-  ACTIVE  // primeira reserva paga concluída — conta no tier
+  ACTIVE // primeira reserva paga concluída — conta no tier
   EXPIRED // sem reserva paga nos últimos 12 meses
 }
 
 enum CommissionStatus {
-  PENDING   // criada no webhook Stripe (checkout.session.completed)
-  APPROVED  // T+7 dias após COMPLETED do booking — janela anti-dispute
-  PAID      // pago via PIX/Connect — BLOQUEADO até D4 jurídico
+  PENDING // criada no webhook Stripe (checkout.session.completed)
+  APPROVED // T+7 dias após COMPLETED do booking — janela anti-dispute
+  PAID // pago via PIX/Connect — BLOQUEADO até D4 jurídico
   CANCELLED // booking refunded, cancelled ou dispute lost
 }
 
@@ -183,16 +192,16 @@ enum FounderWave {
 }
 
 enum LeadStatus {
-  PENDING      // E-mail cadastrado, aguardando convite
-  INVITED      // Link de convite enviado
-  CONVERTED    // Usuário criou conta via convite
+  PENDING // E-mail cadastrado, aguardando convite
+  INVITED // Link de convite enviado
+  CONVERTED // Usuário criou conta via convite
   UNSUBSCRIBED // Pediu exclusão
 }
 
 enum SignupSource {
-  ORGANIC     // Acesso direto / orgânico
+  ORGANIC // Acesso direto / orgânico
   VIP_LANDING // Formulário "Entrar na Lista"
-  REFERRAL    // Indicação de outro usuário
+  REFERRAL // Indicação de outro usuário
   GOOGLE_ADS
   META_ADS
 }
@@ -200,17 +209,17 @@ enum SignupSource {
 // ─── Models ──────────────────────────────────────────────
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
+  id                  String     @id @default(cuid())
+  email               String     @unique
   emailVerified       DateTime?
-  emailVerifyToken    String?   @unique
+  emailVerifyToken    String?    @unique
   emailTokenExpiresAt DateTime?
-  passwordHash  String?
-  name          String
-  phone         String?
-  userType      UserType  @default(PF)
-  role          UserRole  @default(USER)
-  adminRole     AdminRole? // só presente em usuários com role=ADMIN; define o escopo de permissões
+  passwordHash        String?
+  name                String
+  phone               String?
+  userType            UserType   @default(PF)
+  role                UserRole   @default(USER)
+  adminRole           AdminRole? // só presente em usuários com role=ADMIN; define o escopo de permissões
 
   // Documentos — armazenados criptografados (ver ADR-004)
   // Nunca expor em respostas de API sem mascaramento
@@ -225,8 +234,8 @@ model User {
   bio       String? @db.Text
 
   // Localização (base do usuário — para geo-search de proximidade)
-  cep          String? @db.Char(8)  // somente dígitos, ex.: "59114270"
-  street       String?              // logradouro preenchido via ViaCEP
+  cep          String? @db.Char(8) // somente dígitos, ex.: "59114270"
+  street       String? // logradouro preenchido via ViaCEP
   neighborhood String?
   city         String?
   state        String? @db.Char(2)
@@ -237,17 +246,17 @@ model User {
 
   // Programa de indicação / Embaixadores (ADR-022)
   // referralCode: slug único do link de indicação (mantido por compatibilidade — ex.: "JOAO-X4K2")
-  referralCode    String?          @unique
-  referredById    String? // quem indicou este usuário (atribuição direta no User)
-  referredBy      User?            @relation("Referrals", fields: [referredById], references: [id])
-  referrals       User[]           @relation("Referrals")
+  referralCode          String?                @unique
+  referredById          String? // quem indicou este usuário (atribuição direta no User)
+  referredBy            User?                  @relation("Referrals", fields: [referredById], references: [id])
+  referrals             User[]                 @relation("Referrals")
   // Perfil de embaixador (opt-in explícito, criado quando o usuário aceita o termo do programa)
   ambassadorProfile     AmbassadorProfile?
   // Arestas do grafo de indicações (ADR-022) — denormalizadas além do referredById para suportar
   // status (PENDING/ACTIVE/EXPIRED) e janela de 12 meses para cálculo de tier
-  referralsAsReferrer   Referral[]              @relation("ReferralsAsReferrer")
-  referralAsReferred    Referral?               @relation("ReferralAsReferred")
-  ambassadorCommissions AmbassadorCommission[]  @relation("AmbassadorCommissions")
+  referralsAsReferrer   Referral[]             @relation("ReferralsAsReferrer")
+  referralAsReferred    Referral?              @relation("ReferralAsReferred")
+  ambassadorCommissions AmbassadorCommission[] @relation("AmbassadorCommissions")
 
   isVerified Boolean @default(false)
   isActive   Boolean @default(true)
@@ -274,12 +283,28 @@ model User {
   // exigido só ao Anunciar ou Alugar.
   profileCompletedAt DateTime?
 
+  // ─── KYB leve PJ (ADR-024) ──────────────────────────────────
+  // Dados da Receita (M1/M3) + declaração de responsável legal (M2).
+  // razaoSocial/situacao/dataAbertura: dados públicos da Receita (plaintext OK).
+  // cnpjSituacaoVerificada=false → entrou em estado de revisão (fail-open: API indisponível).
+  cnpjRazaoSocial               String?       @db.VarChar(150)
+  cnpjSituacao                  CnpjSituacao?
+  cnpjDataAbertura              DateTime?     @db.Date
+  cnpjSituacaoVerificada        Boolean       @default(false)
+  cnpjVerificadoAt              DateTime? // última verificação bem-sucedida na Receita
+  cnpjResponsavelLegalEncrypted String? // PII — AES-256-GCM via encryptPII (parecer Segurança)
+  cnpjDeclaracaoAt              DateTime? // momento da declaração de vínculo (auditoria)
+  cnpjDeclaracaoIp              String? // IP da declaração — plaintext, retenção 5a (LGPD art.7º IX)
+  cnpjDeclaracaoVersion         String? // CONSENT_VERSION vigente na declaração
+  cnpjVerificacaoOverrideBy     String? // User.id do admin que liberou em revisão manual
+  cnpjVerificacaoOverrideAt     DateTime?
+
   // Programa Fundadores (não ativar customFeeRate/searchBoost antes do D4 jurídico)
-  isFounder        Boolean     @default(false)
+  isFounder        Boolean      @default(false)
   founderWave      FounderWave?
   founderJoinedAt  DateTime?
-  customFeeRate    Int?         // basis points; null → usa taxa global
-  searchBoost      Float?       // multiplicador de relevância; null → 1.0
+  customFeeRate    Int? // basis points; null → usa taxa global
+  searchBoost      Float? // multiplicador de relevância; null → 1.0
   signupSource     SignupSource @default(ORGANIC)
   signupSourceMeta Json?
 
@@ -288,18 +313,18 @@ model User {
   deletedAt DateTime? // soft delete — nunca delete fisicamente
 
   // Relações
-  items              Item[]
-  bookingsAsBorrower Booking[]                 @relation("BorrowerBookings")
-  bookingsAsOwner    Booking[]                 @relation("OwnerBookings")
-  reviewsGiven       Review[]                  @relation("ReviewsGiven")
-  reviewsReceived    Review[]                  @relation("ReviewsReceived")
-  favorites          Favorite[]
-  messages           Message[]
-  conversations      ConversationParticipant[]
-  notifications      Notification[]
-  adminLogs          AdminLog[]
-  exportJobs         ExportJob[]
-  outboundWebhooks   OutboundWebhook[]
+  items               Item[]
+  bookingsAsBorrower  Booking[]                 @relation("BorrowerBookings")
+  bookingsAsOwner     Booking[]                 @relation("OwnerBookings")
+  reviewsGiven        Review[]                  @relation("ReviewsGiven")
+  reviewsReceived     Review[]                  @relation("ReviewsReceived")
+  favorites           Favorite[]
+  messages            Message[]
+  conversations       ConversationParticipant[]
+  notifications       Notification[]
+  adminLogs           AdminLog[]
+  exportJobs          ExportJob[]
+  outboundWebhooks    OutboundWebhook[]
   // NextAuth.js — @auth/prisma-adapter
   accounts            Account[]
   sessions            Session[]
@@ -462,12 +487,12 @@ model Booking {
   extensionRespondedAt      DateTime? // quando o proprietário respondeu
 
   // Financeiro — FIN-1.1
-  platformFeeRate      Int?
-  platformFeeAmount    Int?
-  ownerNetAmount       Int?
-  stripeFee            Int?
-  depositStatus        DepositStatus @default(NONE)
-  stripeDisputeId      String?
+  platformFeeRate   Int?
+  platformFeeAmount Int?
+  ownerNetAmount    Int?
+  stripeFee         Int?
+  depositStatus     DepositStatus @default(NONE)
+  stripeDisputeId   String?
 
   // P3-20 — desconto de cupom aplicado na criação (absorvido pela taxa da plataforma, não pelo proprietário)
   discountCents Int?
@@ -499,12 +524,12 @@ model Booking {
 // P3-20 — cupom de desconto ganho ao avaliar (1 por reserva avaliada por usuário).
 // O desconto é absorvido pela taxa da plataforma; o proprietário recebe o valor cheio.
 model Coupon {
-  id         String  @id @default(cuid())
+  id         String @id @default(cuid())
   userId     String
-  user       User    @relation(fields: [userId], references: [id])
-  code       String  @unique
+  user       User   @relation(fields: [userId], references: [id])
+  code       String @unique
   percentOff Int // ex.: 10 = 10%
-  source     String  @default("review_reward")
+  source     String @default("review_reward")
 
   // Reserva que originou o cupom (impede cupom duplicado pela mesma reserva)
   sourceBookingId String?
@@ -512,8 +537,8 @@ model Coupon {
   expiresAt DateTime
   usedAt    DateTime?
   // Reserva onde o cupom foi usado
-  bookingId String?  @unique
-  booking   Booking? @relation("CouponUsedInBooking", fields: [bookingId], references: [id])
+  bookingId String?   @unique
+  booking   Booking?  @relation("CouponUsedInBooking", fields: [bookingId], references: [id])
 
   createdAt DateTime @default(now())
 
@@ -534,8 +559,8 @@ model Review {
   item       Item?   @relation(fields: [itemId], references: [id])
 
   reviewType ReviewType
-  rating     Int     // 1–5 overall
-  comment    String? @db.Text
+  rating     Int // 1–5 overall
+  comment    String?    @db.Text
 
   // P3-68: emoji de satisfação (😠1 😕2 😐3 😊4 😍5)
   sentiment       Int?
@@ -755,17 +780,17 @@ model ContractAcceptance {
 // ─── Módulo Financeiro — FIN-1.1 ─────────────────────────────────────────────
 
 model OwnerPaymentAccount {
-  id          String           @id @default(cuid())
-  userId      String           @unique
-  user        User             @relation(fields: [userId], references: [id])
-  pixKeyType  PixKeyType
-  pixKey      String
-  holderName  String
-  bankName    String?
-  status      PixAccountStatus @default(PENDING_VERIFICATION)
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  payouts     Payout[]
+  id         String           @id @default(cuid())
+  userId     String           @unique
+  user       User             @relation(fields: [userId], references: [id])
+  pixKeyType PixKeyType
+  pixKey     String
+  holderName String
+  bankName   String?
+  status     PixAccountStatus @default(PENDING_VERIFICATION)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  payouts    Payout[]
 
   @@map("owner_payment_accounts")
 }
@@ -815,16 +840,16 @@ model PlatformConfig {
 }
 
 model ExportJob {
-  id          String          @id @default(cuid())
-  requestedBy String
-  admin       User            @relation(fields: [requestedBy], references: [id])
-  periodStart DateTime
-  periodEnd   DateTime
-  status      ExportJobStatus @default(PENDING)
-  fileUrl     String?         // URL assinada do Supabase Storage (validade 48h)
+  id           String          @id @default(cuid())
+  requestedBy  String
+  admin        User            @relation(fields: [requestedBy], references: [id])
+  periodStart  DateTime
+  periodEnd    DateTime
+  status       ExportJobStatus @default(PENDING)
+  fileUrl      String? // URL assinada do Supabase Storage (validade 48h)
   errorMessage String?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
 
   @@index([requestedBy, createdAt])
   @@index([status])
@@ -849,13 +874,13 @@ model StripeEventQueue {
 // ─── Programa Fundadores ──────────────────────────────────
 
 model FounderLead {
-  id            String      @id @default(cuid())
-  email         String      @unique
+  id            String       @id @default(cuid())
+  email         String       @unique
   name          String?
-  intent        String      @default("proprietario") // "proprietario" | "locatario"
-  queuePosition Int         @unique @default(autoincrement())
-  wave          FounderWave @default(WAVE_1)          // atualizado pela API após create
-  status        LeadStatus  @default(PENDING)
+  intent        String       @default("proprietario") // "proprietario" | "locatario"
+  queuePosition Int          @unique @default(autoincrement())
+  wave          FounderWave  @default(WAVE_1) // atualizado pela API após create
+  status        LeadStatus   @default(PENDING)
   source        SignupSource @default(VIP_LANDING)
 
   // Localização do interessado — define a região dos pilotos (Piloto 1, Piloto 2…)
@@ -876,8 +901,8 @@ model FounderLead {
   consentUserAgent   String?  @db.VarChar(500)
 
   // Conversão: preenchido quando lead cria conta via link de convite
-  convertedUserId String?  @unique
-  convertedUser   User?    @relation(fields: [convertedUserId], references: [id])
+  convertedUserId String?   @unique
+  convertedUser   User?     @relation(fields: [convertedUserId], references: [id])
   invitedAt       DateTime?
   convertedAt     DateTime?
 
@@ -891,15 +916,15 @@ model FounderLead {
 }
 
 model FounderBenefit {
-  id          String      @id @default(cuid())
-  wave        FounderWave
-  key         String      // "feeRate" | "searchBoost" | "freeVerification"
-  value       String      // string-encoded (basis points, float, "true"/"false")
-  description String?
-  active      Boolean     @default(true)
-  effectiveFrom  DateTime @default(now())
+  id             String      @id @default(cuid())
+  wave           FounderWave
+  key            String // "feeRate" | "searchBoost" | "freeVerification"
+  value          String // string-encoded (basis points, float, "true"/"false")
+  description    String?
+  active         Boolean     @default(true)
+  effectiveFrom  DateTime    @default(now())
   effectiveUntil DateTime?
-  createdAt      DateTime @default(now())
+  createdAt      DateTime    @default(now())
 
   @@unique([wave, key])
   @@map("founder_benefits")
@@ -909,7 +934,7 @@ model FounderAuditLog {
   id        String   @id @default(cuid())
   leadId    String?
   userId    String?
-  action    String   // "LEAD_CREATED" | "INVITED" | "CONVERTED" | "UNSUBSCRIBED"
+  action    String // "LEAD_CREATED" | "INVITED" | "CONVERTED" | "UNSUBSCRIBED"
   metadata  Json?
   createdAt DateTime @default(now())
 
@@ -936,20 +961,20 @@ model AmbassadorProfile {
 
   // Totais acumulados em centavos (denormalizados para dashboard).
   // Recalculáveis a partir de AmbassadorCommission — campos são cache.
-  totalCommissionPendingCents  Int @default(0) // soma de PENDING + APPROVED ainda não pagas
-  totalCommissionPaidCents     Int @default(0) // soma de PAID (zero no MVP até D4)
+  totalCommissionPendingCents   Int @default(0) // soma de PENDING + APPROVED ainda não pagas
+  totalCommissionPaidCents      Int @default(0) // soma de PAID (zero no MVP até D4)
   totalCommissionCancelledCents Int @default(0) // soma de CANCELLED — métrica de qualidade
 
   // Conta de payout — preenchido quando D4 destravar
-  pixKey                  String?
-  pixKeyType              PixKeyType?
-  stripeConnectAccountId  String?     // reservado para evolução pós-dez/2026
+  pixKey                 String?
+  pixKeyType             PixKeyType?
+  stripeConnectAccountId String? // reservado para evolução pós-dez/2026
 
   // LGPD — opt-in auditável
   consentAt        DateTime
-  consentVersion   String   @default("v1.0")
+  consentVersion   String    @default("v1.0")
   consentIp        String?
-  consentUserAgent String?  @db.VarChar(500)
+  consentUserAgent String?   @db.VarChar(500)
   revokedAt        DateTime? // null = ativo; preencher encerra atribuição futura
 
   createdAt DateTime @default(now())
@@ -965,16 +990,16 @@ model AmbassadorProfile {
 /// Único por par — bloqueia duplicação. Persiste após EXPIRED para auditoria.
 /// Status PENDING vira ACTIVE no primeiro booking pago do indicado; EXPIRED após 12 meses sem atividade.
 model Referral {
-  id           String         @id @default(cuid())
-  referrerId   String
-  referrer     User           @relation("ReferralsAsReferrer", fields: [referrerId], references: [id])
-  referredId   String         @unique // 1:1 — um usuário só pode ter sido indicado uma vez
-  referred     User           @relation("ReferralAsReferred", fields: [referredId], references: [id])
-  status       ReferralStatus @default(PENDING)
-  activatedAt  DateTime?      // preenchido quando vira ACTIVE
-  expiredAt    DateTime?      // preenchido quando vira EXPIRED
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  id          String         @id @default(cuid())
+  referrerId  String
+  referrer    User           @relation("ReferralsAsReferrer", fields: [referrerId], references: [id])
+  referredId  String         @unique // 1:1 — um usuário só pode ter sido indicado uma vez
+  referred    User           @relation("ReferralAsReferred", fields: [referredId], references: [id])
+  status      ReferralStatus @default(PENDING)
+  activatedAt DateTime? // preenchido quando vira ACTIVE
+  expiredAt   DateTime? // preenchido quando vira EXPIRED
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 
   commissions AmbassadorCommission[]
 
@@ -989,27 +1014,27 @@ model Referral {
 /// Tier e taxa são capturados no momento da criação — auditoria garantida mesmo após
 /// embaixador subir/descer de tier ou taxa da plataforma mudar.
 model AmbassadorCommission {
-  id                  String           @id @default(cuid())
+  id                  String            @id @default(cuid())
   ambassadorProfileId String
   ambassadorProfile   AmbassadorProfile @relation(fields: [ambassadorProfileId], references: [id])
-  ambassadorUserId    String           // denormalizado para joins rápidos
-  ambassadorUser      User             @relation("AmbassadorCommissions", fields: [ambassadorUserId], references: [id])
+  ambassadorUserId    String // denormalizado para joins rápidos
+  ambassadorUser      User              @relation("AmbassadorCommissions", fields: [ambassadorUserId], references: [id])
   referralId          String
-  referral            Referral         @relation(fields: [referralId], references: [id])
+  referral            Referral          @relation(fields: [referralId], references: [id])
   bookingId           String
-  booking             Booking          @relation(fields: [bookingId], references: [id])
+  booking             Booking           @relation(fields: [bookingId], references: [id])
 
   // Snapshot — imutável após criação
-  tierSnapshot        AmbassadorTier   // tier vigente no momento da geração
-  tierPercentBp       Int              // 300 | 500 | 700
-  platformFeeAmount   Int              // centavos — capturado do Booking
-  amountCents         Int              // platformFeeAmount * tierPercentBp / 10000
+  tierSnapshot      AmbassadorTier // tier vigente no momento da geração
+  tierPercentBp     Int // 300 | 500 | 700
+  platformFeeAmount Int // centavos — capturado do Booking
+  amountCents       Int // platformFeeAmount * tierPercentBp / 10000
 
-  status              CommissionStatus @default(PENDING)
-  approvedAt          DateTime?        // marcado pelo cron T+7 após Booking COMPLETED
-  paidAt              DateTime?        // bloqueado até D4 — sempre null no MVP
-  cancelledAt         DateTime?
-  cancelReason        String?
+  status       CommissionStatus @default(PENDING)
+  approvedAt   DateTime? // marcado pelo cron T+7 após Booking COMPLETED
+  paidAt       DateTime? // bloqueado até D4 — sempre null no MVP
+  cancelledAt  DateTime?
+  cancelReason String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

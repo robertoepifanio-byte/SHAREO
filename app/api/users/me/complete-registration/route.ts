@@ -1,11 +1,22 @@
 import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
+import type { Prisma } from "@prisma/client"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { hashDocument, encryptDocument } from "@/lib/crypto"
 import { CompleteRegistrationSchema } from "@/lib/validations/auth"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { geocodeUserLocation } from "@/lib/geocodeUser"
+import {
+  verifyCnpjAtReceita,
+  buildPjUpdateData,
+  PjVerificationError,
+  type PjVerificationResult,
+} from "@/lib/pjVerification"
+
+function clientIp(req: NextRequest): string {
+  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown"
+}
 
 // Cadastro progressivo — conclui o cadastro completo (documento + endereço) exigido ao
 // Anunciar/Alugar. Marca profileCompletedAt, liberando os gates (lib/registration.ts).
@@ -75,26 +86,82 @@ export async function PATCH(req: NextRequest) {
           { status: 409 },
         )
       }
+      // KYB leve (M4): o CPF do responsável legal também precisa ser único.
+      if (d.cpfResponsavel) {
+        const cpfHash = hashDocument(d.cpfResponsavel)
+        const cpfClash = await prisma.user.findFirst({
+          where:  { cpfHash, id: { not: userId } },
+          select: { id: true },
+        })
+        if (cpfClash) {
+          return NextResponse.json(
+            { error: { code: "CPF_ALREADY_EXISTS", message: "CPF do responsável legal já cadastrado em outra conta." } },
+            { status: 409 },
+          )
+        }
+      }
+    }
+
+    const commonData = {
+      phone:        d.phone || null,
+      cep:          d.zipCode || null,
+      street:       d.street || null,
+      neighborhood: d.neighborhood || null,
+      city:         d.city,
+      state:        d.state,
+      profileCompletedAt: current.profileCompletedAt ?? new Date(),
+      ageDeclaredAt:      current.ageDeclaredAt ?? new Date(),
+    }
+
+    let data: Prisma.UserUpdateInput
+    if (d.userType === "PJ") {
+      // M1 — consulta a Receita (fail-open controlado: indisponibilidade não bloqueia).
+      let verification: PjVerificationResult | null = null
+      try {
+        verification = await verifyCnpjAtReceita(d.cnpj!)
+      } catch (e) {
+        if (e instanceof PjVerificationError) {
+          if (e.code === "CNPJ_INACTIVE") {
+            return NextResponse.json(
+              { error: { code: "CNPJ_INACTIVE", message: "Este CNPJ não está ativo na Receita Federal." } },
+              { status: 422 },
+            )
+          }
+          if (e.code === "CNPJ_NOT_FOUND") {
+            return NextResponse.json(
+              { error: { code: "CNPJ_NOT_FOUND", message: "CNPJ não encontrado na Receita Federal." } },
+              { status: 422 },
+            )
+          }
+          // VERIFICATION_UNAVAILABLE → segue com verification = null (revisão).
+        } else {
+          throw e
+        }
+      }
+      // M4: o CPF do responsável legal vira o cpfHash/cpfEncrypted da conta PJ.
+      data = {
+        ...buildPjUpdateData(
+          { cnpj: d.cnpj!, responsavelLegal: d.responsavelLegal!, declaracaoIp: clientIp(req) },
+          verification,
+        ),
+        cpfHash:      hashDocument(d.cpfResponsavel!),
+        cpfEncrypted: encryptDocument(d.cpfResponsavel!),
+        ...commonData,
+      }
+    } else {
+      data = {
+        userType:      "PF",
+        cpfHash:       d.cpf ? hashDocument(d.cpf)    : null,
+        cpfEncrypted:  d.cpf ? encryptDocument(d.cpf) : null,
+        cnpjHash:      null,
+        cnpjEncrypted: null,
+        ...commonData,
+      }
     }
 
     const updated = await prisma.user.update({
       where: { id: userId },
-      data: {
-        userType:      d.userType,
-        // grava o documento do tipo escolhido; limpa o outro para manter consistência
-        cpfHash:       d.userType === "PF" && d.cpf  ? hashDocument(d.cpf)     : null,
-        cpfEncrypted:  d.userType === "PF" && d.cpf  ? encryptDocument(d.cpf)  : null,
-        cnpjHash:      d.userType === "PJ" && d.cnpj ? hashDocument(d.cnpj)    : null,
-        cnpjEncrypted: d.userType === "PJ" && d.cnpj ? encryptDocument(d.cnpj) : null,
-        phone:         d.phone || null,
-        cep:           d.zipCode || null,
-        street:        d.street || null,
-        neighborhood:  d.neighborhood || null,
-        city:          d.city,
-        state:         d.state,
-        profileCompletedAt: current.profileCompletedAt ?? new Date(),
-        ageDeclaredAt:      current.ageDeclaredAt ?? new Date(),
-      },
+      data,
       select: { id: true, userType: true, city: true, state: true, street: true, neighborhood: true, profileCompletedAt: true },
     })
 

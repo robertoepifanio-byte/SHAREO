@@ -64,6 +64,17 @@ const NAV: { href: string; label: string; roles: AdminRole[]; icon: React.ReactN
     ),
   },
   {
+    href:  "/admin/usuarios/kyb-pendentes",
+    label: "Revisão PJ",
+    roles: ["ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL"],
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+        <path d="M3 21h18M6 21V7l6-4 6 4v14"/>
+        <path d="M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01"/>
+      </svg>
+    ),
+  },
+  {
     href:  "/admin/fundadores",
     label: "Interessados",
     roles: ["ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL"],

@@ -49,6 +49,23 @@ export function decryptDocument(stored: string): string {
   return decipher.update(ciphertext).toString("utf8") + decipher.final("utf8")
 }
 
+// PII textual genérica (nome de responsável legal etc.) — AES-256-GCM, mesmo
+// formato/chave de encryptDocument, mas SEM o `.replace(/\D/g, "")`, que
+// destruiria texto não-numérico. Ver ADR-024 / parecer de Segurança.
+export function encryptPII(plaintext: string): string {
+  const iv = crypto.randomBytes(IV_LENGTH)
+  const cipher = crypto.createCipheriv(ALGORITHM, getKey(), iv)
+  const encrypted = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()])
+  const tag = cipher.getAuthTag()
+  return `${iv.toString("hex")}:${tag.toString("hex")}:${encrypted.toString("hex")}`
+}
+
+// Inverso de encryptPII. Idêntico a decryptDocument (que não filtra dígitos);
+// nome distinto para deixar a intenção explícita no call-site.
+export function decryptPII(stored: string): string {
+  return decryptDocument(stored)
+}
+
 export function maskCPF(cpf: string): string {
   const digits = cpf.replace(/\D/g, "")
   return digits.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "•••.$2.$3-$4")

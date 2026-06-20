@@ -82,6 +82,12 @@ export const CompleteRegistrationSchema = z
     userType: z.enum(["PF", "PJ"]),
     cpf: z.string().optional(),
     cnpj: z.string().optional(),
+    // KYB leve PJ (ADR-024 / M4): ao completar cadastro como PJ, exigir o CPF e o nome
+    // do responsável legal + declaração de vínculo. O CPF vai para cpfHash/cpfEncrypted —
+    // toda conta PJ passa a ter uma pessoa física identificada por trás.
+    cpfResponsavel: z.string().optional(),
+    responsavelLegal: z.string().max(150).optional(),
+    declaracaoVinculoPJ: z.boolean().optional(),
     phone: z
       .string()
       .regex(/^\+55\d{10,11}$/, "Telefone inválido")
@@ -105,8 +111,41 @@ export const CompleteRegistrationSchema = z
     message: "CNPJ inválido",
     path: ["cnpj"],
   })
+  .refine((d) => d.userType !== "PJ" || (!!d.cpfResponsavel && validateCPF(d.cpfResponsavel)), {
+    message: "CPF do responsável legal inválido",
+    path: ["cpfResponsavel"],
+  })
+  .refine((d) => d.userType !== "PJ" || (!!d.responsavelLegal && d.responsavelLegal.trim().length >= 3), {
+    message: "Informe o nome do responsável legal",
+    path: ["responsavelLegal"],
+  })
+  .refine((d) => d.userType !== "PJ" || d.declaracaoVinculoPJ === true, {
+    message: "É necessário aceitar a declaração de responsável legal.",
+    path: ["declaracaoVinculoPJ"],
+  })
 
 export type CompleteRegistrationInput = z.infer<typeof CompleteRegistrationSchema>
+
+/**
+ * Upgrade de conta PF existente para PJ (POST /api/users/me/upgrade-pj).
+ * KYB leve (ADR-024): CNPJ válido + nome do responsável legal + declaração de vínculo.
+ */
+export const UpgradePjSchema = z.object({
+  cnpj: z
+    .string()
+    .min(14, "CNPJ inválido")
+    .refine((v) => validateCNPJ(v), "CNPJ inválido"),
+  responsavelLegal: z
+    .string()
+    .trim()
+    .min(3, "Informe o nome do responsável legal")
+    .max(150, "Nome muito longo"),
+  declaracaoVinculo: z.literal(true, {
+    errorMap: () => ({ message: "É necessário aceitar a declaração de responsável legal." }),
+  }),
+})
+
+export type UpgradePjInput = z.infer<typeof UpgradePjSchema>
 
 export const LoginSchema = z.object({
   email: z.string().email(),
