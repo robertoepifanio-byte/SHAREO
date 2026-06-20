@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { headers } from "next/headers"
 import { Montserrat, Inter } from "next/font/google"
-import { Toaster } from "sonner"
+import { ThemedToaster } from "@/components/layout/ThemedToaster"
 import { BottomNav } from "@/components/layout/BottomNav"
 import { AppFooter } from "@/components/layout/AppFooter"
 import { ServiceWorkerRegister } from "@/components/layout/ServiceWorkerRegister"
@@ -99,7 +99,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <AppFooter />
           </div>
           <BottomNav />
-          <Toaster richColors position="top-right" />
+          <ThemedToaster />
           <ServiceWorkerRegister />
           {/* P3-82: GA4 — carregado apenas quando NEXT_PUBLIC_GA_MEASUREMENT_ID definido */}
           <GoogleAnalytics nonce={nonce} />
