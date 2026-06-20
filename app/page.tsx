@@ -132,7 +132,7 @@ export default async function HomePage() {
       <main>
         {/* ─── HERO ─── */}
         <section
-          className="relative overflow-hidden bg-gradient-to-br from-primary to-[#144D81] px-4 py-10 md:px-8 md:py-16 xl:px-16"
+          className="relative overflow-hidden bg-gradient-to-br from-primary to-blue-medium px-4 py-10 md:px-8 md:py-16 xl:px-16"
           aria-label="Seção principal"
         >
           {/* orbe decorativo */}

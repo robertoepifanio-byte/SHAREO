@@ -11,7 +11,7 @@ const fmt = (cents: number) =>
 
 const TIER_COLORS: Record<AmbassadorTier, string> = {
   BRONZE: "text-amber-700 bg-amber-50 border-amber-200",
-  SILVER: "text-slate-600 bg-slate-50 border-slate-200",
+  SILVER: "text-muted-foreground bg-surface-muted border-border",
   GOLD:   "text-yellow-700 bg-yellow-50 border-yellow-200",
 }
 

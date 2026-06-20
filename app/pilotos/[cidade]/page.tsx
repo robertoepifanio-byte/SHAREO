@@ -64,7 +64,7 @@ export default async function PilotoCidadePage(
   return (
     <main>
       <section
-        className="relative overflow-hidden bg-gradient-to-br from-primary to-[#001f40] px-6 py-16 text-center"
+        className="relative overflow-hidden bg-gradient-to-br from-primary to-navy-deep px-6 py-16 text-center"
         aria-labelledby="piloto-title"
       >
         <div

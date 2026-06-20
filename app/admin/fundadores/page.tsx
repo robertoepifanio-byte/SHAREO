@@ -110,7 +110,7 @@ export default async function AdminFundadoresPage() {
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: "Interessados",  value: totalLeads,     color: "text-primary" },
-          { label: "Aguardando",    value: totalPending,   color: totalPending > 0 ? "text-[#9A4700]" : "text-primary" },
+          { label: "Aguardando",    value: totalPending,   color: totalPending > 0 ? "text-orange-link" : "text-primary" },
           { label: "Convidados",    value: totalInvited,   color: "text-primary" },
           { label: "Cadastrados",   value: totalConverted, color: "text-success" },
         ].map((s) => (
@@ -179,7 +179,7 @@ export default async function AdminFundadoresPage() {
                   </td>
                   <td className="px-3 py-3 text-center font-semibold text-foreground">{r.total}</td>
                   <td className="px-3 py-3 text-center text-muted-foreground">{r.owners} / {r.renters}</td>
-                  <td className="px-3 py-3 text-center">{r.pending > 0 ? <span className="font-semibold text-[#9A4700]">{r.pending}</span> : "0"}</td>
+                  <td className="px-3 py-3 text-center">{r.pending > 0 ? <span className="font-semibold text-orange-link">{r.pending}</span> : "0"}</td>
                   <td className="px-3 py-3 text-center text-muted-foreground">{r.invited}</td>
                   <td className="px-3 py-3 text-center">{r.converted > 0 ? <span className="font-semibold text-success">{r.converted}</span> : "0"}</td>
                   <td className="px-3 py-3 text-center text-muted-foreground">{r.referred}</td>

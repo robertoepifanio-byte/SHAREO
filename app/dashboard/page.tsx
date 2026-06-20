@@ -174,7 +174,7 @@ export default async function DashboardPage() {
     <div className="min-h-screen bg-background">
       <AppHeader />
       {/* ─── HEADER GRADIENTE ─── */}
-      <section className="bg-gradient-to-br from-primary to-[#144D81] px-4 py-8">
+      <section className="bg-gradient-to-br from-primary to-blue-medium px-4 py-8">
         <div className="container">
           <div className="flex items-center justify-between">
             <div>

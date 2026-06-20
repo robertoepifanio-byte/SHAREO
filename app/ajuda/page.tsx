@@ -126,8 +126,8 @@ const SECTIONS = [
     id: "locatario",
     title: "Para quem quer alugar",
     icon: "🛒",
-    color: "bg-[#144D81]/5 border-[#144D81]/20",
-    iconBg: "bg-[#144D81]/10",
+    color: "bg-blue-medium/5 border-blue-medium/20",
+    iconBg: "bg-blue-medium/10",
     faqs: [
       { q: "Como encontro um item perto de mim?",
         a: "Acesse 'Explorar' e navegue pelos anúncios disponíveis. Cada item mostra o bairro e a cidade do proprietário, para você saber onde o item está antes de solicitar." },
@@ -311,8 +311,8 @@ const SECTIONS = [
     id: "legal",
     title: "Questões Legais e Fiscais",
     icon: "📋",
-    color: "bg-slate-50 border-slate-200",
-    iconBg: "bg-slate-100",
+    color: "bg-surface-muted border-border",
+    iconBg: "bg-muted",
     faqs: [
       { q: "O ShareO emite nota fiscal?",
         a: "O ShareO emite comprovante eletrônico de transação para todas as locações concluídas na plataforma. O comprovante é enviado automaticamente para o email cadastrado após o encerramento da reserva. Você também pode baixar o histórico de comprovantes em 'Meu Perfil > Histórico financeiro'." },
@@ -409,7 +409,7 @@ export default async function AjudaPage() {
       <main>
        <HelpSearchProvider sections={sections}>
         {/* Hero */}
-        <section className="bg-gradient-to-br from-primary to-[#144D81] px-4 py-14 text-center">
+        <section className="bg-gradient-to-br from-primary to-blue-medium px-4 py-14 text-center">
           <div className="mx-auto max-w-xl">
             <div className="mb-4 text-5xl" aria-hidden="true">💬</div>
             <h1 className="mb-3 font-display text-3xl font-extrabold text-white md:text-4xl">
@@ -463,10 +463,10 @@ export default async function AjudaPage() {
             <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
               {/* Locatário — accordion nativo: fechado por padrão para a página não virar uma parede de scroll */}
               <details className="group/guide">
-                <summary className="cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden rounded-xl bg-[#144D81]/8 border border-[#144D81]/20 px-5 py-4 transition-colors hover:bg-[#144D81]/15">
+                <summary className="cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden rounded-xl bg-blue-medium/8 border border-blue-medium/20 px-5 py-4 transition-colors hover:bg-blue-medium/15">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <h3 className="font-display text-lg font-bold text-[#144D81] flex items-center gap-2">
+                      <h3 className="font-display text-lg font-bold text-blue-medium flex items-center gap-2">
                         <span className="text-2xl" aria-hidden="true">🛒</span>
                         Quero alugar um item
                       </h3>
@@ -474,7 +474,7 @@ export default async function AjudaPage() {
                         Do cadastro à devolução — guia em {locatarioSteps.length} passos.
                       </p>
                     </div>
-                    <svg className="h-5 w-5 flex-shrink-0 text-[#144D81] transition-transform duration-200 group-open/guide:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <svg className="h-5 w-5 flex-shrink-0 text-blue-medium transition-transform duration-200 group-open/guide:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                       <polyline points="6 9 12 15 18 9" />
                     </svg>
                   </div>

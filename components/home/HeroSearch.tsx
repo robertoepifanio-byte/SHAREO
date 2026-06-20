@@ -30,7 +30,7 @@ export function HeroSearch() {
       action="/itens"
       method="GET"
       role="search"
-      className="mx-auto flex w-full max-w-[520px] items-center gap-2 overflow-hidden rounded-xl bg-white px-4 py-1.5 shadow-[0_4px_20px_rgba(0,0,0,0.2)]"
+      className="mx-auto flex w-full max-w-[520px] items-center gap-2 overflow-hidden rounded-xl bg-surface px-4 py-1.5 shadow-[0_4px_20px_rgba(0,0,0,0.2)]"
     >
       <svg
         width="18"

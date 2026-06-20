@@ -38,7 +38,7 @@ export function CasosRenda() {
   return (
     <section
       id="casos-renda"
-      className="bg-slate-100 px-4 py-8 xl:px-6 xl:py-12"
+      className="bg-surface-muted px-4 py-8 xl:px-6 xl:py-12"
       aria-labelledby="casos-renda-title"
     >
       <div className="container">
@@ -50,7 +50,7 @@ export function CasosRenda() {
             Quem já está ganhando
           </h2>
         </div>
-        <p className="mb-6 text-sm text-slate-600">
+        <p className="mb-6 text-sm text-muted-foreground">
           Veja o potencial de quem transforma itens parados em renda extra.
         </p>
 
@@ -58,7 +58,7 @@ export function CasosRenda() {
           {CASES.map((c) => (
             <article
               key={c.name}
-              className="flex flex-col gap-3 rounded-xl bg-[#144D81] p-6 text-white"
+              className="flex flex-col gap-3 rounded-xl bg-blue-medium p-6 text-white"
               aria-label={`Caso: ${c.name}, ${c.item}, ${c.renda}/mês`}
             >
               {/* Header: avatar + nome/papel + badge renda */}
@@ -105,7 +105,7 @@ export function CasosRenda() {
           ))}
         </div>
 
-        <p className="mt-4 text-xs leading-relaxed text-slate-600">
+        <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
           Personagens e valores ilustrativos, baseados em estimativas de uso típico
           (3–4 locações/mês). Resultados reais variam conforme o item, a demanda e a região.
         </p>

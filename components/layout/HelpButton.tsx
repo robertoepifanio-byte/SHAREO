@@ -60,7 +60,7 @@ export function HelpButton() {
 
       {/* Popover desktop */}
       {open && (
-        <div className="absolute right-0 top-11 z-[300] w-56 rounded-xl border border-border bg-white shadow-xl overflow-hidden">
+        <div className="absolute right-0 top-11 z-[300] w-56 rounded-xl border border-border bg-surface shadow-xl overflow-hidden">
           {/* Header */}
           <div className="px-4 py-3 border-b border-border bg-muted/40">
             <p className="text-xs text-muted-foreground font-semibold">Central de Ajuda</p>
