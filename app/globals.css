@@ -98,6 +98,9 @@
     --icon-color:         0 123 60;
     --icon-accent:        89 198 134;
     --icon-border:        20 77 129;
+
+    /* Cor base das sombras (navy no claro — identidade) */
+    --shadow-rgb:         0 51 102;
   }
 
   /* ── DARK (inerte até Fase 2 — next-themes adiciona .dark no <html>) ── */
@@ -195,6 +198,9 @@
     --icon-color:         91 208 139;    /* #5BD08B — verde claro no dark */
     --icon-accent:        89 198 134;    /* #59C686 */
     --icon-border:        91 163 224;    /* #5BA3E0 — azul claro no dark */
+
+    /* Sombra preta no dark — navy reprovaria (mais claro que o bg = vira brilho) */
+    --shadow-rgb:         0 0 0;
   }
 
   /* ── Dark a11y: marca usada como TEXTO precisa clarear (contraste AA) ──────
