@@ -301,7 +301,7 @@ export function BookingActions({
             placeholder="000000"
             value={pickupTokenInput}
             onChange={(e) => setPickupTokenInput(e.target.value.replace(/\D/g, ""))}
-            className="mb-3 w-full rounded-lg border border-input bg-white px-3 py-2.5 text-center text-2xl font-bold tracking-[0.3em] text-primary outline-none focus:border-brand"
+            className="mb-3 w-full rounded-lg border border-input bg-surface px-3 py-2.5 text-center text-2xl font-bold tracking-[0.3em] text-primary outline-none focus:border-brand"
           />
 
           <label htmlFor="pickup-time-input" className="mb-1 block text-xs font-semibold text-foreground">

@@ -181,7 +181,7 @@ export function SimuladorRenda({ data = DEFAULT_DATA }: { data?: SimuladorItem[]
                 }}
                 placeholder="Ex: Furadeira, Projetor, Caixa de Som..."
                 autoComplete="off"
-                className="w-full rounded-lg border-[1.5px] border-border py-3 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
+                className="w-full rounded-lg border-[1.5px] border-border bg-surface py-3 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand"
                 aria-label="Digite o nome do item que você quer anunciar"
               />
             </div>

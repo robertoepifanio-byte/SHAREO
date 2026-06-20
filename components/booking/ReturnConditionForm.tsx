@@ -140,7 +140,7 @@ export function ReturnConditionForm({ bookingId }: Props) {
                 value={opt.value}
                 checked={isSelected}
                 onChange={() => setCondition(opt.value)}
-                className="mt-0.5 h-4 w-4 flex-shrink-0 accent-brand cursor-pointer focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+                className="form-radio mt-0.5 h-4 w-4 flex-shrink-0 accent-brand cursor-pointer focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
                 aria-describedby={`condition-desc-${opt.value}`}
               />
               <div className="flex-1 min-w-0">

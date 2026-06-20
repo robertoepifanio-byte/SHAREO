@@ -81,7 +81,7 @@ export function Calculadora({ feeRatePct = 15 }: { feeRatePct?: number }) {
             placeholder={String(cat.diaria)}
             value={preco}
             onChange={e => setPreco(e.target.value === "" ? "" : Number(e.target.value))}
-            className="h-11 w-full rounded-lg border border-input bg-white px-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition-colors"
+            className="h-11 w-full rounded-lg border border-input bg-surface px-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition-colors"
           />
           <span className="text-sm text-muted-foreground whitespace-nowrap">/dia</span>
         </div>

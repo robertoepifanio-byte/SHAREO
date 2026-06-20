@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
+import { ThemeToggle } from "@/components/layout/ThemeToggle"
 
 interface Props {
   isLoggedIn: boolean
@@ -218,6 +219,16 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
               <li>
                 <NavLink href="/sobre" className={topItem}>Sobre</NavLink>
               </li>
+
+              {/* Tema */}
+              <li className="px-0 py-1">
+                <p className="px-4 pb-1 pt-2 text-xs font-semibold text-white/80 uppercase tracking-wider">
+                  Tema
+                </p>
+                <ThemeToggle variant="menu" />
+              </li>
+
+              <li><div className="my-1 h-px bg-white/10" /></li>
 
               {/* Explorar — expansível */}
               <li>

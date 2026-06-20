@@ -288,7 +288,7 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
           checked={lgpdConsent}
           onChange={(e) => setLgpdConsent(e.target.checked)}
           disabled={state === "loading"}
-          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-white/30 bg-white/10 accent-accent"
+          className="form-checkbox mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-white/30 bg-white/10 accent-accent"
         />
         <span className="text-xs leading-snug text-white/60">
           Concordo em receber comunicações sobre o lançamento do Shareo. Posso cancelar a qualquer momento

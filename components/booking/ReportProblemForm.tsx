@@ -140,7 +140,7 @@ export function ReportProblemForm({ bookingId, onSuccess }: Props) {
                 value={value}
                 checked={reason === value}
                 onChange={() => setReason(value)}
-                className="h-4 w-4 accent-brand"
+                className="form-radio h-4 w-4 accent-brand"
                 aria-label={label}
               />
               <span className="font-medium text-foreground">{label}</span>
