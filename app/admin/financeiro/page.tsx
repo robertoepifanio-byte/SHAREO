@@ -124,7 +124,7 @@ export default async function AdminFinanceiroPage() {
           { label: "Receita ShareO",   value: fmt(shareoFee), sub: `taxa de ${currentFeeRate / 100}% sobre GMV`,  color: "text-success" },
           { label: "Repasse líquido",  value: fmt(ownerNet),  sub: "o que os proprietários recebem",  color: "text-primary" },
           { label: "Repasses pagos",   value: fmt(completedPayouts), sub: `${payoutByStatus["COMPLETED"]?.count ?? 0} transferências`, color: "text-success" },
-          { label: "Pendentes agora",  value: pendingPayouts, sub: "repasses elegíveis hoje",         color: pendingPayouts > 0 ? "text-[#9A4700]" : "text-primary" },
+          { label: "Pendentes agora",  value: pendingPayouts, sub: "repasses elegíveis hoje",         color: pendingPayouts > 0 ? "text-orange-link" : "text-primary" },
           { label: "Contas PIX",       value: pixByStatus["VERIFIED"] ?? 0, sub: `${pixByStatus["PENDING_VERIFICATION"] ?? 0} aguardando verificação`, color: "text-primary" },
           { label: "Disputas abertas", value: disputeCount, sub: "chargebacks Stripe ativos", color: disputeCount > 0 ? "text-destructive" : "text-primary" },
         ].map((s) => (

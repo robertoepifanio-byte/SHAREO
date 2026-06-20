@@ -26,7 +26,7 @@ export async function ListaVIP() {
   return (
     <section
       id="lista-vip"
-      className="relative overflow-hidden bg-gradient-to-br from-primary to-[#001f40] px-6 py-16 text-center"
+      className="relative overflow-hidden bg-gradient-to-br from-primary to-navy-deep px-6 py-16 text-center"
       aria-labelledby="vip-title"
     >
       {/* Orbe decorativo */}

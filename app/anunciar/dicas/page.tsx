@@ -107,7 +107,7 @@ export default function DicasPage() {
           {DICAS.map((dica) => (
             <article
               key={dica.numero}
-              className="rounded-2xl border border-border bg-white overflow-hidden"
+              className="rounded-2xl border border-border bg-surface overflow-hidden"
             >
               {/* Cabeçalho */}
               <div className="flex items-center gap-4 px-6 py-4 border-b border-border bg-muted/30">

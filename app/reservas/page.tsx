@@ -12,12 +12,12 @@ export const metadata: Metadata = {
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   PENDING:   { label: "Aguardando",  color: "bg-amber-100 text-amber-800" },
-  CONFIRMED: { label: "Confirmada",  color: "bg-[#144D81]/10 text-[#144D81]" },
+  CONFIRMED: { label: "Confirmada",  color: "bg-blue-medium/10 text-blue-medium" },
   ACTIVE:    { label: "Em andamento", color: "bg-brand/10 text-brand" },
   RETURNED:  { label: "Devolvido",   color: "bg-purple-100 text-purple-700" },
   COMPLETED: { label: "Concluída",   color: "bg-success/10 text-success" },
   CANCELLED: { label: "Cancelada",   color: "bg-destructive/10 text-destructive" },
-  DISPUTED:  { label: "Em disputa",  color: "bg-orange-100 text-[#9A4700]" },
+  DISPUTED:  { label: "Em disputa",  color: "bg-orange-light text-orange-link" },
 }
 
 const fmt = (cents: number) =>

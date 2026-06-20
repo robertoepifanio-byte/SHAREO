@@ -50,7 +50,7 @@ export function Calculadora({ feeRatePct = 15 }: { feeRatePct?: number }) {
               className={`flex flex-col items-center gap-1.5 rounded-xl border-2 p-3 text-sm font-medium transition-all outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                 catSlug === c.slug
                   ? "border-brand bg-brand/5 text-brand"
-                  : "border-border bg-white text-foreground hover:border-brand/40"
+                  : "border-border bg-surface text-foreground hover:border-brand/40"
               }`}
             >
               <span className="text-2xl">{c.icon}</span>
@@ -100,7 +100,7 @@ export function Calculadora({ feeRatePct = 15 }: { feeRatePct?: number }) {
               className={`rounded-full border-2 px-4 py-1.5 text-sm font-medium transition-all outline-none focus-visible:ring-2 focus-visible:ring-brand ${
                 diasMes === d
                   ? "border-brand bg-brand text-white"
-                  : "border-border bg-white text-foreground hover:border-brand/40"
+                  : "border-border bg-surface text-foreground hover:border-brand/40"
               }`}
             >
               {d} dias
@@ -117,7 +117,7 @@ export function Calculadora({ feeRatePct = 15 }: { feeRatePct?: number }) {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           {/* Por mês */}
-          <div className="rounded-xl bg-white border border-border p-4 text-center">
+          <div className="rounded-xl bg-surface border border-border p-4 text-center">
             <p className="text-xs text-muted-foreground mb-1">Por mês</p>
             <p className="text-2xl font-bold text-brand">{fmt(ganhoMes)}</p>
             <p className="text-xs text-muted-foreground mt-1">{diasMes} dias × {fmt(diaria)}</p>
@@ -131,7 +131,7 @@ export function Calculadora({ feeRatePct = 15 }: { feeRatePct?: number }) {
           </div>
 
           {/* Por ano */}
-          <div className="rounded-xl bg-white border border-border p-4 text-center">
+          <div className="rounded-xl bg-surface border border-border p-4 text-center">
             <p className="text-xs text-muted-foreground mb-1">Projeção anual</p>
             <p className="text-2xl font-bold text-foreground">{fmt(ganhoAno)}</p>
             <p className="text-xs text-muted-foreground mt-1">se mantiver o ritmo</p>
@@ -139,7 +139,7 @@ export function Calculadora({ feeRatePct = 15 }: { feeRatePct?: number }) {
         </div>
 
         {/* Detalhamento */}
-        <div className="rounded-lg bg-white border border-border divide-y divide-border text-sm mb-6">
+        <div className="rounded-lg bg-surface border border-border divide-y divide-border text-sm mb-6">
           <div className="flex justify-between px-4 py-2.5">
             <span className="text-muted-foreground">Diária</span>
             <span className="font-medium">{fmt(diaria)}</span>

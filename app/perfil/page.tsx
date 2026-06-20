@@ -100,7 +100,7 @@ export default async function ProfilePage() {
           <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
 
             {/* Faixa de cor no topo */}
-            <div className="h-24 bg-gradient-to-r from-primary to-[#144D81]" />
+            <div className="h-24 bg-gradient-to-r from-primary to-blue-medium" />
 
             {/* Avatar + info */}
             <div className="px-6 pb-6">

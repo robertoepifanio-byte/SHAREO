@@ -88,7 +88,7 @@ export default function ComunidadePage() {
             <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <Link
                 href="/cadastro"
-                className="inline-flex h-11 items-center rounded-lg bg-[#007B3C] px-6 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+                className="inline-flex h-11 items-center rounded-lg bg-brand px-6 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
               >
                 Criar conta grátis
               </Link>

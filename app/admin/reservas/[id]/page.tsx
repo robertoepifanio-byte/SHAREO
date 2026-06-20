@@ -20,12 +20,12 @@ const fmtDateTime = (d: Date) =>
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   PENDING:   { label: "Aguardando resposta", color: "bg-amber-100 text-amber-800" },
-  CONFIRMED: { label: "Confirmada",          color: "bg-[#144D81]/10 text-[#144D81]" },
+  CONFIRMED: { label: "Confirmada",          color: "bg-blue-medium/10 text-blue-medium" },
   ACTIVE:    { label: "Em andamento",        color: "bg-brand/10 text-brand" },
   RETURNED:  { label: "Devolvido",           color: "bg-purple-100 text-purple-700" },
   COMPLETED: { label: "Concluída",           color: "bg-success/10 text-success" },
   CANCELLED: { label: "Cancelada",           color: "bg-destructive/10 text-destructive" },
-  DISPUTED:  { label: "Em disputa",          color: "bg-orange-100 text-[#9A4700]" },
+  DISPUTED:  { label: "Em disputa",          color: "bg-orange-light text-orange-link" },
 }
 
 /**
@@ -174,9 +174,9 @@ export default async function AdminReservaPage({ params }: Props) {
               <p className="text-sm text-foreground"><span className="font-semibold">Proprietário: </span>{booking.ownerNote}</p>
             )}
             {booking.cancelReason && (
-              <div className="rounded-lg bg-orange-50 p-2.5 text-xs text-[#9A4700]">
+              <div className="rounded-lg bg-orange-light p-2.5 text-xs text-orange-link">
                 <span className="font-semibold">Motivo do cancelamento/disputa: </span>{booking.cancelReason}
-                {booking.cancelledAt && <span className="text-[#9A4700]/70"> · {fmtDateTime(booking.cancelledAt)}</span>}
+                {booking.cancelledAt && <span className="text-orange-link/70"> · {fmtDateTime(booking.cancelledAt)}</span>}
               </div>
             )}
           </div>

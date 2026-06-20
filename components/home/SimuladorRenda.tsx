@@ -71,7 +71,7 @@ export function SimuladorRenda({ data = DEFAULT_DATA }: { data?: SimuladorItem[]
   return (
     <section
       id="simulador-renda"
-      className="bg-white px-4 py-8 xl:px-6 xl:py-12"
+      className="bg-surface px-4 py-8 xl:px-6 xl:py-12"
       aria-labelledby="simulador-section-title"
     >
       <div className="mx-auto max-w-[800px]">
@@ -123,7 +123,7 @@ export function SimuladorRenda({ data = DEFAULT_DATA }: { data?: SimuladorItem[]
                 {TABLE_ROWS.map((row) => (
                   <tr
                     key={row.name}
-                    className={`border-b border-border hover:bg-surface-muted ${row.highlight ? "bg-[#F0FBF5]" : ""}`}
+                    className={`border-b border-border hover:bg-surface-muted ${row.highlight ? "bg-brand-light/40" : ""}`}
                   >
                     <td className="px-1 py-3 font-medium text-foreground">
                       <span className="inline-flex items-center gap-2">
@@ -202,8 +202,8 @@ export function SimuladorRenda({ data = DEFAULT_DATA }: { data?: SimuladorItem[]
                   }}
                   className={`min-h-tap min-w-tap rounded-full border-[1.5px] px-3.5 py-1.5 text-sm font-medium transition-all ${
                     activeChip === chip
-                      ? "border-brand bg-[#F0FBF5] text-brand"
-                      : "border-border bg-white text-foreground hover:border-brand hover:bg-[#F0FBF5] hover:text-brand"
+                      ? "border-brand bg-brand-light/40 text-brand"
+                      : "border-border bg-surface text-foreground hover:border-brand hover:bg-brand-light/40 hover:text-brand"
                   }`}
                 >
                   {chip}
@@ -219,7 +219,7 @@ export function SimuladorRenda({ data = DEFAULT_DATA }: { data?: SimuladorItem[]
               className="mt-4"
             >
               {result ? (
-                <div className="rounded-xl border-[1.5px] border-sim-border bg-gradient-to-br from-[#F0FBF5] to-[#E8F5EE] p-5 text-center">
+                <div className="rounded-xl border-[1.5px] border-sim-border bg-gradient-to-br from-brand-light/40 to-brand-light/60 p-5 text-center">
                   <p className="mb-2 text-[13px] font-semibold uppercase tracking-[0.5px] text-muted-foreground">
                     Potencial de renda:
                   </p>
@@ -233,7 +233,7 @@ export function SimuladorRenda({ data = DEFAULT_DATA }: { data?: SimuladorItem[]
                       className={
                         result.demand === "alta"
                           ? "font-semibold text-brand"
-                          : "font-semibold text-[#92400E]"
+                          : "font-semibold text-orange-link"
                       }
                     >
                       {result.demand === "alta" ? "alta" : "moderada"}

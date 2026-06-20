@@ -19,7 +19,7 @@ const CheckIcon = (
     height="28"
     viewBox="0 0 24 24"
     fill="none"
-    stroke="#007B3C"
+    stroke="currentColor"
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
@@ -35,7 +35,7 @@ const ShieldIcon = (
     height="28"
     viewBox="0 0 24 24"
     fill="none"
-    stroke="#007B3C"
+    stroke="currentColor"
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
@@ -82,7 +82,7 @@ export async function Seguranca() {
 
   return (
     <section
-      className="bg-white px-6 py-8 xl:py-12"
+      className="bg-surface px-6 py-8 xl:py-12"
       aria-labelledby="seguranca-title"
     >
       <div className="mx-auto max-w-[900px]">
@@ -108,7 +108,7 @@ export async function Seguranca() {
               className="flex flex-col items-center gap-3 rounded-xl border border-border bg-surface-muted p-6"
             >
               <div
-                className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-light"
+                className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-light text-brand"
                 aria-hidden="true"
               >
                 {p.icon}

@@ -175,7 +175,7 @@ export function ItemsMap({
         <div className="absolute bottom-3 right-3 z-10 pointer-events-none">
           <Link
             href="/itens"
-            className="pointer-events-auto rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-primary shadow-sm hover:bg-white/90 transition-colors"
+            className="pointer-events-auto rounded-md bg-surface px-3 py-1.5 text-xs font-semibold text-primary shadow-sm hover:bg-surface/90 transition-colors"
           >
             Ver todos →
           </Link>
