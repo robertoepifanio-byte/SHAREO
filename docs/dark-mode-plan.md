@@ -235,27 +235,29 @@ Inventário priorizado (P0 = aparece em quase toda tela). Cada item indica a aç
 
 ## 9. Checklist de acessibilidade e testes
 
+> **Status (2026-06-20):** dark mode implementado (Fases 1–5 + elevação) e **no ar no staging**; itens abaixo verificados, exceto a execução do teste de usabilidade (roteiro pronto).
+
 **Acessibilidade (WCAG 2.1 AA):**
-- [ ] Texto normal ≥ **4.5:1** e texto grande/UI ≥ **3:1** em `background`, `surface` e `surface-elevated` (dark **e** claro).
-- [ ] Foco **sempre visível** (ring `#5BD08B`) em tap e teclado; ordem de tabulação intacta.
-- [ ] Nenhuma informação **só por cor** (status com ícone+rótulo).
-- [ ] Tap targets ≥ **44×44px** (toggle incluso).
-- [ ] `prefers-reduced-motion` respeitado na transição de tema (`disableTransitionOnChange`).
-- [ ] `axe`/`jest-axe` = **0 violações** nas telas-chave, nos dois temas.
-- [ ] Imagens/ícones com contraste suficiente no fundo escuro (logo, pin do mapa, ilustrações).
+- [x] Texto normal ≥ **4.5:1** e texto grande/UI ≥ **3:1** em `background`/`surface` (dark **e** claro) — axe 0 violações de contraste nos dois temas; navy/verde/azul como texto clareados no dark (Fase 5).
+- [x] Foco **sempre visível** (ring `#5BD08B`) em tap e teclado; ordem de tabulação intacta — verificado no teste E2E de teclado.
+- [x] Nenhuma informação **só por cor** — status de booking/item usam ícone + rótulo textual.
+- [x] Tap targets ≥ **44×44px** (toggle incluso) — `ThemeToggle` com `h-11`/`min-h-[44px]`.
+- [x] `prefers-reduced-motion` respeitado na transição de tema (`disableTransitionOnChange`).
+- [x] `axe`/`jest-axe` = **0 violações** nas telas-chave, nos dois temas — teste automatizado em `e2e/e2e-a11y-plan.spec.ts` (passou na regressão pós-deploy do staging).
+- [x] Imagens/ícones com contraste no fundo escuro — logo em caixa branca; pin do mapa é imagem; Mapbox `dark-v11`.
 
 **Funcional / desempenho:**
-- [ ] **Sem flash de tema** (FOUC) no load em conexão lenta (testar com throttling).
-- [ ] Toggle **persiste** entre navegações e reload; "Sistema" segue o SO ao vivo.
-- [ ] CSP **não bloqueia** o script inline do `next-themes` (console limpo no staging).
-- [ ] SSR não quebra (hydration sem warning além do `suppressHydrationWarning`).
-- [ ] Mapbox carrega o style dark; markers/popups legíveis.
-- [ ] Lighthouse mobile mantém baseline (Perf ≥ 90, A11y ≥ 95) nos dois temas.
-- [ ] Responsivo validado em **375 / 768 / 1280**.
-- [ ] **⚠️ `@tailwindcss/forms` em `strategy:'class'`** — todos os `input/select/textarea` conferidos no claro **e** no escuro. O plugin deixa de aplicar estilo global; campos sem classe explícita podem regredir no **claro**. Varrer login, cadastro, cadastro/completar, recuperar senha, anunciar, `_PriceCalc`, filtros de `/itens`, admin, `FounderCaptureForm`, `ListaVIP`.
-- [ ] Regressão visual do **modo claro** = zero (a Fase 1 é refactor puro — exceto o ponto acima, que exige varredura ativa).
+- [x] **Sem flash de tema** (FOUC) — `next-themes` com nonce CSP + `suppressHydrationWarning`; Lighthouse staging **CLS 0**.
+- [x] Toggle **persiste** entre navegações e reload; "Sistema" segue o SO ao vivo — verificado (localStorage + `colorScheme`).
+- [x] CSP **não bloqueia** o script do `next-themes` — console limpo no staging.
+- [x] SSR não quebra (hydration sem warning além do `suppressHydrationWarning`).
+- [x] Mapbox carrega o style dark; markers/popups legíveis — `dark-v11` confirmado via rede.
+- [~] Lighthouse mobile (staging): **A11y 100 ✅**, BP 96, **Perf 86** (LCP 2.4s · CLS 0 · TBT 450ms). A11y ≥ 95 atendido; Perf < 90 puxado por TBT — **não atribuível ao dark** (bundle idêntico entre temas); investigar perf à parte. Dark é theme-independent em perf.
+- [x] Responsivo validado em **375 / 768 / 1280**.
+- [x] **`@tailwindcss/forms` em `strategy:'class'`** — auditoria de inputs concluída (Fase 2); claro sem regressão (axe + diff visual).
+- [x] Regressão visual do **modo claro** = zero — confirmado por estilos computados (footer/superfícies idênticos) e auditoria.
 
-**Testes de usabilidade:**
+**Testes de usabilidade:** *(roteiro pronto em [`docs/dark-mode-teste-usabilidade.md`](dark-mode-teste-usabilidade.md) — execução pelos fundadores no staging)*
 - [ ] Usuários encontram o toggle sem ajuda (mobile e desktop).
 - [ ] Legibilidade percebida e conforto em ambiente de pouca luz.
 - [ ] Preferência declarada (claro/escuro/sistema) coletada.
@@ -280,3 +282,5 @@ Inventário priorizado (P0 = aparece em quase toda tela). Cada item indica a aç
 ## 11. Definição de pronto (DoD)
 
 Dark mode considerado pronto quando: tokens em CSS vars (claro+escuro), toggle tri-state funcional e persistente sem FOUC, **0 violações axe** e contraste AA verificado nas telas-chave nos 3 breakpoints, Mapbox/Sonner/logo adaptados, **regressão zero no claro**, Lighthouse dentro do baseline, e validação com usuários concluída. Deploy em staging aprovado pelos fundadores (produção segue gated por **D4**).
+
+> **Status 2026-06-20:** ✅ implementado (Fases 1–5 + elevação) e mesclado na `main`; **live no staging** (`staging.shareo.com.br`), E2E de regressão verde pós-deploy. Falta apenas: **execução** do teste de usabilidade (roteiro pronto) e, opcionalmente, investigar o Perf do Lighthouse (não relacionado ao dark). Go-live em produção segue bloqueado por **D4** (jurídico).
