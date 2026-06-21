@@ -65,6 +65,7 @@ export const RATE_LIMITS = {
   loginIp:        { limit: 10, windowMs: 60_000 },              // 10/min por IP
   loginEmail:     { limit: 5,  windowMs: 5 * 60_000 },          // 5/5min por e-mail
   mobileLogin:    { limit: 10, windowMs: 60_000 },              // 10/min por IP
+  mobileRefresh:  { limit: 30, windowMs: 60_000 },              // 30/min por IP (SEC-CRIT-05)
   forgotPassword: { limit: 3,  windowMs: 60_000 },              // 3/min por IP
   resetPassword:  { limit: 10, windowMs: 60_000 },              // 10/min por IP
   resendVerify:   { limit: 3,  windowMs: 3_600_000 },           // 3/h por usuário
@@ -97,12 +98,18 @@ export async function checkRateLimit(
   windowMs: number,
   req?: { headers: { get(name: string): string | null } },
 ): Promise<RateLimitResult> {
-  if (process.env.SKIP_RATE_LIMIT === "true") {
-    return { allowed: true, remaining: limit, resetAt: Date.now() + windowMs }
-  }
-  const e2eSecret = process.env.E2E_SECRET
-  if (e2eSecret && req?.headers.get("x-e2e-token") === e2eSecret) {
-    return { allowed: true, remaining: limit, resetAt: Date.now() + windowMs }
+  // SEC-CRIT-02/03: bypass de rate limit para testes (E2E). Em PRODUÇÃO REAL este
+  // bypass NUNCA deve valer — runbook D4: (1) não setar SKIP_RATE_LIMIT nem E2E_SECRET
+  // na prod, e (2) setar E2E_BYPASS_DISABLED=true como kill-switch (mesmo que um secret
+  // vaze por cópia de env, o bypass fica inerte). Staging mantém o bypass (sem o flag).
+  if (process.env.E2E_BYPASS_DISABLED !== "true") {
+    if (process.env.SKIP_RATE_LIMIT === "true") {
+      return { allowed: true, remaining: limit, resetAt: Date.now() + windowMs }
+    }
+    const e2eSecret = process.env.E2E_SECRET
+    if (e2eSecret && req?.headers.get("x-e2e-token") === e2eSecret) {
+      return { allowed: true, remaining: limit, resetAt: Date.now() + windowMs }
+    }
   }
   if (!hasUpstash) return inMemoryCheck(key, limit, windowMs)
 
