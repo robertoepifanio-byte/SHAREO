@@ -6,6 +6,7 @@ import { CreateBookingSchema, ListBookingsQuerySchema } from "@/lib/validations/
 import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
 import { calcBookingTotal } from "@/lib/pricing"
 import { validateCoupon } from "@/lib/coupons"
+import { findOverlappingItem } from "@/lib/booking-availability"
 
 export async function GET(req: NextRequest) {
   try {
@@ -199,18 +200,9 @@ export async function POST(req: NextRequest) {
 
     // Cria booking + conversation atomicamente (conflict check dentro da transação evita double-booking)
     const booking = await prisma.$transaction(async (tx) => {
-      const conflict = await tx.booking.findFirst({
-        where: {
-          itemId,
-          status: { in: ["CONFIRMED", "ACTIVE"] },
-          AND: [
-            { startDate: { lt: new Date(endDate) } },
-            { endDate:   { gt: new Date(startDate) } },
-          ],
-        },
-        select: { id: true },
-      })
-      if (conflict) throw Object.assign(new Error("DATE_CONFLICT"), { code: "DATE_CONFLICT" })
+      // Disponibilidade via booking_items (cobre locações multi-item — Story B)
+      const conflictItem = await findOverlappingItem(tx, [itemId], new Date(startDate), new Date(endDate))
+      if (conflictItem) throw Object.assign(new Error("DATE_CONFLICT"), { code: "DATE_CONFLICT" })
 
       const b = await tx.booking.create({
         data: {
@@ -245,6 +237,12 @@ export async function POST(req: NextRequest) {
             },
           },
         },
+      })
+
+      // Story B: registra o item da locação em booking_items (fonte de verdade da
+      // disponibilidade). Reserva de item único = exatamente 1 BookingItem.
+      await tx.bookingItem.create({
+        data: { bookingId: b.id, itemId, dailyPrice: item.pricePerDay, totalPrice },
       })
 
       // Consome o cupom na mesma transação (corrida: condição usedAt null garante uso único)
