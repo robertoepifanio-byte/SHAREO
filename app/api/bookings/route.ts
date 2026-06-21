@@ -8,6 +8,7 @@ import { calcBookingTotal } from "@/lib/pricing"
 import { validateCoupon } from "@/lib/coupons"
 import { findOverlappingItem } from "@/lib/booking-availability"
 import { CHECKOUT_MAX_CENTS } from "@/lib/platform-config"
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 
 export async function GET(req: NextRequest) {
   try {
@@ -92,6 +93,10 @@ export async function POST(req: NextRequest) {
         { status: 401 },
       )
     }
+
+    // SEC-ALTO-03: rate limit por usuário (evita rajada de criação de reservas/locks)
+    const rl = await checkRateLimit(`booking-create:${borrowerId}`, 20, 60_000, req)
+    if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const userCheck = await prisma.user.findUnique({
       where:  { id: borrowerId },

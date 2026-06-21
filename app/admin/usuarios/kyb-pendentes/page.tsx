@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { after } from "next/server"
 import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
 import { hasAdminRole } from "@/lib/auth/admin-guards"
@@ -52,6 +53,19 @@ export default async function KybPendentesPage() {
     declaracaoAt:     u.cnpjDeclaracaoAt,
     declaracaoIp:     u.cnpjDeclaracaoIp ?? "—",
   }))
+
+  // SEC-ALTO-08: trilha LGPD — registra quem abriu a fila com dados descriptografados
+  after(() =>
+    prisma.adminLog.create({
+      data: {
+        adminId:    session.user.id,
+        action:     "KYB_QUEUE_VIEWED",
+        entityType: "User",
+        entityId:   "kyb-queue",
+        metadata:   { count: rows.length },
+      },
+    }).catch((e) => console.error("[adminLog KYB_QUEUE_VIEWED]", e instanceof Error ? e.message : e))
+  )
 
   return (
     <div>

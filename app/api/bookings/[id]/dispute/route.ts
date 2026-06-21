@@ -8,6 +8,7 @@ import { NextResponse, after, type NextRequest } from "next/server"
 import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { isOwnStoragePhotoUrl } from "@/lib/validations/storageUrl"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -22,7 +23,7 @@ const DisputeSchema = z.object({
     .string()
     .min(10, "Descrição deve ter ao menos 10 caracteres.")
     .max(500, "Descrição: máximo 500 caracteres."),
-  photoUrl: z.string().url("URL de foto inválida.").optional(),
+  photoUrl: z.string().url("URL de foto inválida.").refine(isOwnStoragePhotoUrl, "A foto deve ser enviada pela plataforma.").optional(),
 })
 
 const REASON_LABELS: Record<string, string> = {

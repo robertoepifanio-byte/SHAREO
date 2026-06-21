@@ -114,12 +114,13 @@ export async function POST(req: Request) {
         }
 
         // Pagamento de aluguel normal — gera token de retirada único de 6 dígitos
-        let pickupToken: string
-        for (;;) {
+        let pickupToken: string | null = null
+        for (let attempt = 0; attempt < 12 && !pickupToken; attempt++) { // ARQ-ALTO-14: teto de tentativas
           const candidate = String(randomInt(100000, 1000000))
           const conflict  = await prisma.booking.findFirst({ where: { pickupToken: candidate }, select: { id: true } })
-          if (!conflict) { pickupToken = candidate; break }
+          if (!conflict) pickupToken = candidate
         }
+        if (!pickupToken) throw new Error("pickupToken generation exhausted") // Stripe re-tenta o webhook
 
         await prisma.booking.update({
           where: { id: bookingId },

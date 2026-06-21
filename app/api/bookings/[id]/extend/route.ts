@@ -81,6 +81,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       JOIN items i ON i.id = b."itemId"
       WHERE b.id = ${id}
         AND b."deletedAt" IS NULL
+        AND i."deletedAt" IS NULL
       LIMIT 1
     `
     const booking = rows[0]
@@ -198,6 +199,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       JOIN items i ON i.id = b."itemId"
       WHERE b.id = ${id}
         AND b."deletedAt" IS NULL
+        AND i."deletedAt" IS NULL
       LIMIT 1
     `
     const booking = rows[0]

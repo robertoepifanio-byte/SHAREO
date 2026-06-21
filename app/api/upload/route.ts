@@ -65,7 +65,13 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const ext      = file.name.split(".").pop()?.toLowerCase() ?? "jpg"
+    // SEC-ALTO-06: extensão derivada do MIME já validado (isImageType + magic bytes),
+    // NUNCA do nome do arquivo do cliente (evita salvar .php/.exe no bucket público).
+    const EXT_BY_MIME: Record<string, string> = {
+      "image/jpeg": "jpg", "image/jpg": "jpg", "image/png": "png",
+      "image/webp": "webp", "image/gif": "gif", "image/heic": "heic", "image/heif": "heif",
+    }
+    const ext      = EXT_BY_MIME[file.type.toLowerCase()] ?? "jpg"
     const path     = `uploads/${session.user.id}/${Date.now()}.${ext}`
     const arrayBuf = await file.arrayBuffer()
     if (!(await isMagicBytesValid(arrayBuf))) {
