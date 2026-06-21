@@ -11,10 +11,12 @@ import { PayButton }           from "@/components/bookings/PayButton"
 import { ContractBanner }      from "./_ContractBanner"
 import { CheckInOut }          from "./_CheckInOut"
 import { BookingProgressBar }  from "@/components/booking/BookingProgressBar"
+import { BookingHistory }     from "@/components/booking/BookingHistory"
 import { ReturnCountdown }    from "@/components/booking/ReturnCountdown"
 import { ReturnChecklist }    from "@/components/booking/ReturnChecklist"
 import { ReturnConditionForm } from "@/components/booking/ReturnConditionForm"
 import { getPlatformFeeRate, calcSplit } from "@/lib/platform-config"
+import { deriveBookingHistory } from "@/lib/bookingHistory"
 
 type Props = {
   params:       Promise<{ id: string }>
@@ -75,7 +77,6 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
       id:            true,
       status:        true,
       paymentStatus: true,
-      paidAt:        true,
       startDate:     true,
       endDate:       true,
       totalDays:     true,
@@ -85,12 +86,18 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
       depositAmount: true,
       borrowerNote:  true,
       ownerNote:     true,
-      cancelledAt:   true,
-      cancelReason:  true,
-      createdAt:     true,
-      contractSignedAt: true,
-      activatedAt:   true,
-      returnedAt:    true,
+      // timestamps de histórico
+      createdAt:            true,
+      respondedAt:          true,
+      paidAt:               true,
+      contractSignedAt:     true,
+      activatedAt:          true,
+      returnRequestedAt:    true,
+      returnedAt:           true,
+      cancelledAt:          true,
+      cancelReason:         true,
+      extensionRequestedAt: true,
+      extensionRespondedAt: true,
       lateFeeAmount: true,
       photos:        { select: { id: true, url: true, phase: true, createdAt: true }, orderBy: { createdAt: "asc" } },
       item: {
@@ -171,6 +178,32 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
             status={booking.status as Parameters<typeof BookingProgressBar>[0]["status"]}
             paymentStatus={booking.paymentStatus}
           />
+
+          {/* ─── Histórico de eventos ─── */}
+          {(() => {
+            const historyEvents = deriveBookingHistory({
+              createdAt:            booking.createdAt,
+              respondedAt:          booking.respondedAt,
+              paidAt:               booking.paidAt,
+              activatedAt:          booking.activatedAt,
+              returnRequestedAt:    booking.returnRequestedAt,
+              returnedAt:           booking.returnedAt,
+              cancelledAt:          booking.cancelledAt,
+              cancelReason:         booking.cancelReason,
+              extensionRequestedAt: booking.extensionRequestedAt,
+              extensionRespondedAt: booking.extensionRespondedAt,
+              extensionStatus:      booking.extensionStatus ?? null,
+              status:               booking.status,
+              borrower:             { name: booking.borrower.name },
+              owner:                { name: booking.owner.name },
+            })
+            // Serializa Date → ISO string para passar ao Client Component
+            const serialized = historyEvents.map((e) => ({
+              ...e,
+              at: e.at.toISOString(),
+            }))
+            return <BookingHistory events={serialized} />
+          })()}
 
           {/* Header do booking */}
           <div className="mb-6 flex flex-wrap items-start justify-between gap-3">

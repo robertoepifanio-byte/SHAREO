@@ -475,8 +475,9 @@ model Booking {
   pickupTokenUsedAt DateTime? // quando foi validado (mark_active)
 
   // Devolução e taxa de atraso
-  returnedAt    DateTime? // data real de devolução (pode ser após endDate)
-  lateFeeAmount Int? // cents — calculado se returnedAt > endDate
+  returnRequestedAt DateTime? // quando o locatário iniciou a devolução (mark_returned)
+  returnedAt        DateTime? // quando o locador confirmou o recebimento (confirm_return)
+  lateFeeAmount     Int? // cents — calculado se returnedAt > endDate
 
   // Contrato digital
   contractSignedAt DateTime?
