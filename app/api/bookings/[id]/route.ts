@@ -263,11 +263,19 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     // Gera pickupToken único no confirm (fluxo PIX/manual — Stripe gera o próprio via webhook).
     if (action === "confirm" && !booking.pickupToken) {
-      for (;;) {
+      let token: string | null = null
+      for (let attempt = 0; attempt < 12 && !token; attempt++) { // ARQ-ALTO-14: teto de tentativas
         const candidate = String(randomInt(100000, 1000000))
         const conflict  = await prisma.booking.findFirst({ where: { pickupToken: candidate }, select: { id: true } })
-        if (!conflict) { data.pickupToken = candidate; break }
+        if (!conflict) token = candidate
       }
+      if (!token) {
+        return NextResponse.json(
+          { error: { code: "INTERNAL_ERROR", message: "Não foi possível gerar o código de retirada. Tente novamente." } },
+          { status: 500 },
+        )
+      }
+      data.pickupToken = token
     }
 
     // Update atômico por ação (S14-A-05/A-06 — evita double-booking e ativação dupla em corrida).

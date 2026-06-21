@@ -129,7 +129,10 @@ export default async function ExplorarPage({ searchParams }: Props) {
   const dbResult = await Promise.all([
     prisma.item.findMany({
       where,
-      ...(useJsFilter ? {} : { skip, take: PAGE_SIZE }),
+      // ARQ-ALTO-09 (paliativo até PostGIS): filtro JS (distância/rating) opera sobre o
+      // conjunto, mas com TETO de 500 itens p/ não carregar a tabela inteira na lambda.
+      take: useJsFilter ? 500 : PAGE_SIZE,
+      ...(useJsFilter ? {} : { skip }),
       orderBy: getOrderBy(sort),
       select: {
         id: true, title: true, pricePerDay: true, pricePerWeek: true,

@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { hasAdminRole } from "@/lib/auth/admin-guards"
 import { sendIdVerifiedEmail, sendIdRejectedEmail } from "@/lib/email"
 import { z } from "zod"
 
@@ -18,6 +19,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (!session || session.user.role !== "ADMIN") {
       return NextResponse.json(
         { error: { code: "FORBIDDEN", message: "Acesso restrito a administradores." } },
+        { status: 403 },
+      )
+    }
+    // SEC-ALTO-01: verificação de identidade é de OPERACIONAL (não FINANCEIRO)
+    if (!hasAdminRole(session, "ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL")) {
+      return NextResponse.json(
+        { error: { code: "FORBIDDEN", message: "Sem permissão para verificar identidades." } },
         { status: 403 },
       )
     }
