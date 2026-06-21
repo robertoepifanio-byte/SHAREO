@@ -107,16 +107,9 @@ export async function middleware(req: NextRequest) {
     return nextWithCsp()
   }
 
-  // Cron/service calls autenticados via CRON_SECRET passam direto no middleware;
-  // a rota de destino valida o secret novamente antes de executar.
-  if (isAdminRoute) {
-    const cronSecret = process.env.CRON_SECRET
-    const authHeader = req.headers.get("authorization")
-    if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
-      return nextWithCsp()
-    }
-  }
-
+  // SEC-CRIT-01: NÃO há bypass de CRON_SECRET para rotas admin. Os crons vivem em
+  // /api/cron/* (não em /api/admin/*) e se autenticam na própria rota; rotas admin
+  // exigem SEMPRE sessão com role admin. Um Bearer não pode abrir o painel admin.
   const isSecure = process.env.NODE_ENV === "production"
   const token = await getToken({
     req,

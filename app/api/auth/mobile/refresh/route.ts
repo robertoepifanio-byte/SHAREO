@@ -4,6 +4,7 @@ import { jwtVerify, SignJWT } from "jose"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { isSessionStale } from "@/lib/redis-admin-blocklist"
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 
 const Schema = z.object({
   refreshToken: z.string().min(1),
@@ -17,6 +18,11 @@ function secret() {
 
 export async function POST(req: NextRequest) {
   try {
+    // SEC-CRIT-05: rate limit por IP (evita rajada de refresh / DoS no Redis de sessão)
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
+    const rl = await checkRateLimit(`mobile-refresh:${ip}`, RATE_LIMITS.mobileRefresh.limit, RATE_LIMITS.mobileRefresh.windowMs, req)
+    if (!rl.allowed) return rateLimitResponse(rl.resetAt)
+
     const body = await req.json()
     const parsed = Schema.safeParse(body)
     if (!parsed.success) {
