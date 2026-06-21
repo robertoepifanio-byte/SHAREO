@@ -26,9 +26,10 @@ const ANUNCIAR_LINKS = [
 ]
 
 const ATIVIDADE_LINKS = [
-  { href: "/reservas",  label: "Reservas",  icon: "calendar" },
-  { href: "/mensagens", label: "Mensagens", icon: "message" },
-  { href: "/dashboard", label: "Dashboard", icon: "grid" },
+  { href: "/meus-anuncios", label: "Meus Anúncios", icon: "package" },
+  { href: "/reservas",      label: "Reservas",      icon: "calendar" },
+  { href: "/mensagens",     label: "Mensagens",     icon: "message" },
+  { href: "/dashboard",     label: "Dashboard",     icon: "grid" },
 ]
 
 const ADMIN_ATALHOS_LINKS = [
