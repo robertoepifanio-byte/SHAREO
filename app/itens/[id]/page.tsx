@@ -115,7 +115,7 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
 
   if (!item) notFound()
 
-  const [responseBadge, ownerStats, similarItems] = await Promise.all([
+  const [responseBadge, ownerStats, similarItems, ownerItems] = await Promise.all([
     getOwnerResponseBadge(item.ownerId),
     // P1-23 — taxa de resposta e locações concluídas (ARQ-M-10: 1 groupBy em vez de 1 aggregate + 2 counts)
     prisma.booking.groupBy({
@@ -143,6 +143,26 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
         isApproved: true,
         id:         { not: item.id },
         owner:      { deletedAt: null },
+      },
+      select: {
+        id: true, title: true, pricePerDay: true, condition: true,
+        city: true, state: true, neighborhood: true, status: true,
+        images:   { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
+        category: { select: { name: true } },
+        owner:    { select: { name: true, isVerified: true } },
+        _count:   { select: { reviews: true, favorites: true } },
+      },
+      orderBy: { viewCount: "desc" },
+      take: 4,
+    }),
+    // Story B — outros itens do MESMO anunciante (para montar uma locação multi-item)
+    prisma.item.findMany({
+      where: {
+        ownerId:    item.ownerId,
+        deletedAt:  null,
+        status:     "AVAILABLE",
+        isApproved: true,
+        id:         { not: item.id },
       },
       select: {
         id: true, title: true, pricePerDay: true, condition: true,
@@ -641,14 +661,31 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
           </div>
 
         </div>
-        {/* P1-31 — Itens similares */}
-        {similarItems.length > 0 && (
+        {/* Story B — outros itens do mesmo anunciante (atalho p/ montar locação multi-item) */}
+        {!isOwner && ownerItems.length > 0 && (
+          <section className="mt-12 border-t border-border pt-10" aria-labelledby="owner-items-heading">
+            <h2 id="owner-items-heading" className="mb-1 text-lg font-bold text-primary">
+              Ou itens do mesmo anunciante
+            </h2>
+            <p className="mb-6 text-sm text-muted-foreground">
+              De {item.owner.name} — você pode alugar vários itens deste anunciante numa só locação.
+            </p>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {ownerItems.map((oi) => (
+                <ItemCard key={oi.id} item={oi} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* P1-31 — Itens similares (exclui os do mesmo anunciante p/ não duplicar o quadro acima) */}
+        {similarItems.filter((si) => !ownerItems.some((oi) => oi.id === si.id)).length > 0 && (
           <section className="mt-12 border-t border-border pt-10" aria-labelledby="similar-heading">
             <h2 id="similar-heading" className="mb-6 text-lg font-bold text-primary">
               Você também pode gostar
             </h2>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {similarItems.map((si) => (
+              {similarItems.filter((si) => !ownerItems.some((oi) => oi.id === si.id)).map((si) => (
                 <ItemCard key={si.id} item={si} />
               ))}
             </div>
