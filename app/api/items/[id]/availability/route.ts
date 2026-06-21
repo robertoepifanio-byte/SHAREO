@@ -32,17 +32,22 @@ export async function GET(_req: NextRequest, { params }: Params) {
     const horizon = new Date(today)
     horizon.setMonth(horizon.getMonth() + 12)
 
-    const bookings = await prisma.booking.findMany({
+    // Ocupação via booking_items (cobre locações multi-item — Story B): um item pode
+    // estar reservado como item secundário de uma locação cujo Booking.itemId é outro.
+    const occupiedRows = await prisma.bookingItem.findMany({
       where: {
-        itemId:    id,
-        deletedAt: null,
-        status:    { in: ["CONFIRMED", "ACTIVE", "RETURNED", "COMPLETED"] },
-        // sobrepõe com a janela de interesse
-        startDate: { lt: horizon },
-        endDate:   { gte: today },
+        itemId: id,
+        booking: {
+          deletedAt: null,
+          status:    { in: ["CONFIRMED", "ACTIVE", "RETURNED", "COMPLETED"] },
+          // sobrepõe com a janela de interesse
+          startDate: { lt: horizon },
+          endDate:   { gte: today },
+        },
       },
-      select: { startDate: true, endDate: true },
+      select: { booking: { select: { startDate: true, endDate: true } } },
     })
+    const bookings = occupiedRows.map((r) => r.booking)
 
     // Expande cada booking para a lista de dias individuais
     const occupied: string[] = []

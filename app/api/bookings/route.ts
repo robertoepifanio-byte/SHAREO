@@ -6,6 +6,7 @@ import { CreateBookingSchema, ListBookingsQuerySchema } from "@/lib/validations/
 import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
 import { calcBookingTotal } from "@/lib/pricing"
 import { validateCoupon } from "@/lib/coupons"
+import { findOverlappingItem } from "@/lib/booking-availability"
 
 export async function GET(req: NextRequest) {
   try {
@@ -125,10 +126,14 @@ export async function POST(req: NextRequest) {
 
     const { itemId, startDate, endDate, borrowerNote, couponCode } = parsed.data
 
-    // Carrega item e valida disponibilidade
-    const [item, borrower] = await Promise.all([
-      prisma.item.findFirst({
-        where:  { id: itemId, status: "AVAILABLE", isApproved: true, deletedAt: null },
+    // Itens da locação — Story B: vários itens do MESMO dono, no MESMO período.
+    // itemId é o item principal; additionalItemIds são os demais (todos do mesmo dono).
+    const additionalItemIds = [...new Set(parsed.data.additionalItemIds ?? [])].filter((id) => id !== itemId)
+    const allItemIds = [itemId, ...additionalItemIds]
+
+    const [items, borrower] = await Promise.all([
+      prisma.item.findMany({
+        where:  { id: { in: allItemIds }, status: "AVAILABLE", isApproved: true, deletedAt: null },
         select: {
           id: true, ownerId: true, title: true,
           pricePerDay: true, pricePerWeek: true, pricePerMonth: true, depositAmount: true,
@@ -142,9 +147,21 @@ export async function POST(req: NextRequest) {
       }),
     ])
 
-    if (!item) {
+    const itemsById = new Map(items.map((i) => [i.id, i]))
+    const item = itemsById.get(itemId) // item principal
+
+    // Todos os itens informados precisam existir e estar disponíveis
+    if (!item || items.length !== allItemIds.length) {
       return NextResponse.json(
-        { error: { code: "ITEM_UNAVAILABLE", message: "Item não disponível." } },
+        { error: { code: "ITEM_UNAVAILABLE", message: "Um ou mais itens não estão disponíveis." } },
+        { status: 422 },
+      )
+    }
+
+    // Escopo Story B: todos os itens da locação são do MESMO proprietário
+    if (items.some((i) => i.ownerId !== item.ownerId)) {
+      return NextResponse.json(
+        { error: { code: "MIXED_OWNERS", message: "Em uma locação só é possível alugar itens do mesmo anunciante. Faça uma locação por anunciante." } },
         { status: 422 },
       )
     }
@@ -156,17 +173,17 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Valida requisitos do proprietário
-    if (item.requireIdVerification && borrower?.idVerificationStatus !== "VERIFIED") {
+    // Requisitos do proprietário — se QUALQUER item exigir, vale para a locação inteira
+    if (items.some((i) => i.requireIdVerification) && borrower?.idVerificationStatus !== "VERIFIED") {
       return NextResponse.json(
-        { error: { code: "ID_VERIFICATION_REQUIRED", message: "O proprietário exige identidade verificada para alugar este item. Acesse seu perfil e envie seus documentos." } },
+        { error: { code: "ID_VERIFICATION_REQUIRED", message: "O proprietário exige identidade verificada para alugar. Acesse seu perfil e envie seus documentos." } },
         { status: 422 },
       )
     }
 
-    if (item.requirePhone && !borrower?.phone) {
+    if (items.some((i) => i.requirePhone) && !borrower?.phone) {
       return NextResponse.json(
-        { error: { code: "PHONE_REQUIRED", message: "O proprietário exige telefone cadastrado para alugar este item. Acesse seu perfil e adicione um número de telefone." } },
+        { error: { code: "PHONE_REQUIRED", message: "O proprietário exige telefone cadastrado para alugar. Acesse seu perfil e adicione um número de telefone." } },
         { status: 422 },
       )
     }
@@ -174,9 +191,16 @@ export async function POST(req: NextRequest) {
     const totalDays  = Math.ceil(
       (new Date(endDate).getTime() - new Date(startDate).getTime()) / 86_400_000,
     )
-    const { totalPrice: grossPrice } = calcBookingTotal(
-      totalDays, item.pricePerDay, item.pricePerWeek, item.pricePerMonth,
-    )
+
+    // Preço por item (mesmo período) + total bruto da locação
+    const perItem = allItemIds.map((id) => {
+      const it = itemsById.get(id)!
+      const { totalPrice } = calcBookingTotal(totalDays, it.pricePerDay, it.pricePerWeek, it.pricePerMonth)
+      return { itemId: id, dailyPrice: it.pricePerDay, totalPrice }
+    })
+    const grossPrice    = perItem.reduce((sum, p) => sum + p.totalPrice, 0)
+    const sumDailyPrice = perItem.reduce((sum, p) => sum + p.dailyPrice, 0)
+    const sumDeposit    = items.reduce((sum, i) => sum + (i.depositAmount ?? 0), 0)
 
     // P3-20: cupom de desconto — absorvido pela taxa da plataforma (proprietário recebe o valor cheio)
     let couponId: string | null = null
@@ -199,31 +223,22 @@ export async function POST(req: NextRequest) {
 
     // Cria booking + conversation atomicamente (conflict check dentro da transação evita double-booking)
     const booking = await prisma.$transaction(async (tx) => {
-      const conflict = await tx.booking.findFirst({
-        where: {
-          itemId,
-          status: { in: ["CONFIRMED", "ACTIVE"] },
-          AND: [
-            { startDate: { lt: new Date(endDate) } },
-            { endDate:   { gt: new Date(startDate) } },
-          ],
-        },
-        select: { id: true },
-      })
-      if (conflict) throw Object.assign(new Error("DATE_CONFLICT"), { code: "DATE_CONFLICT" })
+      // Disponibilidade de TODOS os itens via booking_items (Story B)
+      const conflictItem = await findOverlappingItem(tx, allItemIds, new Date(startDate), new Date(endDate))
+      if (conflictItem) throw Object.assign(new Error("DATE_CONFLICT"), { code: "DATE_CONFLICT" })
 
       const b = await tx.booking.create({
         data: {
-          itemId,
+          itemId,                      // item principal da locação
           borrowerId,
           ownerId:       item.ownerId,
           startDate:     new Date(startDate),
           endDate:       new Date(endDate),
           totalDays,
-          dailyPrice:    item.pricePerDay,
+          dailyPrice:    sumDailyPrice,
           totalPrice,
           discountCents: discountCents || null,
-          depositAmount: item.depositAmount ?? null,
+          depositAmount: sumDeposit || null,
           borrowerNote:  borrowerNote ?? null,
         },
         select: {
@@ -245,6 +260,12 @@ export async function POST(req: NextRequest) {
             },
           },
         },
+      })
+
+      // Story B: registra TODOS os itens da locação em booking_items (fonte de verdade
+      // da disponibilidade). Reserva de item único = exatamente 1 BookingItem.
+      await tx.bookingItem.createMany({
+        data: perItem.map((p) => ({ bookingId: b.id, itemId: p.itemId, dailyPrice: p.dailyPrice, totalPrice: p.totalPrice })),
       })
 
       // Consome o cupom na mesma transação (corrida: condição usedAt null garante uso único)
@@ -291,7 +312,9 @@ export async function POST(req: NextRequest) {
           userId: item.ownerId,
           type:   "BOOKING_REQUEST",
           title:  "Nova solicitação de aluguel",
-          body:   `${borrower?.name ?? "Um usuário"} quer alugar "${booking.item.title}"`,
+          body:   additionalItemIds.length > 0
+            ? `${borrower?.name ?? "Um usuário"} quer alugar "${booking.item.title}" e mais ${additionalItemIds.length} ${additionalItemIds.length === 1 ? "item" : "itens"}`
+            : `${borrower?.name ?? "Um usuário"} quer alugar "${booking.item.title}"`,
           data:   { bookingId: booking.id },
         },
       }).catch((e) => console.error("[notification] BOOKING_REQUEST:", e instanceof Error ? e.message : e))

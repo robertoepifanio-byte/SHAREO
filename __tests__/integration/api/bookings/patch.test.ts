@@ -27,6 +27,7 @@ const mockBookingFindFirst  = jest.fn().mockResolvedValue(null) // sem conflito 
 const mockBookingUpdate     = jest.fn()
 const mockBookingUpdateMany = jest.fn().mockResolvedValue({ count: 1 }) // mark_active: token ainda não consumido
 const mockBookingFindUniqueOrThrow = jest.fn()
+const mockBookingItemFindFirst = jest.fn().mockResolvedValue(null) // Story B: disponibilidade via booking_items, sem conflito
 const mockNotificationCreate = jest.fn()
 
 // S14-A-05/A-06: `confirm` roda dentro de prisma.$transaction (tx.booking.findFirst + update);
@@ -39,9 +40,13 @@ jest.mock("@/lib/prisma", () => {
     updateMany:        (...args: unknown[]) => mockBookingUpdateMany(...args),
     findUniqueOrThrow: (...args: unknown[]) => mockBookingFindUniqueOrThrow(...args),
   }
+  const bookingItem = {
+    findFirst: (...args: unknown[]) => mockBookingItemFindFirst(...args),
+  }
   return {
     prisma: {
       booking,
+      bookingItem,
       notification: {
         create: (...args: unknown[]) => mockNotificationCreate(...args),
       },
@@ -56,7 +61,7 @@ jest.mock("@/lib/prisma", () => {
         findMany:   jest.fn().mockResolvedValue([]),
       },
       // confirm usa transação serializável; o mock executa o callback com um tx que reusa os mesmos mocks.
-      $transaction: (fn: (tx: unknown) => unknown) => fn({ booking }),
+      $transaction: (fn: (tx: unknown) => unknown) => fn({ booking, bookingItem }),
     },
   }
 })

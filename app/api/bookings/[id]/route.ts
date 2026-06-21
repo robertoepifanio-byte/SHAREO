@@ -12,6 +12,7 @@ import { sendBookingConfirmedEmail, sendBookingCancelledEmail } from "@/lib/emai
 import { calcRefund } from "@/lib/cancellationPolicy"
 import { getCancellationConfig, getPayoutWindowDays } from "@/lib/platform-config"
 import { releaseCouponForBooking } from "@/lib/coupons"
+import { findOverlappingItem } from "@/lib/booking-availability"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -277,19 +278,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       // Antes o check ficava fora de transação → race de double-booking (dois confirms simultâneos).
       try {
         const result = await prisma.$transaction(async (tx) => {
-          const conflict = await tx.booking.findFirst({
-            where: {
-              id:     { not: id },
-              itemId: booking.itemId,
-              status: { in: ["CONFIRMED", "ACTIVE"] },
-              AND: [
-                { startDate: { lt: booking.endDate } },
-                { endDate:   { gt: booking.startDate } },
-              ],
-            },
-            select: { id: true },
-          })
-          if (conflict) return null
+          // Disponibilidade via booking_items (cobre locações multi-item — Story B)
+          const conflictItem = await findOverlappingItem(tx, [booking.itemId], booking.startDate, booking.endDate, id)
+          if (conflictItem) return null
           return tx.booking.update({ where: { id }, data, select: updateSelect })
         }, { isolationLevel: "Serializable" })
 

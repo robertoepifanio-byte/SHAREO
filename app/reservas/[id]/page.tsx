@@ -102,6 +102,14 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
           images: { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
         },
       },
+      // Story B — itens da locação (>1 quando é locação multi-item do mesmo dono)
+      bookingItems: {
+        select: {
+          itemId:     true,
+          totalPrice: true,
+          item: { select: { title: true, images: { select: { url: true }, orderBy: { order: "asc" }, take: 1 } } },
+        },
+      },
       extensionStatus:           true,
       extensionRequestedEndDate: true,
       pickupToken:       true,
@@ -167,7 +175,12 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
           {/* Header do booking */}
           <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h1 className="text-xl font-bold text-primary">{booking.item.title}</h1>
+              <h1 className="text-xl font-bold text-primary">
+                {booking.item.title}
+                {booking.bookingItems.length > 1 && (
+                  <span className="text-base font-semibold text-muted-foreground"> + {booking.bookingItems.length - 1} {booking.bookingItems.length - 1 === 1 ? "item" : "itens"}</span>
+                )}
+              </h1>
               <p className="text-sm text-muted-foreground">
                 {isOwner ? "Locatário" : "Proprietário"}:{" "}
                 <span className="font-medium text-foreground">{counterpart.name}</span>
@@ -177,6 +190,28 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
               {statusInfo.label}
             </span>
           </div>
+
+          {/* Story B — itens desta locação (só quando há mais de um) */}
+          {booking.bookingItems.length > 1 && (
+            <div className="mb-6 rounded-xl border border-border bg-surface p-4">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Itens desta locação ({booking.bookingItems.length})
+              </p>
+              <ul className="divide-y divide-border">
+                {booking.bookingItems.map((bi) => (
+                  <li key={bi.itemId} className="flex items-center gap-3 py-2">
+                    <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-muted">
+                      {bi.item.images[0]?.url && (
+                        <Image src={bi.item.images[0].url} alt={bi.item.title} fill sizes="40px" className="object-cover" />
+                      )}
+                    </div>
+                    <span className="min-w-0 flex-1 truncate text-sm text-foreground">{bi.item.title}</span>
+                    <span className="shrink-0 text-sm font-medium text-muted-foreground">{fmt(bi.totalPrice)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Imagem + datas */}
           <div className="mb-6 overflow-hidden rounded-xl border border-border bg-surface">
