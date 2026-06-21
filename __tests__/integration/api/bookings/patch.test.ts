@@ -129,6 +129,7 @@ function makeBooking(overrides: {
     startDate:   new Date("2026-06-10T00:00:00Z"),
     endDate:     new Date("2026-06-15T00:00:00Z"),
     totalPrice:  300,
+    bookingItems: [{ itemId: "item-id-004" }], // Story B — confirm revalida todos os itens
     item:        { title: "Furadeira Bosch" },
     borrower:    { email: "borrower@ex.com", name: "Locatário Teste" },
     owner:       { email: "owner@ex.com",    name: "Proprietário Teste" },
@@ -174,6 +175,20 @@ describe("PATCH /api/bookings/[id]", () => {
 
       expect(res.status).toBe(200)
       expect(body.data.status).toBe("CONFIRMED")
+    })
+
+    // Story B / ARQ-CRIT-01 — confirm revalida TODOS os itens da locação:
+    // se um item (principal OU secundário) já estiver reservado no período → 409
+    it("PENDING + confirm com item da locação já reservado → 409 DATE_CONFLICT", async () => {
+      mockAuth.mockResolvedValue(makeSession(OWNER_ID))
+      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "PENDING" }))
+      mockBookingItemFindFirst.mockResolvedValueOnce({ itemId: "item-id-004" }) // conflito num item da locação
+
+      const res  = await PATCH(makeReq({ action: "confirm" }), makeParams())
+      const body = await res.json() as { error?: { code?: string } }
+
+      expect(res.status).toBe(409)
+      expect(body.error?.code).toBe("DATE_CONFLICT")
     })
 
     // 2. PENDING + cancel (borrower, com reason) → 200, status CANCELLED

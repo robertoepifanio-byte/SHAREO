@@ -7,6 +7,7 @@ import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
 import { calcBookingTotal } from "@/lib/pricing"
 import { validateCoupon } from "@/lib/coupons"
 import { findOverlappingItem } from "@/lib/booking-availability"
+import { CHECKOUT_MAX_CENTS } from "@/lib/platform-config"
 
 export async function GET(req: NextRequest) {
   try {
@@ -199,6 +200,8 @@ export async function POST(req: NextRequest) {
       return { itemId: id, dailyPrice: it.pricePerDay, totalPrice }
     })
     const grossPrice    = perItem.reduce((sum, p) => sum + p.totalPrice, 0)
+    // Diária combinada da locação (item único = a diária do item; multi-item = soma).
+    // É só snapshot de exibição — o split/repasse usa totalPrice; a diária POR ITEM fica em BookingItem.dailyPrice.
     const sumDailyPrice = perItem.reduce((sum, p) => sum + p.dailyPrice, 0)
     const sumDeposit    = items.reduce((sum, i) => sum + (i.depositAmount ?? 0), 0)
 
@@ -220,6 +223,15 @@ export async function POST(req: NextRequest) {
       discountCents = Math.round(grossPrice * validation.percentOff / 100)
     }
     const totalPrice = grossPrice - discountCents
+
+    // Teto R$500 por locação (D2) — espelha o gate do checkout (EXCEEDS_MVP_LIMIT).
+    // Sem isto, uma chamada direta criaria reserva > R$500 que depois não pagaria.
+    if (totalPrice > CHECKOUT_MAX_CENTS) {
+      return NextResponse.json(
+        { error: { code: "EXCEEDS_MVP_LIMIT", message: "Locações acima de R$ 500 não estão disponíveis nesta versão. Remova um item ou reduza o período." } },
+        { status: 422 },
+      )
+    }
 
     // Cria booking + conversation atomicamente (conflict check dentro da transação evita double-booking)
     const booking = await prisma.$transaction(async (tx) => {
@@ -291,7 +303,7 @@ export async function POST(req: NextRequest) {
       })
 
       return { ...b, conversationId: conv.id }
-    }, { timeout: 5000 })
+    }, { isolationLevel: "Serializable", timeout: 5000 })
 
     // Webhook de saída para o locador — após a resposta
     after(() =>
@@ -322,7 +334,11 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ data: booking }, { status: 201 })
   } catch (e) {
-    if (e instanceof Error && (e as NodeJS.ErrnoException).code === "DATE_CONFLICT") {
+    // P2034 = falha de serialização (corrida simultânea sob isolationLevel Serializable) → conflito de datas
+    if (
+      (e instanceof Error && (e as NodeJS.ErrnoException).code === "DATE_CONFLICT") ||
+      (e && typeof e === "object" && "code" in e && (e as { code?: string }).code === "P2034")
+    ) {
       return NextResponse.json(
         { error: { code: "DATE_CONFLICT", message: "Item indisponível no período selecionado." } },
         { status: 409 },

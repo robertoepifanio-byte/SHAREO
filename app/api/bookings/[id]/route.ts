@@ -138,6 +138,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         id: true, status: true, borrowerId: true, ownerId: true,
         itemId: true, startDate: true, endDate: true, totalPrice: true, totalDays: true,
         pickupToken: true, pickupTokenUsedAt: true,
+        bookingItems: { select: { itemId: true } }, // Story B — revalidar todos os itens no confirm
         item:     { select: { title: true } },
         borrower: { select: { email: true, name: true } },
         owner:    { select: { email: true, name: true } },
@@ -278,8 +279,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       // Antes o check ficava fora de transação → race de double-booking (dois confirms simultâneos).
       try {
         const result = await prisma.$transaction(async (tx) => {
-          // Disponibilidade via booking_items (cobre locações multi-item — Story B)
-          const conflictItem = await findOverlappingItem(tx, [booking.itemId], booking.startDate, booking.endDate, id)
+          // Disponibilidade de TODOS os itens da locação via booking_items (Story B) —
+          // não só o item principal, senão um item secundário podia ser double-booked no confirm.
+          const itemIds = booking.bookingItems.length > 0
+            ? booking.bookingItems.map((bi) => bi.itemId)
+            : [booking.itemId]
+          const conflictItem = await findOverlappingItem(tx, itemIds, booking.startDate, booking.endDate, id)
           if (conflictItem) return null
           return tx.booking.update({ where: { id }, data, select: updateSelect })
         }, { isolationLevel: "Serializable" })
