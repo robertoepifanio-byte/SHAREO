@@ -665,7 +665,7 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
         {!isOwner && ownerItems.length > 0 && (
           <section className="mt-12 border-t border-border pt-10" aria-labelledby="owner-items-heading">
             <h2 id="owner-items-heading" className="mb-1 text-lg font-bold text-primary">
-              Ou itens do mesmo anunciante
+              Itens do mesmo anunciante
             </h2>
             <p className="mb-6 text-sm text-muted-foreground">
               De {item.owner.name} — você pode alugar vários itens deste anunciante numa só locação.
