@@ -27,7 +27,9 @@ interface BookingDetail {
 
 const STATUS_LABEL: Record<string, { label: string; color: string; bg: string }> = {
   PENDING:   { label: "Aguardando aprovação", color: "text-amber-700",  bg: "bg-amber-50 border-amber-200" },
+  CONFIRMED: { label: "Confirmada",            color: "text-brand",      bg: "bg-emerald-50 border-emerald-200" },
   ACTIVE:    { label: "Em andamento",          color: "text-brand",      bg: "bg-emerald-50 border-emerald-200" },
+  RETURNED:  { label: "Devolução em andamento", color: "text-purple-700", bg: "bg-purple-50 border-purple-200" },
   COMPLETED: { label: "Concluída",             color: "text-success",   bg: "bg-emerald-50 border-emerald-200" },
   CANCELLED: { label: "Cancelada",             color: "text-muted",     bg: "bg-gray-50 border-border" },
   DISPUTED:  { label: "Em disputa",            color: "text-red-600",   bg: "bg-red-50 border-red-200" },
@@ -58,6 +60,19 @@ export default function BookingDetailScreen() {
       qc.invalidateQueries({ queryKey: ["bookings"] })
     },
     onError: () => Alert.alert("Erro", "Não foi possível cancelar a reserva."),
+  })
+
+  // Fluxo de devolução: locatário inicia (mark_returned → "Devolução em andamento"),
+  // locador confirma o recebimento (confirm_return → "Concluído").
+  const returnAction = useMutation({
+    mutationFn: (action: "mark_returned" | "confirm_return") =>
+      apiFetch(`/api/bookings/${id}`, { method: "PATCH", body: JSON.stringify({ action }) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["booking", id] })
+      qc.invalidateQueries({ queryKey: ["bookings"] })
+    },
+    onError: (e) =>
+      Alert.alert("Erro", e instanceof Error ? e.message : "Não foi possível concluir a ação."),
   })
 
   const booking = data?.data
@@ -93,8 +108,10 @@ export default function BookingDetailScreen() {
   const st = STATUS_LABEL[booking.status] ?? { label: booking.status, color: "text-muted", bg: "bg-gray-50 border-border" }
   const isOwner    = user.id === booking.owner.id
   const isBorrower = user.id === booking.borrower.id
-  const canCancel  = (booking.status === "PENDING" || booking.status === "ACTIVE") && isBorrower
-  const thumb      = booking.item.images[0]?.url
+  const canCancel        = (booking.status === "PENDING" || booking.status === "ACTIVE") && isBorrower
+  const canReturn        = booking.status === "ACTIVE"   && isBorrower
+  const canConfirmReturn = booking.status === "RETURNED" && isOwner
+  const thumb            = booking.item.images[0]?.url
 
   function handleCancel() {
     Alert.alert(
@@ -103,6 +120,28 @@ export default function BookingDetailScreen() {
       [
         { text: "Voltar", style: "cancel" },
         { text: "Cancelar reserva", style: "destructive", onPress: () => cancel.mutate() },
+      ]
+    )
+  }
+
+  function handleReturn() {
+    Alert.alert(
+      "Devolver item",
+      "Confirmar que você está devolvendo o item? O locador precisará confirmar o recebimento para concluir a locação.",
+      [
+        { text: "Voltar", style: "cancel" },
+        { text: "Devolver", onPress: () => returnAction.mutate("mark_returned") },
+      ]
+    )
+  }
+
+  function handleConfirmReturn() {
+    Alert.alert(
+      "Confirmar recebimento",
+      "Confirmar que você recebeu o item de volta? Isso concluirá a locação.",
+      [
+        { text: "Voltar", style: "cancel" },
+        { text: "Confirmar recebimento", onPress: () => returnAction.mutate("confirm_return") },
       ]
     )
   }
@@ -211,6 +250,34 @@ export default function BookingDetailScreen() {
             activeOpacity={0.85}
           >
             <Text className="text-sm font-bold text-brand">💬 Abrir conversa</Text>
+          </TouchableOpacity>
+        )}
+        {canReturn && (
+          <TouchableOpacity
+            className="rounded-xl bg-brand py-3 items-center"
+            onPress={handleReturn}
+            activeOpacity={0.85}
+            disabled={returnAction.isPending}
+          >
+            {returnAction.isPending ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text className="text-sm font-bold text-white">📦 Devolver</Text>
+            )}
+          </TouchableOpacity>
+        )}
+        {canConfirmReturn && (
+          <TouchableOpacity
+            className="rounded-xl bg-brand py-3 items-center"
+            onPress={handleConfirmReturn}
+            activeOpacity={0.85}
+            disabled={returnAction.isPending}
+          >
+            {returnAction.isPending ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text className="text-sm font-bold text-white">📦 Confirmar recebimento</Text>
+            )}
           </TouchableOpacity>
         )}
         {canCancel && (

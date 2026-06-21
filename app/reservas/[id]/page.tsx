@@ -27,7 +27,7 @@ const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   PENDING:   { label: "Aguardando resposta", color: "bg-amber-100 text-amber-800" },
   CONFIRMED: { label: "Confirmada",          color: "bg-blue-medium/10 text-blue-medium" },
   ACTIVE:    { label: "Em andamento",        color: "bg-brand/10 text-brand" },
-  RETURNED:  { label: "Devolvido",           color: "bg-purple-100 text-purple-700" },
+  RETURNED:  { label: "Devolução em andamento", color: "bg-purple-100 text-purple-700" },
   COMPLETED: { label: "Concluída",           color: "bg-success/10 text-success" },
   CANCELLED: { label: "Cancelada",           color: "bg-destructive/10 text-destructive" },
   DISPUTED:  { label: "Em disputa",          color: "bg-orange-light text-orange-link" },
@@ -497,10 +497,37 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
             </div>
           )}
 
+          {/* ── Locador aguardando o locatário devolver (owner em ACTIVE) ── */}
+          {isOwner && booking.status === "ACTIVE" && (
+            <div className="mb-6 flex items-start gap-3 rounded-xl border border-blue-medium/30 bg-blue-medium/5 px-4 py-4">
+              <span className="text-xl" aria-hidden="true">⏳</span>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Aguardando a devolução</p>
+                <p className="text-xs text-muted-foreground">
+                  O locatário ainda está com o item. Quando ele iniciar a devolução, a reserva ficará como
+                  <strong> Devolução em andamento</strong> e você poderá confirmar o recebimento aqui.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* ── P2-49 — Checklist de devolução (borrower em ACTIVE) ── */}
           {isBorrower && booking.status === "ACTIVE" && (
             <div className="mb-6">
               <ReturnChecklist bookingId={booking.id} />
+            </div>
+          )}
+
+          {/* ── Locatário aguardando o locador confirmar (borrower em "Devolução em andamento") ── */}
+          {isBorrower && booking.status === "RETURNED" && (
+            <div className="mb-6 flex items-start gap-3 rounded-xl border border-purple-200 bg-purple-50 px-4 py-4">
+              <span className="text-xl" aria-hidden="true">🔄</span>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Devolução em andamento</p>
+                <p className="text-xs text-muted-foreground">
+                  Você iniciou a devolução. Aguardando o locador confirmar o recebimento do item para concluir a locação.
+                </p>
+              </div>
             </div>
           )}
 

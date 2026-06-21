@@ -634,6 +634,80 @@ export async function sendFounderInviteEmail(
   if (error) throw new Error(`Resend error: ${error.message}`)
 }
 
+/** Devolução em andamento — avisa o LOCADOR que o locatário iniciou a devolução e precisa de confirmação */
+export async function sendReturnInProgressEmail(
+  ownerEmail:   string, ownerName:    string,
+  borrowerName: string, itemTitle:    string,
+  bookingId:    string,
+): Promise<void> {
+  const resend = getResend()
+  if (!resend) return
+
+  const firstName     = ownerName.split(" ")[0]
+  const borrowerFirst = borrowerName.split(" ")[0]
+  const bookingUrl    = `${APP_URL}/reservas/${bookingId}`
+
+  const html = baseLayout(`
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
+      🔄 Devolução em andamento
+    </h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
+      Olá, ${firstName}! <strong>${borrowerFirst}</strong> iniciou a devolução de
+      <strong>${itemTitle}</strong>. Confira o item e confirme o recebimento para concluir a locação.
+    </p>
+    <div style="text-align:center;">${ctaButton(bookingUrl, "Confirmar recebimento")}</div>
+    <p style="margin:20px 0 0;font-size:13px;color:#64748B;line-height:1.6;">
+      A locação só é concluída após a <strong>sua confirmação</strong> do recebimento.
+    </p>
+  `)
+
+  const { error } = await sendWithRetry(resend, {
+    from:    `ShareO <${FROM}>`,
+    to:      ownerEmail,
+    subject: `🔄 Devolução em andamento — ${itemTitle}`,
+    html,
+  }, "return-in-progress")
+
+  if (error) throw new Error(`Resend error: ${error.message}`)
+}
+
+/** Devolução confirmada — avisa AMBAS as partes que a locação foi concluída */
+export async function sendReturnCompletedEmail(
+  borrowerEmail: string, borrowerName: string,
+  ownerEmail:    string, ownerName:    string,
+  itemTitle:     string, bookingId:    string,
+): Promise<void> {
+  const resend = getResend()
+  if (!resend) return
+
+  const url  = `${APP_URL}/reservas/${bookingId}`
+  const html = (firstName: string, role: "borrower" | "owner") => baseLayout(`
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#15803D;">
+      ✅ Devolução confirmada
+    </h1>
+    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
+      Olá, ${firstName}! ${role === "owner"
+        ? `Você confirmou o recebimento de <strong>${itemTitle}</strong>. A locação está concluída.`
+        : `O proprietário confirmou o recebimento de <strong>${itemTitle}</strong>. A locação está concluída.`}
+      ${role === "borrower" ? " Que tal avaliar a experiência?" : ""}
+    </p>
+    <div style="text-align:center;">${ctaButton(url, "Ver reserva")}</div>
+  `)
+
+  await Promise.all([
+    resend.emails.send({
+      from: `ShareO <${FROM}>`, to: borrowerEmail,
+      subject: `✅ Devolução confirmada — ${itemTitle}`,
+      html: html(borrowerName.split(" ")[0], "borrower"),
+    }),
+    resend.emails.send({
+      from: `ShareO <${FROM}>`, to: ownerEmail,
+      subject: `✅ Devolução confirmada — ${itemTitle}`,
+      html: html(ownerName.split(" ")[0], "owner"),
+    }),
+  ])
+}
+
 /** Lembrete: item em atraso — enviado ao locatário e ao locador */
 export async function sendReminderOverdue(
   borrowerEmail:    string, borrowerName: string,
