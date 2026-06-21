@@ -10,6 +10,7 @@ import { FavoriteButton } from "@/components/items/FavoriteButton"
 import { getOwnerResponseBadge } from "@/lib/ownerStats"
 import { Gallery } from "./_Gallery"
 import { PriceCalc } from "./_PriceCalc"
+import { AddToRentalButton } from "@/components/cart/AddToRentalButton"
 import { StickyBookingCTA } from "./_StickyBookingCTA"
 import { CANCELLATION_POLICY_LINES } from "@/lib/cancellationPolicy"
 import { getPlatformFeeRate, CHECKOUT_MAX_CENTS } from "@/lib/platform-config"
@@ -499,6 +500,26 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
                     isLoggedIn={!!session}
                     feeRatePct={feeRatePct}
                     checkoutMaxCents={CHECKOUT_MAX_CENTS}
+                  />
+
+                  {/* Story B — juntar vários itens do mesmo anunciante numa locação */}
+                  <div className="my-3 flex items-center gap-2 text-[11px] text-muted-foreground">
+                    <div className="h-px flex-1 bg-border" />
+                    ou
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+                  <AddToRentalButton
+                    ownerId={item.owner.id}
+                    ownerName={item.owner.name}
+                    item={{
+                      itemId:        item.id,
+                      title:         item.title,
+                      image:         item.images[0]?.url ?? null,
+                      pricePerDay:   item.pricePerDay,
+                      pricePerWeek:  item.pricePerWeek,
+                      pricePerMonth: item.pricePerMonth,
+                      depositAmount: item.depositAmount,
+                    }}
                   />
                 </div>
               )}
