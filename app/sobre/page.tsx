@@ -99,8 +99,10 @@ export default function SobrePage() {
               Use Mais. Possua Menos.
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg text-white/80">
-              Marketplace de economia circular para aluguel local de itens —
-              transformando o que está parado em renda e acesso para quem precisa.
+              O ShareO conecta pessoas que querem gerar renda alugando seus bens
+              para quem precisa usar sem comprar. Uma forma inteligente de transformar
+              patrimônio parado em renda, reduzir desperdícios e facilitar o acesso a
+              tudo o que você precisa.
             </p>
           </div>
         </section>
@@ -174,7 +176,7 @@ export default function SobrePage() {
                 <p>
                   Foi dessa oportunidade que nasceu o ShareO: uma plataforma criada para conectar
                   proprietários e locatários de forma prática, segura e transparente, permitindo que
-                  bens parados se transformem em lucro e necessidade em economia.
+                  bens parados se transformem em renda e necessidade em economia.
                 </p>
                 <p>
                   Porque acreditamos que, no futuro, gerar renda com o que você já tem será tão
