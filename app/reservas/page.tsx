@@ -65,6 +65,7 @@ export default async function ReservasPage({ searchParams }: Props) {
       borrower:     { select: { id: true, name: true } },
       owner:        { select: { id: true, name: true } },
       conversation: { select: { id: true } },
+      _count:       { select: { bookingItems: true } }, // Story B — quantos itens na locação
     },
   })
 
@@ -164,6 +165,9 @@ export default async function ReservasPage({ searchParams }: Props) {
                           className="text-sm font-semibold text-foreground hover:text-brand transition-colors"
                         >
                           {b.item.title}
+                          {b._count.bookingItems > 1 && (
+                            <span className="ml-1 font-normal text-muted-foreground">+ {b._count.bookingItems - 1} {b._count.bookingItems - 1 === 1 ? "item" : "itens"}</span>
+                          )}
                         </Link>
                         <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusInfo.color}`}>
                           {statusInfo.label}
