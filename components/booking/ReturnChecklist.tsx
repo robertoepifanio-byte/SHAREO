@@ -105,7 +105,8 @@ export function ReturnChecklist({ bookingId }: Props) {
         Checklist de devolução
       </h2>
       <p className="mb-4 text-xs text-muted-foreground">
-        Marque pelo menos {MIN_CHECKED} de {CHECKLIST_ITEMS.length} itens para confirmar a devolução.
+        Marque pelo menos {MIN_CHECKED} de {CHECKLIST_ITEMS.length} itens para iniciar a devolução.
+        Depois disso, o locador confirma o recebimento para concluir a locação.
       </p>
 
       {/* Itens do checklist */}
@@ -257,12 +258,16 @@ export function ReturnChecklist({ bookingId }: Props) {
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
           </svg>
         )}
-        {loading ? "Confirmando…" : "Confirmar devolução"}
+        {loading ? "Enviando…" : "Devolver"}
       </button>
 
-      {!canConfirm && (
+      {canConfirm ? (
         <p className="mt-2 text-center text-xs text-muted-foreground" role="note">
-          Marque pelo menos {MIN_CHECKED} itens para habilitar a confirmação.
+          Ao devolver, a locação fica como <strong>Devolução em andamento</strong> até o locador confirmar o recebimento.
+        </p>
+      ) : (
+        <p className="mt-2 text-center text-xs text-muted-foreground" role="note">
+          Marque pelo menos {MIN_CHECKED} itens para habilitar a devolução.
         </p>
       )}
     </section>

@@ -101,7 +101,7 @@ export function BookingActions({
     confirm:        "Reserva confirmada",
     cancel:         "Reserva cancelada",
     mark_active:    "Retirada confirmada",
-    mark_returned:  "Devolução confirmada",
+    mark_returned:  "Devolução iniciada — aguardando o locador confirmar",
     confirm_return: "Recebimento confirmado",
     open_dispute:   "Problema reportado",
   }
@@ -234,7 +234,7 @@ export function BookingActions({
   }
   if (isBorrower) {
     if (status === "ACTIVE" && !hideReturnActions)
-      buttons.push({ label: "📦 Confirmar devolução",   variant: "primary", onClick: () => { setReturnTime(nowLocal()); setPanel("return_time") } })
+      buttons.push({ label: "📦 Devolver",   variant: "primary", onClick: () => { setReturnTime(nowLocal()); setPanel("return_time") } })
     if (status === "ACTIVE")
       buttons.push({ label: "📅 Solicitar extensão de prazo", variant: "ghost", onClick: () => setPanel("extend_request") })
   }
@@ -337,9 +337,9 @@ export function BookingActions({
       {/* ── Painel: Confirmar devolução com horário ── */}
       {panel === "return_time" && (
         <div className="rounded-xl border border-brand/40 bg-brand/5 p-4">
-          <p className="mb-1 text-sm font-semibold text-foreground">Confirmar devolução do item</p>
+          <p className="mb-1 text-sm font-semibold text-foreground">Devolver o item</p>
           <p className="mb-3 text-xs text-muted-foreground">
-            Informe o horário exato da devolução. Este registro fica vinculado à reserva.
+            Informe o horário exato da devolução. A locação ficará como <strong>Devolução em andamento</strong> até o locador confirmar o recebimento.
           </p>
           <label htmlFor="return-time-input" className="mb-1 block text-xs font-medium text-foreground">
             Horário da devolução <span className="text-destructive">*</span>
@@ -361,7 +361,7 @@ export function BookingActions({
               disabled={loading}
               className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
             >
-              Confirmar devolução
+              Devolver
             </button>
             <button onClick={reset} className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-background transition-colors">
               Cancelar

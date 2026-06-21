@@ -8,7 +8,7 @@ import { PatchBookingSchema } from "@/lib/validations/bookings"
 import type { BookingStatus } from "@prisma/client"
 import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
 import type { WebhookEvent } from "@/lib/outboundWebhooks"
-import { sendBookingConfirmedEmail, sendBookingCancelledEmail } from "@/lib/email"
+import { sendBookingConfirmedEmail, sendBookingCancelledEmail, sendReturnInProgressEmail, sendReturnCompletedEmail } from "@/lib/email"
 import { calcRefund } from "@/lib/cancellationPolicy"
 import { getCancellationConfig, getPayoutWindowDays } from "@/lib/platform-config"
 import { releaseCouponForBooking } from "@/lib/coupons"
@@ -373,6 +373,25 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       // P3-20: devolve o cupom usado nesta reserva — após a resposta
       after(() => releaseCouponForBooking(id))
     }
+    // Devolução iniciada pelo locatário (ACTIVE → "Devolução em Andamento") — avisa o locador
+    if (action === "mark_returned") {
+      after(() =>
+        sendReturnInProgressEmail(
+          booking.owner.email, booking.owner.name,
+          booking.borrower.name, booking.item.title, id,
+        ).catch((e) => console.error("[email] return in progress:", e instanceof Error ? e.message : e))
+      )
+    }
+    // Recebimento confirmado pelo locador (→ COMPLETED) — avisa AMBAS as partes
+    if (action === "confirm_return") {
+      after(() =>
+        sendReturnCompletedEmail(
+          booking.borrower.email, booking.borrower.name,
+          booking.owner.email, booking.owner.name,
+          booking.item.title, id,
+        ).catch((e) => console.error("[email] return completed:", e instanceof Error ? e.message : e))
+      )
+    }
 
     // Webhooks de saída — após a resposta
     const webhookEventMap: Partial<Record<typeof action, WebhookEvent>> = {
@@ -399,7 +418,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const notifMap: Partial<Record<typeof action, { type: string; title: string; body: string }>> = {
       confirm:        { type: "BOOKING_CONFIRMED",  title: "Reserva confirmada!",        body: `Sua reserva de "${booking.item.title}" foi confirmada.` },
       cancel:         { type: "BOOKING_CANCELLED",  title: "Reserva cancelada",          body: `A reserva de "${booking.item.title}" foi cancelada.` },
-      mark_returned:  { type: "BOOKING_RETURNED",   title: "Devolução registrada",       body: `"${booking.item.title}" foi devolvido. Avalie a experiência!` },
+      mark_returned:  { type: "BOOKING_RETURNED",   title: "Devolução em andamento",     body: `O locatário iniciou a devolução de "${booking.item.title}". Confira o item e confirme o recebimento.` },
       confirm_return: { type: "BOOKING_RETURNED",   title: "Devolução confirmada!",      body: `O proprietário confirmou a devolução de "${booking.item.title}". A reserva está concluída.` },
     }
     const notif = notifMap[action]

@@ -28,7 +28,7 @@ const BOOKING_STATUS_LABEL: Record<string, string> = {
   PENDING:   "Pendente",
   CONFIRMED: "Confirmada",
   ACTIVE:    "Em uso",
-  RETURNED:  "Devolvida",
+  RETURNED:  "Devolução em andamento",
   COMPLETED: "Concluída",
   CANCELLED: "Cancelada",
   DISPUTED:  "Em disputa",

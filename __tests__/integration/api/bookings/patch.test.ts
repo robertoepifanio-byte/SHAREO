@@ -74,6 +74,8 @@ jest.mock("@/lib/auth", () => ({
 jest.mock("@/lib/email", () => ({
   sendBookingConfirmedEmail: jest.fn().mockResolvedValue(undefined),
   sendBookingCancelledEmail: jest.fn().mockResolvedValue(undefined),
+  sendReturnInProgressEmail: jest.fn().mockResolvedValue(undefined),
+  sendReturnCompletedEmail:  jest.fn().mockResolvedValue(undefined),
 }))
 
 jest.mock("@/lib/outboundWebhooks", () => ({
