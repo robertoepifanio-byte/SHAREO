@@ -31,6 +31,7 @@ export async function findOverlappingItem(
       itemId: { in: itemIds },
       booking: {
         status: BLOCKING_STATUSES,
+        deletedAt: null, // não bloquear por reservas soft-deletadas (defesa em profundidade)
         ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
         AND: [
           { startDate: { lt: endDate } },
