@@ -10,6 +10,9 @@ function tomorrow() {
 export const CreateBookingSchema = z
   .object({
     itemId:      z.string().cuid("itemId inválido"),
+    // Story B — itens adicionais do MESMO proprietário, no MESMO período (locação multi-item).
+    // Vazio/ausente = locação de item único (comportamento legado).
+    additionalItemIds: z.array(z.string().cuid("itemId inválido")).max(9, "Máximo 10 itens por locação").optional(),
     startDate:   z.string().datetime({ message: "startDate inválida" }),
     endDate:     z.string().datetime({ message: "endDate inválida" }),
     borrowerNote: z.string().max(500, "Nota: máximo 500 caracteres").optional(),
