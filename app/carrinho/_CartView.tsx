@@ -28,10 +28,11 @@ function addDays(iso: string, days: number): string {
   return d.toISOString().split("T")[0]
 }
 
-function tomorrowISO(): string {
+// Data local de hoje (não UTC): permite locação no MESMO dia e evita o bug de
+// "virar o dia" à noite no Brasil que o toISOString() causaria.
+function todayISO(): string {
   const d = new Date()
-  d.setDate(d.getDate() + 1)
-  return d.toISOString().split("T")[0]
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
 }
 
 export function CartView({ feeRatePct, checkoutMaxCents }: Props) {
@@ -46,7 +47,7 @@ export function CartView({ feeRatePct, checkoutMaxCents }: Props) {
   const [needsComplete, setNeedsComplete] = useState(false)
   const [pending, startTransition] = useTransition()
 
-  const minDate = tomorrowISO()
+  const minDate = todayISO()
   const endDate = useMemo(() => (startDate ? addDays(startDate, numDays) : ""), [startDate, numDays])
 
   const items = useMemo(() => cart?.items ?? [], [cart])

@@ -66,7 +66,12 @@ export function PriceCalc({
   depositAmount, itemId, isLoggedIn, feeRatePct, checkoutMaxCents,
 }: Props) {
   const router = useRouter()
-  const today  = new Date().toISOString().split("T")[0]
+  // Data local (não UTC): toISOString() viraria o dia seguinte à noite no Brasil
+  // e bloquearia a locação no MESMO dia. Permite hoje como início.
+  const today  = (() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+  })()
 
   const availableModes: Mode[] = [
     "daily",
