@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse, after } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { checkRateLimit } from "@/lib/rateLimit"
-import { sendReminderReturnTomorrow } from "@/lib/email"
+import { sendReminderReturnTomorrow, bookingItemsLabel } from "@/lib/email"
 import type { NotificationType } from "@prisma/client"
 
 /**
@@ -61,6 +61,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       endDate:   true,
       item:    { select: { title: true } },
       borrower: { select: { id: true, name: true, email: true } },
+      _count:  { select: { bookingItems: true } },
     },
   })
 
@@ -104,7 +105,7 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
       sendReminderReturnTomorrow(
         booking.borrower.email,
         booking.borrower.name,
-        booking.item.title,
+        bookingItemsLabel(booking.item.title, booking._count.bookingItems || 1),
         bookingId,
         new Date(booking.endDate),
       ).catch((err) => {

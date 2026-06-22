@@ -8,7 +8,7 @@ import { PatchBookingSchema } from "@/lib/validations/bookings"
 import type { BookingStatus } from "@prisma/client"
 import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
 import type { WebhookEvent } from "@/lib/outboundWebhooks"
-import { sendBookingConfirmedEmail, sendBookingCancelledEmail, sendReturnInProgressEmail, sendReturnCompletedEmail } from "@/lib/email"
+import { sendBookingConfirmedEmail, sendBookingCancelledEmail, sendReturnInProgressEmail, sendReturnCompletedEmail, bookingItemsLabel } from "@/lib/email"
 import { calcRefund } from "@/lib/cancellationPolicy"
 import { getCancellationConfig, getPayoutWindowDays } from "@/lib/platform-config"
 import { releaseCouponForBooking } from "@/lib/coupons"
@@ -357,12 +357,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       }
     }
 
-    // E-mails transacionais — após a resposta
+    // E-mails transacionais — após a resposta.
+    // Rótulo multi-item (Story B): cita o item principal + "+ mais N itens" quando a locação tem vários.
+    const itemsLabel = bookingItemsLabel(booking.item.title, booking.bookingItems.length || 1)
     if (action === "confirm") {
       after(() =>
         sendBookingConfirmedEmail(
           booking.borrower.email, booking.borrower.name,
-          booking.item.title, id,
+          itemsLabel, id,
           booking.startDate, booking.endDate,
         ).catch((e) => console.error("[email] booking confirmed:", e instanceof Error ? e.message : e))
       )
@@ -374,7 +376,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       after(() =>
         sendBookingCancelledEmail(
           notifyEmail, notifyName, notifyRole,
-          booking.item.title, id, reason ?? undefined,
+          itemsLabel, id, reason ?? undefined,
         ).catch((e) => console.error("[email] booking cancelled:", e instanceof Error ? e.message : e))
       )
       // P3-20: devolve o cupom usado nesta reserva — após a resposta
@@ -385,7 +387,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       after(() =>
         sendReturnInProgressEmail(
           booking.owner.email, booking.owner.name,
-          booking.borrower.name, booking.item.title, id,
+          booking.borrower.name, itemsLabel, id,
         ).catch((e) => console.error("[email] return in progress:", e instanceof Error ? e.message : e))
       )
     }
@@ -395,7 +397,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         sendReturnCompletedEmail(
           booking.borrower.email, booking.borrower.name,
           booking.owner.email, booking.owner.name,
-          booking.item.title, id,
+          itemsLabel, id,
         ).catch((e) => console.error("[email] return completed:", e instanceof Error ? e.message : e))
       )
     }
