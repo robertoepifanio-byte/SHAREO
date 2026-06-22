@@ -44,7 +44,7 @@ Ambos na org FREE pessoal (`robertoepifanio-byte's Org`), NANO, sa-east-1. **`sh
 
 SQL de manutenção/migration para staging → sempre usar `fflpuoluiqmhpvcxubqi` (**shareo-staging**).
 
-⚠️ **Split do ambiente local:** `.env` aponta `DATABASE_URL` (Prisma) para o **shareo-dev**, mas `.env.local` sobrescreve o cliente Supabase (Storage/Realtime) para o **shareo-staging** → no `next dev`, o ORM grava no dev enquanto Storage/Realtime usam o staging. Alinhar conforme a intenção (uniformizar para o shareo-dev OU mover `DATABASE_URL` para staging também).
+**Ambiente local isolado no shareo-dev (2026-06-22):** `.env` aponta `DATABASE_URL`/`DIRECT_URL` (Prisma) **e** o cliente Supabase (URL + publishable + service_role, chaves novas `sb_*`) para o **shareo-dev**; o `.env.local` **não sobrescreve mais** o Supabase para staging (overrides removidos). Os 3 buckets (`item-images`, `booking-photos`, `id-docs`) e o schema (34 tabelas) já existem no shareo-dev. Antes havia um "split" (Prisma=dev, Storage/Realtime=staging) — resolvido. `scripts/setup-dev-storage.ts` (local) recria os buckets se preciso.
 
 ## Decisões arquiteturais
 
