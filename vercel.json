@@ -32,6 +32,10 @@
     {
       "path": "/api/cron/ambassador-decay",
       "schedule": "0 11 1 * *"
+    },
+    {
+      "path": "/api/cron/kyb",
+      "schedule": "0 6 * * *"
     }
   ]
 }

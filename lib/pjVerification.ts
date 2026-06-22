@@ -133,6 +133,35 @@ async function tryProvider(url: string, source: "brasilapi" | "minhareceita"): P
   return fetchProvider(url, source)
 }
 
+// ─── Circuit breaker (ADR-024 / H2) ─────────────────────────────────────────────
+// Best-effort, em memória por instância serverless. Se a Receita estiver
+// majoritariamente indisponível, abre o circuito e pula a chamada — o caller já
+// trata VERIFICATION_UNAVAILABLE como fail-open (PJ em revisão). "ok" = o provedor
+// respondeu (mesmo que ATIVA/inativa/não-encontrada); "fail" = indisponível.
+
+const CB_WINDOW_MS = 5 * 60 * 1000 // janela de 5 min
+const CB_MIN_SAMPLES = 5 // só decide com amostra mínima
+const CB_FAIL_RATIO = 0.5 // > 50% de falhas → abre
+
+const cbOutcomes: { t: number; ok: boolean }[] = []
+
+function cbPrune(now: number) {
+  while (cbOutcomes.length && now - cbOutcomes[0].t > CB_WINDOW_MS) cbOutcomes.shift()
+}
+
+function circuitOpen(): boolean {
+  const now = Date.now()
+  cbPrune(now)
+  if (cbOutcomes.length < CB_MIN_SAMPLES) return false
+  const fails = cbOutcomes.reduce((n, o) => n + (o.ok ? 0 : 1), 0)
+  return fails / cbOutcomes.length > CB_FAIL_RATIO
+}
+
+function recordOutcome(ok: boolean) {
+  cbOutcomes.push({ t: Date.now(), ok })
+  cbPrune(Date.now())
+}
+
 // ─── Cache best-effort (Upstash Redis) ──────────────────────────────────────────
 
 let redisClient: UpstashRedis | null | undefined
@@ -178,11 +207,17 @@ export async function verifyCnpjAtReceita(cnpj: string): Promise<PjVerificationR
     }
   }
 
+  // Circuit aberto: pula a chamada e cai no fail-open (caller põe em revisão).
+  if (circuitOpen()) throw new PjVerificationError("VERIFICATION_UNAVAILABLE")
+
   const brasilapi = await tryProvider(`https://brasilapi.com.br/api/cnpj/v1/${digits}`, "brasilapi")
   let outcome = brasilapi
   if (outcome.kind === "unavailable") {
     outcome = await tryProvider(`https://minhareceita.org/${digits}`, "minhareceita")
   }
+
+  // Alimenta o circuit breaker: indisponível = falha; qualquer resposta = ok.
+  recordOutcome(outcome.kind !== "unavailable")
 
   if (outcome.kind === "unavailable") throw new PjVerificationError("VERIFICATION_UNAVAILABLE")
   if (outcome.kind === "notfound") throw new PjVerificationError("CNPJ_NOT_FOUND")

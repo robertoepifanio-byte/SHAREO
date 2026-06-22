@@ -202,8 +202,8 @@ const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown
 ## Itens em Aberto
 
 - [x] Decisão de Segurança (2026-06-20): `cnpjResponsavelLegal` **criptografado** com AES-256-GCM via nova `encryptPII()` (coluna `cnpjResponsavelLegalEncrypted`); `cnpjDeclaracaoIp` em **plaintext** (base legítimo interesse, retenção 5a). Adicionada coluna `cnpjDeclaracaoVersion` (CONSENT_VERSION na declaração). `CONSENT_VERSION` subiu para `v1.1`.
-- [ ] **H2** — Circuit breaker (>50% falhas/5min → força revisão) e retry agendado da fila `PENDING_REVIEW`: marcados como negociáveis pelo parecer de Segurança; hoje a revisão é manual via `/admin/usuarios/kyb-pendentes`.
-- [ ] **H2** — Cron de revalidação mensal de `cnpjSituacao` para contas com `cnpjVerificadoAt > 30d`.
-- [ ] **H2** — Job de retenção: nullificar `cnpjDeclaracaoIp` após 5 anos, preservando `cnpjDeclaracaoAt`.
+- [x] **H2 (2026-06-20)** — Circuit breaker (`lib/pjVerification.ts`: janela 5min, >50% falhas com ≥5 amostras → abre e cai no fail-open) + retry agendado da fila `PENDING_REVIEW` via cron `GET /api/cron/kyb` (diário 06h UTC, re-consulta a Receita e marca verificada se ATIVA).
+- [x] **H2 (2026-06-20)** — Job de retenção no mesmo cron: nullifica `cnpjDeclaracaoIp` com `cnpjDeclaracaoAt > 5 anos`, preservando `cnpjDeclaracaoAt`.
+- [ ] **H2** — Cron de revalidação periódica de `cnpjSituacao` para contas **já verificadas** com `cnpjVerificadoAt > 30d` (detectar empresa que encerrou após o cadastro) — distinto do retry da fila acima.
 - [ ] Definir UX da tela admin de revisão (Designer) — hoje é lista funcional read-only com ação de aprovar.
 - [ ] Reavaliar contratação de `cnpj.ws` pago se Brasil API + Minha Receita falharem juntas >2x/semana.
