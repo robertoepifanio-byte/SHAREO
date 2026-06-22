@@ -35,12 +35,16 @@ Marketplace de economia circular para aluguel local de itens. Lançamento nacion
 
 ## Dois projetos Supabase — ATENÇÃO
 
-| Arquivo | Projeto Supabase | Uso |
-|---|---|---|
-| `.env` (local) | `jtianehxosfdrhjzqvqj` | Desenvolvimento local |
-| `.env.staging-migrate` | `fflpuoluiqmhpvcxubqi` | **Banco real do staging no Vercel** |
+| Projeto Supabase | Ref | Arquivos `.env` | Uso |
+|---|---|---|---|
+| **shareo-dev** | `jtianehxosfdrhjzqvqj` | `.env` | Desenvolvimento local |
+| **shareo-staging** | `fflpuoluiqmhpvcxubqi` | `.env.local`, `.env.staging-migrate`, `.env.staging-check` | **Banco real do staging no Vercel** |
 
-SQL de manutenção/migration para staging → sempre usar `fflpuoluiqmhpvcxubqi`.
+Ambos na org FREE pessoal (`robertoepifanio-byte's Org`), NANO, sa-east-1. **`shareo-prd`/produção ainda NÃO existe** — criar só pós-D4, na **org corporativa** (`shareo-marketplace`), em Pro, via `migrate deploy` em banco VAZIO (nunca clonar dev/staging).
+
+SQL de manutenção/migration para staging → sempre usar `fflpuoluiqmhpvcxubqi` (**shareo-staging**).
+
+⚠️ **Split do ambiente local:** `.env` aponta `DATABASE_URL` (Prisma) para o **shareo-dev**, mas `.env.local` sobrescreve o cliente Supabase (Storage/Realtime) para o **shareo-staging** → no `next dev`, o ORM grava no dev enquanto Storage/Realtime usam o staging. Alinhar conforme a intenção (uniformizar para o shareo-dev OU mover `DATABASE_URL` para staging também).
 
 ## Decisões arquiteturais
 
