@@ -129,7 +129,10 @@ export default async function ExplorarPage({ searchParams }: Props) {
   const dbResult = await Promise.all([
     prisma.item.findMany({
       where,
-      ...(useJsFilter ? {} : { skip, take: PAGE_SIZE }),
+      // ARQ-ALTO-09 (paliativo até PostGIS): filtro JS (distância/rating) opera sobre o
+      // conjunto, mas com TETO de 500 itens p/ não carregar a tabela inteira na lambda.
+      take: useJsFilter ? 500 : PAGE_SIZE,
+      ...(useJsFilter ? {} : { skip }),
       orderBy: getOrderBy(sort),
       select: {
         id: true, title: true, pricePerDay: true, pricePerWeek: true,
@@ -139,7 +142,10 @@ export default async function ExplorarPage({ searchParams }: Props) {
         owner:    { select: { name: true, isVerified: true } },
         images:   { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
         _count:   { select: { reviews: true, favorites: true, bookings: { where: { status: { in: ["CONFIRMED", "ACTIVE"] } } } } },
-        reviews:  { select: { rating: true }, where: { reviewType: "ITEM" } },
+        // ARQ-ALTO-10: a listagem NÃO exibe nota no card — as reviews servem só ao
+        // filtro opcional `minRating`. Carrega as linhas APENAS quando ele está ativo
+        // (elimina o N+1 de reviews no caso comum, sem migração/denormalização).
+        ...(minRating ? { reviews: { select: { rating: true }, where: { reviewType: "ITEM" as const } } } : {}),
       },
     }),
     prisma.item.count({ where }),
@@ -172,8 +178,8 @@ export default async function ExplorarPage({ searchParams }: Props) {
   const [rawItems, total, categories] = dbResult
 
   // Filtros em JS: distância e avaliação mínima
-  function avgRating(i: { reviews: { rating: number }[] }) {
-    if (!i.reviews.length) return 0
+  function avgRating(i: { reviews?: { rating: number }[] }) {
+    if (!i.reviews?.length) return 0
     return i.reviews.reduce((s, r) => s + r.rating, 0) / i.reviews.length
   }
 

@@ -16,6 +16,14 @@ function isoFromNow(days: number): string {
   return d.toISOString()
 }
 
+/** ISO para N dias a partir de hoje ao MEIO-DIA local — espelha o que a UI envia. */
+function isoNoon(days: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() + days)
+  d.setHours(12, 0, 0, 0)
+  return d.toISOString()
+}
+
 /** CUID válido de exemplo. */
 const VALID_CUID = "clh3z2v0000001p68fxyz1234"
 
@@ -124,18 +132,14 @@ describe("CreateBookingSchema", () => {
   })
 
   describe("regras de negócio — datas", () => {
-    it("rejeita startDate igual a hoje (deve ser a partir de amanhã)", () => {
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
+    it("aceita startDate igual a hoje (locação no mesmo dia)", () => {
+      // A UI envia a data ao meio-dia local; qualquer horário de hoje deve passar.
       const result = CreateBookingSchema.safeParse({
         itemId: VALID_CUID,
-        startDate: today.toISOString(),
-        endDate: isoFromNow(3),
+        startDate: isoNoon(0),
+        endDate: isoNoon(1),
       })
-      expect(result.success).toBe(false)
-      if (!result.success) {
-        expect(result.error.issues.some((i) => i.path.includes("startDate"))).toBe(true)
-      }
+      expect(result.success).toBe(true)
     })
 
     it("rejeita startDate no passado", () => {

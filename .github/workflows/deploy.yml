@@ -187,7 +187,7 @@ jobs:
 
   # ─────────────────────────────────────────────────────────────────
   # JOB 3: E2E Staging — regressão contínua após cada deploy na main
-  # Roda os 12 specs Playwright contra shareo-rouge.vercel.app
+  # Roda os 12 specs curados + smoke autenticado de devolução (#36) contra o staging
   # ─────────────────────────────────────────────────────────────────
   e2e-staging:
     name: E2E Regressão Contínua (Staging)
@@ -211,6 +211,29 @@ jobs:
       - name: Install Playwright browsers (Chromium)
         run: pnpm exec playwright install --with-deps chromium
 
+      # Smokes autenticados de ciclo de vida (ex.: return-flow #36) usam sessões fixture
+      # (storageState) que são gitignored. Recriamos no runner: register idempotente + login.
+      # continue-on-error: se falhar, os smokes que dependem das sessões apenas DÃO SKIP
+      # (test.skip(!hasSessions)) — a regressão curada segue intacta, sem falso-vermelho.
+      - name: Criar sessões fixture (smokes autenticados)
+        continue-on-error: true
+        run: pnpm tsx scripts/create-staging-fixtures.ts
+        env:
+          STAGING_URL: ${{ secrets.STAGING_URL }}
+          E2E_SECRET:  ${{ secrets.E2E_SECRET }}
+
+      # Os fixtures recém-criados nascem sem e-mail verificado / cadastro completo, o que
+      # bloquearia anunciar (REGISTRATION_INCOMPLETE) e alugar (EMAIL_NOT_VERIFIED). Marcamos
+      # ambos via DB para os 2 usuários de teste. continue-on-error: se falhar, o smoke dá SKIP
+      # (createTestItem → 403 → test.skip), sem derrubar o deploy.
+      - name: Provisionar usuários fixture (emailVerified + profileCompletedAt)
+        continue-on-error: true
+        run: |
+          printf '%s\n' "UPDATE users SET \"emailVerified\" = COALESCE(\"emailVerified\", now()), \"profileCompletedAt\" = COALESCE(\"profileCompletedAt\", now()) WHERE email IN ('locatario.fixture@shareo-test.com','proprietario.fixture@shareo-test.com');" \
+            | pnpm prisma db execute --stdin --url "$DIRECT_URL"
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_URL_STAGING }}
+
       - name: Run E2E suite against staging
         run: |
           pnpm playwright test \
@@ -226,6 +249,7 @@ jobs:
             e2e/e2e-usability-plan.spec.ts \
             e2e/e2e-integration-plan.spec.ts \
             e2e/e2e-governance-plan.spec.ts \
+            e2e/return-flow.spec.ts \
             --config=playwright.staging.config.ts --workers=1
         env:
           STAGING_URL: ${{ secrets.STAGING_URL }}

@@ -10,6 +10,7 @@ export type AuditAction =
   | "PLATFORM_CONFIG_UPDATED"
   | "ADMIN_ROLE_GRANTED"
   | "EXPORT_FINANCIAL"
+  | "PIX_PAYMENT_CONFIRMED"
 
 /** Grava uma entrada no audit log de forma fire-and-forget. Nunca lança exceção. */
 export function auditLog(

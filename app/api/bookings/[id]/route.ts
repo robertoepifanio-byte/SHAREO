@@ -8,10 +8,11 @@ import { PatchBookingSchema } from "@/lib/validations/bookings"
 import type { BookingStatus } from "@prisma/client"
 import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
 import type { WebhookEvent } from "@/lib/outboundWebhooks"
-import { sendBookingConfirmedEmail, sendBookingCancelledEmail } from "@/lib/email"
+import { sendBookingConfirmedEmail, sendBookingCancelledEmail, sendReturnInProgressEmail, sendReturnCompletedEmail } from "@/lib/email"
 import { calcRefund } from "@/lib/cancellationPolicy"
 import { getCancellationConfig, getPayoutWindowDays } from "@/lib/platform-config"
 import { releaseCouponForBooking } from "@/lib/coupons"
+import { findOverlappingItem } from "@/lib/booking-availability"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -137,6 +138,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         id: true, status: true, borrowerId: true, ownerId: true,
         itemId: true, startDate: true, endDate: true, totalPrice: true, totalDays: true,
         pickupToken: true, pickupTokenUsedAt: true,
+        bookingItems: { select: { itemId: true } }, // Story B — revalidar todos os itens no confirm
         item:     { select: { title: true } },
         borrower: { select: { email: true, name: true } },
         owner:    { select: { email: true, name: true } },
@@ -254,18 +256,33 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       data.endDate           = new Date(effectiveTime.getTime() + booking.totalDays * 24 * 60 * 60 * 1000)
     }
 
-    // Grava horário real de devolução (informado pelo locatário ou server time).
-    if (action === "mark_returned" || action === "confirm_return") {
+    // Grava horário de devolução em dois momentos distintos:
+    //  - mark_returned (borrower inicia): grava returnRequestedAt (solicitação)
+    //  - confirm_return (owner confirma): grava returnedAt (confirmação real)
+    // Isso permite exibir "Devolução solicitada" e "Devolução confirmada" como
+    // eventos separados no histórico da locação.
+    if (action === "mark_returned") {
+      data.returnRequestedAt = effectiveTime
+    }
+    if (action === "confirm_return") {
       data.returnedAt = effectiveTime
     }
 
     // Gera pickupToken único no confirm (fluxo PIX/manual — Stripe gera o próprio via webhook).
     if (action === "confirm" && !booking.pickupToken) {
-      for (;;) {
+      let token: string | null = null
+      for (let attempt = 0; attempt < 12 && !token; attempt++) { // ARQ-ALTO-14: teto de tentativas
         const candidate = String(randomInt(100000, 1000000))
         const conflict  = await prisma.booking.findFirst({ where: { pickupToken: candidate }, select: { id: true } })
-        if (!conflict) { data.pickupToken = candidate; break }
+        if (!conflict) token = candidate
       }
+      if (!token) {
+        return NextResponse.json(
+          { error: { code: "INTERNAL_ERROR", message: "Não foi possível gerar o código de retirada. Tente novamente." } },
+          { status: 500 },
+        )
+      }
+      data.pickupToken = token
     }
 
     // Update atômico por ação (S14-A-05/A-06 — evita double-booking e ativação dupla em corrida).
@@ -277,19 +294,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       // Antes o check ficava fora de transação → race de double-booking (dois confirms simultâneos).
       try {
         const result = await prisma.$transaction(async (tx) => {
-          const conflict = await tx.booking.findFirst({
-            where: {
-              id:     { not: id },
-              itemId: booking.itemId,
-              status: { in: ["CONFIRMED", "ACTIVE"] },
-              AND: [
-                { startDate: { lt: booking.endDate } },
-                { endDate:   { gt: booking.startDate } },
-              ],
-            },
-            select: { id: true },
-          })
-          if (conflict) return null
+          // Disponibilidade de TODOS os itens da locação via booking_items (Story B) —
+          // não só o item principal, senão um item secundário podia ser double-booked no confirm.
+          const itemIds = booking.bookingItems.length > 0
+            ? booking.bookingItems.map((bi) => bi.itemId)
+            : [booking.itemId]
+          const conflictItem = await findOverlappingItem(tx, itemIds, booking.startDate, booking.endDate, id)
+          if (conflictItem) return null
           return tx.booking.update({ where: { id }, data, select: updateSelect })
         }, { isolationLevel: "Serializable" })
 
@@ -369,6 +380,25 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       // P3-20: devolve o cupom usado nesta reserva — após a resposta
       after(() => releaseCouponForBooking(id))
     }
+    // Devolução iniciada pelo locatário (ACTIVE → "Devolução em Andamento") — avisa o locador
+    if (action === "mark_returned") {
+      after(() =>
+        sendReturnInProgressEmail(
+          booking.owner.email, booking.owner.name,
+          booking.borrower.name, booking.item.title, id,
+        ).catch((e) => console.error("[email] return in progress:", e instanceof Error ? e.message : e))
+      )
+    }
+    // Recebimento confirmado pelo locador (→ COMPLETED) — avisa AMBAS as partes
+    if (action === "confirm_return") {
+      after(() =>
+        sendReturnCompletedEmail(
+          booking.borrower.email, booking.borrower.name,
+          booking.owner.email, booking.owner.name,
+          booking.item.title, id,
+        ).catch((e) => console.error("[email] return completed:", e instanceof Error ? e.message : e))
+      )
+    }
 
     // Webhooks de saída — após a resposta
     const webhookEventMap: Partial<Record<typeof action, WebhookEvent>> = {
@@ -395,7 +425,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const notifMap: Partial<Record<typeof action, { type: string; title: string; body: string }>> = {
       confirm:        { type: "BOOKING_CONFIRMED",  title: "Reserva confirmada!",        body: `Sua reserva de "${booking.item.title}" foi confirmada.` },
       cancel:         { type: "BOOKING_CANCELLED",  title: "Reserva cancelada",          body: `A reserva de "${booking.item.title}" foi cancelada.` },
-      mark_returned:  { type: "BOOKING_RETURNED",   title: "Devolução registrada",       body: `"${booking.item.title}" foi devolvido. Avalie a experiência!` },
+      mark_returned:  { type: "BOOKING_RETURNED",   title: "Devolução em andamento",     body: `O locatário iniciou a devolução de "${booking.item.title}". Confira o item e confirme o recebimento.` },
       confirm_return: { type: "BOOKING_RETURNED",   title: "Devolução confirmada!",      body: `O proprietário confirmou a devolução de "${booking.item.title}". A reserva está concluída.` },
     }
     const notif = notifMap[action]

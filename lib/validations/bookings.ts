@@ -1,22 +1,30 @@
 import { z } from "zod"
 
-function tomorrow() {
-  const d = new Date()
-  d.setDate(d.getDate() + 1)
-  d.setHours(0, 0, 0, 0)
-  return d
+// Início do dia CORRENTE no fuso do Brasil (America/Fortaleza, UTC-3 sem DST),
+// expresso como instante UTC. Permite locação no MESMO dia e bloqueia datas
+// passadas — sem o bug de "virar o dia" quando o servidor (UTC) já passou da
+// meia-noite enquanto no Brasil ainda é hoje. O cliente envia startDate ao
+// meio-dia local, então qualquer horário de "hoje" passa.
+function startOfTodayBR() {
+  const BR_OFFSET_MS = 3 * 60 * 60 * 1000 // UTC-3
+  const nowBR = new Date(Date.now() - BR_OFFSET_MS) // "agora" em componentes BRT
+  nowBR.setUTCHours(0, 0, 0, 0)                      // meia-noite BRT
+  return new Date(nowBR.getTime() + BR_OFFSET_MS)    // de volta a UTC
 }
 
 export const CreateBookingSchema = z
   .object({
     itemId:      z.string().cuid("itemId inválido"),
+    // Story B — itens adicionais do MESMO proprietário, no MESMO período (locação multi-item).
+    // Vazio/ausente = locação de item único (comportamento legado).
+    additionalItemIds: z.array(z.string().cuid("itemId inválido")).max(9, "Máximo 10 itens por locação").optional(),
     startDate:   z.string().datetime({ message: "startDate inválida" }),
     endDate:     z.string().datetime({ message: "endDate inválida" }),
     borrowerNote: z.string().max(500, "Nota: máximo 500 caracteres").optional(),
     couponCode:   z.string().trim().min(4).max(30).optional(),
   })
-  .refine((d) => new Date(d.startDate) >= tomorrow(), {
-    message: "A data de início deve ser a partir de amanhã",
+  .refine((d) => new Date(d.startDate) >= startOfTodayBR(), {
+    message: "A data de início não pode ser no passado.",
     path: ["startDate"],
   })
   .refine((d) => new Date(d.endDate) > new Date(d.startDate), {

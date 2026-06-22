@@ -35,12 +35,16 @@ Marketplace de economia circular para aluguel local de itens. Lançamento nacion
 
 ## Dois projetos Supabase — ATENÇÃO
 
-| Arquivo | Projeto Supabase | Uso |
-|---|---|---|
-| `.env` (local) | `jtianehxosfdrhjzqvqj` | Desenvolvimento local |
-| `.env.staging-migrate` | `fflpuoluiqmhpvcxubqi` | **Banco real do staging no Vercel** |
+| Projeto Supabase | Ref | Arquivos `.env` | Uso |
+|---|---|---|---|
+| **shareo-dev** | `jtianehxosfdrhjzqvqj` | `.env` | Desenvolvimento local |
+| **shareo-staging** | `fflpuoluiqmhpvcxubqi` | `.env.local`, `.env.staging-migrate`, `.env.staging-check` | **Banco real do staging no Vercel** |
 
-SQL de manutenção/migration para staging → sempre usar `fflpuoluiqmhpvcxubqi`.
+Ambos na org FREE pessoal (`robertoepifanio-byte's Org`), NANO, sa-east-1. **`shareo-prd`/produção ainda NÃO existe** — criar só pós-D4, na **org corporativa** (`shareo-marketplace`), em Pro, via `migrate deploy` em banco VAZIO (nunca clonar dev/staging).
+
+SQL de manutenção/migration para staging → sempre usar `fflpuoluiqmhpvcxubqi` (**shareo-staging**).
+
+**Ambiente local isolado no shareo-dev (2026-06-22):** `.env` aponta `DATABASE_URL`/`DIRECT_URL` (Prisma) **e** o cliente Supabase (URL + publishable + service_role, chaves novas `sb_*`) para o **shareo-dev**; o `.env.local` **não sobrescreve mais** o Supabase para staging (overrides removidos). Os 3 buckets (`item-images`, `booking-photos`, `id-docs`) e o schema (34 tabelas) já existem no shareo-dev. Antes havia um "split" (Prisma=dev, Storage/Realtime=staging) — resolvido. `scripts/setup-dev-storage.ts` (local) recria os buckets se preciso.
 
 ## Decisões arquiteturais
 

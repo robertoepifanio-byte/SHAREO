@@ -13,9 +13,10 @@ interface Props {
 }
 
 const ATIVIDADE = [
-  { href: "/reservas",   label: "Reservas",   icon: "📅" },
-  { href: "/mensagens",  label: "Mensagens",  icon: "💬" },
-  { href: "/dashboard",  label: "Dashboard",  icon: "📊" },
+  { href: "/meus-anuncios", label: "Meus Anúncios", icon: "📦" },
+  { href: "/reservas",      label: "Reservas",      icon: "📅" },
+  { href: "/mensagens",     label: "Mensagens",     icon: "💬" },
+  { href: "/dashboard",     label: "Dashboard",     icon: "📊" },
 ]
 
 const ADMIN_ATALHOS = [

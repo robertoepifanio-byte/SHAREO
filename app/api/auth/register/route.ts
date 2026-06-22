@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { RegisterMinimalSchema } from "@/lib/validations/auth"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { sendVerificationEmail } from "@/lib/email"
+import { hashToken } from "@/lib/crypto"
 import crypto from "crypto"
 import { generateUserSlug } from "@/lib/slugify"
 import { applyReferralCode } from "@/lib/referral"
@@ -105,7 +106,7 @@ export async function POST(req: NextRequest) {
       prisma.user
         .update({
           where: { id: user.id },
-          data:  { emailVerifyToken: verifyToken, emailTokenExpiresAt: tokenExpiresAt },
+          data:  { emailVerifyToken: hashToken(verifyToken), emailTokenExpiresAt: tokenExpiresAt },
         })
         .then(() => sendVerificationEmail(user.email, user.name, verifyToken))
         .catch((err) =>

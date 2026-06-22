@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { sendVerificationEmail } from "@/lib/email"
+import { hashToken } from "@/lib/crypto"
 import { EMAIL_VERIFY_TOKEN_TTL_MS } from "@/lib/auth-config"
 
 export async function POST(req: NextRequest) {
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
 
   await prisma.user.update({
     where: { id: userId },
-    data:  { emailVerifyToken: verifyToken, emailTokenExpiresAt: tokenExpiresAt },
+    data:  { emailVerifyToken: hashToken(verifyToken), emailTokenExpiresAt: tokenExpiresAt },
   })
 
   after(() =>

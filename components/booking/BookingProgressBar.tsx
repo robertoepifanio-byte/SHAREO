@@ -1,6 +1,11 @@
 /**
  * BookingProgressBar — barra de progresso visual para o fluxo de reserva.
  * Server Component: recebe o status atual como prop e não usa estado.
+ *
+ * Responsividade: em telas pequenas (mobile) os rótulos por etapa são ocultados
+ * e exibimos apenas a nomenclatura da etapa vigente, centralizada abaixo da
+ * timeline — evita a sobreposição de textos. A partir de `sm` (desktop/tablet)
+ * todos os rótulos aparecem sob cada indicador.
  */
 
 type BookingStatus =
@@ -15,15 +20,15 @@ type BookingStatus =
 interface Step {
   id:    number
   label: string
-  short: string
 }
 
 const STEPS: Step[] = [
-  { id: 1, label: "Solicitação",  short: "Solicitado" },
-  { id: 2, label: "Confirmação",  short: "Confirmado" },
-  { id: 3, label: "Pagamento",    short: "Pago" },
-  { id: 4, label: "Em uso",       short: "Em uso" },
-  { id: 5, label: "Concluída",    short: "Concluído" },
+  { id: 1, label: "Solicitação" },
+  { id: 2, label: "Confirmação" },
+  { id: 3, label: "Pagamento" },
+  { id: 4, label: "Em uso" },
+  { id: 5, label: "Devolução" },
+  { id: 6, label: "Concluída" },
 ]
 
 /** Retorna qual etapa está "ativa" dado o status do booking */
@@ -32,8 +37,8 @@ function statusToStep(status: BookingStatus, isPaid: boolean): number {
     case "PENDING":   return 1
     case "CONFIRMED": return isPaid ? 3 : 2
     case "ACTIVE":    return 4
-    case "RETURNED":
-    case "COMPLETED": return 5
+    case "RETURNED":  return 5 // Devolução em andamento — aguardando confirmação do locador
+    case "COMPLETED": return 6
     default:          return 1
   }
 }
@@ -41,22 +46,21 @@ function statusToStep(status: BookingStatus, isPaid: boolean): number {
 interface Props {
   status:        BookingStatus
   paymentStatus: string
-  /** Exibe versão compacta (só ícones + labels curtos) em mobile */
-  compact?: boolean
 }
 
-export function BookingProgressBar({ status, paymentStatus, compact = false }: Props) {
+export function BookingProgressBar({ status, paymentStatus }: Props) {
   if (status === "CANCELLED" || status === "DISPUTED") return null
 
-  const isPaid      = paymentStatus === "PAID"
-  const currentStep = statusToStep(status, isPaid)
-  const fillWidth   = `${((currentStep - 1) / (STEPS.length - 1)) * 100}%`
+  const isPaid       = paymentStatus === "PAID"
+  const currentStep  = statusToStep(status, isPaid)
+  const currentLabel = STEPS[currentStep - 1]?.label
+  const fillWidth    = `${((currentStep - 1) / (STEPS.length - 1)) * 100}%`
 
   return (
     <div className="mb-6 rounded-xl border border-border bg-surface p-4" aria-label="Progresso da reserva">
       {/* Label da etapa atual */}
       <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        Etapa {currentStep} de {STEPS.length} — <span className="text-brand">{STEPS[currentStep - 1]?.label}</span>
+        Etapa {currentStep} de {STEPS.length} — <span className="text-brand">{currentLabel}</span>
       </p>
 
       {/* Linha de progresso */}
@@ -99,21 +103,25 @@ export function BookingProgressBar({ status, paymentStatus, compact = false }: P
                   )}
                 </div>
 
-                {/* Label */}
+                {/* Label por etapa — apenas no desktop (sm+); no mobile usamos o rótulo único abaixo */}
                 <span
                   className={[
-                    "mt-2 text-center leading-tight",
-                    compact ? "text-[10px] w-12" : "text-xs w-16",
+                    "mt-2 hidden text-center text-xs leading-tight sm:block sm:w-16",
                     done || current ? "font-semibold text-foreground" : "text-muted-foreground",
                   ].join(" ")}
                 >
-                  {compact ? step.short : step.label}
+                  {step.label}
                 </span>
               </li>
             )
           })}
         </ol>
       </div>
+
+      {/* Rótulo da etapa vigente — apenas no mobile, centralizado abaixo da timeline (sem sobreposição) */}
+      <p className="mt-3 text-center text-sm font-semibold text-foreground sm:hidden">
+        {currentLabel}
+      </p>
     </div>
   )
 }

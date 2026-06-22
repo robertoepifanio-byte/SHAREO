@@ -28,7 +28,7 @@ const BOOKING_STATUS_LABEL: Record<string, string> = {
   PENDING:   "Pendente",
   CONFIRMED: "Confirmada",
   ACTIVE:    "Em uso",
-  RETURNED:  "Devolvida",
+  RETURNED:  "Devolução em andamento",
   COMPLETED: "Concluída",
   CANCELLED: "Cancelada",
   DISPUTED:  "Em disputa",
@@ -108,10 +108,10 @@ export default async function DashboardPage() {
       select: { item: { select: { categoryId: true } } },
     }).catch(() => []),
 
-    // cidade/estado do usuário para personalizar textos
+    // cidade/estado do usuário para personalizar textos + status do cadastro
     prisma.user.findUnique({
       where:  { id: uid },
-      select: { city: true, state: true },
+      select: { city: true, state: true, profileCompletedAt: true },
     }).catch(() => null),
 
     // P2-58 — Próximas devoluções (proprietário): reservas ACTIVE ordenadas por endDate ASC
@@ -170,6 +170,9 @@ export default async function DashboardPage() {
   const userState    = userProfile?.state ?? null
   const userLocation = userCity ? (userState ? `${userCity}, ${userState}` : userCity) : "Brasil"
 
+  // Cadastro incompleto → aviso opcional para completar (CPF + endereço), exigido só ao anunciar/alugar.
+  const profileIncomplete = !!userProfile && userProfile.profileCompletedAt == null
+
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
@@ -194,6 +197,31 @@ export default async function DashboardPage() {
 
       <main className="container py-8">
         <div className="mx-auto max-w-3xl">
+
+          {/* Aviso de cadastro incompleto — opcional, exigido só ao anunciar/alugar */}
+          {profileIncomplete && (
+            <div className="mb-8 flex flex-col gap-3 rounded-xl border border-brand/30 bg-brand/5 p-5 sm:flex-row sm:items-center">
+              <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>
+                </svg>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-primary">Complete seu cadastro</p>
+                <p className="mt-0.5 text-sm text-muted-foreground">
+                  Informe CPF e endereço (ou CNPJ, se for empresa) para poder anunciar e alugar. Leva menos de 1 minuto — é opcional até você usar.
+                </p>
+              </div>
+              <Link
+                href="/cadastro/completar"
+                className="inline-flex h-11 flex-shrink-0 items-center justify-center rounded-lg bg-brand px-5 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+              >
+                Completar agora
+              </Link>
+            </div>
+          )}
 
           {/* Stats — 4 métricas em 2×2 */}
           <div className="mb-8 grid grid-cols-2 gap-4">

@@ -199,9 +199,12 @@ export async function POST(req: NextRequest, { params }: Params) {
         prisma.review.count({ where: { bookingId: id } })
           .then(async (count) => {
             if (count >= 3) {
+              // Conclusão por avaliação mútua (sem confirm_return): grava returnedAt para
+              // manter o invariante "COMPLETED sempre tem returnedAt" — necessário para o
+              // histórico da locação (evento de conclusão) e para o display admin.
               await prisma.booking.update({
                 where: { id, status: "RETURNED" },
-                data:  { status: "COMPLETED" },
+                data:  { status: "COMPLETED", returnedAt: new Date() },
               })
             }
           })

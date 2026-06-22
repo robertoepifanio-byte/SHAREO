@@ -27,6 +27,7 @@ const mockBookingFindFirst  = jest.fn().mockResolvedValue(null) // sem conflito 
 const mockBookingUpdate     = jest.fn()
 const mockBookingUpdateMany = jest.fn().mockResolvedValue({ count: 1 }) // mark_active: token ainda não consumido
 const mockBookingFindUniqueOrThrow = jest.fn()
+const mockBookingItemFindFirst = jest.fn().mockResolvedValue(null) // Story B: disponibilidade via booking_items, sem conflito
 const mockNotificationCreate = jest.fn()
 
 // S14-A-05/A-06: `confirm` roda dentro de prisma.$transaction (tx.booking.findFirst + update);
@@ -39,9 +40,13 @@ jest.mock("@/lib/prisma", () => {
     updateMany:        (...args: unknown[]) => mockBookingUpdateMany(...args),
     findUniqueOrThrow: (...args: unknown[]) => mockBookingFindUniqueOrThrow(...args),
   }
+  const bookingItem = {
+    findFirst: (...args: unknown[]) => mockBookingItemFindFirst(...args),
+  }
   return {
     prisma: {
       booking,
+      bookingItem,
       notification: {
         create: (...args: unknown[]) => mockNotificationCreate(...args),
       },
@@ -56,7 +61,7 @@ jest.mock("@/lib/prisma", () => {
         findMany:   jest.fn().mockResolvedValue([]),
       },
       // confirm usa transação serializável; o mock executa o callback com um tx que reusa os mesmos mocks.
-      $transaction: (fn: (tx: unknown) => unknown) => fn({ booking }),
+      $transaction: (fn: (tx: unknown) => unknown) => fn({ booking, bookingItem }),
     },
   }
 })
@@ -69,6 +74,8 @@ jest.mock("@/lib/auth", () => ({
 jest.mock("@/lib/email", () => ({
   sendBookingConfirmedEmail: jest.fn().mockResolvedValue(undefined),
   sendBookingCancelledEmail: jest.fn().mockResolvedValue(undefined),
+  sendReturnInProgressEmail: jest.fn().mockResolvedValue(undefined),
+  sendReturnCompletedEmail:  jest.fn().mockResolvedValue(undefined),
 }))
 
 jest.mock("@/lib/outboundWebhooks", () => ({
@@ -124,6 +131,7 @@ function makeBooking(overrides: {
     startDate:   new Date("2026-06-10T00:00:00Z"),
     endDate:     new Date("2026-06-15T00:00:00Z"),
     totalPrice:  300,
+    bookingItems: [{ itemId: "item-id-004" }], // Story B — confirm revalida todos os itens
     item:        { title: "Furadeira Bosch" },
     borrower:    { email: "borrower@ex.com", name: "Locatário Teste" },
     owner:       { email: "owner@ex.com",    name: "Proprietário Teste" },
@@ -169,6 +177,20 @@ describe("PATCH /api/bookings/[id]", () => {
 
       expect(res.status).toBe(200)
       expect(body.data.status).toBe("CONFIRMED")
+    })
+
+    // Story B / ARQ-CRIT-01 — confirm revalida TODOS os itens da locação:
+    // se um item (principal OU secundário) já estiver reservado no período → 409
+    it("PENDING + confirm com item da locação já reservado → 409 DATE_CONFLICT", async () => {
+      mockAuth.mockResolvedValue(makeSession(OWNER_ID))
+      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "PENDING" }))
+      mockBookingItemFindFirst.mockResolvedValueOnce({ itemId: "item-id-004" }) // conflito num item da locação
+
+      const res  = await PATCH(makeReq({ action: "confirm" }), makeParams())
+      const body = await res.json() as { error?: { code?: string } }
+
+      expect(res.status).toBe(409)
+      expect(body.error?.code).toBe("DATE_CONFLICT")
     })
 
     // 2. PENDING + cancel (borrower, com reason) → 200, status CANCELLED

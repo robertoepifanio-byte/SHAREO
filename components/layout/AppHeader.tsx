@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth"
 import Image from "next/image"
 import Link from "next/link"
 import { NotificationBell } from "@/components/ui/NotificationBell"
+import { CartIndicator } from "@/components/cart/CartIndicator"
 import { MobileMenu } from "@/components/layout/MobileMenu"
 import { UserDropdown } from "@/components/layout/UserDropdown"
 import { HelpButton } from "@/components/layout/HelpButton"
@@ -57,6 +58,8 @@ export async function AppHeader() {
               <span className="hidden md:block text-sm font-semibold text-white/85 whitespace-nowrap">
                 Olá, {session.user?.name?.split(" ")[0] ?? "você"}!
               </span>
+
+              <CartIndicator />
 
               <NotificationBell />
 

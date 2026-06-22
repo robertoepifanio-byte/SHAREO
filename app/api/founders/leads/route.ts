@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma"
 import { assignWave } from "@/lib/founders"
 import { sendFounderWelcomeEmail } from "@/lib/email"
 import { CONSENT_VERSION } from "@/lib/legal-config"
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 
 const SOURCE_VALUES = ["ORGANIC", "VIP_LANDING", "REFERRAL", "GOOGLE_ADS", "META_ADS"] as const
 type SourceValue = (typeof SOURCE_VALUES)[number]
@@ -29,6 +30,12 @@ const Schema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    // SEC-ALTO-05: rota pública — rate limit por IP (anti-spam de leads + custo Resend)
+    const rlIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+             ?? req.headers.get("x-real-ip") ?? "unknown"
+    const rl = await checkRateLimit(`founders-lead:${rlIp}`, 5, 60_000, req)
+    if (!rl.allowed) return rateLimitResponse(rl.resetAt)
+
     const body   = await req.json().catch(() => null)
     const parsed = Schema.safeParse(body)
     if (!parsed.success) {

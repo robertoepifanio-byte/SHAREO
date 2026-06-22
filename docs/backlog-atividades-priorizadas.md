@@ -8,6 +8,36 @@
 
 ---
 
+## ⏭️ Pendências imediatas (próxima sessão)
+
+| Item | Status | Ação |
+|---|---|---|
+| **KYB PJ — mesclar PR #64 (H2)** | 🟡 PR aberto, **aguardando merge** | PR [#64](https://github.com/robertoepifanio-byte/SHAREO/pull/64) (`feat/kyb-h2-hardening`, `55ea18e`): circuit breaker + cron `/api/cron/kyb` (retry da fila + retenção do IP) + `STATUS.md` s32 + roteiro de testes versionado. CI verde; **não mesclado p/ não redeployar durante a validação dos testers**. Mesclar quando os testers terminarem. Sem migração nova. |
+| **KYB PJ — feedback dos testers do cadastro** | ⏳ aguardando | Tratar os achados do roteiro `docs/roteiro-teste-cadastro-pj.pdf` (2 formas: upgrade PF→PJ e cadastro direto PJ) quando os testers devolverem. |
+| **KYB PJ — cron de revalidação de PJs já verificadas (H2 aberto)** | 🔵 backlog | Cron periódico p/ reconsultar a Receita em contas **já verificadas** (`cnpjVerificadoAt > 30d`) e detectar empresa que encerrou após o cadastro — distinto do retry da fila já implementado. Ver `docs/adr/ADR-024-kyb-leve-pj.md`. |
+| **`/bem-vindo` — generalizar a copy (PÓS pré-lançamento)** | 🔵 pós pré-lançamento | Com o ajuste de UX do cadastro (feedback dos testers), **todo** signup passou a cair em `/bem-vindo` (antes só convidados-piloto): `RegisterForm` redireciona p/ lá + aviso "Complete seu cadastro" no `/dashboard` p/ perfil incompleto. A `/bem-vindo` ainda traz enquadramento de piloto ("Você é um dos primeiros 🎉"; comentário "Onboarding do piloto") — **adequado no pré-lançamento**; **após o lançamento**, generalizar a copy (remover o tom de piloto). Arquivo: `app/bem-vindo/page.tsx`. |
+| **Termos — cláusula explícita da taxa (questão #4 do D4)** | 🟡 commitado local, **falta push/PR** | Branch `fix/termos-taxa-servico-explicita` (`7e6aa84`) já com a seção 6 dos Termos explicitando taxa 15% (via `getPlatformFeeRate()`, sem hardcode) + repasse semanal às segundas + teto R$500. **Amanhã (a partir de 2026-06-18):** `git push` da branch + abrir PR p/ `main` (CI roda lint/tsc/build). Verificado local: `/termos`=200. |
+
+---
+
+## 💳 Avaliação: migração de pagamentos Stripe → Mercado Pago (s34, 2026-06-22)
+
+**Status:** 🟡 **EM AVALIAÇÃO — decisão dos fundadores.** Análise técnica feita; **nenhum código alterado.** Roberto vai levar aos fundadores. **Nada vai a produção antes do D4.**
+
+**Por quê:** o Mercado Pago é nativo do Brasil (PIX/cartão/boleto), faz **PIX nativo com confirmação automática** (aposenta o checkout PIX manual temporário) e é **instituição de pagamento licenciada** — pode **amenizar** as questões #1/#5 do D4 (Lei 12.865 / PLD).
+
+**Bifurcação que define tudo (decisão dos fundadores):**
+- **Modelo A — gateway simples:** 1 conta MP da ShareO recebe tudo, repasse manual (como hoje). Substituição ~1:1 do Stripe. **~3–5 dias.** Mantém a questão *merchant of record* no D4. **Recomendado começar por aqui.**
+- **Modelo B — Marketplace/split:** cada dono conecta conta MP (OAuth), MP divide e a taxa de 15% vai como `marketplace_fee`. **~2–3 semanas.** Ameniza o D4 e alinha com o plano "Stripe Connect ~dez/2026". Trilha pós-D4.
+
+**Superfície técnica a trocar (modelo A):** `lib/stripe.ts`→`lib/mercadopago.ts`; `app/api/payments/checkout/route.ts` (Preference/`init_point` em vez de `checkout.sessions`); `app/api/webhooks/stripe/route.ts`→`webhooks/mercadopago` (valida `x-signature`, busca pagamento por id, mapeia por `external_reference`); `app/api/cron/reminders` (multa); schema (campos `mp*` aditivos; `StripeEventQueue`→`PaymentEventQueue`); `PayButton.tsx` + cópias (`ajuda`/`politicas`/`termos`/`admin/financeiro`); env `MP_ACCESS_TOKEN`/`MP_WEBHOOK_SECRET`; testes E2E. **CSP NÃO muda** (fluxo é redirect, igual ao Stripe hoje) — só mudaria se usar *Bricks*. Stripe fica preservado atrás de flag durante a transição.
+
+**Gotchas:** webhook do MP é em 2 tempos (recebe id → consulta status `approved`); PIX pode ficar `pending` segundos (UI de "aguardando" — já temos o padrão); validação de assinatura diferente do Stripe; sandbox usa *test users* (não cartões de teste do Stripe).
+
+**Ação dos fundadores:** decidir modelo A×B + conta **PJ** da ShareO; criar conta MP empresa + aplicação (credenciais de teste); levar a pergunta do **split** ao jurídico (D4). **Procedimentos operacionais detalhados:** `docs/mercadopago-procedimentos-fundadores.md` (documento para repasse). Análise completa: memória [[project-mercadopago-migration]].
+
+---
+
 ## 🚀 Deltas s15–s19 (2026-06-14 → 2026-06-16) — CONCLUÍDOS
 
 > Resumo do que andou desde a auditoria s14. Tudo já mesclado em `main` e validado no staging.

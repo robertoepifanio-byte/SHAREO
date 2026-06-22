@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { isOwnStoragePhotoUrl } from "@/lib/validations/storageUrl"
 
 const criterionScore = z.number().int().min(1).max(5)
 
@@ -14,7 +15,7 @@ export const CreateReviewSchema = z.object({
   communication:   criterionScore.optional(),
   conservation:    criterionScore.optional(),
   // P3-69: foto do item em uso
-  photoUrl:        z.string().url().optional(),
+  photoUrl:        z.string().url().refine(isOwnStoragePhotoUrl, "A foto deve ser enviada pela plataforma.").optional(),
 })
 
 export type CreateReviewInput = z.infer<typeof CreateReviewSchema>

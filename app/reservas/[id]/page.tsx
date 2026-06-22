@@ -8,13 +8,16 @@ import { AppHeader } from "@/components/layout/AppHeader"
 import { BookingActions }      from "./_BookingActions"
 import { ReviewForm }          from "./_ReviewForm"
 import { PayButton }           from "@/components/bookings/PayButton"
+import { PixPaymentPanel }     from "./_PixPaymentPanel"
 import { ContractBanner }      from "./_ContractBanner"
 import { CheckInOut }          from "./_CheckInOut"
 import { BookingProgressBar }  from "@/components/booking/BookingProgressBar"
+import { BookingHistory }     from "@/components/booking/BookingHistory"
 import { ReturnCountdown }    from "@/components/booking/ReturnCountdown"
 import { ReturnChecklist }    from "@/components/booking/ReturnChecklist"
 import { ReturnConditionForm } from "@/components/booking/ReturnConditionForm"
-import { getPlatformFeeRate, calcSplit } from "@/lib/platform-config"
+import { getPlatformFeeRate, calcSplit, getPlatformPixConfig } from "@/lib/platform-config"
+import { deriveBookingHistory } from "@/lib/bookingHistory"
 
 type Props = {
   params:       Promise<{ id: string }>
@@ -27,7 +30,7 @@ const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   PENDING:   { label: "Aguardando resposta", color: "bg-amber-100 text-amber-800" },
   CONFIRMED: { label: "Confirmada",          color: "bg-blue-medium/10 text-blue-medium" },
   ACTIVE:    { label: "Em andamento",        color: "bg-brand/10 text-brand" },
-  RETURNED:  { label: "Devolvido",           color: "bg-purple-100 text-purple-700" },
+  RETURNED:  { label: "Devolução em andamento", color: "bg-purple-100 text-purple-700" },
   COMPLETED: { label: "Concluída",           color: "bg-success/10 text-success" },
   CANCELLED: { label: "Cancelada",           color: "bg-destructive/10 text-destructive" },
   DISPUTED:  { label: "Em disputa",          color: "bg-orange-light text-orange-link" },
@@ -75,7 +78,6 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
       id:            true,
       status:        true,
       paymentStatus: true,
-      paidAt:        true,
       startDate:     true,
       endDate:       true,
       totalDays:     true,
@@ -85,12 +87,19 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
       depositAmount: true,
       borrowerNote:  true,
       ownerNote:     true,
-      cancelledAt:   true,
-      cancelReason:  true,
-      createdAt:     true,
-      contractSignedAt: true,
-      activatedAt:   true,
-      returnedAt:    true,
+      // timestamps de histórico
+      createdAt:            true,
+      respondedAt:          true,
+      paidAt:               true,
+      pixDeclaredAt:        true,
+      contractSignedAt:     true,
+      activatedAt:          true,
+      returnRequestedAt:    true,
+      returnedAt:           true,
+      cancelledAt:          true,
+      cancelReason:         true,
+      extensionRequestedAt: true,
+      extensionRespondedAt: true,
       lateFeeAmount: true,
       photos:        { select: { id: true, url: true, phase: true, createdAt: true }, orderBy: { createdAt: "asc" } },
       item: {
@@ -100,6 +109,14 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
           city:   true,
           state:  true,
           images: { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
+        },
+      },
+      // Story B — itens da locação (>1 quando é locação multi-item do mesmo dono)
+      bookingItems: {
+        select: {
+          itemId:     true,
+          totalPrice: true,
+          item: { select: { title: true, images: { select: { url: true }, orderBy: { order: "asc" }, take: 1 } } },
         },
       },
       extensionStatus:           true,
@@ -125,6 +142,11 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
 
   const feeRateBps = await getPlatformFeeRate()
   const feeRatePct = feeRateBps / 100
+
+  // Checkout PIX manual (validação em staging): quando habilitado, troca o botão Stripe
+  // pelo painel com a chave PIX da plataforma. Default off → Stripe segue intacto.
+  const pix = await getPlatformPixConfig()
+  const pixCheckout = pix.enabled && !!pix.key
   const feeRateLabel = feeRatePct % 1 === 0 ? feeRatePct.toFixed(0) : String(feeRatePct)
 
   // Split da plataforma — espelha exatamente o checkout (lib/platform-config.calcSplit):
@@ -164,10 +186,41 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
             paymentStatus={booking.paymentStatus}
           />
 
+          {/* ─── Histórico de eventos ─── */}
+          {(() => {
+            const historyEvents = deriveBookingHistory({
+              createdAt:            booking.createdAt,
+              respondedAt:          booking.respondedAt,
+              paidAt:               booking.paidAt,
+              activatedAt:          booking.activatedAt,
+              returnRequestedAt:    booking.returnRequestedAt,
+              returnedAt:           booking.returnedAt,
+              cancelledAt:          booking.cancelledAt,
+              cancelReason:         booking.cancelReason,
+              extensionRequestedAt: booking.extensionRequestedAt,
+              extensionRespondedAt: booking.extensionRespondedAt,
+              extensionStatus:      booking.extensionStatus ?? null,
+              status:               booking.status,
+              borrower:             { name: booking.borrower.name },
+              owner:                { name: booking.owner.name },
+            })
+            // Serializa Date → ISO string para passar ao Client Component
+            const serialized = historyEvents.map((e) => ({
+              ...e,
+              at: e.at.toISOString(),
+            }))
+            return <BookingHistory events={serialized} />
+          })()}
+
           {/* Header do booking */}
           <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h1 className="text-xl font-bold text-primary">{booking.item.title}</h1>
+              <h1 className="text-xl font-bold text-primary">
+                {booking.item.title}
+                {booking.bookingItems.length > 1 && (
+                  <span className="text-base font-semibold text-muted-foreground"> + {booking.bookingItems.length - 1} {booking.bookingItems.length - 1 === 1 ? "item" : "itens"}</span>
+                )}
+              </h1>
               <p className="text-sm text-muted-foreground">
                 {isOwner ? "Locatário" : "Proprietário"}:{" "}
                 <span className="font-medium text-foreground">{counterpart.name}</span>
@@ -177,6 +230,28 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
               {statusInfo.label}
             </span>
           </div>
+
+          {/* Story B — itens desta locação (só quando há mais de um) */}
+          {booking.bookingItems.length > 1 && (
+            <div className="mb-6 rounded-xl border border-border bg-surface p-4">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Itens desta locação ({booking.bookingItems.length})
+              </p>
+              <ul className="divide-y divide-border">
+                {booking.bookingItems.map((bi) => (
+                  <li key={bi.itemId} className="flex items-center gap-3 py-2">
+                    <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-muted">
+                      {bi.item.images[0]?.url && (
+                        <Image src={bi.item.images[0].url} alt={bi.item.title} fill sizes="40px" className="object-cover" />
+                      )}
+                    </div>
+                    <span className="min-w-0 flex-1 truncate text-sm text-foreground">{bi.item.title}</span>
+                    <span className="shrink-0 text-sm font-medium text-muted-foreground">{fmt(bi.totalPrice)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Imagem + datas */}
           <div className="mb-6 overflow-hidden rounded-xl border border-border bg-surface">
@@ -364,11 +439,36 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                   <p className="mb-4 text-sm text-muted-foreground">
                     Sua reserva foi confirmada! Faça o pagamento para o locador combinar a entrega do item.
                   </p>
-                  <div className="mb-3 flex items-center justify-between rounded-lg bg-background px-4 py-3 text-sm">
-                    <span className="text-muted-foreground">Valor a pagar</span>
-                    <span className="font-bold text-foreground">{fmt(booking.totalPrice)}</span>
-                  </div>
-                  <PayButton bookingId={booking.id} totalPrice={booking.totalPrice} />
+                  {pixCheckout ? (
+                    booking.pixDeclaredAt ? (
+                      <div className="flex items-start gap-3 rounded-lg border border-blue-medium/30 bg-blue-medium/10 p-3 text-sm">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 flex-shrink-0 text-blue-medium" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <div>
+                          <p className="font-semibold text-blue-medium">Pagamento informado — aguardando confirmação</p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            Recebemos seu aviso de pagamento via PIX. A ShareO vai conferir o recebimento e liberar a retirada. Você será notificado.
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <PixPaymentPanel
+                        bookingId={booking.id}
+                        totalPrice={booking.totalPrice}
+                        pixKey={pix.key!}
+                        pixKeyType={pix.keyType}
+                        holder={pix.holder}
+                        bank={pix.bank}
+                      />
+                    )
+                  ) : (
+                    <>
+                      <div className="mb-3 flex items-center justify-between rounded-lg bg-background px-4 py-3 text-sm">
+                        <span className="text-muted-foreground">Valor a pagar</span>
+                        <span className="font-bold text-foreground">{fmt(booking.totalPrice)}</span>
+                      </div>
+                      <PayButton bookingId={booking.id} totalPrice={booking.totalPrice} />
+                    </>
+                  )}
                 </>
               )}
             </div>
@@ -399,7 +499,11 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                     <line x1="12" y1="8" x2="12" y2="12"/>
                     <line x1="12" y1="16" x2="12.01" y2="16"/>
                   </svg>
-                  <p className="text-yellow-700">Aguardando pagamento do locatário.</p>
+                  <p className="text-yellow-700">
+                    {pixCheckout && booking.pixDeclaredAt
+                      ? "O locatário informou o pagamento via PIX. Aguardando a ShareO confirmar o recebimento."
+                      : "Aguardando pagamento do locatário."}
+                  </p>
                 </>
               )}
             </div>
@@ -462,10 +566,37 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
             </div>
           )}
 
+          {/* ── Locador aguardando o locatário devolver (owner em ACTIVE) ── */}
+          {isOwner && booking.status === "ACTIVE" && (
+            <div className="mb-6 flex items-start gap-3 rounded-xl border border-blue-medium/30 bg-blue-medium/5 px-4 py-4">
+              <span className="text-xl" aria-hidden="true">⏳</span>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Aguardando a devolução</p>
+                <p className="text-xs text-muted-foreground">
+                  O locatário ainda está com o item. Quando ele iniciar a devolução, a reserva ficará como
+                  <strong> Devolução em andamento</strong> e você poderá confirmar o recebimento aqui.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* ── P2-49 — Checklist de devolução (borrower em ACTIVE) ── */}
           {isBorrower && booking.status === "ACTIVE" && (
             <div className="mb-6">
               <ReturnChecklist bookingId={booking.id} />
+            </div>
+          )}
+
+          {/* ── Locatário aguardando o locador confirmar (borrower em "Devolução em andamento") ── */}
+          {isBorrower && booking.status === "RETURNED" && (
+            <div className="mb-6 flex items-start gap-3 rounded-xl border border-purple-200 bg-purple-50 px-4 py-4">
+              <span className="text-xl" aria-hidden="true">🔄</span>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Devolução em andamento</p>
+                <p className="text-xs text-muted-foreground">
+                  Você iniciou a devolução. Aguardando o locador confirmar o recebimento do item para concluir a locação.
+                </p>
+              </div>
             </div>
           )}
 

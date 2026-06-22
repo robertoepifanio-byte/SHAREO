@@ -66,7 +66,12 @@ export function PriceCalc({
   depositAmount, itemId, isLoggedIn, feeRatePct, checkoutMaxCents,
 }: Props) {
   const router = useRouter()
-  const today  = new Date().toISOString().split("T")[0]
+  // Data local (não UTC): toISOString() viraria o dia seguinte à noite no Brasil
+  // e bloquearia a locação no MESMO dia. Permite hoje como início.
+  const today  = (() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+  })()
 
   const availableModes: Mode[] = [
     "daily",
@@ -366,7 +371,7 @@ export function PriceCalc({
         </div>
       )}
 
-      {/* P3-20 — Cupom de desconto (ganho ao avaliar locações anteriores) */}
+      {/* P3-20 — Cupom de desconto (campo de entrada; emissão automática por avaliação desabilitada) */}
       {isReady && isLoggedIn && (
         <div className="mb-4">
           <label htmlFor="coupon-code" className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -379,7 +384,7 @@ export function PriceCalc({
             onChange={(e) => setCoupon(e.target.value.toUpperCase())}
             maxLength={30}
             autoComplete="off"
-            placeholder="Ex.: SHARE10-AB2CD"
+            placeholder="Ex.: PROMO-AB2CD"
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm uppercase text-foreground outline-none focus:border-brand transition-colors placeholder:normal-case placeholder:text-muted-foreground"
           />
           <p className="mt-1 text-[11px] text-muted-foreground">
