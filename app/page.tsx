@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import Image from "next/image"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { AppHeader } from "@/components/layout/AppHeader"
@@ -141,7 +142,9 @@ export default async function HomePage() {
             aria-hidden="true"
           />
 
-          <div className="relative z-10 mx-auto max-w-[640px] text-center">
+          <div className="relative z-10 mx-auto grid max-w-[1180px] items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
+            {/* ─── Coluna de conteúdo ─── */}
+            <div className="mx-auto max-w-[640px] text-center lg:mx-0 lg:max-w-none lg:text-left">
             {/* Badge dourado */}
             <div
               role="note"
@@ -183,7 +186,7 @@ export default async function HomePage() {
             <div
               role="group"
               aria-label="Ações principais"
-              className="mb-5 flex flex-col items-stretch gap-3 md:flex-row md:flex-wrap md:items-center md:justify-center"
+              className="mb-5 flex flex-col items-stretch gap-3 md:flex-row md:flex-wrap md:items-center md:justify-center lg:justify-start"
             >
               <Link
                 href="/itens/novo"
@@ -236,7 +239,7 @@ export default async function HomePage() {
             <div
               role="list"
               aria-label="Números da plataforma"
-              className="mt-9 flex flex-wrap justify-center gap-5 xl:gap-8"
+              className="mt-9 flex flex-wrap justify-center gap-5 lg:justify-start xl:gap-8"
             >
               {[
                 { num: itemCount.toLocaleString("pt-BR"), label: "Itens disponíveis" },
@@ -256,6 +259,20 @@ export default async function HomePage() {
                   <div className="mt-0.5 text-[12px] text-white/60">{stat.label}</div>
                 </div>
               ))}
+            </div>
+            </div>
+
+            {/* ─── Coluna da imagem (somente desktop) ─── */}
+            <div className="hidden lg:block">
+              <Image
+                src="/logos/hero-items.webp"
+                alt="Itens disponíveis para alugar no ShareO: furadeira, câmera, caixa de som, bicicleta, escada e projetor."
+                width={1100}
+                height={702}
+                priority
+                sizes="(min-width: 1024px) 45vw, 1px"
+                className="h-auto w-full"
+              />
             </div>
           </div>
         </section>
