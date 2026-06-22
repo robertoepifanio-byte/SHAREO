@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import Image from "next/image"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/lib/auth"
 import { AppHeader } from "@/components/layout/AppHeader"
@@ -142,29 +143,6 @@ export default async function HomePage() {
           />
 
           <div className="relative z-10 mx-auto max-w-[640px] text-center">
-            {/* Badge dourado */}
-            <div
-              role="note"
-              aria-label="Proposta de valor"
-              className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-[rgba(255,215,0,0.35)] bg-[rgba(255,215,0,0.15)] px-3.5 py-1.5 text-xs font-semibold text-gold"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 6v2m0 8v2M9.5 9.5a2.5 2.5 0 0 1 5 0c0 1.5-2.5 3-2.5 3m0 0v.5" />
-              </svg>
-              Transforme itens parados em renda
-            </div>
-
             {/* H1 */}
             <h1 className="mb-4 font-display text-[24px] font-extrabold leading-[1.15] text-white xl:text-5xl">
               Ganhe dinheiro com o que
@@ -172,12 +150,22 @@ export default async function HomePage() {
               <span className="text-accent">está parado na sua casa.</span>
             </h1>
 
-            {/* Subtítulo */}
-            <p className="mb-8 text-base leading-relaxed text-white/75 md:text-[17px]">
-              Ferramentas, eletrônicos, itens para festas, esportes, eletrodomésticos.
-              <br />
-              Tudo perto de você.
-            </p>
+            {/* Imagem dos itens + linha curta (gancho local) — visível em mobile e desktop.
+                Imagem reduzida no mobile p/ não empurrar CTA + busca pra baixo da dobra. */}
+            <div className="mb-8 flex flex-col items-center gap-3">
+              <Image
+                src="/logos/hero-items.webp"
+                alt="Itens disponíveis para alugar no ShareO: furadeira, câmera, caixa de som, bicicleta, escada e projetor."
+                width={1100}
+                height={702}
+                priority
+                sizes="(min-width: 1024px) 420px, (min-width: 768px) 380px, 230px"
+                className="h-auto w-[230px] md:w-[380px] lg:w-[420px]"
+              />
+              <p className="text-base font-medium text-white/80 md:text-[17px]">
+                Tudo perto de você.
+              </p>
+            </div>
 
             {/* Dual CTA */}
             <div
