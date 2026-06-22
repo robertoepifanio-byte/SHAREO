@@ -173,9 +173,9 @@ export default async function HomePage() {
               <span className="text-accent">está parado na sua casa.</span>
             </h1>
 
-            {/* Imagem dos itens (substitui o subtítulo) — visível em mobile e desktop.
-                Reduzida no mobile p/ não empurrar CTA + busca pra baixo da dobra. */}
-            <div className="mb-8 flex justify-center">
+            {/* Imagem dos itens + linha curta (gancho local) — visível em mobile e desktop.
+                Imagem reduzida no mobile p/ não empurrar CTA + busca pra baixo da dobra. */}
+            <div className="mb-8 flex flex-col items-center gap-3">
               <Image
                 src="/logos/hero-items.webp"
                 alt="Itens disponíveis para alugar no ShareO: furadeira, câmera, caixa de som, bicicleta, escada e projetor."
@@ -185,6 +185,9 @@ export default async function HomePage() {
                 sizes="(min-width: 1024px) 420px, (min-width: 768px) 380px, 230px"
                 className="h-auto w-[230px] md:w-[380px] lg:w-[420px]"
               />
+              <p className="text-base font-medium text-white/80 md:text-[17px]">
+                Tudo perto de você.
+              </p>
             </div>
 
             {/* Dual CTA */}
