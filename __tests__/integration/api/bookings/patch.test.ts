@@ -76,6 +76,8 @@ jest.mock("@/lib/email", () => ({
   sendBookingCancelledEmail: jest.fn().mockResolvedValue(undefined),
   sendReturnInProgressEmail: jest.fn().mockResolvedValue(undefined),
   sendReturnCompletedEmail:  jest.fn().mockResolvedValue(undefined),
+  bookingItemsLabel: (mainTitle: string, totalItems: number) =>
+    totalItems > 1 ? `${mainTitle} + mais ${totalItems - 1} ${totalItems - 1 === 1 ? "item" : "itens"}` : mainTitle,
 }))
 
 jest.mock("@/lib/outboundWebhooks", () => ({

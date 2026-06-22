@@ -34,18 +34,18 @@ export async function AppHeader() {
               priority
             />
           </div>
-          <span aria-hidden="true" className="hidden md:block mt-0.5 text-[10px] text-white/85 font-medium leading-none text-center">
+          <span aria-hidden="true" className="hidden lg:block mt-0.5 text-[10px] text-white/85 font-medium leading-none text-center">
             Use Mais. Possua Menos.
           </span>
         </Link>
 
         {/* Nav desktop — oculta em mobile */}
-        <nav className="hidden md:flex items-center gap-1 ml-6" aria-label="Navegação principal">
+        <nav className="hidden md:flex items-center gap-1 ml-2 lg:ml-6" aria-label="Navegação principal">
           <NavLinks hideAnunciar={session?.user?.role != null && session.user.role !== "USER"} />
         </nav>
 
         {/* Ações de autenticação */}
-        <div className="flex flex-shrink-0 items-center gap-2 ml-auto">
+        <div className="flex flex-shrink-0 items-center gap-1.5 lg:gap-2 ml-auto">
           {/* HelpButton + ThemeToggle — desktop only, logado ou não */}
           <div className="hidden md:flex items-center gap-2">
             <HelpButton />
@@ -54,8 +54,8 @@ export async function AppHeader() {
 
           {session ? (
             <>
-              {/* Saudação — apenas desktop */}
-              <span className="hidden md:block text-sm font-semibold text-white/85 whitespace-nowrap">
+              {/* Saudação — apenas desktop largo (lg+), para não estourar o header em ~768px */}
+              <span className="hidden lg:block text-sm font-semibold text-white/85 whitespace-nowrap">
                 Olá, {session.user?.name?.split(" ")[0] ?? "você"}!
               </span>
 

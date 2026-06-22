@@ -11,6 +11,7 @@ import {
   sendReminderReturnTomorrow,
   sendReminderOverdue,
   sendLateFeeEmail,
+  bookingItemsLabel,
 } from "@/lib/email"
 import { getStripe } from "@/lib/stripe"
 import { getLateFeeMultiplier } from "@/lib/platform-config"
@@ -55,6 +56,7 @@ export async function GET(req: NextRequest) {
         item:     { select: { title: true } },
         borrower: { select: { email: true, name: true } },
         owner:    { select: { email: true, name: true } },
+        _count:   { select: { bookingItems: true } },
       },
     }),
 
@@ -70,6 +72,7 @@ export async function GET(req: NextRequest) {
         item:     { select: { title: true } },
         borrower: { select: { email: true, name: true } },
         owner:    { select: { email: true, name: true } },
+        _count:   { select: { bookingItems: true } },
       },
     }),
 
@@ -85,6 +88,7 @@ export async function GET(req: NextRequest) {
         item:     { select: { title: true, images: { select: { url: true }, orderBy: { order: "asc" }, take: 1 } } },
         borrower: { select: { email: true, name: true } },
         owner:    { select: { email: true, name: true } },
+        _count:   { select: { bookingItems: true } },
       },
     }),
   ])
@@ -95,7 +99,7 @@ export async function GET(req: NextRequest) {
     await sendReminderStartTomorrow(
       b.borrower.email, b.borrower.name,
       b.owner.email,    b.owner.name,
-      b.item.title,     b.id,
+      bookingItemsLabel(b.item.title, b._count.bookingItems || 1), b.id,
       b.startDate,
     ).catch((e) => console.error("[cron] start reminder", b.id, e))
     sent.push(`start:${b.id}`)
@@ -104,7 +108,7 @@ export async function GET(req: NextRequest) {
   for (const b of returnReminders) {
     await sendReminderReturnTomorrow(
       b.borrower.email, b.borrower.name,
-      b.item.title,     b.id,
+      bookingItemsLabel(b.item.title, b._count.bookingItems || 1), b.id,
       b.endDate,
     ).catch((e) => console.error("[cron] return reminder", b.id, e))
     sent.push(`return:${b.id}`)
@@ -116,6 +120,7 @@ export async function GET(req: NextRequest) {
     const daysLate = Math.ceil(
       (startOfDay(today).getTime() - startOfDay(b.endDate).getTime()) / 86_400_000
     )
+    const itemsLabel = bookingItemsLabel(b.item.title, b._count.bookingItems || 1)
 
     // Primeira detecção de atraso: grava lateFeeAmount + cria cobrança Stripe
     if (b.lateFeeAmount == null) {
@@ -138,7 +143,7 @@ export async function GET(req: NextRequest) {
               currency:     "brl",
               unit_amount:  lateFeeAmount,
               product_data: {
-                name:        `Taxa de atraso — ${b.item.title}`,
+                name:        `Taxa de atraso — ${itemsLabel}`,
                 description: `${daysLate} dia${daysLate > 1 ? "s" : ""} em atraso`,
                 ...(b.item.images[0]?.url && { images: [b.item.images[0].url] }),
               },
@@ -152,7 +157,7 @@ export async function GET(req: NextRequest) {
 
         await sendLateFeeEmail(
           b.borrower.email, b.borrower.name,
-          b.item.title, b.id,
+          itemsLabel, b.id,
           lateFeeAmount, session.url!,
         )
         sent.push(`late_fee:${b.id}`)
@@ -165,7 +170,7 @@ export async function GET(req: NextRequest) {
     await sendReminderOverdue(
       b.borrower.email, b.borrower.name,
       b.owner.email,    b.owner.name,
-      b.item.title,     b.id,
+      itemsLabel,       b.id,
       b.endDate,        daysLate,
       b.dailyPrice,     lateFeeMultiplier,
     ).catch((e) => console.error("[cron] overdue reminder", b.id, e))

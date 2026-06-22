@@ -17,6 +17,18 @@ function getResend(): Resend | null {
 const FROM = process.env.EMAIL_FROM || "noreply@shareo.com.br"
 
 /**
+ * Rótulo do item para assuntos/corpos de e-mail e notificações.
+ * Em locações multi-item (Story B), mostra o item principal + "+ mais N item(ns)"
+ * em vez de citar só o principal — assim o usuário não acha que a reserva é de 1 item só.
+ * `totalItems` = total de itens da locação (booking_items); 0/1 → só o título.
+ */
+export function bookingItemsLabel(mainTitle: string, totalItems: number): string {
+  const extra = totalItems - 1
+  if (extra <= 0) return mainTitle
+  return `${mainTitle} + mais ${extra} ${extra === 1 ? "item" : "itens"}`
+}
+
+/**
  * Envia com 1 retry automático em falha transitória da Resend.
  * Para e-mails que bloqueiam o usuário (verificação, reset de senha),
  * uma falha momentânea de rede/API não deve deixá-lo sem o link.
