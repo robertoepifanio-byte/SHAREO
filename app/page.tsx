@@ -143,29 +143,6 @@ export default async function HomePage() {
           />
 
           <div className="relative z-10 mx-auto max-w-[640px] text-center">
-            {/* Badge dourado */}
-            <div
-              role="note"
-              aria-label="Proposta de valor"
-              className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-[rgba(255,215,0,0.35)] bg-[rgba(255,215,0,0.15)] px-3.5 py-1.5 text-xs font-semibold text-gold"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 6v2m0 8v2M9.5 9.5a2.5 2.5 0 0 1 5 0c0 1.5-2.5 3-2.5 3m0 0v.5" />
-              </svg>
-              Transforme itens parados em renda
-            </div>
-
             {/* H1 */}
             <h1 className="mb-4 font-display text-[24px] font-extrabold leading-[1.15] text-white xl:text-5xl">
               Ganhe dinheiro com o que
