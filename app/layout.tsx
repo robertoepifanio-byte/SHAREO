@@ -38,10 +38,19 @@ export const metadata: Metadata = {
     type:     "website",
     locale:   "pt_BR",
     siteName: "ShareO",
+    images: [
+      {
+        url:    "/logos/og-image-v5.webp",
+        width:  1200,
+        height: 630,
+        alt:    "ShareO — alugue ferramentas, eletrônicos, bikes e mais perto de você.",
+      },
+    ],
   },
   twitter: {
-    card: "summary_large_image",
-    site: "@shareo_br",
+    card:   "summary_large_image",
+    site:   "@shareo_br",
+    images: ["/logos/og-image-v5.webp"],
   },
   robots: {
     index:  true,
