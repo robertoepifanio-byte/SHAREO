@@ -229,6 +229,38 @@ export const CHECKOUT_MAX_CENTS = 50_000 // R$ 500,00 — teto MVP (D2)
 /** Expiração da sessão Stripe Checkout em segundos (mín. 30min exigido pela Stripe) */
 export const STRIPE_CHECKOUT_EXPIRES_SECONDS = 30 * 60
 
+// ─── PIX da plataforma (checkout PIX manual — fase de validação em staging) ──
+// Quando `enabled`, o checkout do locatário mostra a chave PIX da plataforma
+// (copia-e-cola) em vez do botão Stripe. O recebimento é confirmado por um admin.
+// Default DESLIGADO no código — só liga inserindo as chaves em PlatformConfig,
+// então produção (pós-D4) nunca usa este caminho por acidente.
+export interface PlatformPixConfig {
+  enabled: boolean
+  key:     string | null // chave PIX (ex.: telefone +5511999999999)
+  keyType: string | null // PHONE | CPF | CNPJ | EMAIL | RANDOM
+  holder:  string | null // nome do titular da conta
+  bank:    string | null // banco do titular
+}
+
+const PLATFORM_PIX_DISABLED: PlatformPixConfig = {
+  enabled: false, key: null, keyType: null, holder: null, bank: null,
+}
+
+export async function getPlatformPixConfig(): Promise<PlatformPixConfig> {
+  try {
+    const map = await loadConfig()
+    return {
+      enabled: map.platformPixEnabled === "true",
+      key:     map.platformPixKey     || null,
+      keyType: map.platformPixKeyType || null,
+      holder:  map.platformPixHolder  || null,
+      bank:    map.platformPixBank    || null,
+    }
+  } catch {
+    return PLATFORM_PIX_DISABLED
+  }
+}
+
 const DEFAULT_WEEKLY_MULTIPLIER  = 3   // preço semanal = 3× diária
 const DEFAULT_MONTHLY_MULTIPLIER = 15  // preço mensal  = 15× diária
 

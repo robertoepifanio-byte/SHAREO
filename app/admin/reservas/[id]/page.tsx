@@ -4,6 +4,7 @@ import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getPlatformFeeRate, calcSplit } from "@/lib/platform-config"
+import { ConfirmPixButton } from "./_ConfirmPixButton"
 
 export const metadata: Metadata = { title: "Admin — Detalhe da reserva" }
 
@@ -49,6 +50,7 @@ export default async function AdminReservaPage({ params }: Props) {
       status:            true,
       paymentStatus:     true,
       paidAt:            true,
+      pixDeclaredAt:     true,
       startDate:         true,
       endDate:           true,
       totalDays:         true,
@@ -160,7 +162,20 @@ export default async function AdminReservaPage({ params }: Props) {
           <div className="mt-2 border-t border-border pt-2">
             <Row label="Status do pagamento" value={booking.paymentStatus} />
             {booking.paidAt && <Row label="Pago em" value={fmtDateTime(booking.paidAt)} />}
+            {booking.pixDeclaredAt && <Row label="PIX informado pelo locatário em" value={fmtDateTime(booking.pixDeclaredAt)} />}
           </div>
+
+          {/* Checkout PIX manual — confirmar recebimento (só CONFIRMED e ainda não pago) */}
+          {booking.status === "CONFIRMED" && booking.paymentStatus !== "PAID" && (
+            <div className="mt-3 rounded-lg border border-border bg-background p-3">
+              <p className="mb-2 text-xs text-muted-foreground">
+                {booking.pixDeclaredAt
+                  ? "O locatário informou o pagamento via PIX. Confira o extrato da conta da plataforma e confirme o recebimento."
+                  : "Confirme o recebimento do pagamento via PIX após conferir o extrato da conta da plataforma."}
+              </p>
+              <ConfirmPixButton bookingId={booking.id} />
+            </div>
+          )}
         </div>
 
         {/* Observações / disputa */}
