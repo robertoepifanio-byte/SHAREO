@@ -173,12 +173,20 @@ export default async function HomePage() {
               <span className="text-accent">está parado na sua casa.</span>
             </h1>
 
-            {/* Subtítulo */}
-            <p className="mb-8 text-base leading-relaxed text-white/75 md:text-[17px]">
-              Ferramentas, eletrônicos, itens para festas, esportes, eletrodomésticos.
-              <br />
-              Tudo perto de você.
-            </p>
+            {/* Subtítulo + imagem dos itens lado a lado (imagem oculta no mobile p/ preservar a dobra) */}
+            <div className="mb-8 flex flex-col items-center gap-5 md:flex-row md:justify-center md:gap-7">
+              <Image
+                src="/logos/hero-items.webp"
+                alt="Itens disponíveis para alugar no ShareO: furadeira, câmera, caixa de som, bicicleta, escada e projetor."
+                width={1100}
+                height={702}
+                sizes="(min-width: 768px) 360px, 1px"
+                className="hidden h-auto w-[300px] shrink-0 md:block lg:w-[360px]"
+              />
+              <p className="text-base leading-relaxed text-white/75 md:max-w-[320px] md:text-left md:text-[17px]">
+                Ferramentas, eletrônicos, itens para festas, esportes, eletrodomésticos. Tudo perto de você.
+              </p>
+            </div>
 
             {/* Dual CTA */}
             <div
@@ -257,20 +265,6 @@ export default async function HomePage() {
                   <div className="mt-0.5 text-[12px] text-white/60">{stat.label}</div>
                 </div>
               ))}
-            </div>
-
-            {/* ─── Vitrine de itens — fecha o hero sobre o navy.
-                 Oculta no mobile p/ preservar CTA + busca na dobra (parecer
-                 designer + PO); fade dissolve a imagem na próxima seção. ─── */}
-            <div className="mt-10 hidden md:block [mask-image:linear-gradient(to_bottom,black_78%,transparent_100%)]">
-              <Image
-                src="/logos/hero-items.webp"
-                alt="Itens disponíveis para alugar no ShareO: furadeira, câmera, caixa de som, bicicleta, escada e projetor."
-                width={1100}
-                height={702}
-                sizes="(min-width: 768px) 560px, 1px"
-                className="mx-auto h-auto w-full max-w-[560px]"
-              />
             </div>
           </div>
         </section>
