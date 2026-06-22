@@ -127,7 +127,6 @@ export function BookingHistory({ events }: Props) {
               return (
                 <li
                   key={event.key}
-                  role="listitem"
                   className="relative flex gap-3 pb-4 last:pb-0"
                 >
                   {/* Linha conectora vertical — não renderiza no último item */}
