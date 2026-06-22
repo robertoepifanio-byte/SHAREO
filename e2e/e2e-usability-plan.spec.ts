@@ -237,8 +237,8 @@ test.describe('Plano E2E Usabilidade — ShareO', () => {
           // ── Homepage: proposta de valor visível ───────────────────────────
           await page.goto(BASE_URL, { waitUntil: 'networkidle' })
 
-          const heroBadge = page.locator('[role="note"][aria-label="Proposta de valor"]')
-          await expect(heroBadge, 'Badge de proposta de valor deve ser visível').toBeVisible({ timeout: 10_000 })
+          const heroImage = page.getByRole('img', { name: /itens disponíveis para alugar no shareo/i })
+          await expect(heroImage, 'Imagem dos itens do hero deve ser visível').toBeVisible({ timeout: 10_000 })
 
           const h1 = page.getByRole('heading', { level: 1 })
           await expect(h1, 'H1 deve ser visível na homepage').toBeVisible()
