@@ -256,8 +256,15 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       data.endDate           = new Date(effectiveTime.getTime() + booking.totalDays * 24 * 60 * 60 * 1000)
     }
 
-    // Grava horário real de devolução (informado pelo locatário ou server time).
-    if (action === "mark_returned" || action === "confirm_return") {
+    // Grava horário de devolução em dois momentos distintos:
+    //  - mark_returned (borrower inicia): grava returnRequestedAt (solicitação)
+    //  - confirm_return (owner confirma): grava returnedAt (confirmação real)
+    // Isso permite exibir "Devolução solicitada" e "Devolução confirmada" como
+    // eventos separados no histórico da locação.
+    if (action === "mark_returned") {
+      data.returnRequestedAt = effectiveTime
+    }
+    if (action === "confirm_return") {
       data.returnedAt = effectiveTime
     }
 

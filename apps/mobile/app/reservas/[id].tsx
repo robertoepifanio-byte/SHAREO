@@ -1,10 +1,12 @@
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from "react-native"
+import { useState } from "react"
 import { router, useLocalSearchParams } from "expo-router"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Image } from "expo-image"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { apiFetch } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
+import { deriveBookingHistory } from "@/lib/bookingHistory"
 
 interface BookingDetail {
   id:         string
@@ -14,7 +16,17 @@ interface BookingDetail {
   totalPrice: number
   depositAmount: number | null
   borrowerNote: string | null
-  createdAt:    string
+  createdAt:            string
+  respondedAt:          string | null
+  paidAt:               string | null
+  activatedAt:          string | null
+  returnRequestedAt:    string | null
+  returnedAt:           string | null
+  cancelledAt:          string | null
+  cancelReason:         string | null
+  extensionRequestedAt: string | null
+  extensionRespondedAt: string | null
+  extensionStatus:      string | null
   item: {
     id: string; title: string
     images: { url: string }[]
@@ -41,11 +53,25 @@ const fmt = (cents: number) =>
 const fmtDate = (d: string) =>
   new Date(d).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })
 
+const fmtEventDateTime = (d: string) =>
+  new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit", month: "long", year: "numeric",
+    hour: "2-digit", minute: "2-digit",
+    timeZone: "America/Fortaleza",
+  }).format(new Date(d))
+
+const ACTOR_ROLE_EMOJI: Record<string, string> = {
+  borrower: "👤",
+  owner:    "🏠",
+  system:   "⚙️",
+}
+
 export default function BookingDetailScreen() {
   const { id }   = useLocalSearchParams<{ id: string }>()
   const insets   = useSafeAreaInsets()
   const user     = useAuth((s) => s.user)
   const qc       = useQueryClient()
+  const [historyExpanded, setHistoryExpanded] = useState(false)
 
   const { data, isLoading } = useQuery({
     queryKey: ["booking", id],
@@ -168,6 +194,114 @@ export default function BookingDetailScreen() {
             Criada em {fmtDate(booking.createdAt)}
           </Text>
         </View>
+
+        {/* ─── Histórico de eventos ─── */}
+        {(() => {
+          const historyEvents = deriveBookingHistory({
+            createdAt:            new Date(booking.createdAt),
+            respondedAt:          booking.respondedAt          ? new Date(booking.respondedAt)          : null,
+            paidAt:               booking.paidAt               ? new Date(booking.paidAt)               : null,
+            activatedAt:          booking.activatedAt          ? new Date(booking.activatedAt)          : null,
+            returnRequestedAt:    booking.returnRequestedAt    ? new Date(booking.returnRequestedAt)    : null,
+            returnedAt:           booking.returnedAt           ? new Date(booking.returnedAt)           : null,
+            cancelledAt:          booking.cancelledAt          ? new Date(booking.cancelledAt)          : null,
+            cancelReason:         booking.cancelReason,
+            extensionRequestedAt: booking.extensionRequestedAt ? new Date(booking.extensionRequestedAt) : null,
+            extensionRespondedAt: booking.extensionRespondedAt ? new Date(booking.extensionRespondedAt) : null,
+            extensionStatus:      booking.extensionStatus,
+            status:               booking.status,
+            borrower:             { name: booking.borrower.name },
+            owner:                { name: booking.owner.name },
+          })
+          if (historyEvents.length === 0) return null
+          const sorted = [...historyEvents].reverse() // mais recente primeiro
+          const latest  = sorted[0]
+
+          return (
+            <View className="mb-4 rounded-xl border border-border bg-surface overflow-hidden">
+              {/* Botão de toggle — mínimo 44px de altura */}
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={historyExpanded ? "Ocultar histórico da locação" : "Ver histórico da locação"}
+                accessibilityState={{ expanded: historyExpanded }}
+                onPress={() => setHistoryExpanded((v) => !v)}
+                activeOpacity={0.7}
+                className="min-h-[44px] flex-row items-center justify-between px-4 py-3"
+              >
+                <View className="flex-row items-center gap-2">
+                  <Text className="text-sm font-semibold text-foreground">
+                    Histórico da locação
+                  </Text>
+                  <Text className="text-xs text-muted">
+                    ({historyEvents.length} evento{historyEvents.length !== 1 ? "s" : ""})
+                  </Text>
+                </View>
+                <Text className="text-base text-muted-foreground">
+                  {historyExpanded ? "⌃" : "⌄"}
+                </Text>
+              </TouchableOpacity>
+
+              {/* Preview do evento mais recente — visível com o painel recolhido */}
+              {!historyExpanded && latest && (
+                <View className="border-t border-border px-4 pb-3 pt-2">
+                  <Text className="text-xs text-muted">Último evento</Text>
+                  <Text className="mt-0.5 text-sm font-semibold text-brand">{latest.label}</Text>
+                  <Text className="text-xs text-muted">{fmtEventDateTime(latest.at.toISOString())}</Text>
+                </View>
+              )}
+
+              {/* Lista expandida */}
+              {historyExpanded && (
+                <View className="border-t border-border px-4 pb-4 pt-3">
+                  {sorted.map((event, idx) => {
+                    const isFirst = idx === 0
+                    const isLast  = idx === sorted.length - 1
+                    return (
+                      <View key={event.key} className="flex-row gap-3 pb-4 last:pb-0">
+                        {/* Coluna esquerda: linha + dot */}
+                        <View className="items-center" style={{ width: 24 }}>
+                          <View
+                            className={[
+                              "h-6 w-6 rounded-full items-center justify-center",
+                              isFirst ? "bg-brand" : "bg-surface border border-border",
+                            ].join(" ")}
+                          >
+                            {isFirst ? (
+                              <Text className="text-white text-xs font-bold">✓</Text>
+                            ) : (
+                              <View className="h-2 w-2 rounded-full bg-border" />
+                            )}
+                          </View>
+                          {!isLast && (
+                            <View className="flex-1 w-px bg-border mt-1" />
+                          )}
+                        </View>
+
+                        {/* Conteúdo do evento */}
+                        <View className="flex-1 pb-0">
+                          <Text className={[
+                            "text-sm font-semibold leading-tight",
+                            isFirst ? "text-brand" : "text-foreground",
+                          ].join(" ")}>
+                            {event.label}
+                          </Text>
+                          <Text className="mt-0.5 text-xs text-muted">
+                            {fmtEventDateTime(event.at.toISOString())}
+                          </Text>
+                          {event.actor && (
+                            <Text className="mt-0.5 text-xs text-muted">
+                              {ACTOR_ROLE_EMOJI[event.actorRole]} {event.actor}
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+                    )
+                  })}
+                </View>
+              )}
+            </View>
+          )
+        })()}
 
         {/* Item card */}
         <TouchableOpacity
