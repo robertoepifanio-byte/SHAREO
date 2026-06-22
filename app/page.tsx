@@ -142,9 +142,7 @@ export default async function HomePage() {
             aria-hidden="true"
           />
 
-          <div className="relative z-10 mx-auto grid max-w-[1180px] items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
-            {/* ─── Coluna de conteúdo ─── */}
-            <div className="mx-auto max-w-[640px] text-center lg:mx-0 lg:max-w-none lg:text-left">
+          <div className="relative z-10 mx-auto max-w-[640px] text-center">
             {/* Badge dourado */}
             <div
               role="note"
@@ -186,7 +184,7 @@ export default async function HomePage() {
             <div
               role="group"
               aria-label="Ações principais"
-              className="mb-5 flex flex-col items-stretch gap-3 md:flex-row md:flex-wrap md:items-center md:justify-center lg:justify-start"
+              className="mb-5 flex flex-col items-stretch gap-3 md:flex-row md:flex-wrap md:items-center md:justify-center"
             >
               <Link
                 href="/itens/novo"
@@ -239,7 +237,7 @@ export default async function HomePage() {
             <div
               role="list"
               aria-label="Números da plataforma"
-              className="mt-9 flex flex-wrap justify-center gap-5 lg:justify-start xl:gap-8"
+              className="mt-9 flex flex-wrap justify-center gap-5 xl:gap-8"
             >
               {[
                 { num: itemCount.toLocaleString("pt-BR"), label: "Itens disponíveis" },
@@ -260,18 +258,18 @@ export default async function HomePage() {
                 </div>
               ))}
             </div>
-            </div>
 
-            {/* ─── Coluna da imagem (somente desktop) ─── */}
-            <div className="hidden lg:block">
+            {/* ─── Vitrine de itens — fecha o hero sobre o navy.
+                 Oculta no mobile p/ preservar CTA + busca na dobra (parecer
+                 designer + PO); fade dissolve a imagem na próxima seção. ─── */}
+            <div className="mt-10 hidden md:block [mask-image:linear-gradient(to_bottom,black_78%,transparent_100%)]">
               <Image
                 src="/logos/hero-items.webp"
                 alt="Itens disponíveis para alugar no ShareO: furadeira, câmera, caixa de som, bicicleta, escada e projetor."
                 width={1100}
                 height={702}
-                priority
-                sizes="(min-width: 1024px) 45vw, 1px"
-                className="h-auto w-full"
+                sizes="(min-width: 768px) 560px, 1px"
+                className="mx-auto h-auto w-full max-w-[560px]"
               />
             </div>
           </div>
