@@ -173,19 +173,18 @@ export default async function HomePage() {
               <span className="text-accent">está parado na sua casa.</span>
             </h1>
 
-            {/* Subtítulo + imagem dos itens lado a lado (imagem oculta no mobile p/ preservar a dobra) */}
-            <div className="mb-8 flex flex-col items-center gap-5 md:flex-row md:justify-center md:gap-7">
+            {/* Imagem dos itens (substitui o subtítulo) — visível em mobile e desktop.
+                Reduzida no mobile p/ não empurrar CTA + busca pra baixo da dobra. */}
+            <div className="mb-8 flex justify-center">
               <Image
                 src="/logos/hero-items.webp"
                 alt="Itens disponíveis para alugar no ShareO: furadeira, câmera, caixa de som, bicicleta, escada e projetor."
                 width={1100}
                 height={702}
-                sizes="(min-width: 768px) 360px, 1px"
-                className="hidden h-auto w-[300px] shrink-0 md:block lg:w-[360px]"
+                priority
+                sizes="(min-width: 1024px) 420px, (min-width: 768px) 380px, 230px"
+                className="h-auto w-[230px] md:w-[380px] lg:w-[420px]"
               />
-              <p className="text-base leading-relaxed text-white/75 md:max-w-[320px] md:text-left md:text-[17px]">
-                Ferramentas, eletrônicos, itens para festas, esportes, eletrodomésticos. Tudo perto de você.
-              </p>
             </div>
 
             {/* Dual CTA */}
