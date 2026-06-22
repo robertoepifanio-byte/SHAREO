@@ -24,7 +24,7 @@
 ## 2. Infraestrutura — provisionar ambiente de produção isolado
 
 - ✅ **Vercel Pro** — pago/ativo (Team `shareo-marketplace`). Deploy por GitHub Actions (token).
-- ⬜ **Supabase produção** — criar **3º projeto** (sa-east-1) via `migrate deploy` em banco **VAZIO** (validado em ARQ-ALTO-15). 🚨 **NUNCA clonar o staging** (carrega drift). Avaliar plano **Pro** (sem auto-pause, mais conexões, PITR).
+- 🗓️ **Supabase produção** — **AGENDADO p/ 1ª semana de julho/2026** (migração para licença **Pro**, decisão dos fundadores). Criar **3º projeto** `shareo-prd` (sa-east-1, org corporativa) via `migrate deploy` em banco **VAZIO** (validado em ARQ-ALTO-15). 🚨 **NUNCA clonar o staging** (carrega drift). Pro = sem auto-pause, mais conexões, PITR. **Os secrets `DATABASE_URL_PROD` / `NEXT_PUBLIC_SUPABASE_*_PROD` só serão setados quando esse projeto existir.**
 - ⬜ **Upstash Redis de produção** — instância própria (rate limit + epoch de sessão; fail-open se ausente).
 - ⬜ **Resend Pro** — domínio `shareo.com.br` já verificado; subir de Free→Pro (~US$20) quando escalar (~20-30 reservas/dia).
 - 🟢 **Sentry** — **Free atende o lançamento** (projeto `shareo-web` na org `shareo-ow` já ativo; sampling enxuto: 10% traces, sem session replay → cota baixa). Usar o **mesmo projeto** com tag de `environment` separando staging × prod. **Team (~US$26/mês) só se:** >1 assento (Free = 1 usuário), volume acima da cota, ou retenção/recursos avançados. ⚠️ **2 ajustes técnicos:** (a) hoje `environment=NODE_ENV` → staging e prod aparecem ambos como "production"; usar `VERCEL_ENV`/`NEXT_PUBLIC_SENTRY_ENV` para separar; (b) `SENTRY_AUTH_TOKEN` não pode expirar (**quebra o build silenciosamente**).
