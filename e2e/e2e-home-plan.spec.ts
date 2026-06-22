@@ -75,8 +75,10 @@ test.describe('Plano E2E Homepage — ShareO', () => {
           // Seção principal (hero)
           await expect(page.locator('[aria-label="Seção principal"]')).toBeVisible()
 
-          // Badge de proposta de valor
-          await expect(page.locator('[role="note"][aria-label="Proposta de valor"]')).toBeVisible()
+          // Imagem dos itens no hero (substituiu o badge de proposta de valor)
+          await expect(
+            page.getByRole('img', { name: /itens disponíveis para alugar no shareo/i }),
+          ).toBeVisible()
 
           // Header presente
           await expect(page.locator('header[role="banner"]')).toBeVisible()
