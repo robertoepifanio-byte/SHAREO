@@ -71,7 +71,9 @@ export interface ReviewCouponConfig {
   validityDays: number  // chave reviewCouponValidityDays (default 90)
 }
 
-const DEFAULT_REVIEW_COUPON: ReviewCouponConfig = { enabled: true, percentOff: 10, validityDays: 90 }
+// Fundadores decidiram NÃO bonificar avaliações no lançamento (2026-06-21).
+// Default false — reativar inserindo reviewCouponEnabled="true" em PlatformConfig via /admin/financeiro.
+const DEFAULT_REVIEW_COUPON: ReviewCouponConfig = { enabled: false, percentOff: 10, validityDays: 90 }
 
 export async function getReviewCouponConfig(): Promise<ReviewCouponConfig> {
   try {
