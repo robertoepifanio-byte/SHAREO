@@ -456,6 +456,10 @@ model Booking {
   stripePaymentIntentId String?
   paidAt                DateTime?
 
+  // Pagamento PIX manual (fase de validação em staging) — locatário declara que
+  // pagou na chave da plataforma; um admin confere o extrato e confirma o recebimento.
+  pixDeclaredAt         DateTime?
+
   cancelledAt   DateTime?
   cancelledById String?
   cancelReason  String?
