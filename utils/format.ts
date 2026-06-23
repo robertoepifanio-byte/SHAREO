@@ -34,6 +34,11 @@ export function formatDateNumeric(date: Date | string): string {
   return formatDate(date, { day: "2-digit", month: "2-digit", year: "numeric" })
 }
 
+/** "23 de jun." — dia + mês abreviado, sem ano. */
+export function formatDateMonthDay(date: Date | string): string {
+  return formatDate(date, { day: "2-digit", month: "short" })
+}
+
 /** "23 de junho de 2026" — dia + mês por extenso + ano. */
 export function formatDateLong(date: Date | string): string {
   return formatDate(date, { day: "2-digit", month: "long", year: "numeric" })
