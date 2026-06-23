@@ -19,7 +19,16 @@ import { ReturnConditionForm } from "@/components/booking/ReturnConditionForm"
 import { getPlatformFeeRate, calcSplit, getPlatformPixConfig } from "@/lib/platform-config"
 import { deriveBookingHistory } from "@/lib/bookingHistory"
 import { BookingStatusBadge } from "@/components/ui/BookingStatusBadge"
-import { formatPrice, formatDate, formatDateLong, formatDateTime } from "@/utils/format"
+import { formatPrice, formatDate, formatDateLong } from "@/utils/format"
+
+// Data+hora no fuso do Brasil (BRT) e por extenso — o servidor roda em UTC,
+// então o timeZone explícito é obrigatório para não exibir a hora 3h adiantada.
+const fmtDateTimeBR = (d: Date | string) =>
+  formatDate(d, {
+    day: "2-digit", month: "long", year: "numeric",
+    hour: "2-digit", minute: "2-digit",
+    timeZone: "America/Fortaleza",
+  })
 
 type Props = {
   params:       Promise<{ id: string }>
@@ -240,7 +249,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                 <div>
                   <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Retirada</p>
                   <p className="font-semibold text-foreground">
-                    {booking.activatedAt ? formatDateTime(booking.activatedAt) : formatDateLong(booking.startDate)}
+                    {booking.activatedAt ? fmtDateTimeBR(booking.activatedAt) : formatDateLong(booking.startDate)}
                   </p>
                   {booking.activatedAt && (
                     <p className="text-[10px] text-success">✓ Confirmada pelo locador</p>
@@ -249,7 +258,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                 <div>
                   <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Devolução até</p>
                   <p className="font-semibold text-foreground">
-                    {booking.activatedAt ? formatDateTime(booking.endDate) : formatDateLong(booking.endDate)}
+                    {booking.activatedAt ? fmtDateTimeBR(booking.endDate) : formatDateLong(booking.endDate)}
                   </p>
                   {booking.activatedAt && (
                     <p className="text-[10px] text-muted-foreground">Mesmo horário da retirada</p>
