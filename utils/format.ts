@@ -48,6 +48,11 @@ export function formatDateTime(date: Date | string): string {
   })
 }
 
+/** "1.234" — número inteiro com separador de milhar pt-BR. */
+export function formatNumber(n: number): string {
+  return new Intl.NumberFormat("pt-BR").format(n)
+}
+
 export function formatDistance(meters: number): string {
   return meters < 1000 ? `${Math.round(meters)} m` : `${(meters / 1000).toFixed(1)} km`
 }
