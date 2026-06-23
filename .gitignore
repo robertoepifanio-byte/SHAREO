@@ -19,6 +19,7 @@ dist/
 coverage/
 playwright-report/
 playwright-report-staging/
+playwright-report-visual/
 test-results/
 # Session fixtures e dados de teste — não commitar
 e2e/fixtures/session-*.json
