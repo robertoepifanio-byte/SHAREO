@@ -26,6 +26,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "rls": "tsx scripts/apply-rls.ts",
     "test:lighthouse": "tsx scripts/lighthouse-check.ts",
+    "test:load": "k6 run load/smoke.js",
     "postinstall": "prisma generate",
     "prepare": "husky"
   },
