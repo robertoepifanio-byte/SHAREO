@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
+import { Avatar } from "@/components/ui/Avatar"
 
 interface Props {
   name:      string
@@ -39,7 +39,6 @@ export function UserDropdown({ name, avatarUrl, role }: Props) {
   const [open, setOpen]   = useState(false)
   const ref               = useRef<HTMLDivElement>(null)
   const pathname          = usePathname()
-  const initial           = name[0]?.toUpperCase() ?? "U"
   const firstName         = name.split(" ")[0]
 
   // Fecha ao navegar
@@ -74,13 +73,9 @@ export function UserDropdown({ name, avatarUrl, role }: Props) {
         aria-haspopup="true"
         aria-expanded={open}
         aria-label={`Menu do usuário — ${firstName}`}
-        className="flex h-9 w-9 items-center justify-center rounded-full bg-brand border-2 border-white/30 text-sm font-bold text-white hover:opacity-90 transition-opacity outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary overflow-hidden"
+        className="rounded-full hover:opacity-90 transition-opacity outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
       >
-        {avatarUrl ? (
-          <Image src={avatarUrl} alt={name} width={36} height={36} className="h-full w-full object-cover" />
-        ) : (
-          initial
-        )}
+        <Avatar name={name} src={avatarUrl} size={36} className="bg-brand text-white border-2 border-white/30" />
       </button>
 
       {/* Dropdown */}

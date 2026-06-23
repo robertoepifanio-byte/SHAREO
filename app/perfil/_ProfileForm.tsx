@@ -2,8 +2,8 @@
 
 import { useRef, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import Image from "next/image"
 import Link from "next/link"
+import { Avatar } from "@/components/ui/Avatar"
 import { maskPhone, displayPhone } from "@/lib/forms/masks"
 
 interface UserData {
@@ -30,9 +30,6 @@ export function ProfileForm({ user, redirectOnSave }: { user: UserData; redirect
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState("")
   const [success, setSuccess] = useState(false)
-
-  const initials =
-    name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?"
 
   // Upload de foto de perfil: escolhe do dispositivo → /api/upload (valida tipo/
   // magic-bytes/tamanho e devolve a URL pública) → guarda em avatarUrl. A gravação
@@ -146,13 +143,7 @@ export function ProfileForm({ user, redirectOnSave }: { user: UserData; redirect
             Foto de perfil <span className="font-normal normal-case text-muted-foreground">(opcional)</span>
           </span>
           <div className="flex items-center gap-4">
-            <span className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-background">
-              {avatarUrl ? (
-                <Image src={avatarUrl} alt="Foto de perfil" width={64} height={64} className="h-full w-full object-cover" />
-              ) : (
-                <span className="text-lg font-semibold text-muted-foreground">{initials}</span>
-              )}
-            </span>
+            <Avatar name={name} src={avatarUrl || null} size={64} className="border border-border bg-background text-muted-foreground" />
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center gap-2">
                 <button

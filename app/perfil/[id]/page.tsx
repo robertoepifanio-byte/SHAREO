@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import Image from "next/image"
+import { Avatar } from "@/components/ui/Avatar"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
@@ -136,19 +136,7 @@ export default async function PublicProfilePage({ params }: Props) {
           <div className="rounded-xl border border-border bg-surface p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
               <div className="flex-shrink-0">
-                {user.avatarUrl ? (
-                  <Image
-                    src={user.avatarUrl}
-                    alt={user.name}
-                    width={80}
-                    height={80}
-                    className="h-20 w-20 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary text-2xl font-bold text-white">
-                    {user.name[0]?.toUpperCase() ?? "U"}
-                  </div>
-                )}
+                <Avatar name={user.name} src={user.avatarUrl} size={80} className="bg-primary text-white" />
               </div>
 
               <div className="flex-1 min-w-0">

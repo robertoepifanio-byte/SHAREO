@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { userMiniSelect } from "@/lib/prisma/selects"
+import { Avatar } from "@/components/ui/Avatar"
 
 export const metadata: Metadata = { title: "Mensagens" }
 
@@ -77,7 +78,6 @@ export default async function MensagensPage() {
               const lastMsg    = conv.messages[0]
               const isUnread   = myLastRead && lastMsg && lastMsg.senderId !== userId
                 && new Date(lastMsg.createdAt) > new Date(myLastRead)
-              const initial    = other?.user.name[0]?.toUpperCase() ?? "?"
 
               return (
                 <Link
@@ -87,9 +87,7 @@ export default async function MensagensPage() {
                 >
                   {/* Avatar */}
                   <div className="relative flex-shrink-0">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">
-                      {initial}
-                    </div>
+                    <Avatar name={other?.user.name} src={other?.user.avatarUrl} size={48} className="bg-primary text-white" />
                     {isUnread && (
                       <span className="absolute right-0 top-0 h-3 w-3 rounded-full bg-brand ring-2 ring-surface" aria-hidden="true" />
                     )}
