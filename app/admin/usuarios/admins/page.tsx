@@ -1,34 +1,29 @@
 import type { Metadata } from "next"
-import { redirect } from "next/navigation"
 import Link from "next/link"
-import { auth } from "@/lib/auth"
+import { requireAdminPage } from "@/lib/auth/require-admin"
 import { prisma } from "@/lib/prisma"
-import { hasAdminRole } from "@/lib/auth/admin-guards"
 import { AdminActions } from "./_AdminActions"
 import { CreateAdminForm } from "./_CreateAdminForm"
 import { PromoteUserForm } from "./_PromoteUserForm"
+import { formatDateShort } from "@/utils/format"
+import { StatusBadge } from "@/components/ui/StatusBadge"
 
 export const metadata: Metadata = { title: "Admin — Gestão de Admins" }
 
-const ROLE_BADGE: Record<string, { label: string; cls: string }> = {
-  ADMIN_SUPERADMIN:  { label: "Superadmin",  cls: "bg-primary/10 text-primary" },
-  ADMIN_FINANCEIRO:  { label: "Financeiro",  cls: "bg-amber-100 text-amber-700" },
-  ADMIN_OPERACIONAL: { label: "Operacional", cls: "bg-sky-100 text-sky-700" },
+const ROLE_BADGE: Record<string, { label: string; variant: "brand" | "warning" | "info" }> = {
+  ADMIN_SUPERADMIN:  { label: "Superadmin",  variant: "brand" },
+  ADMIN_FINANCEIRO:  { label: "Financeiro",  variant: "warning" },
+  ADMIN_OPERACIONAL: { label: "Operacional", variant: "info" },
 }
 
 export default async function AdminsPage() {
-  const session = await auth()
-  if (!session || session.user.role !== "ADMIN") redirect("/dashboard")
-  if (!hasAdminRole(session, "ADMIN_SUPERADMIN")) redirect("/admin")
+  const session = await requireAdminPage("ADMIN_SUPERADMIN")
 
   const admins = await prisma.user.findMany({
     where:   { role: "ADMIN", deletedAt: null },
     orderBy: { createdAt: "asc" },
     select:  { id: true, name: true, email: true, adminRole: true, isActive: true, createdAt: true },
   })
-
-  const fmtDate = (d: Date) =>
-    new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short", year: "2-digit" }).format(d)
 
   return (
     <div className="space-y-6">
@@ -81,7 +76,7 @@ export default async function AdminsPage() {
                           {admin.name}
                           {isSelf && <span className="ml-1.5 text-[10px] text-muted-foreground">(você)</span>}
                           {!admin.isActive && (
-                            <span className="ml-1.5 rounded-sm bg-red-100 px-1 text-[10px] font-semibold text-red-600">inativo</span>
+                            <StatusBadge variant="danger" size="sm"> inativo</StatusBadge>
                           )}
                         </p>
                         <p className="text-xs text-muted-foreground">{admin.email}</p>
@@ -90,15 +85,13 @@ export default async function AdminsPage() {
                   </td>
                   <td className="hidden px-2 py-3 sm:table-cell">
                     {badge ? (
-                      <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${badge.cls}`}>
-                        {badge.label}
-                      </span>
+                      <StatusBadge variant={badge.variant}>{badge.label}</StatusBadge>
                     ) : (
                       <span className="text-xs text-muted-foreground">—</span>
                     )}
                   </td>
                   <td className="hidden px-2 py-3 text-xs text-muted-foreground md:table-cell">
-                    {fmtDate(admin.createdAt)}
+                    {formatDateShort(admin.createdAt)}
                   </td>
                   <td className="py-3 pl-2">
                     {isSelf ? (

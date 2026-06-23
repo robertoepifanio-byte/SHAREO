@@ -1,33 +1,16 @@
 import type { Metadata } from "next"
-import { notFound, redirect } from "next/navigation"
+import { notFound } from "next/navigation"
 import Link from "next/link"
-import { auth } from "@/lib/auth"
+import { requireAdminPage } from "@/lib/auth/require-admin"
 import { prisma } from "@/lib/prisma"
 import { getPlatformFeeRate, calcSplit } from "@/lib/platform-config"
 import { ConfirmPixButton } from "./_ConfirmPixButton"
+import { formatPrice, formatDate, formatDateTime } from "@/utils/format"
+import { BookingStatusBadge } from "@/components/ui/BookingStatusBadge"
 
 export const metadata: Metadata = { title: "Admin — Detalhe da reserva" }
 
 type Props = { params: Promise<{ id: string }> }
-
-const fmt = (cents: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
-
-const fmtDate = (d: Date) =>
-  new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short", year: "2-digit" }).format(new Date(d))
-
-const fmtDateTime = (d: Date) =>
-  new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short", year: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(d))
-
-const STATUS_LABEL: Record<string, { label: string; color: string }> = {
-  PENDING:   { label: "Aguardando resposta", color: "bg-amber-100 text-amber-800" },
-  CONFIRMED: { label: "Confirmada",          color: "bg-blue-medium/10 text-blue-medium" },
-  ACTIVE:    { label: "Em andamento",        color: "bg-brand/10 text-brand" },
-  RETURNED:  { label: "Devolução em andamento", color: "bg-purple-100 text-purple-700" },
-  COMPLETED: { label: "Concluída",           color: "bg-success/10 text-success" },
-  CANCELLED: { label: "Cancelada",           color: "bg-destructive/10 text-destructive" },
-  DISPUTED:  { label: "Em disputa",          color: "bg-orange-light text-orange-link" },
-}
 
 /**
  * Visão SOMENTE LEITURA do detalhe de uma reserva, para o admin.
@@ -38,8 +21,7 @@ const STATUS_LABEL: Record<string, { label: string; color: string }> = {
  * Aqui o admin é OBSERVADOR: sem ações (pagar/avaliar/check-in), sem mutação.
  */
 export default async function AdminReservaPage({ params }: Props) {
-  const session = await auth()
-  if (!session || session.user.role !== "ADMIN") redirect("/dashboard")
+  await requireAdminPage()
 
   const { id } = await params
 
@@ -78,8 +60,6 @@ export default async function AdminReservaPage({ params }: Props) {
 
   if (!booking) notFound()
 
-  const statusInfo = STATUS_LABEL[booking.status] ?? { label: booking.status, color: "bg-muted text-foreground" }
-
   // Split: prioriza os valores PERSISTIDOS (capturados no checkout); se ausentes
   // (reserva sem pagamento ainda), recalcula com calcSplit como a tela do usuário.
   const discountCents = booking.discountCents ?? 0
@@ -87,6 +67,9 @@ export default async function AdminReservaPage({ params }: Props) {
   const gross         = calcSplit(booking.totalPrice + discountCents, feeRateBps)
   const platformFee   = booking.platformFeeAmount ?? Math.max(0, gross.platformFeeAmount - discountCents)
   const ownerNet      = booking.ownerNetAmount ?? gross.ownerNetAmount
+
+  // Preset: dia "2-digit" + mês "short" + ano "2-digit" (equivalente ao fmtDate original)
+  const fmtDate     = (d: Date) => formatDate(d, { day: "2-digit", month: "short", year: "2-digit" })
 
   const Row = ({ label, value, strong }: { label: string; value: string; strong?: boolean }) => (
     <div className="flex items-center justify-between py-1.5 text-sm">
@@ -105,12 +88,10 @@ export default async function AdminReservaPage({ params }: Props) {
           <h1 className="mt-1 text-xl font-bold text-primary">{booking.item.title}</h1>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {booking.item.city && booking.item.state ? `${booking.item.city} — ${booking.item.state} · ` : ""}
-            Criada em {fmtDateTime(booking.createdAt)}
+            Criada em {formatDateTime(booking.createdAt)}
           </p>
         </div>
-        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusInfo.color}`}>
-          {statusInfo.label}
-        </span>
+        <BookingStatusBadge status={booking.status} />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -144,25 +125,25 @@ export default async function AdminReservaPage({ params }: Props) {
           <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Período</p>
           <Row label="Retirada"  value={fmtDate(booking.startDate)} />
           <Row label="Devolução" value={fmtDate(booking.endDate)} />
-          <Row label="Diárias"   value={`${booking.totalDays} × ${fmt(booking.dailyPrice)}`} />
-          {booking.activatedAt && <Row label="Ativada em"   value={fmtDateTime(booking.activatedAt)} />}
-          {booking.returnedAt  && <Row label="Devolvida em" value={fmtDateTime(booking.returnedAt)} />}
-          {booking.contractSignedAt && <Row label="Contrato aceito" value={fmtDateTime(booking.contractSignedAt)} />}
+          <Row label="Diárias"   value={`${booking.totalDays} × ${formatPrice(booking.dailyPrice)}`} />
+          {booking.activatedAt && <Row label="Ativada em"   value={formatDateTime(booking.activatedAt)} />}
+          {booking.returnedAt  && <Row label="Devolvida em" value={formatDateTime(booking.returnedAt)} />}
+          {booking.contractSignedAt && <Row label="Contrato aceito" value={formatDateTime(booking.contractSignedAt)} />}
         </div>
 
         {/* Financeiro */}
         <div className="rounded-xl border border-border bg-surface p-5 md:col-span-2">
           <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Financeiro</p>
-          <Row label="Total da locação" value={fmt(booking.totalPrice)} strong />
-          {discountCents > 0 && <Row label="Cupom/desconto" value={`− ${fmt(discountCents)}`} />}
-          <Row label={`Taxa ShareO (${feeRateBps / 100}%, retida do repasse)`} value={`− ${fmt(platformFee)}`} />
-          <Row label="Repasse ao proprietário" value={fmt(ownerNet)} strong />
-          {booking.lateFeeAmount ? <Row label="Multa por atraso" value={fmt(booking.lateFeeAmount)} /> : null}
-          {booking.depositAmount ? <Row label="Caução" value={fmt(booking.depositAmount)} /> : null}
+          <Row label="Total da locação" value={formatPrice(booking.totalPrice)} strong />
+          {discountCents > 0 && <Row label="Cupom/desconto" value={`− ${formatPrice(discountCents)}`} />}
+          <Row label={`Taxa ShareO (${feeRateBps / 100}%, retida do repasse)`} value={`− ${formatPrice(platformFee)}`} />
+          <Row label="Repasse ao proprietário" value={formatPrice(ownerNet)} strong />
+          {booking.lateFeeAmount ? <Row label="Multa por atraso" value={formatPrice(booking.lateFeeAmount)} /> : null}
+          {booking.depositAmount ? <Row label="Caução" value={formatPrice(booking.depositAmount)} /> : null}
           <div className="mt-2 border-t border-border pt-2">
             <Row label="Status do pagamento" value={booking.paymentStatus} />
-            {booking.paidAt && <Row label="Pago em" value={fmtDateTime(booking.paidAt)} />}
-            {booking.pixDeclaredAt && <Row label="PIX informado pelo locatário em" value={fmtDateTime(booking.pixDeclaredAt)} />}
+            {booking.paidAt && <Row label="Pago em" value={formatDateTime(booking.paidAt)} />}
+            {booking.pixDeclaredAt && <Row label="PIX informado pelo locatário em" value={formatDateTime(booking.pixDeclaredAt)} />}
           </div>
 
           {/* Checkout PIX manual — confirmar recebimento (só CONFIRMED e ainda não pago) */}
@@ -191,7 +172,7 @@ export default async function AdminReservaPage({ params }: Props) {
             {booking.cancelReason && (
               <div className="rounded-lg bg-orange-light p-2.5 text-xs text-orange-link">
                 <span className="font-semibold">Motivo do cancelamento/disputa: </span>{booking.cancelReason}
-                {booking.cancelledAt && <span className="text-orange-link/70"> · {fmtDateTime(booking.cancelledAt)}</span>}
+                {booking.cancelledAt && <span className="text-orange-link/70"> · {formatDateTime(booking.cancelledAt)}</span>}
               </div>
             )}
           </div>

@@ -1,19 +1,13 @@
 import type { Metadata } from "next"
-import { redirect } from "next/navigation"
-import { auth } from "@/lib/auth"
-import { hasAdminRole } from "@/lib/auth/admin-guards"
+import { requireAdminPage } from "@/lib/auth/require-admin"
 import { prisma } from "@/lib/prisma"
 import { ItemActions } from "./_Actions"
+import { formatPrice } from "@/utils/format"
 
 export const metadata: Metadata = { title: "Admin — Itens" }
 
-const fmt = (cents: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
-
 export default async function AdminItensPage() {
-  const session = await auth()
-  if (!session || session.user.role !== "ADMIN") redirect("/dashboard")
-  if (!hasAdminRole(session, "ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL")) redirect("/admin")
+  await requireAdminPage("ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL")
 
   const items = await prisma.item.findMany({
     where:   { deletedAt: null },
@@ -45,7 +39,7 @@ export default async function AdminItensPage() {
         {item.category?.name ?? "—"}
       </td>
       <td className="px-2 py-3 text-xs text-muted-foreground whitespace-nowrap">
-        {fmt(item.pricePerDay)}/dia
+        {formatPrice(item.pricePerDay)}/dia
       </td>
       <td className="px-2 py-3 hidden md:table-cell">
         <div className="flex gap-1">

@@ -1,18 +1,15 @@
 import type { Metadata } from "next"
-import { redirect } from "next/navigation"
 import Link from "next/link"
-import { auth } from "@/lib/auth"
+import { requireAdminPage } from "@/lib/auth/require-admin"
 import { prisma } from "@/lib/prisma"
 import { DisputeActions } from "./_Actions"
+import { formatPrice, formatDateTime } from "@/utils/format"
+import { EmptyState } from "@/components/ui/EmptyState"
 
 export const metadata: Metadata = { title: "Admin — Disputas" }
 
-const fmt = (cents: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
-
 export default async function AdminDisputasPage() {
-  const session = await auth()
-  if (!session || session.user.role !== "ADMIN") redirect("/dashboard")
+  await requireAdminPage()
 
   const disputes = await prisma.booking.findMany({
     where:   { status: "DISPUTED" },
@@ -29,9 +26,6 @@ export default async function AdminDisputasPage() {
     },
   })
 
-  const fmtDate = (d: Date) =>
-    new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short", year: "2-digit", hour: "2-digit", minute: "2-digit" }).format(d)
-
   return (
     <div>
       <h1 className="mb-6 text-xl font-bold text-primary">
@@ -42,13 +36,15 @@ export default async function AdminDisputasPage() {
       </h1>
 
       {disputes.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 py-20 text-center">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground/40" aria-hidden="true">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-            <polyline points="22 4 12 14.01 9 11.01"/>
-          </svg>
-          <p className="text-muted-foreground">Nenhuma disputa aberta.</p>
-        </div>
+        <EmptyState
+          icon={
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+          }
+          title="Nenhuma disputa aberta."
+        />
       ) : (
         <div className="space-y-4">
           {disputes.map((d) => (
@@ -57,7 +53,7 @@ export default async function AdminDisputasPage() {
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-foreground">{d.item.title}</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    Valor: {fmt(d.totalPrice)} · Em disputa desde {fmtDate(d.updatedAt)}
+                    Valor: {formatPrice(d.totalPrice)} · Em disputa desde {formatDateTime(d.updatedAt)}
                   </p>
 
                   <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
