@@ -6,6 +6,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { APP_URL } from "@/lib/app-url"
+import { assertCronAuth } from "@/lib/auth/cron-guard"
 import {
   sendReminderStartTomorrow,
   sendReminderReturnTomorrow,
@@ -31,12 +32,8 @@ function endOfDay(d: Date) {
 }
 
 export async function GET(req: NextRequest) {
-  // Proteção: apenas Vercel Cron ou CRON_SECRET correto
-  const auth = req.headers.get("authorization")
-  const secret = process.env.CRON_SECRET
-  if (!secret || auth !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  const denied = assertCronAuth(req)
+  if (denied) return denied
 
   const lateFeeMultiplier = await getLateFeeMultiplier()
 

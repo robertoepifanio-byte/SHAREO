@@ -6,6 +6,44 @@ export function formatDate(date: Date | string, opts?: Intl.DateTimeFormatOption
   return new Intl.DateTimeFormat("pt-BR", opts).format(new Date(date))
 }
 
+// Presets de data para uso nos templates de e-mail e rotas de API.
+// Centraliza as opções Intl.DateTimeFormatOptions mais usadas no projeto.
+
+/** Ex.: "22/06/2026" */
+export function formatDateNumeric(date: Date | string): string {
+  return formatDate(date, { day: "2-digit", month: "2-digit", year: "numeric" })
+}
+
+/** Ex.: "22 de junho de 2026" */
+export function formatDateLong(date: Date | string): string {
+  return formatDate(date, { day: "2-digit", month: "long", year: "numeric" })
+}
+
+/** Ex.: "22 de jun. de 2026" */
+export function formatDateShort(date: Date | string): string {
+  return formatDate(date, { day: "2-digit", month: "short", year: "numeric" })
+}
+
+/** Ex.: "22 jun." */
+export function formatDateMonthDay(date: Date | string): string {
+  return formatDate(date, { day: "2-digit", month: "short" })
+}
+
+/** Ex.: "junho de 2026" */
+export function formatMonthYear(date: Date | string): string {
+  return formatDate(date, { month: "long", year: "numeric" })
+}
+
+/** Ex.: "14:30" */
+export function formatTime(date: Date | string): string {
+  return formatDate(date, { hour: "2-digit", minute: "2-digit" })
+}
+
+/** Ex.: "22/06/2026 14:30" */
+export function formatDateTime(date: Date | string): string {
+  return formatDate(date, { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
+}
+
 export function formatDistance(meters: number): string {
   return meters < 1000 ? `${Math.round(meters)} m` : `${(meters / 1000).toFixed(1)} km`
 }

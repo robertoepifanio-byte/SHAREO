@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
+import { userMiniSelect } from "@/lib/prisma/selects"
 import { CreateBookingSchema, ListBookingsQuerySchema } from "@/lib/validations/bookings"
 import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
 import { calcBookingTotal } from "@/lib/pricing"
@@ -63,8 +64,8 @@ export async function GET(req: NextRequest) {
               images: { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
             },
           },
-          borrower: { select: { id: true, name: true, avatarUrl: true } },
-          owner:    { select: { id: true, name: true, avatarUrl: true } },
+          borrower: { select: userMiniSelect },
+          owner:    { select: userMiniSelect },
           conversation: { select: { id: true } },
         },
       }),

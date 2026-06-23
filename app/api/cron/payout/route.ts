@@ -6,6 +6,7 @@
  */
 import { NextResponse, type NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { assertCronAuth } from "@/lib/auth/cron-guard"
 
 export const runtime    = "nodejs"
 export const maxDuration = 60
@@ -13,11 +14,8 @@ export const maxDuration = 60
 const BATCH_SIZE = 10
 
 export async function GET(req: NextRequest) {
-  const auth   = req.headers.get("authorization")
-  const secret = process.env.CRON_SECRET
-  if (!secret || auth !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  const denied = assertCronAuth(req)
+  if (denied) return denied
 
   const now = new Date()
   let processed = 0

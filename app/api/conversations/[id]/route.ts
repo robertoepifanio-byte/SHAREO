@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
+import { userMiniSelect } from "@/lib/prisma/selects"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -39,7 +40,7 @@ export async function GET(req: NextRequest, { params }: Params) {
                 id:     true,
                 title:  true,
                 images: { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
-                owner:  { select: { id: true, name: true, avatarUrl: true } },
+                owner:  { select: userMiniSelect },
               },
             },
           },
@@ -48,7 +49,7 @@ export async function GET(req: NextRequest, { params }: Params) {
           select: {
             userId:    true,
             lastReadAt: true,
-            user: { select: { id: true, name: true, avatarUrl: true } },
+            user: { select: userMiniSelect },
           },
         },
       },

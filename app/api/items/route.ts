@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { CreateItemSchema, ListItemsQuerySchema } from "@/lib/validations/items"
 import { geocodeItem } from "@/lib/geocodeItem"
+import { userPublicSelect } from "@/lib/prisma/selects"
 
 export async function GET(req: NextRequest) {
   try {
@@ -66,7 +67,7 @@ export async function GET(req: NextRequest) {
           viewCount: true,
           createdAt: true,
           category: { select: { id: true, name: true, slug: true } },
-          owner:    { select: { id: true, name: true, avatarUrl: true, isVerified: true } },
+          owner:    { select: userPublicSelect },
           images:   { select: { id: true, url: true }, orderBy: { order: "asc" }, take: 1 },
           _count:   { select: { reviews: true, favorites: true } },
         },

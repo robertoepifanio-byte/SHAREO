@@ -11,17 +11,14 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { getAutoCancelConfig } from "@/lib/platform-config"
+import { assertCronAuth } from "@/lib/auth/cron-guard"
 
 export const runtime     = "nodejs"
 export const maxDuration = 60
 
 export async function GET(req: NextRequest) {
-  // Proteção: apenas chamadas com o CRON_SECRET correto
-  const auth   = req.headers.get("authorization")
-  const secret = process.env.CRON_SECRET
-  if (!secret || auth !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  const denied = assertCronAuth(req)
+  if (denied) return denied
 
   // Reservas PENDING criadas há mais de N horas (PlatformConfig: autoCancelPendingHours)
   const { pendingHours } = await getAutoCancelConfig()

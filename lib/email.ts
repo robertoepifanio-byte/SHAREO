@@ -1,5 +1,6 @@
 import { Resend } from "resend"
 import { APP_URL } from "@/lib/app-url"
+import { formatPrice, formatDateLong } from "@/utils/format"
 
 const hasResendKey =
   typeof process.env.RESEND_API_KEY === "string" &&
@@ -267,7 +268,6 @@ export async function sendExportReadyEmail(
   if (!resend) return
 
   const firstName = name.split(" ")[0]
-  const fmtBr     = (d: Date) => d.toLocaleDateString("pt-BR")
   const url       = `${APP_URL}/admin/financeiro/exportar`
 
   const html = baseLayout(`
@@ -276,7 +276,7 @@ export async function sendExportReadyEmail(
     </h1>
     <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
       Olá, ${firstName}! A exportação financeira do período
-      <strong>${fmtBr(periodStart)} a ${fmtBr(periodEnd)}</strong> foi concluída
+      <strong>${formatDateLong(periodStart)} a ${formatDateLong(periodEnd)}</strong> foi concluída
       e está disponível para download no painel administrativo.
     </p>
 
@@ -344,9 +344,8 @@ export async function sendVerificationEmail(
 
 // ─── Lembretes automáticos ────────────────────────────────────────────────────
 
-function fmtDate(d: Date) {
-  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "long", year: "numeric" }).format(d)
-}
+// Alias local para manter legibilidade dos templates sem mudar o texto formatado.
+const fmtDate = formatDateLong
 
 /** Lembrete: reserva começa amanhã — enviado ao locatário e ao locador */
 export async function sendReminderStartTomorrow(
@@ -462,9 +461,8 @@ export async function sendLateFeeEmail(
 ): Promise<void> {
   const resend = getResend()
   if (!resend) return
-  const firstName       = name.split(" ")[0]
-  const lateFeeFormatted = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" })
-    .format(lateFeeAmountCents / 100)
+  const firstName        = name.split(" ")[0]
+  const lateFeeFormatted = formatPrice(lateFeeAmountCents)
   const bookingUrl = `${APP_URL}/reservas/${bookingId}`
   const { error } = await resend.emails.send({
     from:    `ShareO <${FROM}>`,
@@ -729,9 +727,8 @@ export async function sendReminderOverdue(
   dailyPriceCents:  number,
   lateFeeMultiplier = 1.5,
 ): Promise<void> {
-  const url       = `${APP_URL}/reservas/${bookingId}`
-  const lateFee   = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" })
-                      .format((dailyPriceCents * lateFeeMultiplier * daysLate) / 100)
+  const url     = `${APP_URL}/reservas/${bookingId}`
+  const lateFee = formatPrice(Math.round(dailyPriceCents * lateFeeMultiplier * daysLate))
 
   const html = (firstName: string, role: "borrower" | "owner") => baseLayout(`
     <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#B91C1C;">

@@ -7,6 +7,7 @@ import { stripe } from "@/lib/stripe"
 import { APP_URL } from "@/lib/app-url"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { getPlatformFeeRate, calcSplit, CHECKOUT_MAX_CENTS, STRIPE_CHECKOUT_EXPIRES_SECONDS } from "@/lib/platform-config"
+import { formatDateMonthDay } from "@/utils/format"
 
 const Schema = z.object({
   bookingId: z.string().min(1),
@@ -105,9 +106,6 @@ export async function POST(req: NextRequest) {
 
     const appUrl = APP_URL
 
-    const fmtDate = (d: Date) =>
-      new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(d)
-
     const checkoutSession = await stripe.checkout.sessions.create({
       mode:                "payment",
       payment_method_types: ["card"],
@@ -120,7 +118,7 @@ export async function POST(req: NextRequest) {
             unit_amount:  booking.totalPrice, // já em centavos
             product_data: {
               name: `Aluguel — ${booking.item.title}`,
-              description: `${booking.totalDays} ${booking.totalDays === 1 ? "dia" : "dias"} · ${fmtDate(booking.startDate)} até ${fmtDate(booking.endDate)}`,
+              description: `${booking.totalDays} ${booking.totalDays === 1 ? "dia" : "dias"} · ${formatDateMonthDay(booking.startDate)} até ${formatDateMonthDay(booking.endDate)}`,
               ...(booking.item.images[0]?.url && { images: [booking.item.images[0].url] }),
             },
           },
