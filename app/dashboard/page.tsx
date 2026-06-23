@@ -111,7 +111,7 @@ export default async function DashboardPage() {
     // cidade/estado do usuário para personalizar textos + status do cadastro
     prisma.user.findUnique({
       where:  { id: uid },
-      select: { city: true, state: true, profileCompletedAt: true },
+      select: { city: true, state: true, profileCompletedAt: true, avatarUrl: true },
     }).catch(() => null),
 
     // P2-58 — Próximas devoluções (proprietário): reservas ACTIVE ordenadas por endDate ASC
@@ -166,8 +166,9 @@ export default async function DashboardPage() {
   const earningsCents = monthEarnings._sum.totalPrice ?? 0
   const firstName     = session.user.name?.split(" ")[0] ?? "você"
 
-  const userCity     = userProfile?.city  ?? null
-  const userState    = userProfile?.state ?? null
+  const userCity      = userProfile?.city  ?? null
+  const userState     = userProfile?.state ?? null
+  const userAvatarUrl = userProfile?.avatarUrl ?? null
   const userLocation = userCity ? (userState ? `${userCity}, ${userState}` : userCity) : "Brasil"
 
   // Cadastro incompleto → aviso opcional para completar (CPF + endereço), exigido só ao anunciar/alugar.
@@ -188,8 +189,12 @@ export default async function DashboardPage() {
                 {userLocation} · Bem-vindo de volta ao ShareO
               </p>
             </div>
-            <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full border-2 border-white/20 bg-brand text-xl font-extrabold text-white">
-              {firstName[0]?.toUpperCase()}
+            <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white/20 bg-brand text-xl font-extrabold text-white">
+              {userAvatarUrl ? (
+                <Image src={userAvatarUrl} alt={firstName} width={56} height={56} className="h-full w-full object-cover" />
+              ) : (
+                firstName[0]?.toUpperCase()
+              )}
             </div>
           </div>
         </div>
