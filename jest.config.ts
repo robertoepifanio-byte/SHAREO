@@ -33,6 +33,9 @@ const config: Config = {
     "<rootDir>/node_modules/",
     "<rootDir>/.next/",
     "<rootDir>/e2e/",
+    // apps/mobile é um pacote Expo com seu próprio jest (preset jest-expo, ambiente
+    // react-native). O jest da raiz (next/jest, jsdom) NÃO deve coletar esses testes.
+    "<rootDir>/apps/",
   ],
   collectCoverageFrom: [
     "lib/**/*.{ts,tsx}",
