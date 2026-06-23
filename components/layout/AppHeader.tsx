@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
 import Image from "next/image"
 import Link from "next/link"
 import { NotificationBell } from "@/components/ui/NotificationBell"
@@ -11,6 +12,16 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle"
 
 export async function AppHeader() {
   const session = await auth().catch(() => null)
+
+  // Avatar do header lido DIRETO do banco — NÃO do JWT: `session.user.image` nunca é
+  // populado com `avatarUrl` (auth é JWT sem PrismaAdapter) e ficaria desatualizado
+  // após um upload. Assim o avatar do header bate com o do /perfil e reflete uma foto
+  // recém-enviada já no router.refresh() do "Salvar", sem precisar relogar.
+  const avatarUrl = session?.user?.id
+    ? ((await prisma.user
+        .findUnique({ where: { id: session.user.id }, select: { avatarUrl: true } })
+        .catch(() => null))?.avatarUrl ?? null)
+    : null
 
   return (
     <header className="sticky top-0 z-[200] bg-primary" role="banner">
@@ -67,7 +78,7 @@ export async function AppHeader() {
               <div className="hidden md:block">
                 <UserDropdown
                   name={session.user.name ?? "Usuário"}
-                  avatarUrl={session.user.image ?? null}
+                  avatarUrl={avatarUrl}
                   role={session.user.role ?? null}
                 />
               </div>
