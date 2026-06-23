@@ -5,6 +5,9 @@ import Image from "next/image"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { ItemCard } from "@/components/items/ItemCard"
+import { EmptyState } from "@/components/shared/EmptyState"
+import { RatingStars } from "@/components/ui/RatingStars"
+import { formatMonthYear } from "@/utils/format"
 
 type Props = { params: Promise<{ slug: string }> }
 
@@ -51,9 +54,6 @@ async function getOwner(slug: string) {
     },
   })
 }
-
-const fmtMembro = (d: Date) =>
-  new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(d)
 
 export default async function LojaPage({ params }: Props) {
   const { slug } = await params
@@ -140,7 +140,7 @@ export default async function LojaPage({ params }: Props) {
                   {(owner.city || owner.state) && (
                     <span>📍 {[owner.city, owner.state].filter(Boolean).join(", ")}</span>
                   )}
-                  <span>Membro desde {fmtMembro(owner.createdAt)}</span>
+                  <span>Membro desde {formatMonthYear(owner.createdAt)}</span>
                 </div>
 
                 {owner.bio && (
@@ -159,12 +159,7 @@ export default async function LojaPage({ params }: Props) {
                   </div>
                   {avgRating !== null && (
                     <div className="text-center">
-                      <p className="text-lg font-bold text-primary">
-                        {avgRating.toFixed(1)} <span className="text-yellow-400 text-base">★</span>
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {reviewCount} {reviewCount === 1 ? "avaliação" : "avaliações"}
-                      </p>
+                      <RatingStars rating={avgRating} showValue size="md" count={reviewCount} />
                     </div>
                   )}
                 </div>
@@ -184,19 +179,10 @@ export default async function LojaPage({ params }: Props) {
         {/* ── Grid de itens ── */}
         <div className="container py-8">
           {items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground" aria-hidden="true">
-                  <rect x="3" y="3" width="18" height="18" rx="2"/>
-                  <circle cx="8.5" cy="8.5" r="1.5"/>
-                  <polyline points="21 15 16 10 5 21"/>
-                </svg>
-              </div>
-              <h2 className="mb-2 font-semibold text-primary">Nenhum item disponível</h2>
-              <p className="text-sm text-muted-foreground">
-                {owner.name} ainda não tem itens ativos no momento.
-              </p>
-            </div>
+            <EmptyState
+              title="Nenhum item disponível"
+              description={`${owner.name} ainda não tem itens ativos no momento.`}
+            />
           ) : (
             <>
               <h2 className="mb-4 font-semibold text-foreground">

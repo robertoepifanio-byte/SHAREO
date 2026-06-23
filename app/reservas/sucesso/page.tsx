@@ -7,21 +7,11 @@ import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { BookingProgressBar } from "@/components/booking/BookingProgressBar"
 import { TrackEvent } from "@/components/analytics/TrackEvent"
+import { formatPrice, formatDateLong } from "@/utils/format"
 
 export const metadata: Metadata = { title: "Reserva confirmada! — ShareO" }
 
 type Props = { searchParams: Promise<{ bookingId?: string }> }
-
-const fmt = (cents: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
-
-function fmtDate(d: Date) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    day:   "2-digit",
-    month: "long",
-    year:  "numeric",
-  }).format(new Date(d))
-}
 
 export default async function BookingSuccessPage({ searchParams }: Props) {
   const session = await auth()
@@ -154,11 +144,11 @@ export default async function BookingSuccessPage({ searchParams }: Props) {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Retirada</span>
-                  <span className="font-medium">{fmtDate(booking.startDate)}</span>
+                  <span className="font-medium">{formatDateLong(booking.startDate)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Devolução</span>
-                  <span className="font-medium">{fmtDate(booking.endDate)}</span>
+                  <span className="font-medium">{formatDateLong(booking.endDate)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Duração</span>
@@ -167,7 +157,7 @@ export default async function BookingSuccessPage({ searchParams }: Props) {
                 <div className="my-2 h-px bg-border" />
                 <div className="flex justify-between font-bold">
                   <span>Total pago</span>
-                  <span className="text-brand">{fmt(booking.totalPrice)}</span>
+                  <span className="text-brand">{formatPrice(booking.totalPrice)}</span>
                 </div>
               </div>
             </div>

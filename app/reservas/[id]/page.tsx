@@ -18,6 +18,8 @@ import { ReturnChecklist }    from "@/components/booking/ReturnChecklist"
 import { ReturnConditionForm } from "@/components/booking/ReturnConditionForm"
 import { getPlatformFeeRate, calcSplit, getPlatformPixConfig } from "@/lib/platform-config"
 import { deriveBookingHistory } from "@/lib/bookingHistory"
+import { BookingStatusBadge } from "@/components/ui/BookingStatusBadge"
+import { formatPrice, formatDate, formatDateLong, formatDateTime } from "@/utils/format"
 
 type Props = {
   params:       Promise<{ id: string }>
@@ -25,19 +27,6 @@ type Props = {
 }
 
 export const metadata: Metadata = { title: "Detalhe da Reserva" }
-
-const STATUS_LABEL: Record<string, { label: string; color: string }> = {
-  PENDING:   { label: "Aguardando resposta", color: "bg-amber-100 text-amber-800" },
-  CONFIRMED: { label: "Confirmada",          color: "bg-blue-medium/10 text-blue-medium" },
-  ACTIVE:    { label: "Em andamento",        color: "bg-brand/10 text-brand" },
-  RETURNED:  { label: "Devolução em andamento", color: "bg-purple-100 text-purple-700" },
-  COMPLETED: { label: "Concluída",           color: "bg-success/10 text-success" },
-  CANCELLED: { label: "Cancelada",           color: "bg-destructive/10 text-destructive" },
-  DISPUTED:  { label: "Em disputa",          color: "bg-orange-light text-orange-link" },
-}
-
-const fmt = (cents: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
 
 function fmtOwnerAddress(owner: {
   cep?: string | null; street?: string | null
@@ -52,17 +41,6 @@ function fmtOwnerAddress(owner: {
   return parts.length ? parts.join(", ") : null
 }
 
-function fmtDate(d: Date) {
-  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "long", year: "numeric" }).format(new Date(d))
-}
-
-function fmtDateTime(d: Date) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit", month: "long", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
-    timeZone: "America/Fortaleza",
-  }).format(new Date(d))
-}
 
 export default async function BookingDetailPage({ params, searchParams }: Props) {
   const session = await auth()
@@ -161,7 +139,6 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
   const isBorrower = booking.borrower.id === userId
   if (!isOwner && !isBorrower) notFound()
 
-  const statusInfo  = STATUS_LABEL[booking.status] ?? { label: booking.status, color: "bg-muted text-foreground" }
   const counterpart = isOwner ? booking.borrower : booking.owner
   const img         = booking.item.images[0]?.url
 
@@ -226,9 +203,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                 <span className="font-medium text-foreground">{counterpart.name}</span>
               </p>
             </div>
-            <span className={`rounded-full px-3 py-1 text-sm font-semibold ${statusInfo.color}`}>
-              {statusInfo.label}
-            </span>
+            <BookingStatusBadge status={booking.status} size="md" />
           </div>
 
           {/* Story B — itens desta locação (só quando há mais de um) */}
@@ -246,7 +221,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                       )}
                     </div>
                     <span className="min-w-0 flex-1 truncate text-sm text-foreground">{bi.item.title}</span>
-                    <span className="shrink-0 text-sm font-medium text-muted-foreground">{fmt(bi.totalPrice)}</span>
+                    <span className="shrink-0 text-sm font-medium text-muted-foreground">{formatPrice(bi.totalPrice)}</span>
                   </li>
                 ))}
               </ul>
@@ -265,7 +240,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                 <div>
                   <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Retirada</p>
                   <p className="font-semibold text-foreground">
-                    {booking.activatedAt ? fmtDateTime(booking.activatedAt) : fmtDate(booking.startDate)}
+                    {booking.activatedAt ? formatDateTime(booking.activatedAt) : formatDateLong(booking.startDate)}
                   </p>
                   {booking.activatedAt && (
                     <p className="text-[10px] text-success">✓ Confirmada pelo locador</p>
@@ -274,7 +249,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                 <div>
                   <p className="mb-0.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Devolução até</p>
                   <p className="font-semibold text-foreground">
-                    {booking.activatedAt ? fmtDateTime(booking.endDate) : fmtDate(booking.endDate)}
+                    {booking.activatedAt ? formatDateTime(booking.endDate) : formatDateLong(booking.endDate)}
                   </p>
                   {booking.activatedAt && (
                     <p className="text-[10px] text-muted-foreground">Mesmo horário da retirada</p>
@@ -287,24 +262,24 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
               {/* Resumo financeiro */}
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between text-muted-foreground">
-                  <span>{booking.totalDays} dia{booking.totalDays !== 1 ? "s" : ""} × {fmt(booking.dailyPrice)}</span>
-                  <span>{fmt(booking.dailyPrice * booking.totalDays)}</span>
+                  <span>{booking.totalDays} dia{booking.totalDays !== 1 ? "s" : ""} × {formatPrice(booking.dailyPrice)}</span>
+                  <span>{formatPrice(booking.dailyPrice * booking.totalDays)}</span>
                 </div>
                 {discountCents > 0 && (
                   <div className="flex justify-between text-success">
                     <span>Desconto (cupom)</span>
-                    <span>− {fmt(discountCents)}</span>
+                    <span>− {formatPrice(discountCents)}</span>
                   </div>
                 )}
                 <div className="my-1 h-px bg-border" />
                 <div className="flex justify-between font-bold text-foreground">
                   <span>Total da locação</span>
-                  <span>{fmt(booking.totalPrice)}</span>
+                  <span>{formatPrice(booking.totalPrice)}</span>
                 </div>
                 {booking.depositAmount && (
                   <div className="flex justify-between text-muted-foreground">
                     <span>Caução (reembolsável)</span>
-                    <span>{fmt(booking.depositAmount)}</span>
+                    <span>{formatPrice(booking.depositAmount)}</span>
                   </div>
                 )}
 
@@ -312,11 +287,11 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                 <div className="mt-3 space-y-1.5 rounded-lg bg-background p-3">
                   <div className="flex justify-between text-muted-foreground">
                     <span>Taxa Shareo ({feeRateLabel}%)</span>
-                    <span className="text-destructive">− {fmt(platformFee)}</span>
+                    <span className="text-destructive">− {formatPrice(platformFee)}</span>
                   </div>
                   <div className="flex justify-between font-semibold text-foreground">
                     <span>{isOwner ? "Você recebe" : "Proprietário recebe"}</span>
-                    <span className="text-brand">{fmt(ownerNet)}</span>
+                    <span className="text-brand">{formatPrice(ownerNet)}</span>
                   </div>
                 </div>
               </div>
@@ -429,7 +404,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                     <p className="font-semibold text-success">Pago com sucesso</p>
                     {booking.paidAt && (
                       <p className="text-xs text-success/80">
-                        {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(booking.paidAt))}
+                        {formatDate(booking.paidAt, { dateStyle: "short", timeStyle: "short" })}
                       </p>
                     )}
                   </div>
@@ -464,7 +439,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                     <>
                       <div className="mb-3 flex items-center justify-between rounded-lg bg-background px-4 py-3 text-sm">
                         <span className="text-muted-foreground">Valor a pagar</span>
-                        <span className="font-bold text-foreground">{fmt(booking.totalPrice)}</span>
+                        <span className="font-bold text-foreground">{formatPrice(booking.totalPrice)}</span>
                       </div>
                       <PayButton bookingId={booking.id} totalPrice={booking.totalPrice} />
                     </>
@@ -560,7 +535,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                 <p className="text-sm font-semibold text-red-800">Taxa de atraso aplicada</p>
                 <p className="text-xs text-red-700">
                   Item devolvido após o prazo. Taxa adicional:{" "}
-                  <strong>{new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(booking.lateFeeAmount / 100)}</strong>
+                  <strong>{formatPrice(booking.lateFeeAmount)}</strong>
                 </p>
               </div>
             </div>

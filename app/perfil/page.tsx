@@ -7,6 +7,8 @@ import { AppHeader } from "@/components/layout/AppHeader"
 import { UpgradePjForm } from "./_UpgradePjForm"
 import { displayPhone } from "@/lib/forms/masks"
 import Link from "next/link"
+import { formatMonthYear, formatDate } from "@/utils/format"
+import { RatingStars } from "@/components/ui/RatingStars"
 
 export const metadata: Metadata = { title: "Meu Perfil" }
 
@@ -85,9 +87,7 @@ export default async function ProfilePage() {
   const reviewCount   = reviewStats._count._all
   const totalBookings = user._count.bookingsAsBorrower + user._count.bookingsAsOwner
 
-  const fmtMemberSince = new Intl.DateTimeFormat("pt-BR", {
-    month: "long", year: "numeric",
-  }).format(user.createdAt)
+  const fmtMemberSince = formatMonthYear(user.createdAt)
 
   return (
     <div className="min-h-screen bg-background">
@@ -225,9 +225,7 @@ export default async function ProfilePage() {
                   )}
                 </h2>
                 {avgRating !== null && (
-                  <span className="text-sm font-bold text-yellow-500">
-                    ★ {avgRating.toFixed(1)}
-                  </span>
+                  <RatingStars rating={avgRating} showValue size="md" />
                 )}
               </div>
 
@@ -248,12 +246,10 @@ export default async function ProfilePage() {
                       <div className="flex items-center justify-between gap-2 mb-0.5">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-semibold text-foreground">{review.reviewer.name}</span>
-                          <span className="text-yellow-400 text-xs leading-none">
-                            {"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}
-                          </span>
+                          <RatingStars rating={review.rating} />
                         </div>
                         <span className="whitespace-nowrap text-xs text-muted-foreground flex-shrink-0">
-                          {new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short" }).format(new Date(review.createdAt))}
+                          {formatDate(review.createdAt, { day: "2-digit", month: "short" })}
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground mb-1">

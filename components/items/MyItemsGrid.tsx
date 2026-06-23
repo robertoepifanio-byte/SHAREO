@@ -4,6 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { toast } from "sonner"
 import { ItemCard } from "@/components/items/ItemCard"
+import { EmptyState } from "@/components/shared/EmptyState"
 
 interface ItemSummary {
   id:           string
@@ -89,28 +90,18 @@ export function MyItemsGrid({ initialItems }: MyItemsGridProps) {
 
   if (items.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border py-16 text-center">
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground" aria-hidden="true">
-            <rect x="3" y="3" width="18" height="18" rx="2"/>
-            <circle cx="8.5" cy="8.5" r="1.5"/>
-            <polyline points="21 15 16 10 5 21"/>
-          </svg>
-        </div>
-        <h3 className="mb-2 font-semibold text-primary">Nenhum anúncio ainda</h3>
-        <p className="mb-6 text-sm text-muted-foreground">
-          Comece a ganhar dinheiro alugando o que você tem.
-        </p>
-        <Link
-          href="/itens/novo"
-          className="inline-flex items-center gap-1.5 h-10 px-6 rounded-md bg-brand text-sm font-medium text-white hover:bg-brand-hover transition-colors"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
-            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          Criar primeiro anúncio
-        </Link>
-      </div>
+      <EmptyState
+        title="Nenhum anúncio ainda"
+        description="Comece a ganhar dinheiro alugando o que você tem."
+        action={
+          <Link
+            href="/itens/novo"
+            className="inline-flex items-center gap-1.5 h-10 px-6 rounded-md bg-brand text-sm font-medium text-white hover:opacity-90 transition-opacity"
+          >
+            Criar primeiro anúncio
+          </Link>
+        }
+      />
     )
   }
 

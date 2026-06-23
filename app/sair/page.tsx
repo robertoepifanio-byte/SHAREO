@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import { signOut } from "next-auth/react"
 import Image from "next/image"
 import Link from "next/link"
+import { LoadingSpinner } from "@/components/shared/LoadingSpinner"
 
 export default function SairPage() {
   useEffect(() => {
@@ -30,27 +31,7 @@ export default function SairPage() {
       <div className="w-full max-w-sm rounded-xl border border-border bg-surface p-8 text-center shadow-sm">
         {/* Spinner */}
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-          <svg
-            className="h-7 w-7 animate-spin text-brand"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-            />
-          </svg>
+          <LoadingSpinner size="md" />
         </div>
 
         <h1 className="mb-2 text-xl font-bold text-primary">Saindo…</h1>

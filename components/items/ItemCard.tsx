@@ -1,6 +1,8 @@
 import Image from "next/image"
 import Link from "next/link"
 import { FavoriteButton } from "./FavoriteButton"
+import { formatPrice } from "@/utils/format"
+import { RatingStars } from "@/components/ui/RatingStars"
 
 interface ItemCardItem {
   id:           string
@@ -32,8 +34,7 @@ interface ItemCardProps {
 
 export function ItemCard({ item, showActions = false, isFavorited = false, hotBadge = false, toggling = false, backHref, onDelete, onToggleActive }: ItemCardProps) {
   const imageUrl = item.images[0]?.url
-  const price    = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" })
-                      .format(item.pricePerDay / 100)
+  const price    = formatPrice(item.pricePerDay)
   const location = item.neighborhood
     ? `${item.neighborhood}, ${item.city}`
     : item.city
@@ -117,12 +118,8 @@ export function ItemCard({ item, showActions = false, isFavorited = false, hotBa
 
           {/* Rating */}
           {item.avgRating != null && item._count && item._count.reviews > 0 && (
-            <div className="mb-1.5 flex items-center gap-1 text-xs text-muted-foreground">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="1" aria-hidden="true">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-              </svg>
-              <span>{item.avgRating.toFixed(1)}</span>
-              <span>({item._count.reviews})</span>
+            <div className="mb-1.5">
+              <RatingStars rating={item.avgRating} showValue count={item._count.reviews} />
             </div>
           )}
 

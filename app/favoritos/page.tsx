@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { ItemCard } from "@/components/items/ItemCard"
+import { EmptyState } from "@/components/shared/EmptyState"
 
 export const metadata: Metadata = { title: "Favoritos" }
 
@@ -57,14 +58,10 @@ export default async function FavoritosPage() {
         </div>
 
         {items.length === 0 ? (
-          <div className="flex flex-col items-center gap-4 py-20 text-center">
-            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground/40" aria-hidden="true">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-            </svg>
-            <p className="max-w-xs text-muted-foreground">
-              Toque no coração em qualquer item para salvá-lo aqui.
-            </p>
-          </div>
+          <EmptyState
+            title="Nenhum favorito ainda"
+            description="Toque no coração em qualquer item para salvá-lo aqui."
+          />
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {items.map((item) => (
