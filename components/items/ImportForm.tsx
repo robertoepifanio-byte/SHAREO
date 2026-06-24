@@ -82,18 +82,33 @@ export function ImportForm() {
           <li>Máximo 100 linhas por arquivo. Se o título já existe, o item é <strong>atualizado</strong></li>
         </ol>
 
-        <a
-          href="/template-importacao.csv"
-          download
-          className="mt-4 inline-flex h-9 items-center gap-1.5 rounded-lg border border-brand/40 bg-brand/5 px-3 text-sm font-semibold text-brand hover:bg-brand/10 transition-colors"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
-          Baixar modelo CSV
-        </a>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <a
+            href="/template-importacao.csv"
+            download
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-brand/40 bg-brand/5 px-3 text-sm font-semibold text-brand hover:bg-brand/10 transition-colors"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Baixar modelo CSV
+          </a>
+          <a
+            href="https://docs.google.com/spreadsheets/d/1NEd7Dn-zASPcNwuwMWHTErJWSVgKl3ByinRWfGIjcQI/copy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-brand/40 bg-brand/5 px-3 text-sm font-semibold text-brand hover:bg-brand/10 transition-colors"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+            Abrir modelo no Google Sheets
+          </a>
+        </div>
       </div>
 
       {/* Upload */}
