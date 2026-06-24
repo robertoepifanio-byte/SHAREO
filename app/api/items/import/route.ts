@@ -13,7 +13,7 @@ const MAX_BYTES   = 512 * 1024  // 512 KB
 function parseCSVRow(line: string): string[] {
   const fields: string[] = []
   let i = 0
-  while (i <= line.length) {
+  while (i < line.length) {
     if (line[i] === '"') {
       let field = ""
       i++
