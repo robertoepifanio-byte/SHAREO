@@ -1,9 +1,8 @@
 import type { Metadata } from "next"
-import { redirect } from "next/navigation"
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { hasAdminRole } from "@/lib/auth/admin-guards"
+import { requireAdminPage } from "@/lib/auth/require-admin"
 import { InviteCityButton } from "./_InviteCityButton"
+import { StatCard } from "@/components/ui/StatCard"
 
 export const metadata: Metadata = { title: "Admin — Interessados / Pilotos" }
 
@@ -22,9 +21,7 @@ type CityRow = {
 const keyOf = (city: string | null, state: string | null) => `${state ?? ""}|${(city ?? "").toLowerCase()}`
 
 export default async function AdminFundadoresPage() {
-  const session = await auth()
-  if (!session || session.user.role !== "ADMIN") redirect("/dashboard")
-  if (!hasAdminRole(session, "ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL")) redirect("/admin")
+  await requireAdminPage("ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL")
 
   const [leads, referredUsers, bySource, byCampaign] = await Promise.all([
     prisma.founderLead.findMany({
@@ -108,17 +105,10 @@ export default async function AdminFundadoresPage() {
 
       {/* Métricas */}
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          { label: "Interessados",  value: totalLeads,     color: "text-primary" },
-          { label: "Aguardando",    value: totalPending,   color: totalPending > 0 ? "text-orange-link" : "text-primary" },
-          { label: "Convidados",    value: totalInvited,   color: "text-primary" },
-          { label: "Cadastrados",   value: totalConverted, color: "text-success" },
-        ].map((s) => (
-          <div key={s.label} className="rounded-xl border border-border bg-surface p-4">
-            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-            <p className="mt-0.5 text-sm font-medium text-foreground">{s.label}</p>
-          </div>
-        ))}
+        <StatCard label="Interessados" value={totalLeads}     accent="primary" />
+        <StatCard label="Aguardando"   value={totalPending}   accent={totalPending > 0 ? "warning" : "primary"} />
+        <StatCard label="Convidados"   value={totalInvited}   accent="primary" />
+        <StatCard label="Cadastrados"  value={totalConverted} accent="success" />
       </div>
 
       {/* Atribuição por canal / campanha */}

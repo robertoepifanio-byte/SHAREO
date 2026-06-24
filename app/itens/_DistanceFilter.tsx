@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { LoadingSpinner } from "@/components/shared/LoadingSpinner"
 
 interface Props {
   dist?:         string
@@ -125,10 +126,7 @@ export function DistanceFilter({ dist, userLat, userLng, hasProfileLocation, onA
           className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-brand/40 bg-brand/5 px-3 py-2 text-xs font-semibold text-brand hover:bg-brand/10 transition-colors disabled:opacity-50"
         >
           {loading ? (
-            <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" strokeOpacity=".25"/>
-              <path d="M12 2a10 10 0 0 1 10 10" />
-            </svg>
+            <LoadingSpinner size="sm" />
           ) : (
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <circle cx="12" cy="12" r="3"/>

@@ -4,6 +4,7 @@ import { randomInt } from "node:crypto"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
+import { userMiniSelect } from "@/lib/prisma/selects"
 import { PatchBookingSchema } from "@/lib/validations/bookings"
 import type { BookingStatus } from "@prisma/client"
 import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
@@ -53,8 +54,8 @@ export async function GET(req: NextRequest, { params }: Params) {
             images: { select: { url: true }, orderBy: { order: "asc" } },
           },
         },
-        borrower:     { select: { id: true, name: true, avatarUrl: true } },
-        owner:        { select: { id: true, name: true, avatarUrl: true } },
+        borrower:     { select: userMiniSelect },
+        owner:        { select: userMiniSelect },
         conversation: { select: { id: true } },
         pickupToken:  true,
       reviews:      {

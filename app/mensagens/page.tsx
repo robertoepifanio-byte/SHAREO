@@ -4,6 +4,8 @@ import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
+import { EmptyState } from "@/components/shared/EmptyState"
+import { userMiniSelect } from "@/lib/prisma/selects"
 
 export const metadata: Metadata = { title: "Mensagens" }
 
@@ -44,7 +46,7 @@ export default async function MensagensPage() {
         select: {
           userId:    true,
           lastReadAt: true,
-          user: { select: { id: true, name: true, avatarUrl: true } },
+          user: { select: userMiniSelect },
         },
       },
       messages: {
@@ -63,17 +65,10 @@ export default async function MensagensPage() {
         <h1 className="mb-6 text-2xl font-bold text-primary">Mensagens</h1>
 
         {conversations.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground" aria-hidden="true">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-              </svg>
-            </div>
-            <h3 className="mb-2 font-semibold text-primary">Nenhuma conversa ainda</h3>
-            <p className="text-sm text-muted-foreground">
-              Quando você solicitar ou receber uma reserva, a conversa aparecerá aqui.
-            </p>
-          </div>
+          <EmptyState
+            title="Nenhuma conversa ainda"
+            description="Quando você solicitar ou receber uma reserva, a conversa aparecerá aqui."
+          />
         ) : (
           <div className="mx-auto max-w-2xl divide-y divide-border rounded-xl border border-border bg-surface overflow-hidden">
             {conversations.map((conv) => {

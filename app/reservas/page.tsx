@@ -5,26 +5,12 @@ import Image from "next/image"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
+import { BookingStatusBadge } from "@/components/ui/BookingStatusBadge"
+import { EmptyState } from "@/components/shared/EmptyState"
+import { formatPrice, formatDateShort } from "@/utils/format"
 
 export const metadata: Metadata = {
   title: "Minhas Reservas",
-}
-
-const STATUS_LABEL: Record<string, { label: string; color: string }> = {
-  PENDING:   { label: "Aguardando",  color: "bg-amber-100 text-amber-800" },
-  CONFIRMED: { label: "Confirmada",  color: "bg-blue-medium/10 text-blue-medium" },
-  ACTIVE:    { label: "Em andamento", color: "bg-brand/10 text-brand" },
-  RETURNED:  { label: "Devolução em andamento", color: "bg-purple-100 text-purple-700" },
-  COMPLETED: { label: "Concluída",   color: "bg-success/10 text-success" },
-  CANCELLED: { label: "Cancelada",   color: "bg-destructive/10 text-destructive" },
-  DISPUTED:  { label: "Em disputa",  color: "bg-orange-light text-orange-link" },
-}
-
-const fmt = (cents: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
-
-function fmtDate(d: Date) {
-  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(d))
 }
 
 type Tab = "borrower" | "owner"
@@ -116,28 +102,24 @@ export default async function ReservasPage({ searchParams }: Props) {
         )}
 
         {bookings.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground" aria-hidden="true">
-                <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-              </svg>
-            </div>
-            <h3 className="mb-2 font-semibold text-primary">Nenhuma reserva ainda</h3>
-            <p className="mb-6 text-sm text-muted-foreground">
-              {tab === "borrower"
+          <EmptyState
+            title="Nenhuma reserva ainda"
+            description={
+              tab === "borrower"
                 ? "Explore itens disponíveis e faça sua primeira reserva."
-                : "Quando alguém solicitar um item seu, aparecerá aqui."}
-            </p>
-            {tab === "borrower" && (
-              <Link href="/itens" className="text-sm font-medium text-brand hover:underline">
-                Explorar anúncios →
-              </Link>
-            )}
-          </div>
+                : "Quando alguém solicitar um item seu, aparecerá aqui."
+            }
+            action={
+              tab === "borrower" ? (
+                <Link href="/itens" className="text-sm font-medium text-brand hover:underline">
+                  Explorar anúncios →
+                </Link>
+              ) : undefined
+            }
+          />
         ) : (
           <div className="flex flex-col gap-4">
             {bookings.map((b) => {
-              const statusInfo = STATUS_LABEL[b.status] ?? { label: b.status, color: "bg-muted text-foreground" }
               const counterpart = tab === "borrower" ? b.owner : b.borrower
               const img = b.item.images[0]?.url
 
@@ -169,9 +151,7 @@ export default async function ReservasPage({ searchParams }: Props) {
                             <span className="ml-1 font-normal text-muted-foreground">+ {b._count.bookingItems - 1} {b._count.bookingItems - 1 === 1 ? "item" : "itens"}</span>
                           )}
                         </Link>
-                        <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusInfo.color}`}>
-                          {statusInfo.label}
-                        </span>
+                        <BookingStatusBadge status={b.status} />
                       </div>
 
                       <p className="mb-2 text-xs text-muted-foreground">
@@ -180,9 +160,9 @@ export default async function ReservasPage({ searchParams }: Props) {
                       </p>
 
                       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                        <span>📅 {fmtDate(b.startDate)} → {fmtDate(b.endDate)}</span>
+                        <span>📅 {formatDateShort(b.startDate)} → {formatDateShort(b.endDate)}</span>
                         <span>· {b.totalDays} dia{b.totalDays !== 1 ? "s" : ""}</span>
-                        <span className="font-semibold text-foreground">· {fmt(b.totalPrice)}</span>
+                        <span className="font-semibold text-foreground">· {formatPrice(b.totalPrice)}</span>
                       </div>
                     </div>
                   </div>

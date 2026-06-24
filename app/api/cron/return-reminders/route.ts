@@ -12,6 +12,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import type { NotificationType } from "@prisma/client"
+import { assertCronAuth } from "@/lib/auth/cron-guard"
 
 export const runtime    = "nodejs"
 export const maxDuration = 60
@@ -22,12 +23,8 @@ export const maxDuration = 60
 const RETURN_REMINDER_TYPE = "RETURN_REMINDER" as NotificationType
 
 export async function GET(req: NextRequest) {
-  // ── Autenticação do cron ──────────────────────────────────────────────────
-  const secret = process.env.CRON_SECRET
-  const auth   = req.headers.get("authorization")
-  if (!secret || auth !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  const denied = assertCronAuth(req)
+  if (denied) return denied
 
   const now   = new Date()
   const in24h = new Date(now.getTime() + 24 * 60 * 60 * 1000)

@@ -1,11 +1,10 @@
 import type { Metadata } from "next"
-import { redirect } from "next/navigation"
 import Image from "next/image"
-import { auth } from "@/lib/auth"
-import { hasAdminRole } from "@/lib/auth/admin-guards"
+import { requireAdminPage } from "@/lib/auth/require-admin"
 import { prisma } from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { VerificationActions } from "./_Actions"
+import { EmptyState } from "@/components/ui/EmptyState"
 
 export const metadata: Metadata = { title: "Admin — Verificações de Identidade" }
 
@@ -37,9 +36,7 @@ async function signedUrl(path: string | null): Promise<string | null> {
 }
 
 export default async function VerificacoesPage() {
-  const session = await auth()
-  if (!session || session.user.role !== "ADMIN") redirect("/dashboard")
-  if (!hasAdminRole(session, "ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL")) redirect("/admin")
+  await requireAdminPage("ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL")
 
   const [pending, recent] = await Promise.all([
     prisma.user.findMany({
@@ -216,13 +213,11 @@ export default async function VerificacoesPage() {
       )}
 
       {pendingWithUrls.length === 0 && recent.length === 0 && (
-        <div className="rounded-xl border border-border bg-surface p-8 text-center">
-          <p className="text-3xl">🆔</p>
-          <p className="mt-3 text-sm font-medium text-foreground">Nenhuma verificação ainda</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            As verificações aparecerão aqui quando os usuários enviarem seus documentos.
-          </p>
-        </div>
+        <EmptyState
+          icon={<span className="text-3xl">🆔</span>}
+          title="Nenhuma verificação ainda"
+          description="As verificações aparecerão aqui quando os usuários enviarem seus documentos."
+        />
       )}
     </div>
   )

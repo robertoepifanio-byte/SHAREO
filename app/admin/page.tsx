@@ -2,11 +2,10 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
 import { getPlatformFeeRate } from "@/lib/platform-config"
+import { formatPrice } from "@/utils/format"
+import { StatCard } from "@/components/ui/StatCard"
 
 export const metadata: Metadata = { title: "Admin — Visão Geral" }
-
-const fmt = (cents: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
 
 export default async function AdminOverviewPage() {
   const [
@@ -44,28 +43,53 @@ export default async function AdminOverviewPage() {
     bookingStats.map((r) => [r.status, r._count._all])
   )
 
-  const stats = [
-    { label: "Usuários",         value: totalUsers,                     sub: `${inactiveUsers} desativados`,   color: "text-primary" },
-    { label: "Itens ativos",     value: totalItems,                     sub: `${pendingItems} aguardando aprovação`, color: pendingItems > 0 ? "text-orange-link" : "text-primary" },
-    { label: "Reservas ativas",  value: byStatus["ACTIVE"]    ?? 0,     sub: `${byStatus["PENDING"] ?? 0} pendentes`, color: "text-primary" },
-    { label: "Disputas abertas", value: disputes,                       sub: "bookings em disputa",            color: disputes > 0 ? "text-orange-link" : "text-primary" },
-    { label: "Concluídas",     value: byStatus["COMPLETED"] ?? 0,                    sub: "reservas concluídas",        color: "text-success" },
-    { label: "GMV",            value: fmt(gmvResult._sum.totalPrice ?? 0),        sub: "volume total de aluguéis",   color: "text-success", isString: true },
-    { label: "Receita ShareO", value: fmt(feeResult._sum.platformFeeAmount ?? 0), sub: `taxa ${currentFeeRate / 100}% sobre locações`, color: "text-success", isString: true },
-  ]
-
   return (
     <div>
       <h1 className="mb-6 text-xl font-bold text-primary">Visão Geral</h1>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {stats.map((s) => (
-          <div key={s.label} className="rounded-xl border border-border bg-surface p-4">
-            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-            <p className="mt-0.5 text-sm font-medium text-foreground">{s.label}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">{s.sub}</p>
-          </div>
-        ))}
+        <StatCard
+          label="Usuários"
+          value={totalUsers}
+          sub={`${inactiveUsers} desativados`}
+          accent="primary"
+        />
+        <StatCard
+          label="Itens ativos"
+          value={totalItems}
+          sub={`${pendingItems} aguardando aprovação`}
+          accent={pendingItems > 0 ? "warning" : "primary"}
+        />
+        <StatCard
+          label="Reservas ativas"
+          value={byStatus["ACTIVE"] ?? 0}
+          sub={`${byStatus["PENDING"] ?? 0} pendentes`}
+          accent="primary"
+        />
+        <StatCard
+          label="Disputas abertas"
+          value={disputes}
+          sub="bookings em disputa"
+          accent={disputes > 0 ? "warning" : "primary"}
+        />
+        <StatCard
+          label="Concluídas"
+          value={byStatus["COMPLETED"] ?? 0}
+          sub="reservas concluídas"
+          accent="success"
+        />
+        <StatCard
+          label="GMV"
+          value={formatPrice(gmvResult._sum.totalPrice ?? 0)}
+          sub="volume total de aluguéis"
+          accent="success"
+        />
+        <StatCard
+          label="Receita ShareO"
+          value={formatPrice(feeResult._sum.platformFeeAmount ?? 0)}
+          sub={`taxa ${currentFeeRate / 100}% sobre locações`}
+          accent="success"
+        />
       </div>
 
       {pendingItems > 0 && (

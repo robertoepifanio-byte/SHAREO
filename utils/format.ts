@@ -6,6 +6,53 @@ export function formatDate(date: Date | string, opts?: Intl.DateTimeFormatOption
   return new Intl.DateTimeFormat("pt-BR", opts).format(new Date(date))
 }
 
+// ── Presets de data (pt-BR) ────────────────────────────────────────────────
+// Evitam reescrever as `options` do Intl.DateTimeFormat em cada arquivo.
+// Para um formato fora destes, use formatDate(date, { ...opts }).
+
+/** "23 de jun. de 2026" — dia + mês abreviado + ano. */
+export function formatDateShort(date: Date | string): string {
+  return formatDate(date, { day: "2-digit", month: "short", year: "numeric" })
+}
+
+/** "23/06/2026" — numérico. */
+export function formatDateNumeric(date: Date | string): string {
+  return formatDate(date, { day: "2-digit", month: "2-digit", year: "numeric" })
+}
+
+/** "23 de jun." — dia + mês abreviado, sem ano. */
+export function formatDateMonthDay(date: Date | string): string {
+  return formatDate(date, { day: "2-digit", month: "short" })
+}
+
+/** "23 de junho de 2026" — dia + mês por extenso + ano. */
+export function formatDateLong(date: Date | string): string {
+  return formatDate(date, { day: "2-digit", month: "long", year: "numeric" })
+}
+
+/** "junho de 2026" — mês por extenso + ano (ex.: "Membro desde…"). */
+export function formatMonthYear(date: Date | string): string {
+  return formatDate(date, { month: "long", year: "numeric" })
+}
+
+/** "14:30" — apenas hora e minuto. */
+export function formatTime(date: Date | string): string {
+  return formatDate(date, { hour: "2-digit", minute: "2-digit" })
+}
+
+/** "23/06/2026 14:30" — data numérica + hora. */
+export function formatDateTime(date: Date | string): string {
+  return formatDate(date, {
+    day: "2-digit", month: "2-digit", year: "numeric",
+    hour: "2-digit", minute: "2-digit",
+  })
+}
+
+/** "1.234" — número inteiro com separador de milhar pt-BR. */
+export function formatNumber(n: number): string {
+  return new Intl.NumberFormat("pt-BR").format(n)
+}
+
 export function formatDistance(meters: number): string {
   return meters < 1000 ? `${Math.round(meters)} m` : `${(meters / 1000).toFixed(1)} km`
 }

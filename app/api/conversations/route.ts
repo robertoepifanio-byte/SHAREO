@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
+import { userMiniSelect } from "@/lib/prisma/selects"
 
 export async function GET(req: NextRequest) {
   try {
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest) {
         participants: {
           select: {
             userId: true,
-            user:   { select: { id: true, name: true, avatarUrl: true } },
+            user:   { select: userMiniSelect },
           },
         },
         messages: {

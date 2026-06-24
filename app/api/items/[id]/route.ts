@@ -4,6 +4,8 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { UpdateItemSchema } from "@/lib/validations/items"
 import { geocodeItem } from "@/lib/geocodeItem"
+import { userPublicSelect } from "@/lib/prisma/selects"
+import { assertOwnerOrAdmin } from "@/lib/auth/ownership"
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -19,10 +21,7 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
       include: {
         category: { select: { id: true, name: true, slug: true } },
         owner: {
-          select: {
-            id: true, name: true, avatarUrl: true, isVerified: true,
-            city: true, state: true, createdAt: true,
-          },
+          select: { ...userPublicSelect, city: true, state: true, createdAt: true },
         },
         images:  { orderBy: { order: "asc" }, take: 24 },  // bound de payload (ARQ-M-07)
         reviews: {
@@ -103,7 +102,7 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
       )
     }
 
-    if (existing.ownerId !== session.user.id && session.user.role !== "ADMIN") {
+    if (!assertOwnerOrAdmin(existing.ownerId, session)) {
       return NextResponse.json(
         { error: { code: "FORBIDDEN", message: "Sem permissão." } },
         { status: 403 }
@@ -200,7 +199,7 @@ export async function DELETE(_req: NextRequest, { params }: RouteContext) {
       )
     }
 
-    if (existing.ownerId !== session.user.id && session.user.role !== "ADMIN") {
+    if (!assertOwnerOrAdmin(existing.ownerId, session)) {
       return NextResponse.json(
         { error: { code: "FORBIDDEN", message: "Sem permissão." } },
         { status: 403 }

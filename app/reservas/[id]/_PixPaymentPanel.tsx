@@ -2,9 +2,8 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-
-const fmt = (cents: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
+import { LoadingSpinner } from "@/components/shared/LoadingSpinner"
+import { formatPrice } from "@/utils/format"
 
 const KEY_TYPE_LABEL: Record<string, string> = {
   PHONE: "Telefone", CPF: "CPF", CNPJ: "CNPJ", EMAIL: "E-mail", RANDOM: "Chave aleatória",
@@ -91,13 +90,13 @@ export function PixPaymentPanel({ bookingId, totalPrice, pixKey, pixKeyType, hol
           {pixKeyType && <div className="flex justify-between"><dt>Tipo de chave</dt><dd className="font-medium text-foreground">{KEY_TYPE_LABEL[pixKeyType] ?? pixKeyType}</dd></div>}
           {holder     && <div className="flex justify-between"><dt>Titular</dt><dd className="font-medium text-foreground">{holder}</dd></div>}
           {bank       && <div className="flex justify-between"><dt>Banco</dt><dd className="font-medium text-foreground">{bank}</dd></div>}
-          <div className="flex justify-between"><dt>Valor</dt><dd className="font-bold text-foreground">{fmt(totalPrice)}</dd></div>
+          <div className="flex justify-between"><dt>Valor</dt><dd className="font-bold text-foreground">{formatPrice(totalPrice)}</dd></div>
         </dl>
       </div>
 
       <ol className="list-decimal space-y-1 pl-5 text-xs text-muted-foreground">
         <li>Abra o app do seu banco e escolha pagar com PIX por chave.</li>
-        <li>Use a chave acima, confira o titular e pague {fmt(totalPrice)}.</li>
+        <li>Use a chave acima, confira o titular e pague {formatPrice(totalPrice)}.</li>
         <li>Volte aqui e toque em <strong>Já paguei</strong> — a ShareO confirmará o recebimento.</li>
       </ol>
 
@@ -108,7 +107,7 @@ export function PixPaymentPanel({ bookingId, totalPrice, pixKey, pixKeyType, hol
       >
         {loading ? (
           <>
-            <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            <LoadingSpinner size="sm" />
             Enviando…
           </>
         ) : "Já paguei"}

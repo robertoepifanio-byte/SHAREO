@@ -1,10 +1,11 @@
 import type { Metadata } from "next"
-import { redirect } from "next/navigation"
 import Link from "next/link"
-import { auth } from "@/lib/auth"
+import { requireAdminPage } from "@/lib/auth/require-admin"
 import { prisma } from "@/lib/prisma"
 import { hasAdminRole } from "@/lib/auth/admin-guards"
 import { UserActions } from "./_Actions"
+import { formatDateShort } from "@/utils/format"
+import { StatusBadge } from "@/components/ui/StatusBadge"
 
 export const metadata: Metadata = { title: "Admin — Usuários" }
 
@@ -13,9 +14,7 @@ export default async function AdminUsuariosPage({
 }: {
   searchParams: Promise<{ q?: string }>
 }) {
-  const session = await auth()
-  if (!session || session.user.role !== "ADMIN") redirect("/dashboard")
-  if (!hasAdminRole(session, "ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL", "ADMIN_FINANCEIRO")) redirect("/admin")
+  const session = await requireAdminPage("ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL", "ADMIN_FINANCEIRO")
 
   const q = (await searchParams).q?.trim() ?? ""
 
@@ -51,9 +50,6 @@ export default async function AdminUsuariosPage({
       },
     },
   })
-
-  const fmtDate = (d: Date) =>
-    new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short", year: "2-digit" }).format(d)
 
   return (
     <div>
@@ -114,7 +110,7 @@ export default async function AdminUsuariosPage({
             {users.length === 0 && (
               <tr>
                 <td colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
-                  Nenhum usuário encontrado para “{q}”.
+                  Nenhum usuário encontrado para &quot;{q}&quot;.
                 </td>
               </tr>
             )}
@@ -129,10 +125,10 @@ export default async function AdminUsuariosPage({
                       <p className="text-sm font-medium text-foreground">
                         {user.name}
                         {user.role === "ADMIN" && (
-                          <span className="ml-1 rounded-sm bg-primary/10 px-1 text-[10px] font-bold text-primary">ADMIN</span>
+                          <StatusBadge variant="brand" size="sm"> ADMIN</StatusBadge>
                         )}
                         {user.isVerified && (
-                          <span className="ml-1 text-success text-xs">✓</span>
+                          <StatusBadge variant="success" size="sm"> ✓</StatusBadge>
                         )}
                       </p>
                       <p className="text-xs text-muted-foreground">{user.email}</p>
@@ -146,7 +142,7 @@ export default async function AdminUsuariosPage({
                   {user._count.items} itens · {user._count.bookingsAsBorrower + user._count.bookingsAsOwner} reservas
                 </td>
                 <td className="hidden px-2 py-3 text-xs text-muted-foreground lg:table-cell">
-                  {fmtDate(user.createdAt)}
+                  {formatDateShort(user.createdAt)}
                 </td>
                 <td className="py-3 pl-2">
                   {user.role === "ADMIN" || !hasAdminRole(session, "ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL") ? (

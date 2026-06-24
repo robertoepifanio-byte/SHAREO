@@ -1,17 +1,13 @@
 import type { Metadata } from "next"
-import { notFound, redirect } from "next/navigation"
+import { notFound } from "next/navigation"
 import Link from "next/link"
-import { auth } from "@/lib/auth"
+import { requireAdminPage } from "@/lib/auth/require-admin"
 import { prisma } from "@/lib/prisma"
+import { formatDateTime } from "@/utils/format"
 
 export const metadata: Metadata = { title: "Admin — Conversa da disputa" }
 
 type Props = { params: Promise<{ id: string }> }
-
-const fmtDateTime = (d: Date) =>
-  new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit", month: "short", year: "2-digit", hour: "2-digit", minute: "2-digit",
-  }).format(d)
 
 /**
  * Visão SOMENTE LEITURA da conversa de uma disputa, para o admin.
@@ -22,8 +18,7 @@ const fmtDateTime = (d: Date) =>
  * `[id]` é o ID da conversa.
  */
 export default async function AdminDisputaConversaPage({ params }: Props) {
-  const session = await auth()
-  if (!session || session.user.role !== "ADMIN") redirect("/dashboard")
+  await requireAdminPage()
 
   const { id } = await params
 
@@ -113,7 +108,7 @@ export default async function AdminDisputaConversaPage({ params }: Props) {
                         {who.role}
                       </span>
                     )}
-                    <span className="text-[11px] text-muted-foreground">{fmtDateTime(m.createdAt)}</span>
+                    <span className="text-[11px] text-muted-foreground">{formatDateTime(m.createdAt)}</span>
                   </div>
                   <p className="whitespace-pre-wrap break-words text-sm text-foreground/90">{m.content}</p>
                 </li>

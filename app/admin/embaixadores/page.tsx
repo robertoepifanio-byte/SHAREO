@@ -1,15 +1,13 @@
 import type { Metadata } from "next"
-import { redirect } from "next/navigation"
-import { auth } from "@/lib/auth"
 import { hasAdminRole } from "@/lib/auth/admin-guards"
+import { requireAdminPage } from "@/lib/auth/require-admin"
 import { prisma } from "@/lib/prisma"
 import { getAmbassadorAdminStats, getTierLabel } from "@/lib/ambassador"
 import { AmbassadorConfigForm } from "./_AmbassadorConfigForm"
+import { formatPrice } from "@/utils/format"
+import { StatCard } from "@/components/ui/StatCard"
 
 export const metadata: Metadata = { title: "Admin — Embaixadores" }
-
-const fmt = (cents: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
 
 const PERIODS = [
   { label: "Últimos 7 dias",  days: 7 },
@@ -22,9 +20,7 @@ export default async function AdminEmbaixadoresPage({
 }: {
   searchParams: Promise<{ period?: string }>
 }) {
-  const session = await auth()
-  if (!session || session.user.role !== "ADMIN") redirect("/dashboard")
-  if (!hasAdminRole(session, "ADMIN_SUPERADMIN", "ADMIN_FINANCEIRO")) redirect("/admin")
+  const session = await requireAdminPage("ADMIN_SUPERADMIN", "ADMIN_FINANCEIRO")
 
   const isSuperAdmin = hasAdminRole(session, "ADMIN_SUPERADMIN")
 
@@ -99,18 +95,14 @@ export default async function AdminEmbaixadoresPage({
 
       {/* Métricas */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <MetricCard label="Total embaixadores" value={stats.totalAmbassadors} />
-        <MetricCard label="Indicados cadastrados" value={stats.totalReferralsRegistered} />
-        <MetricCard label="Indicados ativos" value={stats.totalReferralsActive} />
-        <MetricCard label="Conversão" value={`${stats.conversionRate}%`} />
-        <MetricCard label="Comissões geradas" value={fmt(stats.totalCommissionsGeneratedCents)} mono />
-        <MetricCard label="Comissões pagas" value={fmt(stats.totalCommissionsPaidCents)} mono />
-        <MetricCard label="Comissões bloqueadas" value={fmt(stats.totalCommissionsBlockedCents)} mono />
-        <MetricCard
-          label="Custo (% GMV)"
-          value="—"
-          note="calculado em breve"
-        />
+        <StatCard label="Total embaixadores"    value={stats.totalAmbassadors} />
+        <StatCard label="Indicados cadastrados" value={stats.totalReferralsRegistered} />
+        <StatCard label="Indicados ativos"      value={stats.totalReferralsActive} />
+        <StatCard label="Conversão"             value={`${stats.conversionRate}%`} />
+        <StatCard label="Comissões geradas"   value={formatPrice(stats.totalCommissionsGeneratedCents)} />
+        <StatCard label="Comissões pagas"     value={formatPrice(stats.totalCommissionsPaidCents)} />
+        <StatCard label="Comissões bloqueadas" value={formatPrice(stats.totalCommissionsBlockedCents)} />
+        <StatCard label="Custo (% GMV)"       value="—" sub="calculado em breve" />
       </div>
 
       {/* Embaixadores por tier */}
@@ -156,8 +148,8 @@ export default async function AdminEmbaixadoresPage({
                     </td>
                     <td className="py-2 pr-4 text-muted-foreground">{getTierLabel(a.currentTier)}</td>
                     <td className="py-2 pr-4 text-foreground">{a.activeReferralsCnt}</td>
-                    <td className="py-2 pr-4 font-medium text-foreground">{fmt(a.totalCommissionPendingCents)}</td>
-                    <td className="py-2 text-foreground">{fmt(a.totalCommissionPaidCents)}</td>
+                    <td className="py-2 pr-4 font-medium text-foreground">{formatPrice(a.totalCommissionPendingCents)}</td>
+                    <td className="py-2 text-foreground">{formatPrice(a.totalCommissionPaidCents)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -178,25 +170,6 @@ export default async function AdminEmbaixadoresPage({
           />
         </div>
       )}
-    </div>
-  )
-}
-
-function MetricCard({
-  label, value, note, mono,
-}: {
-  label: string
-  value: string | number
-  note?: string
-  mono?: boolean
-}) {
-  return (
-    <div className="rounded-xl border border-border bg-surface p-4">
-      <p className={`text-xl font-extrabold text-foreground ${mono ? "font-mono text-lg" : ""}`}>
-        {value}
-      </p>
-      <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
-      {note && <p className="text-xs text-muted-foreground/60 italic">{note}</p>}
     </div>
   )
 }

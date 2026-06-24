@@ -15,6 +15,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { decryptDocument } from "@/lib/crypto"
 import { verifyCnpjAtReceita, PjVerificationError } from "@/lib/pjVerification"
+import { assertCronAuth } from "@/lib/auth/cron-guard"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
@@ -25,12 +26,8 @@ const REVALIDATE_BATCH = 25
 const REVALIDATE_AFTER_DAYS = 30
 
 export async function GET(req: NextRequest) {
-  // Proteção: apenas Vercel Cron ou CRON_SECRET correto.
-  const auth = req.headers.get("authorization")
-  const secret = process.env.CRON_SECRET
-  if (!secret || auth !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  const denied = assertCronAuth(req)
+  if (denied) return denied
 
   // ─── (1) Retry da fila de revisão ──────────────────────────────────────────
   const pending = await prisma.user.findMany({

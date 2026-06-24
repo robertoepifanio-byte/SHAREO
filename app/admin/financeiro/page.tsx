@@ -1,25 +1,19 @@
 import type { Metadata } from "next"
-import { redirect } from "next/navigation"
 import Link from "next/link"
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { hasAdminRole } from "@/lib/auth/admin-guards"
+import { requireAdminPage } from "@/lib/auth/require-admin"
 import { PayoutActions } from "./_PayoutActions"
 import { FeeRateForm } from "./_FeeRateForm"
 import { PricingMultipliersForm } from "./_PricingMultipliersForm"
 import { getPlatformFeeRate, getPricingMultipliers } from "@/lib/platform-config"
+import { formatPrice, formatDateShort, formatDateTime } from "@/utils/format"
+import { StatCard } from "@/components/ui/StatCard"
 
 export const metadata: Metadata = { title: "Admin — Financeiro" }
 
-const fmt = (cents: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
-
 export default async function AdminFinanceiroPage() {
-  const session = await auth()
-  if (!session || session.user.role !== "ADMIN") redirect("/dashboard")
-  if (!hasAdminRole(session, "ADMIN_SUPERADMIN", "ADMIN_FINANCEIRO")) {
-    redirect("/admin")
-  }
+  const session = await requireAdminPage("ADMIN_SUPERADMIN", "ADMIN_FINANCEIRO")
 
   const isSuperAdmin = hasAdminRole(session, "ADMIN_SUPERADMIN")
 
@@ -119,21 +113,48 @@ export default async function AdminFinanceiroPage() {
 
       {/* ── Métricas principais ── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {[
-          { label: "GMV",              value: fmt(gmv),       sub: "volume total de aluguéis",        color: "text-primary" },
-          { label: "Receita ShareO",   value: fmt(shareoFee), sub: `taxa de ${currentFeeRate / 100}% sobre GMV`,  color: "text-success" },
-          { label: "Repasse líquido",  value: fmt(ownerNet),  sub: "o que os proprietários recebem",  color: "text-primary" },
-          { label: "Repasses pagos",   value: fmt(completedPayouts), sub: `${payoutByStatus["COMPLETED"]?.count ?? 0} transferências`, color: "text-success" },
-          { label: "Pendentes agora",  value: pendingPayouts, sub: "repasses elegíveis hoje",         color: pendingPayouts > 0 ? "text-orange-link" : "text-primary" },
-          { label: "Contas PIX",       value: pixByStatus["VERIFIED"] ?? 0, sub: `${pixByStatus["PENDING_VERIFICATION"] ?? 0} aguardando verificação`, color: "text-primary" },
-          { label: "Disputas abertas", value: disputeCount, sub: "chargebacks Stripe ativos", color: disputeCount > 0 ? "text-destructive" : "text-primary" },
-        ].map((s) => (
-          <div key={s.label} className="rounded-xl border border-border bg-surface p-4">
-            <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-            <p className="mt-0.5 text-sm font-medium text-foreground">{s.label}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">{s.sub}</p>
-          </div>
-        ))}
+        <StatCard
+          label="GMV"
+          value={formatPrice(gmv)}
+          sub="volume total de aluguéis"
+          accent="primary"
+        />
+        <StatCard
+          label="Receita ShareO"
+          value={formatPrice(shareoFee)}
+          sub={`taxa de ${currentFeeRate / 100}% sobre GMV`}
+          accent="success"
+        />
+        <StatCard
+          label="Repasse líquido"
+          value={formatPrice(ownerNet)}
+          sub="o que os proprietários recebem"
+          accent="primary"
+        />
+        <StatCard
+          label="Repasses pagos"
+          value={formatPrice(completedPayouts)}
+          sub={`${payoutByStatus["COMPLETED"]?.count ?? 0} transferências`}
+          accent="success"
+        />
+        <StatCard
+          label="Pendentes agora"
+          value={pendingPayouts}
+          sub="repasses elegíveis hoje"
+          accent={pendingPayouts > 0 ? "warning" : "primary"}
+        />
+        <StatCard
+          label="Contas PIX"
+          value={pixByStatus["VERIFIED"] ?? 0}
+          sub={`${pixByStatus["PENDING_VERIFICATION"] ?? 0} aguardando verificação`}
+          accent="primary"
+        />
+        <StatCard
+          label="Disputas abertas"
+          value={disputeCount}
+          sub="chargebacks Stripe ativos"
+          accent={disputeCount > 0 ? "danger" : "primary"}
+        />
       </div>
 
       {/* ── Contas PIX aguardando verificação ── */}
@@ -168,11 +189,11 @@ export default async function AdminFinanceiroPage() {
                     {p.ownerPaymentAccount.holderName} · {p.ownerPaymentAccount.pixKeyType}: {p.ownerPaymentAccount.pixKey}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Elegível desde {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(new Date(p.eligibleAfter))}
+                    Elegível desde {formatDateShort(p.eligibleAfter)}
                   </p>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className="text-lg font-bold text-success">{fmt(p.amount)}</p>
+                  <p className="text-lg font-bold text-success">{formatPrice(p.amount)}</p>
                   <Link
                     href={`/admin/reservas/${p.booking.id}`}
                     className="text-xs text-brand hover:underline"
@@ -210,11 +231,11 @@ export default async function AdminFinanceiroPage() {
                     <p className="text-xs font-mono text-muted-foreground">{b.stripeDisputeId}</p>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    Atualizado em {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" }).format(new Date(b.updatedAt))}
+                    Atualizado em {formatDateTime(b.updatedAt)}
                   </p>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className="text-lg font-bold text-destructive">{fmt(b.totalPrice)}</p>
+                  <p className="text-lg font-bold text-destructive">{formatPrice(b.totalPrice)}</p>
                   <Link
                     href={`/admin/reservas/${b.id}`}
                     className="text-xs text-brand hover:underline"

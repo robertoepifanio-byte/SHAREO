@@ -22,6 +22,7 @@ const staticCacheHeaders = [
 ]
 
 const config: NextConfig = {
+  poweredByHeader: false,
   // Headers de segurança em todas as rotas
   async headers() {
     return [

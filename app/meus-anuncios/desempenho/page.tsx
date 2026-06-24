@@ -6,14 +6,10 @@ import Image from "next/image"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { PjGate } from "@/components/premium/PjGate"
+import { EmptyState } from "@/components/shared/EmptyState"
+import { formatPrice, formatNumber } from "@/utils/format"
 
 export const metadata: Metadata = { title: "Desempenho dos Anúncios" }
-
-const fmtBRL = (cents: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
-
-const fmtNum = (n: number) =>
-  new Intl.NumberFormat("pt-BR").format(n)
 
 function StatCard({
   label,
@@ -170,37 +166,32 @@ export default async function DesempenhoPage() {
         </div>
 
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground" aria-hidden="true">
-                <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
-              </svg>
-            </div>
-            <h2 className="mb-2 font-semibold text-primary">Nenhum anúncio ainda</h2>
-            <p className="mb-6 text-sm text-muted-foreground">
-              Crie seu primeiro anúncio para ver as métricas aqui.
-            </p>
-            <Link href="/itens/novo" className="text-sm font-medium text-brand hover:underline">
-              Criar anúncio →
-            </Link>
-          </div>
+          <EmptyState
+            title="Nenhum anúncio ainda"
+            description="Crie seu primeiro anúncio para ver as métricas aqui."
+            action={
+              <Link href="/itens/novo" className="text-sm font-medium text-brand hover:underline">
+                Criar anúncio →
+              </Link>
+            }
+          />
         ) : (
           <>
             {/* ── Cards de totais ── */}
             <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
               <StatCard
                 label="Visualizações"
-                value={fmtNum(totalViews)}
+                value={formatNumber(totalViews)}
                 sub="total acumulado"
               />
               <StatCard
                 label="Reservas concluídas"
-                value={fmtNum(totalBookings)}
+                value={formatNumber(totalBookings)}
                 sub="devolvidas ou finalizadas"
               />
               <StatCard
                 label="Receita total"
-                value={fmtBRL(totalRevenue)}
+                value={formatPrice(totalRevenue)}
                 sub="locações finalizadas"
                 accent
               />
@@ -270,16 +261,16 @@ export default async function DesempenhoPage() {
                             </div>
                           </td>
                           <td className="px-4 py-3 text-right tabular-nums text-foreground">
-                            {fmtNum(item.viewCount)}
+                            {formatNumber(item.viewCount)}
                           </td>
                           <td className="px-4 py-3 text-right tabular-nums text-foreground">
-                            {fmtNum(item._count.favorites)}
+                            {formatNumber(item._count.favorites)}
                           </td>
                           <td className="px-4 py-3 text-right tabular-nums text-foreground">
                             {item.bookings.length}
                           </td>
                           <td className="px-4 py-3 text-right tabular-nums font-semibold text-foreground">
-                            {revenue > 0 ? fmtBRL(revenue) : <span className="text-muted-foreground font-normal">—</span>}
+                            {revenue > 0 ? formatPrice(revenue) : <span className="text-muted-foreground font-normal">—</span>}
                           </td>
                           <td className="px-4 py-3 text-right">
                             {avgItem !== null ? (
@@ -337,11 +328,11 @@ export default async function DesempenhoPage() {
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div className="rounded-lg bg-background p-2.5">
                           <p className="text-xs text-muted-foreground">Views</p>
-                          <p className="font-semibold text-foreground">{fmtNum(item.viewCount)}</p>
+                          <p className="font-semibold text-foreground">{formatNumber(item.viewCount)}</p>
                         </div>
                         <div className="rounded-lg bg-background p-2.5">
                           <p className="text-xs text-muted-foreground">Favoritos</p>
-                          <p className="font-semibold text-foreground">{fmtNum(item._count.favorites)}</p>
+                          <p className="font-semibold text-foreground">{formatNumber(item._count.favorites)}</p>
                         </div>
                         <div className="rounded-lg bg-background p-2.5">
                           <p className="text-xs text-muted-foreground">Reservas</p>
@@ -350,7 +341,7 @@ export default async function DesempenhoPage() {
                         <div className="rounded-lg bg-background p-2.5">
                           <p className="text-xs text-muted-foreground">Receita</p>
                           <p className="font-semibold text-foreground">
-                            {revenue > 0 ? fmtBRL(revenue) : "—"}
+                            {revenue > 0 ? formatPrice(revenue) : "—"}
                           </p>
                         </div>
                         {avgItem !== null && (

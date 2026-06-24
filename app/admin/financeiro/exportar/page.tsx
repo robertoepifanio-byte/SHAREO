@@ -1,15 +1,11 @@
 import type { Metadata } from "next"
-import { redirect } from "next/navigation"
-import { auth } from "@/lib/auth"
-import { hasAdminRole } from "@/lib/auth/admin-guards"
+import { requireAdminPage } from "@/lib/auth/require-admin"
 import { ExportForm } from "./_ExportForm"
 
 export const metadata: Metadata = { title: "Admin — Exportar Financeiro" }
 
 export default async function ExportarPage() {
-  const session = await auth()
-  if (!session || session.user.role !== "ADMIN") redirect("/dashboard")
-  if (!hasAdminRole(session, "ADMIN_SUPERADMIN", "ADMIN_FINANCEIRO")) redirect("/admin")
+  await requireAdminPage("ADMIN_SUPERADMIN", "ADMIN_FINANCEIRO")
 
   return (
     <div className="space-y-6">

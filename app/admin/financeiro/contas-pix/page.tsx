@@ -1,16 +1,13 @@
 import type { Metadata } from "next"
-import { redirect } from "next/navigation"
-import { auth } from "@/lib/auth"
+import { requireAdminPage } from "@/lib/auth/require-admin"
 import { prisma } from "@/lib/prisma"
-import { hasAdminRole } from "@/lib/auth/admin-guards"
 import { PixAccountActions } from "./_PixAccountActions"
+import { formatDateShort } from "@/utils/format"
 
 export const metadata: Metadata = { title: "Admin — Contas PIX" }
 
 export default async function ContasPixPage() {
-  const session = await auth()
-  if (!session || session.user.role !== "ADMIN") redirect("/dashboard")
-  if (!hasAdminRole(session, "ADMIN_SUPERADMIN", "ADMIN_FINANCEIRO")) redirect("/admin")
+  await requireAdminPage("ADMIN_SUPERADMIN", "ADMIN_FINANCEIRO")
 
   const accounts = await prisma.ownerPaymentAccount.findMany({
     orderBy: [{ status: "asc" }, { createdAt: "asc" }],
@@ -87,7 +84,7 @@ export default async function ContasPixPage() {
                     {a.holderName}{a.bankName ? ` · ${a.bankName}` : ""}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Cadastrado em {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(new Date(a.createdAt))}
+                    Cadastrado em {formatDateShort(a.createdAt)}
                   </p>
                 </div>
                 <div className="flex flex-col items-end gap-2 flex-shrink-0">

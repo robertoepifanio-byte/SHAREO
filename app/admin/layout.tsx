@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation"
 import Link from "next/link"
-import { auth } from "@/lib/auth"
+import { requireAdminPage } from "@/lib/auth/require-admin"
 import { APP_VERSION, BUILD_SHA, BUILD_ENV } from "@/lib/version"
 
 type AdminRole = "ADMIN_SUPERADMIN" | "ADMIN_FINANCEIRO" | "ADMIN_OPERACIONAL"
@@ -114,8 +113,7 @@ const linkCls =
   "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-foreground/70 hover:bg-background hover:text-foreground transition-colors"
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth()
-  if (!session || session.user.role !== "ADMIN") redirect("/dashboard")
+  const session = await requireAdminPage()
 
   const adminRole = ((session.user as { adminRole?: string }).adminRole ?? "") as AdminRole
   const visibleNav = NAV.filter((item) => item.roles.includes(adminRole))

@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getUploadLimits } from "@/lib/platform-config"
+import { assertOwnerOrAdmin } from "@/lib/auth/ownership"
 
 const BUCKET = process.env.NEXT_PUBLIC_STORAGE_BUCKET ?? "item-images"
 
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       )
     }
 
-    if (item.ownerId !== session.user.id && session.user.role !== "ADMIN") {
+    if (!assertOwnerOrAdmin(item.ownerId, session)) {
       return NextResponse.json(
         { error: { code: "FORBIDDEN", message: "Sem permissão." } },
         { status: 403 }
@@ -199,7 +200,7 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
       )
     }
 
-    if (image.item.ownerId !== session.user.id && session.user.role !== "ADMIN") {
+    if (!assertOwnerOrAdmin(image.item.ownerId, session)) {
       return NextResponse.json(
         { error: { code: "FORBIDDEN", message: "Sem permissão." } },
         { status: 403 }

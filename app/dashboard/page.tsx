@@ -9,30 +9,10 @@ import { SuggestCard } from "@/components/dashboard/SuggestCard"
 import { MonthlyGoalProgress } from "@/components/dashboard/MonthlyGoalProgress"
 import { UpcomingReturns } from "@/components/dashboard/UpcomingReturns"
 import { calcCO2Savings } from "@/lib/co2"
+import { formatPrice, formatDateNumeric } from "@/utils/format"
+import { BOOKING_STATUS_LABEL } from "@/components/ui/BookingStatusBadge"
 
 export const metadata: Metadata = { title: "Dashboard" }
-
-const fmtCurrency = (cents: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
-
-/** Formato de data seguro para SSR: DD/MM/AAAA — sem depender do ICU do Node.js */
-function fmtDateSafe(d: Date | string): string {
-  const dt   = new Date(d)
-  const day  = String(dt.getUTCDate()).padStart(2, "0")
-  const mon  = String(dt.getUTCMonth() + 1).padStart(2, "0")
-  const year = dt.getUTCFullYear()
-  return `${day}/${mon}/${year}`
-}
-
-const BOOKING_STATUS_LABEL: Record<string, string> = {
-  PENDING:   "Pendente",
-  CONFIRMED: "Confirmada",
-  ACTIVE:    "Em uso",
-  RETURNED:  "Devolução em andamento",
-  COMPLETED: "Concluída",
-  CANCELLED: "Cancelada",
-  DISPUTED:  "Em disputa",
-}
 
 export default async function DashboardPage() {
   const session = await auth()
@@ -242,7 +222,7 @@ export default async function DashboardPage() {
             </div>
             <div className="rounded-lg border border-border bg-surface p-5">
               <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Ganhos este mês</p>
-              <p className="text-2xl font-bold text-brand">{fmtCurrency(earningsCents)}</p>
+              <p className="text-2xl font-bold text-brand">{formatPrice(earningsCents)}</p>
               <p className="mt-1 text-xs text-muted-foreground">como locador</p>
             </div>
             <div className="rounded-lg border border-border bg-surface p-5">
@@ -282,7 +262,7 @@ export default async function DashboardPage() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-foreground">{b.item.title}</p>
                       <p className="text-xs text-muted-foreground">
-                        {fmtDateSafe(b.startDate)} – {fmtDateSafe(b.endDate)}
+                        {formatDateNumeric(b.startDate)} – {formatDateNumeric(b.endDate)}
                       </p>
                     </div>
                     <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${

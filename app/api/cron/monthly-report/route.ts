@@ -5,19 +5,15 @@
  */
 import { NextResponse, type NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { assertCronAuth } from "@/lib/auth/cron-guard"
+import { formatPrice } from "@/utils/format"
 
 export const runtime     = "nodejs"
 export const maxDuration = 60
 
-const fmt = (cents: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
-
 export async function GET(req: NextRequest) {
-  const auth   = req.headers.get("authorization")
-  const secret = process.env.CRON_SECRET
-  if (!secret || auth !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  const denied = assertCronAuth(req)
+  if (denied) return denied
 
   // Calcula janela do mês anterior
   const now       = new Date()
@@ -73,10 +69,10 @@ export async function GET(req: NextRequest) {
 
   const summaryText = [
     `📊 Relatório financeiro — ${monthLabel}`,
-    `GMV: ${fmt(report.gmvCents)} (${report.gmvCount} locações)`,
-    `Receita ShareO: ${fmt(report.feeCents)}`,
-    `Repasse líquido proprietários: ${fmt(report.ownerNetCents)}`,
-    `Repasses realizados: ${fmt(report.payoutsCents)} (${report.payoutsCount})`,
+    `GMV: ${formatPrice(report.gmvCents)} (${report.gmvCount} locações)`,
+    `Receita ShareO: ${formatPrice(report.feeCents)}`,
+    `Repasse líquido proprietários: ${formatPrice(report.ownerNetCents)}`,
+    `Repasses realizados: ${formatPrice(report.payoutsCents)} (${report.payoutsCount})`,
     `Disputas abertas: ${report.disputes}`,
     `Novas contas PIX: ${report.newPixAccounts}`,
   ].join(" · ")
@@ -95,7 +91,7 @@ export async function GET(req: NextRequest) {
     )
   )
 
-  console.warn(`[cron/monthly-report] ${monthLabel} — GMV ${fmt(report.gmvCents)}, receita ${fmt(report.feeCents)}, ${admins.length} admin(s) notificado(s)`)
+  console.warn(`[cron/monthly-report] ${monthLabel} — GMV ${formatPrice(report.gmvCents)}, receita ${formatPrice(report.feeCents)}, ${admins.length} admin(s) notificado(s)`)
 
   return NextResponse.json({ ok: true, report })
 }

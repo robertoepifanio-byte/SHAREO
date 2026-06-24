@@ -3,21 +3,14 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { PJ_DECLARATION_TEXT } from "@/lib/legal-config"
+import { maskCNPJ } from "@/lib/forms/masks"
+import { LoadingSpinner } from "@/components/shared/LoadingSpinner"
 
 type State =
   | { status: "idle" }
   | { status: "loading" }
   | { status: "error"; message: string }
   | { status: "success"; razaoSocial: string | null; pendingReview: boolean }
-
-function formatCNPJ(value: string): string {
-  const digits = value.replace(/\D/g, "").slice(0, 14)
-  return digits
-    .replace(/^(\d{2})(\d)/, "$1.$2")
-    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
-    .replace(/\.(\d{3})(\d)/, ".$1/$2")
-    .replace(/(\d{4})(\d)/, "$1-$2")
-}
 
 export function UpgradePjForm() {
   const router = useRouter()
@@ -96,7 +89,7 @@ export function UpgradePjForm() {
           autoComplete="off"
           placeholder="00.000.000/0000-00"
           value={cnpj}
-          onChange={(e) => setCnpj(formatCNPJ(e.target.value))}
+          onChange={(e) => setCnpj(maskCNPJ(e.target.value))}
           className="h-11 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
         />
         <p className="mt-1 text-xs text-muted-foreground">Validamos a situação cadastral na Receita Federal.</p>
@@ -140,9 +133,7 @@ export function UpgradePjForm() {
       >
         {state.status === "loading" ? (
           <>
-            <svg className="mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-              <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-            </svg>
+            <LoadingSpinner size="sm" />
             Verificando CNPJ…
           </>
         ) : (

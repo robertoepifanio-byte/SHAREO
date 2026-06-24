@@ -7,15 +7,11 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { expireStaleReferrals } from "@/lib/ambassador"
+import { assertCronAuth } from "@/lib/auth/cron-guard"
 
 export async function GET(req: NextRequest) {
-  // SEC-CRIT-01: autentica via Authorization: Bearer {CRON_SECRET} (padrão dos demais
-  // crons + header que a Vercel Cron envia). NÃO ler de query string (vaza em logs/URL).
-  const auth   = req.headers.get("authorization")
-  const secret = process.env.CRON_SECRET
-  if (!secret || auth !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  const denied = assertCronAuth(req)
+  if (denied) return denied
 
   try {
     const affectedReferrers = await expireStaleReferrals()

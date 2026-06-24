@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { userMiniSelect } from "@/lib/prisma/selects"
 import { CreateReviewSchema } from "@/lib/validations/reviews"
 import type { ReviewType } from "@prisma/client"
 import { REPUTATION_PER_REVIEW } from "@/lib/badges"
@@ -48,7 +49,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
         reviewType: true,
         rating:     true,
         comment:    true,
-        reviewer:   { select: { id: true, name: true, avatarUrl: true } },
+        reviewer:   { select: userMiniSelect },
         createdAt:  true,
       },
       orderBy: { createdAt: "asc" },

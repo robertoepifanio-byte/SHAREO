@@ -8,19 +8,13 @@ import { calcBookingTotal } from "@/lib/pricing"
 import { useCart } from "@/components/cart/useCart"
 import { removeFromCart, clearCart } from "@/lib/cart"
 import { trackEvent } from "@/components/analytics/GoogleAnalytics"
+import { formatPrice, formatDateNumeric } from "@/utils/format"
 
 interface Props {
   feeRatePct:       number
   checkoutMaxCents: number
 }
 
-const fmt = (cents: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
-
-const fmtDate = (iso: string) => {
-  const [y, m, d] = iso.split("-")
-  return `${d}/${m}/${y}`
-}
 
 function addDays(iso: string, days: number): string {
   const d = new Date(`${iso}T12:00:00`)
@@ -146,10 +140,10 @@ export function CartView({ feeRatePct, checkoutMaxCents }: Props) {
               <Link href={`/itens/${l.itemId}`} className="line-clamp-1 text-sm font-semibold text-foreground hover:text-brand">
                 {l.title}
               </Link>
-              <p className="text-xs text-muted-foreground">{fmt(l.pricePerDay)}/dia</p>
+              <p className="text-xs text-muted-foreground">{formatPrice(l.pricePerDay)}/dia</p>
             </div>
             <div className="text-right">
-              <p className="text-sm font-semibold text-foreground">{numDays > 0 ? fmt(l.lineTotal) : "—"}</p>
+              <p className="text-sm font-semibold text-foreground">{numDays > 0 ? formatPrice(l.lineTotal) : "—"}</p>
               <button
                 type="button"
                 onClick={() => removeFromCart(l.itemId)}
@@ -199,7 +193,7 @@ export function CartView({ feeRatePct, checkoutMaxCents }: Props) {
         </div>
         {endDate && (
           <p className="mt-2 text-[11px] text-muted-foreground">
-            Devolução em <strong className="text-foreground">{fmtDate(endDate)}</strong> — todos os itens no mesmo período.
+            Devolução em <strong className="text-foreground">{formatDateNumeric(endDate)}</strong> — todos os itens no mesmo período.
           </p>
         )}
       </div>
@@ -208,18 +202,18 @@ export function CartView({ feeRatePct, checkoutMaxCents }: Props) {
       <div className="rounded-xl border border-border bg-surface p-4 text-sm" aria-live="polite">
         <div className="mb-1.5 flex justify-between text-muted-foreground">
           <span>{items.length} {items.length === 1 ? "item" : "itens"} × {numDays} {numDays === 1 ? "dia" : "dias"}</span>
-          <span>{startDate ? fmt(subtotalCents) : "—"}</span>
+          <span>{startDate ? formatPrice(subtotalCents) : "—"}</span>
         </div>
         {depositCents > 0 && (
           <div className="mb-1.5 flex justify-between text-xs text-amber-700">
             <span>Caução (devolvida)</span>
-            <span>+{fmt(depositCents)}</span>
+            <span>+{formatPrice(depositCents)}</span>
           </div>
         )}
         <div className="my-2 h-px bg-border" />
         <div className="flex justify-between font-bold text-foreground">
           <span>Total do aluguel</span>
-          <span>{startDate ? fmt(subtotalCents) : "—"}</span>
+          <span>{startDate ? formatPrice(subtotalCents) : "—"}</span>
         </div>
         <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
           Você paga apenas o valor da locação. A ShareO retém {feeLabel}% do repasse ao proprietário.
@@ -250,7 +244,7 @@ export function CartView({ feeRatePct, checkoutMaxCents }: Props) {
         <div role="alert" className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
           <span aria-hidden="true">⚠️</span>
           <span>
-            O total excede o limite de <strong>{fmt(checkoutMaxCents)}</strong> por locação.
+            O total excede o limite de <strong>{formatPrice(checkoutMaxCents)}</strong> por locação.
             Remova um item ou reduza os dias.
           </span>
         </div>

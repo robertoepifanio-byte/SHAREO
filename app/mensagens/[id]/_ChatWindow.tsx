@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useTransition } from "react"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import { formatDate } from "@/utils/format"
 
 interface Message {
   id:        string
@@ -30,7 +31,7 @@ interface Props {
 }
 
 function fmtTime(d: string) {
-  return new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" }).format(new Date(d))
+  return formatDate(d, { hour: "2-digit", minute: "2-digit" })
 }
 
 function fmtDay(d: string) {
@@ -39,7 +40,7 @@ function fmtDay(d: string) {
   const yest  = new Date(); yest.setDate(yest.getDate() - 1)
   if (date.toDateString() === today.toDateString()) return "Hoje"
   if (date.toDateString() === yest.toDateString())  return "Ontem"
-  return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "long" }).format(date)
+  return formatDate(date, { day: "2-digit", month: "long" })
 }
 
 export function ChatWindow({ conversationId, currentUserId, initialMessages, otherName }: Props) {

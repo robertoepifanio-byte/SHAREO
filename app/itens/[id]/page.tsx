@@ -18,6 +18,8 @@ import { ItemCard } from "@/components/items/ItemCard"
 import { AvailabilityCalendar } from "@/components/items/AvailabilityCalendar"
 import { ReviewDetails, ReviewSentiment } from "@/components/reviews/ReviewDetails"
 import { TrackEvent } from "@/components/analytics/TrackEvent"
+import { formatPrice } from "@/utils/format"
+import { RatingStars } from "@/components/ui/RatingStars"
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ back?: string }> }
 
@@ -186,9 +188,6 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
   const avgRating = item.reviews.length
     ? item.reviews.reduce((s, r) => s + r.rating, 0) / item.reviews.length
     : null
-
-  const fmt = (cents: number) =>
-    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
 
   const ownerInitial  = item.owner.name[0]?.toUpperCase() ?? "?"
   const ownerLocation = [item.owner.neighborhood, item.owner.city].filter(Boolean).join(", ")
@@ -382,8 +381,8 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
                           {relativeTime(new Date(review.createdAt))}
                         </span>
                       </div>
-                      <div className="mb-1 flex items-center gap-2 text-sm text-yellow-500" aria-label={`${review.rating} estrelas`}>
-                        <span>{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span>
+                      <div className="mb-1 flex items-center gap-2">
+                        <RatingStars rating={review.rating} />
                         <ReviewSentiment sentiment={review.sentiment} />
                       </div>
                       {review.comment && (
@@ -418,12 +417,7 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
               {/* Rating */}
               {avgRating !== null && (
                 <div className="mb-4 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
-                  <span className="text-yellow-500" aria-label={`${avgRating.toFixed(1)} estrelas`}>
-                    {"★".repeat(Math.round(avgRating))}{"☆".repeat(5 - Math.round(avgRating))}
-                  </span>
-                  <strong className="text-foreground">{avgRating.toFixed(1)}</strong>
-                  <span>·</span>
-                  <span>{item._count.reviews} avaliação{item._count.reviews !== 1 ? "ões" : ""}</span>
+                  <RatingStars rating={avgRating} showValue count={item._count.reviews} size="md" />
                   <span className="rounded-full border border-success/30 bg-success/10 px-2 py-0.5 text-xs font-semibold text-success">
                     🌿 Eco
                   </span>
@@ -439,7 +433,7 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                   </svg>
                   <span>
-                    <strong>Caução:</strong> {fmt(item.depositAmount)} — retida no aluguel e devolvida após a devolução do item.
+                    <strong>Caução:</strong> {formatPrice(item.depositAmount)} — retida no aluguel e devolvida após a devolução do item.
                   </span>
                 </div>
               )}
@@ -466,9 +460,9 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
                 <div className="mb-4 flex items-start gap-2 rounded-lg border border-brand/20 bg-brand/5 px-3 py-2 text-xs text-muted-foreground">
                   <span className="mt-0.5 shrink-0 text-base">💡</span>
                   <span>
-                    Comprar este item custa <strong className="text-foreground">~{fmt(item.estimatedRetailPrice)}</strong>.
+                    Comprar este item custa <strong className="text-foreground">~{formatPrice(item.estimatedRetailPrice)}</strong>.
                     Alugar por 1 dia sai a{" "}
-                    <strong className="text-brand">{fmt(item.pricePerDay)}</strong> —
+                    <strong className="text-brand">{formatPrice(item.pricePerDay)}</strong> —
                     economia de{" "}
                     <strong className="text-success">
                       {Math.round((1 - item.pricePerDay / item.estimatedRetailPrice) * 100)}%

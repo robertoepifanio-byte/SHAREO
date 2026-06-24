@@ -1,8 +1,6 @@
 import type { Metadata } from "next"
 import { after } from "next/server"
-import { redirect } from "next/navigation"
-import { auth } from "@/lib/auth"
-import { hasAdminRole } from "@/lib/auth/admin-guards"
+import { requireAdminPage } from "@/lib/auth/require-admin"
 import { prisma } from "@/lib/prisma"
 import { decryptDocument, decryptPII, maskCNPJ } from "@/lib/crypto"
 import { KybActions } from "./_KybActions"
@@ -22,9 +20,7 @@ function safe<T>(fn: () => T, fallback: T): T {
 }
 
 export default async function KybPendentesPage() {
-  const session = await auth()
-  if (!session || session.user.role !== "ADMIN") redirect("/dashboard")
-  if (!hasAdminRole(session, "ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL")) redirect("/admin")
+  const session = await requireAdminPage("ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL")
 
   // Fila de revisão (ADR-024 D2): PJ com verificação pendente e sem override manual.
   const pending = await prisma.user.findMany({
