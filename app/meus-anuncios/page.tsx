@@ -12,24 +12,32 @@ export default async function MeusAnunciosPage() {
   const session = await auth()
   if (!session) redirect("/login?callbackUrl=/meus-anuncios")
 
-  const items = await prisma.item.findMany({
-    where:   { ownerId: session.user.id, deletedAt: null },
-    orderBy: { createdAt: "desc" },
-    select: {
-      id:           true,
-      title:        true,
-      pricePerDay:  true,
-      condition:    true,
-      city:         true,
-      state:        true,
-      neighborhood: true,
-      status:       true,
-      category:     { select: { name: true } },
-      owner:        { select: { name: true, isVerified: true } },
-      images:       { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
-      _count:       { select: { reviews: true, favorites: true } },
-    },
-  })
+  const [items, currentUser] = await Promise.all([
+    prisma.item.findMany({
+      where:   { ownerId: session.user.id, deletedAt: null },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id:           true,
+        title:        true,
+        pricePerDay:  true,
+        condition:    true,
+        city:         true,
+        state:        true,
+        neighborhood: true,
+        status:       true,
+        category:     { select: { name: true } },
+        owner:        { select: { name: true, isVerified: true } },
+        images:       { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
+        _count:       { select: { reviews: true, favorites: true } },
+      },
+    }),
+    prisma.user.findUnique({
+      where:  { id: session.user.id },
+      select: { userType: true },
+    }),
+  ])
+
+  const isPJ = currentUser?.userType === "PJ"
 
   return (
     <div className="min-h-screen bg-background">
@@ -72,14 +80,16 @@ export default async function MeusAnunciosPage() {
           >
             Desempenho
           </Link>
-          <Link
-            href="/meus-anuncios/importar"
-            role="tab"
-            aria-selected={false}
-            className="inline-flex h-9 items-center rounded-md px-4 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
-          >
-            Importar
-          </Link>
+          {isPJ && (
+            <Link
+              href="/meus-anuncios/importar"
+              role="tab"
+              aria-selected={false}
+              className="inline-flex h-9 items-center rounded-md px-4 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2"
+            >
+              Importar
+            </Link>
+          )}
           <Link
             href="/meus-anuncios/integracoes"
             role="tab"

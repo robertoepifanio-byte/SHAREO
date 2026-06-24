@@ -61,6 +61,8 @@ interface ItemFormProps {
   initialData?:       InitialData
   weeklyMultiplier?:  number
   monthlyMultiplier?: number
+  prefillCategoryId?: string
+  prefillCondicao?:   string
 }
 
 // ─── Sugestão de preço por faixa de valor do bem ─────────────────────────────
@@ -152,14 +154,14 @@ function PriceInput({
 
 // ─── Componente ──────────────────────────────────────────────────────────────
 
-export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMultiplier = 15 }: ItemFormProps) {
+export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMultiplier = 15, prefillCategoryId = "", prefillCondicao = "" }: ItemFormProps) {
   const router = useRouter()
 
   // Form fields
   const [title,         setTitle]         = useState(initialData?.title         ?? "")
   const [description,   setDescription]   = useState(initialData?.description   ?? "")
-  const [categoryId,    setCategoryId]    = useState(initialData?.categoryId    ?? "")
-  const [condition,     setCondition]     = useState(initialData?.condition     ?? "GOOD")
+  const [categoryId,    setCategoryId]    = useState(initialData?.categoryId    ?? prefillCategoryId)
+  const [condition,     setCondition]     = useState(initialData?.condition     ?? (prefillCondicao || "GOOD"))
   const [pricePerDay,   setPricePerDay]   = useState(toDisplay(initialData?.pricePerDay))
   const [pricePerWeek,  setPricePerWeek]  = useState(toDisplay(initialData?.pricePerWeek))
   const [pricePerMonth, setPricePerMonth] = useState(toDisplay(initialData?.pricePerMonth))
@@ -517,7 +519,7 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
         return
       }
 
-      window.location.href = `/itens/${itemId}`
+      window.location.href = mode === "create" ? `/itens/${itemId}?publicado=true` : `/itens/${itemId}`
     } catch {
       setErrors({ form: "Erro inesperado. Tente novamente." })
       setLoading(false)

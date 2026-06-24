@@ -9,18 +9,28 @@ import { completeRegistrationPath } from "@/lib/registration"
 
 export const metadata: Metadata = { title: "Novo anúncio" }
 
-export default async function NovoItemPage() {
+export default async function NovoItemPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ categoriaId?: string; condicao?: string }>
+}) {
   const session = await auth()
   if (!session) redirect("/login?callbackUrl=/itens/novo")
 
   // Cadastro progressivo — anunciar exige cadastro completo
-  const me = await prisma.user.findUnique({
-    where:  { id: session.user.id },
-    select: { profileCompletedAt: true },
-  })
+  const [me, sp] = await Promise.all([
+    prisma.user.findUnique({
+      where:  { id: session.user.id },
+      select: { profileCompletedAt: true },
+    }),
+    searchParams,
+  ])
   if (!me?.profileCompletedAt) redirect(completeRegistrationPath("/itens/novo"))
 
   const { weeklyMultiplier, monthlyMultiplier } = await getPricingMultipliers()
+
+  const prefillCategoryId = sp.categoriaId ?? ""
+  const prefillCondicao   = sp.condicao    ?? ""
 
   return (
     <div className="min-h-screen bg-background">
@@ -33,7 +43,13 @@ export default async function NovoItemPage() {
               Compartilhe o que você tem para alugar e comece a ganhar
             </p>
           </div>
-          <ItemForm mode="create" weeklyMultiplier={weeklyMultiplier} monthlyMultiplier={monthlyMultiplier} />
+          <ItemForm
+            mode="create"
+            weeklyMultiplier={weeklyMultiplier}
+            monthlyMultiplier={monthlyMultiplier}
+            prefillCategoryId={prefillCategoryId}
+            prefillCondicao={prefillCondicao}
+          />
         </div>
       </main>
     </div>

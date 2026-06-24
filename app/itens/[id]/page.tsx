@@ -22,7 +22,7 @@ import { TrackEvent } from "@/components/analytics/TrackEvent"
 import { formatPrice } from "@/utils/format"
 import { RatingStars } from "@/components/ui/RatingStars"
 
-type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ back?: string }> }
+type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ back?: string; publicado?: string }> }
 
 const CONDITION_LABEL: Record<string, string> = {
   NEW:       "Novo",
@@ -314,6 +314,17 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
       )}
 
       <main className="container py-8">
+        {sp.publicado === "true" && isOwner && (
+          <div className="mb-6 flex flex-col gap-3 rounded-lg border border-brand/30 bg-brand/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm font-medium text-brand">Anúncio publicado com sucesso!</p>
+            <a
+              href={`/itens/novo?categoriaId=${item.categoryId}&condicao=${item.condition}`}
+              className="inline-flex h-9 items-center self-start rounded-md bg-brand px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90 sm:self-auto whitespace-nowrap"
+            >
+              Anunciar outro item
+            </a>
+          </div>
+        )}
         <h1 className="sr-only">{item.title}</h1>
         {/* Mobile: galeria → card de reserva (preço+CTA acima da dobra) → descrição.
             Desktop (lg): coluna esquerda galeria+descrição, card sticky à direita. */}
