@@ -155,9 +155,9 @@ export function IdVerification({ status: initialStatus, rejectionReason }: Props
                 </div>
                 {docName && <p className="mt-1 text-xs text-success truncate">✓ {docName}</p>}
                 <input ref={docCamRef} type="file" accept="image/*" capture="environment" className="hidden"
-                  onChange={e => { const f = e.target.files?.[0]; if (f) { setDocName(f.name); docRef.current && (docRef.current.value = "") } }} />
+                  onChange={e => { const f = e.target.files?.[0]; if (f) { setDocName(f.name); if (docRef.current) docRef.current.value = "" } }} />
                 <input ref={docRef}    type="file" accept="image/*" className="hidden"
-                  onChange={e => { const f = e.target.files?.[0]; if (f) { setDocName(f.name); docCamRef.current && (docCamRef.current.value = "") } }} />
+                  onChange={e => { const f = e.target.files?.[0]; if (f) { setDocName(f.name); if (docCamRef.current) docCamRef.current.value = "" } }} />
               </div>
 
               {/* Selfie */}
@@ -177,9 +177,9 @@ export function IdVerification({ status: initialStatus, rejectionReason }: Props
                 </div>
                 {selfieName && <p className="mt-1 text-xs text-success truncate">✓ {selfieName}</p>}
                 <input ref={selfieCamRef} type="file" accept="image/*" capture="user" className="hidden"
-                  onChange={e => { const f = e.target.files?.[0]; if (f) { setSelfieName(f.name); selfieRef.current && (selfieRef.current.value = "") } }} />
+                  onChange={e => { const f = e.target.files?.[0]; if (f) { setSelfieName(f.name); if (selfieRef.current) selfieRef.current.value = "" } }} />
                 <input ref={selfieRef}    type="file" accept="image/*" className="hidden"
-                  onChange={e => { const f = e.target.files?.[0]; if (f) { setSelfieName(f.name); selfieCamRef.current && (selfieCamRef.current.value = "") } }} />
+                  onChange={e => { const f = e.target.files?.[0]; if (f) { setSelfieName(f.name); if (selfieCamRef.current) selfieCamRef.current.value = "" } }} />
               </div>
 
               <p className="text-xs text-muted-foreground">

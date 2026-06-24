@@ -8,6 +8,30 @@
 
 ---
 
+## 🧪 QA pré-lançamento (s36, 2026-06-23) — achados para deliberação
+
+> Bateria de validação de qualidade executada na branch `refactor/dedup` (sem criar funcionalidade, sem quebrar nada). **Todos os gates automatizados verdes.** Achados abaixo são **não-bloqueantes** e estão aqui para deliberação **antes** de qualquer execução.
+
+**Resultados verdes (evidência):**
+- `tsc --noEmit` ✅ limpo · `next lint` ✅ (só 4 warnings menores, ver QA-LINT-01) · `jest` ✅ **480/480** (26 suites) · `next build` ✅ EXIT 0 (First Load JS compartilhado 104 kB, middleware 45 kB)
+- **Headers de segurança do staging** ✅ fortes: CSP com nonce + `frame-ancestors 'self'` + `frame-src 'none'`, HSTS `max-age=63072000; includeSubDomains; preload`, `X-Frame-Options SAMEORIGIN`, `X-Content-Type-Options nosniff`, `Referrer-Policy strict-origin-when-cross-origin`, `Permissions-Policy camera=()/microphone=()/geolocation=(self)`, COOP `same-origin`
+- **Duplicação de código** (jscpd) ✅ **2,81%** (75 clones / 1.287 linhas em 349 arquivos) — baixa, coerente com a campanha dedup
+
+| ID | Descrição | Evidência | Sugestão | Impacto |
+|---|---|---|---|---|
+| **QA-DEP-01** | 12 vulnerabilidades **transitivas** em `pnpm audit --prod` (2 high / 6 mod / 4 low). Nenhuma crítica; nenhuma é dependência direta. | Runtime web real = só `cookie` (low, via `@supabase/ssr`). As "high" são **tooling de build** (`rollup` via `@sentry/nextjs`) ou **mobile-only** (`undici` via `apps/mobile>expo>@expo/cli`). Demais "web" (`@babel/core`, `postcss`, `uuid`, `@opentelemetry/core`) são build-time do `@sentry/nextjs`/`next`. | Bump de `@sentry/nextjs` + `@supabase/ssr`; mobile via `expo` upgrade (trilha separada). Reauditar pós-bump. | **Baixo** |
+| **QA-LINT-01** ✅ CORRIGIDO (s36) | 4 warnings `@typescript-eslint/no-unused-expressions` (padrão `ref.current && (ref.current.value = "")`). **Não é bug** — funciona (reset do input file); é code-smell. | `app/perfil/_IdVerification.tsx:158,160,180,182` | ✅ Trocado por `if (cond) x = y` nos 4 pontos. `next lint` agora "No ESLint warnings or errors"; tsc + build verdes. | **Baixo** |
+| **QA-DUP-01** | Clones residuais (2,81%) concentrados nos itens **já adiados** da campanha dedup. Maiores: `bookingHistory` mobile×web (135L, cross-package — intencional), payload PIX `declare-pix`×`checkout` (36L), guards admin em route handlers (`payouts`×`pix-accounts`, 25L), boilerplate de forms de auth (`RegisterForm`/`SetPassword`/`Reset`/`Login`), crons `auto-cancel`×`expire-bookings` (33L). | Relatório jscpd (top-25 por linhas). | Cobertos por C3 (guard 401 ~100 rotas) e C6 (boilerplate de fetch ~30 forms) de [[project-dedup-campaign]]. `bookingHistory` → avaliar pacote `@shareo/shared` (baixa prioridade). | **Baixo** |
+| **QA-SEC-HDR-01** ✅ CORRIGIDO (s36) | Header `X-Powered-By: Next.js` exposto no staging (info disclosure menor). | `curl -D - https://staging.shareo.com.br/` | ✅ `poweredByHeader: false` adicionado ao `next.config.ts`. (efeito visível no staging após o próximo deploy.) | **Muito baixo** |
+
+**Escopo da meta que NÃO é executável neste ambiente (requer validação manual/externa — registrar como tarefa de bancada):**
+- **Responsividade real** (320/480/768/1024px), **gestos** (pinch/swipe/rotação): cobertura automatizada existe via regressão visual Playwright (`test:visual`, 18 baselines win32) — rodar sob demanda. Validação tátil em **device Android real** segue manual.
+- **Leitores de tela** (NVDA/VoiceOver) e **navegação por teclado** ponta-a-ponta: axe automatizado roda em `e2e/e2e-a11y-plan.spec.ts` (claro+escuro, 0 violações na última corrida); SR manual é de bancada.
+- **Compatibilidade multi-browser/OS** (Safari/Firefox/Edge, iOS/macOS): não há matriz BrowserStack — manual.
+- **Carga/stress:** k6 disponível (`test:load`), porém **`BASE_URL` = localhost por regra do projeto — NUNCA rodar load/stress no staging** (rate limit/testers). Medição de escala fica para ambiente dedicado pós-D4.
+
+---
+
 ## ⏭️ Pendências imediatas (próxima sessão)
 
 | Item | Status | Ação |
