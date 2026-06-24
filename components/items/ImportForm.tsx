@@ -20,26 +20,35 @@ type State =
 export function ImportForm() {
   const [state,     setState]     = useState<State>({ status: "idle" })
   const [file,      setFile]      = useState<File | null>(null)
+  const [sheetsUrl, setSheetsUrl] = useState("")
   const [dragging,  setDragging]  = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  const ACCEPTED = [".csv", ".xlsx"]
+
   function handleFile(f: File) {
-    if (!f.name.endsWith(".csv")) {
-      setState({ status: "error", message: "Selecione um arquivo .csv" })
+    const name = f.name.toLowerCase()
+    if (!ACCEPTED.some((ext) => name.endsWith(ext))) {
+      setState({ status: "error", message: "Selecione um arquivo .csv ou .xlsx" })
       return
     }
     setFile(f)
+    setSheetsUrl("")
     setState({ status: "idle" })
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!file) return
+    if (!file && !sheetsUrl.trim()) return
 
     setState({ status: "loading" })
 
     const form = new FormData()
-    form.append("file", file)
+    if (sheetsUrl.trim()) {
+      form.append("sheetsUrl", sheetsUrl.trim())
+    } else if (file) {
+      form.append("file", file)
+    }
 
     try {
       const res  = await fetch("/api/items/import", { method: "POST", body: form })
@@ -56,6 +65,8 @@ export function ImportForm() {
     }
   }
 
+  const hasInput = !!file || sheetsUrl.trim().length > 0
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
 
@@ -63,7 +74,7 @@ export function ImportForm() {
       <div className="rounded-xl border border-border bg-surface p-5">
         <h2 className="mb-3 font-semibold text-foreground">Como usar</h2>
         <ol className="space-y-1.5 text-sm text-muted-foreground list-decimal list-inside">
-          <li>Baixe o modelo CSV abaixo e preencha seus itens</li>
+          <li>Baixe o modelo abaixo e preencha seus itens no Excel, Google Sheets ou qualquer editor de planilhas</li>
           <li>Colunas obrigatórias: <code className="rounded bg-muted px-1 text-xs">titulo</code>, <code className="rounded bg-muted px-1 text-xs">categoria</code>, <code className="rounded bg-muted px-1 text-xs">preco_dia</code>, <code className="rounded bg-muted px-1 text-xs">condicao</code></li>
           <li>Preço em Reais com ponto ou vírgula — ex: <code className="rounded bg-muted px-1 text-xs">25.00</code></li>
           <li>Condições aceitas: <code className="rounded bg-muted px-1 text-xs">NOVO</code> · <code className="rounded bg-muted px-1 text-xs">EXCELENTE</code> · <code className="rounded bg-muted px-1 text-xs">BOM</code> · <code className="rounded bg-muted px-1 text-xs">REGULAR</code></li>
@@ -87,10 +98,12 @@ export function ImportForm() {
 
       {/* Upload */}
       <form onSubmit={handleSubmit} className="space-y-4">
+
+        {/* Zona de upload */}
         <div
           role="button"
           tabIndex={0}
-          aria-label="Área de upload de arquivo CSV"
+          aria-label="Área de upload de arquivo CSV ou Excel"
           onClick={() => inputRef.current?.click()}
           onKeyDown={(e) => e.key === "Enter" && inputRef.current?.click()}
           onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
@@ -108,13 +121,15 @@ export function ImportForm() {
               ? "border-brand bg-brand/5"
               : file
                 ? "border-success/50 bg-success/5"
-                : "border-border hover:border-brand/40 hover:bg-brand/5",
+                : sheetsUrl.trim()
+                  ? "border-border bg-muted/40 opacity-50 pointer-events-none"
+                  : "border-border hover:border-brand/40 hover:bg-brand/5",
           ].join(" ")}
         >
           <input
             ref={inputRef}
             type="file"
-            accept=".csv,text/csv"
+            accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             className="sr-only"
             onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
           />
@@ -139,11 +154,46 @@ export function ImportForm() {
                 <line x1="12" y1="3" x2="12" y2="15"/>
               </svg>
               <div className="text-center">
-                <p className="font-medium text-foreground">Arraste o CSV ou clique para selecionar</p>
-                <p className="text-xs text-muted-foreground">Apenas arquivos .csv · máximo 512 KB</p>
+                <p className="font-medium text-foreground">Arraste ou clique para selecionar</p>
+                <p className="text-xs text-muted-foreground">Formatos aceitos: .csv · .xlsx (Excel) · máximo 512 KB</p>
               </div>
             </>
           )}
+        </div>
+
+        {/* Separador */}
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-border" />
+          <span className="text-xs font-medium text-muted-foreground">ou</span>
+          <div className="h-px flex-1 bg-border" />
+        </div>
+
+        {/* Google Sheets URL */}
+        <div className="space-y-1.5">
+          <label htmlFor="sheets-url" className="text-sm font-medium text-foreground">
+            Google Sheets — cole o link da planilha
+          </label>
+          <input
+            id="sheets-url"
+            type="url"
+            value={sheetsUrl}
+            onChange={(e) => {
+              setSheetsUrl(e.target.value)
+              if (e.target.value.trim()) setFile(null)
+              setState({ status: "idle" })
+            }}
+            placeholder="https://docs.google.com/spreadsheets/d/..."
+            className={[
+              "h-11 w-full rounded-md border border-input bg-surface px-3 text-sm text-foreground",
+              "placeholder:text-muted-foreground outline-none transition-colors",
+              "focus:border-ring focus:ring-2 focus:ring-ring/20",
+              file ? "opacity-50 pointer-events-none" : "",
+            ].join(" ")}
+          />
+          <p className="text-xs text-muted-foreground">
+            A planilha precisa estar compartilhada como{" "}
+            <strong>"Qualquer pessoa com o link pode visualizar"</strong>.
+          </p>
         </div>
 
         {state.status === "error" && (
@@ -154,7 +204,7 @@ export function ImportForm() {
 
         <button
           type="submit"
-          disabled={!file || state.status === "loading"}
+          disabled={!hasInput || state.status === "loading"}
           className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-brand text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40 transition-opacity"
         >
           {state.status === "loading" ? (

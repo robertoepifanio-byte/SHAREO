@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
+import * as XLSX from "xlsx"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import type { ItemCondition } from "@prisma/client"
@@ -45,6 +46,50 @@ function parseCSV(text: string): Record<string, string>[] {
     headers.forEach((h, i) => { row[h] = (values[i] ?? "").trim() })
     return row
   })
+}
+
+// ─── Excel (.xlsx) parser ─────────────────────────────────────────────────────
+
+function parseXLSX(buffer: ArrayBuffer): Record<string, string>[] {
+  const workbook = XLSX.read(buffer, { type: "array" })
+  const sheet    = workbook.Sheets[workbook.SheetNames[0]]
+  // raw:false converte todos os valores para string; defval:"" preenche células vazias
+  return XLSX.utils.sheet_to_json<Record<string, string>>(sheet, { raw: false, defval: "" })
+    .map((row) => {
+      const normalized: Record<string, string> = {}
+      for (const [k, v] of Object.entries(row)) {
+        normalized[k.trim().toLowerCase()] = String(v ?? "").trim()
+      }
+      return normalized
+    })
+}
+
+// ─── Google Sheets URL → CSV ──────────────────────────────────────────────────
+
+function extractSheetsId(url: string): string | null {
+  // Aceita URLs do tipo /spreadsheets/d/{ID}/... (edit, pub, export, etc.)
+  const m = url.match(/spreadsheets\/d\/([a-zA-Z0-9_-]+)/)
+  return m?.[1] ?? null
+}
+
+async function fetchSheetsRows(rawUrl: string): Promise<Record<string, string>[]> {
+  const id = extractSheetsId(rawUrl)
+  if (!id) throw new Error("URL inválida. Cole o link da planilha do Google Sheets.")
+
+  const exportUrl = `https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=0`
+  const res = await fetch(exportUrl, {
+    headers: { "User-Agent": "ShareO-Import/1.0" },
+    redirect: "follow",
+  })
+
+  const contentType = res.headers.get("content-type") ?? ""
+  if (!res.ok || contentType.includes("text/html")) {
+    throw new Error(
+      'Não foi possível acessar a planilha. Verifique se ela está compartilhada como "Qualquer pessoa com o link pode visualizar".'
+    )
+  }
+
+  return parseCSV(await res.text())
 }
 
 // ─── Validação de linha ───────────────────────────────────────────────────────
@@ -107,6 +152,13 @@ export async function POST(req: Request) {
       )
     }
 
+    if (session.user.userType !== "PJ") {
+      return NextResponse.json(
+        { error: { code: "FORBIDDEN", message: "Importação em massa é exclusiva para contas PJ." } },
+        { status: 403 },
+      )
+    }
+
     const contentLength = Number(req.headers.get("content-length") ?? 0)
     if (contentLength > MAX_BYTES) {
       return NextResponse.json(
@@ -115,22 +167,48 @@ export async function POST(req: Request) {
       )
     }
 
-    const formData = await req.formData() as globalThis.FormData
-    const file = formData.get("file")
+    const formData  = await req.formData() as globalThis.FormData
+    const file      = formData.get("file")
+    const sheetsUrl = formData.get("sheetsUrl")
 
-    if (!file || typeof file === "string") {
+    // ── Resolver fonte de dados ───────────────────────────────────────────────
+    let rows: Record<string, string>[]
+
+    if (sheetsUrl && typeof sheetsUrl === "string" && sheetsUrl.trim()) {
+      try {
+        rows = await fetchSheetsRows(sheetsUrl.trim())
+      } catch (e: unknown) {
+        return NextResponse.json(
+          { error: { code: "SHEETS_ERROR", message: e instanceof Error ? e.message : "Erro ao acessar planilha." } },
+          { status: 400 },
+        )
+      }
+    } else if (file && typeof file !== "string") {
+      const f    = file as File
+      const name = f.name.toLowerCase()
+
+      if (name.endsWith(".xlsx")) {
+        try {
+          rows = parseXLSX(await f.arrayBuffer())
+        } catch {
+          return NextResponse.json(
+            { error: { code: "INVALID_FILE", message: "Não foi possível ler o arquivo Excel. Verifique se é um .xlsx válido." } },
+            { status: 400 },
+          )
+        }
+      } else {
+        rows = parseCSV(await f.text())
+      }
+    } else {
       return NextResponse.json(
-        { error: { code: "NO_FILE", message: "Nenhum arquivo enviado." } },
+        { error: { code: "NO_INPUT", message: "Envie um arquivo (.csv ou .xlsx) ou cole a URL de uma planilha do Google Sheets." } },
         { status: 400 },
       )
     }
 
-    const text = await (file as File).text()
-    const rows = parseCSV(text)
-
     if (rows.length === 0) {
       return NextResponse.json(
-        { error: { code: "EMPTY_FILE", message: "Arquivo sem linhas de dados." } },
+        { error: { code: "EMPTY_FILE", message: "Nenhuma linha de dados encontrada." } },
         { status: 400 },
       )
     }
@@ -142,16 +220,9 @@ export async function POST(req: Request) {
       )
     }
 
-    // Carregar categorias uma vez
+    // ── Processar linhas ──────────────────────────────────────────────────────
     const categories = await prisma.category.findMany({ select: { id: true, name: true } })
     const categoryMap = new Map(categories.map((c) => [c.name.toLowerCase(), c.id]))
-
-    if (session.user.userType !== "PJ") {
-      return NextResponse.json(
-        { error: { code: "FORBIDDEN", message: "Importação em massa é exclusiva para contas PJ." } },
-        { status: 403 },
-      )
-    }
 
     const ownerId = session.user.id
     let created = 0
@@ -181,7 +252,6 @@ export async function POST(req: Request) {
       }
 
       try {
-        // Upsert: mesmo título + mesmo dono → atualiza; senão cria
         const existing = await prisma.item.findFirst({
           where: { ownerId, title: d.titulo, deletedAt: null },
           select: { id: true },
@@ -198,7 +268,6 @@ export async function POST(req: Request) {
           city:          d.cidade  || "",
           state:         d.estado  || "",
           neighborhood:  d.bairro  || undefined,
-          // Itens importados ficam DRAFT até receberem foto
           status:        "DRAFT" as const,
         }
 
@@ -207,7 +276,6 @@ export async function POST(req: Request) {
           items.push({ id: existing.id, title: d.titulo, action: "updated" })
           updated++
         } else {
-          // latitude/longitude são obrigatórios no schema; padrão 0 para itens importados sem geo
           const created_ = await prisma.item.create({
             data:   { ...sharedData, ownerId, latitude: 0, longitude: 0 },
             select: { id: true },
