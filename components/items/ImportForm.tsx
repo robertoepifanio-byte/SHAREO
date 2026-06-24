@@ -8,6 +8,7 @@ type ImportResult = {
   updated: number
   failed:  number
   errors:  { row: number; message: string }[]
+  items:   { id: string; title: string; action: "created" | "updated" }[]
 }
 
 type State =
@@ -201,13 +202,43 @@ export function ImportForm() {
             </div>
           )}
 
-          {(state.result.created > 0 || state.result.updated > 0) && (
-            <Link
-              href="/meus-anuncios"
-              className="inline-flex h-11 items-center rounded-lg bg-brand px-4 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
-            >
-              Ver meus anúncios →
-            </Link>
+          {state.result.items.length > 0 && (
+            <div className="space-y-3">
+              <div className="rounded-lg border border-brand/30 bg-brand/5 px-4 py-3">
+                <p className="text-sm font-medium text-brand">
+                  Próximo passo: adicione fotos para publicar cada anúncio
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Itens sem foto ficam como rascunho e não aparecem nas buscas.
+                </p>
+              </div>
+
+              <ul className="divide-y divide-border rounded-lg border border-border bg-surface">
+                {state.result.items.map((item) => (
+                  <li key={item.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-foreground">{item.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.action === "created" ? "Criado" : "Atualizado"}
+                      </p>
+                    </div>
+                    <Link
+                      href={`/itens/${item.id}/editar`}
+                      className="inline-flex h-8 shrink-0 items-center rounded-md bg-brand px-3 text-xs font-semibold text-white hover:opacity-90 transition-opacity"
+                    >
+                      Adicionar fotos
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+
+              <Link
+                href="/meus-anuncios"
+                className="inline-flex h-9 items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Ver todos os anúncios →
+              </Link>
+            </div>
           )}
         </div>
       )}

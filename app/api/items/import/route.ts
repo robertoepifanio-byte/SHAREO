@@ -157,6 +157,7 @@ export async function POST(req: Request) {
     let created = 0
     let updated = 0
     const errors: { row: number; message: string }[] = []
+    const items:  { id: string; title: string; action: "created" | "updated" }[] = []
 
     for (let i = 0; i < rows.length; i++) {
       const rowNum = i + 2  // +1 para header, +1 para 1-indexed
@@ -203,12 +204,15 @@ export async function POST(req: Request) {
 
         if (existing) {
           await prisma.item.update({ where: { id: existing.id }, data: sharedData })
+          items.push({ id: existing.id, title: d.titulo, action: "updated" })
           updated++
         } else {
           // latitude/longitude são obrigatórios no schema; padrão 0 para itens importados sem geo
-          await prisma.item.create({
-            data: { ...sharedData, ownerId, latitude: 0, longitude: 0 },
+          const created_ = await prisma.item.create({
+            data:   { ...sharedData, ownerId, latitude: 0, longitude: 0 },
+            select: { id: true },
           })
+          items.push({ id: created_.id, title: d.titulo, action: "created" })
           created++
         }
       } catch {
@@ -217,7 +221,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({
-      data: { created, updated, failed: errors.length, errors },
+      data: { created, updated, failed: errors.length, errors, items },
     })
   } catch (e: unknown) {
     console.error("[POST /api/items/import]", e instanceof Error ? e.message : e)
