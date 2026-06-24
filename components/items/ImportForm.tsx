@@ -192,7 +192,7 @@ export function ImportForm() {
           />
           <p className="text-xs text-muted-foreground">
             A planilha precisa estar compartilhada como{" "}
-            <strong>"Qualquer pessoa com o link pode visualizar"</strong>.
+            <strong>&ldquo;Qualquer pessoa com o link pode visualizar&rdquo;</strong>.
           </p>
         </div>
 
