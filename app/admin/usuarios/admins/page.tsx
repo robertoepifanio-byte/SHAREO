@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { requireAdminPage } from "@/lib/auth/require-admin"
 import { prisma } from "@/lib/prisma"
+import { Avatar } from "@/components/ui/Avatar"
 import { AdminActions } from "./_AdminActions"
 import { CreateAdminForm } from "./_CreateAdminForm"
 import { PromoteUserForm } from "./_PromoteUserForm"
@@ -68,9 +69,7 @@ export default async function AdminsPage() {
                 <tr key={admin.id} className="border-b border-border last:border-0">
                   <td className="py-3 pr-3">
                     <div className="flex items-center gap-2">
-                      <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
-                        {admin.name[0]?.toUpperCase() ?? "A"}
-                      </div>
+                      <Avatar name={admin.name} size={28} className="bg-primary text-white" />
                       <div>
                         <p className="text-sm font-medium text-foreground">
                           {admin.name}

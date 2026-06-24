@@ -52,11 +52,15 @@ function fmtOwnerAddress(owner: {
 
 
 export default async function BookingDetailPage({ params, searchParams }: Props) {
-  const session = await auth()
-  if (!session) redirect("/login?callbackUrl=/reservas")
-
   const { id }      = await params
   const { payment } = await searchParams
+
+  const session = await auth()
+  // Preserva a reserva no callbackUrl: ao voltar do login o usuário cai NA reserva
+  // que clicou (ex.: link "Ver reserva" do e-mail de lembrete), não na lista.
+  // /reservas não está em PROTECTED_PREFIXES do middleware, então este é o guard real.
+  if (!session) redirect(`/login?callbackUrl=/reservas/${id}`)
+
   const userId       = session.user.id
 
   const booking = await prisma.booking.findUnique({

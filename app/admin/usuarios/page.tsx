@@ -3,6 +3,7 @@ import Link from "next/link"
 import { requireAdminPage } from "@/lib/auth/require-admin"
 import { prisma } from "@/lib/prisma"
 import { hasAdminRole } from "@/lib/auth/admin-guards"
+import { Avatar } from "@/components/ui/Avatar"
 import { UserActions } from "./_Actions"
 import { formatDateShort } from "@/utils/format"
 import { StatusBadge } from "@/components/ui/StatusBadge"
@@ -118,9 +119,7 @@ export default async function AdminUsuariosPage({
               <tr key={user.id} className="border-b border-border last:border-0">
                 <td className="py-3 pr-3">
                   <div className="flex items-center gap-2">
-                    <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
-                      {user.name[0]?.toUpperCase() ?? "U"}
-                    </div>
+                    <Avatar name={user.name} size={28} className="bg-primary text-white" />
                     <div>
                       <p className="text-sm font-medium text-foreground">
                         {user.name}

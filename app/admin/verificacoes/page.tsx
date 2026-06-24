@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Image from "next/image"
 import { requireAdminPage } from "@/lib/auth/require-admin"
+import { Avatar } from "@/components/ui/Avatar"
 import { prisma } from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { VerificationActions } from "./_Actions"
@@ -96,9 +97,7 @@ export default async function VerificacoesPage() {
               <div key={user.id} className="rounded-xl border border-amber-200 bg-amber-50/40 p-4">
                 {/* Cabeçalho do usuário */}
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">
-                    {user.name[0]?.toUpperCase() ?? "?"}
-                  </div>
+                  <Avatar name={user.name} src={user.avatarUrl} size={40} className="bg-primary text-white" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-foreground">{user.name}</p>
                     <p className="truncate text-xs text-muted-foreground">{user.email}</p>
@@ -184,9 +183,7 @@ export default async function VerificacoesPage() {
                   key={user.id}
                   className={`flex items-center gap-3 px-4 py-3 ${i < recent.length - 1 ? "border-b border-border" : ""}`}
                 >
-                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">
-                    {user.name[0]?.toUpperCase() ?? "?"}
-                  </div>
+                  <Avatar name={user.name} src={user.avatarUrl} size={32} className="bg-primary text-white" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-foreground">{user.name}</p>
                     {user.idRejectionReason && (

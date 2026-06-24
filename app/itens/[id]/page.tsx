@@ -6,6 +6,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { jsonLdScript } from "@/lib/jsonLd"
 import { AppHeader } from "@/components/layout/AppHeader"
+import { Avatar } from "@/components/ui/Avatar"
 import { FavoriteButton } from "@/components/items/FavoriteButton"
 import { getOwnerResponseBadge } from "@/lib/ownerStats"
 import { Gallery } from "./_Gallery"
@@ -94,7 +95,7 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
         category: { select: { name: true } },
         owner: {
           select: {
-            id: true, name: true, isVerified: true,
+            id: true, name: true, isVerified: true, avatarUrl: true,
             city: true, neighborhood: true, createdAt: true,
           },
         },
@@ -189,7 +190,6 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
     ? item.reviews.reduce((s, r) => s + r.rating, 0) / item.reviews.length
     : null
 
-  const ownerInitial  = item.owner.name[0]?.toUpperCase() ?? "?"
   const ownerLocation = [item.owner.neighborhood, item.owner.city].filter(Boolean).join(", ")
 
   const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://shareo-rouge.vercel.app"
@@ -552,12 +552,7 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
                 className="flex items-center gap-3 rounded-lg border border-border bg-background p-3.5 hover:bg-muted/40 transition-colors"
                 aria-label={`Ver perfil de ${item.owner.name}`}
               >
-                <div
-                  className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-primary text-base font-bold text-white"
-                  aria-hidden="true"
-                >
-                  {ownerInitial}
-                </div>
+                <Avatar name={item.owner.name} src={item.owner.avatarUrl} size={44} className="bg-primary text-white" />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-foreground">
                     {item.owner.name}

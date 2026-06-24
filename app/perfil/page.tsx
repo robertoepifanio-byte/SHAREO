@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import Image from "next/image"
+import { Avatar } from "@/components/ui/Avatar"
 import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
@@ -107,19 +107,7 @@ export default async function ProfilePage() {
               <div className="flex items-end justify-between gap-4 -mt-12 mb-4">
                 {/* Avatar grande */}
                 <div className="flex-shrink-0 ring-4 ring-surface rounded-full">
-                  {user.avatarUrl ? (
-                    <Image
-                      src={user.avatarUrl}
-                      alt={user.name}
-                      width={96}
-                      height={96}
-                      className="h-24 w-24 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary text-3xl font-bold text-white">
-                      {user.name[0]?.toUpperCase() ?? "U"}
-                    </div>
-                  )}
+                  <Avatar name={user.name} src={user.avatarUrl} size={96} className="bg-primary text-white" />
                 </div>
 
                 {/* Botão editar */}
@@ -234,13 +222,7 @@ export default async function ProfilePage() {
                   <div key={i} className="flex gap-3 border-b border-border pb-4 last:border-0 last:pb-0">
                     {/* Avatar do reviewer */}
                     <div className="flex-shrink-0">
-                      {review.reviewer.avatarUrl ? (
-                        <Image src={review.reviewer.avatarUrl} alt={review.reviewer.name} width={32} height={32} className="h-8 w-8 rounded-full object-cover" />
-                      ) : (
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">
-                          {review.reviewer.name[0]?.toUpperCase()}
-                        </div>
-                      )}
+                      <Avatar name={review.reviewer.name} src={review.reviewer.avatarUrl} size={32} className="bg-muted text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2 mb-0.5">

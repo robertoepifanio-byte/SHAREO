@@ -5,6 +5,8 @@ import Link from "next/link"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import Image from "next/image"
+import { Avatar } from "@/components/ui/Avatar"
+import { getCurrentUser } from "@/lib/currentUser"
 import { SuggestCard } from "@/components/dashboard/SuggestCard"
 import { MonthlyGoalProgress } from "@/components/dashboard/MonthlyGoalProgress"
 import { UpcomingReturns } from "@/components/dashboard/UpcomingReturns"
@@ -88,11 +90,8 @@ export default async function DashboardPage() {
       select: { item: { select: { categoryId: true } } },
     }).catch(() => []),
 
-    // cidade/estado do usuário para personalizar textos + status do cadastro
-    prisma.user.findUnique({
-      where:  { id: uid },
-      select: { city: true, state: true, profileCompletedAt: true, avatarUrl: true },
-    }).catch(() => null),
+    // dados do usuário logado (fonte única, cacheada por request — dedup com o header)
+    getCurrentUser(),
 
     // P2-58 — Próximas devoluções (proprietário): reservas ACTIVE ordenadas por endDate ASC
     prisma.booking.findMany({
@@ -169,13 +168,7 @@ export default async function DashboardPage() {
                 {userLocation} · Bem-vindo de volta ao ShareO
               </p>
             </div>
-            <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white/20 bg-brand text-xl font-extrabold text-white">
-              {userAvatarUrl ? (
-                <Image src={userAvatarUrl} alt={firstName} width={56} height={56} className="h-full w-full object-cover" />
-              ) : (
-                firstName[0]?.toUpperCase()
-              )}
-            </div>
+            <Avatar name={firstName} src={userAvatarUrl} size={56} className="bg-brand text-white border-2 border-white/20" />
           </div>
         </div>
       </section>

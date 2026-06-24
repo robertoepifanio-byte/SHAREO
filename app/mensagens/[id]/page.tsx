@@ -4,6 +4,7 @@ import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
+import { Avatar } from "@/components/ui/Avatar"
 import { ChatWindow } from "./_ChatWindow"
 
 type Props = { params: Promise<{ id: string }> }
@@ -37,7 +38,7 @@ export default async function ChatPage({ params }: Props) {
       participants: {
         select: {
           userId: true,
-          user:   { select: { id: true, name: true } },
+          user:   { select: { id: true, name: true, avatarUrl: true } },
         },
       },
       messages: {
@@ -86,9 +87,7 @@ export default async function ChatPage({ params }: Props) {
             <Link href="/mensagens" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               ←
             </Link>
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">
-              {other?.user.name[0]?.toUpperCase() ?? "?"}
-            </div>
+            <Avatar name={other?.user.name} src={other?.user.avatarUrl} size={36} className="bg-primary text-white" />
             <div>
               <p className="text-sm font-semibold text-foreground">{other?.user.name ?? "Usuário"}</p>
               {conv.booking && (

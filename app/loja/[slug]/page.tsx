@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import Image from "next/image"
+import { Avatar } from "@/components/ui/Avatar"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { ItemCard } from "@/components/items/ItemCard"
@@ -105,19 +105,7 @@ export default async function LojaPage({ params }: Props) {
 
               {/* Avatar */}
               <div className="flex-shrink-0">
-                {owner.avatarUrl ? (
-                  <Image
-                    src={owner.avatarUrl}
-                    alt={owner.name}
-                    width={88}
-                    height={88}
-                    className="h-20 w-20 rounded-full object-cover ring-2 ring-border sm:h-22 sm:w-22"
-                  />
-                ) : (
-                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary text-3xl font-bold text-white">
-                    {owner.name[0]?.toUpperCase()}
-                  </div>
-                )}
+                <Avatar name={owner.name} src={owner.avatarUrl} size={88} className="bg-primary text-white ring-2 ring-border" />
               </div>
 
               {/* Info */}
