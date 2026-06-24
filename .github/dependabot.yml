@@ -44,6 +44,21 @@ updates:
           - "typescript"
           - "@types/*"
 
+  # Workspace mobile (Expo/React Native) — fonte das vulns transitivas
+  # (undici/tar/js-yaml via expo>@expo/cli). Sem esta entrada o app mobile
+  # ficava sem version-updates do Dependabot (security updates são repo-wide à parte).
+  - package-ecosystem: "npm"
+    directory: "/apps/mobile"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Sao_Paulo"
+    open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
