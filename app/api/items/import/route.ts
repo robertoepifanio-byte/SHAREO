@@ -76,25 +76,31 @@ async function fetchSheetsRows(rawUrl: string): Promise<Record<string, string>[]
   const id = extractSheetsId(rawUrl)
   if (!id) throw new Error("URL inválida. Cole o link da planilha do Google Sheets.")
 
-  // gviz/tq é o endpoint oficial para acesso programático — /export redireciona para HTML
-  // em IPs de datacenter mesmo com planilha pública
-  const exportUrl = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&gid=0`
-  const res = await fetch(exportUrl, {
-    headers: {
-      "User-Agent": "Mozilla/5.0 (compatible; ShareO-Import/1.0)",
-      "Accept": "text/csv, text/plain, */*",
-    },
-    redirect: "follow",
-  })
+  const apiKey = process.env.GOOGLE_SHEETS_API_KEY
+  if (!apiKey) throw new Error("Integração com Google Sheets não configurada. Contate o suporte.")
 
-  const body = await res.text()
-  if (!res.ok || body.trimStart().startsWith("<")) {
-    throw new Error(
-      'Não foi possível acessar a planilha. Verifique se ela está compartilhada como "Qualquer pessoa com o link pode visualizar".'
-    )
+  // Sheets API v4 — único método confiável para planilhas "anyone with link" a partir de servidor.
+  // /export e /gviz/tq redirecionam para HTML em IPs de datacenter (sem cookies de browser).
+  const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${id}/values/A:Z?key=${encodeURIComponent(apiKey)}`
+  const res = await fetch(apiUrl)
+
+  if (!res.ok) {
+    if (res.status === 403 || res.status === 404) {
+      throw new Error('Não foi possível acessar a planilha. Verifique se ela está compartilhada como "Qualquer pessoa com o link pode visualizar".')
+    }
+    throw new Error(`Erro ao acessar planilha (${res.status}). Tente novamente.`)
   }
 
-  return parseCSV(body)
+  const json = await res.json() as { values?: string[][] }
+  const values = json.values ?? []
+  if (values.length < 2) return []
+
+  const headers = values[0].map((h) => h.trim().toLowerCase())
+  return values.slice(1).map((row) => {
+    const record: Record<string, string> = {}
+    headers.forEach((h, i) => { record[h] = (row[i] ?? "").trim() })
+    return record
+  })
 }
 
 // ─── Validação de linha ───────────────────────────────────────────────────────
