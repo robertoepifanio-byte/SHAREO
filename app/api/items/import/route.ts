@@ -76,20 +76,25 @@ async function fetchSheetsRows(rawUrl: string): Promise<Record<string, string>[]
   const id = extractSheetsId(rawUrl)
   if (!id) throw new Error("URL inválida. Cole o link da planilha do Google Sheets.")
 
-  const exportUrl = `https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=0`
+  // gviz/tq é o endpoint oficial para acesso programático — /export redireciona para HTML
+  // em IPs de datacenter mesmo com planilha pública
+  const exportUrl = `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv&gid=0`
   const res = await fetch(exportUrl, {
-    headers: { "User-Agent": "ShareO-Import/1.0" },
+    headers: {
+      "User-Agent": "Mozilla/5.0 (compatible; ShareO-Import/1.0)",
+      "Accept": "text/csv, text/plain, */*",
+    },
     redirect: "follow",
   })
 
-  const contentType = res.headers.get("content-type") ?? ""
-  if (!res.ok || contentType.includes("text/html")) {
+  const body = await res.text()
+  if (!res.ok || body.trimStart().startsWith("<")) {
     throw new Error(
       'Não foi possível acessar a planilha. Verifique se ela está compartilhada como "Qualquer pessoa com o link pode visualizar".'
     )
   }
 
-  return parseCSV(await res.text())
+  return parseCSV(body)
 }
 
 // ─── Validação de linha ───────────────────────────────────────────────────────
