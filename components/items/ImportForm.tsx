@@ -74,12 +74,12 @@ export function ImportForm() {
       <div className="rounded-xl border border-border bg-surface p-5">
         <h2 className="mb-3 font-semibold text-foreground">Como usar</h2>
         <ol className="space-y-1.5 text-sm text-muted-foreground list-decimal list-inside">
-          <li>Baixe o modelo abaixo e preencha seus itens no Excel, Google Sheets ou qualquer editor de planilhas</li>
-          <li>Colunas obrigatórias: <code className="rounded bg-muted px-1 text-xs">titulo</code>, <code className="rounded bg-muted px-1 text-xs">categoria</code>, <code className="rounded bg-muted px-1 text-xs">preco_dia</code>, <code className="rounded bg-muted px-1 text-xs">condicao</code></li>
-          <li>Preço em Reais com ponto ou vírgula — ex: <code className="rounded bg-muted px-1 text-xs">25.00</code></li>
+          <li>Clique em &ldquo;Abrir modelo no Google Sheets&rdquo; abaixo — o Google vai pedir para <strong>criar uma cópia</strong> no seu Drive</li>
+          <li>Preencha seus itens na cópia. Colunas obrigatórias: <code className="rounded bg-muted px-1 text-xs">titulo</code>, <code className="rounded bg-muted px-1 text-xs">categoria</code>, <code className="rounded bg-muted px-1 text-xs">preco_dia</code>, <code className="rounded bg-muted px-1 text-xs">condicao</code></li>
+          <li>Compartilhe a <strong>sua cópia</strong>: botão <strong>Compartilhar</strong> → &ldquo;Qualquer pessoa com o link&rdquo; → Visualizador → Copiar link</li>
+          <li>Cole o link da sua planilha no campo abaixo e clique em Importar</li>
           <li>Condições aceitas: <code className="rounded bg-muted px-1 text-xs">NOVO</code> · <code className="rounded bg-muted px-1 text-xs">EXCELENTE</code> · <code className="rounded bg-muted px-1 text-xs">BOM</code> · <code className="rounded bg-muted px-1 text-xs">REGULAR</code></li>
-          <li>Categorias: Ferramentas · Eletrônicos · Construção · Esporte · Moda · Festas · Eletrodomésticos</li>
-          <li>Máximo 100 linhas por arquivo. Se o título já existe, o item é <strong>atualizado</strong></li>
+          <li>Máximo 100 linhas por importação. Se o título já existe, o item é <strong>atualizado</strong></li>
         </ol>
 
         <div className="mt-4 flex flex-wrap gap-2">
