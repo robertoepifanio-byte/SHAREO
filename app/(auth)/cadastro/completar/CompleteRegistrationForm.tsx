@@ -172,6 +172,10 @@ export function CompleteRegistrationForm({
         CNPJ_INACTIVE:       "Este CNPJ não está ativo na Receita Federal.",
         CNPJ_NOT_FOUND:      "CNPJ não encontrado na Receita Federal.",
         RATE_LIMITED:        "Muitas tentativas. Aguarde um momento e tente novamente.",
+        // Sessão válida (JWT) mas a conta não existe mais (ex.: base recriada) ou
+        // sessão ausente → orientar re-login em vez do genérico "tente novamente".
+        NOT_FOUND:           "Sua sessão expirou. Saia da conta e entre novamente para concluir o cadastro.",
+        UNAUTHORIZED:        "Sua sessão expirou. Saia da conta e entre novamente para concluir o cadastro.",
       }
       setErrors({ form: MSG[code] ?? "Erro ao concluir o cadastro. Tente novamente." })
       return
