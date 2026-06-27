@@ -37,12 +37,20 @@ Marketplace de economia circular para aluguel local de itens. Lançamento nacion
 
 | Projeto Supabase | Ref | Arquivos `.env` | Uso |
 |---|---|---|---|
-| **shareo-dev** | `jtianehxosfdrhjzqvqj` | `.env` | Desenvolvimento local |
-| **shareo-staging** | `fflpuoluiqmhpvcxubqi` | `.env.local`, `.env.staging-migrate`, `.env.staging-check` | **Banco real do staging no Vercel** |
+| **shareo-dev** | `kehbrjlllfkooauaswtp` | `.env` | Desenvolvimento local |
+| **shareo-staging** | `zythygwvmrwrqmnrdufq` | `.env.local`, `.env.staging-migrate`, `.env.staging-check` | **Banco real do staging no Vercel** |
 
-Ambos na org FREE pessoal (`robertoepifanio-byte's Org`), NANO, sa-east-1. **`shareo-prd`/produção ainda NÃO existe** — criar só pós-D4, na **org corporativa** (`shareo-marketplace`), em Pro, via `migrate deploy` em banco VAZIO (nunca clonar dev/staging).
+Ambos na **org corporativa** `Shareo Marketplace de aluguel` (slug `ohrwffrbcnccuflhmbpr`), FREE, NANO, sa-east-1 (migrados em 2026-06-27 — refs antigos eram dev `jtianehxosfdrhjzqvqj` / staging `fflpuoluiqmhpvcxubqi`, na org pessoal). Pooler host = **`aws-1-sa-east-1.pooler.supabase.com`**. **`shareo-prd`/produção ainda NÃO existe** — criar só pós-D4, em Pro (org FREE só cabe 2 projetos → upgrade necessário), via `migrate deploy` em banco VAZIO (nunca clonar dev/staging).
 
-SQL de manutenção/migration para staging → sempre usar `fflpuoluiqmhpvcxubqi` (**shareo-staging**).
+### 🔑 Trocar banco do staging exige DOIS lados (Vercel + GitHub Secrets)
+
+O deploy de staging (`.github/workflows/deploy.yml`) injeta de **GitHub Secrets** `*_STAGING`, NÃO só do Vercel:
+- `NEXT_PUBLIC_SUPABASE_URL_STAGING` / `NEXT_PUBLIC_SUPABASE_ANON_KEY_STAGING` → **inlinados no `vercel build`** (build-time)
+- `DATABASE_URL_STAGING` / `DIRECT_URL_STAGING` → build + passos de migrate/seed do deploy
+
+As env vars do **Vercel** só valem para o **runtime** (server-side: `DATABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`). Logo: trocar de projeto Supabase no staging = atualizar **os dois** (`gh secret set ...` + Vercel env). Se esquecer os GitHub Secrets, `NEXT_PUBLIC_SUPABASE_URL` fica inlinado no banco velho → `createAdminClient`/storage quebram mesmo com Vercel certo (sintoma: health check `db:ok` + `storage:error`). Pendentes não-bloqueantes da migração: flip `.env` local (dev), remover `public` dos Exposed schemas nos 2 projetos novos.
+
+SQL de manutenção/migration para staging → sempre usar `zythygwvmrwrqmnrdufq` (**shareo-staging**).
 
 **Ambiente local isolado no shareo-dev (2026-06-22):** `.env` aponta `DATABASE_URL`/`DIRECT_URL` (Prisma) **e** o cliente Supabase (URL + publishable + service_role, chaves novas `sb_*`) para o **shareo-dev**; o `.env.local` **não sobrescreve mais** o Supabase para staging (overrides removidos). Os 3 buckets (`item-images`, `booking-photos`, `id-docs`) e o schema (34 tabelas) já existem no shareo-dev. Antes havia um "split" (Prisma=dev, Storage/Realtime=staging) — resolvido. `scripts/setup-dev-storage.ts` (local) recria os buckets se preciso.
 
