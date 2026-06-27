@@ -298,7 +298,7 @@ export function CompleteRegistrationForm({
           placeholder="(84) 99999-0000"
           value={phone}
           onChange={handlePhone}
-          helper="Opcional — incluir DDD"
+          helper="Opcional — se preencher, inclua o DDD"
           disabled={loading}
         />
 
