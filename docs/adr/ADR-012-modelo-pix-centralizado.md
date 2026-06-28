@@ -1,6 +1,6 @@
 # ADR-012 — Modelo PIX Centralizado (Merchant of Record)
 
-**Status:** Accepted
+**Status:** Superseded by [[ADR-026-pagamentos-mercado-pago-modelo-b]] (decisão 2026-06-28 — migrar para Mercado Pago / Modelo B split; **implementação pendente, gated por D4**). Vigente no MVP/staging até a migração.
 **Data:** 2026-06-05
 **Decisores:** Arquiteto, Product Owner
 **Contexto:** ShareO — módulo financeiro
