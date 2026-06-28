@@ -26,6 +26,7 @@
 - 🔨 **Formalizar transferência internacional** (Resend/Sentry/Mapbox/Vercel — EUA) com cláusulas-padrão (art. 33).
 - ✅ **Direitos do titular**: acesso/exclusão (art. 18, `DELETE /api/users/me`) + portabilidade (art. 20, `GET /api/users/me/export`).
 - ✅ **Segurança**: AES-256-GCM em CPF/CNPJ + HMAC; bucket `id-docs` privado; PII mascarada em logs.
+- 🟡 **Ressalvas da auditoria s40** (sinalizar ao parecer / endereçar): (1) **mesma chave** p/ AES e HMAC (`ENCRYPTION_KEY`) — separar `HMAC_KEY`; (2) `DELETE /api/users/me` **não bloqueia em janela fiscal de 5 anos** (diverge do ADR-017); (3) **export do art. 20 incompleto** (omite mensagens/financeiro/KYC/ambassador); (4) scrub mais raso no `sentry.edge.config.ts`; (5) `console.error` server-side **não mascarado**; (6) `SENSITIVE_RE` sem `pixKey`/`holderName`/`responsavelLegal`. Ver `auditoria-conformidade-tecnica-s40.md`.
 
 ## 4. CDC / Termos de Uso
 - ✅ **Taxa de 15% destacada** na UI e nos Termos (`app/termos`).
@@ -47,7 +48,7 @@
 - 🟡 **Multas e atrasos** previstos — verificar cobertura atual (devolução em atraso).
 
 ## 7. Marco Civil da Internet (Lei 12.965/2014)
-- 🟡 **Guarda de logs por 6 meses** (art. 15) — **VERIFICAR** o que é logado e a retenção atual.
+- 🔴 **Guarda de logs por 6 meses** (art. 15) — **NÃO CONFORME hoje** (auditoria s40): Vercel retém ≤3 dias, Sentry só erros. 🔨 Implementar **Vercel Log Drain** p/ destino 6m+ (Axiom/Better Stack/S3) **ou** tabela `access_logs` particionada (sa-east-1) + expurgo aos 180d. Ver [`auditoria-conformidade-tecnica-s40.md`](auditoria-conformidade-tecnica-s40.md).
 - 🔨 Política de **notificação e retirada** de conteúdo (art. 19).
 - ✅ **Termos de Uso e Política de Privacidade publicados/acessíveis** (`/termos`, `/privacidade`) — **revisar o conteúdo** conforme o parecer.
 
