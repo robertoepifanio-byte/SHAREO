@@ -46,19 +46,29 @@
 
 ## 💳 Avaliação: migração de pagamentos Stripe → Mercado Pago (s34, 2026-06-22)
 
-**Status:** 🟡 **EM AVALIAÇÃO — decisão dos fundadores.** Análise técnica feita; **nenhum código alterado.** Roberto vai levar aos fundadores. **Nada vai a produção antes do D4.**
+**Status:** ✅ **DECIDIDO (2026-06-28, s39): Mercado Pago — Modelo B (split/marketplace).** Escolhido pelos fundadores e **recomendado pelo parecer D4** (split/escrow afasta o enquadramento da Lei 12.865). **Nenhum código alterado ainda** — a implementação **começa quando os fundadores fornecerem as credenciais de teste do app MP** (marketplace: `Client ID`/`Client Secret`/`Access Token`/webhook). **Nada vai a produção antes do parecer FORMAL (D4).** Ver `docs/checklist-conformidade-juridica.md` e memória [[project-mercadopago-migration]].
 
 **Por quê:** o Mercado Pago é nativo do Brasil (PIX/cartão/boleto), faz **PIX nativo com confirmação automática** (aposenta o checkout PIX manual temporário) e é **instituição de pagamento licenciada** — pode **amenizar** as questões #1/#5 do D4 (Lei 12.865 / PLD).
 
 **Bifurcação que define tudo (decisão dos fundadores):**
 - **Modelo A — gateway simples:** 1 conta MP da ShareO recebe tudo, repasse manual (como hoje). Substituição ~1:1 do Stripe. **~3–5 dias.** Mantém a questão *merchant of record* no D4. **Recomendado começar por aqui.**
-- **Modelo B — Marketplace/split:** cada dono conecta conta MP (OAuth), MP divide e a taxa de 15% vai como `marketplace_fee`. **~2–3 semanas.** Ameniza o D4 e alinha com o plano "Stripe Connect ~dez/2026". Trilha pós-D4.
+- **✅ Modelo B — Marketplace/split (ESCOLHIDO):** cada dono conecta conta MP (OAuth), MP divide e a taxa de 15% vai como `marketplace_fee`. **~2–3 semanas.** Afasta o enquadramento da Lei 12.865 (parecer D4) e alinha com o plano "Stripe Connect ~dez/2026".
+
+**⚠️ Implicação de produto (Modelo B):** cada **proprietário** precisa **conectar uma conta Mercado Pago via OAuth** para receber (inclusive PF) — onboarding novo no fluxo do locador (equivalente ao Stripe Connect). Confirmar com os fundadores se a fricção extra é aceitável.
+
+**▶ Plano faseado** (não toca no PIX/Stripe atuais até validar; tudo em staging/dev, atrás de flag, sem pagamento real):
+1. **Fundação MP atrás de flag** — `lib/mercadopago.ts` (SDK `mercadopago` v2) + env `MP_*`; schema aditivo (conta MP do locador + campos `mp*` no booking + `PaymentEventQueue`); **OAuth de onboarding do locador** (`/api/payments/mp/connect` + callback) + UI "Conectar Mercado Pago".
+2. **Checkout com split + webhook** — `app/api/payments/checkout` cria preference com `marketplace_fee` (15% via `getPlatformFeeRate()`, `external_reference=bookingId`, guards CONFIRMED/dono/teto R$500/`calcSplit`); webhook MP em 2 tempos (id → `GET /v1/payments/{id}` → `approved`) → PAID/paidAt/pickupToken/comissão embaixador.
+3. **Validação no sandbox** — usuários e cartões de teste do MP (passo-a-passo do blog oficial) → ciclo anúncio→split→repasse.
+4. **Remoção do legado (SÓ após validar)** — remover `platformPix*` (chave pessoal do Raimundo) + checkout PIX manual; remover Stripe (`lib/stripe.ts`, checkout/webhook Stripe, refs em ambassador/referral/cron/admin).
+
+**Achado do código (2026-06-28):** **não existem "rotinas de Stripe Connect"** — o código usa **Stripe Checkout normal** (o Connect só estava oculto na UI); o pagamento **ATIVO** no staging é o **PIX manual** (chave do Raimundo). Logo, "remover o legado" = retirar o PIX-manual-pessoal + a integração Stripe Checkout.
 
 **Superfície técnica a trocar (modelo A):** `lib/stripe.ts`→`lib/mercadopago.ts`; `app/api/payments/checkout/route.ts` (Preference/`init_point` em vez de `checkout.sessions`); `app/api/webhooks/stripe/route.ts`→`webhooks/mercadopago` (valida `x-signature`, busca pagamento por id, mapeia por `external_reference`); `app/api/cron/reminders` (multa); schema (campos `mp*` aditivos; `StripeEventQueue`→`PaymentEventQueue`); `PayButton.tsx` + cópias (`ajuda`/`politicas`/`termos`/`admin/financeiro`); env `MP_ACCESS_TOKEN`/`MP_WEBHOOK_SECRET`; testes E2E. **CSP NÃO muda** (fluxo é redirect, igual ao Stripe hoje) — só mudaria se usar *Bricks*. Stripe fica preservado atrás de flag durante a transição.
 
 **Gotchas:** webhook do MP é em 2 tempos (recebe id → consulta status `approved`); PIX pode ficar `pending` segundos (UI de "aguardando" — já temos o padrão); validação de assinatura diferente do Stripe; sandbox usa *test users* (não cartões de teste do Stripe).
 
-**Ação dos fundadores:** decidir modelo A×B + conta **PJ** da ShareO; criar conta MP empresa + aplicação (credenciais de teste); levar a pergunta do **split** ao jurídico (D4). **Procedimentos operacionais detalhados:** `docs/mercadopago-procedimentos-fundadores.md` (documento para repasse). Análise completa: memória [[project-mercadopago-migration]].
+**Ação dos fundadores (em andamento):** ✅ Modelo decidido (**B**); 🔜 **fornecer as credenciais de teste do app MP (marketplace)** — é o **bloqueador da Fase 1**; conta **PJ** da ShareO como titular. **Procedimentos operacionais detalhados:** `docs/mercadopago-procedimentos-fundadores.md`. Análise completa: memória [[project-mercadopago-migration]].
 
 ---
 
