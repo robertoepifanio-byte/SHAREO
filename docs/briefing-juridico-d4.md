@@ -95,7 +95,12 @@ As **5 questões-núcleo** (formato pronto de envio) estão em [`docs/d4-cobranc
 4. **CDC / Termos** — a redação atual (taxa/repasse/teto/aceite/arrependimento) basta?
 5. **PLD/FT** — PIX centralizado torna a ShareO sujeito obrigado? Qual programa (KYC/KYB, monitoramento, COAF)?
 
-**Perguntas abertas adicionais** (fundacionais): responsabilidade civil por dano ao item sem caução; minuta de contrato de locação entre as partes; regime de responsabilidade do provedor (Marco Civil); registro de marca.
+**Questões fundacionais adicionais** (levantadas na revisão pré-go-live, além das 5 acima):
+
+6. **Civil — contrato de locação e risco sem caução** (Código Civil, locação de coisas — arts. 565+): qual a estrutura do **contrato de locação** entre locador e locatário (intermediado pela plataforma) e como **alocar contratualmente o risco de dano/perda** do item entre as três partes, considerando que o MVP **não exige caução**? Há cláusulas mínimas exigíveis?
+7. **Marco Civil — responsabilidade do provedor** (Lei 12.965/2014, art. 19): qual o **regime de responsabilidade da plataforma** por conteúdo/anúncio de terceiros e por atos praticados entre usuários? Quais obrigações de **notificação/retirada** de conteúdo e de **guarda de logs** se aplicam?
+
+**Outras pendências fundacionais** (não exaustivas): registro da **marca "ShareO"** no INPI; necessidade de **seguro/garantia** para danos ao item e cláusula de limitação de responsabilidade.
 
 ---
 
