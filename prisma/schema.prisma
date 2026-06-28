@@ -796,6 +796,9 @@ model BookingPhoto {
 }
 
 // ─── Contrato digital ─────────────────────────────────────────────────────────
+// Registra o aceite eletrônico versionado do contrato de locação pelo locatário.
+// Gated por PlatformConfig.rentalContractAcceptanceEnabled (default OFF — D4 Jurídico).
+// Campos aditivos (migração 20260628000000): contractVersion + contractTextHash.
 
 model ContractAcceptance {
   id        String  @id @default(cuid())
@@ -806,6 +809,14 @@ model ContractAcceptance {
   ipAddress  String?
   userAgent  String?
 
+  // Versão do texto do contrato aceito (ex.: "v1.0-rascunho").
+  // Permite rastrear com exatidão qual redação o locatário concordou.
+  contractVersion  String?
+  // SHA-256 do texto exibido ao locatário no momento do aceite.
+  // Prova forense de que o conteúdo não mudou após o aceite.
+  contractTextHash String?
+
+  @@index([contractVersion])
   @@map("contract_acceptances")
 }
 

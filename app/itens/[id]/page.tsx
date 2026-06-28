@@ -14,7 +14,8 @@ import { PriceCalc } from "./_PriceCalc"
 import { AddToRentalButton } from "@/components/cart/AddToRentalButton"
 import { StickyBookingCTA } from "./_StickyBookingCTA"
 import { CANCELLATION_POLICY_LINES } from "@/lib/cancellationPolicy"
-import { getPlatformFeeRate, CHECKOUT_MAX_CENTS } from "@/lib/platform-config"
+import { getPlatformFeeRate, CHECKOUT_MAX_CENTS, getRentalContractConfig } from "@/lib/platform-config"
+import { RENTAL_CONTRACT_TEXT } from "@/lib/rental-contract"
 import { ItemCard } from "@/components/items/ItemCard"
 import { AvailabilityCalendar } from "@/components/items/AvailabilityCalendar"
 import { ReviewDetails, ReviewSentiment } from "@/components/reviews/ReviewDetails"
@@ -182,7 +183,10 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
 
   after(() => { prisma.item.update({ where: { id }, data: { viewCount: { increment: 1 } } }).catch(() => {}) })
 
-  const feeRateBps = await getPlatformFeeRate()   // basis points (ex: 1500 = 15%)
+  const [feeRateBps, contractCfg] = await Promise.all([
+    getPlatformFeeRate(),
+    getRentalContractConfig(),
+  ])
   const feeRatePct = feeRateBps / 100             // 15.0
 
   const isOwner   = session?.user.id === item.ownerId
@@ -525,6 +529,8 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
                     isLoggedIn={!!session}
                     feeRatePct={feeRatePct}
                     checkoutMaxCents={CHECKOUT_MAX_CENTS}
+                    contractRequired={contractCfg.enabled}
+                    contractText={contractCfg.enabled ? RENTAL_CONTRACT_TEXT : undefined}
                   />
 
                   {/* Story B — juntar vários itens do mesmo anunciante numa locação */}
