@@ -284,9 +284,11 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
       .catch(() => {})
   }, [])
 
-  // No modo create, busca o endereço do perfil para pré-preencher localização
+  // Busca o endereço do perfil para pré-preencher a localização — read-only tanto
+  // em create quanto em edit. O endereço do anúncio é sempre o do perfil (fonte
+  // única; é ele que o locatário vê na retirada via booking.owner.*). Travar a
+  // edição aqui impede que o endereço do item divirja do perfil.
   useEffect(() => {
-    if (mode !== "create") return
     fetch("/api/users/me")
       .then((r) => r.json())
       .then(({ data }) => {
@@ -813,8 +815,8 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
       <section className="rounded-lg border border-border bg-surface p-6 space-y-4">
         <h2 className="font-semibold text-primary">Localização</h2>
 
-        {/* Banner: endereço do perfil pré-preenchido (somente leitura) */}
-        {mode === "create" && profileAddressLoaded && profileAddress && (
+        {/* Banner: endereço do perfil pré-preenchido (somente leitura, create e edit) */}
+        {profileAddressLoaded && profileAddress && (
           <div className="flex items-start gap-2 rounded-lg border border-brand/20 bg-brand/5 px-3 py-2.5 text-xs text-brand">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 shrink-0" aria-hidden="true">
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
@@ -875,7 +877,7 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
           </p>
         )}
 
-        {/* Campos somente leitura no create (endereço vem do perfil); editáveis apenas no edit */}
+        {/* Campos somente leitura (create e edit): o endereço vem sempre do perfil */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="md:col-span-2">
             <Input
@@ -892,7 +894,7 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
               onBlur={mode === "edit" ? geocodeAddress : undefined}
               error={errors.city}
               required
-              disabled={loading || mode === "create"}
+              disabled={loading}
             />
           </div>
           <Select
@@ -909,7 +911,7 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
             error={errors.state}
             placeholder="UF"
             required
-            disabled={loading || mode === "create"}
+            disabled={loading}
           >
             {BR_STATES.map((uf) => (
               <option key={uf} value={uf}>{uf}</option>
@@ -925,7 +927,7 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
             onChange={(e) => { if (mode !== "create") setNeighborhood(e.target.value) }}
             onBlur={mode === "edit" ? geocodeAddress : undefined}
             helper="Opcional — melhora a precisão no mapa"
-            disabled={loading || mode === "create"}
+            disabled={loading}
           />
           <Input
             label="Endereço"
@@ -933,8 +935,8 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
             placeholder="Rua das Dunas, 123"
             value={address}
             onChange={(e) => { if (mode !== "create") setAddress(e.target.value) }}
-            helper="Opcional — só compartilhado após confirmação"
-            disabled={loading || mode === "create"}
+            helper="Opcional — só compartilhado com o locatário após o pagamento confirmado"
+            disabled={loading}
           />
         </div>
       </section>
