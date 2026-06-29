@@ -8,8 +8,9 @@ import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
 import { calcBookingTotal } from "@/lib/pricing"
 import { validateCoupon } from "@/lib/coupons"
 import { findOverlappingItem } from "@/lib/booking-availability"
-import { CHECKOUT_MAX_CENTS } from "@/lib/platform-config"
+import { CHECKOUT_MAX_CENTS, getRentalContractConfig } from "@/lib/platform-config"
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
+import { RENTAL_CONTRACT_VERSION, RENTAL_CONTRACT_TEXT_HASH } from "@/lib/rental-contract"
 
 export async function GET(req: NextRequest) {
   try {
@@ -131,7 +132,31 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { itemId, startDate, endDate, borrowerNote, couponCode } = parsed.data
+    const { itemId, startDate, endDate, borrowerNote, couponCode,
+            contractAccepted, contractAcceptedVersion } = parsed.data
+
+    // ── Guard: aceite do contrato de locação (D4 Jurídico — Questão #6) ─────
+    // Verificado após o parse Zod (inputs já sanitizados) e antes de qualquer
+    // acesso ao banco — rejeição rápida sem custo de I/O.
+    // Default OFF: getRentalContractConfig() retorna { enabled: false } quando a
+    // chave rentalContractAcceptanceEnabled não existe em PlatformConfig.
+    const contractCfg = await getRentalContractConfig()
+    if (contractCfg.enabled) {
+      if (!contractAccepted) {
+        return NextResponse.json(
+          { error: { code: "CONTRACT_NOT_ACCEPTED", message: "É necessário aceitar o Contrato de Locação para prosseguir." } },
+          { status: 422 },
+        )
+      }
+      // Versão do contrato enviada pelo cliente deve corresponder à vigente no servidor.
+      // Evita aceite de versão desatualizada quando o texto é atualizado.
+      if (contractAcceptedVersion && contractAcceptedVersion !== RENTAL_CONTRACT_VERSION) {
+        return NextResponse.json(
+          { error: { code: "CONTRACT_VERSION_MISMATCH", message: "O contrato foi atualizado. Recarregue a página e aceite a versão mais recente." } },
+          { status: 422 },
+        )
+      }
+    }
 
     // Itens da locação — Story B: vários itens do MESMO dono, no MESMO período.
     // itemId é o item principal; additionalItemIds são os demais (todos do mesmo dono).
@@ -293,6 +318,28 @@ export async function POST(req: NextRequest) {
           data:  { usedAt: new Date(), bookingId: b.id },
         })
         if (consumed.count === 0) throw Object.assign(new Error("COUPON_RACE"), { code: "COUPON_RACE" })
+      }
+
+      // Aceite eletrônico do contrato de locação — gravado atomicamente com a reserva.
+      // Só executado quando a feature flag está ON e o locatário enviou contractAccepted=true.
+      // Registra: versão do texto aceito + hash SHA-256 do conteúdo + IP + userAgent.
+      // Também atualiza contractSignedAt no booking (campo existente) para consistência.
+      if (contractCfg.enabled && contractAccepted) {
+        const ip        = req.headers.get("x-forwarded-for")?.split(",")[0] ?? null
+        const userAgent = req.headers.get("user-agent") ?? null
+        await tx.contractAcceptance.create({
+          data: {
+            bookingId:        b.id,
+            ipAddress:        ip,
+            userAgent:        userAgent,
+            contractVersion:  RENTAL_CONTRACT_VERSION,
+            contractTextHash: RENTAL_CONTRACT_TEXT_HASH,
+          },
+        })
+        await tx.booking.update({
+          where: { id: b.id },
+          data:  { contractSignedAt: new Date() },
+        })
       }
 
       const conv = await tx.conversation.create({

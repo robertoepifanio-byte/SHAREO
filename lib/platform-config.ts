@@ -261,6 +261,33 @@ export async function getPlatformPixConfig(): Promise<PlatformPixConfig> {
   }
 }
 
+// ─── Aceite eletrônico do contrato de locação (D4 Jurídico) ─────────────────
+// Flag de feature: PlatformConfig.rentalContractAcceptanceEnabled
+// Default OFF — com a flag desligada o fluxo de reserva atual NÃO muda.
+// Ativar só após aprovação do parecer jurídico D4 e revisão do texto do contrato.
+
+export interface RentalContractConfig {
+  enabled: boolean // chave rentalContractAcceptanceEnabled ("true"/"false")
+}
+
+const DEFAULT_RENTAL_CONTRACT: RentalContractConfig = { enabled: false }
+
+/**
+ * Lê a configuração do aceite eletrônico do contrato de locação.
+ * Nunca lança exceção — usado no caminho crítico do POST /api/bookings.
+ * Default OFF garante que o comportamento atual não muda até ativação explícita.
+ */
+export async function getRentalContractConfig(): Promise<RentalContractConfig> {
+  try {
+    const map = await loadConfig()
+    return {
+      enabled: map.rentalContractAcceptanceEnabled === "true",
+    }
+  } catch {
+    return DEFAULT_RENTAL_CONTRACT
+  }
+}
+
 const DEFAULT_WEEKLY_MULTIPLIER  = 3   // preço semanal = 3× diária
 const DEFAULT_MONTHLY_MULTIPLIER = 15  // preço mensal  = 15× diária
 

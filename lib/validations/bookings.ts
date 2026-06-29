@@ -22,6 +22,13 @@ export const CreateBookingSchema = z
     endDate:     z.string().datetime({ message: "endDate inválida" }),
     borrowerNote: z.string().max(500, "Nota: máximo 500 caracteres").optional(),
     couponCode:   z.string().trim().min(4).max(30).optional(),
+    // Aceite eletrônico do contrato de locação (D4 Jurídico — Questão #6).
+    // Obrigatório quando a feature flag rentalContractAcceptanceEnabled=true.
+    // Ignorado pelo servidor quando a flag estiver OFF — comportamento legado inalterado.
+    contractAccepted:        z.boolean().optional(),
+    // Versão do contrato exibido ao locatário no cliente.
+    // Validada no servidor contra RENTAL_CONTRACT_VERSION vigente quando a flag está ON.
+    contractAcceptedVersion: z.string().max(50).optional(),
   })
   .refine((d) => new Date(d.startDate) >= startOfTodayBR(), {
     message: "A data de início não pode ser no passado.",

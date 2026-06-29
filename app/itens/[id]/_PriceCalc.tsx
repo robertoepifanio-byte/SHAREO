@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { calcBookingTotal } from "@/lib/pricing"
 import { trackEvent } from "@/components/analytics/GoogleAnalytics"
+import { ContractAcceptanceCheckbox } from "@/components/booking/ContractAcceptanceCheckbox"
+import { RENTAL_CONTRACT_VERSION } from "@/lib/rental-contract"
 
 interface Props {
   pricePerDay:      number
@@ -15,6 +17,13 @@ interface Props {
   isLoggedIn:       boolean
   feeRatePct:       number   // ex: 15.0 para 15%
   checkoutMaxCents: number   // teto por transação (D2) — ex: 50000 = R$500
+  // Feature flag: aceite eletrônico do contrato de locação (D4 Jurídico).
+  // Passado pelo Server Component pai a partir de getRentalContractConfig().
+  // Default false — quando OFF, o fluxo atual não muda.
+  contractRequired?: boolean
+  // Texto do contrato a exibir (Server Component renderiza e passa como prop
+  // para evitar importar o módulo pesado diretamente no bundle do cliente).
+  contractText?:    string
 }
 
 type Mode = "daily" | "weekly" | "monthly"
@@ -64,6 +73,7 @@ function buildBreakdown(
 export function PriceCalc({
   pricePerDay, pricePerWeek, pricePerMonth,
   depositAmount, itemId, isLoggedIn, feeRatePct, checkoutMaxCents,
+  contractRequired = false, contractText = "",
 }: Props) {
   const router = useRouter()
   // Data local (não UTC): toISOString() viraria o dia seguinte à noite no Brasil
@@ -87,6 +97,8 @@ export function PriceCalc({
   const [error,     setError]     = useState("")
   const [needsComplete, setNeedsComplete] = useState(false)
   const [pending,   startTransition] = useTransition()
+  // Aceite eletrônico do contrato — só relevante quando contractRequired=true
+  const [contractAccepted, setContractAccepted] = useState(false)
 
   // Data de devolução calculada automaticamente
   const endDate = useMemo(() => {
@@ -122,7 +134,8 @@ export function PriceCalc({
   const overLimit      = subtotalCents > checkoutMaxCents
   const checkoutMaxFmt = fmt(checkoutMaxCents / 100)
 
-  const isReady = !!startDate && days > 0 && !overLimit
+  // isReady considera aceite do contrato quando a feature flag estiver ON
+  const isReady = !!startDate && days > 0 && !overLimit && (!contractRequired || contractAccepted)
 
   function handleModeChange(m: Mode) {
     setMode(m)
@@ -148,6 +161,12 @@ export function PriceCalc({
           endDate:   new Date(`${endDate}T12:00:00`).toISOString(),
           borrowerNote: note || undefined,
           couponCode:   coupon.trim() || undefined,
+          // Aceite eletrônico — enviado somente quando a feature flag está ON.
+          // Quando OFF, campos ausentes → servidor ignora (comportamento legado).
+          ...(contractRequired && {
+            contractAccepted:        contractAccepted,
+            contractAcceptedVersion: RENTAL_CONTRACT_VERSION,
+          }),
         }),
       })
       const json = await res.json()
@@ -391,6 +410,17 @@ export function PriceCalc({
             O desconto é aplicado no valor final da reserva.
           </p>
         </div>
+      )}
+
+      {/* Aceite eletrônico do contrato de locação (D4 Jurídico — flag OFF por padrão).
+          Exibido apenas quando: flag ON + usuário logado + datas selecionadas + dentro do teto. */}
+      {contractRequired && isLoggedIn && !!startDate && days > 0 && !overLimit && contractText && (
+        <ContractAcceptanceCheckbox
+          accepted={contractAccepted}
+          onAcceptedChange={setContractAccepted}
+          contractText={contractText}
+          contractVersion={RENTAL_CONTRACT_VERSION}
+        />
       )}
 
       {/* Aviso de teto por transação (D2) */}
