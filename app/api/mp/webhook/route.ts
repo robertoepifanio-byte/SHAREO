@@ -2,15 +2,59 @@ import { NextResponse } from "next/server"
 import crypto from "crypto"
 import type { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
-import { isMercadoPagoActive, getPaymentClient } from "@/lib/mercadopago"
+import { encryptPII, decryptPII } from "@/lib/crypto"
+import { isMercadoPagoActive, getPaymentClient, refreshSellerToken } from "@/lib/mercadopago"
 import { markRentalPaid } from "@/lib/payments/mark-booking-paid"
 
 export const dynamic = "force-dynamic"
 
+/** Serializa um erro (inclusive os objetos do SDK do MP, que não são Error). */
+function errMsg(e: unknown): string {
+  if (e instanceof Error) return e.message
+  if (e && typeof e === "object") {
+    const o = e as Record<string, unknown>
+    return String(o.message ?? o.error ?? JSON.stringify(o)).slice(0, 500)
+  }
+  return String(e)
+}
+
+/**
+ * Resolve o cliente de Payment para consultar a notificação.
+ *
+ * No Modelo B (split) o pagamento vive na conta do VENDEDOR — o token da aplicação
+ * recebe 404. A notificação traz `user_id` (id do vendedor no MP); usamos isso para
+ * achar o `OwnerPaymentAccount`, decriptar o access_token do vendedor (renovando se
+ * expirado) e consultar o pagamento com ele. Fallback: token da aplicação.
+ */
+async function paymentClientForSeller(sellerUserId: string | null) {
+  if (!sellerUserId) return getPaymentClient()
+
+  const acct = await prisma.ownerPaymentAccount.findUnique({
+    where:  { mpUserId: sellerUserId },
+    select: { mpAccessToken: true, mpRefreshToken: true, mpTokenExpiresAt: true },
+  })
+  if (!acct?.mpAccessToken || !acct.mpRefreshToken) return getPaymentClient()
+
+  let token = decryptPII(acct.mpAccessToken)
+  if (acct.mpTokenExpiresAt && acct.mpTokenExpiresAt < new Date()) {
+    const refreshed = await refreshSellerToken(decryptPII(acct.mpRefreshToken))
+    token = refreshed.accessToken
+    await prisma.ownerPaymentAccount.update({
+      where: { mpUserId: sellerUserId },
+      data: {
+        mpAccessToken:    encryptPII(refreshed.accessToken),
+        mpRefreshToken:   encryptPII(refreshed.refreshToken),
+        mpTokenExpiresAt: refreshed.expiresAt,
+      },
+    })
+  }
+  return getPaymentClient(token)
+}
+
 /**
  * Webhook do Mercado Pago (Modelo B — ADR-026). Notificações em 2 tempos:
- * recebe o id do pagamento → consulta `GET /v1/payments/{id}` → se `approved`,
- * marca a reserva como paga (paridade com o webhook do Stripe).
+ * recebe o id do pagamento → consulta `GET /v1/payments/{id}` (com o token do
+ * vendedor) → se `approved`, marca a reserva como paga (paridade com o Stripe).
  *
  * - Assinatura: valida `x-signature` (HMAC) quando MP_WEBHOOK_SECRET está setado.
  * - Idempotência: dedupe pela id da notificação via MercadoPagoEventQueue.
@@ -22,17 +66,24 @@ export async function POST(req: Request) {
   }
 
   const raw = await req.text()
-  let payload: { id?: number | string; type?: string; action?: string; data?: { id?: string } }
+  let payload: {
+    id?: number | string
+    type?: string
+    action?: string
+    user_id?: number | string
+    data?: { id?: string }
+  }
   try {
     payload = raw ? JSON.parse(raw) : {}
   } catch {
     return NextResponse.json({ error: "invalid body" }, { status: 400 })
   }
 
-  const url        = new URL(req.url)
-  const type       = payload.type ?? url.searchParams.get("type") ?? url.searchParams.get("topic") ?? ""
-  const dataId     = payload.data?.id ?? url.searchParams.get("data.id") ?? url.searchParams.get("id") ?? ""
-  const eventId    = String(payload.id ?? `${type}:${dataId}:${payload.action ?? ""}`)
+  const url    = new URL(req.url)
+  const type   = payload.type ?? url.searchParams.get("type") ?? url.searchParams.get("topic") ?? ""
+  const dataId = payload.data?.id ?? url.searchParams.get("data.id") ?? url.searchParams.get("id") ?? ""
+  const eventId = String(payload.id ?? `${type}:${dataId}:${payload.action ?? ""}`)
+  const sellerUserId = payload.user_id != null ? String(payload.user_id) : null
 
   // Validação de assinatura (quando o secret está configurado).
   const secret = process.env.MP_WEBHOOK_SECRET
@@ -65,8 +116,9 @@ export async function POST(req: Request) {
       update: { status: "PROCESSING", attempts: { increment: 1 } },
     })
 
-    // Tempo 2: consulta o pagamento real (não confiar no corpo da notificação).
-    const payment = await getPaymentClient().get({ id: String(dataId) })
+    // Tempo 2: consulta o pagamento real com o token do VENDEDOR (Modelo B).
+    const client  = await paymentClientForSeller(sellerUserId)
+    const payment = await client.get({ id: String(dataId) })
 
     if (payment.status === "approved") {
       const bookingId = payment.external_reference
@@ -85,9 +137,10 @@ export async function POST(req: Request) {
       data:  { status: "COMPLETED", processedAt: new Date() },
     })
   } catch (e) {
-    console.error("[mp webhook] erro:", e instanceof Error ? e.message : e)
+    const msg = errMsg(e)
+    console.error("[mp webhook] erro:", msg)
     await prisma.mercadoPagoEventQueue
-      .update({ where: { mpEventId: eventId }, data: { status: "FAILED", lastError: e instanceof Error ? e.message : String(e) } })
+      .update({ where: { mpEventId: eventId }, data: { status: "FAILED", lastError: msg } })
       .catch(() => undefined)
     // 500 faz o MP re-tentar a notificação.
     return NextResponse.json({ error: "processing error" }, { status: 500 })
