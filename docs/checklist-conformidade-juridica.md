@@ -22,8 +22,9 @@
 
 ## 3. LGPD (Lei 13.709/2018)
 - ✅ **DPO/Encarregado** designado + canal (`privacidade@shareo.com.br`, `lib/legal-config.ts`).
-- 🔨 **RIPD** (Relatório de Impacto) elaborado e arquivado.
-- 🔨 **Formalizar transferência internacional** (Resend/Sentry/Mapbox/Vercel — EUA) com cláusulas-padrão (art. 33).
+- 🟡 **RIPD** (Relatório de Impacto) — **rascunho elaborado** (#116, [`rascunho-ripd.md`](rascunho-ripd.md)); falta validação do DPO/jurídico + arquivamento formal.
+- 🟡 **Formalizar transferência internacional** (Resend/Sentry/Mapbox/Vercel — EUA) — **rascunho** (#116, [`transferencia-internacional-dados.md`](transferencia-internacional-dados.md)); falta assinar cláusulas-padrão (art. 33).
+- 🔨 **Expurgo de dados** (minimização/retenção) — crons `purge-admin-logs` / `purge-consent-ips` / `purge-access-logs` implementados (#118, flag-safe); **prazos (5a / 180d) a confirmar com jurídico** antes de ativar em produção.
 - ✅ **Direitos do titular**: acesso/exclusão (art. 18, `DELETE /api/users/me`) + portabilidade (art. 20, `GET /api/users/me/export`).
 - ✅ **Segurança**: AES-256-GCM em CPF/CNPJ + HMAC; bucket `id-docs` privado; PII mascarada em logs.
 - 🟡 **Ressalvas da auditoria s40** (sinalizar ao parecer / endereçar): (1) **mesma chave** p/ AES e HMAC (`ENCRYPTION_KEY`) — separar `HMAC_KEY`; (2) `DELETE /api/users/me` **não bloqueia em janela fiscal de 5 anos** (diverge do ADR-017); (3) **export do art. 20 incompleto** (omite mensagens/financeiro/KYC/ambassador); (4) scrub mais raso no `sentry.edge.config.ts`; (5) `console.error` server-side **não mascarado**; (6) `SENSITIVE_RE` sem `pixKey`/`holderName`/`responsavelLegal`. Ver `auditoria-conformidade-tecnica-s40.md`.
@@ -42,13 +43,13 @@
 - 🔨 Procedimento de **comunicação ao COAF** (se aplicável).
 
 ## 6. Civil / Contratos (CC, locação de coisas)
-- 🔨 **Contrato de locação aceito eletronicamente** por locador e locatário (no momento da reserva).
+- 🟡 **Contrato de locação aceito eletronicamente** por locador e locatário — **implementado atrás de flag** `rentalContractAcceptanceEnabled` (OFF) (#117, [`lib/rental-contract.ts`](../lib/rental-contract.ts) + `contractVersion`/`contractTextHash`); ligar pós-parecer, com o texto contratual aprovado.
 - 🔨 Cláusula de **responsabilidade por dano/perda** do item (risco do locatário, salvo vício preexistente).
 - 🔵 **Seguro opcional** disponível (parceria/seguradora) — decisão de negócio.
 - 🟡 **Multas e atrasos** previstos — verificar cobertura atual (devolução em atraso).
 
 ## 7. Marco Civil da Internet (Lei 12.965/2014)
-- 🔴 **Guarda de logs por 6 meses** (art. 15) — **NÃO CONFORME hoje** (auditoria s40): Vercel retém ≤3 dias, Sentry só erros. 🔨 Implementar **Vercel Log Drain** p/ destino 6m+ (Axiom/Better Stack/S3) **ou** tabela `access_logs` particionada (sa-east-1) + expurgo aos 180d. Ver [`auditoria-conformidade-tecnica-s40.md`](auditoria-conformidade-tecnica-s40.md).
+- 🔨 **Guarda de logs por 6 meses** (art. 15) — **scaffolding implementado, flag OFF** (#118, s40): tabela `access_logs` (sa-east-1) + `lib/access-log.ts` (grava só com `accessLogsEnabled="true"`) + cron de expurgo aos 180d. **Ainda NÃO conforme em produção** — falta jurídico decidir **Opção I** (Vercel Log Drain → Axiom/Better Stack/S3, dados EUA) × **Opção II** (tabela sa-east-1, recomendada p/ H1), integrar `logAccess()` nas rotas autenticadas e **ligar a flag**. Ver [`retencao-logs-art15.md`](retencao-logs-art15.md) e [`auditoria-conformidade-tecnica-s40.md`](auditoria-conformidade-tecnica-s40.md).
 - 🔨 Política de **notificação e retirada** de conteúdo (art. 19).
 - ✅ **Termos de Uso e Política de Privacidade publicados/acessíveis** (`/termos`, `/privacidade`) — **revisar o conteúdo** conforme o parecer.
 
