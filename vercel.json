@@ -36,6 +36,18 @@
     {
       "path": "/api/cron/kyb",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/purge-admin-logs",
+      "schedule": "0 2 1 * *"
+    },
+    {
+      "path": "/api/cron/purge-consent-ips",
+      "schedule": "0 3 1 * *"
+    },
+    {
+      "path": "/api/cron/purge-access-logs",
+      "schedule": "0 4 * * 1"
     }
   ]
 }
