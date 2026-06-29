@@ -288,6 +288,35 @@ export async function getRentalContractConfig(): Promise<RentalContractConfig> {
   }
 }
 
+// ─── Mercado Pago (Modelo B / split — EM IMPLANTAÇÃO, gated D4) ──────────────
+// Flag de feature: PlatformConfig.mercadoPagoEnabled
+// Default OFF — com a flag desligada o fluxo de pagamento atual (PIX manual /
+// Stripe oculto) NÃO muda. Ativar só após: parecer FORMAL do D4 + contrato PSP +
+// credenciais configuradas (ver lib/mercadopago.ts e docs/mercadopago-procedimentos-fundadores.md).
+// ADR-026 supersede ADR-012.
+
+export interface MercadoPagoConfig {
+  enabled: boolean // chave mercadoPagoEnabled ("true"/"false")
+}
+
+const DEFAULT_MERCADO_PAGO: MercadoPagoConfig = { enabled: false }
+
+/**
+ * Lê a configuração do Mercado Pago.
+ * Nunca lança exceção — usado no caminho crítico do checkout.
+ * Default OFF garante que o comportamento atual não muda até ativação explícita.
+ */
+export async function getMercadoPagoConfig(): Promise<MercadoPagoConfig> {
+  try {
+    const map = await loadConfig()
+    return {
+      enabled: map.mercadoPagoEnabled === "true",
+    }
+  } catch {
+    return DEFAULT_MERCADO_PAGO
+  }
+}
+
 const DEFAULT_WEEKLY_MULTIPLIER  = 3   // preço semanal = 3× diária
 const DEFAULT_MONTHLY_MULTIPLIER = 15  // preço mensal  = 15× diária
 
