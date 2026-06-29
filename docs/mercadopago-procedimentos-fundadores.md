@@ -1,104 +1,123 @@
 # Mercado Pago — Procedimentos e Decisões (para os fundadores)
 
-**Contexto:** avaliação de substituir o **Stripe** pelo **Mercado Pago (MP)** como meio de pagamento das locações. O MP é nativo do Brasil, faz **PIX, cartão e boleto** e é uma **instituição de pagamento licenciada** — o que pode, inclusive, ajudar nas questões do D4 (jurídico). Este documento tem **o que os fundadores precisam fazer/decidir**; o resumo técnico está no fim.
+**Contexto:** o ShareO vai operar os pagamentos das locações pelo **Mercado Pago (MP)** — PSP **licenciado pelo Banco Central**, nativo do Brasil (PIX, cartão, boleto). Substitui o Stripe (oculto) e o **PIX manual temporário em chave pessoal** que está no staging hoje. Este documento tem **o que os fundadores precisam fazer/decidir**; o resumo técnico está no fim.
 
-> ⚠️ **Nada disso vai para produção antes do D4.** A integração pode ser construída e testada no *staging* (ambiente de homologação) usando o **sandbox do MP**, sem mover dinheiro real.
-
----
-
-## Parte 1 — Decisões que dependem dos fundadores
-
-Estas 3 decisões definem o tamanho do trabalho e o impacto jurídico:
-
-### Decisão 1 — Modelo de recebimento (a mais importante)
-
-| | **A) MP como gateway simples** | **B) MP Marketplace (split automático)** |
-|---|---|---|
-| Quem recebe | **1 conta MP da ShareO** recebe tudo | cada **dono do item** conecta a própria conta MP |
-| Repasse ao dono | manual (como hoje) | **automático** pelo MP; a taxa de 15% sai como "marketplace fee" |
-| Esforço técnico | menor (~3–5 dias) | maior (~2–3 semanas) |
-| Efeito no jurídico (D4) | mantém a ShareO como "recebedora de terceiros" | **ameniza**: o MP (licenciado pelo BC) passa a ser o arranjo de pagamento |
-| Recomendação | **começar por aqui** | trilha para depois do D4 (alinha com o plano de longo prazo) |
-
-➡️ **Recomendação:** começar pelo **A** (resolve o PIX nativo já) e **levar o B ao jurídico**, porque pode reduzir o escopo regulatório.
-
-### Decisão 2 — Conta PJ da ShareO
-A conta do MP deve ser **empresa (CNPJ da ShareO)**, não conta pessoal. Isso **substitui a chave PIX pessoal temporária do Raimundo** que está no staging hoje, e é exatamente o ponto que o jurídico precisa endereçar (receber pagamento de terceiros).
-
-### Decisão 3 — Levar ao jurídico junto do D4
-Incluir na consulta: "se usarmos o **split do Mercado Pago** (PSP licenciado), isso muda nosso enquadramento na Lei 12.865/2013 e no PLD (Lei 9.613)?" — pode transformar parte do bloqueador em mitigante.
+> ✅ **DECIDIDO (2026-06-28):** pagamentos via **Mercado Pago**, **Modelo B (split/marketplace)**, conta de recebimento na **PJ da ShareO**, repasse semanal. Decisão recomendada pelo parecer **preliminar** do D4 (PSP licenciado + split afasta o enquadramento da Lei 12.865).
+>
+> ⚠️ **Nada vai para produção antes do D4 (parecer FORMAL).** A integração é construída e testada **no staging com o sandbox do MP**, atrás de uma chave de ativação (flag), **sem mover dinheiro real**.
 
 ---
 
-## Parte 2 — Procedimentos operacionais (passo a passo)
+## Parte 1 — Decisões dos fundadores (já tomadas)
 
-> Quem faz: **fundadores** (conta/credenciais). Quem usa: **time técnico** (integra com as credenciais).
+| Decisão | Definição |
+|---|---|
+| **Modelo de recebimento** | **B — Marketplace/split.** Cada dono de item (inclusive PF) conecta a própria conta MP (via OAuth); o MP repassa automático e retém nossa **taxa de 15%** como *marketplace fee*. |
+| **Conta da plataforma** | **PJ da ShareO (CNPJ)** — nunca conta pessoal. Substitui a chave PIX pessoal temporária do staging. |
+| **Levar ao jurídico (D4)** | Já incluído: "o split do MP (PSP licenciado) muda nosso enquadramento na Lei 12.865 e no PLD?" — vira **mitigante** do bloqueador. Aguardando parecer FORMAL. |
 
-### 1. Criar/usar a conta Mercado Pago da empresa
-- Conta **PJ** com o CNPJ da ShareO em https://www.mercadopago.com.br
-- Completar o cadastro e a **verificação de identidade da empresa** (responsável legal, documentos).
+> Por que o B (e não o A/gateway simples): alinha com o parecer (o PSP licenciado assume o arranjo de pagamento), automatiza o repasse e elimina a confirmação manual de PIX pelo admin. O custo é um onboarding novo (cada locador conecta a conta MP).
+
+---
+
+## Parte 2 — Passo a passo para os fundadores (gera as credenciais)
+
+> Quem faz: **fundadores** (conta + aplicação + credenciais). Quem usa: **time técnico** (integra).
+
+### 1. Conta Mercado Pago da empresa
+- Conta **PJ** com o **CNPJ da ShareO** em https://www.mercadopago.com.br
+- Completar a **verificação de identidade da empresa** (responsável legal + documentos).
 - Cadastrar a **conta bancária da ShareO** para saque do saldo.
 
-### 2. Criar a aplicação de desenvolvedor (gera as credenciais)
-- Acessar https://www.mercadopago.com.br/developers → **"Suas integrações"** → **criar aplicação**.
-- Definir o produto: **Checkout Pro** (pagamento online com redirecionamento) — é o que o time vai usar.
-- Cada aplicação tem dois conjuntos de credenciais:
-  - **Teste (sandbox):** `Public Key` + `Access Token` de teste.
-  - **Produção:** `Public Key` + `Access Token` de produção (usar **só após o D4**).
-- 🔐 Repassar as credenciais ao time **por canal seguro** (não por e-mail/chat aberto) — elas dão acesso ao recebimento.
+### 2. Criar a aplicação de desenvolvedor
+Em https://www.mercadopago.com.br/developers → **"Suas integrações" (Your Integrations)** → **Criar aplicação**, com estas escolhas **para o nosso caso**:
 
-### 3. Criar usuários de teste (sandbox)
-- No painel do desenvolvedor, criar **usuários de teste** (um "comprador" e, se for o modelo B, um "vendedor").
-- O time usa **cartões de teste** do MP + esses usuários para validar o fluxo sem dinheiro real.
+| Campo | Escolher |
+|---|---|
+| **Nome** (≤ 50 caracteres) | ex.: `ShareO Marketplace` |
+| **Tipo de solução** | **Pagamentos online (Online Payments)** |
+| "Usa plataforma de e-commerce?" | **Não** (integração própria em Next.js) |
+| **Produto** | **Checkout Pro** (redirecionamento; PIX/cartão/boleto nativos; não exige mudar a CSP). O split do Modelo B é construído por cima dele. |
+| **Modelo de integração** (opcional) | marcar **Marketplace**, se a opção aparecer |
+
+> ⚠️ **Importante (do próprio painel):** criar a aplicação pode **exigir reautenticar/verificar a identidade** da conta. Tenham os documentos do responsável legal à mão — se a verificação não estiver completa, o MP redireciona para o envio de documentos **antes** de liberar a app.
+
+### 3. Copiar as credenciais (e repassar ao time com segurança)
+Dentro de **Detalhes da aplicação**:
+- **Credenciais → Credenciais de teste:** `Public Key (TEST-…)` + `Access Token (TEST-…)`.
+- **OAuth / Client:** `Client ID` + `Client Secret` (ligam o onboarding dos locadores no Modelo B).
+- 🔐 **Repassar por canal seguro** (gerenciador de senhas / variável de ambiente), **nunca por e-mail ou chat aberto** — essas chaves dão acesso ao recebimento.
+- As **credenciais de produção** (`APP_USR-…`) só serão usadas **após o D4**.
 
 ### 4. Configurar as notificações (webhook)
-- Na aplicação, configurar a **URL de notificação** (o time fornece, ex.: `.../api/webhooks/mercadopago`).
-- Guardar a **assinatura secreta** do webhook (o MP usa para o time validar que a notificação é legítima).
+- Cadastrar a **URL de notificação** que o time fornece (ex.: `https://staging.shareo.com.br/api/mp/webhook`).
+- Guardar a **assinatura secreta** do webhook (o time usa para validar que a notificação é legítima).
 
-### 5. (Somente modelo B) Ativar Marketplace
-- Solicitar/ativar o modo **Marketplace** na conta.
-- O time implementa a autorização (**OAuth**) para cada dono conectar a conta MP dele.
+### 5. OAuth / Marketplace (Modelo B)
+- Confirmar que a aplicação está habilitada para **pagamentos de marketplace** (split/`marketplace_fee`). Se necessário, **solicitar a ativação** do marketplace ao MP.
+- Cadastrar o **Redirect URI** do OAuth que o time fornece (ex.: `https://staging.shareo.com.br/api/mp/oauth/callback`).
+- O time implementa o fluxo em que **cada dono conecta a conta MP** dele.
 
-### 6. Saque do saldo
-- O dinheiro recebido fica no **saldo do MP**; transferir para a conta bancária da ShareO (PIX/TED).
-- Conferir em **"Custos de receber"** se está no modo de liberação padrão (mais barato) ou antecipada (mais caro).
+### 6. Usuários de teste (sandbox)
+- **O time cria** os usuários de teste (1 vendedor + 1 comprador) via API com o Access Token de teste — os fundadores **não precisam** fazer isso. Cartões de teste são públicos.
+
+### 7. Saque do saldo (produção, futuro)
+- O saldo do MP é transferido para a conta bancária da ShareO. Conferir em **"Custos de receber"** o modo de liberação (padrão = mais barato; antecipada = mais caro).
 
 ---
 
-## Parte 3 — Custos e prazos (confirmar na fonte oficial)
+## Parte 3 — ✅ Checklist de credenciais para entregar ao time (Fase 1, sandbox)
 
-> ⚠️ As tarifas e prazos **mudam com o tempo e com o volume negociado** — confirmar os números atuais em **Mercado Pago → "Custos" / "Tarifas"** dentro da conta da empresa. Abaixo, só a **estrutura** para os fundadores saberem o que perguntar:
+> 🔒 **Não cole os valores secretos no chat.** O time prepara as variáveis e indica **onde colar** (Vercel env / GitHub Secrets). Os fundadores só inserem os valores.
 
-- **PIX:** costuma ser o meio **mais barato** e com liberação **rápida** (importante: o MVP é PIX).
-- **Cartão de crédito:** tarifa por transação **+ prazo de liberação configurável** — receber **na hora** custa mais; receber em **D+14/D+30** custa menos.
+| Credencial | Variável | Onde | Fase |
+|---|---|---|---|
+| Client ID | `MP_CLIENT_ID` | Vercel env (projeto) | **1** |
+| Client Secret 🔐 | `MP_CLIENT_SECRET` | Vercel env (projeto) | **1** |
+| Access Token de TESTE 🔐 | `MP_ACCESS_TOKEN` | Vercel env (projeto) | **1** |
+| Confirmação do modelo Marketplace/OAuth | — | (config no painel) | **1** |
+| Public Key de TESTE | `NEXT_PUBLIC_MP_PUBLIC_KEY` | GitHub Secret `*_STAGING` (inlinada no build) | 2 |
+| Webhook secret 🔐 | `MP_WEBHOOK_SECRET` | Vercel env (projeto) | 2 |
+
+**Mínimo para destravar a Fase 1 (fundação atrás de flag, server-side):** **Client ID + Client Secret + Access Token de TESTE** + confirmação do modelo marketplace. O resto entra na Fase 2 (tela de checkout + webhook).
+
+---
+
+## Parte 4 — Custos e prazos (confirmar na fonte oficial)
+
+> ⚠️ Tarifas e prazos **mudam com o tempo e o volume** — confirmar em **Mercado Pago → "Custos" / "Tarifas"** dentro da conta da empresa. Abaixo, só a **estrutura**:
+
+- **PIX:** costuma ser o **mais barato** e com liberação **rápida**.
+- **Cartão de crédito:** tarifa por transação **+ prazo de liberação configurável** (na hora = mais caro; D+14/D+30 = mais barato).
 - **Boleto:** tarifa fixa por boleto pago.
-- **Antecipação de recebíveis:** opcional, com custo — decidir se interessa.
-- Essas tarifas do MP são **separadas** da taxa de 15% que a ShareO cobra do negócio (uma é custo de adquirência; a outra é a receita da plataforma).
+- **Antecipação de recebíveis:** opcional, com custo.
+- Essas tarifas do MP são **separadas** da taxa de 15% que a ShareO cobra (uma é custo de adquirência; a outra é a receita da plataforma). No Modelo B, a taxa de 15% sai como **marketplace fee** automaticamente.
 
 ---
 
-## Parte 4 — O que muda para o usuário (e um ganho imediato)
+## Parte 5 — O que muda para o usuário
 
-- Hoje o staging usa um **checkout PIX manual** (o locatário declara "já paguei" e um admin confirma olhando o extrato). Isso era **temporário**.
-- Com o MP, o **PIX vira nativo**: o sistema gera o QR/copia-e-cola e o **MP confirma o pagamento automaticamente** — **acaba a confirmação manual do admin**.
-- O cliente passa a poder pagar por **PIX, cartão ou boleto** numa tela do próprio Mercado Pago.
-
----
-
-## Parte 5 — Resumo técnico (para acompanhar a conversa com o time)
-
-- Substituição é quase **1:1** no modelo A: troca-se a criação do checkout Stripe pela **Preference** do MP (redirecionamento), e o webhook do Stripe pelo **webhook do MP** (que avisa o ID do pagamento; o sistema consulta o status `aprovado`).
-- O **frontend não muda muito** (continua um redirecionamento) e a política de segurança do site (CSP) **não precisa mudar** se usarmos o redirecionamento.
-- O **Stripe fica preservado no código** atrás de uma chave de configuração durante a transição (mesmo padrão já usado).
-- Esforço: **modelo A ~3–5 dias** de desenvolvimento + testes no sandbox; **modelo B ~2–3 semanas**.
-- Detalhe arquivo-a-arquivo no backlog técnico (`docs/backlog-atividades-priorizadas.md`).
+- Hoje o staging usa um **checkout PIX manual** (locatário declara "já paguei" → admin confirma no extrato). Era **temporário**.
+- Com o MP, o **PIX vira nativo**: o sistema gera o QR/copia-e-cola e o **MP confirma automaticamente** — **acaba a confirmação manual do admin**.
+- O cliente pode pagar por **PIX, cartão ou boleto**.
+- **Novo no Modelo B:** cada **dono de item** faz um **onboarding único** conectando a conta MP dele (OAuth) para receber os repasses automáticos.
 
 ---
 
-## Parte 6 — Próximos passos sugeridos
+## Parte 6 — Resumo técnico (para acompanhar a conversa com o time)
 
-1. Fundadores decidem **modelo A × B** e confirmam **conta PJ**.
-2. Fundadores criam a **conta MP da empresa** + **aplicação** e repassam as **credenciais de teste** ao time.
-3. Time implementa o **modelo A no staging** (sandbox) e valida o PIX nativo.
-4. Incluir a pergunta do **split do MP** no parecer do **D4**.
-5. Go-live só **após o D4** (com as credenciais de produção e a conta PJ oficial).
+- **OAuth (onboarding do locador):** a plataforma redireciona o dono para autorizar (com `MP_CLIENT_ID` + redirect URI); recebe um `code`; troca por `access_token` + `refresh_token` do vendedor (usando `MP_CLIENT_SECRET`).
+- **Pagamento com split:** a plataforma cria o pagamento/preference em nome do vendedor com **`marketplace_fee` = 15%** (nossa receita), o restante cai na conta MP do dono.
+- **Webhook do MP** avisa o ID do pagamento; o sistema consulta o status `aprovado` e libera a reserva.
+- **Faseamento (atrás de flag, sem produção):** Fase 1 fundação + OAuth → Fase 2 checkout split + webhook → validar no **sandbox** → **só então** remover o PIX-manual e o Stripe. Detalhe arquivo-a-arquivo em `docs/backlog-atividades-priorizadas.md`. Decisão registrada em `docs/adr/ADR-026-pagamentos-mercado-pago-modelo-b.md` (supersede ADR-012).
+- **Stripe** segue preservado no código atrás de chave de configuração durante a transição.
+
+---
+
+## Parte 7 — Próximos passos
+
+1. ✅ Fundadores decidiram **Modelo B** + **conta PJ**.
+2. **Fundadores criam a conta MP da empresa + a aplicação** (Parte 2) e repassam as **credenciais de teste** (Parte 3) ao time — **bloqueador atual da Fase 1**.
+3. Time implementa a **Fase 1 (fundação + OAuth) no staging/sandbox**, atrás de flag.
+4. Parecer **FORMAL** do D4 confirma o enquadramento (split do MP) — ver `docs/d4-cobranca-juridico.md`.
+5. Go-live só **após o D4**, com credenciais de produção e conta PJ oficial.
