@@ -456,6 +456,10 @@ model Booking {
   stripePaymentIntentId String?
   paidAt                DateTime?
 
+  // Pagamento via Mercado Pago (Modelo B / split — ADR-026, gated flag mercadoPagoEnabled)
+  mpPreferenceId String? @unique // Preference (Checkout Pro) criada para esta reserva
+  mpPaymentId    String?         // ID do pagamento aprovado (retornado pelo webhook)
+
   // Pagamento PIX manual (fase de validação em staging) — locatário declara que
   // pagou na chave da plataforma; um admin confere o extrato e confirma o recebimento.
   pixDeclaredAt         DateTime?
@@ -835,6 +839,16 @@ model OwnerPaymentAccount {
   updatedAt  DateTime         @updatedAt
   payouts    Payout[]
 
+  // Conexão Mercado Pago (Modelo B / split via OAuth — ADR-026).
+  // Tokens guardados CRIPTOGRAFADOS (encryptPII) — nunca em texto puro.
+  mpUserId         String?   @unique // user_id do vendedor no MP (numérico, como string)
+  mpAccessToken    String?   @db.Text // 🔐 access_token do locador (criptografado)
+  mpRefreshToken   String?   @db.Text // 🔐 refresh_token do locador (criptografado)
+  mpPublicKey      String?            // public key do vendedor (não sensível)
+  mpTokenExpiresAt DateTime?          // expiração do access_token (refresh antes disso)
+  mpConnectedAt    DateTime?          // quando o locador concluiu o OAuth
+  mpLiveMode       Boolean   @default(false) // false = sandbox/teste
+
   @@map("owner_payment_accounts")
 }
 
@@ -912,6 +926,24 @@ model StripeEventQueue {
 
   @@index([status, createdAt])
   @@map("stripe_event_queue")
+}
+
+// Fila idempotente de notificações do Mercado Pago (ADR-013, espelha StripeEventQueue).
+// Dedupe pelo id da notificação — retries do MP reusam o mesmo id, evitando
+// reprocessar o pagamento (comissão de embaixador duplicada, paidAt/pickupToken regravados).
+model MercadoPagoEventQueue {
+  id          String           @id @default(cuid())
+  mpEventId   String           @unique // id da notificação do webhook do MP
+  type        String                   // topic/type (ex.: "payment")
+  payload     Json
+  status      EventQueueStatus @default(PENDING)
+  attempts    Int              @default(0)
+  lastError   String?
+  processedAt DateTime?
+  createdAt   DateTime         @default(now())
+
+  @@index([status, createdAt])
+  @@map("mercado_pago_event_queue")
 }
 
 // ─── Programa Fundadores ──────────────────────────────────

@@ -8,6 +8,7 @@ import { AppHeader } from "@/components/layout/AppHeader"
 import { BookingActions }      from "./_BookingActions"
 import { ReviewForm }          from "./_ReviewForm"
 import { PayButton }           from "@/components/bookings/PayButton"
+import { MpPayButton }         from "@/components/bookings/MpPayButton"
 import { PixPaymentPanel }     from "./_PixPaymentPanel"
 import { ContractBanner }      from "./_ContractBanner"
 import { CheckInOut }          from "./_CheckInOut"
@@ -17,6 +18,7 @@ import { ReturnCountdown }    from "@/components/booking/ReturnCountdown"
 import { ReturnChecklist }    from "@/components/booking/ReturnChecklist"
 import { ReturnConditionForm } from "@/components/booking/ReturnConditionForm"
 import { getPlatformFeeRate, calcSplit, getPlatformPixConfig } from "@/lib/platform-config"
+import { isMercadoPagoActive } from "@/lib/mercadopago"
 import { deriveBookingHistory } from "@/lib/bookingHistory"
 import { BookingStatusBadge } from "@/components/ui/BookingStatusBadge"
 import { formatPrice, formatDate, formatDateLong } from "@/utils/format"
@@ -138,6 +140,8 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
   // pelo painel com a chave PIX da plataforma. Default off → Stripe segue intacto.
   const pix = await getPlatformPixConfig()
   const pixCheckout = pix.enabled && !!pix.key
+  // Mercado Pago (Modelo B / split — ADR-026) tem prioridade quando ativo.
+  const mpActive = await isMercadoPagoActive()
   const feeRateLabel = feeRatePct % 1 === 0 ? feeRatePct.toFixed(0) : String(feeRatePct)
 
   // Split da plataforma — espelha exatamente o checkout (lib/platform-config.calcSplit):
@@ -427,7 +431,9 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                   <p className="mb-4 text-sm text-muted-foreground">
                     Sua reserva foi confirmada! Faça o pagamento para o locador combinar a entrega do item.
                   </p>
-                  {pixCheckout ? (
+                  {mpActive ? (
+                    <MpPayButton bookingId={booking.id} totalPrice={booking.totalPrice} />
+                  ) : pixCheckout ? (
                     booking.pixDeclaredAt ? (
                       <div className="flex items-start gap-3 rounded-lg border border-blue-medium/30 bg-blue-medium/10 p-3 text-sm">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 flex-shrink-0 text-blue-medium" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
