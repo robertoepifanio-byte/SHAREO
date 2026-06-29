@@ -1088,3 +1088,25 @@ model AmbassadorCommission {
   @@index([bookingId])
   @@map("ambassador_commissions")
 }
+
+// ─── Registro de Acesso — Marco Civil da Internet art. 15 ────────────────────
+//
+// ATENÇÃO: confirmar prazo e escopo com jurídico antes de ativar em produção.
+// A tabela SÓ é populada quando PlatformConfig.accessLogsEnabled = "true".
+// Com a flag OFF (default), nenhuma linha é gravada → ZERO impacto de performance.
+// Retenção: 180 dias (6 meses, conforme art. 15 MCI). Expurgo via cron /api/cron/purge-access-logs.
+// Ver: docs/retencao-logs-art15.md para a análise das opções de implementação.
+model AccessLog {
+  id        String   @id @default(cuid())
+  ts        DateTime @default(now()) @db.Timestamptz(6)
+  ip        String
+  userId    String?  // null = requisição não autenticada (mas registrada se na rota coberta)
+  path      String
+  method    String
+  status    Int      @default(0)
+  requestId String?  // x-vercel-id ou header equivalente para correlação
+
+  @@index([ts])
+  @@index([userId])
+  @@map("access_logs")
+}
