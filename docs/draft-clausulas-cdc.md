@@ -39,31 +39,38 @@ O art. 49 do CDC garante ao consumidor o direito de arrependimento em contratos 
 
 ## Clausula B2 — Limitacao de Responsabilidade da Plataforma (sem afastar CDC e sem excluir responsabilidade solidaria)
 
+**Referencia de decisao: D3 (aprovado pelos fundadores/juridico em 2026-06-30)**
+
 ### Contexto legal
 
 O CDC proibe clausulas que excluam totalmente a responsabilidade do fornecedor (art. 51 I). A ShareO, como intermediaria digital, responde solidariamente com o proprietario pelos servicos de intermediacao que presta (CDC art. 18 e art. 20 por analogia; parecer D4). A clausula de limitacao pode existir — desde que: (a) nao exclua direitos minimos do CDC; (b) nao afaste a responsabilidade solidaria que a lei impoe; (c) seja redigida com clareza para ser valida (art. 47 CDC — interpretacao mais favoravel ao consumidor).
 
 > CONSULTAR ADVOGADA: validar os limites exatos da limitacao de responsabilidade admissivel no modelo de marketplace brasileiro, especialmente quanto a danos causados por proprietarios e a responsabilidade por falhas no pagamento via Mercado Pago.
 
-### Texto proposto da clausula
+### Texto aprovado da clausula (VERBATIM — D3)
 
 > **[Z]. Responsabilidade da ShareO**
 >
-> **[Z].1. Intermediacao e responsabilidade solidaria.** A ShareO atua como plataforma de intermediacao entre locatarios e proprietarios de bens moveis. Nos termos do Codigo de Defesa do Consumidor, a ShareO e **responsavel solidaria** no que lhe couber pelos servicos de intermediacao que presta — o que inclui garantir o correto funcionamento da plataforma, o processamento dos pagamentos via parceiro autorizado (Mercado Pago), o canal de comunicacao entre as partes e o processo de resolucao de disputas.
+> A ShareO limita sua responsabilidade as falhas proprias da plataforma, como indisponibilidade tecnica ou erros de sistema. A ShareO nao garante a qualidade ou funcionamento dos bens anunciados, cuja responsabilidade primaria e do locador. Sem prejuizo dessa limitacao, a ShareO responde solidariamente com os fornecedores perante os consumidores, nos termos do Codigo de Defesa do Consumidor, nao podendo excluir ou restringir direitos legalmente assegurados.
+
+### Texto complementar recomendado (sujeito a revisao juridica)
+
+Os itens abaixo nao constam do texto aprovado D3, mas decorrem da estrutura operacional da plataforma e devem ser avaliados pela advogada para inclusao junto ao texto verbatim acima:
+
+> **[Z].1. Responsabilidade dos usuarios.** A responsabilidade pelo estado do item anunciado, pela veracidade das informacoes do anuncio, pela entrega e pelo recebimento do item no prazo e nas condicoes acordadas e do **proprietario/locador**. A responsabilidade pelo uso adequado do item durante o periodo de locacao, pela devolucao no prazo e pelo pagamento das taxas aplicaveis e do **locatario**.
 >
-> **[Z].2. Responsabilidade dos usuarios.** A responsabilidade pelo estado do item anunciado, pela veracidade das informacoes do anuncio, pela entrega e pelo recebimento do item no prazo e nas condicoes acordadas e do **proprietario**. A responsabilidade pelo uso adequado do item durante o periodo de locacao, pela devolucao no prazo e pelo pagamento das taxas aplicaveis e do **locatario**.
+> **[Z].2. Limitacao proporcional.** Sem prejuizo das disposicoes do CDC, a responsabilidade da ShareO por danos diretos decorrentes de falhas nos servicos de intermediacao fica limitada ao valor total pago pelo locatario na locacao especifica em que o dano ocorreu. Essa limitacao nao se aplica em casos de dolo, culpa grave ou violacao de direitos fundamentais do consumidor.
 >
-> **[Z].3. Limitacao proporcional.** Sem prejuizo das disposicoes do CDC, a responsabilidade da ShareO por danos diretos decorrentes de falhas nos servicos de intermediacao fica limitada ao valor total pago pelo locatario na locacao especifica em que o dano ocorreu. Essa limitacao nao se aplica em casos de dolo, culpa grave ou violacao de direitos fundamentais do consumidor.
+> **[Z].3. Falhas de parceiros.** A ShareO nao se responsabiliza por falhas nos servicos do Mercado Pago nao causadas pela ShareO, por eventos de forca maior que impossibilitem a prestacao dos servicos, nem por danos decorrentes de uso incorreto do item pelo locatario.
 >
-> **[Z].4. Exclusoes.** A ShareO nao se responsabiliza por: (a) danos causados pelo proprietario ao locatario ou ao bem locado, ressalvada a responsabilidade solidaria acima; (b) danos decorrentes de uso incorreto do item pelo locatario; (c) falhas nos servicos do Mercado Pago nao causadas pela ShareO; (d) eventos de forca maior que impossibilitem a prestacao dos servicos.
->
-> **[Z].5. Canal de reclamacao.** Em caso de problemas nao resolvidos pela plataforma, o consumidor pode acionar os canais de defesa do consumidor (Procon, e-Consumidor — consumidor.gov.br) e o Poder Judiciario.
+> **[Z].4. Canal de reclamacao.** Em caso de problemas nao resolvidos pela plataforma, o consumidor pode acionar os canais de defesa do consumidor (Procon, e-Consumidor — consumidor.gov.br) e o Poder Judiciario.
 
 ### Notas de implementacao
 
-- A clausula [Z].1 e mandatoria — nao pode ser removida ou enfraquecida sem nova consulta juridica.
-- A clausula [Z].3 (limite ao valor da locacao) e admissivel como limitacao proporcional; verificar se a advogada considera valida no contexto especifico do marketplace.
-- A clausula [Z].5 e exigida pela politica de atendimento ao consumidor da plataforma e reforca a clausula de SLA da Central de Ajuda.
+- O texto verbatim D3 e mandatorio e nao pode ser removido ou enfraquecido sem nova consulta juridica.
+- O texto complementar [Z].1–[Z].4 e sugestao operacional — a advogada decide se integra ao mesmo artigo ou secoes separadas.
+- A clausula [Z].2 (limite ao valor da locacao) e admissivel como limitacao proporcional; verificar se a advogada considera valida no contexto especifico do marketplace.
+- A clausula [Z].4 e exigida pela politica de atendimento ao consumidor da plataforma e reforca o SLA da Central de Ajuda.
 
 ---
 
@@ -112,12 +119,36 @@ A existencia de uma politica de cancelamento e devolucao clara e requisito do CD
 
 ---
 
+## Clausula B4 — Responsabilidade por Dano ou Perda do Bem (sem caucao)
+
+**Referencia de decisao: E2 (aprovado pelos fundadores/juridico em 2026-06-30)**
+
+### Contexto legal
+
+A decisao D2 (sem caucao no MVP, teto R$ 500 por transacao) nao elimina a responsabilidade civil do locatario por danos, extravio ou perda do bem locado. A ausencia de caucao e uma opcao de modelo de negocio — nao uma renuncio dos direitos do locador. Esta clausula faz essa distincao expressa e serve tambem como base para o processo de disputas (booking com status DISPUTED no sistema).
+
+### Texto aprovado da clausula (VERBATIM — E2)
+
+Esta clausula integra o contrato de locacao e pode ser reproduzida tambem nos Termos de Uso (secao de obrigacoes do locatario):
+
+> O LOCATARIO assume integral responsabilidade pela guarda e conservacao do bem locado, obrigando-se a devolvê-lo no estado em que o recebeu, salvo desgaste natural pelo uso normal. Em caso de dano, extravio ou perda, respondera pelo ressarcimento integral ao LOCADOR, exceto quando comprovado vicio preexistente ou defeito nao imputavel ao uso. A ausencia de caucao nao exime o LOCATARIO de sua responsabilidade civil.
+
+### Notas de implementacao
+
+- A excecao de "vicio preexistente" requer que o produto registre o estado do item antes da retirada — isso ja e feito por meio das fotos de check-in (`booking-photos`). A advogada deve ser alertada de que o registro fotografico e a evidencia primaria para essa excecao.
+- "Desgaste natural pelo uso normal" nao e definido na clausula; recomenda-se que a Central de Ajuda e o guia de devolucao exemplifiquem o que se qualifica como desgaste normal vs. dano (ex.: arranho profundo vs. patina de uso em ferramentas).
+- O fluxo de disputa ja existe no produto (status `DISPUTED`, suspensao do repasse, analise pelo admin). Esta clausula lhe da fundamento contratual.
+- Verificar com a advogada se o texto deve usar "LOCADOR" e "LOCATARIO" (linguagem de contrato) ou "proprietario" e "locatario" (linguagem dos Termos) — unificar antes de publicar.
+
+---
+
 ## Relacao entre as clausulas e os Termos atuais
 
-| Clausula proposta | Posicao sugerida nos Termos de Uso | Dependencia |
-|---|---|---|
-| B1 — Arrependimento | Nova secao [X], apos a secao de Pagamentos (atual Secao 6) | Depende de flag `withdrawalRightEnabled` — ligar apos aprovacao juridica |
-| B2 — Limitacao de responsabilidade | Secao [Z], substituir ou complementar a secao atual de "Limitacao de Responsabilidade" | Nao depende de flag — pode ser incluida na revisao dos Termos pre-go-live |
-| B3 — Cancelamento e devolucao | Secao [Y], substituir ou formalizar a politica de cancelamento atual | Deve espelhar os valores de `CancellationConfig` do banco |
+| Clausula proposta | Posicao sugerida nos Termos de Uso | Decisao de referencia | Dependencia |
+|---|---|---|---|
+| B1 — Arrependimento | Nova secao [X], apos a secao de Pagamentos (atual Secao 6) | — | Depende de flag `withdrawalRightEnabled` — ligar apos aprovacao juridica |
+| B2 — Limitacao de responsabilidade | Secao [Z], substituir ou complementar a secao atual de "Limitacao de Responsabilidade" | **D3** (2026-06-30) | Nao depende de flag — incluir na revisao dos Termos pre-go-live |
+| B3 — Cancelamento e devolucao | Secao [Y], substituir ou formalizar a politica de cancelamento atual | — | Deve espelhar os valores de `CancellationConfig` do banco |
+| B4 — Responsabilidade por dano/perda sem caucao | Secao de obrigacoes do locatario nos Termos e/ou no contrato de locacao separado | **E2** (2026-06-30) | Requer alinhamento com fluxo de disputas e fotos de check-in; verificar nomenclatura LOCADOR/LOCATARIO vs. proprietario/locatario |
 
 > Relacionado: [`draft-clausulas-mp-termos-privacidade.md`](draft-clausulas-mp-termos-privacidade.md) (Secoes A e B), [`spec-arrependimento-art49.md`](spec-arrependimento-art49.md), [`checklist-conformidade-juridica.md`](checklist-conformidade-juridica.md) item 4.

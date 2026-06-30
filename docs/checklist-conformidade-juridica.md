@@ -73,8 +73,38 @@ Revisão read-only por product-owner + designer + segurança. Relatório consoli
 
 ## 🚦 Go-live só após (condições do próprio parecer)
 1. ✅ **Parecer jurídico FORMAL** — **recebido** (versão revisada com o Mercado Pago como PSP, [`parecer-juridico-revisado-mp.md`](parecer-juridico-revisado-mp.md)).
-2. 🔵 **Contrato com PSP (Mercado Pago) assinado + conta PJ ativa.**
-3. 🔨 **Termos de Uso e Política de Privacidade revisados e publicados** (rascunhos: [`draft-clausulas-mp-termos-privacidade.md`](draft-clausulas-mp-termos-privacidade.md)).
-4. 🔨 **Checklist acima 100% cumprido.**
+2. ⏳ **Contrato com PSP (Mercado Pago) assinado + conta PJ ativa** — **EM ANDAMENTO** (responsabilidade do fundador; prazo a confirmar — resposta B1). **Único 🔒 bloqueador remanescente.**
+3. ✅(conteúdo) **Termos de Uso e Política de Privacidade revisados** — **conteúdo APROVADO p/ publicação no go-live** (resposta D1); **publicar só no go-live** (rascunhos: [`draft-clausulas-mp-termos-privacidade.md`](draft-clausulas-mp-termos-privacidade.md)).
+4. 🔨 **Checklist acima 100% cumprido** — destravado pelas respostas de 2026-06-30 (ver abaixo); restam B3 tributarista, C2 DPA, C3 RIPD/DPO.
 
 > Ver também: [`checklist-go-live.md`](checklist-go-live.md) (infra/técnico) · [`d4-cobranca-juridico.md`](d4-cobranca-juridico.md) · memória [[project-d4-juridico]].
+
+---
+
+## ✅ Respostas dos fundadores/jurídico à pauta (2026-06-30, s41)
+Fonte: `docs/Pauta única decisões jurídicas societárias Respostas.docx`. **Tudo segue gated D4** — implementar em staging/flag-OFF/draft; **publicar/ativar só no go-live**.
+
+| # | Decisão | Destrava (staging/flag/draft) |
+|---|---|---|
+| **A1** | ✅ Retenção: **5a** fiscal · **180d** logs · **5a** consentimento. Sem categorias extras. | Ligar os 3 crons de expurgo — **após** a trava legal (A4). |
+| **A2** | ✅ Logar **rotas autenticadas + ações sensíveis** (login/logout, alterações cadastrais, consentimentos, movimentações financeiras, acesso a dados de terceiros). **Não** logar navegação anônima. | Fiar `logAccess()` nesse escopo + flag `accessLogsEnabled`. |
+| **A3** | ✅ **Opção II (Brasil, `access_logs` sa-east-1)** — sem transferência internacional. | Já alinhado (tabela existe); descartar Opção I. |
+| **A4** | ✅ Expurgo **suspenso** sob ordem judicial/litígio/investigação. | Implementar **flag de "retenção legal" por registro** ANTES de ligar os crons. |
+| **B1** 🔒 | ⏳ Contrato MP **em andamento** (fundador; prazo a confirmar). | — (bloqueador de go-live). |
+| **B2** | ✅ NF da ShareO sobre os 15% (ISS + PIS/COFINS). 85% = **não-receita** (terceiros em trânsito); locador emite a própria. | Automação de NF = análise futura. |
+| **B3** | 🔴 **Sem parecer de tributarista ainda** — regime (Simples/Presumido/Real) a definir. | Pendente especialista. |
+| **B4** | ✅ ShareO **não é sujeito obrigado** (PSP assume KYC/KYB/monitoramento). Manter **política mínima** de PLD/FT: KYC/KYB básico (feito), monitoramento de suspeitas, canal de reporte, treinamento, logs de alertas 5a. Sem comunicação direta ao COAF. | Redigir política mínima. |
+| **C1** | ✅ Selfie **É dado biométrico sensível (art. 11)** — interesse legítimo **insuficiente**; exige **consentimento específico e destacado** (art. 11 II "a"). | Ajustar base legal no RIPD (risco F-09), texto de consentimento separado dos Termos, segurança reforçada. |
+| **C2** | 🟡 **Em análise** (DPAs/cláusulas-padrão dos subprocessadores EUA + MP). | Pendente. |
+| **C3** | 🟡 **Em análise** (validação/assinatura do RIPD + designação formal do DPO). | Pendente. |
+| **C4** | ✅ Incluir **MP como operador** na Política; corrigir "nunca compartilhamos com terceiros" → texto de compartilhamento controlado (redação fornecida). | Atualizar draft da Política + RIPD. |
+| **D1** 🔒 | ✅ Conteúdo revisado dos Termos/Política **aprovado p/ publicação no go-live**. | Publicar só no go-live (condição 3). |
+| **D2** | ✅ Arrependimento **7 dias corridos, antes da retirada**. Reembolso via MP: locatário recebe integral, ShareO **estorna os 15%**. Exceção: locação iniciada → só cancelamento. | Implementar atrás da flag `withdrawalRightEnabled`. |
+| **D3** | ✅ Limitação de responsabilidade **sem excluir** CDC nem solidária (redação da Seção 8 fornecida). | Finalizar Seção 8 dos Termos (draft). |
+| **D4** | ✅ **NOVO SLA: 8h/4h; atendimento seg–sex 09:00–17:00** (substitui 4h/2h e "7 dias 8h–22h"). | Reescrever Central de Ajuda. |
+| **D5** | ✅ **Sem seguradora SUSEP no MVP** — adaptar/remover "seguro"; tema em análise dos fundadores. | Renomear p/ "proteção/garantia" ou remover na Central de Ajuda. |
+| **E1** | ✅ Texto do **Contrato de Locação** aprovável com os elementos essenciais listados; aceite eletrônico válido com log. | Finalizar texto → ligar `rentalContractAcceptanceEnabled`. |
+| **E2** | ✅ Risco de dano/perda **ao locatário** (salvo vício preexistente/força maior), **sem caução** no MVP (cláusula fornecida). | Inserir cláusula no contrato (item 6). |
+| **E3** | ✅ **Art. 19 MCI**: ShareO não responde por conteúdo de terceiros salvo ordem judicial; adotar **notice-and-takedown voluntário** (botão Reportar, análise, remoção de ilícitos, logs). Cláusula fornecida. | Cláusula nos Termos + procedimento de remoção. |
+
+**Pendentes (não destravados):** B1 🔒 (contrato MP — bloqueador de go-live), B3 (tributarista), C2 (DPAs), C3 (RIPD/DPO formal).
