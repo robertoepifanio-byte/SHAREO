@@ -2,30 +2,32 @@
  * GET /api/cron/purge-consent-ips
  * Executado mensalmente via Vercel Cron (dia 1, 03h UTC).
  *
- * Expurgo de IPs de consentimento — retenção LGPD (auditoria s40):
+ * Expurgo de IPs de consentimento — retencao LGPD (prazo confirmado com juridico em
+ * 2026-06-30, decisao A1: 5 anos para todos os campos abaixo):
  *
  *   (A) User.consentIp (PF)
- *       IP do consentimento LGPD no cadastro de Pessoa Física.
- *       Sugestão: 5 anos (espelha cron PJ já existente em /api/cron/kyb).
- *       Referência do campo: User.consentAt (quando ocorreu o consentimento).
- *       ⚠️ CONFIRMAR PRAZO COM JURÍDICO.
+ *       IP do consentimento LGPD no cadastro de Pessoa Fisica.
+ *       Prazo: 5 anos a partir de User.consentAt.
+ *       EXCECAO: User.legalHoldConsent=true → campo NAO e nullificado (A4).
  *
  *   (B) ContractAcceptance.ipAddress + userAgent
- *       IP e UA do aceite do contrato de locação.
- *       Sugestão: 5 anos após o término da reserva vinculada.
- *       "Término" = Booking.endDate (ou data de cancelamento se CANCELLED).
- *       ⚠️ CONFIRMAR PRAZO COM JURÍDICO.
+ *       IP e UA do aceite do contrato de locacao.
+ *       Prazo: 5 anos apos o termino da reserva vinculada (Booking.endDate).
+ *       EXCECAO: ContractAcceptance.legalHold=true → campos NAO sao nullificados (A4).
  *
  *   (C) FounderLead.consentIp + consentUserAgent
  *       IP e UA do consentimento de marketing da lista de fundadores.
- *       Sugestão: 5 anos a partir de marketingConsentAt.
- *       ⚠️ CONFIRMAR PRAZO COM JURÍDICO.
+ *       Prazo: 5 anos a partir de marketingConsentAt.
+ *       EXCECAO: FounderLead.legalHold=true → campos NAO sao nullificados (A4).
  *
- * Padrão de expurgo: nullifica os campos de IP/UA (não deleta o registro inteiro).
- * O timestamp de consentimento (consentAt, acceptedAt, marketingConsentAt) é preservado
- * pois não é considerado PII forte — é dado de auditoria necessário.
+ * Padrao de expurgo: nullifica os campos de IP/UA (nao deleta o registro inteiro).
+ * O timestamp de consentimento (consentAt, acceptedAt, marketingConsentAt) e preservado
+ * pois nao e considerado PII forte — e dado de auditoria necessario.
  *
- * Idempotente: re-executar não afeta registros já zerados (WHERE ip IS NOT NULL).
+ * Para acionar retencao legal (A4), executar via SQL no Supabase Dashboard (MFA obrigatorio).
+ * Ver migration 20260630100000_add_legal_hold para instrucoes.
+ *
+ * Idempotente: re-executar nao afeta registros ja zerados (WHERE ip IS NOT NULL).
  */
 import { NextResponse, type NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
@@ -34,7 +36,8 @@ import { assertCronAuth } from "@/lib/auth/cron-guard"
 export const runtime     = "nodejs"
 export const maxDuration = 60
 
-// ⚠️ CONFIRMAR COM JURÍDICO — sugestão da auditoria s40: 5 anos
+// 5 anos (LGPD art. 7o IX + CTN art. 173).
+// Prazo confirmado com juridico em 2026-06-30 (decisao A1).
 const RETENTION_YEARS = 5
 
 export async function GET(req: NextRequest) {
@@ -45,29 +48,32 @@ export async function GET(req: NextRequest) {
   fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - RETENTION_YEARS)
 
   // ─── (A) User.consentIp — PF ───────────────────────────────────────────────
-  // Espelha o padrão do cron PJ (/api/cron/kyb linha 143-153).
-  // Critério de tempo: User.consentAt (quando PF deu o consentimento).
-  // Exclui PJ para não duplicar com o cron kyb existente.
+  // Espelha o padrao do cron PJ (/api/cron/kyb linha 143-153).
+  // Criterio de tempo: User.consentAt (quando PF deu o consentimento).
+  // Exclui PJ para nao duplicar com o cron kyb existente.
+  // PULA usuarios com legalHoldConsent=true (retencao legal ativa — A4).
   const pfIpResult = await prisma.user.updateMany({
     where: {
-      userType:  "PF",
-      consentIp: { not: null },
-      consentAt: { lt: fiveYearsAgo },
+      userType:         "PF",
+      consentIp:        { not: null },
+      consentAt:        { lt: fiveYearsAgo },
+      legalHoldConsent: false,
     },
     data: { consentIp: null },
   })
 
   // ─── (B) ContractAcceptance.ipAddress + userAgent ──────────────────────────
-  // Critério de tempo: Booking.endDate da reserva vinculada.
-  // Se a reserva foi cancelada, usa updatedAt como proxy (sem campo dedicado de término).
-  // A lógica: nullifica IP/UA de contratos cujo booking.endDate < cutoff
-  // (e booking não está mais ACTIVE/PENDING — já encerrado de alguma forma).
+  // Criterio de tempo: Booking.endDate da reserva vinculada.
+  // A logica: nullifica IP/UA de contratos cujo booking.endDate < cutoff
+  // (e booking nao esta mais ACTIVE/PENDING — ja encerrado de alguma forma).
+  // PULA contratos com legalHold=true (retencao legal ativa — A4).
   const contractResult = await prisma.contractAcceptance.updateMany({
     where: {
-      ipAddress: { not: null },
+      ipAddress:  { not: null },
+      legalHold:  false,
       booking: {
         endDate: { lt: fiveYearsAgo },
-        // Só expurga de reservas já encerradas (não PENDING/CONFIRMED/ACTIVE)
+        // So expurga de reservas ja encerradas (nao PENDING/CONFIRMED/ACTIVE)
         status: { in: ["COMPLETED", "CANCELLED", "RETURNED", "DISPUTED"] },
       },
     },
@@ -78,11 +84,13 @@ export async function GET(req: NextRequest) {
   })
 
   // ─── (C) FounderLead.consentIp + consentUserAgent ──────────────────────────
-  // Critério de tempo: FounderLead.marketingConsentAt.
+  // Criterio de tempo: FounderLead.marketingConsentAt.
+  // PULA leads com legalHold=true (retencao legal ativa — A4).
   const founderResult = await prisma.founderLead.updateMany({
     where: {
-      consentIp:        { not: null },
+      consentIp:          { not: null },
       marketingConsentAt: { lt: fiveYearsAgo },
+      legalHold:          false,
     },
     data: {
       consentIp:       null,
@@ -97,7 +105,7 @@ export async function GET(req: NextRequest) {
     pfConsentIp:    { cleared: pfIpResult.count },
     contractIpUa:   { cleared: contractResult.count },
     founderIpUa:    { cleared: founderResult.count },
-    note:           "CONFIRMAR PRAZOS COM JURÍDICO antes de ativar em producao",
+    note:           "LGPD art. 7o IX + prazo fiscal 5 anos (A1). legalHold=true/legalHoldConsent=true preservados (A4).",
   }
   console.warn("[cron/purge-consent-ips]", JSON.stringify(summary))
   return NextResponse.json(summary)

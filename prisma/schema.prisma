@@ -278,6 +278,13 @@ model User {
   consentVersion String? // versão da política aceita (ex.: "v1.0")
   ageDeclaredAt  DateTime? // declaração de 18+ persistida (trilha de auditoria LGPD)
 
+  // Retenção legal do consentIp (A4 — 2026-06-30): impede nullificação do campo
+  // consentIp pelo cron purge-consent-ips. Nome distinto de "legalHold" para não
+  // conflitar com eventual suspensão de conta (isActive). Acionar via SQL (MFA obrigatório).
+  legalHoldConsent       Boolean   @default(false)
+  legalHoldConsentReason String?
+  legalHoldConsentAt     DateTime?
+
   // Cadastro progressivo — signup mínimo (nome/e-mail/senha/cidade/estado) habilita navegar;
   // null = cadastro incompleto. Preenchido ao concluir o cadastro completo (CPF/CNPJ + endereço),
   // exigido só ao Anunciar ou Alugar.
@@ -778,6 +785,13 @@ model AdminLog {
   metadata   Json?
   createdAt  DateTime @default(now())
 
+  // Retenção legal (A4 — 2026-06-30): suspende o expurgo automático (purge-admin-logs)
+  // para registros sob ordem judicial, litígio ou investigação.
+  // Acionar via SQL no Supabase Dashboard (MFA obrigatório). Ver migration add_legal_hold.
+  legalHold       Boolean   @default(false)
+  legalHoldReason String?
+  legalHoldAt     DateTime?
+
   @@index([adminId])
   @@index([entityType, entityId])
   @@map("admin_logs")
@@ -819,6 +833,12 @@ model ContractAcceptance {
   // SHA-256 do texto exibido ao locatário no momento do aceite.
   // Prova forense de que o conteúdo não mudou após o aceite.
   contractTextHash String?
+
+  // Retenção legal (A4 — 2026-06-30): impede a nullificação de ipAddress/userAgent
+  // pelo cron purge-consent-ips enquanto o registro estiver sob hold.
+  legalHold       Boolean   @default(false)
+  legalHoldReason String?
+  legalHoldAt     DateTime?
 
   @@index([contractVersion])
   @@map("contract_acceptances")
@@ -983,6 +1003,12 @@ model FounderLead {
   invitedAt       DateTime?
   convertedAt     DateTime?
 
+  // Retenção legal (A4 — 2026-06-30): impede a nullificação de consentIp/consentUserAgent
+  // pelo cron purge-consent-ips enquanto o registro estiver sob hold.
+  legalHold       Boolean   @default(false)
+  legalHoldReason String?
+  legalHoldAt     DateTime?
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
@@ -1125,11 +1151,11 @@ model AmbassadorCommission {
 
 // ─── Registro de Acesso — Marco Civil da Internet art. 15 ────────────────────
 //
-// ATENÇÃO: confirmar prazo e escopo com jurídico antes de ativar em produção.
 // A tabela SÓ é populada quando PlatformConfig.accessLogsEnabled = "true".
 // Com a flag OFF (default), nenhuma linha é gravada → ZERO impacto de performance.
 // Retenção: 180 dias (6 meses, conforme art. 15 MCI). Expurgo via cron /api/cron/purge-access-logs.
-// Ver: docs/retencao-logs-art15.md para a análise das opções de implementação.
+// Opção arquitetural escolhida: II (tabela Postgres sa-east-1, sem transferência internacional).
+// Ver: docs/retencao-logs-art15.md para análise e decisão dos fundadores (2026-06-30).
 model AccessLog {
   id        String   @id @default(cuid())
   ts        DateTime @default(now()) @db.Timestamptz(6)
@@ -1139,6 +1165,13 @@ model AccessLog {
   method    String
   status    Int      @default(0)
   requestId String?  // x-vercel-id ou header equivalente para correlação
+
+  // Retenção legal (A4 — 2026-06-30): suspende o expurgo automático (purge-access-logs)
+  // para registros sob ordem judicial, litígio ou investigação.
+  // Acionar via SQL no Supabase Dashboard (MFA obrigatório). Ver migration add_legal_hold.
+  legalHold       Boolean   @default(false)
+  legalHoldReason String?
+  legalHoldAt     DateTime?
 
   @@index([ts])
   @@index([userId])

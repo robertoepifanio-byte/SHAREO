@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { invalidateUserSessions } from "@/lib/redis-admin-blocklist"
+import { logAccess, extractClientIp } from "@/lib/access-log"
 
 const Schema = z.object({
   token:    z.string().min(1),
@@ -88,6 +89,17 @@ export async function POST(req: NextRequest) {
         data:  { status: "CONVERTED", convertedAt: new Date() },
       })
       .catch((e) => console.error("[reset-password] lead convert", e instanceof Error ? e.message : e))
+
+    // MCI art.15 / A2 — acao sensivel: alteracao de credencial (reset de senha).
+    // Logado mesmo sem sessao ativa: o userId e recuperado do token de reset.
+    logAccess({
+      ip:        extractClientIp(req),
+      userId:    user.id,
+      path:      "/api/auth/reset-password",
+      method:    "POST",
+      status:    200,
+      requestId: req.headers.get("x-vercel-id"),
+    })
 
     return NextResponse.json({ data: { message: "Senha redefinida com sucesso." } })
   } catch (e: unknown) {
