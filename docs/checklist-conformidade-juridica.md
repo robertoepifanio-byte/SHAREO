@@ -1,6 +1,6 @@
 # Checklist de Conformidade Jurídica — ShareO
 
-**Atualizado:** 2026-06-28 (s39) · **Fonte:** parecer técnico-jurídico **preliminar** do D4 (em revisão com a advogada) + dossiê [`briefing-juridico-d4.md`](briefing-juridico-d4.md).
+**Atualizado:** 2026-06-30 (s41) · **Fonte:** parecer técnico-jurídico **preliminar** do D4 (em revisão com a advogada) + dossiê [`briefing-juridico-d4.md`](briefing-juridico-d4.md) + revisão da Central de Ajuda (s41).
 
 > ⚠️ **D4 NÃO está fechado.** O parecer é **preliminar/em revisão** — não é o parecer FORMAL. Nenhuma atividade de produção antes do sign-off formal (regra absoluta). Este checklist **rastreia** os ajustes exigidos; não os declara cumpridos juridicamente.
 
@@ -57,6 +57,16 @@
 - ✅ **Registro da marca "ShareO" no INPI** — **FEITO** (confirmado no parecer).
 - 🔵 Avaliar **seguro coletivo** / parceria com seguradora.
 - 🔵 **Estrutura societária** revisada (PJ titular da conta e dos contratos com PSP).
+
+## 9. Central de Ajuda (`/ajuda`) — revisão dos especialistas (s41)
+Revisão read-only por product-owner + designer + segurança. Relatório consolidado: [`ajuda-revisao-especialistas-s41.md`](ajuda-revisao-especialistas-s41.md). Itens a levar à advogada (gated D4 — **não publicar antes do sign-off**):
+- 🔨 **Conteúdo de pagamento cita "Stripe"** em 7 trechos — reescrever para **Mercado Pago** (cruza item 1). Risco de **propaganda enganosa** (CDC art. 30/37); a FAQ "regulamentado pelo Banco Central via Stripe" toca a Lei 12.865 → **validar redação com a advogada**.
+- 🔨 **"Dinheiro retido na plataforma"** (6×) contradiz o Modelo B/split (custódia é do PSP) — reescrever (cruza itens 1/3).
+- 🔨 **"Exclusão em 15 dias conforme a LGPD"** — impreciso (art. 18 §3º; 15 dias é do art. 19) — alinhar com #3 e o RIPD.
+- 🔨 **"Nunca compartilhamos com terceiros"** — falso (subprocessadores + MP, transferência internacional) — alinhar com #3.
+- 🔨 **"Seguro opcional 1%"** — vender "seguro" sem seguradora SUSEP é irregular (DL 73/66); confirmar parceiro ou renomear "proteção" (cruza item 6, ⊕ checar se é promessa não implementada).
+- 🟡 SLAs publicados (4h/2h/"7 dias 8h–22h") viram oferta vinculante (CDC art. 30) — alinhar com capacidade real; multa/cancelamento espelhar nos Termos (item 4).
+- ✅ **Já corrigido (não-gated, PR #124):** a11y (tap targets/contraste/aria-live) + inconsistência interna da regra de liberação de pagamento.
 
 ---
 
