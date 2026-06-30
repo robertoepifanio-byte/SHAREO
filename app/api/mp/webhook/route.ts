@@ -3,7 +3,7 @@ import crypto from "crypto"
 import type { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { encryptPII, decryptPII } from "@/lib/crypto"
-import { isMercadoPagoActive, getPaymentClient, refreshSellerToken } from "@/lib/mercadopago"
+import { isMercadoPagoActive, getPaymentClient, refreshSellerToken, sandboxSellerTokenOverride } from "@/lib/mercadopago"
 import { markRentalPaid } from "@/lib/payments/mark-booking-paid"
 
 export const dynamic = "force-dynamic"
@@ -27,6 +27,10 @@ function errMsg(e: unknown): string {
  * expirado) e consultar o pagamento com ele. Fallback: token da aplicação.
  */
 async function paymentClientForSeller(sellerUserId: string | null) {
+  // Sandbox: token via env (pago foi criado com o mesmo token — consulta com ele).
+  const sandboxToken = sandboxSellerTokenOverride()
+  if (sandboxToken) return getPaymentClient(sandboxToken)
+
   if (!sellerUserId) return getPaymentClient()
 
   const acct = await prisma.ownerPaymentAccount.findUnique({

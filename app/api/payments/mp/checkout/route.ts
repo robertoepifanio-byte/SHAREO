@@ -12,6 +12,7 @@ import {
   isMercadoPagoActive,
   getPreferenceClient,
   refreshSellerToken,
+  sandboxSellerTokenOverride,
   MP_WEBHOOK_PATH,
 } from "@/lib/mercadopago"
 
@@ -76,8 +77,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Token do vendedor — renova se expirado (access tokens do MP expiram ~180 dias).
-    let sellerToken = decryptPII(ownerAccount.mpAccessToken)
-    if (ownerAccount.mpTokenExpiresAt && ownerAccount.mpTokenExpiresAt < new Date()) {
+    // Sandbox: override via env (OAuth real com test users é inviável — ver helper).
+    const sandboxToken = sandboxSellerTokenOverride()
+    let sellerToken = sandboxToken ?? decryptPII(ownerAccount.mpAccessToken)
+    if (!sandboxToken && ownerAccount.mpTokenExpiresAt && ownerAccount.mpTokenExpiresAt < new Date()) {
       const refreshed = await refreshSellerToken(decryptPII(ownerAccount.mpRefreshToken))
       sellerToken = refreshed.accessToken
       await prisma.ownerPaymentAccount.update({
