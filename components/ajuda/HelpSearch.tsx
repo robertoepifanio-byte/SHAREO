@@ -172,14 +172,14 @@ export function HelpSearchInput() {
             onClick={() => setQuery("")}
             aria-label="Limpar busca"
             className={[
-              "absolute right-3 top-1/2 -translate-y-1/2",
-              "flex h-7 w-7 items-center justify-center rounded-full",
+              "absolute right-2 top-1/2 -translate-y-1/2",
+              "flex h-11 w-11 items-center justify-center rounded-full",
               "bg-border text-muted-foreground hover:bg-input hover:text-foreground transition-colors",
               "focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 outline-none",
             ].join(" ")}
           >
             <svg
-              className="h-3.5 w-3.5"
+              className="h-4 w-4"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -199,7 +199,6 @@ export function HelpSearchInput() {
         <button
           type="button"
           onClick={scrollToResults}
-          aria-live="polite"
           className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-white/85 underline-offset-4 hover:text-white hover:underline"
         >
           {hasResults
@@ -295,7 +294,7 @@ export function HelpResults() {
   return (
     <div
       id="faq-results"
-      className="container mx-auto max-w-3xl scroll-mt-20 px-4 py-12 space-y-10"
+      className="container mx-auto max-w-3xl scroll-mt-24 px-4 py-12 space-y-10"
     >
       {/* Contagem de resultados — acessível por aria-live */}
       <div aria-live="polite" aria-atomic="true" className="sr-only">
