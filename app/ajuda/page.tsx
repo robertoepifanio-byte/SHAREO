@@ -46,7 +46,7 @@ const LOCATARIO_STEPS: Step[] = [
   },
   {
     step: 5, icon: "💳", title: "Aguardar confirmação e pagar",
-    desc: "O proprietário tem até 24 horas para confirmar ou recusar. Se ele confirmar, você recebe uma notificação e pode clicar em 'Pagar agora'. O pagamento é feito por cartão de crédito (Visa, Mastercard, Elo, Amex) via Stripe — seus dados de cartão nunca passam pelos servidores do ShareO. O valor máximo por locação é R$ 500. O dinheiro fica retido na plataforma e só é repassado ao proprietário após a devolução confirmada.",
+    desc: "O proprietário tem até 24 horas para confirmar ou recusar. Se ele confirmar, você recebe uma notificação e pode clicar em 'Pagar agora'. O pagamento é processado pelo Mercado Pago — instituição de pagamento licenciada pelo Banco Central do Brasil. Você é direcionado para o ambiente seguro do Mercado Pago para inserir seus dados de pagamento. Seus dados de cartão nunca passam pelos servidores do ShareO. O valor máximo por locação é R$ 500. O valor fica em custódia do Mercado Pago e só é repassado ao proprietário após a confirmação da devolução.",
     tip: "Se o proprietário não responder em 24h, a reserva é cancelada automaticamente e nenhum valor é cobrado.",
   },
   {
@@ -78,8 +78,8 @@ const LOCADOR_STEPS: Step[] = [
     example: "Anúncio: 'Tenda Gazebo 3×3m branca para festas'. Preço: R$ 120/dia, R$ 360/semana (3× diária), R$ 1.800/mês (15× diária). Categoria: Festas e Eventos. Estado: Bom estado.",
   },
   {
-    step: 3, icon: "💳", title: "Cadastrar sua chave PIX",
-    desc: "Antes de receber qualquer pagamento, cadastre sua chave PIX em Meu Perfil → Recebimentos. Você pode usar CPF, CNPJ, e-mail, telefone ou chave aleatória. Sem a chave PIX cadastrada, os repasses ficam em espera e não são processados.",
+    step: 3, icon: "💳", title: "Conectar sua conta Mercado Pago",
+    desc: "Antes de receber qualquer pagamento, conecte sua conta Mercado Pago em Meu Perfil → Recebimentos. O repasse de cada locação é feito pelo Mercado Pago direto para a sua conta. Sem a conta Mercado Pago conectada, os repasses ficam em espera e não são processados.",
     tip: "Faça isso antes de publicar o primeiro anúncio para não atrasar nenhum recebimento.",
   },
   {
@@ -89,18 +89,18 @@ const LOCADOR_STEPS: Step[] = [
   },
   {
     step: 5, icon: "📷", title: "Entregar o item e registrar o check-in",
-    desc: "Combine local e horário de entrega pelo chat da reserva. Na hora da entrega, use a opção 'Registrar fotos de check-in' na página da reserva — fotografe todos os ângulos do item, incluindo marcas e desgastes já existentes. Após a entrega física, clique em 'Marcar como ativo' no app. A locação entra em andamento; o valor é liberado para o repasse semanal somente após a confirmação da devolução.",
+    desc: "Combine local e horário de entrega pelo chat da reserva. Na hora da entrega, use a opção 'Registrar fotos de check-in' na página da reserva — fotografe todos os ângulos do item, incluindo marcas e desgastes já existentes. Após a entrega física, clique em 'Marcar como ativo' no app. A locação entra em andamento; o valor é mantido em custódia pelo Mercado Pago e só entra na fila de repasse semanal após a confirmação da devolução.",
     warning: "Sem fotos de check-in, você perde proteção em disputas por danos. Nunca pule essa etapa, mesmo que o locatário pareça confiável.",
   },
   {
     step: 6, icon: "💰", title: "Receber a devolução e o pagamento",
-    desc: "No horário combinado (mesmo horário da retirada), receba o item de volta. Use a opção 'Registrar fotos de check-out' e compare com as fotos do check-in. Se tudo estiver ok, confirme a devolução. O valor líquido entra na fila de repasse semanal e é transferido via PIX na próxima segunda-feira. Avalie o locatário após cada devolução.",
+    desc: "No horário combinado (mesmo horário da retirada), receba o item de volta. Use a opção 'Registrar fotos de check-out' e compare com as fotos do check-in. Se tudo estiver ok, confirme a devolução. O valor líquido entra na fila de repasse semanal e é repassado pelo Mercado Pago na próxima segunda-feira. Avalie o locatário após cada devolução.",
     example: "LOCADOR_STEP6_EXAMPLE",
     tip: "Quanto mais avaliações positivas você tiver, mais alto o seu anúncio aparece nos resultados de busca.",
   },
   {
     step: 7, icon: "✅", title: "Confirme o recebimento",
-    desc: "Após o locatário devolver, toque em 'Confirmar recebimento' e informe o estado do item. O valor líquido entra na fila de repasse semanal e é transferido via PIX toda segunda-feira (feriado: primeiro dia útil seguinte) para a chave cadastrada em Meu Perfil → Recebimentos.",
+    desc: "Após o locatário devolver, toque em 'Confirmar recebimento' e informe o estado do item. O valor líquido entra na fila de repasse semanal e é repassado pelo Mercado Pago toda segunda-feira (feriado: primeiro dia útil seguinte) para a conta Mercado Pago conectada em Meu Perfil → Recebimentos.",
     warning: "Se o item voltar danificado, selecione 'Danificado'. Uma disputa será aberta automaticamente e o repasse fica suspenso até a resolução.",
   },
 ]
@@ -110,11 +110,10 @@ const LOCADOR_STEPS: Step[] = [
 function buildFeeTable(feeLabel: string) { return [
   { label: "Taxa de serviço (cobrada do locatário)", value: `${feeLabel} do total`,           when: "Na confirmação do pagamento" },
   { label: "Anunciar na plataforma (locador)",        value: "Gratuito",                      when: "Sempre, sem mensalidade" },
-  { label: "Repasse ao locador",                      value: "Via PIX — valor líquido",       when: "Toda segunda-feira (feriado: 1º dia útil seguinte)" },
-  { label: "Valor máximo do bem anunciado",             value: "R$ 1.000 por item",             when: "Validado ao publicar o anúncio" },
-  { label: "Limite por locação",                      value: "R$ 500 por transação",          when: "Validado no checkout" },
-  { label: "Seguro opcional (locador)",                value: "1% sobre o valor da locação",   when: "Optativo — cobre extravio do item" },
-  { label: "Multa por atraso na devolução",           value: "1× preço diário por dia extra", when: "Por cada dia além do prazo" },
+  { label: "Repasse ao locador",                      value: "Via Mercado Pago — valor líquido", when: "Toda segunda-feira (feriado: 1º dia útil seguinte)" },
+  { label: "Valor máximo do bem anunciado",             value: "R$ 1.000 por item",               when: "Validado ao publicar o anúncio" },
+  { label: "Limite por locação",                      value: "R$ 500 por transação",             when: "Validado no checkout" },
+  { label: "Multa por atraso na devolução",           value: "1× preço diário por dia extra",    when: "Por cada dia além do prazo" },
   { label: "Cancelamento com +24h de antecedência",   value: "Gratuito",                      when: "Reembolso integral" },
   { label: "Cancelamento com menos de 24h",           value: "30% do valor da locação",       when: "Descontado do reembolso" },
 ] }
@@ -134,7 +133,7 @@ const SECTIONS = [
       { q: "Como faço uma reserva?",
         a: "Abra a página do item e use a calculadora de locação. Escolha a modalidade (diário, semanal ou mensal), selecione a data de retirada e o número de dias. A data de devolução e o valor total aparecem automaticamente. Se quiser, escreva uma mensagem ao proprietário e clique em 'Solicitar locação'." },
       { q: "Como funciona o pagamento?",
-        a: "Só é possível pagar depois que o proprietário confirmar a reserva. Quando ele aceitar, você recebe o aviso e pode clicar em 'Pagar agora'. O pagamento é feito com cartão via Stripe. O dinheiro fica retido e só é liberado ao proprietário após a confirmação da retirada do item." },
+        a: "Só é possível pagar depois que o proprietário confirmar a reserva. Quando ele aceitar, você recebe o aviso e pode clicar em 'Pagar agora'. O pagamento é processado pelo Mercado Pago. O valor fica em custódia do Mercado Pago e só é repassado ao proprietário após a confirmação da devolução do item." },
       { q: "Posso cancelar uma reserva?",
         a: "Sim. Enquanto a reserva estiver 'Aguardando' ou 'Confirmada', você pode cancelar na página da reserva. O cancelamento é gratuito até 24 horas antes da data de retirada." },
       { q: "O que acontece na retirada do item?",
@@ -171,13 +170,13 @@ const SECTIONS = [
       { q: "Como confirmo uma reserva?",
         a: "Quando alguém solicitar seu item, você recebe uma notificação. Em 'Minhas Reservas', clique na aba 'Como locador'. Abra a reserva, leia a mensagem do locatário e clique em 'Confirmar reserva'. Se não quiser aceitar, pode cancelar informando o motivo." },
       { q: "Quando recebo o pagamento?",
-        a: "Após você confirmar o recebimento do item devolvido, o valor líquido (aluguel menos a taxa da plataforma) entra na fila de repasse. Toda segunda-feira o valor é transferido automaticamente para a sua chave PIX cadastrada em Meu Perfil → Recebimentos. Se a segunda-feira for feriado, o repasse ocorre no primeiro dia útil seguinte." },
+        a: "Após você confirmar o recebimento do item devolvido, o valor líquido (aluguel menos a taxa da plataforma) entra na fila de repasse. Toda segunda-feira o Mercado Pago repassa o valor automaticamente para a conta Mercado Pago que você conectou em Meu Perfil → Recebimentos. Se a segunda-feira for feriado, o repasse ocorre no primeiro dia útil seguinte." },
       { q: "O que faço na entrega do item?",
         a: "Combine o local e horário de entrega pelo chat. Na hora da entrega, você pode registrar fotos do estado do item (check-in). Quando entregar, clique em 'Marcar como ativo'. Na devolução, registre fotos de check-out para documentar o estado do item ao retornar." },
       { q: "Como cancelo uma reserva?",
         a: "Você pode cancelar enquanto ela estiver 'Aguardando' ou 'Confirmada'. Na página da reserva, clique em 'Cancelar reserva' e informe o motivo. Evite cancelamentos frequentes — eles afetam sua reputação na plataforma." },
       { q: "Meu item está protegido?",
-        a: "A ShareO oferece proteção durante a locação via fotos de check-in e check-out vinculadas à reserva. O valor fica retido na plataforma até o repasse semanal (toda segunda-feira), o que protege ambas as partes contra contestações. Em caso de danos, abra uma disputa com as fotos como evidência — o repasse fica suspenso até a resolução." },
+        a: "A ShareO oferece proteção durante a locação via fotos de check-in e check-out vinculadas à reserva. O valor fica em custódia do Mercado Pago até o repasse semanal (toda segunda-feira), o que protege ambas as partes contra contestações. Em caso de danos, abra uma disputa com as fotos como evidência — o repasse fica suspenso até a resolução." },
       { q: "Posso pausar meu anúncio temporariamente?",
         a: "Sim. Em 'Meus Anúncios', clique em 'Pausar' no card do item. O anúncio sai da busca e não recebe novas solicitações, mas continua salvo com todas as suas informações, fotos e histórico. Quando quiser voltar a anunciar, clique em 'Reativar'. Use esse recurso quando o item estiver em uso, em manutenção ou você precisar de uma pausa — é melhor do que remover e recriar o anúncio." },
       { q: "Tenho um prazo para confirmar uma solicitação?",
@@ -189,7 +188,7 @@ const SECTIONS = [
       { q: "Como funciona o check-in e check-out fotográfico?",
         a: "Na entrega do item, use a opção 'Registrar fotos de check-in' na página da reserva. Fotografe o item de todos os ângulos, incluindo possíveis marcas ou desgastes que já existiam antes. Na devolução, registre as fotos de check-out da mesma forma. Essas imagens ficam salvas na reserva e são a principal evidência em caso de disputa por danos. Não pule essa etapa — ela protege você." },
       { q: "Quando recebo o pagamento da locação?",
-        a: "Após confirmar o recebimento do item, o valor líquido entra na fila de repasse semanal. Todo domingo as operações do dia são consolidadas, e toda segunda-feira o valor é transferido via PIX para a chave cadastrada em Meu Perfil → Recebimentos. Se segunda for feriado, o repasse ocorre no primeiro dia útil seguinte." },
+        a: "Após confirmar o recebimento do item, o valor líquido entra na fila de repasse semanal. Todo domingo as operações do dia são consolidadas, e toda segunda-feira o valor é repassado pelo Mercado Pago para a conta conectada em Meu Perfil → Recebimentos. Se segunda for feriado, o repasse ocorre no primeiro dia útil seguinte." },
       { q: "O que faço se o item voltou danificado?",
         a: "Na tela de confirmação de recebimento, selecione 'Danificado' e descreva o problema. Uma disputa é aberta automaticamente e o pagamento fica pausado até a resolução." },
       { q: "Por que meu item não aparece na busca?",
@@ -208,21 +207,21 @@ const SECTIONS = [
     iconBg: "bg-amber-100",
     faqs: [
       { q: "Como o pagamento funciona no ShareO?",
-        a: "O pagamento segue quatro etapas: 1) O locatário solicita a reserva. 2) O proprietário confirma. 3) O locatário paga via cartão pelo app — o dinheiro fica retido na plataforma. 4) Após a devolução confirmada, o valor líquido é repassado ao proprietário via PIX toda segunda-feira (considerando todas as operações concluídas até domingo às 23h59). Se segunda for feriado, o repasse ocorre no primeiro dia útil seguinte. Isso garante segurança para os dois lados." },
+        a: "O pagamento segue quatro etapas: 1) O locatário solicita a reserva. 2) O proprietário confirma. 3) O locatário paga pelo Checkout do Mercado Pago — o valor fica em custódia do Mercado Pago. 4) Após a devolução confirmada, o Mercado Pago processa o repasse ao proprietário toda segunda-feira (considerando todas as operações concluídas até domingo às 23h59), descontando automaticamente a taxa de serviço da ShareO. Se segunda for feriado, o repasse ocorre no primeiro dia útil seguinte. Isso garante segurança para os dois lados." },
       { q: "Meu dinheiro está protegido?",
-        a: "Sim. O pagamento não vai direto para o proprietário — ele fica retido na plataforma até a confirmação da entrega. Se algo der errado antes disso, o valor pode ser devolvido. Em caso de disputa, nossa equipe analisa o caso e decide o destino do pagamento." },
+        a: "Sim. O pagamento não vai diretamente ao proprietário no ato do pagamento — o valor fica em custódia do Mercado Pago (nosso parceiro de pagamentos, licenciado pelo Banco Central) até a confirmação da entrega. Se algo der errado antes da entrega ser confirmada, o valor pode ser reembolsado conforme a política de cancelamento. Em caso de disputa, a equipe ShareO analisa o caso e, conforme o resultado, aciona o Mercado Pago para o destino do valor." },
       { q: "Como os proprietários recebem o pagamento?",
-        a: "Os proprietários recebem via PIX. Toda segunda-feira o valor líquido (aluguel menos a taxa da plataforma) das operações concluídas até domingo às 23h59 é transferido automaticamente para a chave PIX cadastrada em Meu Perfil → Recebimentos. Se segunda for feriado, o repasse ocorre no primeiro dia útil seguinte. Para cadastrar ou atualizar sua chave PIX, acesse Meu Perfil → Recebimentos." },
+        a: "Os proprietários recebem pelo Mercado Pago. Toda segunda-feira o valor líquido (aluguel menos a taxa da plataforma) das operações concluídas até domingo às 23h59 é repassado automaticamente para a conta Mercado Pago conectada em Meu Perfil → Recebimentos. Se segunda for feriado, o repasse ocorre no primeiro dia útil seguinte. Para conectar ou atualizar sua conta Mercado Pago, acesse Meu Perfil → Recebimentos." },
       { q: "Como funciona o pagamento do locatário?",
-        a: "O locatário paga com cartão de crédito via Stripe — a mesma tecnologia usada por grandes empresas no mundo todo. Seus dados de cartão nunca passam pelos servidores do ShareO. O valor é cobrado à vista (sem parcelamento na versão atual) e fica retido até a devolução confirmada." },
-      { q: "Quais bandeiras de cartão são aceitas?",
-        a: "São aceitos cartões de crédito Visa, Mastercard, Elo e American Express. O parcelamento não está disponível na versão atual — o valor total é cobrado à vista. O valor máximo por locação é R$ 500." },
+        a: "O locatário paga pelo Checkout do Mercado Pago — instituição de pagamento licenciada pelo Banco Central, usada por milhões de empresas no Brasil. O pagamento é processado com segurança no ambiente do Mercado Pago; seus dados de cartão nunca passam pelos servidores do ShareO. O valor é cobrado à vista. Após o pagamento, o valor fica em custódia do Mercado Pago até a confirmação da devolução." },
+      { q: "Quais formas de pagamento são aceitas?",
+        a: "O Mercado Pago aceita as principais bandeiras de cartão de crédito (Visa, Mastercard, Elo, Hipercard, American Express), além de Pix. As modalidades disponíveis são exibidas no Checkout do Mercado Pago no momento do pagamento. O valor máximo por locação é R$ 500." },
       { q: "Existe caução no ShareO?",
         a: "A caução ainda não está disponível nesta versão do ShareO. A proteção ao proprietário é feita via fotos de check-in e check-out vinculadas à reserva e pelo canal de disputas, onde a equipe ShareO medeia casos de danos. A caução estará disponível em uma versão futura da plataforma." },
       { q: "Como funciona a verificação de identidade?",
         a: "Para criar uma conta e fazer reservas, você precisa confirmar seu email. Para desbloquear reservas de alto valor e acessar recursos avançados, a verificação de CPF é solicitada. O documento é criptografado e armazenado com segurança — nunca aparece em tela ou logs. O selo 'Verificado' no seu perfil aumenta a confiança de outros usuários." },
       { q: "Como a ShareO protege contra fraudes?",
-        a: "Usamos múltiplas camadas de proteção: verificação de identidade (CPF/CNPJ), análise de risco nas transações via Stripe, limite de tentativas de pagamento e monitoramento de comportamento suspeito. Contas com padrões anômalos são sinalizadas para revisão manual antes de qualquer transação ser concluída." },
+        a: "Usamos múltiplas camadas de proteção: verificação de identidade (CPF/CNPJ), análise antifraude do Mercado Pago integrada ao fluxo de pagamento, limite de tentativas de pagamento e monitoramento de comportamento suspeito. Contas com padrões anômalos são sinalizadas para revisão manual antes de qualquer transação ser concluída." },
     ],
   },
   {
@@ -260,9 +259,9 @@ const SECTIONS = [
       { q: "Como a equipe ShareO decide em uma disputa?",
         a: "Nossa equipe analisa todas as evidências fornecidas pelas duas partes: fotos de check-in vs. check-out, conversas no chat, histórico de transações e avaliações anteriores. Respondemos em até 3 dias úteis. A decisão leva em conta o estado documentado do item antes e depois, o comportamento das partes e a política de uso do ShareO." },
       { q: "O que acontece com o repasse em caso de dano?",
-        a: "Se houver dano comprovado, o proprietário abre uma disputa antes de confirmar o recebimento. O repasse via PIX fica suspenso automaticamente durante a análise. A equipe ShareO avalia as fotos de check-in e check-out e, em até 3 dias úteis, decide se o repasse é liberado, parcialmente retido ou cancelado conforme o prejuízo apurado." },
+        a: "Se houver dano comprovado, o proprietário abre uma disputa antes de confirmar o recebimento. O repasse pelo Mercado Pago fica suspenso automaticamente durante a análise. A equipe ShareO avalia as fotos de check-in e check-out e, em até 3 dias úteis, decide se o repasse é liberado, parcialmente retido ou cancelado conforme o prejuízo apurado." },
       { q: "O que acontece se meu item for extraviado?",
-        a: "Em caso de furto ou extravio durante a locação, a cobertura depende se o seguro opcional foi contratado. Proprietários que optarem pelo seguro da plataforma (1% sobre o valor da locação) têm o prejuízo coberto conforme as condições do plano. Sem o seguro, abra uma disputa na plataforma e registre um boletim de ocorrência (BO) — a ShareO analisa o caso e aciona os mecanismos de proteção disponíveis, mas a cobertura financeira não é garantida." },
+        a: "Em caso de furto ou extravio durante a locação, abra uma disputa na plataforma e registre um boletim de ocorrência (BO). A equipe ShareO analisa o caso e aciona os mecanismos de proteção disponíveis. Uma solução de proteção dedicada está em desenvolvimento — em breve disponível." },
       { q: "Posso apelar de uma decisão de disputa?",
         a: "Sim. Se você discordar da decisão, tem até 5 dias úteis para solicitar uma revisão. Envie novas evidências que não foram analisadas anteriormente e explique o motivo do recurso. A revisão é feita por um time diferente do que tomou a decisão original. Caso o problema persista, você pode acionar os canais de defesa do consumidor (Procon) ou o e-Consumidor." },
     ],
@@ -275,13 +274,13 @@ const SECTIONS = [
     iconBg: "bg-sky-100",
     faqs: [
       { q: "Quais são os canais de atendimento?",
-        a: "Você pode nos contatar por: Email (suporte@shareo.com.br) — respondemos em até 4 horas úteis; Chat interno do app — disponível em reservas ativas; e, em casos urgentes, pelo botão 'Atendimento emergencial' dentro da reserva com disputa ativa. Nosso horário é segunda a domingo, das 8h às 22h." },
+        a: "Você pode nos contatar por: Email (suporte@shareo.com.br) — respondemos em até 8 horas úteis (casos urgentes: até 4 horas úteis); Chat interno do app — disponível em reservas ativas; e, em casos urgentes, pelo botão 'Atendimento emergencial' dentro da reserva com disputa ativa. Nosso horário de atendimento é segunda a sexta, das 09h às 17h." },
       { q: "Qual é o prazo de resposta para cada tipo de solicitação?",
-        a: "Email: até 4 horas úteis. Disputas ativas: até 3 dias úteis para decisão. Revisão de disputa (recurso): até 5 dias úteis. Solicitações de exclusão de conta (LGPD): até 15 dias. Denúncias de usuário suspeito: até 24 horas. Para reservas urgentes em andamento, use sempre o canal de atendimento emergencial dentro do app." },
+        a: "Email: até 8 horas úteis (urgente: até 4 horas úteis). Disputas ativas: até 3 dias úteis para decisão. Revisão de disputa (recurso): até 5 dias úteis. Solicitações de exclusão de conta (LGPD): até 15 dias. Denúncias de usuário suspeito: até 24 horas. Os prazos indicados são metas de atendimento em condições normais de operação — segunda a sexta, 09h às 17h — e podem ser impactados em situações extraordinárias de volume ou força maior. Para reservas urgentes em andamento, use sempre o canal de atendimento emergencial dentro do app." },
       { q: "Como reporto um usuário ou anúncio suspeito?",
         a: "Em qualquer anúncio ou perfil, toque nos três pontinhos (⋯) e selecione 'Reportar'. Descreva o problema com o máximo de detalhes e confirme. Nossa equipe analisa o reporte em até 24 horas e, se necessário, suspende o usuário preventivamente. Reportes são anônimos — o usuário reportado não sabe quem enviou." },
       { q: "Tenho um problema urgente com uma reserva em andamento. O que faço?",
-        a: "Acesse a página da reserva e toque em 'Precisa de ajuda?'. Isso abre um canal prioritário com nossa equipe. Para situações críticas — item não entregue no dia, proprietário sem contato, suspeita de golpe — use 'Solicitar intervenção ShareO' para acionar resposta em até 2 horas." },
+        a: "Acesse a página da reserva e toque em 'Precisa de ajuda?'. Isso abre um canal prioritário com nossa equipe. Para situações críticas — item não entregue no dia, proprietário sem contato, suspeita de golpe — use 'Solicitar intervenção ShareO'. Casos urgentes são tratados com meta de resposta de até 4 horas úteis (segunda a sexta, 09h–17h)." },
       { q: "O app tem notificações automáticas?",
         a: "Sim. Você recebe notificações para: nova solicitação de reserva recebida, confirmação ou recusa de reserva, mensagem no chat, pagamento recebido, aviso 24h antes do prazo de devolução, atraso registrado e resultado de disputa. Ative as notificações do app nas configurações do celular para não perder nenhum alerta." },
     ],
@@ -321,9 +320,9 @@ const SECTIONS = [
       { q: "Quais as regras para empresas (PJ) anunciarem na plataforma?",
         a: "Pessoas jurídicas podem usar o ShareO com o plano PJ Premium. As regras incluem: CNPJ ativo e regular; emissão de nota fiscal para todas as locações (conforme legislação vigente); cumprimento das regras do CDC (Código de Defesa do Consumidor) na relação com locatários. PJs têm acesso a ferramentas avançadas como importação em massa, analytics e vitrine personalizada." },
       { q: "Meus dados estão protegidos? Como funciona a LGPD no ShareO?",
-        a: "O ShareO segue integralmente a Lei Geral de Proteção de Dados (LGPD — Lei 13.709/2018). Coletamos apenas os dados estritamente necessários para o funcionamento da plataforma. Você pode solicitar acesso, correção, portabilidade ou exclusão dos seus dados a qualquer momento em 'Meu Perfil > Privacidade e dados'. Nunca compartilhamos seus dados com terceiros sem sua autorização explícita." },
+        a: "O ShareO segue integralmente a Lei Geral de Proteção de Dados (LGPD — Lei 13.709/2018) e coleta apenas os dados necessários para o funcionamento da plataforma. Você pode solicitar acesso, correção, portabilidade ou exclusão dos seus dados a qualquer momento em 'Meu Perfil > Privacidade e dados'. Os dados necessários para processar pagamentos são compartilhados com o Mercado Pago (nosso parceiro de pagamentos, que atua como operador de dados financeiros). Dados mínimos são transmitidos a outros prestadores de infraestrutura (hospedagem, e-mail transacional e monitoramento de erros), sempre sob acordo de confidencialidade. Não vendemos seus dados pessoais. Consulte nossa Política de Privacidade para a lista completa." },
       { q: "O ShareO é regulamentado?",
-        a: "O ShareO opera como marketplace de locação de bens móveis, seguindo as normas do Código Civil, CDC e LGPD. As transações são processadas via Stripe, que opera sob regulamentação do Banco Central e das normas PCI-DSS para segurança de cartões. Para dúvidas jurídicas específicas sobre suas transações, consulte um advogado especializado em direito digital ou relações de consumo." },
+        a: "O ShareO opera como marketplace de locação de bens móveis, seguindo as normas do Código Civil, CDC e LGPD. Os pagamentos são processados pelo Mercado Pago (Mercado Pago Instituição de Pagamento Ltda.), instituição de pagamento autorizada e licenciada pelo Banco Central do Brasil (BACEN), certificada pelos padrões de segurança PCI-DSS. A ShareO responde solidariamente pelos serviços de intermediação que presta, nos termos do Código de Defesa do Consumidor. Para dúvidas jurídicas específicas sobre suas transações, consulte um advogado especializado em direito digital ou relações de consumo." },
     ],
   },
 ]
@@ -385,7 +384,7 @@ export default async function AjudaPage() {
 
   const locadorSteps: Step[] = LOCADOR_STEPS.map(s =>
     s.example === "LOCADOR_STEP6_EXAMPLE"
-      ? { ...s, example: `Locação: R$ 120/dia × 2 dias = R$ 240. Taxa de plataforma (${feeLabel}) = R$ ${(240 - ex6Net).toFixed(0)}. Você recebe R$ ${ex6Net} via PIX na segunda-feira seguinte à confirmação de devolução.` }
+      ? { ...s, example: `Locação: R$ 120/dia × 2 dias = R$ 240. Taxa de plataforma (${feeLabel}) = R$ ${(240 - ex6Net).toFixed(0)}. Você recebe R$ ${ex6Net} pelo Mercado Pago na segunda-feira seguinte à confirmação de devolução.` }
       : s
   )
 
@@ -624,7 +623,7 @@ export default async function AjudaPage() {
               </table>
             </div>
             <p className="mt-4 text-center text-xs text-muted-foreground">
-              O repasse via PIX é processado automaticamente pelo sistema — nenhuma ação manual é necessária após a confirmação da devolução.
+              O repasse pelo Mercado Pago é processado automaticamente — nenhuma ação manual é necessária após a confirmação da devolução.
             </p>
           </div>
         </section>
