@@ -78,8 +78,8 @@ const LOCADOR_STEPS: Step[] = [
     example: "Anúncio: 'Tenda Gazebo 3×3m branca para festas'. Preço: R$ 120/dia, R$ 360/semana (3× diária), R$ 1.800/mês (15× diária). Categoria: Festas e Eventos. Estado: Bom estado.",
   },
   {
-    step: 3, icon: "💳", title: "Cadastrar sua chave PIX",
-    desc: "Antes de receber qualquer pagamento, cadastre sua chave PIX em Meu Perfil → Recebimentos. Você pode usar CPF, CNPJ, e-mail, telefone ou chave aleatória. Sem a chave PIX cadastrada, os repasses ficam em espera e não são processados.",
+    step: 3, icon: "💳", title: "Conectar sua conta Mercado Pago",
+    desc: "Antes de receber qualquer pagamento, conecte sua conta Mercado Pago em Meu Perfil → Recebimentos. O repasse de cada locação é feito pelo Mercado Pago direto para a sua conta. Sem a conta Mercado Pago conectada, os repasses ficam em espera e não são processados.",
     tip: "Faça isso antes de publicar o primeiro anúncio para não atrasar nenhum recebimento.",
   },
   {
@@ -94,13 +94,13 @@ const LOCADOR_STEPS: Step[] = [
   },
   {
     step: 6, icon: "💰", title: "Receber a devolução e o pagamento",
-    desc: "No horário combinado (mesmo horário da retirada), receba o item de volta. Use a opção 'Registrar fotos de check-out' e compare com as fotos do check-in. Se tudo estiver ok, confirme a devolução. O valor líquido entra na fila de repasse semanal e é transferido via PIX na próxima segunda-feira. Avalie o locatário após cada devolução.",
+    desc: "No horário combinado (mesmo horário da retirada), receba o item de volta. Use a opção 'Registrar fotos de check-out' e compare com as fotos do check-in. Se tudo estiver ok, confirme a devolução. O valor líquido entra na fila de repasse semanal e é repassado pelo Mercado Pago na próxima segunda-feira. Avalie o locatário após cada devolução.",
     example: "LOCADOR_STEP6_EXAMPLE",
     tip: "Quanto mais avaliações positivas você tiver, mais alto o seu anúncio aparece nos resultados de busca.",
   },
   {
     step: 7, icon: "✅", title: "Confirme o recebimento",
-    desc: "Após o locatário devolver, toque em 'Confirmar recebimento' e informe o estado do item. O valor líquido entra na fila de repasse semanal e é transferido via PIX toda segunda-feira (feriado: primeiro dia útil seguinte) para a chave cadastrada em Meu Perfil → Recebimentos.",
+    desc: "Após o locatário devolver, toque em 'Confirmar recebimento' e informe o estado do item. O valor líquido entra na fila de repasse semanal e é repassado pelo Mercado Pago toda segunda-feira (feriado: primeiro dia útil seguinte) para a conta Mercado Pago conectada em Meu Perfil → Recebimentos.",
     warning: "Se o item voltar danificado, selecione 'Danificado'. Uma disputa será aberta automaticamente e o repasse fica suspenso até a resolução.",
   },
 ]
@@ -170,7 +170,7 @@ const SECTIONS = [
       { q: "Como confirmo uma reserva?",
         a: "Quando alguém solicitar seu item, você recebe uma notificação. Em 'Minhas Reservas', clique na aba 'Como locador'. Abra a reserva, leia a mensagem do locatário e clique em 'Confirmar reserva'. Se não quiser aceitar, pode cancelar informando o motivo." },
       { q: "Quando recebo o pagamento?",
-        a: "Após você confirmar o recebimento do item devolvido, o valor líquido (aluguel menos a taxa da plataforma) entra na fila de repasse. Toda segunda-feira o valor é transferido automaticamente para a sua chave PIX cadastrada em Meu Perfil → Recebimentos. Se a segunda-feira for feriado, o repasse ocorre no primeiro dia útil seguinte." },
+        a: "Após você confirmar o recebimento do item devolvido, o valor líquido (aluguel menos a taxa da plataforma) entra na fila de repasse. Toda segunda-feira o Mercado Pago repassa o valor automaticamente para a conta Mercado Pago que você conectou em Meu Perfil → Recebimentos. Se a segunda-feira for feriado, o repasse ocorre no primeiro dia útil seguinte." },
       { q: "O que faço na entrega do item?",
         a: "Combine o local e horário de entrega pelo chat. Na hora da entrega, você pode registrar fotos do estado do item (check-in). Quando entregar, clique em 'Marcar como ativo'. Na devolução, registre fotos de check-out para documentar o estado do item ao retornar." },
       { q: "Como cancelo uma reserva?",
@@ -188,7 +188,7 @@ const SECTIONS = [
       { q: "Como funciona o check-in e check-out fotográfico?",
         a: "Na entrega do item, use a opção 'Registrar fotos de check-in' na página da reserva. Fotografe o item de todos os ângulos, incluindo possíveis marcas ou desgastes que já existiam antes. Na devolução, registre as fotos de check-out da mesma forma. Essas imagens ficam salvas na reserva e são a principal evidência em caso de disputa por danos. Não pule essa etapa — ela protege você." },
       { q: "Quando recebo o pagamento da locação?",
-        a: "Após confirmar o recebimento do item, o valor líquido entra na fila de repasse semanal. Todo domingo as operações do dia são consolidadas, e toda segunda-feira o valor é transferido via PIX para a chave cadastrada em Meu Perfil → Recebimentos. Se segunda for feriado, o repasse ocorre no primeiro dia útil seguinte." },
+        a: "Após confirmar o recebimento do item, o valor líquido entra na fila de repasse semanal. Todo domingo as operações do dia são consolidadas, e toda segunda-feira o valor é repassado pelo Mercado Pago para a conta conectada em Meu Perfil → Recebimentos. Se segunda for feriado, o repasse ocorre no primeiro dia útil seguinte." },
       { q: "O que faço se o item voltou danificado?",
         a: "Na tela de confirmação de recebimento, selecione 'Danificado' e descreva o problema. Uma disputa é aberta automaticamente e o pagamento fica pausado até a resolução." },
       { q: "Por que meu item não aparece na busca?",
@@ -211,7 +211,7 @@ const SECTIONS = [
       { q: "Meu dinheiro está protegido?",
         a: "Sim. O pagamento não vai diretamente ao proprietário no ato do pagamento — o valor fica em custódia do Mercado Pago (nosso parceiro de pagamentos, licenciado pelo Banco Central) até a confirmação da entrega. Se algo der errado antes da entrega ser confirmada, o valor pode ser reembolsado conforme a política de cancelamento. Em caso de disputa, a equipe ShareO analisa o caso e, conforme o resultado, aciona o Mercado Pago para o destino do valor." },
       { q: "Como os proprietários recebem o pagamento?",
-        a: "Os proprietários recebem via PIX. Toda segunda-feira o valor líquido (aluguel menos a taxa da plataforma) das operações concluídas até domingo às 23h59 é transferido automaticamente para a chave PIX cadastrada em Meu Perfil → Recebimentos. Se segunda for feriado, o repasse ocorre no primeiro dia útil seguinte. Para cadastrar ou atualizar sua chave PIX, acesse Meu Perfil → Recebimentos." },
+        a: "Os proprietários recebem pelo Mercado Pago. Toda segunda-feira o valor líquido (aluguel menos a taxa da plataforma) das operações concluídas até domingo às 23h59 é repassado automaticamente para a conta Mercado Pago conectada em Meu Perfil → Recebimentos. Se segunda for feriado, o repasse ocorre no primeiro dia útil seguinte. Para conectar ou atualizar sua conta Mercado Pago, acesse Meu Perfil → Recebimentos." },
       { q: "Como funciona o pagamento do locatário?",
         a: "O locatário paga pelo Checkout do Mercado Pago — instituição de pagamento licenciada pelo Banco Central, usada por milhões de empresas no Brasil. O pagamento é processado com segurança no ambiente do Mercado Pago; seus dados de cartão nunca passam pelos servidores do ShareO. O valor é cobrado à vista. Após o pagamento, o valor fica em custódia do Mercado Pago até a confirmação da devolução." },
       { q: "Quais formas de pagamento são aceitas?",
@@ -259,7 +259,7 @@ const SECTIONS = [
       { q: "Como a equipe ShareO decide em uma disputa?",
         a: "Nossa equipe analisa todas as evidências fornecidas pelas duas partes: fotos de check-in vs. check-out, conversas no chat, histórico de transações e avaliações anteriores. Respondemos em até 3 dias úteis. A decisão leva em conta o estado documentado do item antes e depois, o comportamento das partes e a política de uso do ShareO." },
       { q: "O que acontece com o repasse em caso de dano?",
-        a: "Se houver dano comprovado, o proprietário abre uma disputa antes de confirmar o recebimento. O repasse via PIX fica suspenso automaticamente durante a análise. A equipe ShareO avalia as fotos de check-in e check-out e, em até 3 dias úteis, decide se o repasse é liberado, parcialmente retido ou cancelado conforme o prejuízo apurado." },
+        a: "Se houver dano comprovado, o proprietário abre uma disputa antes de confirmar o recebimento. O repasse pelo Mercado Pago fica suspenso automaticamente durante a análise. A equipe ShareO avalia as fotos de check-in e check-out e, em até 3 dias úteis, decide se o repasse é liberado, parcialmente retido ou cancelado conforme o prejuízo apurado." },
       { q: "O que acontece se meu item for extraviado?",
         a: "Em caso de furto ou extravio durante a locação, abra uma disputa na plataforma e registre um boletim de ocorrência (BO). A equipe ShareO analisa o caso e aciona os mecanismos de proteção disponíveis. Uma solução de proteção dedicada está em desenvolvimento — em breve disponível." },
       { q: "Posso apelar de uma decisão de disputa?",
@@ -384,7 +384,7 @@ export default async function AjudaPage() {
 
   const locadorSteps: Step[] = LOCADOR_STEPS.map(s =>
     s.example === "LOCADOR_STEP6_EXAMPLE"
-      ? { ...s, example: `Locação: R$ 120/dia × 2 dias = R$ 240. Taxa de plataforma (${feeLabel}) = R$ ${(240 - ex6Net).toFixed(0)}. Você recebe R$ ${ex6Net} via PIX na segunda-feira seguinte à confirmação de devolução.` }
+      ? { ...s, example: `Locação: R$ 120/dia × 2 dias = R$ 240. Taxa de plataforma (${feeLabel}) = R$ ${(240 - ex6Net).toFixed(0)}. Você recebe R$ ${ex6Net} pelo Mercado Pago na segunda-feira seguinte à confirmação de devolução.` }
       : s
   )
 
@@ -623,7 +623,7 @@ export default async function AjudaPage() {
               </table>
             </div>
             <p className="mt-4 text-center text-xs text-muted-foreground">
-              O repasse via PIX é processado automaticamente pelo sistema — nenhuma ação manual é necessária após a confirmação da devolução.
+              O repasse pelo Mercado Pago é processado automaticamente — nenhuma ação manual é necessária após a confirmação da devolução.
             </p>
           </div>
         </section>
