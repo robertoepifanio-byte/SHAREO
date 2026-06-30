@@ -11,6 +11,7 @@ import crypto from "crypto"
 import { generateUserSlug } from "@/lib/slugify"
 import { applyReferralCode } from "@/lib/referral"
 import { EMAIL_VERIFY_TOKEN_TTL_MS } from "@/lib/auth-config"
+import { logAccess, extractClientIp } from "@/lib/access-log"
 
 export async function POST(req: NextRequest) {
   try {
@@ -114,6 +115,16 @@ export async function POST(req: NextRequest) {
           console.error("[register] verification email error:", err instanceof Error ? err.message : err)
         )
     )
+
+    // MCI art.15 / A2 — acao sensivel: novo cadastro (consentimento LGPD registrado).
+    logAccess({
+      ip:        extractClientIp(req),
+      userId:    user.id,
+      path:      "/api/auth/register",
+      method:    "POST",
+      status:    201,
+      requestId: req.headers.get("x-vercel-id"),
+    })
 
     return NextResponse.json({ data: user }, { status: 201 })
   } catch (e: unknown) {

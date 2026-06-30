@@ -1,180 +1,205 @@
-# Retenção de Logs de Acesso — Marco Civil da Internet, art. 15
+# Retencao de Logs de Acesso — Marco Civil da Internet, art. 15
 
-**Data:** 2026-06-28 (s40) · **Autor:** DevOps (subagente) · **Status:** aguardando decisão dos fundadores
+**Data original:** 2026-06-28 (s40) · **Atualizado:** 2026-06-30 (s41) · **Autor:** DevOps
+**Status:** DECISOES REGISTRADAS (A1/A2/A3/A4 — ver abaixo)
 **Relacionado a:** `auditoria-conformidade-tecnica-s40.md`, `checklist-conformidade-juridica.md`
 
-> Este documento compara duas arquiteturas para cumprir a obrigação de retenção de logs de acesso
-> prevista no art. 15 da Lei 12.965/2014 (Marco Civil da Internet). A escolha final cabe aos fundadores,
-> preferencialmente com validacao do jurídico.
+---
+
+## Decisoes dos fundadores (2026-06-30)
+
+As seguintes decisoes foram registradas pelos fundadores em 2026-06-30, com base no parecer
+juridico formal (D4):
+
+| ID | Decisao | Status |
+|---|---|---|
+| **A1** | Prazos confirmados: 180 dias para logs MCI art.15; 5 anos fiscal para admin_logs e consent IPs | IMPLEMENTADO |
+| **A2** | Escopo do logAccess(): rotas autenticadas + acoes sensiveis (ver secao abaixo) | IMPLEMENTADO |
+| **A3** | Opcao II escolhida: tabela `access_logs` no PostgreSQL Supabase (sa-east-1/Brasil) | IMPLEMENTADO |
+| **A4** | Retencao legal (legal hold): flag por registro suspende o expurgo automatico | IMPLEMENTADO |
+
+Producao ainda bloqueada pelo D4 (contrato MP + conta PJ + Termos/Politica publicados).
 
 ---
 
 ## O que exige o art. 15
 
-O art. 15 do Marco Civil da Internet (Lei 12.965/2014) determina que provedores de aplicações de
-internet devem **guardar os registros de acesso a aplicações por 6 meses** (180 dias), sob sigilo,
-em ambiente controlado e de segurança, e fornecê-los à autoridade policial ou ao Ministério Público
+O art. 15 do Marco Civil da Internet (Lei 12.965/2014) determina que provedores de aplicacoes de
+internet devem **guardar os registros de acesso a aplicacoes por 6 meses** (180 dias), sob sigilo,
+em ambiente controlado e de seguranca, e fornece-los a autoridade policial ou ao Ministerio Publico
 mediante ordem judicial.
 
-Os campos mínimos exigidos por regulamentação:
+Os campos minimos exigidos por regulamentacao:
 - Data e hora do acesso (timestamp UTC)
-- Endereço IP do terminal utilizado
-- Identificação do usuário (quando autenticado)
+- Endereco IP do terminal utilizado
+- Identificacao do usuario (quando autenticado)
 
-Não há obrigação de reter além de 6 meses para fins de conformidade com o art. 15 — exceto
-quando houver ordem judicial de preservação específica.
+Nao ha obrigacao de reter alem de 6 meses para fins de conformidade com o art. 15 — exceto
+quando houver ordem judicial de preservacao especifica (tratada pela flag `legalHold`, decisao A4).
 
 ---
 
-## Opcao I — Vercel Log Drain + Destino Gerenciado
+## A3 — Decisao de Arquitetura: Opcao II (Postgres/Supabase)
 
-### Como funciona
+**Decisao final dos fundadores (2026-06-30):** Opcao II — tabela `access_logs` no PostgreSQL
+Supabase em sa-east-1 (Brasil). **Opcao I (Vercel Log Drain para destino nos EUA) foi descartada.**
 
-O Vercel (plano Pro) suporta **Log Drains**: encaminha todos os logs de acesso HTTP e console em
-tempo real para um destino externo configurado pelo cliente. Os logs incluem automaticamente
-`timestamp`, `IP`, `path`, `status`, `method` e `x-vercel-id`.
+### Motivos da escolha
 
-Destinos compatíveis com retenção >= 6 meses:
+1. **Dados em sa-east-1, sem transferencia internacional**: o art. 33 da LGPD exige formalizacao
+   contratual para transferencias internacionais. A Opcao I (Axiom/Better Stack nos EUA) adicionaria
+   mais uma transferencia para formalizar, antes mesmo de D4. A Opcao II mantem os dados no mesmo
+   banco Supabase ja usado pelo ShareO — zero transferencia internacional.
+2. **Zero custo adicional no H1**: dentro do plano existente do Supabase Free.
+3. **userId nativo**: a Opcao I exigiria middleware extra para propagar o userId via header HTTP.
+4. **Scaffolding ja implementado**: tabela + cron + flag OFF desde PR #125.
 
-| Destino | Retenção | Custo estimado | Região dos dados |
+### Para H2/escala
+
+Se o volume de requisicoes crescer muito (>100k/dia), reavaliar a Opcao I (Log Drain para Axiom
+ou S3 em sa-east-1 — nao EUA) como solucao mais eficiente.
+
+---
+
+## A2 — Escopo do logAccess()
+
+**Decisao:** cobrir rotas autenticadas + acoes sensiveis. Navegacao anonima NAO e logada.
+
+### Rotas cobertas (implementadas)
+
+| Rota | Metodo | Categoria | Status |
 |---|---|---|---|
-| **Axiom** | até 30 dias no gratuito; configurável no pago | ~$25/mês (dev) | EUA (ajustável) |
-| **Better Stack (Logtail)** | configurável por tier | ~$25-50/mês | EUA ou EU |
-| **AWS S3** | indefinida (por custo de storage) | ~$1-5/mês (volume MVP) | sa-east-1 possível |
-| **Datadog** | 15 dias (Standard) / configurável | mais caro (~$100+/mês) | vários |
+| `POST /api/auth/register` | POST | Novo cadastro (consentimento LGPD) | Implementado |
+| `POST /api/auth/reset-password` | POST | Alteracao de credencial | Implementado |
+| `GET /api/users/me` | GET | Acesso a dados proprios | Implementado |
+| `PATCH /api/users/me` | PATCH | Alteracao cadastral | Implementado |
+| `DELETE /api/users/me` | DELETE | Exclusao de conta (LGPD art.18) | Implementado |
+| `GET /api/bookings` | GET | Acesso a movimentacoes financeiras | Implementado |
+| `POST /api/bookings` | POST | Criacao de movimentacao financeira | Implementado |
+| `GET /api/conversations` | GET | Acesso a dados de terceiros (chat) | Implementado |
 
-Para o caso do ShareO, a combinação mais simples seria **Axiom** ou **Better Stack** com retenção
-configurada para 180 dias e depois arquivamento (ou descarte) automático.
+### Fora do escopo (decisao)
 
-### Vantagens
+- Navegacao anonima (landing, /itens, buscas publicas) — sem usuario identificado.
+- Rotas admin: ja cobertas pelo model `AdminLog` (trilha de auditoria separada).
+- Rotas de checkout de pagamento: cobertos pelo modelo financeiro (PlatformTransaction).
+- Requisicoes nao autenticadas em geral: sem obrigacao explicita no art. 15 MCI para este caso.
 
-- Zero código na aplicação: a infraestrutura do Vercel faz o trabalho.
-- Melhor performance: nenhuma latência extra no caminho das requisições.
-- Cobertura completa: 100% das requisições, inclusive as não autenticadas.
-- Dashboard e busca incluídos nos serviços gerenciados.
-- Mais fácil de demonstrar conformidade: logs imutáveis gerenciados por terceiro.
+### Ampliacao futura
 
-### Desvantagens
-
-- **Transferência internacional de dados**: logs vão para EUA (Axiom/Better Stack) ou precisam
-  de configuração específica de região. Isso exige formalizar a transferência sob art. 33 LGPD
-  (cláusulas-padrão ou garantias equivalentes) — já identificado na auditoria s40 como pendência.
-- Custo mensal adicional (~$25-50/mês no H1, crescente com o volume).
-- Dependência de serviço externo: se o destino ficar fora do ar, os logs são perdidos (sem buffer
-  durável por padrão no Vercel Log Drain).
-- O `userId` do ShareO NÃO está presente no log HTTP do Vercel por padrão — exigiria um
-  middleware leve que adicione um header `x-user-id` à resposta para que o Log Drain capture.
-
-### Como implementar (se escolhida)
-
-1. No Vercel Dashboard → Settings → Log Drains → Add Drain → selecionar destino.
-2. Configurar retenção de 180 dias no destino.
-3. Adicionar middleware em `middleware.ts` para propagar `x-user-id` no header de resposta
-   (somente em rotas autenticadas, sem expor dados além do ID interno).
-4. Configurar alerta de expiração a 180 dias e automação de descarte.
-5. Formalizar a transferência internacional com o jurídico (se destino for EUA).
-
-**Tempo estimado de implementação:** 1-2 dias (incluindo configuração do destino e middleware).
+Se o juridico exigir cobertura de rotas publicas (por exemplo, buscas geolocalizadas), o escopo
+pode ser ampliado sem quebrar a API — basta chamar `logAccess()` no handler com `userId: null`.
 
 ---
 
-## Opcao II — Tabela `access_logs` no PostgreSQL (in-repo)
+## A1 — Prazos de retencao (confirmados)
 
-### Como funciona
+| Dado | Prazo | Base legal | Cron |
+|---|---|---|---|
+| Logs MCI art.15 (`access_logs`) | 180 dias | MCI art. 15 | `purge-access-logs` (semanal) |
+| Trilha admin (`admin_logs`) | 5 anos | LGPD art. 7o IX + CTN art. 173 | `purge-admin-logs` (mensal) |
+| IPs de consentimento (`User.consentIp`, `ContractAcceptance.ipAddress`, `FounderLead.consentIp`) | 5 anos | LGPD art. 7o IX | `purge-consent-ips` (mensal) |
 
-Tabela `access_logs` criada no banco PostgreSQL do Supabase (sa-east-1) via Prisma migration.
-Um logger lean (`lib/access-log.ts`) grava uma linha por requisição de API autenticada, de forma
-fire-and-forget (sem bloquear a resposta HTTP).
+---
 
-A gravação é controlada por flag em `PlatformConfig`:
-- `accessLogsEnabled = "false"` (default): nenhuma linha é gravada, zero impacto de performance.
-- `accessLogsEnabled = "true"`: logger grava a entrada em background após a resposta ser enviada.
+## A4 — Retencao Legal (Legal Hold)
 
-Um cron de expurgo (`/api/cron/purge-access-logs`) deleta registros com mais de 180 dias,
-executado semanalmente.
+**Decisao:** flag booleana `legalHold` por registro suspende o expurgo automatico para registros
+sob ordem judicial, litigio ou investigacao.
 
-**Esta opcao ja esta implementada como scaffolding neste PR** (tabela + flag OFF + logger + cron).
+### Tabelas cobertas
 
-### Vantagens
+| Tabela | Colunas adicionadas | Cron que respeita o hold |
+|---|---|---|
+| `access_logs` | `legalHold`, `legalHoldReason`, `legalHoldAt` | `purge-access-logs` |
+| `admin_logs` | `legalHold`, `legalHoldReason`, `legalHoldAt` | `purge-admin-logs` |
+| `contract_acceptances` | `legalHold`, `legalHoldReason`, `legalHoldAt` | `purge-consent-ips` |
+| `founder_leads` | `legalHold`, `legalHoldReason`, `legalHoldAt` | `purge-consent-ips` |
+| `users` | `legalHoldConsent`, `legalHoldConsentReason`, `legalHoldConsentAt` | `purge-consent-ips` |
 
-- **Dados em sa-east-1**: nenhuma transferência internacional — dados ficam no Brasil, no mesmo
-  banco Supabase já usado pelo ShareO. Simplifica conformidade LGPD/MCI.
-- Zero custo adicional de infraestrutura no H1 (dentro do plano existente do Supabase).
-- Controle total: a política de retenção, acesso e expurgo é nossa.
-- O `userId` interno é gravado nativamente (sem gambiarra de header).
-- Consulta por autoridade judicial: podemos exportar um CSV direto do Supabase Dashboard.
+### Como acionar (juridico/compliance)
 
-### Desvantagens
+Acesso restrito ao Supabase Dashboard (MFA obrigatorio). Sem UI — acao intencional via SQL.
 
-- **Impacto no banco de dados**: cada requisição autenticada gera um INSERT. Para o volume esperado
-  no MVP (estimativa: 1.000-10.000 req/dia autenticadas), o impacto é baixo. Acima de 100k req/dia,
-  avaliar particionamento por mês.
-- A implementação atual não cobre requisições não autenticadas (apenas API autenticadas). Se o
-  jurídico exigir cobertura de rotas públicas, o escopo precisará ser ampliado.
-- Sem dashboard de busca nativo — consultas via Supabase Dashboard ou exportação SQL.
-- Exige monitorar o crescimento do banco (alerta configurado em 70% do limite do plano Supabase).
+```sql
+-- Colocar registro sob retencao legal:
+UPDATE access_logs
+   SET "legalHold" = TRUE,
+       "legalHoldReason" = 'Oficio no XXX -- Delegacia YYY -- 2026-06-30',
+       "legalHoldAt" = now()
+ WHERE id = '<id_do_registro>';
 
-### Implementacao atual (scaffolding neste PR)
+-- Por userId + periodo:
+UPDATE access_logs
+   SET "legalHold" = TRUE,
+       "legalHoldReason" = 'Investigacao criminal no XXXX',
+       "legalHoldAt" = now()
+ WHERE "userId" = '<id_do_usuario>'
+   AND ts BETWEEN '2026-01-01' AND '2026-06-30';
+
+-- Levantar retencao (apos decisao judicial ou encerramento do processo):
+UPDATE access_logs
+   SET "legalHold" = FALSE,
+       "legalHoldReason" = NULL,
+       "legalHoldAt" = NULL
+ WHERE id = '<id_do_registro>';
+```
+
+Para `User.consentIp`, usar a coluna `legalHoldConsent` (distinta de suspensao de conta):
+
+```sql
+UPDATE users
+   SET "legalHoldConsent" = TRUE,
+       "legalHoldConsentReason" = 'Oficio no XXX',
+       "legalHoldConsentAt" = now()
+ WHERE id = '<id_do_usuario>';
+```
+
+**Registrar todo acionamento em issue privado no repositorio** para trilha de auditoria.
+
+---
+
+## Estado da implementacao
 
 | Componente | Arquivo | Status |
 |---|---|---|
-| Migration da tabela | `prisma/migrations/20260628000000_add_access_logs/` | Criado |
-| Model Prisma | `prisma/schema.prisma` (model `AccessLog`) | Adicionado |
-| Logger | `lib/access-log.ts` | Criado |
-| Cron de expurgo | `app/api/cron/purge-access-logs/route.ts` | Criado |
+| Migration da tabela access_logs | `prisma/migrations/20260628000000_add_access_logs/` | NO AR (staging) |
+| Migration legal hold | `prisma/migrations/20260630100000_add_legal_hold/` | Pronto (aplicar no merge) |
+| Model Prisma AccessLog + hold | `prisma/schema.prisma` | Atualizado |
+| Model Prisma AdminLog + hold | `prisma/schema.prisma` | Atualizado |
+| Model Prisma ContractAcceptance + hold | `prisma/schema.prisma` | Atualizado |
+| Model Prisma FounderLead + hold | `prisma/schema.prisma` | Atualizado |
+| Model Prisma User + legalHoldConsent | `prisma/schema.prisma` | Atualizado |
+| Logger com after() | `lib/access-log.ts` | Atualizado |
+| Cron purge-access-logs (hold-aware) | `app/api/cron/purge-access-logs/route.ts` | Atualizado |
+| Cron purge-admin-logs (hold-aware) | `app/api/cron/purge-admin-logs/route.ts` | Atualizado |
+| Cron purge-consent-ips (hold-aware) | `app/api/cron/purge-consent-ips/route.ts` | Atualizado |
+| logAccess em register | `app/api/auth/register/route.ts` | Adicionado |
+| logAccess em reset-password | `app/api/auth/reset-password/route.ts` | Adicionado |
 | Flag de controle | `PlatformConfig.accessLogsEnabled` (default `"false"`) | Pronto |
 
-Para ativar: inserir `accessLogsEnabled = "true"` em `PlatformConfig` via `/admin/financeiro`
-(ou via SQL direto em staging para testes). O logger precisa ser invocado no handler de cada
-rota de API coberta — ver nota de integração abaixo.
-
-**Nota de integração (trabalho adicional necessario):** O logger `logAccess()` precisa ser
-chamado em cada handler de rota de API coberta, ou alternativamente via um wrapper centralizado.
-A abordagem mais simples para cobrir todas as rotas de uma vez seria um wrapper no `middleware.ts`
-— porém o middleware roda no Edge Runtime e não tem acesso ao Prisma (Node.js apenas). Alternativa:
-criar um wrapper de handler server-side reutilizável que envolve cada route handler e chama
-`logAccess()` após a resposta, usando `after()` do Next.js 15.
+Para ativar em staging (teste): inserir `accessLogsEnabled = "true"` em `PlatformConfig` via
+`/admin/financeiro` (ou via SQL direto no Supabase Dashboard do shareo-staging).
 
 ---
 
-## Comparacao direta
+## Historico
 
-| Criterio | Opcao I (Log Drain) | Opcao II (Postgres) |
-|---|---|---|
-| Performance | Melhor (zero impacto no app) | Boa (fire-and-forget) |
-| Custo mensal H1 | +$25-50/mes | Incluido no Supabase |
-| Localizacao dos dados | EUA (transferencia intl.) | sa-east-1 (Brasil) |
-| Cobertura | 100% das requisicoes | API autenticadas (ampliavel) |
-| Complexidade de impl. | Baixa (config Vercel + middleware) | Media (logger + integração) |
-| Consulta por autoridade | Via dashboard do destino | Via Supabase/SQL export |
-| userId no log | Exige middleware extra | Nativo |
-| Conformidade LGPD art. 33 | Exige formalizacao intl. | Sem transferencia intl. |
-| Tempo de ativacao | 1-2 dias | H1 scaffolding pronto; integração pendente |
+- **2026-06-28 (s40):** scaffolding inicial — tabela, cron, logger fire-and-forget. Analise A1/A3 pendente.
+- **2026-06-30 (s41):** decisoes A1/A2/A3/A4 registradas. Logger migrado para `after()`. Legal hold
+  implementado em 5 tabelas. Escopo ampliado para register + reset-password.
 
 ---
 
-## Recomendacao
+## Opcao I — Vercel Log Drain (DESCARTADA)
 
-Para o MVP/H1 do ShareO:
+*Mantida abaixo para registro historico — decisao A3 escolheu a Opcao II.*
 
-**Preferencia: Opcao II (Postgres/Supabase)**, pelos seguintes motivos:
+O Vercel (plano Pro) suporta Log Drains: encaminha todos os logs de acesso HTTP e console em
+tempo real para um destino externo. A Opcao I foi descartada pelos seguintes motivos:
 
-1. Os dados ficam em sa-east-1, sem transferência internacional — simplifica a conformidade LGPD
-   (já temos a pendência de formalizar transferências para Vercel/Resend/Sentry/Mapbox; adicionar
-   mais um destino EUA antes do D4 não é ideal).
-2. Zero custo adicional no H1 (orçamento de infraestrutura já aprovado).
-3. O scaffolding já está implementado neste PR — basta ativar a flag e integrar o logger nas rotas.
-4. Para o volume esperado no MVP, o impacto no banco é desprezível.
-
-**Para H2/escala**, se o volume de requisições crescer muito (>100k/dia), reavaliar a Opcao I
-(Log Drain para Axiom ou S3 em sa-east-1) como solução mais eficiente.
-
-**Acao imediata necessaria (pós-D4):**
-
-1. Confirmar com jurídico: (a) escopo das rotas a cobrir, (b) se requisições não autenticadas
-   precisam ser incluídas, (c) exceções para registros sob investigação judicial.
-2. Decidir entre Opcao I e Opcao II (recomendamos II para H1).
-3. Se Opcao II: integrar `logAccess()` nas rotas de API autenticadas e ativar a flag.
-4. Documentar no RIPD a política de retenção adotada.
-
-> A escolha cabe aos fundadores, com validacao do jurídico (D4 bloqueador).
+- **Transferencia internacional**: destinos disponiveis (Axiom, Better Stack) ficam nos EUA,
+  exigindo formalizacao sob art. 33 LGPD — adicionaria mais uma transferencia para formalizar.
+- **userId ausente**: exigiria middleware extra para propagar o userId via header HTTP.
+- **Custo adicional**: +$25-50/mes no H1 sem beneficio adicional para o volume do MVP.
+- **Dependencia externa**: se o destino ficar fora do ar, os logs sao perdidos.

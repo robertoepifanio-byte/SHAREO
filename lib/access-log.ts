@@ -1,34 +1,46 @@
 /**
  * lib/access-log.ts — Logger de acesso para conformidade com Marco Civil da Internet, art. 15.
  *
- * IMPORTANTE: confirmar prazo e escopo com jurídico antes de ativar em produção.
+ * DECISOES (2026-06-30):
+ *   A2 — Escopo: rotas autenticadas + acoes sensiveis (login/logout, alteracoes cadastrais,
+ *        consentimentos, movimentacoes financeiras, acesso a dados de terceiros).
+ *        Navegacao anonima NAO e logada. Ver docs/retencao-logs-art15.md para o escopo completo.
+ *   A3 — Opcao II escolhida: tabela `access_logs` no PostgreSQL Supabase (sa-east-1/Brasil).
+ *        Opcao I (Vercel Log Drain → EUA) descartada por implicar transferencia internacional (art.33 LGPD).
+ *   A4 — Retencao legal: flag `legalHold` por registro impede o expurgo automatico (purge-access-logs)
+ *        para registros sob ordem judicial. Acionar via SQL (Supabase Dashboard, MFA obrigatorio).
  *
- * Esta função é FIRE-AND-FORGET: não bloqueia a resposta HTTP. Nunca lança exceção.
- * A gravação ocorre SOMENTE quando PlatformConfig.accessLogsEnabled = "true".
- * Com a flag OFF (default), a função retorna imediatamente sem fazer I/O.
+ * CONFIABILIDADE: `logAccess()` usa `after()` do `next/server` (Next.js 15) para garantir que
+ * o write nao seja perdido quando a lambda Vercel congelar apos o envio da resposta HTTP.
+ * O fire-and-forget simples (`void (async () => {})()`) violava a regra do projeto:
+ * "void promise morre quando a lambda congela apos a resposta" (ver CLAUDE.md / feedback-fire-and-forget-vercel.md).
  *
- * Escopo de cobertura: apenas rotas de API autenticadas (/api/*), conforme
- * recomendação da auditoria s40. Rotas públicas (landing, /itens, etc.) ficam
- * fora do escopo desta implementação inicial — decidir com jurídico se necessário.
+ * COMO USAR: chamar `logAccess(entry)` ANTES do `return NextResponse.json(...)` no handler.
+ * O `after()` registra o callback para execucao pos-resposta; o retorno do handler nao e bloqueado.
+ * Nao lanca excecao em nenhum cenario — erros de logging sao emitidos como `console.warn`.
  *
- * Campos gravados (mínimos — art. 15 MCI):
+ * A gravacao ocorre SOMENTE quando PlatformConfig.accessLogsEnabled = "true" (default OFF).
+ * Com a flag OFF, a funcao apenas enfileira um after() que retorna cedo sem fazer I/O.
+ *
+ * Campos gravados (minimos — art. 15 MCI):
  *   ts        : timestamp UTC do request
- *   ip        : endereço IP do cliente (x-forwarded-for pelo Vercel)
- *   userId    : ID interno do usuário autenticado (não PII direta — só o cuid interno)
+ *   ip        : endereco IP do cliente (x-forwarded-for pelo Vercel)
+ *   userId    : ID interno do usuario autenticado (nao PII direta — so o cuid interno)
  *   path      : path do request (sem query string para reduzir volume)
- *   method    : método HTTP
- *   status    : código HTTP da resposta
- *   requestId : x-vercel-id para correlação com os logs da Vercel
+ *   method    : metodo HTTP
+ *   status    : codigo HTTP da resposta
+ *   requestId : x-vercel-id para correlacao com os logs da Vercel
  *
- * Filtragem de PII: NÃO gravamos query strings (podem conter tokens/dados pessoais),
- * corpo do request, headers de autenticação ou User-Agent nesta implementação mínima.
- * O User-Agent pode ser adicionado futuramente se exigido pelo jurídico.
+ * Filtragem de PII: NAO gravamos query strings (podem conter tokens/dados pessoais),
+ * corpo do request, headers de autenticacao ou User-Agent nesta implementacao minima.
+ * O User-Agent pode ser adicionado futuramente se exigido pelo juridico.
  */
 
+import { after } from "next/server"
 import { prisma } from "@/lib/prisma"
 
-// Cache em memória do estado da flag (TTL 60s — mesmo TTL do PlatformConfig)
-// Evita um SELECT por request quando a flag está OFF.
+// Cache em memoria do estado da flag (TTL 60s — mesmo TTL do PlatformConfig)
+// Evita um SELECT por request quando a flag esta OFF.
 let flagCache: { enabled: boolean; expiresAt: number } | null = null
 const FLAG_TTL_MS = 60_000
 
@@ -45,28 +57,35 @@ async function isAccessLogsEnabled(): Promise<boolean> {
     flagCache = { enabled, expiresAt: now + FLAG_TTL_MS }
     return enabled
   } catch {
-    // Falha ao ler config → fica OFF por segurança
+    // Falha ao ler config → fica OFF por seguranca
     return false
   }
 }
 
 export interface AccessLogEntry {
-  ip:        string
-  userId?:   string | null
-  path:      string
-  method:    string
-  status:    number
+  ip:         string
+  userId?:    string | null
+  path:       string
+  method:     string
+  status:     number
   requestId?: string | null
 }
 
 /**
- * Grava uma entrada de log de acesso de forma assíncrona/fire-and-forget.
- * Retorna imediatamente; a escrita ocorre em background.
- * Não lança exceção em nenhum cenário.
+ * Registra uma entrada de log de acesso usando `after()` do Next.js 15.
+ *
+ * O `after()` garante que o callback execute APOS a resposta HTTP ser enviada,
+ * mantendo a lambda Vercel viva ate a conclusao do write. Isso e critico para
+ * logs de conformidade: o fire-and-forget simples (`void (async () => {})()`)
+ * pode perder writes quando a lambda e congelada imediatamente apos o return.
+ *
+ * Deve ser chamado DENTRO do contexto de um request handler (App Router route.ts).
+ * Nao lanca excecao em nenhum cenario.
  */
 export function logAccess(entry: AccessLogEntry): void {
-  // Iniciamos a promise sem await — fire-and-forget
-  void (async () => {
+  // after() enfileira o callback para execucao pos-resposta.
+  // A lambda permanece viva ate o callback completar (ou timeout Vercel).
+  after(async () => {
     try {
       const enabled = await isAccessLogsEnabled()
       if (!enabled) return
@@ -82,10 +101,10 @@ export function logAccess(entry: AccessLogEntry): void {
         },
       })
     } catch (e) {
-      // Erros de logging nunca devem impactar o usuário — apenas registramos
+      // Erros de logging nunca devem impactar o usuario — apenas registramos
       console.warn("[access-log] falha ao gravar entrada:", e instanceof Error ? e.message : e)
     }
-  })()
+  })
 }
 
 /**
@@ -95,7 +114,7 @@ export function logAccess(entry: AccessLogEntry): void {
 export function extractClientIp(req: Request): string {
   const forwarded = req.headers.get("x-forwarded-for")
   if (forwarded) {
-    // Pode ser "IP1, IP2, ..." — o primeiro é o cliente real
+    // Pode ser "IP1, IP2, ..." — o primeiro e o cliente real
     const first = forwarded.split(",")[0].trim()
     if (first) return first
   }
