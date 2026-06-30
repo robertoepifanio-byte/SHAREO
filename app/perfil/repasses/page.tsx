@@ -85,7 +85,7 @@ export default async function RepassesPage() {
           </div>
 
           {/* Conta PIX cadastrada */}
-          {account ? (
+          {account?.pixKey ? (
             <div className={`rounded-xl border p-4 text-sm ${
               account.status === "VERIFIED"
                 ? "border-green-200 bg-green-50"

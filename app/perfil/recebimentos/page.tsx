@@ -11,10 +11,12 @@ import { isMercadoPagoActive } from "@/lib/mercadopago"
 export const metadata: Metadata = { title: "Conta de Recebimento PIX" }
 
 // Mensagens do retorno do OAuth do Mercado Pago (?mp=...).
+// `sem_conta` não deve mais ocorrer após o desacoplamento PIX (upsert no callback),
+// mas mantida para compatibilidade com deploys antigos em staging.
 const MP_STATUS: Record<string, { ok: boolean; msg: string }> = {
   conectado:  { ok: true,  msg: "Conta Mercado Pago conectada com sucesso." },
   cancelado:  { ok: false, msg: "Conexão com o Mercado Pago cancelada." },
-  sem_conta:  { ok: false, msg: "Cadastre sua chave PIX abaixo antes de conectar o Mercado Pago." },
+  sem_conta:  { ok: false, msg: "Não foi possível criar sua conta de recebimento. Tente novamente." },
   erro_state: { ok: false, msg: "Sessão de conexão expirada. Tente novamente." },
   erro:       { ok: false, msg: "Não foi possível conectar ao Mercado Pago. Tente novamente." },
 }

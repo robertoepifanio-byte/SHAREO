@@ -120,7 +120,7 @@ export default async function InformeRendimentosPage({
             <p className="mt-1 text-xs text-muted-foreground">
               {payouts.length} repasse{payouts.length !== 1 ? "s" : ""} concluído{payouts.length !== 1 ? "s" : ""}
             </p>
-            {account && (
+            {account?.pixKey && (
               <p className="mt-2 text-xs text-muted-foreground">
                 Titular: {account.holderName} · {account.pixKeyType}: {account.pixKey}
               </p>

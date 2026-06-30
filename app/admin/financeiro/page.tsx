@@ -186,7 +186,9 @@ export default async function AdminFinanceiroPage() {
                 <div className="min-w-0">
                   <p className="font-semibold text-foreground truncate">{p.booking.item.title}</p>
                   <p className="text-xs text-muted-foreground">
-                    {p.ownerPaymentAccount.holderName} · {p.ownerPaymentAccount.pixKeyType}: {p.ownerPaymentAccount.pixKey}
+                    {p.ownerPaymentAccount.pixKey
+                      ? `${p.ownerPaymentAccount.holderName} · ${p.ownerPaymentAccount.pixKeyType}: ${p.ownerPaymentAccount.pixKey}`
+                      : "Repasse via Mercado Pago"}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     Elegível desde {formatDateShort(p.eligibleAfter)}
