@@ -32,15 +32,20 @@
 
 ---
 
-## ⏭️ Pendências imediatas (próxima sessão)
+## ⏭️ Pendências imediatas (atualizado 2026-06-30, s41)
 
 | Item | Status | Ação |
 |---|---|---|
-| **KYB PJ — mesclar PR #64 (H2)** | 🟡 PR aberto, **aguardando merge** | PR [#64](https://github.com/robertoepifanio-byte/SHAREO/pull/64) (`feat/kyb-h2-hardening`, `55ea18e`): circuit breaker + cron `/api/cron/kyb` (retry da fila + retenção do IP) + `STATUS.md` s32 + roteiro de testes versionado. CI verde; **não mesclado p/ não redeployar durante a validação dos testers**. Mesclar quando os testers terminarem. Sem migração nova. |
-| **KYB PJ — feedback dos testers do cadastro** | ⏳ aguardando | Tratar os achados do roteiro `docs/roteiro-teste-cadastro-pj.pdf` (2 formas: upgrade PF→PJ e cadastro direto PJ) quando os testers devolverem. |
-| **KYB PJ — cron de revalidação de PJs já verificadas (H2 aberto)** | 🔵 backlog | Cron periódico p/ reconsultar a Receita em contas **já verificadas** (`cnpjVerificadoAt > 30d`) e detectar empresa que encerrou após o cadastro — distinto do retry da fila já implementado. Ver `docs/adr/ADR-024-kyb-leve-pj.md`. |
-| **`/bem-vindo` — generalizar a copy (PÓS pré-lançamento)** | 🔵 pós pré-lançamento | Com o ajuste de UX do cadastro (feedback dos testers), **todo** signup passou a cair em `/bem-vindo` (antes só convidados-piloto): `RegisterForm` redireciona p/ lá + aviso "Complete seu cadastro" no `/dashboard` p/ perfil incompleto. A `/bem-vindo` ainda traz enquadramento de piloto ("Você é um dos primeiros 🎉"; comentário "Onboarding do piloto") — **adequado no pré-lançamento**; **após o lançamento**, generalizar a copy (remover o tom de piloto). Arquivo: `app/bem-vindo/page.tsx`. |
-| **Termos — cláusula explícita da taxa (questão #4 do D4)** | 🟡 commitado local, **falta push/PR** | Branch `fix/termos-taxa-servico-explicita` (`7e6aa84`) já com a seção 6 dos Termos explicitando taxa 15% (via `getPlatformFeeRate()`, sem hardcode) + repasse semanal às segundas + teto R$500. **Amanhã (a partir de 2026-06-18):** `git push` da branch + abrir PR p/ `main` (CI roda lint/tsc/build). Verificado local: `/termos`=200. |
+| **Mercado Pago — validação humana (testers)** | 🟢 **EM ANDAMENTO** | Ciclo E2E já validado tecnicamente (reserva PAID + split + webhook real). Roteiro para testers entregue (`docs/roteiro-teste-mercadopago.md`/`.pdf`, regra única = pagar como convidado). Aguardando retorno dos testers (canal WhatsApp 84 99662-2346). |
+| **Mercado Pago — `MP_WEBHOOK_SECRET`** | 🟡 **bloqueado em ação humana** | Código já valida `x-signature` quando o secret existe. Falta **obter o valor no painel do MP (Webhooks)** e adicioná-lo no Vercel (Production). Sem isso, o webhook funciona mas pula a validação de assinatura (aceitável no sandbox). |
+| **Mercado Pago — remover override de sandbox (#122)** | 🔴 **antes do go-live** | Remover env `MP_SANDBOX_SELLER_TOKEN` + helper `sandboxSellerTokenOverride()` + 2 call sites (checkout/webhook). É bypass de teste. Fazer quando a validação humana fechar. |
+| **Mercado Pago — desacoplar PIX NOT NULL** | 🔵 **adiado p/ remoção do legado** | Callback OAuth é *update-only* (locador precisa ter PIX antes de conectar MP). Tornar `pixKey`/`holderName`/`pixKeyType` nullable toca ~25 call sites do modelo financeiro; sem benefício hoje (ninguém conecta MP sem PIX). PR dedicado quando removermos o PIX-manual/Stripe. |
+| **Central de Ajuda (`/ajuda`) — revisão dos especialistas** | 🎯 **META s41 (ver STATUS.md)** | A página descreve pagamento via **Stripe/cartão**; o modelo decidido é **Mercado Pago**. Revisão por product-owner + designer + jurídico contra o modelo atual (MP, repasse semanal, taxa 15%, teto R$500, valor máx. do bem R$1.000) e conformidade D4. **Gated D4** para publicar mudanças voltadas a pagamento. |
+| ✅ **KYB PJ — PR #64 (H2)** | ✅ MESCLADO (#63 + #64) | Circuit breaker + cron `/api/cron/kyb`. No ar. |
+| ✅ **KYB PJ — cron de revalidação de PJs verificadas** | ✅ FEITO (s34) | Bloco no cron `/api/cron/kyb` re-consulta PJs verificadas há +30 dias. |
+| ✅ **Termos — cláusula explícita da taxa (#4 do D4)** | ✅ MESCLADO (#42) | Seção 6 dos Termos com taxa 15% dinâmica + repasse semanal + teto R$500. |
+| **`/bem-vindo` — generalizar a copy (PÓS lançamento)** | 🔵 pós-lançamento | Remover o tom de piloto ("Você é um dos primeiros 🎉") após o go-live. Arquivo: `app/bem-vindo/page.tsx`. |
+| **KYB PJ — feedback dos testers do cadastro** | ⏳ aguardando | Tratar achados do roteiro `docs/roteiro-teste-cadastro-pj.pdf` quando os testers devolverem. |
 
 ---
 
