@@ -8,6 +8,39 @@ import { geocodeUserLocation } from "@/lib/geocodeUser"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { logAccess, extractClientIp } from "@/lib/access-log"
 
+// Janela de retenção fiscal: 5 anos a partir da data da transação (ADR-017 / CTN art.173)
+const FISCAL_RETENTION_YEARS = 5
+
+/**
+ * Verifica se o usuário possui registros financeiros dentro da janela de retenção
+ * fiscal de 5 anos (PlatformTransaction ou Payout criados após a data de corte).
+ * ADR-017: esses registros não podem sofrer hard delete — apenas anonimização de PII.
+ */
+async function hasRecentFiscalRecords(userId: string): Promise<boolean> {
+  const cutoff = new Date()
+  cutoff.setFullYear(cutoff.getFullYear() - FISCAL_RETENTION_YEARS)
+
+  // PlatformTransaction vinculada a reservas do usuário (como locatário ou locador)
+  const txCount = await prisma.platformTransaction.count({
+    where: {
+      createdAt: { gte: cutoff },
+      booking: {
+        OR: [{ borrowerId: userId }, { ownerId: userId }],
+      },
+    },
+  })
+  if (txCount > 0) return true
+
+  // Payout vinculado à conta de pagamento do usuário
+  const payoutCount = await prisma.payout.count({
+    where: {
+      createdAt: { gte: cutoff },
+      ownerPaymentAccount: { userId },
+    },
+  })
+  return payoutCount > 0
+}
+
 // LGPD art. 18 — direito ao esquecimento
 export async function DELETE(req: NextRequest) {
   try {
@@ -42,6 +75,11 @@ export async function DELETE(req: NextRequest) {
         { status: 409 },
       )
     }
+
+    // ADR-017 / CTN art. 173: verificar janela de retenção fiscal de 5 anos.
+    // Se houver registros financeiros recentes, anonimizar PII mas RETER os registros.
+    // O titular é informado da limitação legal (art. 18 §3º LGPD).
+    const hasFiscalBlock = await hasRecentFiscalRecords(userId)
 
     // SEC-MAJ-06 (LGPD art. 18): scrub atômico de TODA a PII do usuário.
     // Dados de transações concluídas (valores, datas, splits) são mantidos por
@@ -142,7 +180,14 @@ export async function DELETE(req: NextRequest) {
       requestId: req.headers.get("x-vercel-id"),
     })
 
-    return NextResponse.json({ data: { message: "Conta excluída com sucesso." } })
+    // ADR-017: informar ao titular sobre registros retidos por obrigação fiscal.
+    const message = hasFiscalBlock
+      ? "Conta excluída. Seus dados de identificação foram removidos. " +
+        "Registros financeiros dos últimos 5 anos foram preservados de forma anonimizada " +
+        "conforme exigência fiscal (CTN art. 173). Serão expurgados automaticamente após o prazo."
+      : "Conta excluída com sucesso."
+
+    return NextResponse.json({ data: { message, fiscalRetentionApplied: hasFiscalBlock } })
   } catch (e: unknown) {
     console.error("[DELETE /api/users/me]", e instanceof Error ? e.message : e)
     return NextResponse.json(
