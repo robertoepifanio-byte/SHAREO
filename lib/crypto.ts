@@ -25,7 +25,10 @@ function getKey(): Buffer {
  * Ref.: ressalva LGPD #1 — auditoria de conformidade técnica s40.
  */
 function getHmacKey(): Buffer {
-  const key = process.env.HMAC_KEY ?? process.env.ENCRYPTION_KEY
+  // `||` (não `??`): HMAC_KEY="" (valor documentado no .env.example para dev)
+  // deve cair em ENCRYPTION_KEY. Com `??`, string vazia não dispara o fallback
+  // e quebraria todo hash de CPF/CNPJ ("ENCRYPTION_KEY não definida").
+  const key = process.env.HMAC_KEY || process.env.ENCRYPTION_KEY
   if (!key) throw new Error("ENCRYPTION_KEY não definida")
   const buf = Buffer.from(key, "hex")
   if (buf.length !== 32) throw new Error("HMAC_KEY/ENCRYPTION_KEY deve ter 32 bytes (64 hex chars)")
