@@ -35,34 +35,68 @@ A vedacao a "tentar burlar o sistema de pagamento da plataforma" permanece valid
 
 ### A.4 Clausulas CDC adicionais (arrependimento, cancelamento, limitacao de responsabilidade)
 
-As clausulas exigidas pelo checklist item 4 — politica de arrependimento (art. 49 CDC), limitacao de responsabilidade sem afastar o CDC, e politica de cancelamento/devolucao — estao detalhadas em:
+As clausulas exigidas pelo checklist item 4 — politica de arrependimento (art. 49 CDC), limitacao de responsabilidade sem afastar o CDC, e politica de cancelamento/devolucao — estao detalhadas em **[`draft-clausulas-cdc.md`](draft-clausulas-cdc.md)**.
 
-**[`draft-clausulas-cdc.md`](draft-clausulas-cdc.md)**
-- Clausula B1: Politica de Arrependimento (art. 49)
-- Clausula B2: Limitacao de Responsabilidade (sem afastar CDC + responsabilidade solidaria)
-- Clausula B3: Politica de Cancelamento e Devolucao
+### A.5 Nova clausula — Conteudo de terceiros e art. 19 do Marco Civil da Internet
 
-Essas clausulas devem ser integradas aos Termos de Uso junto com as clausulas A.1 e A.2 acima, nas secoes correspondentes.
+**Referencia de decisao: E3 (aprovado pelos fundadores/juridico em 2026-06-30)**
+
+Acrescentar como nova secao dos Termos de Uso (posicao sugerida: apos a secao de Condutas Proibidas ou como secao propria "Conteudo de Terceiros"):
+
+> **[W]. Conteudo de Terceiros e Responsabilidade Civil**
+>
+> A ShareO nao se responsabiliza pelo conteudo publicado por terceiros na plataforma, incluindo anuncios, avaliacoes e mensagens, respondendo apenas nos termos do art. 19 da Lei n. 12.965/2014 (Marco Civil da Internet), mediante ordem judicial especifica. Sem prejuizo disso, a ShareO mantem canal de denuncia e podera remover voluntariamente conteudos que violem a lei ou os presentes Termos, a seu exclusivo criterio.
+>
+> **[W].1. Procedimento de notice-and-takedown.** A ShareO mantém um procedimento operacional de aviso e retirada de conteudo (notice-and-takedown) estruturado da seguinte forma: (a) qualquer usuario pode reportar conteudo potencialmente ilegal ou violador destes Termos por meio do botao "Reportar" disponivel nos anuncios, avaliacoes e mensagens da plataforma; (b) a equipe de compliance da ShareO analisa o conteudo reportado e pode removê-lo voluntariamente quando a violacao for manifesta; (c) a ShareO registra documentalmente todos os relatorios recebidos e as acoes tomadas; (d) ordens judiciais especificas que determinem a remocao de conteudo sao cumpridas imediatamente, nos termos do art. 19 do Marco Civil da Internet.
+
+#### Notas de implementacao (E3)
+
+- O botao "Reportar" ja e mencionado na clausula como funcionalidade existente — confirmar com o time de produto se o botao de report esta implementado em todas as entidades mencionadas (anuncios, avaliacoes, mensagens de chat).
+  - ⚠️ **VERIFICADO no codigo (2026-06-30):** NAO existe canal de denuncia de CONTEUDO. O unico componente proximo e `components/booking/ReportProblemForm.tsx`, que abre **disputa de RESERVA** (item nao funciona / veio danificado), nao moderacao de anuncio/avaliacao/mensagem; e nem esta referenciado em outras telas. NAO ha rota de API de report nem model de moderacao no schema. **Implicacao:** a clausula promete "canal de denuncia" inexistente → risco CDC art. 30 (oferta vinculante). **Opcoes:** (a) construir o canal de denuncia + notice-and-takedown antes de publicar a clausula; ou (b) ate la, redigir a clausula sem afirmar que o canal ja existe (ex.: "podera disponibilizar canal de denuncia"). Bloqueia a publicacao de E3 com a redacao atual.
+- O "registro documental" de reports nao esta explicitamente mapeado no schema atual; verificar se a tabela de disputas/reports ja cobre esse requisito ou se e necessario uma tabela dedicada.
+  - ⚠️ **VERIFICADO (2026-06-30):** nao ha tabela de reports/moderacao no `prisma/schema.prisma`. Se E3 for publicada com canal real, exigira model dedicado (ex.: `ContentReport`).
+- O art. 19 MCI exige "ordem judicial especifica" para responsabilizacao por conteudo de terceiros — a clausula nao expande esse limiar, o que e correto.
+- **CONSULTAR ADVOGADA:** confirmar se a responsabilidade por anuncios falsos (itens que nao existem ou foram roubados) se encaixa no art. 19 MCI ou se ha fundamento de responsabilidade objetiva pelo CDC pelo fato do servico.
+
+Essas clausulas, mais as de arrependimento, cancelamento/devolucao e responsabilidade por dano/perda (B1–B4), devem ser integradas aos Termos de Uso junto com as clausulas A.1 e A.2 acima, nas secoes correspondentes — ver [`draft-clausulas-cdc.md`](draft-clausulas-cdc.md).
 
 ---
 
 ## B. Politica de Privacidade (`app/privacidade/page.tsx`)
 
-### B.1 Secao 4 — "Compartilhamento de Dados": nomear o operador
+**Referencia de decisao: C4 (aprovado pelos fundadores/juridico em 2026-06-30)**
 
-**Texto atual:** "…parceiros de processamento de pagamento (para finalizar transacoes)…"
+### B.1 Secao 4 — "Compartilhamento de Dados": substituir afirmacao imprecisa e nomear operadores
 
-**Rascunho revisado:**
+**Texto atual (a substituir):** qualquer variacao de "nunca compartilhamos dados com terceiros" ou "parceiros de processamento de pagamento (para finalizar transacoes)" (identificar o trecho exato em `app/privacidade/page.tsx` antes de publicar).
 
-> Podemos compartilhar dados com: **o Mercado Pago, instituicao de pagamento responsavel por processar pagamentos, dividir (*split*) e repassar valores, atuando como operador de dados financeiros** (nome, identificacao e dados necessarios a transacao); autoridades publicas (quando exigido por lei); prestadores de servico de infraestrutura tecnologica (hospedagem, e-mail, analytics), sempre sob acordo de confidencialidade.
+**Rascunho revisado — texto aprovado (C4 — use VERBATIM):**
 
-> **Nota:** alinhar com a frase "Nao vendemos seus dados" (manter) e com a Central de Ajuda — corrigir a afirmacao "nunca compartilhamos com terceiros" (item 5 de [`draft-ajuda-mp-rewrite.md`](draft-ajuda-mp-rewrite.md) e item 9 do checklist), que e imprecisa diante dos subprocessadores e do Mercado Pago.
+> Compartilhamos dados pessoais apenas com operadores e parceiros necessarios para a execucao dos servicos, incluindo o Mercado Pago para processamento de pagamentos, sempre sob contratos que garantem protecao e conformidade com a LGPD.
 
-### B.2 Nova subsecao — Mercado Pago como operador de dados financeiros
+**Complemento descritivo recomendado** (sujeito a revisao juridica — detalha o texto verbatim acima):
 
-Acrescentar item dedicado (ex.: 4.1):
+> Os principais operadores e subprocessadores de dados da ShareO sao:
+>
+> | Operador/Subprocessador | Finalidade | Pais-sede |
+> |---|---|---|
+> | **Mercado Pago** (Mercado Pago Instituicao de Pagamento Ltda.) | Processamento de pagamentos, split e repasse ao locador — atua como operador de dados financeiros | Brasil |
+> | **Resend** | Envio de e-mails transacionais (confirmacao, lembretes, notificacoes) | EUA |
+> | **Sentry** | Monitoramento de erros da plataforma (pode processar dados tecnicos de sessao) | EUA |
+> | **Mapbox** | Geocodificacao de enderecos de anuncios e exibicao de mapas | EUA |
+> | **Vercel** | Hospedagem e execucao da aplicacao web | EUA |
+>
+> Para operadores sediados fora do Brasil, aplica-se a secao de Transferencia Internacional de Dados desta Politica.
+>
+> A ShareO **nao vende seus dados pessoais** a terceiros. O compartilhamento ocorre exclusivamente para viabilizar os servicos descritos acima.
 
-> **4.1. Processamento de pagamentos (Mercado Pago).** Os pagamentos das locacoes sao processados pelo **Mercado Pago**, que atua como **operador** de dados pessoais financeiros estritamente necessarios a transacao (identificacao das partes, valor, meio de pagamento). O tratamento por esse operador rege-se tambem pela politica de privacidade do Mercado Pago. A ShareO permanece como **controladora** dos dados que coleta para a intermediacao.
+> **Nota de implementacao:** a frase "nao vendemos seus dados" (manter — e correta) deve ser mantida; apenas a afirmacao "nunca compartilhamos com terceiros" e que precisa ser substituida pelo texto verbatim C4. Alinhar tambem com a Central de Ajuda (item 5 de [`draft-ajuda-mp-rewrite.md`](draft-ajuda-mp-rewrite.md) e item 9 do checklist).
+
+### B.2 Nova subsecao — Mercado Pago como operador de dados financeiros (posicao sugerida: 4.1)
+
+Acrescentar item dedicado imediatamente apos o texto de compartilhamento revisado (B.1):
+
+> **4.1. Processamento de pagamentos (Mercado Pago).** Os pagamentos das locacoes sao processados pelo **Mercado Pago (Mercado Pago Instituicao de Pagamento Ltda.)**, que atua como **operador** de dados pessoais financeiros estritamente necessarios a transacao — incluindo identificacao das partes, valor, meio de pagamento e dados necessarios ao split e ao repasse ao locador. Os dados de cartao do locatario sao inseridos diretamente no ambiente do Mercado Pago; a ShareO **nao armazena dados de cartao**. A ShareO armazena tokens OAuth cifrados do locador para viabilizar o repasse automatico. O tratamento por esse operador rege-se tambem pela politica de privacidade do Mercado Pago, disponivel em mercadopago.com.br. A ShareO permanece como **controladora** dos dados que coleta para a intermediacao.
 
 ### B.3 RIPD
 
@@ -86,7 +120,7 @@ Resumo das edicoes:
 - **Central de Ajuda (`/ajuda`):** reescrita completa para Mercado Pago — ver [`draft-ajuda-mp-rewrite.md`](draft-ajuda-mp-rewrite.md).
 - **Versao da politica:** ao publicar, **bumpar** `POLICY_UPDATED_AT` / `CONSENT_VERSION` em `lib/legal-config.ts` (reaceite dos usuarios).
 - **Contrato de Locacao** (flag `rentalContractAcceptanceEnabled`, OFF) — texto separado, nao confundir com Termos.
-- **Lista de subprocessadores:** ao publicar a Politica de Privacidade revisada, incluir lista completa (Mercado Pago, Mapbox, Resend, Sentry, Vercel) com nome, pais e finalidade — exigido pela LGPD art. 18 VII e pelo principio da transparencia (art. 6 VI).
+- **Lista de subprocessadores:** a lista completa (Mercado Pago, Mapbox, Resend, Sentry, Vercel) com nome, pais e finalidade ja consta do complemento descritivo da secao B.1 deste rascunho — exigido pela LGPD art. 18 VII e pelo principio da transparencia (art. 6 VI). Confirmar se a Supabase deve tambem ser listada (processa dados como banco de dados e storage).
 
 > Rastreado em [`checklist-conformidade-juridica.md`](checklist-conformidade-juridica.md) (itens 1, 3, 4) e [`parecer-juridico-revisado-mp.md`](parecer-juridico-revisado-mp.md).
 > Documentos relacionados (s41): [`draft-clausulas-cdc.md`](draft-clausulas-cdc.md) · [`redline-ripd-mp.md`](redline-ripd-mp.md) · [`draft-ajuda-mp-rewrite.md`](draft-ajuda-mp-rewrite.md) · [`spec-arrependimento-art49.md`](spec-arrependimento-art49.md).
