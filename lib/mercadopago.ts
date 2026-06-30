@@ -80,6 +80,19 @@ export async function isMercadoPagoActive(): Promise<boolean> {
   return enabled
 }
 
+/**
+ * SANDBOX-ONLY (não-produção): token do vendedor via env, contornando o decrypt do
+ * campo cifrado (`OwnerPaymentAccount.mpAccessToken`). Necessário porque o OAuth real
+ * com *test users* esbarra na verificação de e-mail do MP, e não há como reproduzir a
+ * cifragem da `ENCRYPTION_KEY` do staging fora dele. Quando `MP_SANDBOX_SELLER_TOKEN`
+ * está ausente (produção), retorna null → comportamento normal (decrypt do banco).
+ * Duplamente protegido: só atua com a flag `mercadoPagoEnabled` ON E este env setado.
+ * REMOVER junto com a validação de sandbox (ver memory project-mercadopago-migration).
+ */
+export function sandboxSellerTokenOverride(): string | null {
+  return process.env.MP_SANDBOX_SELLER_TOKEN?.trim() || null
+}
+
 // ─── Cliente do SDK ──────────────────────────────────────────────────────────
 
 /**
