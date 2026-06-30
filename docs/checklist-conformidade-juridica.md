@@ -1,16 +1,16 @@
 # Checklist de Conformidade Jurídica — ShareO
 
-**Atualizado:** 2026-06-30 (s41) · **Fonte:** parecer técnico-jurídico **preliminar** do D4 (em revisão com a advogada) + dossiê [`briefing-juridico-d4.md`](briefing-juridico-d4.md) + revisão da Central de Ajuda (s41).
+**Atualizado:** 2026-06-30 (s41) · **Fonte:** **parecer jurídico FORMAL** do D4 (revisado com a contratação do Mercado Pago como PSP — [`parecer-juridico-revisado-mp.md`](parecer-juridico-revisado-mp.md)) + dossiê [`briefing-juridico-d4.md`](briefing-juridico-d4.md) + revisão da Central de Ajuda (s41).
 
-> ⚠️ **D4 NÃO está fechado.** O parecer é **preliminar/em revisão** — não é o parecer FORMAL. Nenhuma atividade de produção antes do sign-off formal (regra absoluta). Este checklist **rastreia** os ajustes exigidos; não os declara cumpridos juridicamente.
+> ✅ **Parecer FORMAL recebido** (condição 1 das 4 de go-live cumprida). ⚠️ **Go-live ainda NÃO liberado:** faltam **contrato com o Mercado Pago assinado + conta PJ ativa**, **Termos/Política revisados e publicados** e **checklist 100%**. Até lá, **nenhuma atividade de produção** (regra absoluta). Este checklist **rastreia** os ajustes exigidos; não os declara cumpridos juridicamente.
 
 > Legenda: ✅ **pronto** (no produto/código) · 🟡 **parcial / verificar** · 🔨 **trabalho novo** · 🔵 **decisão de negócio/jurídico** (fora do código)
 
 ---
 
 ## 1. Pagamentos (Lei 12.865/2013 · BACEN)
-- 🔵🔨 Migrar recebimento para **PSP licenciado** — **DECIDIDO: Mercado Pago** ([[project-mercadopago-migration]]). Hoje o staging usa PIX manual em **chave pessoal de sócio** (temporário).
-- 🔵 Formalizar **contrato com o PSP** (Mercado Pago) — fundadores/jurídico.
+- 🔵🔨 Migrar recebimento para **PSP licenciado** — **DECIDIDO + CONFIRMADO no parecer FORMAL: Mercado Pago** (ShareO **deixa de ser *merchant of record***; risco da Lei 12.865 reduzido substancialmente) ([[project-mercadopago-migration]]). Hoje o staging usa PIX manual em **chave pessoal de sócio** (temporário). Ciclo E2E de split validado em sandbox.
+- 🔵 Formalizar **contrato com o PSP** (Mercado Pago) — fundadores/jurídico. **Condição 2 de go-live.**
 - 🔨 Garantir fluxo **split/escrow** para afastar enquadramento como instituição de pagamento (aponta para o "Modelo B" da migração MP).
 - 🔵 **Conta de recebimento = PJ da ShareO** (nunca pessoal) — societário.
 
@@ -22,12 +22,13 @@
 
 ## 3. LGPD (Lei 13.709/2018)
 - ✅ **DPO/Encarregado** designado + canal (`privacidade@shareo.com.br`, `lib/legal-config.ts`).
+- 🔨 **Mercado Pago como operador de dados financeiros** (exigência do parecer revisado) — incluir no **RIPD** (Seções B/D.2/C.6) e na **Política de Privacidade** (`/privacidade`, nova subseção 4.1). Rascunhos em [`draft-clausulas-mp-termos-privacidade.md`](draft-clausulas-mp-termos-privacidade.md).
 - 🟡 **RIPD** (Relatório de Impacto) — **rascunho elaborado** (#116, [`rascunho-ripd.md`](rascunho-ripd.md)); falta validação do DPO/jurídico + arquivamento formal.
 - 🟡 **Formalizar transferência internacional** (Resend/Sentry/Mapbox/Vercel — EUA) — **rascunho** (#116, [`transferencia-internacional-dados.md`](transferencia-internacional-dados.md)); falta assinar cláusulas-padrão (art. 33).
 - 🔨 **Expurgo de dados** (minimização/retenção) — crons `purge-admin-logs` / `purge-consent-ips` / `purge-access-logs` implementados (#118, flag-safe); **prazos (5a / 180d) a confirmar com jurídico** antes de ativar em produção.
 - ✅ **Direitos do titular**: acesso/exclusão (art. 18, `DELETE /api/users/me`) + portabilidade (art. 20, `GET /api/users/me/export`).
 - ✅ **Segurança**: AES-256-GCM em CPF/CNPJ + HMAC; bucket `id-docs` privado; PII mascarada em logs.
-- 🟡 **Ressalvas da auditoria s40** (sinalizar ao parecer / endereçar): (1) **mesma chave** p/ AES e HMAC (`ENCRYPTION_KEY`) — separar `HMAC_KEY`; (2) `DELETE /api/users/me` **não bloqueia em janela fiscal de 5 anos** (diverge do ADR-017); (3) **export do art. 20 incompleto** (omite mensagens/financeiro/KYC/ambassador); (4) scrub mais raso no `sentry.edge.config.ts`; (5) `console.error` server-side **não mascarado**; (6) `SENSITIVE_RE` sem `pixKey`/`holderName`/`responsavelLegal`. Ver `auditoria-conformidade-tecnica-s40.md`.
+- 🔨 **Ressalvas da auditoria s40 — REMEDIADAS (PRs abertos, pendente merge, s41 2026-06-30):** (1) `HMAC_KEY` separada de `ENCRYPTION_KEY` (fallback retrocompat) #125; (2) `DELETE /api/users/me` respeita janela fiscal de 5a (ADR-017) #127; (3) export art. 20 completo (+mensagens/financeiro/KYC/ambassador) #127; (4) scrub unificado `lib/sentry-scrub.ts` (edge/server/client) #125; (5) `lib/logger.ts` `safeServerError()` mascara `console.error` #125; (6) `SENSITIVE_RE` com `pixKey`/`holderName`/`responsavelLegal` #125. **PRs #125/#127** — ainda **não mesclados**; flags OFF, sem produção. Ver `auditoria-conformidade-tecnica-s40.md`.
 
 ## 4. CDC / Termos de Uso
 - ✅ **Taxa de 15% destacada** na UI e nos Termos (`app/termos`).
@@ -49,7 +50,7 @@
 - 🟡 **Multas e atrasos** previstos — verificar cobertura atual (devolução em atraso).
 
 ## 7. Marco Civil da Internet (Lei 12.965/2014)
-- 🔨 **Guarda de logs por 6 meses** (art. 15) — **scaffolding implementado, flag OFF** (#118, s40): tabela `access_logs` (sa-east-1) + `lib/access-log.ts` (grava só com `accessLogsEnabled="true"`) + cron de expurgo aos 180d. **Ainda NÃO conforme em produção** — falta jurídico decidir **Opção I** (Vercel Log Drain → Axiom/Better Stack/S3, dados EUA) × **Opção II** (tabela sa-east-1, recomendada p/ H1), integrar `logAccess()` nas rotas autenticadas e **ligar a flag**. Ver [`retencao-logs-art15.md`](retencao-logs-art15.md) e [`auditoria-conformidade-tecnica-s40.md`](auditoria-conformidade-tecnica-s40.md).
+- 🔨 **Guarda de logs por 6 meses** (art. 15) — **scaffolding implementado, flag OFF** (#118, s40): tabela `access_logs` (sa-east-1) + `lib/access-log.ts` (grava só com `accessLogsEnabled="true"`) + cron de expurgo aos 180d. **`logAccess()` já integrado nas rotas autenticadas** (`users/me`, `bookings`, `conversations`) no **PR #125** (s41, flag ainda OFF → zero I/O). **Ainda NÃO conforme em produção** — falta jurídico decidir **Opção I** (Vercel Log Drain → Axiom/Better Stack/S3, dados EUA) × **Opção II** (tabela sa-east-1, recomendada p/ H1) e **ligar a flag**. Ver [`retencao-logs-art15.md`](retencao-logs-art15.md) e [`auditoria-conformidade-tecnica-s40.md`](auditoria-conformidade-tecnica-s40.md).
 - 🔨 Política de **notificação e retirada** de conteúdo (art. 19).
 - ✅ **Termos de Uso e Política de Privacidade publicados/acessíveis** (`/termos`, `/privacidade`) — **revisar o conteúdo** conforme o parecer.
 
@@ -71,9 +72,9 @@ Revisão read-only por product-owner + designer + segurança. Relatório consoli
 ---
 
 ## 🚦 Go-live só após (condições do próprio parecer)
-1. **Parecer jurídico FORMAL** sobre os 5 pontos críticos (o atual é preliminar/em revisão).
-2. **Contrato com PSP (Mercado Pago) assinado + conta PJ ativa.**
-3. **Termos de Uso e Política de Privacidade revisados e publicados.**
-4. **Checklist acima 100% cumprido.**
+1. ✅ **Parecer jurídico FORMAL** — **recebido** (versão revisada com o Mercado Pago como PSP, [`parecer-juridico-revisado-mp.md`](parecer-juridico-revisado-mp.md)).
+2. 🔵 **Contrato com PSP (Mercado Pago) assinado + conta PJ ativa.**
+3. 🔨 **Termos de Uso e Política de Privacidade revisados e publicados** (rascunhos: [`draft-clausulas-mp-termos-privacidade.md`](draft-clausulas-mp-termos-privacidade.md)).
+4. 🔨 **Checklist acima 100% cumprido.**
 
 > Ver também: [`checklist-go-live.md`](checklist-go-live.md) (infra/técnico) · [`d4-cobranca-juridico.md`](d4-cobranca-juridico.md) · memória [[project-d4-juridico]].
