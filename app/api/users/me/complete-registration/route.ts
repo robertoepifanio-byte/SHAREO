@@ -4,6 +4,7 @@ import type { Prisma } from "@prisma/client"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { hashDocument, encryptDocument } from "@/lib/crypto"
+import { safeServerError } from "@/lib/logger"
 import { CompleteRegistrationSchema } from "@/lib/validations/auth"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { geocodeUserLocation } from "@/lib/geocodeUser"
@@ -177,7 +178,8 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json({ data: updated })
   } catch (e: unknown) {
-    console.error("[PATCH /api/users/me/complete-registration]", e instanceof Error ? e.message : e)
+    // safeServerError mascara CPF/CNPJ que podem aparecer em mensagens de erro
+    safeServerError("[PATCH /api/users/me/complete-registration]", e instanceof Error ? e.message : e)
     return NextResponse.json(
       { error: { code: "INTERNAL_ERROR", message: "Erro interno. Tente novamente." } },
       { status: 500 },

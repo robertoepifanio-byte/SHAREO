@@ -6,9 +6,10 @@ import { resolveUserId } from "@/lib/resolveUserId"
 import { UpdateProfileSchema } from "@/lib/validations/users"
 import { geocodeUserLocation } from "@/lib/geocodeUser"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { logAccess, extractClientIp } from "@/lib/access-log"
 
 // LGPD art. 18 — direito ao esquecimento
-export async function DELETE() {
+export async function DELETE(req: NextRequest) {
   try {
     const session = await auth()
     if (!session) {
@@ -131,6 +132,16 @@ export async function DELETE() {
       }
     })
 
+    // MCI art.15 — log de acesso (fire-and-forget; flag accessLogsEnabled default OFF)
+    logAccess({
+      ip:     extractClientIp(req),
+      userId,
+      path:   "/api/users/me",
+      method: "DELETE",
+      status: 200,
+      requestId: req.headers.get("x-vercel-id"),
+    })
+
     return NextResponse.json({ data: { message: "Conta excluída com sucesso." } })
   } catch (e: unknown) {
     console.error("[DELETE /api/users/me]", e instanceof Error ? e.message : e)
@@ -176,6 +187,16 @@ export async function GET(req: NextRequest) {
         { status: 404 },
       )
     }
+
+    // MCI art.15 — log de acesso (fire-and-forget; flag accessLogsEnabled default OFF)
+    logAccess({
+      ip:     extractClientIp(req),
+      userId,
+      path:   "/api/users/me",
+      method: "GET",
+      status: 200,
+      requestId: req.headers.get("x-vercel-id"),
+    })
 
     return NextResponse.json({ data: user })
   } catch (e) {
@@ -260,6 +281,16 @@ export async function PATCH(req: NextRequest) {
         )
       }
     }
+
+    // MCI art.15 — log de acesso (fire-and-forget; flag accessLogsEnabled default OFF)
+    logAccess({
+      ip:     extractClientIp(req),
+      userId: session.user.id,
+      path:   "/api/users/me",
+      method: "PATCH",
+      status: 200,
+      requestId: req.headers.get("x-vercel-id"),
+    })
 
     return NextResponse.json({ data: updated })
   } catch (e) {

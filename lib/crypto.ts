@@ -11,13 +11,32 @@ function getKey(): Buffer {
   return buf
 }
 
+/**
+ * Retorna a chave HMAC para indexação de CPF/CNPJ (HMAC-SHA256).
+ *
+ * PRODUÇÃO (banco NOVO, sem hashes legados): definir HMAC_KEY com valor
+ * DISTINTO de ENCRYPTION_KEY — vazamento da chave AES não compromete o índice
+ * de unicidade, e vice-versa. Gerar com: openssl rand -hex 32
+ *
+ * DEV/STAGING (hashes legados no banco): HMAC_KEY pode ser omitida — cai em
+ * ENCRYPTION_KEY como fallback para retrocompatibilidade. Migrar hashes antes
+ * de definir HMAC_KEY diferente num banco existente (ver ADR-005).
+ *
+ * Ref.: ressalva LGPD #1 — auditoria de conformidade técnica s40.
+ */
+function getHmacKey(): Buffer {
+  const key = process.env.HMAC_KEY ?? process.env.ENCRYPTION_KEY
+  if (!key) throw new Error("ENCRYPTION_KEY não definida")
+  const buf = Buffer.from(key, "hex")
+  if (buf.length !== 32) throw new Error("HMAC_KEY/ENCRYPTION_KEY deve ter 32 bytes (64 hex chars)")
+  return buf
+}
+
 // HMAC-SHA256 determinístico — permite lookup por unicidade no banco.
 // bcrypt seria seguro mas não-determinístico, tornando o índice UNIQUE inútil.
 export function hashDocument(doc: string): string {
-  const key = process.env.ENCRYPTION_KEY
-  if (!key) throw new Error("ENCRYPTION_KEY não definida")
   return crypto
-    .createHmac("sha256", Buffer.from(key, "hex"))
+    .createHmac("sha256", getHmacKey())
     .update(doc.replace(/\D/g, ""))
     .digest("hex")
 }

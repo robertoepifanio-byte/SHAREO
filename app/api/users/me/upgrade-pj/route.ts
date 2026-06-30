@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { hashDocument } from "@/lib/crypto"
+import { safeServerError } from "@/lib/logger"
 import { UpgradePjSchema } from "@/lib/validations/auth"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import {
@@ -124,7 +125,8 @@ export async function POST(req: NextRequest) {
       },
     })
   } catch (e: unknown) {
-    console.error("[POST /api/users/me/upgrade-pj]", e instanceof Error ? e.message : e)
+    // safeServerError mascara CNPJ/responsavelLegal que podem aparecer em mensagens de erro
+    safeServerError("[POST /api/users/me/upgrade-pj]", e instanceof Error ? e.message : e)
     return NextResponse.json(
       { error: { code: "INTERNAL_ERROR", message: "Erro interno." } },
       { status: 500 },

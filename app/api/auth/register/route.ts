@@ -6,6 +6,7 @@ import { RegisterMinimalSchema } from "@/lib/validations/auth"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { sendVerificationEmail } from "@/lib/email"
 import { hashToken } from "@/lib/crypto"
+import { safeServerError } from "@/lib/logger"
 import crypto from "crypto"
 import { generateUserSlug } from "@/lib/slugify"
 import { applyReferralCode } from "@/lib/referral"
@@ -118,7 +119,8 @@ export async function POST(req: NextRequest) {
   } catch (e: unknown) {
     const msg   = e instanceof Error ? e.message  : String(e)
     const stack = e instanceof Error ? e.stack     : undefined
-    console.error("[POST /api/auth/register] INTERNAL_ERROR:", msg, stack)
+    // safeServerError mascara PII (e-mail, senha etc.) que pode aparecer no stack trace
+    safeServerError("[POST /api/auth/register] INTERNAL_ERROR:", msg, stack)
     return NextResponse.json(
       { error: { code: "INTERNAL_ERROR", message: "Erro interno. Tente novamente." } },
       { status: 500 },

@@ -63,6 +63,22 @@ describe("hashDocument", () => {
     delete process.env.ENCRYPTION_KEY
     expect(() => hashDocument("12345678900")).toThrow("ENCRYPTION_KEY não definida")
   })
+
+  it("usa HMAC_KEY quando definida (em vez de ENCRYPTION_KEY)", () => {
+    const altKey = "f".repeat(64)
+    process.env.HMAC_KEY = altKey
+    const hashComHmacKey = hashDocument("12345678900")
+    delete process.env.HMAC_KEY
+    const hashComEncryptionKey = hashDocument("12345678900")
+    // Chaves diferentes → hashes diferentes
+    expect(hashComHmacKey).not.toBe(hashComEncryptionKey)
+  })
+
+  it("fallback para ENCRYPTION_KEY quando HMAC_KEY não está definida", () => {
+    delete process.env.HMAC_KEY
+    // Com fallback, deve usar ENCRYPTION_KEY sem lançar erro
+    expect(() => hashDocument("12345678900")).not.toThrow()
+  })
 })
 
 // ---------------------------------------------------------------------------

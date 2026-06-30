@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
 import { userMiniSelect } from "@/lib/prisma/selects"
+import { logAccess, extractClientIp } from "@/lib/access-log"
 
 export async function GET(req: NextRequest) {
   try {
@@ -73,6 +74,16 @@ export async function GET(req: NextRequest) {
           ? { body: lastMsg.content.slice(0, 100), createdAt: lastMsg.createdAt }
           : null,
       }
+    })
+
+    // MCI art.15 — log de acesso (fire-and-forget; flag accessLogsEnabled default OFF)
+    logAccess({
+      ip:     extractClientIp(req),
+      userId,
+      path:   "/api/conversations",
+      method: "GET",
+      status: 200,
+      requestId: req.headers.get("x-vercel-id"),
     })
 
     return NextResponse.json({ data })
