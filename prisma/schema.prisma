@@ -830,9 +830,11 @@ model OwnerPaymentAccount {
   id         String           @id @default(cuid())
   userId     String           @unique
   user       User             @relation(fields: [userId], references: [id])
-  pixKeyType PixKeyType
-  pixKey     String
-  holderName String
+  // PIX é opcional: locadores que conectam o Mercado Pago diretamente não precisam
+  // ter PIX pré-cadastrado. Campos tornados nullable em desacoplamento PIX/MP (ADR-026).
+  pixKeyType PixKeyType?
+  pixKey     String?
+  holderName String?
   bankName   String?
   status     PixAccountStatus @default(PENDING_VERIFICATION)
   createdAt  DateTime         @default(now())

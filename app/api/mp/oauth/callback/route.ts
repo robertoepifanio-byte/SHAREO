@@ -19,6 +19,10 @@ function back(status: string) {
  * (anti-CSRF) contra o cookie, trocamos o `code` pelos tokens do vendedor e os
  * guardamos CRIPTOGRAFADOS na conta de recebimento do locador.
  *
+ * Desacoplamento PIX: faz UPSERT — cria a conta sem PIX caso o locador não tenha
+ * pré-cadastrado chave PIX. Campos pixKeyType/pixKey/holderName são agora nullable
+ * (migration 20260630000000_decouple_pix_from_mp).
+ *
  * Gating: flag mercadoPagoEnabled + credenciais. Sem isso, 404.
  */
 export async function GET(req: NextRequest) {
@@ -51,24 +55,27 @@ export async function GET(req: NextRequest) {
   try {
     const tokens = await exchangeOAuthCode(code)
 
-    // O locador precisa ter uma conta de recebimento. No Modelo B a conexão MP
-    // será suficiente; enquanto o PIX legado existe, exigimos a conta criada antes.
-    const existing = await prisma.ownerPaymentAccount.findUnique({
-      where:  { userId: session.user.id },
-      select: { id: true },
-    })
-    if (!existing) return back("sem_conta")
+    // UPSERT: cria a conta de recebimento se o locador ainda não tiver uma.
+    // Com o desacoplamento PIX, não é mais obrigatório ter PIX cadastrado antes
+    // de conectar o Mercado Pago — a conta é criada só com os campos mp*.
+    // Campos PIX (pixKey, pixKeyType, holderName) ficam nulos até o locador
+    // cadastrá-los manualmente em /perfil/recebimentos.
+    const mpData = {
+      mpUserId:         tokens.mpUserId,
+      mpAccessToken:    encryptPII(tokens.accessToken),
+      mpRefreshToken:   encryptPII(tokens.refreshToken),
+      mpPublicKey:      tokens.publicKey,
+      mpTokenExpiresAt: tokens.expiresAt,
+      mpConnectedAt:    new Date(),
+      mpLiveMode:       tokens.liveMode,
+    }
 
-    await prisma.ownerPaymentAccount.update({
-      where: { userId: session.user.id },
-      data: {
-        mpUserId:         tokens.mpUserId,
-        mpAccessToken:    encryptPII(tokens.accessToken),
-        mpRefreshToken:   encryptPII(tokens.refreshToken),
-        mpPublicKey:      tokens.publicKey,
-        mpTokenExpiresAt: tokens.expiresAt,
-        mpConnectedAt:    new Date(),
-        mpLiveMode:       tokens.liveMode,
+    await prisma.ownerPaymentAccount.upsert({
+      where:  { userId: session.user.id },
+      update: mpData,
+      create: {
+        userId: session.user.id,
+        ...mpData,
       },
     })
 

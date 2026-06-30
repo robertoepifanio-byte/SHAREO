@@ -87,7 +87,11 @@ export async function isMercadoPagoActive(): Promise<boolean> {
  * cifragem da `ENCRYPTION_KEY` do staging fora dele. Quando `MP_SANDBOX_SELLER_TOKEN`
  * está ausente (produção), retorna null → comportamento normal (decrypt do banco).
  * Duplamente protegido: só atua com a flag `mercadoPagoEnabled` ON E este env setado.
- * REMOVER junto com a validação de sandbox (ver memory project-mercadopago-migration).
+ *
+ * TODO(go-live): remover bypass MP_SANDBOX_SELLER_TOKEN — ver docs/mp-pendencias-go-live.md
+ * Cheklist: (1) remover env `MP_SANDBOX_SELLER_TOKEN` do Vercel/GitHub Secrets,
+ * (2) remover este helper, (3) remover call sites em /api/mp/webhook e /api/payments/mp/checkout,
+ * (4) resetar campos mp* das contas teste_pj_01..10 criadas com a chave local de sandbox.
  */
 export function sandboxSellerTokenOverride(): string | null {
   return process.env.MP_SANDBOX_SELLER_TOKEN?.trim() || null
