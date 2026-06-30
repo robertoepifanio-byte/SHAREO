@@ -77,6 +77,35 @@ payment_methods: {
 
 ---
 
+## 4. Remover o fluxo de PIX manual (cutover para o Mercado Pago)
+
+**O que é:** o pagamento ativo hoje no staging é o **PIX manual** — o locatário paga numa
+**chave PIX pessoal de sócio** (`platformPix*` em `lib/platform-config.ts`) e um **admin
+confirma na mão** (`confirm-pix`). É scaffolding **temporário** para ter um caminho de pagamento
+funcional enquanto o MP está atrás de flag (OFF).
+
+**Por que NÃO remover agora:** com o MP desligado, este é o **único** caminho de pagamento que
+funciona. Removê-lo antes do MP estar ligado e validado em produção deixaria o staging sem
+pagamento. Sequência (ADR-026, passo 5): **MP ON + validado em produção → ENTÃO** remover.
+
+> ⚠️ **Pré-condição:** este item só é executado **depois** de a flag `mercadoPagoEnabled` estar
+> ligada e o ciclo de pagamento MP validado em produção. É tarefa de **cutover**, não de antes.
+
+**O que remover/migrar no cutover:**
+
+- [ ] `app/reservas/[id]/_PixPaymentPanel.tsx` — painel do locatário "pagar via PIX" + "Já paguei"
+- [ ] `app/api/bookings/[id]/declare-pix/route.ts` — declaração de pagamento manual
+- [ ] `app/admin/reservas/[id]/_ConfirmPixButton.tsx` + `app/api/admin/bookings/[id]/confirm-pix/route.ts` — confirmação manual pelo admin
+- [ ] `app/admin/financeiro/contas-pix/*` + `app/api/admin/pix-accounts/[id]/route.ts` — gestão de chaves PIX no admin
+- [ ] `app/perfil/recebimentos/_PixAccountForm.tsx` — formulário de chave PIX do locador → **substituir** pelo "Conectar Mercado Pago" (OAuth)
+- [ ] `platformPix*` em `lib/platform-config.ts` — chave/dados do PIX da plataforma
+- [ ] Integração **Stripe Checkout** legada (`lib/stripe.ts`, checkout/webhook Stripe + refs em ambassador/referral/cron/admin) — ver ADR-026, nota de implementação
+
+**Como validar a remoção:** com o MP ligado, criar uma reserva e pagar pelo checkout do MP
+(cartão e Pix), confirmar split + repasse automáticos, sem nenhuma etapa manual de admin.
+
+---
+
 ## Referências
 
 - ADR-026: decisão Modelo B / split via OAuth
