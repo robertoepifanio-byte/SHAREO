@@ -89,7 +89,7 @@ const LOCADOR_STEPS: Step[] = [
   },
   {
     step: 5, icon: "📷", title: "Entregar o item e registrar o check-in",
-    desc: "Combine local e horário de entrega pelo chat da reserva. Na hora da entrega, use a opção 'Registrar fotos de check-in' na página da reserva — fotografe todos os ângulos do item, incluindo marcas e desgastes já existentes. Após a entrega física, clique em 'Marcar como ativo' no app. O pagamento é liberado para você nesse exato momento.",
+    desc: "Combine local e horário de entrega pelo chat da reserva. Na hora da entrega, use a opção 'Registrar fotos de check-in' na página da reserva — fotografe todos os ângulos do item, incluindo marcas e desgastes já existentes. Após a entrega física, clique em 'Marcar como ativo' no app. A locação entra em andamento; o valor é liberado para o repasse semanal somente após a confirmação da devolução.",
     warning: "Sem fotos de check-in, você perde proteção em disputas por danos. Nunca pule essa etapa, mesmo que o locatário pareça confiável.",
   },
   {
@@ -171,7 +171,7 @@ const SECTIONS = [
       { q: "Como confirmo uma reserva?",
         a: "Quando alguém solicitar seu item, você recebe uma notificação. Em 'Minhas Reservas', clique na aba 'Como locador'. Abra a reserva, leia a mensagem do locatário e clique em 'Confirmar reserva'. Se não quiser aceitar, pode cancelar informando o motivo." },
       { q: "Quando recebo o pagamento?",
-        a: "Após você confirmar o recebimento do item devolvido, o valor líquido (aluguel menos a taxa da plataforma) entra na fila de repasse. Todo domingo à meia-noite as operações concluídas são consolidadas, e toda segunda-feira o valor é transferido automaticamente para a sua chave PIX cadastrada em Meu Perfil → Recebimentos. Se a segunda-feira for feriado, o repasse ocorre no primeiro dia útil seguinte." },
+        a: "Após você confirmar o recebimento do item devolvido, o valor líquido (aluguel menos a taxa da plataforma) entra na fila de repasse. Toda segunda-feira o valor é transferido automaticamente para a sua chave PIX cadastrada em Meu Perfil → Recebimentos. Se a segunda-feira for feriado, o repasse ocorre no primeiro dia útil seguinte." },
       { q: "O que faço na entrega do item?",
         a: "Combine o local e horário de entrega pelo chat. Na hora da entrega, você pode registrar fotos do estado do item (check-in). Quando entregar, clique em 'Marcar como ativo'. Na devolução, registre fotos de check-out para documentar o estado do item ao retornar." },
       { q: "Como cancelo uma reserva?",
@@ -436,7 +436,7 @@ export default async function AjudaPage() {
                 <a
                   key={link.href}
                   href={link.href}
-                  className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20 transition-colors"
+                  className="inline-flex min-h-11 items-center rounded-full border border-white/30 bg-white/20 px-4 py-3 text-sm font-semibold text-white hover:bg-white/30 transition-colors"
                 >
                   {link.label}
                 </a>
@@ -446,7 +446,7 @@ export default async function AjudaPage() {
         </section>
 
         {/* Primeiros Passos */}
-        <section id="primeiros-passos" className="bg-surface px-4 py-16 border-b border-border scroll-mt-20">
+        <section id="primeiros-passos" className="bg-surface px-4 py-16 border-b border-border scroll-mt-24">
           <div className="container mx-auto max-w-5xl">
             <div className="mb-12 text-center">
               <span className="rounded-full bg-brand/10 px-4 py-1 text-xs font-bold text-brand uppercase tracking-wide">
@@ -525,7 +525,7 @@ export default async function AjudaPage() {
         </section>
 
         {/* P-5 — Dicas para anfitriões (prometido no protótipo v3b, nav "Anunciar") */}
-        <section id="dicas-anfitrioes" className="bg-background px-4 py-16 border-b border-border scroll-mt-20">
+        <section id="dicas-anfitrioes" className="bg-background px-4 py-16 border-b border-border scroll-mt-24">
           <div className="container mx-auto max-w-3xl">
             <div className="mb-10 text-center">
               <span className="rounded-full bg-brand/10 px-4 py-1 text-xs font-bold text-brand uppercase tracking-wide">
@@ -590,7 +590,7 @@ export default async function AjudaPage() {
         </section>
 
         {/* Tabela de taxas */}
-        <section id="taxas-secao" className="bg-background px-4 py-12 border-b border-border scroll-mt-20">
+        <section id="taxas-secao" className="bg-background px-4 py-12 border-b border-border scroll-mt-24">
           <div className="container mx-auto max-w-3xl">
             <div className="mb-8 text-center">
               <span className="rounded-full bg-amber-100 px-4 py-1 text-xs font-bold text-amber-700 uppercase tracking-wide">
