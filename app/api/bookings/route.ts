@@ -11,6 +11,7 @@ import { findOverlappingItem } from "@/lib/booking-availability"
 import { CHECKOUT_MAX_CENTS, getRentalContractConfig } from "@/lib/platform-config"
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 import { RENTAL_CONTRACT_VERSION, RENTAL_CONTRACT_TEXT_HASH } from "@/lib/rental-contract"
+import { logAccess, extractClientIp } from "@/lib/access-log"
 
 export async function GET(req: NextRequest) {
   try {
@@ -72,6 +73,16 @@ export async function GET(req: NextRequest) {
       }),
       prisma.booking.count({ where }),
     ])
+
+    // MCI art.15 — log de acesso (fire-and-forget; flag accessLogsEnabled default OFF)
+    logAccess({
+      ip:     extractClientIp(req),
+      userId,
+      path:   "/api/bookings",
+      method: "GET",
+      status: 200,
+      requestId: req.headers.get("x-vercel-id"),
+    })
 
     return NextResponse.json({
       data: bookings,
@@ -384,6 +395,16 @@ export async function POST(req: NextRequest) {
         },
       }).catch((e) => console.error("[notification] BOOKING_REQUEST:", e instanceof Error ? e.message : e))
     )
+
+    // MCI art.15 — log de acesso (fire-and-forget; flag accessLogsEnabled default OFF)
+    logAccess({
+      ip:     extractClientIp(req),
+      userId: borrowerId,
+      path:   "/api/bookings",
+      method: "POST",
+      status: 201,
+      requestId: req.headers.get("x-vercel-id"),
+    })
 
     return NextResponse.json({ data: booking }, { status: 201 })
   } catch (e) {
