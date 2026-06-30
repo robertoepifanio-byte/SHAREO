@@ -1,6 +1,6 @@
 # ADR-026 — Pagamentos via Mercado Pago (Modelo B — Split/Marketplace)
 
-**Status:** Accepted (decisão dos fundadores, 2026-06-28) — **implementação pendente**; produção **gated por D4** (parecer FORMAL). **Supersede [[ADR-012-modelo-pix-centralizado]]**.
+**Status:** Accepted (decisão dos fundadores, 2026-06-28) — **confirmado pelo parecer jurídico FORMAL** (2026-06-30, [`parecer-juridico-revisado-mp.md`](../parecer-juridico-revisado-mp.md)); produção ainda **gated** por contrato MP + conta PJ + Termos/Política publicados + checklist 100%. **Supersede [[ADR-012-modelo-pix-centralizado]]**.
 **Data:** 2026-06-28
 **Decisores:** Fundadores, Arquiteto, Product Owner — com base no parecer jurídico (D4).
 **Contexto:** ShareO — módulo financeiro.
@@ -9,7 +9,7 @@
 
 ## Contexto
 
-O modelo do MVP ([[ADR-012-modelo-pix-centralizado]]) era *merchant of record*: a ShareO recebia 100% do pagamento, retinha 15% e repassava ao proprietário. O **parecer jurídico (D4, preliminar/em revisão)** apontou esse desenho como o **maior risco regulatório**: receber e repassar dinheiro de terceiros pode **enquadrar a ShareO como instituição/arranjo de pagamento** (Lei 12.865/2013), exigindo autorização do BACEN, com implicações de **PLD/FT** (Lei 9.613/1998). Recomendação do parecer: **terceirizar o arranjo a um PSP licenciado**, com **split/escrow**, usando **conta PJ** (nunca pessoal — hoje o staging usa, temporariamente, a chave PIX pessoal de um sócio).
+O modelo do MVP ([[ADR-012-modelo-pix-centralizado]]) era *merchant of record*: a ShareO recebia 100% do pagamento, retinha 15% e repassava ao proprietário. O **parecer jurídico (D4)** apontou esse desenho como o **maior risco regulatório**: receber e repassar dinheiro de terceiros pode **enquadrar a ShareO como instituição/arranjo de pagamento** (Lei 12.865/2013), exigindo autorização do BACEN, com implicações de **PLD/FT** (Lei 9.613/1998). Recomendação do parecer: **terceirizar o arranjo a um PSP licenciado**, com **split/escrow**, usando **conta PJ** (nunca pessoal — hoje o staging usa, temporariamente, a chave PIX pessoal de um sócio). A **versão FORMAL revisada do parecer** (2026-06-30) **confirma** essa direção: com o Mercado Pago como PSP licenciado responsável por split e repasse semanal, a ShareO **deixa de ser *merchant of record*** e o risco regulatório **se reduz substancialmente** ([`parecer-juridico-revisado-mp.md`](../parecer-juridico-revisado-mp.md)).
 
 Alternativas avaliadas:
 - **Manter PIX centralizado (Stripe / merchant of record):** mantém o risco da Lei 12.865.
