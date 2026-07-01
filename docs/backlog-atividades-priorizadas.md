@@ -54,6 +54,71 @@
 
 ---
 
+## 🧹 Sprint de Endurecimento Zero-Dependência (s41, 2026-07-01) — backlog dos achados
+
+> Origem: META `meta-hardening-zero-dependencia-s41.md`. 5 especialistas auditaram/desenvolveram o que **não tem dependência externa** e **não é feature nova**. **Já aplicado + mesclado:** PR #152 (mobile/hardening), #153 (+309 testes + a11y `RatingStars`), #154 (segurança A1/A2/M1–M5), e o PR de a11y do designer. **Abaixo: tudo que os agentes marcaram para ANÁLISE** (exige feature nova, decisão de negócio/design, migração de dados, ou mudança de comportamento com risco). Nada aqui foi executado.
+
+### 🔐 Segurança — backlog (auditoria `seguranca-shareo`)
+
+| ID | Item | Por que é backlog | Sev. |
+|---|---|---|---|
+| SEC-BL1 | `passwordResetToken.token` gravado em **claro** no banco (`forgot-password`/`reset-password`) | Fix exige migração dupla-leitura (aceitar claro OU hash por 1h) → tokens de reset em voo falham no deploy. Precisa decisão + release note. | Alto |
+| SEC-BL2 | Chave PIX (`ownerPaymentAccount.pixKey`) em **texto claro** | `encryptPII` já existe (usado em `mpAccessToken`), mas exige migração de dados legado (staging tem chaves de teste) + mudança em vários call-sites (API/admin/informe) + cuidado com consulta por valor. Refator próprio. | Alto |
+| SEC-BL3 | `outboundWebhook.secret` HMAC em **claro** | Precisa ser recuperável p/ assinar → `encryptPII` + migração dupla-leitura. | Alto |
+| SEC-BL5 | Mensagens de chat (`Message.content`) sem criptografia em repouso | Criptografar quebra o Supabase Realtime (streama `content`) e busca textual futura. Decisão de arquitetura. | Médio |
+| SEC-BL6 | Sem rate-limit em `PATCH /api/bookings/[id]` (transições) e `POST /conversations/[id]/messages` | Exige o PO definir budgets (msgs/min entre 2 partes; transições/min). Não é "correção óbvia". | Médio |
+| SEC-BL4 | `X-Frame-Options: SAMEORIGIN` × CSP `frame-ancestors 'self'` divergem de fonte | Equivalentes hoje; só tech-debt de fonte-única. | Baixo |
+| SEC-BL7 | Registro de consentimento desigual (cookies/marketing implícitos) | Depende do que o PO/jurídico quer coletar. | LGPD |
+| SEC-BL8 | Documentar janela de retenção `access_logs`/IPs de consentimento + checar `legalHold` no purge | Revisão, não correção; crons já existem. | LGPD |
+
+### ♿ Acessibilidade — backlog (auditoria `designer-shareo`)
+
+| ID | Item | Por que é backlog |
+|---|---|---|
+| A11Y-BL1 | `NotificationBell` — `role="dialog"`+focus-trap p/ o painel | Muda comportamento de foco (teclado). |
+| A11Y-BL2 | `UserDropdown` `role="menu"` sem navegação por seta ↑↓ | Refator de gestão de foco, risco de regressão. |
+| A11Y-BL3 | Botões de ação de reserva sem `min-h-[44px]` (~34px) | Adicionar altura mínima muda o layout do grid de ações. |
+| A11Y-BL4 | Emojis nos labels dos botões de reserva (`✅`/`📦`/`⚠️`) lidos por leitor de tela | Exige separar emoji em `aria-hidden` em todo o array de labels. |
+| A11Y-BL5 | `HelpButton`/`FilterBottomSheet` sem focus-trap completo | Muda comportamento de teclado. |
+| A11Y-BL6 | `CasosRenda` — cards ilustrativos soam como depoimentos reais p/ leitor de tela | Decisão de produto sobre semântica de conteúdo fictício. |
+| A11Y-BL7 | `BottomNav` sem `focus-visible:ring` | Perceptível quando focado por teclado. |
+| A11Y-BL8 | Cabeçalhos de seção do `MobileMenu` sem `role="group"` | Muda estrutura HTML; cuidado com o flex. |
+| A11Y-BL9 | Ordem "Central de Ajuda" depois de "Sair" no menu | Decisão de UX. |
+
+### 🔁 DRY / tech-debt — backlog (auditoria `arquiteto-shareo`)
+
+| ID | Item | Por que é backlog |
+|---|---|---|
+| DRY-BL1 | Dois `EmptyState` (`components/ui` × `components/shared`) com layouts/API diferentes | Consolidar muda layout observável em ~6 telas; decisão de qual é canônico (alinhar c/ designer). |
+| DRY-BL2 | `dashboard/page.tsx` reimplementa cores de status de reserva divergindo do `BookingStatusBadge` (`CONFIRMED` blue-100/700 × blue-medium; `ACTIVE` success × brand) | Adotar o badge **muda cores observáveis**; precisa canonizar a fonte da verdade. |
+| DRY-BL3 | `STATUS_LABEL` de Payout/PixAccount/Verification/Booking espalhados | Domínios distintos; criar `lib/statusMaps.ts` unificado usando variants do `StatusBadge`. |
+| DRY-BL4 | 4 rotas admin retornam **403** p/ não-autenticado; `requireAdminApi` retorna **401** | Adotar muda status HTTP → risco de quebrar E2E/contratos. Alinhar padrão. |
+| DRY-BL5 | `apps/mobile/lib/bookingHistory.ts` é cópia byte-a-byte de `lib/bookingHistory.ts` + formatters duplicados no mobile | Pede pacote `packages/shared` (setup de workspace) — refator de tooling. |
+| DRY-BL6 | `utils/cn.ts` (clsx+tailwind-merge) com **0 uso** | Adotar mexe em centenas de linhas; migrar UI primeiro via ADR. |
+| DRY-BL7 | `condition_label` (NEW/EXCELLENT/…) repetido em 4 lugares com conjuntos diferentes | Precisa decidir enum canônico × valores importáveis. |
+| DRY-BL8 | Estrelas `★☆` inline em vez do `RatingStars` em alguns lugares | Trocar muda markup/aria; validar visual/teste. |
+| DRY-BL9 | `rounded-xl border border-border bg-surface p-4` em 23+ lugares (primitivo `Card`) | Refator amplo (30+ arquivos); alinhar c/ designer. |
+| DRY-BL10 | `relativeTime` triplicado com granularidades diferentes ("semana(s)" × "semanas", meses) | Canonizar muda copy sutil numa tela. |
+| DRY-BL11 | Dedup de formatadores **bit-idêntica** (`formatPrice`/`formatDate*`/`formatNumber` inline em ~15 arquivos) | **Seguro, mas toca ~15 arquivos** — fazer como PR de limpeza dedicado e revisável (ressalva: `_PriceCalc` usa reais, não centavos → não trocar por `formatPrice` sem ajustar unidade). |
+
+### 🧪 Cobertura de testes — backlog (auditoria `qa-shareo`)
+
+| ID | Item | Por que é backlog |
+|---|---|---|
+| TEST-BL1 | `lib/booking-availability.ts` (`findOverlappingItem`) sem teste | Usa `Prisma.TransactionClient` → pede teste de integração/E2E de double-booking. |
+| TEST-BL2 | `lib/coupons.ts` / `lib/referral.ts` sem teste | Lógica pura acoplada a `prisma`; testar exige extração (refator). |
+| TEST-BL3 | `calcBookingTotal` aceita `days` não-inteiro sem validar | Adicionar guard muda comportamento observável — decisão. |
+| TEST-BL4 | E2E de cancelamento/reembolso e axe dos forms de anúncio/reserva | Exige staging com dados controlados / mocks pesados (router/Mapbox/Supabase). |
+
+### 📱 Mobile — backlog
+
+| ID | Item | Por que é backlog |
+|---|---|---|
+| MOB-BL1 | Remover dead-code do bloco de **caução** em `apps/mobile/app/itens/[id].tsx` (`depositAmount > 0` nunca ocorre no MVP — D2) | Limpeza optativa, não bug; revisar quando D2 for reavaliado. |
+| MOB-BL2 | Fluxo **reservar+pagar / anunciar / KYC / mapa** no app | **Feature nova** — ver `plano-mobile-lojas.md` (Fases 2 e 5). |
+
+---
+
 ## 💳 Avaliação: migração de pagamentos Stripe → Mercado Pago (s34, 2026-06-22)
 
 **Status:** ✅ **DECIDIDO (2026-06-28, s39): Mercado Pago — Modelo B (split/marketplace).** Escolhido pelos fundadores e **recomendado pelo parecer D4** (split/escrow afasta o enquadramento da Lei 12.865). **Nenhum código alterado ainda** — a implementação **começa quando os fundadores fornecerem as credenciais de teste do app MP** (marketplace: `Client ID`/`Client Secret`/`Access Token`/webhook). **Nada vai a produção antes do parecer FORMAL (D4).** Ver `docs/checklist-conformidade-juridica.md` e memória [[project-mercadopago-migration]].
