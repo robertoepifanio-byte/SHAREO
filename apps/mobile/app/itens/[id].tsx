@@ -239,7 +239,7 @@ export default function ItemDetailScreen() {
             <Text className="text-base font-bold text-white">Reservar item</Text>
           </TouchableOpacity>
           <Text className="mt-2 text-center text-xs text-muted">
-            🔒 Pagamento seguro via ShareO
+            🔒 Pagamento processado com segurança
           </Text>
         </View>
       )}
