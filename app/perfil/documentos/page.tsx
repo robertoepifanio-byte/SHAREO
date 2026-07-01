@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { IdVerification } from "../_IdVerification"
 import { decryptDocument, maskCPF, maskCNPJ } from "@/lib/crypto"
+import { getBiometricConsentConfig } from "@/lib/platform-config"
 
 export const metadata: Metadata = { title: "Documentos e Verificação" }
 
@@ -25,6 +26,8 @@ export default async function DocumentosPage() {
   })
 
   if (!user) redirect("/login")
+
+  const { required: biometricConsentRequired } = await getBiometricConsentConfig()
 
   // Decriptografar e mascarar — nunca expor o valor completo ao cliente
   let maskedDoc: string | null = null
@@ -89,6 +92,7 @@ export default async function DocumentosPage() {
             <IdVerification
               status={user.idVerificationStatus}
               rejectionReason={user.idRejectionReason}
+              biometricConsentRequired={biometricConsentRequired}
             />
           </div>
         </div>

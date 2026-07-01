@@ -8,8 +8,12 @@ import { NextResponse }     from "next/server"
 import { auth }             from "@/lib/auth"
 import { prisma }           from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { getUploadLimits }   from "@/lib/platform-config"
+import { getUploadLimits, getBiometricConsentConfig } from "@/lib/platform-config"
 import { isImageType, isMagicBytesValid } from "@/lib/imageUpload"
+import { BIOMETRIC_CONSENT_VERSION } from "@/lib/legal-config"
+import { BIOMETRIC_CONSENT_TEXT } from "@/lib/legal/biometric-consent-text"
+import { hashToken } from "@/lib/crypto"
+import { extractClientIp } from "@/lib/access-log"
 
 export async function POST(req: NextRequest) {
   const supabase = createAdminClient()
@@ -50,6 +54,38 @@ export async function POST(req: NextRequest) {
       { error: { code: "INVALID_TYPE", message: "Documento e selfie devem ser imagens (JPEG, PNG, WebP, HEIC)." } },
       { status: 415 }
     )
+
+  // Consentimento biométrico (LGPD art. 11 — decisão C1). Só exigido/gravado quando
+  // a flag biometricConsentRequired está ligada. Com a flag OFF (default), este bloco
+  // é inerte e o fluxo de KYC segue idêntico ao atual.
+  const { required: biometricConsentRequired } = await getBiometricConsentConfig()
+  let consentData: {
+    idSelfieConsentAt: Date
+    idSelfieConsentVersion: string
+    idSelfieConsentTextHash: string
+    idSelfieConsentIp: string
+  } | null = null
+
+  if (biometricConsentRequired) {
+    const consentAccepted = formData.get("biometricConsent") === "true"
+    if (!consentAccepted)
+      return NextResponse.json(
+        {
+          error: {
+            code:    "BIOMETRIC_CONSENT_REQUIRED",
+            message: "É necessário consentir com o tratamento biométrico da selfie para prosseguir.",
+          },
+        },
+        { status: 412 }
+      )
+    consentData = {
+      idSelfieConsentAt:       new Date(),
+      idSelfieConsentVersion:  BIOMETRIC_CONSENT_VERSION,
+      // Hash da MESMA string canônica exibida na UI — prova de qual versão o titular leu.
+      idSelfieConsentTextHash: hashToken(BIOMETRIC_CONSENT_TEXT),
+      idSelfieConsentIp:       extractClientIp(req),
+    }
+  }
 
   const userId = session.user.id
   const now    = Date.now()
@@ -96,6 +132,7 @@ export async function POST(req: NextRequest) {
       idDocumentUrl:        docPath,
       idSelfieUrl:          selfiePath,
       idSubmittedAt:        new Date(),
+      ...(consentData ?? {}),
     },
   })
 
