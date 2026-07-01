@@ -11,6 +11,7 @@ export type AuditAction =
   | "ADMIN_ROLE_GRANTED"
   | "EXPORT_FINANCIAL"
   | "PIX_PAYMENT_CONFIRMED"
+  | "kyc.selfie.view"
 
 /** Grava uma entrada no audit log de forma fire-and-forget. Nunca lança exceção. */
 export function auditLog(
