@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { sendVerificationEmail } from "@/lib/email"
 import { invalidateUserSessions } from "@/lib/redis-admin-blocklist"
+import { hashToken } from "@/lib/crypto"
 
 const schema = z.object({
   newEmail:        z.string().email("E-mail inválido"),
@@ -57,6 +58,8 @@ export async function PATCH(req: Request) {
   }
 
   // Atualiza e-mail, limpa verificação anterior e gera novo token
+  // A1 (SEC-ALTO): token em claro vai no e-mail; banco guarda apenas o hash SHA-256
+  // (paridade com register/resend-verification/verify-email que já usam hashToken).
   const verifyToken    = crypto.randomBytes(32).toString("hex")
   const tokenExpiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000) // 48h
 
@@ -65,7 +68,7 @@ export async function PATCH(req: Request) {
     data:  {
       email:               newEmail.toLowerCase(),
       emailVerified:       null,
-      emailVerifyToken:    verifyToken,
+      emailVerifyToken:    hashToken(verifyToken),
       emailTokenExpiresAt: tokenExpiresAt,
     },
   })

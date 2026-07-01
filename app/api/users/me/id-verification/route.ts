@@ -9,16 +9,27 @@ import { auth }             from "@/lib/auth"
 import { prisma }           from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getUploadLimits, getBiometricConsentConfig } from "@/lib/platform-config"
-import { isImageType, isMagicBytesValid } from "@/lib/imageUpload"
+import { isImageType, isMagicBytesValid, EXT_BY_MIME } from "@/lib/imageUpload"
 import { BIOMETRIC_CONSENT_VERSION } from "@/lib/legal-config"
 import { BIOMETRIC_CONSENT_TEXT } from "@/lib/legal/biometric-consent-text"
 import { hashToken } from "@/lib/crypto"
 import { extractClientIp } from "@/lib/access-log"
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 
 export async function POST(req: NextRequest) {
   const supabase = createAdminClient()
   const session = await auth()
   if (!session) return NextResponse.json({ error: { code: "UNAUTHORIZED" } }, { status: 401 })
+
+  // M4 (SEC-MED): rate limit por usuário — mesmo padrão de checkRateLimit/rateLimitResponse
+  // já usado em POST /api/bookings e RATE_LIMITS em lib/rateLimit.ts.
+  const rl = await checkRateLimit(
+    `upload:${session.user.id}`,
+    RATE_LIMITS.upload.limit,
+    RATE_LIMITS.upload.windowMs,
+    req,
+  )
+  if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
   const user = await prisma.user.findUnique({
     where:  { id: session.user.id },
@@ -104,8 +115,10 @@ export async function POST(req: NextRequest) {
   const docBuf    = Buffer.from(docArr)
   const selfieBuf = Buffer.from(selfieArr)
 
-  const docExt    = docFile.name.split(".").pop()?.toLowerCase() ?? "jpg"
-  const selfieExt = selfie.name.split(".").pop()?.toLowerCase() ?? "jpg"
+  // A2 (SEC-ALTO): extensão derivada do MIME já validado, NUNCA do nome do cliente
+  // (evita salvar .php/.exe no bucket privado). Paridade com app/api/upload/route.ts.
+  const docExt    = EXT_BY_MIME[docFile.type.toLowerCase()] ?? "jpg"
+  const selfieExt = EXT_BY_MIME[selfie.type.toLowerCase()]  ?? "jpg"
   const docPath   = `id-verification/${userId}/document-${now}.${docExt}`
   const selfiePath = `id-verification/${userId}/selfie-${now}.${selfieExt}`
 
@@ -115,10 +128,12 @@ export async function POST(req: NextRequest) {
   ])
 
   if (docUpload.error || selfieUpload.error) {
+    // M2 (SEC-MED): log interno com detalhe; resposta ao cliente é genérica
+    // (paridade com app/api/upload/route.ts e app/api/items/[id]/images/route.ts).
     const detail = docUpload.error?.message ?? selfieUpload.error?.message ?? "unknown"
     console.error("[id-verification upload]", detail)
     return NextResponse.json(
-      { error: { code: "UPLOAD_ERROR", message: `Falha ao enviar arquivos: ${detail}` } },
+      { error: { code: "UPLOAD_ERROR", message: "Falha ao enviar arquivos. Tente novamente." } },
       { status: 500 }
     )
   }
