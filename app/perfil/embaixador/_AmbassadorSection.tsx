@@ -119,10 +119,10 @@ export function AmbassadorSection({ stats: initialStats, hasConsented: initialCo
           })}
         </div>
 
-        {/* Banner pré-D4 */}
-        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          <strong>Comissões em análise jurídica.</strong>{" "}
-          Seus créditos acumulados estão seguros e serão liberados após a conclusão da validação legal.
+        {/* Banner pré-go-live */}
+        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:bg-amber-900/30 dark:border-amber-700 dark:text-amber-200">
+          <strong>Programa em pré-lançamento.</strong>{" "}
+          Você já pode indicar amigos e acompanhar suas indicações. O pagamento das comissões começa quando a plataforma entrar no ar.
         </div>
       </div>
 
