@@ -22,6 +22,7 @@ export default async function DocumentosPage() {
       cnpjEncrypted:        true,
       idVerificationStatus: true,
       idRejectionReason:    true,
+      idSelfieConsentAt:    true,
     },
   })
 
@@ -93,6 +94,7 @@ export default async function DocumentosPage() {
               status={user.idVerificationStatus}
               rejectionReason={user.idRejectionReason}
               biometricConsentRequired={biometricConsentRequired}
+              hasBiometricConsent={user.idSelfieConsentAt !== null}
             />
           </div>
         </div>

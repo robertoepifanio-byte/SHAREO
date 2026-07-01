@@ -50,6 +50,11 @@ export async function GET() {
           idVerificationStatus: true,
           idSubmittedAt:        true,
           idVerifiedAt:         true,
+          // Prova de consentimento biométrico (LGPD art. 20 — direito do titular).
+          // idSelfieConsentIp fica FORA (dado de auditoria interna, não PII do titular).
+          idSelfieConsentAt:      true,
+          idSelfieConsentVersion: true,
+          idSelfieConsentTextHash: true,
           createdAt:       true,
         },
       }),
