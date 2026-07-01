@@ -53,7 +53,7 @@ export function HelpButton() {
         aria-label="Central de Ajuda"
         aria-haspopup="true"
         aria-expanded={open}
-        className="h-9 w-9 rounded-full bg-white/15 border border-white/30 text-white text-sm font-bold hover:bg-white/25 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary flex items-center justify-center"
+        className="h-11 w-11 rounded-full bg-white/15 border border-white/30 text-white text-sm font-bold hover:bg-white/25 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary flex items-center justify-center"
       >
         ?
       </button>
@@ -72,7 +72,7 @@ export function HelpButton() {
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className="flex h-10 items-center gap-3 px-4 text-sm text-foreground hover:bg-brand/5 hover:text-brand transition-colors outline-none focus-visible:bg-brand/5"
+                  className="flex h-11 items-center gap-3 px-4 text-sm text-foreground hover:bg-brand/5 hover:text-brand transition-colors outline-none focus-visible:bg-brand/5"
                   onClick={() => setOpen(false)}
                 >
                   <span aria-hidden="true">{item.icon}</span>

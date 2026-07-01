@@ -86,7 +86,7 @@ export function ItemCard({ item, showActions = false, isFavorited = false, hotBa
           {/* Badge "Mais alugado" */}
           {hotBadge && (
             <div className="absolute bottom-2 left-2 rounded-full bg-orange-cta px-2 py-0.5 text-[10px] font-bold text-white">
-              🔥 Mais alugado
+              <span aria-hidden="true">🔥</span> Mais alugado
             </div>
           )}
 
@@ -98,6 +98,7 @@ export function ItemCard({ item, showActions = false, isFavorited = false, hotBa
           {/* Verificado */}
           {item.owner?.isVerified && (
             <div
+              role="img"
               className="absolute right-2 bottom-2 flex h-5 w-5 items-center justify-center rounded-full bg-success/90 text-white"
               title="Anunciante verificado"
               aria-label="Anunciante verificado"

@@ -69,7 +69,7 @@ export function FilterBottomSheet({ isOpen, onClose, children, title = "Filtros"
           <h2 className="text-lg font-bold text-primary">{title}</h2>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-muted-foreground hover:bg-background transition-colors"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-border text-muted-foreground hover:bg-background transition-colors"
             aria-label="Fechar filtros"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
