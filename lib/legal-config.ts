@@ -12,6 +12,16 @@
  */
 export const CONSENT_VERSION = "v1.1"
 
+/**
+ * Versão do TEXTO de consentimento específico para tratamento biométrico
+ * (selfie do KYC) — LGPD art. 11, II, "a" (decisão C1, 2026-06-30).
+ * Evolui em ciclo próprio, INDEPENDENTE de CONSENT_VERSION: alterar o texto do
+ * consentimento da selfie (lib/legal/biometric-consent-text.ts) exige bump aqui,
+ * mas não força reaceite dos Termos. Rascunho gated D4 — só usado com a flag
+ * `biometricConsentRequired` ligada (default OFF). Ver docs/spec-consentimento-biometria-c1.md.
+ */
+export const BIOMETRIC_CONSENT_VERSION = "biometric-v1.0"
+
 /** Data da última atualização dos documentos (exibição amigável). */
 export const POLICY_UPDATED_AT = "junho de 2026"
 

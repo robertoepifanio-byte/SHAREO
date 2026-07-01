@@ -1,12 +1,22 @@
 "use client"
 
 import { useRef, useState } from "react"
+import { BIOMETRIC_CONSENT_VERSION } from "@/lib/legal-config"
+import {
+  BIOMETRIC_CONSENT_TITLE,
+  BIOMETRIC_CONSENT_SUBTITLE,
+  BIOMETRIC_CONSENT_TEXT,
+  BIOMETRIC_CONSENT_CHECKBOX,
+} from "@/lib/legal/biometric-consent-text"
 
 type Status = "UNVERIFIED" | "PENDING" | "VERIFIED" | "REJECTED"
 
 interface Props {
   status:           Status
   rejectionReason?: string | null
+  /** Exige o consentimento biométrico específico (LGPD art. 11). Default false =
+   *  fluxo de KYC atual, sem passo de consentimento. Ligado só com a flag D4. */
+  biometricConsentRequired?: boolean
 }
 
 const STATUS_INFO: Record<Status, { label: string; color: string; icon: string }> = {
@@ -16,12 +26,13 @@ const STATUS_INFO: Record<Status, { label: string; color: string; icon: string }
   REJECTED:   { label: "Recusado",              color: "text-destructive",      icon: "✗" },
 }
 
-export function IdVerification({ status: initialStatus, rejectionReason }: Props) {
+export function IdVerification({ status: initialStatus, rejectionReason, biometricConsentRequired = false }: Props) {
   const [status,  setStatus]  = useState<Status>(initialStatus)
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState("")
   const [success, setSuccess] = useState(false)
   const [open,    setOpen]    = useState(false)
+  const [consent, setConsent] = useState(false)
 
   const docRef        = useRef<HTMLInputElement>(null)
   const docCamRef     = useRef<HTMLInputElement>(null)
@@ -69,6 +80,10 @@ export function IdVerification({ status: initialStatus, rejectionReason }: Props
     const doc    = docRef.current?.files?.[0] ?? docCamRef.current?.files?.[0]
     const selfie = selfieRef.current?.files?.[0] ?? selfieCamRef.current?.files?.[0]
     if (!doc || !selfie) { setError("Selecione o documento e a selfie."); return }
+    if (biometricConsentRequired && !consent) {
+      setError("É necessário consentir com o tratamento da selfie para prosseguir.")
+      return
+    }
 
     setLoading(true); setError("")
     try {
@@ -79,6 +94,7 @@ export function IdVerification({ status: initialStatus, rejectionReason }: Props
       const fd = new FormData()
       fd.append("document", docBlob, "document.jpg")
       fd.append("selfie",   selfieBlob, "selfie.jpg")
+      if (biometricConsentRequired) fd.append("biometricConsent", consent ? "true" : "false")
 
       const res  = await fetch("/api/users/me/id-verification", { method: "POST", body: fd })
       const json = await res.json()
@@ -187,6 +203,30 @@ export function IdVerification({ status: initialStatus, rejectionReason }: Props
                 A análise é feita pela equipe ShareO em até 24 horas.
               </p>
 
+              {/* Consentimento biométrico específico (LGPD art. 11) — só aparece com a flag
+                  biometricConsentRequired ligada. Separado do aceite dos Termos. */}
+              {biometricConsentRequired && (
+                <div className="rounded-lg border border-border bg-background p-3">
+                  <p className="text-sm font-semibold text-foreground">{BIOMETRIC_CONSENT_TITLE}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{BIOMETRIC_CONSENT_SUBTITLE}</p>
+                  <div className="mt-2 max-h-40 overflow-y-auto whitespace-pre-line rounded-md bg-surface p-2 text-[11px] leading-relaxed text-muted-foreground">
+                    {BIOMETRIC_CONSENT_TEXT}
+                  </div>
+                  <label className="mt-3 flex items-start gap-2 text-xs text-foreground">
+                    <input
+                      type="checkbox"
+                      checked={consent}
+                      onChange={(e) => setConsent(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 shrink-0 rounded border-input"
+                    />
+                    <span>{BIOMETRIC_CONSENT_CHECKBOX}</span>
+                  </label>
+                  <p className="mt-2 text-right text-[10px] text-muted-foreground">
+                    Versão do consentimento: {BIOMETRIC_CONSENT_VERSION}
+                  </p>
+                </div>
+              )}
+
               {error && <p className="text-xs text-destructive">{error}</p>}
             </div>
 
@@ -200,8 +240,8 @@ export function IdVerification({ status: initialStatus, rejectionReason }: Props
               </button>
               <button
                 onClick={submit}
-                disabled={loading}
-                className="flex-1 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
+                disabled={loading || (biometricConsentRequired && !consent)}
+                className="flex-1 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
               >
                 {loading ? "Comprimindo e enviando…" : "Enviar documentos"}
               </button>

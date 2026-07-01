@@ -272,6 +272,16 @@ model User {
   idVerifiedAt         DateTime?
   idRejectionReason    String?
 
+  // Prova de consentimento específico para tratamento biométrico da selfie (KYC).
+  // Base legal: LGPD art. 11, II, "a" (decisão C1, 2026-06-30). Padrão análogo a
+  // ContractAcceptance (versão + hash + IP). Gravado só quando a flag
+  // biometricConsentRequired está ligada (default OFF). Mantido 5 anos como prova
+  // mesmo após a selfie ser apagada (revogação / exclusão de conta).
+  idSelfieConsentAt       DateTime?
+  idSelfieConsentVersion  String?
+  idSelfieConsentTextHash String?
+  idSelfieConsentIp       String?
+
   // LGPD — consentimento explícito no cadastro
   consentAt      DateTime?
   consentIp      String?

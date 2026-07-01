@@ -317,6 +317,34 @@ export async function getMercadoPagoConfig(): Promise<MercadoPagoConfig> {
   }
 }
 
+// ─── Consentimento biométrico da selfie (KYC — LGPD art. 11, gated D4) ───────
+// Flag de feature: PlatformConfig.biometricConsentRequired
+// Default OFF — com a flag desligada o fluxo de KYC atual NÃO muda (nenhum passo
+// de consentimento na UI, nenhum bloqueio na API). Ativar só após parecer D4 +
+// aprovação do texto pelo DPO. Ver docs/spec-consentimento-biometria-c1.md.
+
+export interface BiometricConsentConfig {
+  required: boolean // chave biometricConsentRequired ("true"/"false")
+}
+
+const DEFAULT_BIOMETRIC_CONSENT: BiometricConsentConfig = { required: false }
+
+/**
+ * Lê a configuração do consentimento biométrico.
+ * Nunca lança exceção — usado no caminho do upload de KYC.
+ * Default OFF garante que o comportamento atual não muda até ativação explícita.
+ */
+export async function getBiometricConsentConfig(): Promise<BiometricConsentConfig> {
+  try {
+    const map = await loadConfig()
+    return {
+      required: map.biometricConsentRequired === "true",
+    }
+  } catch {
+    return DEFAULT_BIOMETRIC_CONSENT
+  }
+}
+
 const DEFAULT_WEEKLY_MULTIPLIER  = 3   // preço semanal = 3× diária
 const DEFAULT_MONTHLY_MULTIPLIER = 15  // preço mensal  = 15× diária
 
