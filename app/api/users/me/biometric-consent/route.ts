@@ -29,7 +29,10 @@ export async function DELETE(_req: NextRequest) {
       select: { idSelfieUrl: true, idSelfieConsentAt: true },
     })
 
-    if (!user || (!user.idSelfieUrl && !user.idSelfieConsentAt))
+    // Só quem TEM registro de consentimento biométrico pode revogá-lo. Isso evita
+    // que um usuário VERIFIED pelo fluxo antigo (selfie enviada, mas idSelfieConsentAt
+    // null) seja rebaixado a UNVERIFIED por engano ao chamar este endpoint.
+    if (!user || !user.idSelfieConsentAt)
       return NextResponse.json(
         { error: { code: "NO_BIOMETRIC_DATA", message: "Não há consentimento biométrico ativo para revogar." } },
         { status: 404 }
