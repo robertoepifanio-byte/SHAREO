@@ -241,7 +241,7 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
                   type="button"
                   onClick={() => setExplorarOpen((v) => !v)}
                   aria-expanded={explorarOpen}
-                  aria-haspopup="menu"
+                  aria-haspopup="true"
                   className={sectionBtn}
                 >
                   <span>Explorar</span>
@@ -265,7 +265,7 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
                       type="button"
                       onClick={() => setAnunciarOpen((v) => !v)}
                       aria-expanded={anunciarOpen}
-                      aria-haspopup="menu"
+                      aria-haspopup="true"
                       className="flex h-12 w-full items-center justify-between rounded-lg px-4 text-base font-bold bg-accent text-accent-foreground hover:brightness-105 transition-colors"
                     >
                       <span>Anunciar</span>
@@ -310,7 +310,7 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
                       type="button"
                       onClick={() => setAccountOpen((v) => !v)}
                       aria-expanded={accountOpen}
-                      aria-haspopup="menu"
+                      aria-haspopup="true"
                       className={sectionBtn}
                     >
                       <span>Minha Conta</span>
@@ -366,7 +366,7 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
                       type="button"
                       onClick={() => setHelpOpen((v) => !v)}
                       aria-expanded={helpOpen}
-                      aria-haspopup="menu"
+                      aria-haspopup="true"
                       className={sectionBtn}
                     >
                       <span>Central de Ajuda</span>
@@ -384,7 +384,7 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
                         </li>
                       ))}
                       <li>
-                        <NavLink href="/ajuda" className="flex h-11 items-center gap-3 rounded-lg pl-8 pr-4 text-sm font-medium text-brand hover:bg-white/10 transition-colors">
+                        <NavLink href="/ajuda" aria-label="Ver todos os artigos da Central de Ajuda" className="flex h-11 items-center gap-3 rounded-lg pl-8 pr-4 text-sm font-medium text-brand hover:bg-white/10 transition-colors">
                           Ver tudo →
                         </NavLink>
                       </li>
@@ -407,7 +407,7 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
                       type="button"
                       onClick={() => setHelpOpen((v) => !v)}
                       aria-expanded={helpOpen}
-                      aria-haspopup="menu"
+                      aria-haspopup="true"
                       className={sectionBtn}
                     >
                       <span>Central de Ajuda</span>
@@ -425,7 +425,7 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
                         </li>
                       ))}
                       <li>
-                        <NavLink href="/ajuda" className="flex h-11 items-center gap-3 rounded-lg pl-8 pr-4 text-sm font-medium text-brand hover:bg-white/10 transition-colors">
+                        <NavLink href="/ajuda" aria-label="Ver todos os artigos da Central de Ajuda" className="flex h-11 items-center gap-3 rounded-lg pl-8 pr-4 text-sm font-medium text-brand hover:bg-white/10 transition-colors">
                           Ver tudo →
                         </NavLink>
                       </li>

@@ -43,18 +43,25 @@ export function ListingQualityIndicator({
 
   let label: string
   let colorClass: string
+  // text-white tem contraste 2.02:1 sobre bg-amber-500 — falha WCAG AA.
+  // Para "Razoável" usamos text-amber-900 (contraste ~5:1). Demais estados mantêm text-white.
+  let badgeTextClass: string
   if (score < 40) {
-    label      = "Fraco"
-    colorClass = "bg-destructive"
+    label         = "Fraco"
+    colorClass    = "bg-destructive"
+    badgeTextClass = "text-white"
   } else if (score < 70) {
-    label      = "Razoável"
-    colorClass = "bg-amber-500"
+    label         = "Razoável"
+    colorClass    = "bg-amber-500"
+    badgeTextClass = "text-amber-900"
   } else if (score < 100) {
-    label      = "Bom"
-    colorClass = "bg-brand"
+    label         = "Bom"
+    colorClass    = "bg-brand"
+    badgeTextClass = "text-white"
   } else {
-    label      = "Excelente"
-    colorClass = "bg-success"
+    label         = "Excelente"
+    colorClass    = "bg-success"
+    badgeTextClass = "text-white"
   }
 
   return (
@@ -64,7 +71,7 @@ export function ListingQualityIndicator({
     >
       <div className="mb-2 flex items-center justify-between gap-2">
         <span className="text-xs font-semibold text-muted-foreground">Qualidade do anúncio</span>
-        <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold text-white ${colorClass}`}>
+        <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${badgeTextClass} ${colorClass}`}>
           {score}% — {label}
         </span>
       </div>

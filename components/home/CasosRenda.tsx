@@ -99,7 +99,7 @@ export function CasosRenda() {
 
               {/* Estrelas */}
               <div className="flex gap-0.5 text-accent" aria-label="Avaliação 5 estrelas">
-                {"★★★★★"}
+                <span aria-hidden="true">{"★★★★★"}</span>
               </div>
             </article>
           ))}

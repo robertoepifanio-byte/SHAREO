@@ -256,7 +256,7 @@ export function BookingActions({
   return (
     <div className="flex flex-col gap-3">
       {error && (
-        <p className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">{error}</p>
+        <p role="alert" className="rounded-lg bg-destructive/10 px-4 py-2 text-sm text-destructive">{error}</p>
       )}
 
       {/* ── Painel: Cancelar ── */}
@@ -271,11 +271,11 @@ export function BookingActions({
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-brand resize-none"
           />
           <div className="mt-3 flex gap-2">
-            <button onClick={submitCancel} disabled={!reason.trim() || loading}
+            <button type="button" onClick={submitCancel} disabled={!reason.trim() || loading}
               className="rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-opacity">
               Confirmar cancelamento
             </button>
-            <button onClick={reset} className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-background transition-colors">
+            <button type="button" onClick={reset} className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-background transition-colors">
               Voltar
             </button>
           </div>
@@ -321,13 +321,14 @@ export function BookingActions({
 
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={submitPickupTime}
               disabled={loading || pickupTokenInput.length !== 6}
               className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
             >
               Confirmar retirada
             </button>
-            <button onClick={reset} className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-background transition-colors">
+            <button type="button" onClick={reset} className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-background transition-colors">
               Cancelar
             </button>
           </div>
@@ -357,13 +358,14 @@ export function BookingActions({
           </p>
           <div className="mt-3 flex gap-2">
             <button
+              type="button"
               onClick={submitReturnTime}
               disabled={loading}
               className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
             >
               Devolver
             </button>
-            <button onClick={reset} className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-background transition-colors">
+            <button type="button" onClick={reset} className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-background transition-colors">
               Cancelar
             </button>
           </div>
@@ -381,11 +383,11 @@ export function BookingActions({
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-brand"
           />
           <div className="mt-3 flex gap-2">
-            <button onClick={submitExtendRequest} disabled={!newEndDate || loading}
+            <button type="button" onClick={submitExtendRequest} disabled={!newEndDate || loading}
               className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-opacity">
               Solicitar extensão
             </button>
-            <button onClick={reset} className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-background transition-colors">
+            <button type="button" onClick={reset} className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-background transition-colors">
               Cancelar
             </button>
           </div>
@@ -394,18 +396,18 @@ export function BookingActions({
 
       {/* ── Painel: Proprietário responde extensão pendente ── */}
       {showExtendRespond && extensionRequestedEndDate && (
-        <div className="rounded-xl border border-amber-300 bg-amber-50 p-4">
-          <p className="mb-1 text-sm font-semibold text-amber-900">Solicitação de extensão de prazo</p>
-          <p className="mb-3 text-sm text-amber-800">
+        <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 dark:bg-amber-900/30 dark:border-amber-700">
+          <p className="mb-1 text-sm font-semibold text-amber-900 dark:text-amber-200">Solicitação de extensão de prazo</p>
+          <p className="mb-3 text-sm text-amber-800 dark:text-amber-200">
             O locatário solicita estender a devolução até{" "}
             <strong>{fmtDate(extensionRequestedEndDate)}</strong>.
           </p>
           <div className="flex gap-2">
-            <button onClick={() => submitExtendRespond("approve")} disabled={loading}
+            <button type="button" onClick={() => submitExtendRespond("approve")} disabled={loading}
               className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-opacity">
               ✅ Aprovar extensão
             </button>
-            <button onClick={() => submitExtendRespond("reject")} disabled={loading}
+            <button type="button" onClick={() => submitExtendRespond("reject")} disabled={loading}
               className="rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors">
               Recusar
             </button>
@@ -422,6 +424,7 @@ export function BookingActions({
           <div className="mb-3 grid grid-cols-2 gap-2">
             {REPORT_CATEGORIES.map((cat) => (
               <button
+                type="button"
                 key={cat.value}
                 onClick={() => setReportCategory(cat.value)}
                 className={[
@@ -450,6 +453,7 @@ export function BookingActions({
             onChange={(e) => setReportPhoto(e.target.files?.[0] ?? null)}
           />
           <button
+            type="button"
             onClick={() => fileRef.current?.click()}
             className="mb-3 flex items-center gap-2 rounded-lg border border-dashed border-border px-4 py-2.5 text-xs text-muted-foreground hover:border-brand hover:text-brand transition-colors"
           >
@@ -462,13 +466,14 @@ export function BookingActions({
 
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={submitReport}
               disabled={!reportCategory || !reportDesc.trim() || loading}
               className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
             >
               Enviar relatório
             </button>
-            <button onClick={reset} className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-background transition-colors">
+            <button type="button" onClick={reset} className="rounded-lg border border-border px-4 py-2 text-sm text-foreground hover:bg-background transition-colors">
               Cancelar
             </button>
           </div>
@@ -487,6 +492,7 @@ export function BookingActions({
         )}
         {buttons.map(({ label, variant, onClick }) => (
           <button
+            type="button"
             key={label}
             onClick={onClick}
             disabled={loading}
