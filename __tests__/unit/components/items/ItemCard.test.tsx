@@ -172,13 +172,15 @@ describe("ItemCard", () => {
   describe("imagem", () => {
     it("tag alt da imagem contém o título do item", () => {
       render(<ItemCard item={makeItem({ title: "Escada Telescópica" })} />)
-      const img = screen.getByRole("img")
+      // Qualifica pelo alt para não confundir com o RatingStars (role="img" para a11y)
+      const img = screen.getByRole("img", { name: "Escada Telescópica" })
       expect(img).toHaveAttribute("alt", "Escada Telescópica")
     })
 
     it("renderiza sem imagem quando images array está vazio", () => {
-      render(<ItemCard item={makeItem({ images: [] })} />)
-      // Sem src definido, o <img> do mock não é renderizado — o placeholder SVG aparece
+      render(<ItemCard item={makeItem({ images: [], avgRating: null })} />)
+      // Sem src e sem avgRating: nenhum element com role="img" no DOM
+      // (sem foto do item e sem RatingStars visível)
       expect(screen.queryByRole("img")).not.toBeInTheDocument()
     })
   })
