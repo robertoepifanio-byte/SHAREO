@@ -32,9 +32,18 @@ export function StickyBookingCTA({ pricePerDay, isLoggedIn, itemId }: Props) {
 
   if (!visible) return null
 
+  // Logado: rola até a calculadora de locação (#price-calc), que é o fluxo real de
+  // reserva (POST /api/bookings). NÃO navega para /reservas/nova — essa rota não
+  // existe. Não logado: manda para o login e volta ao item.
   const href = isLoggedIn
-    ? `/reservas/nova?itemId=${itemId}`
+    ? `#price-calc`
     : `/login?next=/itens/${itemId}`
+
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (!isLoggedIn) return // deixa o link de login navegar normalmente
+    e.preventDefault()
+    document.getElementById("price-calc")?.scrollIntoView({ behavior: "smooth", block: "center" })
+  }
 
   return (
     <div
@@ -51,6 +60,7 @@ export function StickyBookingCTA({ pricePerDay, isLoggedIn, itemId }: Props) {
       </div>
       <a
         href={href}
+        onClick={handleClick}
         className="inline-flex h-11 items-center rounded-lg bg-brand px-6 text-sm font-bold text-white hover:opacity-90 transition-opacity focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 outline-none"
       >
         Reservar agora
