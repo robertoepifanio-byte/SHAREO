@@ -50,10 +50,8 @@ Hoje o checkout do Mercado Pago ofereceria **cartão + Pix + boleto** (não há 
 - **Opção 1 (recomendada):** excluir boleto → checkout fica **cartão + Pix** (é o que a FAQ já descreve).
 - **Opção 2:** aceitar boleto → ajustar a FAQ e o fluxo para esperar a compensação.
 
-### 4.3 Canal de denúncia de conteúdo (Marco Civil art. 19) — DECISÃO
-A cláusula de Termos aprovada (E3) promete um **"canal de denúncia"** de anúncios/avaliações/mensagens. **Esse canal não existe no produto hoje** (só há disputa de reserva). Decidir:
-- **Construir** o canal de denúncia + remoção (botão "Reportar" + moderação) antes de publicar a cláusula; **ou**
-- **Reescrever** a cláusula como faculdade futura ("poderá disponibilizar") até o canal existir.
+### 4.3 Canal de denúncia de conteúdo (Marco Civil art. 19) — ✅ DECIDIDO: reescrever
+A cláusula E3 prometia um "canal de denúncia" que **não existe no produto hoje** (só disputa de reserva). **Decisão (2026-06-30): reescrever** a cláusula como **faculdade futura** ("poderá disponibilizar canais de denúncia"), sem afirmar que o canal já existe — elimina o risco CDC art. 30. O cumprimento de ordem judicial de remoção fica afirmado de forma incondicional. **Construir o canal** (botão "Reportar" + moderação + model `ContentReport`) vira **roadmap H2**, não pré-requisito dos Termos. A nova redação (`draft-clausulas-mp-termos-privacidade.md` §A.5) precisa de um OK rápido da advogada.
 
 ### 4.4 Selfie de verificação = biometria (LGPD art. 11) — DECISÃO
 O jurídico confirmou que a selfie do KYC é **dado biométrico sensível** e exige **consentimento específico e destacado** (separado dos Termos). Decisões necessárias:

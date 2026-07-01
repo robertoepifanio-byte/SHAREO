@@ -51,7 +51,7 @@
 
 ## 7. Marco Civil da Internet (Lei 12.965/2014)
 - 🔨 **Guarda de logs por 6 meses** (art. 15) — **scaffolding implementado, flag OFF** (#118, s40): tabela `access_logs` (sa-east-1) + `lib/access-log.ts` (grava só com `accessLogsEnabled="true"`) + cron de expurgo aos 180d. **`logAccess()` já integrado nas rotas autenticadas** (`users/me`, `bookings`, `conversations`) no **PR #125** (s41, flag ainda OFF → zero I/O). **Ainda NÃO conforme em produção** — falta jurídico decidir **Opção I** (Vercel Log Drain → Axiom/Better Stack/S3, dados EUA) × **Opção II** (tabela sa-east-1, recomendada p/ H1) e **ligar a flag**. Ver [`retencao-logs-art15.md`](retencao-logs-art15.md) e [`auditoria-conformidade-tecnica-s40.md`](auditoria-conformidade-tecnica-s40.md).
-- 🔨 Política de **notificação e retirada** de conteúdo (art. 19).
+- 🟡 Política de **notificação e retirada** de conteúdo (art. 19) — **DECISÃO 4.3 (2026-06-30): reescrever** a cláusula E3 como **faculdade futura** ("poderá disponibilizar canais de denúncia"), sem prometer canal inexistente (elimina risco CDC art. 30); cumprimento de ordem judicial afirmado de forma incondicional. Rascunho atualizado em [`draft-clausulas-mp-termos-privacidade.md`](draft-clausulas-mp-termos-privacidade.md) §A.5. **Construir o canal de denúncia (botão "Reportar" + model `ContentReport` + takedown) = roadmap H2**, não pré-requisito dos Termos. Confirmar a nova redação com a advogada.
 - ✅ **Termos de Uso e Política de Privacidade publicados/acessíveis** (`/termos`, `/privacidade`) — **revisar o conteúdo** conforme o parecer.
 
 ## 8. Complementar
