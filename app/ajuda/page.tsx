@@ -203,8 +203,8 @@ const SECTIONS = [
     id: "pagamento",
     title: "Pagamento e Segurança",
     icon: "🔒",
-    color: "bg-amber-50 border-amber-200",
-    iconBg: "bg-amber-100",
+    color: "bg-amber-50 border-amber-200 dark:bg-surface dark:border-border",
+    iconBg: "bg-amber-100 dark:bg-amber-500/20",
     faqs: [
       { q: "Como o pagamento funciona no ShareO?",
         a: "O pagamento segue quatro etapas: 1) O locatário solicita a reserva. 2) O proprietário confirma. 3) O locatário paga pelo Checkout do Mercado Pago — o valor fica em custódia do Mercado Pago. 4) Após a devolução confirmada, o Mercado Pago processa o repasse ao proprietário toda segunda-feira (considerando todas as operações concluídas até domingo às 23h59), descontando automaticamente a taxa de serviço da ShareO. Se segunda for feriado, o repasse ocorre no primeiro dia útil seguinte. Isso garante segurança para os dois lados." },
@@ -228,8 +228,8 @@ const SECTIONS = [
     id: "taxas",
     title: "Taxas e Custos",
     icon: "🧾",
-    color: "bg-emerald-50 border-emerald-200",
-    iconBg: "bg-emerald-100",
+    color: "bg-emerald-50 border-emerald-200 dark:bg-surface dark:border-border",
+    iconBg: "bg-emerald-100 dark:bg-emerald-500/20",
     faqs: [
       { q: "Qual é a taxa de serviço do ShareO?",
         a: "TAXA_FAQ_PLACEHOLDER" },
@@ -249,8 +249,8 @@ const SECTIONS = [
     id: "disputas",
     title: "Disputas e Proteção",
     icon: "⚖️",
-    color: "bg-red-50 border-red-200",
-    iconBg: "bg-red-100",
+    color: "bg-red-50 border-red-200 dark:bg-surface dark:border-border",
+    iconBg: "bg-red-100 dark:bg-red-500/20",
     faqs: [
       { q: "Quando posso abrir uma disputa?",
         a: "Você pode abrir uma disputa enquanto a reserva estiver com status 'Ativo' ou em até 48 horas após a devolução do item. Após esse prazo, a reserva é encerrada e o pagamento liberado automaticamente. Por isso, inspecione o item imediatamente na devolução e abra a disputa se necessário — não espere." },
@@ -270,8 +270,8 @@ const SECTIONS = [
     id: "suporte",
     title: "Suporte e Atendimento",
     icon: "🎧",
-    color: "bg-sky-50 border-sky-200",
-    iconBg: "bg-sky-100",
+    color: "bg-sky-50 border-sky-200 dark:bg-surface dark:border-border",
+    iconBg: "bg-sky-100 dark:bg-sky-500/20",
     faqs: [
       { q: "Quais são os canais de atendimento?",
         a: "Você pode nos contatar por: Email (suporte@shareo.com.br) — respondemos em até 8 horas úteis (casos urgentes: até 4 horas úteis); Chat interno do app — disponível em reservas ativas; e, em casos urgentes, pelo botão 'Atendimento emergencial' dentro da reserva com disputa ativa. Nosso horário de atendimento é segunda a sexta, das 09h às 17h." },
@@ -289,8 +289,8 @@ const SECTIONS = [
     id: "conta",
     title: "Conta e Perfil",
     icon: "👤",
-    color: "bg-purple-50 border-purple-200",
-    iconBg: "bg-purple-100",
+    color: "bg-purple-50 border-purple-200 dark:bg-surface dark:border-border",
+    iconBg: "bg-purple-100 dark:bg-purple-500/20",
     faqs: [
       { q: "Como verifico minha identidade?",
         a: "Acesse 'Meu Perfil' e abra 'Documentos'. Lá você encontra a opção de verificação de identidade. Envie os documentos solicitados (CPF e selfie com o documento). Quando aprovada, um selo de verificado aparece no seu perfil. O processo leva até 24 horas úteis." },
@@ -331,9 +331,9 @@ const SECTIONS = [
 
 function Callout({ type, children }: { type: "tip" | "example" | "warning"; children: ReactNode }) {
   const map = {
-    tip:     { cls: "bg-sky-50 border-sky-200 text-sky-800",         label: "💡 Dica",             lc: "text-sky-700 font-bold" },
-    example: { cls: "bg-emerald-50 border-emerald-200 text-emerald-800", label: "📊 Exemplo prático", lc: "text-emerald-700 font-bold" },
-    warning: { cls: "bg-amber-50 border-amber-200 text-amber-800",   label: "⚠️ Atenção",          lc: "text-amber-700 font-bold" },
+    tip:     { cls: "bg-sky-50 border-sky-200 text-sky-800 dark:bg-sky-500/10 dark:border-sky-500/30 dark:text-sky-200",             label: "💡 Dica",             lc: "text-sky-700 dark:text-sky-300 font-bold" },
+    example: { cls: "bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-500/10 dark:border-emerald-500/30 dark:text-emerald-200", label: "📊 Exemplo prático", lc: "text-emerald-700 dark:text-emerald-300 font-bold" },
+    warning: { cls: "bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-500/10 dark:border-amber-500/30 dark:text-amber-200",   label: "⚠️ Atenção",          lc: "text-amber-700 dark:text-amber-300 font-bold" },
   }[type]
   return (
     <div className={`mt-3 rounded-lg border px-4 py-3 text-sm leading-relaxed ${map.cls}`}>
