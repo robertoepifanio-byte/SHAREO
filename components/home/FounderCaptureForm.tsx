@@ -197,7 +197,7 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
                 "min-h-[44px] rounded-lg border px-3 text-sm font-semibold transition-colors",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-primary",
                 isChecked
-                  ? "border-accent bg-accent/20 text-white"
+                  ? "border-accent bg-accent/20 text-foreground"
                   : "border-white/20 text-white/70 hover:border-white/40 hover:text-white",
                 state === "loading" ? "opacity-60" : "",
               ].join(" ")}

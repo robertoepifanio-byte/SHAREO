@@ -1,9 +1,11 @@
 import type { Metadata } from "next"
+import { headers } from "next/headers"
 import Image from "next/image"
 import { requireAdminPage } from "@/lib/auth/require-admin"
 import { Avatar } from "@/components/ui/Avatar"
 import { prisma } from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { auditLog } from "@/lib/audit"
 import { VerificationActions } from "./_Actions"
 import { EmptyState } from "@/components/ui/EmptyState"
 
@@ -37,7 +39,7 @@ async function signedUrl(path: string | null): Promise<string | null> {
 }
 
 export default async function VerificacoesPage() {
-  await requireAdminPage("ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL")
+  const session = await requireAdminPage("ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL")
 
   const [pending, recent] = await Promise.all([
     prisma.user.findMany({
@@ -63,13 +65,31 @@ export default async function VerificacoesPage() {
     }),
   ])
 
-  // Gera signed URLs para os documentos do bucket privado id-docs
+  // Gera signed URLs para os documentos do bucket privado id-docs.
+  // Registra acesso à selfie em admin_logs (LGPD art. 11 / spec-consentimento-biometria-c1 §6).
+  const reqHeaders = await headers()
+  const adminIp    = reqHeaders.get("x-forwarded-for")?.split(",")[0]?.trim()
+                  ?? reqHeaders.get("x-real-ip")
+                  ?? "unknown"
+
   const pendingWithUrls = await Promise.all(
-    pending.map(async (u) => ({
-      ...u,
-      idDocumentUrl: await signedUrl(u.idDocumentUrl),
-      idSelfieUrl:   await signedUrl(u.idSelfieUrl),
-    }))
+    pending.map(async (u) => {
+      const [docUrl, selfieUrl] = await Promise.all([
+        signedUrl(u.idDocumentUrl),
+        signedUrl(u.idSelfieUrl),
+      ])
+      // Registra acesso à selfie sempre que ela é exposta ao admin (fire-and-forget).
+      if (selfieUrl) {
+        auditLog(
+          session.user.id,
+          "kyc.selfie.view",
+          "User",
+          u.id,
+          { purpose: "kyc-review", ip: adminIp },
+        )
+      }
+      return { ...u, idDocumentUrl: docUrl, idSelfieUrl: selfieUrl }
+    })
   )
 
 
