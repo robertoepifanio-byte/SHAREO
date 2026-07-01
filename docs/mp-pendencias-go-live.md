@@ -41,39 +41,26 @@ chave de staging/produção (Sensitive, irrecuperável localmente).
 
 ---
 
-## 3. Restringir métodos de pagamento do Checkout Pro (excluir boleto)
+## 3. Restringir métodos de pagamento do Checkout Pro (excluir boleto) ✅ DECIDIDO+IMPLEMENTADO
 
-**Situação atual (verificado 2026-06-30):** a preferência de Checkout Pro criada em
-`app/api/payments/mp/checkout/route.ts` (linhas ~102–125) **não define `payment_methods`** —
-não há `excluded_payment_types` nem `excluded_payment_methods`. Logo, o checkout oferece
-**todos os métodos habilitados na conta do locador**: cartão de crédito/débito, **Pix** e
-também **boleto**.
+**Decisão dos fundadores (2026-06-30):** **excluir boleto** — checkout fica **cartão + Pix**
+(bate com a FAQ da Central de Ajuda). ✅ **Implementado** em `app/api/payments/mp/checkout/route.ts`:
+`payment_methods: { excluded_payment_types: [{ id: "ticket" }] }` no corpo da preferência.
 
-**Problema:** o **boleto** leva 1–3 dias úteis para compensar — incompatível com o fluxo de
-locação, em que o locador confirma em até 24h e o item é retirado logo em seguida. Um pagamento
-por boleto deixaria a reserva pendente por dias.
+**Contexto:** sem essa restrição, o Checkout Pro ofereceria **todos os métodos habilitados na
+conta do locador** — cartão, Pix **e boleto**. O **boleto** compensa em 1–3 dias úteis,
+incompatível com o fluxo de locação (locador confirma em 24h, item retirado em seguida) —
+deixaria a reserva pendente por dias.
 
-**Decisão (recomendada — opção 1):** **excluir boleto** da preferência, deixando o checkout
-apenas com **cartão + Pix** (que é exatamente o que a FAQ da Central de Ajuda descreve):
+**Ainda a fazer:**
 
-```ts
-// dentro de body da preferência, em app/api/payments/mp/checkout/route.ts
-payment_methods: {
-  excluded_payment_types: [{ id: "ticket" }], // "ticket" = boleto no MP
-},
-```
+- [x] Adicionar `excluded_payment_types: [{ id: "ticket" }]` ao corpo da preferência. ✅
+- [ ] Validar no sandbox que o checkout passa a exibir só cartão + Pix (quando o MP for exercitado).
+- Alternativa **descartada** (aceitar boleto): exigiria acrescentar "boleto" à FAQ e ajustar o
+  fluxo para aguardar a compensação antes de liberar a reserva. Não adotada.
 
-**O que fazer antes do go-live:**
-
-- [ ] Adicionar `excluded_payment_types: [{ id: "ticket" }]` ao corpo da preferência.
-- [ ] Validar no sandbox que o checkout passa a exibir só cartão + Pix.
-- [ ] (Se um dia quiserem ACEITAR boleto) em vez de excluir: acrescentar "boleto" à FAQ
-  "Quais formas de pagamento são aceitas?" (`app/ajuda/page.tsx`) **e** ajustar o fluxo para
-  aguardar a compensação antes de liberar a reserva.
-
-> Não é bloqueante para o merge da migração MP (flag OFF), mas deve ser fechado antes de ligar
-> `mercadoPagoEnabled` em produção, para a FAQ não prometer/omitir métodos divergentes do checkout
-> real (CDC art. 30/37).
+> A mudança está atrás da flag `mercadoPagoEnabled` (OFF) — sem efeito em produção até o go-live.
+> Mantém a FAQ da Central de Ajuda (cartão + Pix) coerente com o checkout real.
 
 ---
 

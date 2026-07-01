@@ -115,6 +115,10 @@ export async function POST(req: NextRequest) {
         external_reference: bookingId,
         notification_url:   `${APP_URL}${MP_WEBHOOK_PATH}`,
         auto_return:        "approved",
+        // Excluir boleto ("ticket"): compensa em 1–3 dias úteis, incompatível com a
+        // confirmação da locação em 24h. Checkout fica cartão + Pix (bate com a FAQ da
+        // Central de Ajuda). Ver docs/mp-pendencias-go-live.md item 3.
+        payment_methods:    { excluded_payment_types: [{ id: "ticket" }] },
         payer:              booking.borrower.email ? { email: booking.borrower.email } : undefined,
         back_urls: {
           success: `${APP_URL}/reservas/sucesso?bookingId=${bookingId}`,
