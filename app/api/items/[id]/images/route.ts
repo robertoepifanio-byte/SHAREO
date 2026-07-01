@@ -6,42 +6,17 @@ import { prisma } from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getUploadLimits } from "@/lib/platform-config"
 import { assertOwnerOrAdmin } from "@/lib/auth/ownership"
+import { ALLOWED_IMAGE_MIMES, EXT_BY_MIME } from "@/lib/imageUpload"
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 
 const BUCKET = process.env.NEXT_PUBLIC_STORAGE_BUCKET ?? "item-images"
-
-/**
- * Whitelist explícita de tipos de imagem aceitos.
- * Não usar `startsWith("image/")` — permitiria image/svg+xml (XSS).
- * application/octet-stream removido — aceitaria qualquer binário.
- *
- * Validação em duas camadas:
- * 1. Content-Type declarado pelo cliente (whitelist)
- * 2. Magic bytes reais do arquivo (fileTypeFromBuffer) — impede SVG/exe
- *    disfarçado de JPEG alterando apenas o Content-Type.
- */
-const ALLOWED_IMAGE_MIMES = new Set([
-  "image/jpeg",
-  "image/jpg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-  "image/heic",
-  "image/heif",
-])
 
 function isImageType(mimeType: string): boolean {
   return ALLOWED_IMAGE_MIMES.has(mimeType)
 }
 
-/**
- * Valida os magic bytes reais do arquivo.
- * file-type lê apenas os primeiros ~12 bytes — impacto de performance mínimo.
- * Retorna false se o tipo detectado não estiver na whitelist ou for desconhecido.
- */
 async function isMagicBytesValid(buffer: ArrayBuffer): Promise<boolean> {
   const detected = await fileTypeFromBuffer(buffer)
-  // HEIC/HEIF: file-type detecta como "image/heic" ou "image/heif"
-  // Se não detectado (arquivo muito pequeno ou formato raro), rejeitar por segurança
   if (!detected) return false
   return ALLOWED_IMAGE_MIMES.has(detected.mime)
 }
@@ -57,6 +32,14 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
         { status: 401 }
       )
     }
+
+    const rl = await checkRateLimit(
+      `upload:${session.user.id}`,
+      RATE_LIMITS.upload.limit,
+      RATE_LIMITS.upload.windowMs,
+      req,
+    )
+    if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const { id } = await params
     const item = await prisma.item.findFirst({
@@ -112,7 +95,6 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       )
     }
 
-    // Validação de magic bytes — impede arquivos disfarçados (SVG como image/jpeg, etc.)
     const buffer = await file.arrayBuffer()
     if (!(await isMagicBytesValid(buffer))) {
       return NextResponse.json(
@@ -121,13 +103,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       )
     }
 
-    // Mapeia MIME → extensão (HEIC de iOS → salva como heic)
-    const MIME_EXT: Record<string, string> = {
-      "image/jpeg": "jpg", "image/jpg": "jpg", "image/png": "png",
-      "image/webp": "webp", "image/heic": "heic", "image/heif": "heif",
-      "image/gif": "gif",
-    }
-    const ext      = MIME_EXT[file.type] ?? (file.name.split(".").pop() ?? "jpg").toLowerCase()
+    const ext      = EXT_BY_MIME[file.type.toLowerCase()] ?? "jpg"
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
     const path     = `${id}/${filename}`
 
@@ -151,7 +127,6 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       select: { id: true, url: true, order: true },
     })
 
-    // Promote DRAFT → AVAILABLE when the first photo is added (síncrono)
     let finalStatus: string = item.status
     if (item.status === "DRAFT" && item._count.images === 0) {
       await prisma.item.update({ where: { id }, data: { status: "AVAILABLE" } })
@@ -207,12 +182,9 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
       )
     }
 
-    // Extract storage path from the public URL
     const url = new URL(image.url)
     const storagePath = url.pathname.split(`/${BUCKET}/`)[1]
 
-    // Defesa em profundidade (SEC-CRIT-06): só remove se o path pertencer a
-    // este item (prefixo `${id}/`) — o upload sempre grava em `${id}/arquivo`.
     if (storagePath && storagePath.startsWith(`${id}/`)) {
       const supabase = createAdminClient()
       await supabase.storage.from(BUCKET).remove([storagePath])
@@ -220,7 +192,6 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
 
     await prisma.itemImage.delete({ where: { id: imageId } })
 
-    // Demote AVAILABLE → DRAFT when the last photo is removed
     if (image.item.status === "AVAILABLE" && image.item._count.images === 1) {
       after(() =>
         prisma.item.update({ where: { id }, data: { status: "DRAFT" } })

@@ -24,6 +24,26 @@ export function isImageType(mimeType: string): boolean {
 }
 
 /**
+ * A2 (SEC-ALTO): mapa MIME → extensão de arquivo.
+ * Extensão derivada do MIME já validado (isImageType + magic bytes), NUNCA do
+ * nome do arquivo do cliente (evita salvar .php/.exe em buckets públicos ou privados).
+ *
+ * Fonte única para todas as rotas de upload:
+ *   - app/api/upload/route.ts (antes: definição inline)
+ *   - app/api/bookings/[id]/photos/route.ts (antes: file.name.split(".").pop())
+ *   - app/api/users/me/id-verification/route.ts (antes: file.name.split(".").pop())
+ */
+export const EXT_BY_MIME: Readonly<Record<string, string>> = {
+  "image/jpeg": "jpg",
+  "image/jpg":  "jpg",
+  "image/png":  "png",
+  "image/webp": "webp",
+  "image/gif":  "gif",
+  "image/heic": "heic",
+  "image/heif": "heif",
+}
+
+/**
  * Valida os magic bytes reais do buffer (file-type lê apenas ~12 bytes).
  * Retorna false se o tipo detectado não estiver na whitelist ou for
  * desconhecido — impede SVG/HTML/executável disfarçado de imagem alterando

@@ -12,12 +12,21 @@ import { auth }             from "@/lib/auth"
 import { prisma }           from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getUploadLimits }   from "@/lib/platform-config"
-import { isImageType, isMagicBytesValid } from "@/lib/imageUpload"
+import { isImageType, isMagicBytesValid, EXT_BY_MIME } from "@/lib/imageUpload"
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 
 type Ctx = { params: Promise<{ id: string }> }
 
 const ALLOWED_PHASES = ["CHECKIN", "CHECKOUT"] as const
 type Phase = (typeof ALLOWED_PHASES)[number]
+
+// Extra (dedup seguro): guard de participante de locação — evita repetição inline.
+function isBookingParticipant(
+  booking: { borrowerId: string; ownerId: string },
+  userId: string,
+): boolean {
+  return booking.borrowerId === userId || booking.ownerId === userId
+}
 
 export async function GET(req: NextRequest, { params }: Ctx) {
   const session = await auth()
@@ -32,9 +41,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
   })
   if (!booking) return NextResponse.json({ error: { code: "NOT_FOUND" } }, { status: 404 })
 
-  const isParticipant =
-    booking.borrowerId === session.user.id || booking.ownerId === session.user.id
-  if (!isParticipant)
+  if (!isBookingParticipant(booking, session.user.id))
     return NextResponse.json({ error: { code: "FORBIDDEN" } }, { status: 403 })
 
   const photos = await prisma.bookingPhoto.findMany({
@@ -50,6 +57,16 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: { code: "UNAUTHORIZED" } }, { status: 401 })
 
+  // M4 (SEC-MED): rate limit por usuário — mesmo padrão de checkRateLimit/rateLimitResponse
+  // já usado em POST /api/bookings e RATE_LIMITS em lib/rateLimit.ts.
+  const rl = await checkRateLimit(
+    `upload:${session.user.id}`,
+    RATE_LIMITS.upload.limit,
+    RATE_LIMITS.upload.windowMs,
+    req,
+  )
+  if (!rl.allowed) return rateLimitResponse(rl.resetAt)
+
   const { id } = await params
 
   const booking = await prisma.booking.findFirst({
@@ -58,9 +75,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   })
   if (!booking) return NextResponse.json({ error: { code: "NOT_FOUND" } }, { status: 404 })
 
-  const isParticipant =
-    booking.borrowerId === session.user.id || booking.ownerId === session.user.id
-  if (!isParticipant)
+  if (!isBookingParticipant(booking, session.user.id))
     return NextResponse.json({ error: { code: "FORBIDDEN" } }, { status: 403 })
 
   const formData = await req.formData() as globalThis.FormData
@@ -92,7 +107,9 @@ export async function POST(req: NextRequest, { params }: Ctx) {
       { status: 415 }
     )
 
-  const ext      = file.name.split(".").pop()?.toLowerCase() ?? "jpg"
+  // A2 (SEC-ALTO): extensão derivada do MIME já validado, NUNCA do nome do cliente
+  // (evita salvar .php/.exe no bucket). Paridade com app/api/upload/route.ts.
+  const ext      = EXT_BY_MIME[file.type.toLowerCase()] ?? "jpg"
   const path     = `bookings/${id}/${phase.toLowerCase()}/${Date.now()}-${session.user.id}.${ext}`
   const arrayBuf = await file.arrayBuffer()
   if (!(await isMagicBytesValid(arrayBuf)))
@@ -108,11 +125,15 @@ export async function POST(req: NextRequest, { params }: Ctx) {
     .from("booking-photos")
     .upload(path, buffer, { contentType: file.type, upsert: false })
 
-  if (uploadError)
+  if (uploadError) {
+    // M1 (SEC-MED): log interno com detalhe; resposta ao cliente é genérica
+    // (paridade com app/api/upload/route.ts e app/api/items/[id]/images/route.ts).
+    console.error("[booking-photos upload]", uploadError.message)
     return NextResponse.json(
-      { error: { code: "UPLOAD_ERROR", message: uploadError.message } },
+      { error: { code: "UPLOAD_ERROR", message: "Falha no upload." } },
       { status: 500 }
     )
+  }
 
   const { data: { publicUrl } } = supabase.storage
     .from("booking-photos")

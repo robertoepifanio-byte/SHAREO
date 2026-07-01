@@ -18,7 +18,8 @@ import { NextResponse }     from "next/server"
 import { auth }             from "@/lib/auth"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getUploadLimits } from "@/lib/platform-config"
-import { isImageType, isMagicBytesValid } from "@/lib/imageUpload"
+import { isImageType, isMagicBytesValid, EXT_BY_MIME } from "@/lib/imageUpload"
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 
 const ALLOWED_BUCKETS = new Set(["booking-photos", "item-images"])
 
@@ -31,6 +32,16 @@ export async function POST(req: NextRequest) {
         { status: 401 },
       )
     }
+
+    // M4 (SEC-MED): rate limit por usuário — mesmo padrão de checkRateLimit/rateLimitResponse
+    // já usado em POST /api/bookings e RATE_LIMITS em lib/rateLimit.ts.
+    const rl = await checkRateLimit(
+      `upload:${session.user.id}`,
+      RATE_LIMITS.upload.limit,
+      RATE_LIMITS.upload.windowMs,
+      req,
+    )
+    if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const formData = await req.formData() as globalThis.FormData
     const file     = formData.get("file")
@@ -65,12 +76,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // SEC-ALTO-06: extensão derivada do MIME já validado (isImageType + magic bytes),
+    // SEC-ALTO-06 / A2: extensão derivada do EXT_BY_MIME compartilhado (lib/imageUpload.ts),
     // NUNCA do nome do arquivo do cliente (evita salvar .php/.exe no bucket público).
-    const EXT_BY_MIME: Record<string, string> = {
-      "image/jpeg": "jpg", "image/jpg": "jpg", "image/png": "png",
-      "image/webp": "webp", "image/gif": "gif", "image/heic": "heic", "image/heif": "heif",
-    }
     const ext      = EXT_BY_MIME[file.type.toLowerCase()] ?? "jpg"
     const path     = `uploads/${session.user.id}/${Date.now()}.${ext}`
     const arrayBuf = await file.arrayBuffer()
