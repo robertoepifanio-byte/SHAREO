@@ -31,7 +31,9 @@ const CONTA = [
   { href: "/perfil/endereco",   label: "Endereço",     icon: "📍" },
   { href: "/perfil/seguranca",  label: "Segurança",    icon: "🔒" },
   { href: "/perfil/documentos", label: "Documentos",   icon: "🪪" },
-  { href: "/perfil/indicacoes", label: "Indicações",   icon: "🎁" },
+  { href: "/perfil/recebimentos", label: "Recebimentos",           icon: "💰" },
+  { href: "/perfil/repasses",     label: "Repasses",                icon: "📊" },
+  { href: "/perfil/indicacoes",   label: "Indicações e Embaixador", icon: "🎁" },
 ]
 
 export function UserDropdown({ name, avatarUrl, role }: Props) {

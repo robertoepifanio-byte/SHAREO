@@ -8,17 +8,18 @@ interface Props {
     pricePerDay: number
     images:     { url: string }[]
   }
+  backHref?: string
 }
 
 const fmt = (cents: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
 
-export function SuggestCard({ item }: Props) {
+export function SuggestCard({ item, backHref }: Props) {
   const imageUrl = item.images[0]?.url
 
   return (
     <Link
-      href={`/itens/${item.id}`}
+      href={`/itens/${item.id}${backHref ? `?back=${encodeURIComponent(backHref)}` : ""}`}
       className="group min-w-[140px] overflow-hidden rounded-xl border border-border bg-surface transition-shadow hover:shadow-md flex-shrink-0"
       aria-label={item.title}
     >

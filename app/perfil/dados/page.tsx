@@ -68,6 +68,25 @@ export default async function DadosPage() {
             ))}
           </div>
 
+          {/* Link para verificação de identidade */}
+          <div className="rounded-xl border border-border bg-surface p-5">
+            <h2 className="mb-1 font-semibold text-foreground">Verificação de identidade</h2>
+            <p className="mb-4 text-sm text-muted-foreground">
+              Para enviar ou atualizar seus documentos de verificação (CPF, CNPJ, selfie), acesse a área de Documentos.
+            </p>
+            <Link
+              href="/perfil/documentos"
+              className="inline-flex h-11 items-center gap-2 rounded-lg border border-border px-5 text-sm font-semibold text-foreground hover:bg-background transition-colors"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <rect x="2" y="5" width="20" height="14" rx="2"/>
+                <line x1="2" y1="10" x2="22" y2="10"/>
+                <line x1="7" y1="15" x2="10" y2="15"/>
+              </svg>
+              Ir para Documentos →
+            </Link>
+          </div>
+
           {/* Link para excluir conta */}
           <div className="rounded-xl border border-destructive/20 bg-surface p-5">
             <h2 className="mb-1 font-semibold text-foreground">Excluir conta</h2>

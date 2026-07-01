@@ -618,7 +618,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
 
           {/* Avaliações — disponíveis após devolução */}
           {(booking.status === "RETURNED" || booking.status === "COMPLETED") && (
-            <div className="mt-6 space-y-4">
+            <div id="avaliar" className="mt-6 space-y-4 scroll-mt-24">
               <h2 className="font-semibold text-foreground">Avaliações</h2>
 
               {isBorrower && (
