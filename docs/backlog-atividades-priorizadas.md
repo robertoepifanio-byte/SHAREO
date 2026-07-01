@@ -36,6 +36,7 @@
 
 | Item | Status | Ação |
 |---|---|---|
+| **📅 REVER AMANHÃ (01/07) — Copy de pagamento p/ validação jurídica** | 🟣 **para a advogada** | Documento consolidado pronto: [`copy-pagamento-validacao-juridica.md`](copy-pagamento-validacao-juridica.md) (+`.pdf`) — Termos §6/§6.1, Política §4/§4.1 e Central de Ajuda + 6 pontos a confirmar (custódia MP, "não retém nem custodia", licença/nome BACEN, solidária, PCI-DSS, MP=operador). É o **item 4.1** da pauta. Enviar à advogada; sem o aval, a Ajuda/Termos não vão a público em produção. Gated D4. |
 | **Mercado Pago — validação humana (testers)** | 🟢 **EM ANDAMENTO** | Ciclo E2E já validado tecnicamente (reserva PAID + split + webhook real). Roteiro para testers entregue (`docs/roteiro-teste-mercadopago.md`/`.pdf`, regra única = pagar como convidado). Aguardando retorno dos testers (canal WhatsApp 84 99662-2346). |
 | **Mercado Pago — `MP_WEBHOOK_SECRET`** | 🟡 **bloqueado em ação humana** | Código já valida `x-signature` quando o secret existe. Falta **obter o valor no painel do MP (Webhooks)** e adicioná-lo no Vercel (Production). Sem isso, o webhook funciona mas pula a validação de assinatura (aceitável no sandbox). |
 | **Mercado Pago — remover override de sandbox (#122)** | 🔴 **antes do go-live** | Remover env `MP_SANDBOX_SELLER_TOKEN` + helper `sandboxSellerTokenOverride()` + 2 call sites (checkout/webhook). É bypass de teste. Fazer quando a validação humana fechar. |
