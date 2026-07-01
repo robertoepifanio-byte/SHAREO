@@ -87,20 +87,18 @@ export function BottomNav() {
         <span className="text-brand">Anunciar</span>
       </Link>
 
-      {/* Chat — em breve */}
-      <button
-        type="button"
-        disabled
-        className="flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-semibold text-muted-foreground/40 cursor-default relative h-full"
-        title="Mensagens disponível em breve"
-        aria-disabled="true"
+      {/* Chat */}
+      <Link
+        href="/mensagens"
+        className={itemCls(isChat)}
+        aria-current={isChat ? "page" : undefined}
       >
         <Indicator active={isChat} />
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={isChat ? 2.5 : 2} strokeLinecap="round" aria-hidden="true">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
         </svg>
         <span>Chat</span>
-      </button>
+      </Link>
 
       {/* Perfil */}
       <Link

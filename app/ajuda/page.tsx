@@ -31,7 +31,7 @@ const LOCATARIO_STEPS: Step[] = [
   },
   {
     step: 2, icon: "🪪", title: "Verificar sua identidade",
-    desc: "Acesse Meu Perfil → Documentos → Verificar identidade. Informe seu CPF e tire uma selfie segurando o documento. A análise leva até 24 horas úteis. Após aprovada, o selo 'Verificado' aparece no seu perfil.",
+    desc: "Acesse Meu Perfil → Documentos → Verificar identidade. Informe seu CPF, envie uma foto do documento e uma selfie (dois campos separados no formulário). A análise leva até 24 horas úteis. Após aprovada, o selo 'Verificado' aparece no seu perfil.",
     warning: "Reservas de alto valor exigem verificação completa. Proprietários tendem a aceitar mais rapidamente locatários verificados.",
   },
   {
@@ -431,6 +431,7 @@ export default async function AjudaPage() {
                 { href: "#suporte",          label: "🎧 Suporte" },
                 { href: "#pagamento",        label: "🔒 Pagamento" },
                 { href: "#legal",            label: "📋 Legal e Fiscal" },
+                { href: "#conta",            label: "👤 Conta e Perfil" },
               ].map((link) => (
                 <a
                   key={link.href}

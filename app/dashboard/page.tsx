@@ -281,7 +281,7 @@ export default async function DashboardPage() {
               </div>
               <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                 {suggestions.map((item) => (
-                  <SuggestCard key={item.id} item={item} />
+                  <SuggestCard key={item.id} item={item} backHref="/dashboard" />
                 ))}
               </div>
             </div>

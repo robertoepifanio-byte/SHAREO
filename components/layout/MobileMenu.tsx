@@ -39,24 +39,28 @@ const ADMIN_ATALHOS_LINKS = [
 ]
 
 const HELP_LINKS = [
-  { href: "/ajuda#primeiros-passos", label: "Primeiros passos", icon: "rocket" },
-  { href: "/ajuda#locatario",        label: "Quero alugar",     icon: "cart" },
-  { href: "/ajuda#locador",          label: "Quero anunciar",   icon: "package" },
-  { href: "/ajuda#taxas-secao",      label: "Taxas",            icon: "receipt" },
-  { href: "/ajuda#disputas",         label: "Disputas",         icon: "shield" },
-  { href: "/ajuda#suporte",          label: "Suporte",          icon: "headphones" },
-  { href: "/ajuda#pagamento",        label: "Pagamento",        icon: "lock" },
-  { href: "/ajuda#legal",            label: "Legal e Fiscal",   icon: "file" },
+  { href: "/ajuda#primeiros-passos", label: "Primeiros passos",      icon: "rocket" },
+  { href: "/ajuda#locatario",        label: "Quero alugar",          icon: "cart" },
+  { href: "/ajuda#locador",          label: "Quero anunciar",        icon: "package" },
+  { href: "/ajuda#dicas-anfitrioes", label: "Dicas para anfitriões", icon: "bulb" },
+  { href: "/ajuda#taxas-secao",      label: "Taxas",                 icon: "receipt" },
+  { href: "/ajuda#disputas",         label: "Disputas",              icon: "shield" },
+  { href: "/ajuda#suporte",          label: "Suporte",               icon: "headphones" },
+  { href: "/ajuda#pagamento",        label: "Pagamento",             icon: "lock" },
+  { href: "/ajuda#legal",            label: "Legal e Fiscal",        icon: "file" },
+  { href: "/ajuda#conta",            label: "Conta e Perfil",        icon: "user" },
 ]
 
 const ACCOUNT_LINKS = [
-  { href: "/perfil",            label: "Ver Perfil",          icon: "user" },
-  { href: "/perfil/editar",     label: "Editar dados",        icon: "edit" },
-  { href: "/perfil/endereco",   label: "Endereço",            icon: "pin" },
-  { href: "/perfil/seguranca",  label: "Segurança",           icon: "lock" },
-  { href: "/perfil/documentos", label: "Documentos",          icon: "idcard" },
-  { href: "/perfil/indicacoes", label: "Indicações",          icon: "gift" },
-  { href: "/perfil/dados",      label: "Privacidade e dados", icon: "folder" },
+  { href: "/perfil",              label: "Ver Perfil",               icon: "user" },
+  { href: "/perfil/editar",       label: "Editar dados",             icon: "edit" },
+  { href: "/perfil/endereco",     label: "Endereço",                 icon: "pin" },
+  { href: "/perfil/seguranca",    label: "Segurança",                icon: "lock" },
+  { href: "/perfil/documentos",   label: "Documentos",               icon: "idcard" },
+  { href: "/perfil/recebimentos", label: "Recebimentos",             icon: "dollar" },
+  { href: "/perfil/repasses",     label: "Repasses",                 icon: "receipt" },
+  { href: "/perfil/indicacoes",   label: "Indicações e Embaixador",  icon: "gift" },
+  { href: "/perfil/dados",        label: "Privacidade e dados",      icon: "folder" },
 ]
 
 function MenuIcon({ name }: { name: string }) {

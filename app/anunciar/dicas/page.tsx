@@ -87,6 +87,14 @@ export default function DicasPage() {
     <div className="min-h-screen bg-background">
       <AppHeader />
 
+      <div className="border-b border-border bg-surface">
+        <div className="container py-3">
+          <Link href="/anunciar/estimativa" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors">
+            ← Anunciar
+          </Link>
+        </div>
+      </div>
+
       <main className="container py-8 max-w-3xl">
 
         {/* Hero */}

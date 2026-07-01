@@ -51,7 +51,12 @@ export default async function ReservasPage({ searchParams }: Props) {
       borrower:     { select: { id: true, name: true } },
       owner:        { select: { id: true, name: true } },
       conversation: { select: { id: true } },
-      _count:       { select: { bookingItems: true } }, // Story B — quantos itens na locação
+      _count: {
+        select: {
+          bookingItems: true,                                   // Story B — quantos itens na locação
+          reviews: { where: { reviewerId: userId } },          // F6 — já avaliou esta reserva?
+        },
+      },
     },
   })
 
@@ -187,6 +192,9 @@ export default async function ReservasPage({ searchParams }: Props) {
                       primaryLabel = "💳 Ver pagamento"
                       primaryStyle = "bg-brand text-white hover:opacity-90"
                     }
+                    // CTA "Avaliar": aparece para RETURNED/COMPLETED sem avaliação do usuário
+                    const canReview = (b.status === "RETURNED" || b.status === "COMPLETED") && b._count.reviews === 0
+
                     return (
                       <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-4">
                         <Link
@@ -202,6 +210,15 @@ export default async function ReservasPage({ searchParams }: Props) {
                             className="inline-flex h-11 items-center rounded-lg border border-border px-4 text-sm font-semibold text-foreground hover:bg-background transition-colors"
                           >
                             Ver detalhes
+                          </Link>
+                        )}
+                        {/* CTA Avaliar — só quando ainda não avaliou e o status permite */}
+                        {canReview && (
+                          <Link
+                            href={`/reservas/${b.id}#avaliar`}
+                            className="inline-flex h-11 items-center rounded-lg border border-brand px-4 text-sm font-semibold text-brand hover:bg-brand/5 transition-colors"
+                          >
+                            ⭐ Avaliar
                           </Link>
                         )}
                         {b.conversation && (
