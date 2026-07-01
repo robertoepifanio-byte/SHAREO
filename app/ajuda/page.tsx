@@ -31,7 +31,7 @@ const LOCATARIO_STEPS: Step[] = [
   },
   {
     step: 2, icon: "🪪", title: "Verificar sua identidade",
-    desc: "Acesse Meu Perfil → Privacidade e dados → Verificar identidade. Informe seu CPF e tire uma selfie segurando o documento. A análise leva até 24 horas úteis. Após aprovada, o selo 'Verificado' aparece no seu perfil.",
+    desc: "Acesse Meu Perfil → Documentos → Verificar identidade. Informe seu CPF e tire uma selfie segurando o documento. A análise leva até 24 horas úteis. Após aprovada, o selo 'Verificado' aparece no seu perfil.",
     warning: "Reservas de alto valor exigem verificação completa. Proprietários tendem a aceitar mais rapidamente locatários verificados.",
   },
   {
@@ -69,7 +69,7 @@ const LOCATARIO_STEPS: Step[] = [
 const LOCADOR_STEPS: Step[] = [
   {
     step: 1, icon: "📧", title: "Criar conta e verificar identidade",
-    desc: "Acesse shareo.com.br e clique em 'Criar conta'. Após confirmar o email, vá em Meu Perfil → Privacidade e dados → Verificar identidade. Informe CPF (pessoa física) ou CNPJ (empresa). O processo leva até 24 horas úteis.",
+    desc: "Acesse shareo.com.br e clique em 'Criar conta'. Após confirmar o email, vá em Meu Perfil → Documentos → Verificar identidade. Informe CPF (pessoa física) ou CNPJ (empresa). O processo leva até 24 horas úteis.",
     tip: "Anunciantes verificados recebem muito mais solicitações. O selo 'Verificado' é o principal fator de confiança para novos locatários.",
   },
   {
@@ -139,7 +139,7 @@ const SECTIONS = [
       { q: "O que acontece na retirada do item?",
         a: "Combine com o proprietário pelo chat do app onde e quando retirar o item. Na entrega, o proprietário registra fotos do estado do item (check-in) e marca a reserva como 'Ativo'. O período de locação começa a contar a partir desse momento — o prazo de devolução é no mesmo horário, N dias depois. Exemplo: retirada em 10/10 às 10h → devolução até 11/10 às 10h (1 dia)." },
       { q: "E se o item não estiver como anunciado?",
-        a: "Se houver algum problema, você pode abrir uma disputa na página da reserva enquanto ela estiver ativa ou em até 48 horas após a devolução. Descreva o que aconteceu e a equipe ShareO vai analisar o caso em até 3 dias úteis. Estamos disponíveis 7 dias por semana." },
+        a: "Se houver algum problema, você pode abrir uma disputa na página da reserva enquanto ela estiver ativa ou em até 48 horas após a devolução. Descreva o que aconteceu e a equipe ShareO vai analisar o caso em até 3 dias úteis. Nosso atendimento é de segunda a sexta, das 09h às 17h." },
       { q: "Como avalio o proprietário?",
         a: "Após devolver o item, a opção de avaliação aparece na página da reserva. Você pode dar uma nota de 1 a 5 estrelas e deixar um comentário. Avaliações ajudam toda a comunidade ShareO." },
       { q: "O proprietário tem um prazo para confirmar minha reserva?",
@@ -242,7 +242,7 @@ const SECTIONS = [
       { q: "Existe taxa de cancelamento?",
         a: "O cancelamento é gratuito se feito com mais de 24 horas de antecedência em relação à data de retirada. Cancelamentos com menos de 24 horas de antecedência geram uma taxa de 30% do valor total para cobrir custos operacionais. Proprietários que cancelam com frequência podem ter as contas suspensas temporariamente." },
       { q: "Recebo comprovante das transações?",
-        a: "Sim. O ShareO emite comprovante eletrônico para todas as transações concluídas na plataforma. O comprovante é enviado automaticamente para o email cadastrado após o encerramento da reserva. Você também pode acessar o histórico completo em 'Meu Perfil > Histórico financeiro'." },
+        a: "Sim. O ShareO emite comprovante eletrônico para todas as transações concluídas na plataforma. O comprovante é enviado automaticamente para o email cadastrado após o encerramento da reserva. Você também pode acessar o histórico completo em 'Meu Perfil > Meus repasses'." },
     ],
   },
   {
@@ -293,7 +293,7 @@ const SECTIONS = [
     iconBg: "bg-purple-100",
     faqs: [
       { q: "Como verifico minha identidade?",
-        a: "Acesse 'Meu Perfil' e role até 'Privacidade e dados'. Lá você encontra a opção de verificação de identidade. Envie os documentos solicitados (CPF e selfie com o documento). Quando aprovada, um selo de verificado aparece no seu perfil. O processo leva até 24 horas úteis." },
+        a: "Acesse 'Meu Perfil' e abra 'Documentos'. Lá você encontra a opção de verificação de identidade. Envie os documentos solicitados (CPF e selfie com o documento). Quando aprovada, um selo de verificado aparece no seu perfil. O processo leva até 24 horas úteis." },
       { q: "Como edito meu perfil?",
         a: "Vá em 'Meu Perfil'. Você pode atualizar nome, bio, telefone, cidade, bairro e foto de perfil. Manter seu perfil completo ajuda outros usuários a confiar mais em você." },
       { q: "Como me torno PJ Premium?",
@@ -314,7 +314,7 @@ const SECTIONS = [
     iconBg: "bg-muted",
     faqs: [
       { q: "O ShareO emite nota fiscal?",
-        a: "O ShareO emite comprovante eletrônico de transação para todas as locações concluídas na plataforma. O comprovante é enviado automaticamente para o email cadastrado após o encerramento da reserva. Você também pode baixar o histórico de comprovantes em 'Meu Perfil > Histórico financeiro'." },
+        a: "O ShareO emite comprovante eletrônico de transação para todas as locações concluídas na plataforma. O comprovante é enviado automaticamente para o email cadastrado após o encerramento da reserva. Você também pode baixar o histórico de comprovantes em 'Meu Perfil > Meus repasses'." },
       { q: "Como declaro os rendimentos de aluguel no Imposto de Renda?",
         a: "Rendimentos de aluguel de bens móveis são tributáveis e devem ser declarados como 'Rendimentos Tributáveis Recebidos de Pessoa Física ou Jurídica' na declaração anual do IR. O ShareO fornece um informe de rendimentos anual em Meu Perfil → Repasses → Informe de Rendimentos — basta selecionar o ano e baixar o resumo com todos os valores recebidos. Consulte seu contador para orientações sobre alíquotas e deduções específicas para o seu caso." },
       { q: "Quais as regras para empresas (PJ) anunciarem na plataforma?",

@@ -209,7 +209,7 @@ export function IdVerification({ status: initialStatus, rejectionReason, biometr
                 <div className="rounded-lg border border-border bg-background p-3">
                   <p className="text-sm font-semibold text-foreground">{BIOMETRIC_CONSENT_TITLE}</p>
                   <p className="mt-1 text-xs text-muted-foreground">{BIOMETRIC_CONSENT_SUBTITLE}</p>
-                  <div className="mt-2 max-h-40 overflow-y-auto whitespace-pre-line rounded-md bg-surface p-2 text-[11px] leading-relaxed text-muted-foreground">
+                  <div className="mt-2 max-h-48 overflow-y-auto whitespace-pre-line rounded-md bg-surface p-2 text-xs leading-relaxed text-muted-foreground">
                     {BIOMETRIC_CONSENT_TEXT}
                   </div>
                   <label className="mt-3 flex items-start gap-2 text-xs text-foreground">
@@ -221,7 +221,7 @@ export function IdVerification({ status: initialStatus, rejectionReason, biometr
                     />
                     <span>{BIOMETRIC_CONSENT_CHECKBOX}</span>
                   </label>
-                  <p className="mt-2 text-right text-[10px] text-muted-foreground">
+                  <p className="mt-2 text-right text-xs text-muted-foreground opacity-70">
                     Versão do consentimento: {BIOMETRIC_CONSENT_VERSION}
                   </p>
                 </div>

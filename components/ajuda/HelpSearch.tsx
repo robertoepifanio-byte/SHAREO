@@ -365,7 +365,7 @@ export function HelpResults() {
           Ainda precisa de ajuda?
         </h2>
         <p className="mb-6 text-sm text-white/75">
-          Nossa equipe está disponível 7 dias por semana para te ajudar.
+          Nossa equipe está disponível de segunda a sexta, das 09h às 17h, para te ajudar.
         </p>
         <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
           <a
