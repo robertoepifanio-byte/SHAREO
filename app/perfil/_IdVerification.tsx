@@ -21,7 +21,7 @@ interface Props {
 
 const STATUS_INFO: Record<Status, { label: string; color: string; icon: string }> = {
   UNVERIFIED: { label: "Não verificado",        color: "text-muted-foreground", icon: "○" },
-  PENDING:    { label: "Em análise",            color: "text-amber-600",        icon: "⏳" },
+  PENDING:    { label: "Em análise",            color: "text-booking-pending",  icon: "⏳" },
   VERIFIED:   { label: "Identidade verificada", color: "text-success",          icon: "✓" },
   REJECTED:   { label: "Recusado",              color: "text-destructive",      icon: "✗" },
 }
