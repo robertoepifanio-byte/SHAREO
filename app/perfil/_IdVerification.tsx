@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { BIOMETRIC_CONSENT_VERSION } from "@/lib/legal-config"
 import {
   BIOMETRIC_CONSENT_TITLE,
@@ -38,9 +38,38 @@ export function IdVerification({ status: initialStatus, rejectionReason, biometr
   const docCamRef     = useRef<HTMLInputElement>(null)
   const selfieRef     = useRef<HTMLInputElement>(null)
   const selfieCamRef  = useRef<HTMLInputElement>(null)
+  const dialogRef     = useRef<HTMLDivElement>(null)
 
   const [docName,    setDocName]    = useState("")
   const [selfieName, setSelfieName] = useState("")
+
+  // A11y do modal: trava scroll do body, move o foco para o diálogo, fecha no
+  // Escape e mantém o Tab preso dentro do diálogo (focus trap) enquanto aberto.
+  useEffect(() => {
+    if (!open) return
+    const dialog = dialogRef.current
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    dialog?.focus()
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { setOpen(false); return }
+      if (e.key !== "Tab" || !dialog) return
+      const focusables = dialog.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      )
+      if (focusables.length === 0) return
+      const first = focusables[0]
+      const last  = focusables[focusables.length - 1]
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus() }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus() }
+    }
+    document.addEventListener("keydown", onKeyDown)
+    return () => {
+      document.removeEventListener("keydown", onKeyDown)
+      document.body.style.overflow = prevOverflow
+    }
+  }, [open])
 
   const info = STATUS_INFO[status]
 
@@ -124,7 +153,7 @@ export function IdVerification({ status: initialStatus, rejectionReason, biometr
         {(status === "UNVERIFIED" || status === "REJECTED") && (
           <button
             onClick={() => setOpen(true)}
-            className="inline-flex h-9 items-center rounded-lg border border-border px-3 text-xs font-semibold text-foreground hover:bg-background transition-colors"
+            className="inline-flex h-11 items-center rounded-lg border border-border px-4 text-xs font-semibold text-foreground hover:bg-background transition-colors"
           >
             {status === "REJECTED" ? "Reenviar" : "Verificar"}
           </button>
@@ -145,9 +174,16 @@ export function IdVerification({ status: initialStatus, rejectionReason, biometr
       {/* Modal de envio */}
       {open && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-surface shadow-2xl">
+          <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="id-verify-title"
+            tabIndex={-1}
+            className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-surface shadow-2xl outline-none"
+          >
             <div className="border-b border-border px-6 py-4">
-              <h2 className="text-lg font-bold text-primary">Verificar identidade</h2>
+              <h2 id="id-verify-title" className="text-lg font-bold text-primary">Verificar identidade</h2>
               <p className="text-xs text-muted-foreground">
                 Seus documentos são armazenados com segurança e usados apenas para verificação.
               </p>
@@ -161,11 +197,11 @@ export function IdVerification({ status: initialStatus, rejectionReason, biometr
                 </p>
                 <div className="flex gap-2">
                   <button type="button" onClick={() => docCamRef.current?.click()}
-                    className="flex-1 rounded-lg border border-input bg-background py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors">
+                    className="flex-1 min-h-11 rounded-lg border border-input bg-background py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors">
                     📷 Tirar foto
                   </button>
                   <button type="button" onClick={() => docRef.current?.click()}
-                    className="flex-1 rounded-lg border border-input bg-background py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors">
+                    className="flex-1 min-h-11 rounded-lg border border-input bg-background py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors">
                     🖼️ Galeria
                   </button>
                 </div>
@@ -183,11 +219,11 @@ export function IdVerification({ status: initialStatus, rejectionReason, biometr
                 </p>
                 <div className="flex gap-2">
                   <button type="button" onClick={() => selfieCamRef.current?.click()}
-                    className="flex-1 rounded-lg border border-input bg-background py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors">
+                    className="flex-1 min-h-11 rounded-lg border border-input bg-background py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors">
                     🤳 Tirar selfie
                   </button>
                   <button type="button" onClick={() => selfieRef.current?.click()}
-                    className="flex-1 rounded-lg border border-input bg-background py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors">
+                    className="flex-1 min-h-11 rounded-lg border border-input bg-background py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors">
                     🖼️ Galeria
                   </button>
                 </div>
@@ -234,14 +270,14 @@ export function IdVerification({ status: initialStatus, rejectionReason, biometr
               <button
                 onClick={() => setOpen(false)}
                 disabled={loading}
-                className="flex-1 rounded-lg border border-border px-4 py-2.5 text-sm font-semibold text-foreground hover:bg-background transition-colors"
+                className="flex-1 min-h-11 rounded-lg border border-border px-4 py-3 text-sm font-semibold text-foreground hover:bg-background transition-colors"
               >
                 Cancelar
               </button>
               <button
                 onClick={submit}
                 disabled={loading || (biometricConsentRequired && !consent)}
-                className="flex-1 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                className="flex-1 min-h-11 rounded-lg bg-brand px-4 py-3 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
               >
                 {loading ? "Comprimindo e enviando…" : "Enviar documentos"}
               </button>
