@@ -1,7 +1,8 @@
 import * as SecureStore from "expo-secure-store"
 
-// Troca pela URL do seu Vercel em produção
-export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://shareo-rouge.vercel.app"
+// URL padrão aponta para o domínio público do staging (Deployment Protection bloqueia *.vercel.app com 401).
+// Sobrescrever com EXPO_PUBLIC_API_URL em builds de produção quando o domínio definitivo existir.
+export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://staging.shareo.com.br"
 
 const TOKENS_KEY = "shareo_tokens"
 
