@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { after } from "next/server"
 import { headers } from "next/headers"
 import Image from "next/image"
 import { requireAdminPage } from "@/lib/auth/require-admin"
@@ -78,14 +79,18 @@ export default async function VerificacoesPage() {
         signedUrl(u.idDocumentUrl),
         signedUrl(u.idSelfieUrl),
       ])
-      // Registra acesso à selfie sempre que ela é exposta ao admin (fire-and-forget).
+      // Registra acesso à selfie sempre que ela é exposta ao admin (LGPD art. 11).
+      // Via after(): roda após a resposta, fora do caminho de render do Server
+      // Component (evita write durante render e não adiciona latência à página).
       if (selfieUrl) {
-        auditLog(
-          session.user.id,
-          "kyc.selfie.view",
-          "User",
-          u.id,
-          { purpose: "kyc-review", ip: adminIp },
+        after(() =>
+          auditLog(
+            session.user.id,
+            "kyc.selfie.view",
+            "User",
+            u.id,
+            { purpose: "kyc-review", ip: adminIp },
+          ),
         )
       }
       return { ...u, idDocumentUrl: docUrl, idSelfieUrl: selfieUrl }
