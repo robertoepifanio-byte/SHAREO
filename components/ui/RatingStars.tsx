@@ -12,6 +12,7 @@ export function RatingStars({ rating, showValue = false, count, size = "sm", cla
 
   return (
     <span
+      role="img"
       className={`inline-flex items-center gap-1 ${textSize} ${className}`}
       aria-label={`${rating.toFixed(1)} estrelas${count != null ? `, ${count} avaliações` : ""}`}
     >
