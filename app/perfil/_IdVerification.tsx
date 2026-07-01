@@ -17,6 +17,9 @@ interface Props {
   /** Exige o consentimento biométrico específico (LGPD art. 11). Default false =
    *  fluxo de KYC atual, sem passo de consentimento. Ligado só com a flag D4. */
   biometricConsentRequired?: boolean
+  /** Usuário possui registro de consentimento biométrico (idSelfieConsentAt != null).
+   *  Habilita o botão "Revogar consentimento biométrico" quando verificado. */
+  hasBiometricConsent?: boolean
 }
 
 const STATUS_INFO: Record<Status, { label: string; color: string; icon: string }> = {
@@ -26,13 +29,35 @@ const STATUS_INFO: Record<Status, { label: string; color: string; icon: string }
   REJECTED:   { label: "Recusado",              color: "text-destructive",      icon: "✗" },
 }
 
-export function IdVerification({ status: initialStatus, rejectionReason, biometricConsentRequired = false }: Props) {
+export function IdVerification({ status: initialStatus, rejectionReason, biometricConsentRequired = false, hasBiometricConsent = false }: Props) {
   const [status,  setStatus]  = useState<Status>(initialStatus)
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState("")
   const [success, setSuccess] = useState(false)
   const [open,    setOpen]    = useState(false)
   const [consent, setConsent] = useState(false)
+  const [revoking, setRevoking] = useState(false)
+
+  async function revokeBiometricConsent() {
+    if (!window.confirm(
+      "Isto apagará a sua selfie e revogará o consentimento biométrico. " +
+      "Sua conta voltará a 'não verificada' e você precisará enviar os documentos de novo. Continuar?"
+    )) return
+    setRevoking(true); setError("")
+    try {
+      const res = await fetch("/api/users/me/biometric-consent", { method: "DELETE" })
+      if (!res.ok && res.status !== 204) {
+        const json = await res.json().catch(() => null)
+        setError(json?.error?.message ?? "Não foi possível revogar o consentimento.")
+        return
+      }
+      setStatus("UNVERIFIED")
+    } catch {
+      setError("Erro de conexão ao revogar o consentimento.")
+    } finally {
+      setRevoking(false)
+    }
+  }
 
   const docRef        = useRef<HTMLInputElement>(null)
   const docCamRef     = useRef<HTMLInputElement>(null)
@@ -159,9 +184,20 @@ export function IdVerification({ status: initialStatus, rejectionReason, biometr
           </button>
         )}
         {status === "VERIFIED" && (
-          <span className="rounded-full bg-success/10 px-2 py-0.5 text-xs font-semibold text-success">
-            ✓ Verificado
-          </span>
+          <div className="flex flex-col items-end gap-1">
+            <span className="rounded-full bg-success/10 px-2 py-0.5 text-xs font-semibold text-success">
+              ✓ Verificado
+            </span>
+            {biometricConsentRequired && hasBiometricConsent && (
+              <button
+                onClick={revokeBiometricConsent}
+                disabled={revoking}
+                className="text-[11px] font-medium text-muted-foreground underline underline-offset-2 hover:text-destructive disabled:opacity-50 transition-colors"
+              >
+                {revoking ? "Revogando…" : "Revogar consentimento biométrico"}
+              </button>
+            )}
+          </div>
         )}
       </div>
 
