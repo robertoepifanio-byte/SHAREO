@@ -71,8 +71,8 @@ describe("ThemeToggle", () => {
       const styles = Array.isArray(radio.props.style)
         ? radio.props.style
         : [radio.props.style]
-      const h = styles.reduce((acc, s) => {
-        if (s && typeof s === "object" && "height" in s) return s.height
+      const h = styles.reduce((acc: number, s: Record<string, unknown> | null | undefined): number => {
+        if (s && typeof s === "object" && "height" in s) return s.height as number
         return acc
       }, 0)
       expect(h).toBeGreaterThanOrEqual(44)

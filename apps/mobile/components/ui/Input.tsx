@@ -17,6 +17,8 @@ interface InputProps extends TextInputProps {
   required?:  boolean
   charCount?: boolean
   maxLength?: number
+  /** Atalho semântico para editable={false} — equivalente a passar editable={false} */
+  disabled?:  boolean
 }
 
 export function Input({
@@ -30,9 +32,14 @@ export function Input({
   value,
   onFocus,
   onBlur,
+  disabled,
+  editable,
   ...props
 }: InputProps) {
   const [focused, setFocused] = useState(false)
+
+  // `disabled` é atalho semântico; se ambos forem passados, `disabled` tem prioridade.
+  const isEditable = disabled ? false : (editable ?? true)
 
   const borderColor = error
     ? "#C0392B"   // --destructive
@@ -42,7 +49,7 @@ export function Input({
 
   const bgColor = error
     ? "#FFF5F5"   // fundo erro (handoff §1.2)
-    : props.editable === false
+    : !isEditable
       ? "#F1F5F9"  // --disabled-bg aproximado
       : "#F8FAFC"  // --surface-muted / default do handoff §1.2
 
@@ -64,10 +71,9 @@ export function Input({
       <TextInput
         value={value}
         maxLength={maxLength}
-        editable={props.disabled ? false : props.editable}
+        editable={isEditable}
         accessibilityLabel={label}
         accessibilityHint={hint}
-        accessibilityInvalid={!!error}
         onFocus={(e) => {
           setFocused(true)
           onFocus?.(e)
@@ -81,7 +87,7 @@ export function Input({
           {
             borderColor,
             backgroundColor: bgColor,
-            color: props.editable === false ? "#64748B" : "#0F172A",
+            color: !isEditable ? "#64748B" : "#0F172A",
             // shadow de foco — traduzido de "focus:ring-2 focus:ring-ring/20"
             ...(focused && !error
               ? {

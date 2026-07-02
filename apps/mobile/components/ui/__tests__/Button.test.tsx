@@ -52,8 +52,8 @@ describe("Button", () => {
     const btn = screen.getByRole("button")
     const flatStyle = btn.props.style
     const styles = Array.isArray(flatStyle) ? flatStyle : [flatStyle]
-    const minHeightValue = styles.reduce((acc, s) => {
-      if (s && typeof s === "object" && "minHeight" in s) return s.minHeight
+    const minHeightValue = styles.reduce((acc: number, s: Record<string, unknown> | null | undefined): number => {
+      if (s && typeof s === "object" && "minHeight" in s) return s.minHeight as number
       return acc
     }, 0)
     expect(minHeightValue).toBeGreaterThanOrEqual(44)
@@ -63,8 +63,8 @@ describe("Button", () => {
     render(<Button size="lg">Grande</Button>)
     const btn = screen.getByRole("button")
     const styles = Array.isArray(btn.props.style) ? btn.props.style : [btn.props.style]
-    const minH = styles.reduce((acc, s) => {
-      if (s && typeof s === "object" && "minHeight" in s) return s.minHeight
+    const minH = styles.reduce((acc: number, s: Record<string, unknown> | null | undefined): number => {
+      if (s && typeof s === "object" && "minHeight" in s) return s.minHeight as number
       return acc
     }, 0)
     expect(minH).toBeGreaterThanOrEqual(52)

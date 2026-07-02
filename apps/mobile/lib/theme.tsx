@@ -67,7 +67,28 @@ export const DARK_TOKENS = {
   disabledBorder: "#26395A",
 } as const
 
-export type Tokens = typeof LIGHT_TOKENS
+// Tokens é tipo estrutural (string, não literal) para aceitar LIGHT_TOKENS e DARK_TOKENS
+// sem TS2322 ("literal incompatível com outro literal").
+export type Tokens = {
+  bg:               string
+  surface:          string
+  text:             string
+  muted:            string
+  border:           string
+  navy:             string
+  green:            string
+  error:            string
+  warning:          string
+  success:          string
+  bookingPending:   string
+  bookingActive:    string
+  bookingCompleted: string
+  bookingCancelled: string
+  bookingDisputed:  string
+  disabledBg:       string
+  disabledText:     string
+  disabledBorder:   string
+}
 
 // ── Persistência ─────────────────────────────────────────────────────────────
 const STORAGE_KEY = "theme-preference"
