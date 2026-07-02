@@ -96,7 +96,7 @@ export default function ChatScreen() {
         >
           <Text className="text-2xl text-muted">‹</Text>
         </TouchableOpacity>
-        <View className="h-9 w-9 items-center justify-center rounded-full bg-primary">
+        <View className="h-10 w-10 items-center justify-center rounded-full bg-primary">
           <Text className="text-sm font-bold text-white">
             {conv?.otherUser?.name[0]?.toUpperCase() ?? "?"}
           </Text>

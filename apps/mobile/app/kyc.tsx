@@ -288,11 +288,12 @@ export default function KycScreen() {
             {needsConsent && (
               <View className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4">
                 <Text className="mb-2 text-sm font-bold text-amber-900">{BIOMETRIC_CONSENT_TITLE}</Text>
-                <ScrollView className="max-h-48 mb-3" nestedScrollEnabled>
+                <ScrollView className="max-h-48 mb-1" nestedScrollEnabled>
                   <Text className="text-xs leading-relaxed text-amber-800">
                     {BIOMETRIC_CONSENT_TEXT}
                   </Text>
                 </ScrollView>
+                <Text className="mb-2 text-[10px] italic text-amber-700">Role para ler o texto completo antes de aceitar ↓</Text>
                 <TouchableOpacity
                   onPress={() => setConsentGiven((v) => !v)}
                   accessibilityRole="checkbox"

@@ -67,12 +67,6 @@ function daysBetween(start: Date, end: Date): number {
   return Math.round((end.getTime() - start.getTime()) / 86_400_000)
 }
 
-const today = (() => {
-  const d = new Date()
-  d.setHours(0, 0, 0, 0)
-  return d
-})()
-
 // ─── Componente ──────────────────────────────────────────────────────────────
 
 export default function BookingCheckoutScreen() {
@@ -81,6 +75,14 @@ export default function BookingCheckoutScreen() {
   const qc     = useQueryClient()
 
   const params = useLocalSearchParams<CheckoutParams>()
+
+  // today calculado na montagem do componente (não no carregamento do módulo),
+  // resolvendo o caso de o app ficar em background passando da meia-noite.
+  const today = useMemo(() => {
+    const d = new Date()
+    d.setHours(0, 0, 0, 0)
+    return d
+  }, [])
 
   const itemId = params.itemId ?? ""
   const title  = params.title  ?? ""

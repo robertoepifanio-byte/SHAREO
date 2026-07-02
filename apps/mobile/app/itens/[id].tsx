@@ -39,6 +39,17 @@ const CONDITION: Record<string, string> = {
   NEW: "Novo", EXCELLENT: "Seminovo", GOOD: "Bom estado", FAIR: "Regular",
 }
 
+function StarRating({ rating, size = "text-sm" }: { rating: number; size?: string }) {
+  const rounded = Math.round(rating)
+  return (
+    <View className="flex-row">
+      {[1, 2, 3, 4, 5].map((i) => (
+        <Text key={i} className={`${size} ${i <= rounded ? "text-yellow-500" : "text-border"}`}>★</Text>
+      ))}
+    </View>
+  )
+}
+
 export default function ItemDetailScreen() {
   const { id }   = useLocalSearchParams<{ id: string }>()
   const insets   = useSafeAreaInsets()
@@ -49,7 +60,7 @@ export default function ItemDetailScreen() {
   // Estado local de favorito — null = desconhecido (não buscamos separadamente, usamos toggle)
   const [isFavorited, setIsFavorited] = useState<boolean | null>(null)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["item", id],
     queryFn:  () => apiFetch<{ data: ItemDetail }>(`/api/items/${id}`),
     enabled:  !!id,
@@ -84,6 +95,26 @@ export default function ItemDetailScreen() {
   }
 
   if (!item) {
+    if (isError) {
+      return (
+        <View className="flex-1 items-center justify-center bg-background px-6">
+          <Text className="text-4xl">📡</Text>
+          <Text className="mt-3 text-base font-semibold text-primary">Não foi possível carregar o item</Text>
+          <Text className="mt-1 text-center text-sm text-muted">Verifique sua conexão</Text>
+          <TouchableOpacity
+            className="mt-4 rounded-xl bg-brand px-6 py-3"
+            onPress={() => refetch()}
+            accessibilityRole="button"
+            accessibilityLabel="Tentar novamente"
+          >
+            <Text className="text-sm font-bold text-white">Tentar novamente</Text>
+          </TouchableOpacity>
+          <TouchableOpacity className="mt-3" onPress={() => router.back()}>
+            <Text className="text-sm text-brand">← Voltar</Text>
+          </TouchableOpacity>
+        </View>
+      )
+    }
     return (
       <View className="flex-1 items-center justify-center bg-background">
         <Text className="text-4xl">😕</Text>
@@ -193,7 +224,7 @@ export default function ItemDetailScreen() {
         {/* Rating */}
         {avgRating !== null && (
           <View className="mt-1 flex-row items-center gap-1">
-            <Text className="text-yellow-500">{"★".repeat(Math.round(avgRating))}{"☆".repeat(5 - Math.round(avgRating))}</Text>
+            <StarRating rating={avgRating} />
             <Text className="text-xs text-muted">{avgRating.toFixed(1)} ({item._count.reviews})</Text>
           </View>
         )}
@@ -271,9 +302,7 @@ export default function ItemDetailScreen() {
             {item.reviews.map((r) => (
               <View key={r.id} className="mb-2 rounded-lg border border-border bg-surface p-3">
                 <Text className="text-xs font-semibold text-foreground">{r.reviewer.name}</Text>
-                <Text className="text-xs text-yellow-500">
-                  {"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}
-                </Text>
+                <StarRating rating={r.rating} size="text-xs" />
                 {r.comment && <Text className="mt-1 text-xs text-muted">{r.comment}</Text>}
               </View>
             ))}

@@ -14,6 +14,13 @@ interface Conversation {
   booking:     { item: { title: string } } | null
 }
 
+const AVATAR_COLORS = ["#003366", "#007B3C", "#9A4700", "#7C3AED", "#0E7490", "#B91C1C"]
+function avatarColor(id: string) {
+  let hash = 0
+  for (let i = 0; i < id.length; i++) hash = (hash * 31 + id.charCodeAt(i)) >>> 0
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length]
+}
+
 function relTime(d: string) {
   const diff = Date.now() - new Date(d).getTime()
   const mins = Math.floor(diff / 60000)
@@ -70,7 +77,10 @@ export default function MensagensScreen() {
               activeOpacity={0.85}
             >
               {/* Avatar */}
-              <View className="h-11 w-11 items-center justify-center rounded-full bg-primary">
+              <View
+                className="h-11 w-11 items-center justify-center rounded-full"
+                style={{ backgroundColor: avatarColor(c.otherUser?.id ?? c.id) }}
+              >
                 <Text className="text-base font-bold text-white">
                   {c.otherUser?.name[0]?.toUpperCase() ?? "?"}
                 </Text>
