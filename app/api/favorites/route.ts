@@ -1,11 +1,12 @@
+import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { resolveUserId } from "@/lib/resolveUserId"
 import { prisma } from "@/lib/prisma"
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 },
@@ -13,7 +14,7 @@ export async function GET() {
     }
 
     const favorites = await prisma.favorite.findMany({
-      where:   { userId: session.user.id },
+      where:   { userId },
       orderBy: { createdAt: "desc" },
       select: {
         createdAt: true,
