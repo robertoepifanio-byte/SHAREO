@@ -57,6 +57,78 @@ jest.mock("react-native/Libraries/Linking/Linking", () => ({
   openURL:    jest.fn(async () => undefined),
 }))
 
+// Mock de @react-native-async-storage/async-storage — usado pelo ThemeProvider.
+jest.mock("@react-native-async-storage/async-storage", () => {
+  const store = new Map()
+  return {
+    getItem:    jest.fn(async (key) => store.get(key) ?? null),
+    setItem:    jest.fn(async (key, value) => { store.set(key, value) }),
+    removeItem: jest.fn(async (key) => { store.delete(key) }),
+    clear:      jest.fn(async () => { store.clear() }),
+  }
+})
+
+// Mock de react-native-svg — substitui SVGs nativos por componentes React vazios.
+jest.mock("react-native-svg", () => {
+  const React = require("react")
+  const { View } = require("react-native")
+  const MockSvg = ({ children, ...props }) =>
+    React.createElement(View, { testID: props.testID }, children)
+  const mockEl = (name) => ({ children }) =>
+    React.createElement(React.Fragment, null, children ?? null)
+  return {
+    __esModule: true,
+    default:    MockSvg,
+    Svg:        MockSvg,
+    Circle:     mockEl("Circle"),
+    Rect:       mockEl("Rect"),
+    Path:       mockEl("Path"),
+    Line:       mockEl("Line"),
+    Polyline:   mockEl("Polyline"),
+    Polygon:    mockEl("Polygon"),
+    G:          mockEl("G"),
+    Text:       mockEl("Text"),
+    TSpan:      mockEl("TSpan"),
+    Defs:       mockEl("Defs"),
+    Stop:       mockEl("Stop"),
+    LinearGradient: mockEl("LinearGradient"),
+  }
+})
+
+// Mock de expo-font e @expo-google-fonts/montserrat
+jest.mock("expo-font", () => ({
+  useFonts:  jest.fn(() => [true, null]),
+  loadAsync: jest.fn(async () => undefined),
+  isLoaded:  jest.fn(() => true),
+}))
+jest.mock("@expo-google-fonts/montserrat", () => ({
+  Montserrat_700Bold:      "Montserrat_700Bold",
+  Montserrat_800ExtraBold: "Montserrat_800ExtraBold",
+}))
+
+// Mock de react-native-safe-area-context — evita "No safe area value available"
+// e componente nativo RNCSafeAreaProvider que renderiza vazio no Jest.
+jest.mock("react-native-safe-area-context", () => {
+  const React = require("react")
+  const { View } = require("react-native")
+  return {
+    SafeAreaProvider: ({ children }) => React.createElement(View, null, children),
+    SafeAreaView:     ({ children }) => React.createElement(View, null, children),
+    useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+    useSafeAreaFrame:  () => ({ x: 0, y: 0, width: 375, height: 812 }),
+  }
+})
+
+// Mock de expo-image — componente nativo ausente no ambiente Jest.
+jest.mock("expo-image", () => {
+  const React = require("react")
+  const { View } = require("react-native")
+  return {
+    Image: ({ accessibilityLabel, style }) =>
+      React.createElement(View, { accessibilityLabel, style }),
+  }
+})
+
 // Silenciar warnings de console durante os testes para manter a saída limpa.
 // Remova ou comente se precisar depurar avisos de um pacote específico.
 const originalWarn = console.warn
