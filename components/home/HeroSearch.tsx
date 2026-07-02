@@ -63,7 +63,7 @@ export function HeroSearch() {
       />
       <button
         type="submit"
-        className="min-h-tap min-w-tap rounded-lg bg-brand px-4 py-2 text-sm font-semibold uppercase text-white hover:bg-brand-hover"
+        className="shrink-0 min-h-tap min-w-tap rounded-lg bg-brand px-3 py-2 text-sm font-semibold uppercase text-white hover:bg-brand-hover"
         aria-label="Buscar"
       >
         Buscar
