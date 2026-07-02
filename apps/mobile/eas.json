@@ -7,14 +7,20 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "node": "22.13.0"
+      "node": "22.13.0",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://staging.shareo.com.br"
+      }
     },
     "preview": {
       "android": {
         "buildType": "apk"
       },
       "distribution": "internal",
-      "node": "22.13.0"
+      "node": "22.13.0",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://staging.shareo.com.br"
+      }
     },
     "production": {
       "android": {
@@ -24,6 +30,10 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "android": {
+        "track": "internal"
+      }
+    }
   }
 }
