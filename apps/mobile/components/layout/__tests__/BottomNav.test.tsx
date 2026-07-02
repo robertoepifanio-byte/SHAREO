@@ -1,6 +1,7 @@
 // Testes de BottomNav — 5 itens com rótulos exatos, SVGs e FAB.
 // Rótulos são a trava anti-invenção: "Início","Explorar","Anunciar","Chat","Perfil"
 // Fonte: components/layout/BottomNav.tsx do site.
+// Lote 2: rotas atualizadas — /explorar, /chat, /perfil (ajuste de expo-router mapping).
 
 import React from "react"
 import { render, screen, fireEvent } from "@testing-library/react-native"
@@ -81,24 +82,31 @@ describe("BottomNav", () => {
     expect(router.push).toHaveBeenCalledWith("/")
   })
 
-  it("pressionar Explorar navega para '/itens'", () => {
+  it("pressionar Explorar navega para '/explorar'", () => {
     const { router } = require("expo-router")
     renderNav()
     fireEvent.press(screen.getByLabelText("Explorar"))
-    expect(router.push).toHaveBeenCalledWith("/itens")
+    expect(router.push).toHaveBeenCalledWith("/explorar")
   })
 
-  it("pressionar Chat navega para '/mensagens'", () => {
+  it("pressionar Chat navega para '/chat'", () => {
     const { router } = require("expo-router")
     renderNav()
     fireEvent.press(screen.getByLabelText("Chat"))
-    expect(router.push).toHaveBeenCalledWith("/mensagens")
+    expect(router.push).toHaveBeenCalledWith("/chat")
   })
 
-  it("pressionar Perfil navega para '/dashboard'", () => {
+  it("pressionar Perfil navega para '/perfil'", () => {
     const { router } = require("expo-router")
     renderNav()
     fireEvent.press(screen.getByLabelText("Perfil"))
-    expect(router.push).toHaveBeenCalledWith("/dashboard")
+    expect(router.push).toHaveBeenCalledWith("/perfil")
+  })
+
+  it("pressionar FAB Anunciar navega para '/itens/novo'", () => {
+    const { router } = require("expo-router")
+    renderNav()
+    fireEvent.press(screen.getByLabelText("Anunciar item"))
+    expect(router.push).toHaveBeenCalledWith("/itens/novo")
   })
 })

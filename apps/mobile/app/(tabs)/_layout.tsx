@@ -1,49 +1,60 @@
-import { Tabs } from "expo-router"
-import { Text } from "react-native"
+// Fonte: components/layout/BottomNav.tsx + components/layout/AppHeader.tsx + components/layout/MobileMenu.tsx
+// Substitui a Tabs nativa do expo-router pelo BottomNav do Lote 1 (5 itens com SVG).
+// AppHeader + MobileMenu drawer navy encapsulados aqui para todas as tabs.
 
-function Icon({ emoji, focused }: { emoji: string; focused: boolean }) {
-  return <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.5 }}>{emoji}</Text>
-}
+import { useState } from "react"
+import { View, StyleSheet } from "react-native"
+import { Slot, router } from "expo-router"
+import { BottomNav } from "@/components/layout/BottomNav"
+import { AppHeader } from "@/components/layout/AppHeader"
+import { MobileMenu } from "@/components/layout/MobileMenu"
+import { useAuth } from "@/lib/auth"
 
 export default function TabsLayout() {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const { user, logout } = useAuth()
+
+  async function handleLogout() {
+    await logout()
+    router.replace("/(auth)/login")
+  }
+
   return (
-    <Tabs
-      screenOptions={{
-        headerShown:      false,
-        tabBarStyle:      { backgroundColor: "#FFFFFF", borderTopColor: "#E2E8F0" },
-        tabBarActiveTintColor:   "#007B3C",
-        tabBarInactiveTintColor: "#94A3B8",
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Explorar",
-          tabBarIcon: ({ focused }) => <Icon emoji="🔍" focused={focused} />,
-        }}
+    <View style={styles.container}>
+      {/* Header fixo no topo — transcrito de AppHeader.tsx do site */}
+      <AppHeader
+        menuOpen={menuOpen}
+        onToggleMenu={() => setMenuOpen((v) => !v)}
+        notificationCount={0}
       />
-      <Tabs.Screen
-        name="reservas"
-        options={{
-          title: "Reservas",
-          tabBarIcon: ({ focused }) => <Icon emoji="📦" focused={focused} />,
-        }}
+
+      {/* Conteúdo da tela ativa */}
+      <View style={styles.content}>
+        <Slot />
+      </View>
+
+      {/* BottomNav com 5 itens + FAB — transcrito de BottomNav.tsx do site */}
+      <BottomNav />
+
+      {/* MobileMenu drawer navy — transcrito de MobileMenu.tsx do site */}
+      <MobileMenu
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        isLoggedIn={!!user}
+        role={user?.role ?? null}
+        onLogout={handleLogout}
       />
-      <Tabs.Screen
-        name="mensagens"
-        options={{
-          title: "Mensagens",
-          tabBarIcon: ({ focused }) => <Icon emoji="💬" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="perfil"
-        options={{
-          title: "Perfil",
-          tabBarIcon: ({ focused }) => <Icon emoji="👤" focused={focused} />,
-        }}
-      />
-    </Tabs>
+    </View>
   )
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F8FAFC",   // bg-background
+  },
+  content: {
+    flex: 1,
+    overflow: "hidden",
+  },
+})
