@@ -18,7 +18,7 @@ export function BottomNav() {
   )
 
   const itemCls = (active: boolean) =>
-    `flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-semibold transition-colors relative h-full ${
+    `flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-semibold transition-colors relative h-full outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset rounded-sm ${
       active
         ? "text-primary"
         : "text-muted-foreground hover:text-foreground"
@@ -68,7 +68,7 @@ export function BottomNav() {
       {/* Anunciar — CTA elevado */}
       <Link
         href="/itens/novo"
-        className="flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-semibold relative"
+        className="flex flex-1 flex-col items-center justify-center gap-1 text-[10px] font-semibold relative outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset rounded-sm"
         style={{ marginTop: "-10px" }}
         aria-label="Anunciar item"
       >

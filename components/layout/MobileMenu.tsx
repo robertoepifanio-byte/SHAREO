@@ -238,49 +238,59 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
               {/* Explorar — expansível */}
               <li>
                 <button
+                  id="menu-section-explorar"
                   type="button"
                   onClick={() => setExplorarOpen((v) => !v)}
                   aria-expanded={explorarOpen}
                   aria-haspopup="true"
+                  aria-controls="menu-group-explorar"
                   className={sectionBtn}
                 >
                   <span>Explorar</span>
                   <Chevron open={explorarOpen} />
                 </button>
+                {explorarOpen && (
+                  <ul id="menu-group-explorar" role="group" aria-labelledby="menu-section-explorar" className="flex flex-col gap-1 mt-1">
+                    {EXPLORAR_LINKS.map((link) => (
+                      <li key={link.href}>
+                        <NavLink href={link.href} className={subItem}>
+                          <MenuIcon name={link.icon} />
+                          {link.label}
+                        </NavLink>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </li>
-              {explorarOpen && EXPLORAR_LINKS.map((link) => (
-                <li key={link.href}>
-                  <NavLink href={link.href} className={subItem}>
-                    <MenuIcon name={link.icon} />
-                    {link.label}
-                  </NavLink>
-                </li>
-              ))}
 
               {/* Anunciar — expansível (apenas para não-admins) */}
               {!isAdmin && (
-                <>
-                  <li>
-                    <button
-                      type="button"
-                      onClick={() => setAnunciarOpen((v) => !v)}
-                      aria-expanded={anunciarOpen}
-                      aria-haspopup="true"
-                      className="flex h-12 w-full items-center justify-between rounded-lg px-4 text-base font-bold bg-accent text-accent-foreground hover:brightness-105 transition-colors"
-                    >
-                      <span>Anunciar</span>
-                      <Chevron open={anunciarOpen} />
-                    </button>
-                  </li>
-                  {anunciarOpen && ANUNCIAR_LINKS.map((link) => (
-                    <li key={link.href}>
-                      <NavLink href={link.href} className={subItem}>
-                        <MenuIcon name={link.icon} />
-                        {link.label}
-                      </NavLink>
-                    </li>
-                  ))}
-                </>
+                <li>
+                  <button
+                    id="menu-section-anunciar"
+                    type="button"
+                    onClick={() => setAnunciarOpen((v) => !v)}
+                    aria-expanded={anunciarOpen}
+                    aria-haspopup="true"
+                    aria-controls="menu-group-anunciar"
+                    className="flex h-12 w-full items-center justify-between rounded-lg px-4 text-base font-bold bg-accent text-accent-foreground hover:brightness-105 transition-colors"
+                  >
+                    <span>Anunciar</span>
+                    <Chevron open={anunciarOpen} />
+                  </button>
+                  {anunciarOpen && (
+                    <ul id="menu-group-anunciar" role="group" aria-labelledby="menu-section-anunciar" className="flex flex-col gap-1 mt-1">
+                      {ANUNCIAR_LINKS.map((link) => (
+                        <li key={link.href}>
+                          <NavLink href={link.href} className={subItem}>
+                            <MenuIcon name={link.icon} />
+                            {link.label}
+                          </NavLink>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
               )}
 
               {isLoggedIn && (
@@ -289,42 +299,50 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
 
                   {/* Atividade / Admin atalhos */}
                   <li>
-                    <p className="px-4 pt-2 pb-1 text-xs font-semibold text-white/80 uppercase tracking-wider">
+                    <p id="menu-heading-atividade" className="px-4 pt-2 pb-1 text-xs font-semibold text-white/80 uppercase tracking-wider">
                       {isAdmin ? "Admin" : "Atividade"}
                     </p>
+                    <ul role="group" aria-labelledby="menu-heading-atividade" className="flex flex-col gap-1">
+                      {(isAdmin ? ADMIN_ATALHOS_LINKS : ATIVIDADE_LINKS).map((link) => (
+                        <li key={link.href}>
+                          <NavLink href={link.href} className={`${subItem} pl-4`}>
+                            <MenuIcon name={link.icon} />
+                            {link.label}
+                          </NavLink>
+                        </li>
+                      ))}
+                    </ul>
                   </li>
-                  {(isAdmin ? ADMIN_ATALHOS_LINKS : ATIVIDADE_LINKS).map((link) => (
-                    <li key={link.href}>
-                      <NavLink href={link.href} className={`${subItem} pl-4`}>
-                        <MenuIcon name={link.icon} />
-                        {link.label}
-                      </NavLink>
-                    </li>
-                  ))}
 
                   <li><div className="my-1 h-px bg-white/10" /></li>
 
                   {/* Minha Conta — expansível */}
                   <li>
                     <button
+                      id="menu-section-conta"
                       type="button"
                       onClick={() => setAccountOpen((v) => !v)}
                       aria-expanded={accountOpen}
                       aria-haspopup="true"
+                      aria-controls="menu-group-conta"
                       className={sectionBtn}
                     >
                       <span>Minha Conta</span>
                       <Chevron open={accountOpen} />
                     </button>
+                    {accountOpen && (
+                      <ul id="menu-group-conta" role="group" aria-labelledby="menu-section-conta" className="flex flex-col gap-1 mt-1">
+                        {ACCOUNT_LINKS.map((link) => (
+                          <li key={link.href}>
+                            <NavLink href={link.href} className={subItem}>
+                              <MenuIcon name={link.icon} />
+                              {link.label}
+                            </NavLink>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </li>
-                  {accountOpen && ACCOUNT_LINKS.map((link) => (
-                    <li key={link.href}>
-                      <NavLink href={link.href} className={subItem}>
-                        <MenuIcon name={link.icon} />
-                        {link.label}
-                      </NavLink>
-                    </li>
-                  ))}
 
                   {/* Painel Admin — apenas para admins */}
                   {isAdmin && (
@@ -363,33 +381,35 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
                   <li><div className="my-1 h-px bg-white/10" /></li>
                   <li>
                     <button
+                      id="menu-section-ajuda-logado"
                       type="button"
                       onClick={() => setHelpOpen((v) => !v)}
                       aria-expanded={helpOpen}
                       aria-haspopup="true"
+                      aria-controls="menu-group-ajuda-logado"
                       className={sectionBtn}
                     >
                       <span>Central de Ajuda</span>
                       <Chevron open={helpOpen} />
                     </button>
-                  </li>
-                  {helpOpen && (
-                    <>
-                      {HELP_LINKS.map((link) => (
-                        <li key={link.href}>
-                          <NavLink href={link.href} className={subItem}>
-                            <MenuIcon name={link.icon} />
-                            {link.label}
+                    {helpOpen && (
+                      <ul id="menu-group-ajuda-logado" role="group" aria-labelledby="menu-section-ajuda-logado" className="flex flex-col gap-1 mt-1">
+                        {HELP_LINKS.map((link) => (
+                          <li key={link.href}>
+                            <NavLink href={link.href} className={subItem}>
+                              <MenuIcon name={link.icon} />
+                              {link.label}
+                            </NavLink>
+                          </li>
+                        ))}
+                        <li>
+                          <NavLink href="/ajuda" aria-label="Ver todos os artigos da Central de Ajuda" className="flex h-11 items-center gap-3 rounded-lg pl-8 pr-4 text-sm font-medium text-brand hover:bg-white/10 transition-colors">
+                            Ver tudo →
                           </NavLink>
                         </li>
-                      ))}
-                      <li>
-                        <NavLink href="/ajuda" aria-label="Ver todos os artigos da Central de Ajuda" className="flex h-11 items-center gap-3 rounded-lg pl-8 pr-4 text-sm font-medium text-brand hover:bg-white/10 transition-colors">
-                          Ver tudo →
-                        </NavLink>
-                      </li>
-                    </>
-                  )}
+                      </ul>
+                    )}
+                  </li>
                 </>
               )}
 
@@ -404,33 +424,35 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
                   <li><div className="my-1 h-px bg-white/10" /></li>
                   <li>
                     <button
+                      id="menu-section-ajuda-anonimo"
                       type="button"
                       onClick={() => setHelpOpen((v) => !v)}
                       aria-expanded={helpOpen}
                       aria-haspopup="true"
+                      aria-controls="menu-group-ajuda-anonimo"
                       className={sectionBtn}
                     >
                       <span>Central de Ajuda</span>
                       <Chevron open={helpOpen} />
                     </button>
-                  </li>
-                  {helpOpen && (
-                    <>
-                      {HELP_LINKS.map((link) => (
-                        <li key={link.href}>
-                          <NavLink href={link.href} className={subItem}>
-                            <MenuIcon name={link.icon} />
-                            {link.label}
+                    {helpOpen && (
+                      <ul id="menu-group-ajuda-anonimo" role="group" aria-labelledby="menu-section-ajuda-anonimo" className="flex flex-col gap-1 mt-1">
+                        {HELP_LINKS.map((link) => (
+                          <li key={link.href}>
+                            <NavLink href={link.href} className={subItem}>
+                              <MenuIcon name={link.icon} />
+                              {link.label}
+                            </NavLink>
+                          </li>
+                        ))}
+                        <li>
+                          <NavLink href="/ajuda" aria-label="Ver todos os artigos da Central de Ajuda" className="flex h-11 items-center gap-3 rounded-lg pl-8 pr-4 text-sm font-medium text-brand hover:bg-white/10 transition-colors">
+                            Ver tudo →
                           </NavLink>
                         </li>
-                      ))}
-                      <li>
-                        <NavLink href="/ajuda" aria-label="Ver todos os artigos da Central de Ajuda" className="flex h-11 items-center gap-3 rounded-lg pl-8 pr-4 text-sm font-medium text-brand hover:bg-white/10 transition-colors">
-                          Ver tudo →
-                        </NavLink>
-                      </li>
-                    </>
-                  )}
+                      </ul>
+                    )}
+                  </li>
                 </>
               )}
             </ul>
