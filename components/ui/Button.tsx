@@ -1,5 +1,5 @@
-"use client"
-
+// ARQ-Mi-01: Server Component — sem hooks/estado/eventos; "use client" removido.
+// Quando usado dentro de um Client Component, herda o contexto sem custo de bundle extra.
 import type { ButtonHTMLAttributes, ReactNode } from "react"
 
 type Variant = "primary" | "secondary" | "ghost" | "destructive"

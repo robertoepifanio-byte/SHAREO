@@ -229,13 +229,7 @@ export default function ItemDetailScreen() {
               )}
             </View>
           )}
-          {item.depositAmount != null && item.depositAmount > 0 && (
-            <View className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
-              <Text className="text-xs text-amber-800">
-                🔒 Caução: <Text className="font-bold">{fmtCurrency(item.depositAmount)}</Text> — devolvida após devolução do item
-              </Text>
-            </View>
-          )}
+          {/* MOB-BL1: bloco de caução removido — decisão D2: sem caução no MVP */}
         </View>
 
         {/* Descrição */}
