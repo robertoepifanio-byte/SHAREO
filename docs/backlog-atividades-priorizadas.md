@@ -116,6 +116,7 @@
 |---|---|---|
 | MOB-BL1 | Remover dead-code do bloco de **caução** em `apps/mobile/app/itens/[id].tsx` (`depositAmount > 0` nunca ocorre no MVP — D2) | Limpeza optativa, não bug; revisar quando D2 for reavaliado. |
 | MOB-BL2 | Fluxo **reservar+pagar / anunciar / KYC / mapa** no app | **Feature nova** — ver `plano-mobile-lojas.md` (Fases 2 e 5). |
+| MOB-BL3 | **App não tem dark mode** — nenhum `useColorScheme`/`Appearance`/variante `dark:` no código; `tailwind.config.js` do app usa hex fixo, ao contrário do site (CSS vars `:root`/`.dark` via `next-themes`, release v1.9.0). App sempre renderiza claro, mesmo com o celular em modo escuro. | **Feature nova** — pede portar os tokens de cor do site para o app (NativeWind `dark:` + `useColorScheme`), revisão de contraste em cada tela e QA visual em device real. Fora do escopo da auditoria UI/UX de s41 (PRs #166/#167). |
 
 ---
 
