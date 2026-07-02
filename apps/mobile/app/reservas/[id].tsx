@@ -103,14 +103,15 @@ export default function BookingDetailScreen() {
   })
 
   // Checkout Mercado Pago — abre o init_point via Linking (navegador externo ou WebView nativa)
-  // Rota dedicada mobile /api/payments/mp/checkout/mobile aceita Bearer JWT.
+  // Usa a rota web unificada /api/payments/mp/checkout (aceita Bearer JWT via resolveUserId);
+  // `client: "mobile"` faz o backend usar back_urls por deep-link shareo://.
   // Inerte-seguro: quando a flag mercadoPagoEnabled está OFF, o endpoint retorna 404
   // e exibimos mensagem amigável ("pagamento indisponível") sem quebrar o fluxo.
   const mpCheckout = useMutation({
     mutationFn: async () => {
       const res = await apiFetch<{ data: { url: string | null } }>(
-        "/api/payments/mp/checkout/mobile",
-        { method: "POST", body: JSON.stringify({ bookingId: id }) },
+        "/api/payments/mp/checkout",
+        { method: "POST", body: JSON.stringify({ bookingId: id, client: "mobile" }) },
       )
       return res.data.url
     },
