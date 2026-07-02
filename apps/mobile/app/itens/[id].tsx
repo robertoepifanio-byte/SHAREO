@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Image } from "expo-image"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { apiFetch } from "@/lib/api"
@@ -33,6 +33,8 @@ interface ItemDetail {
   _count:      { reviews: number; favorites: number }
 }
 
+interface FavoriteStatusResponse { data: { favorited: boolean } }
+
 const CONDITION: Record<string, string> = {
   NEW: "Novo", EXCELLENT: "Seminovo", GOOD: "Bom estado", FAIR: "Regular",
 }
@@ -41,12 +43,34 @@ export default function ItemDetailScreen() {
   const { id }   = useLocalSearchParams<{ id: string }>()
   const insets   = useSafeAreaInsets()
   const user     = useAuth((s) => s.user)
+  const qc       = useQueryClient()
   const [imgIdx, setImgIdx] = useState(0)
+
+  // Estado local de favorito — null = desconhecido (não buscamos separadamente, usamos toggle)
+  const [isFavorited, setIsFavorited] = useState<boolean | null>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ["item", id],
     queryFn:  () => apiFetch<{ data: ItemDetail }>(`/api/items/${id}`),
     enabled:  !!id,
+  })
+
+  const toggleFavorite = useMutation({
+    mutationFn: () =>
+      apiFetch<FavoriteStatusResponse>(`/api/items/${id}/favorite`, { method: "POST" }),
+    onMutate: () => {
+      // Optimistic update — toggle local antes de receber resposta do servidor
+      setIsFavorited((prev) => (prev === null ? true : !prev))
+    },
+    onSuccess: (res) => {
+      setIsFavorited(res.data.favorited)
+      // Invalida lista de favoritos para manter consistência
+      qc.invalidateQueries({ queryKey: ["favorites"] })
+    },
+    onError: () => {
+      // Reverte em caso de erro
+      setIsFavorited((prev) => (prev === null ? null : !prev))
+    },
   })
 
   const item = data?.data
@@ -76,6 +100,9 @@ export default function ItemDetailScreen() {
     ? item.reviews.reduce((s, r) => s + r.rating, 0) / item.reviews.length
     : null
 
+  // ❤️ = favoritado, 🤍 = não favoritado, 🤍 = estado inicial desconhecido
+  const heartIcon = isFavorited === true ? "❤️" : "🤍"
+
   function handleReservar() {
     if (!user) {
       Alert.alert("Login necessário", "Faça login para fazer uma reserva.", [
@@ -85,7 +112,6 @@ export default function ItemDetailScreen() {
       return
     }
     if (!item) return // item é definido neste ponto mas o TS não infere pelo early-return acima
-    // Navega para a tela de checkout passando os preços via params (centavos como string)
     router.push({
       pathname: "/reservas/checkout" as never,
       params: {
@@ -96,6 +122,17 @@ export default function ItemDetailScreen() {
         ...(item.pricePerMonth ? { pricePerMonth: String(item.pricePerMonth) } : {}),
       },
     })
+  }
+
+  function handleToggleFavorite() {
+    if (!user) {
+      Alert.alert("Login necessário", "Faça login para salvar favoritos.", [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Entrar", onPress: () => router.push("/(auth)/login") },
+      ])
+      return
+    }
+    toggleFavorite.mutate()
   }
 
   return (
@@ -117,6 +154,16 @@ export default function ItemDetailScreen() {
           accessibilityRole="button"
         >
           <Text className="text-base font-bold text-white">‹</Text>
+        </TouchableOpacity>
+        {/* Botão favoritar */}
+        <TouchableOpacity
+          className="absolute right-4 top-10 h-11 w-11 items-center justify-center rounded-full bg-black/40"
+          onPress={handleToggleFavorite}
+          disabled={toggleFavorite.isPending}
+          accessibilityRole="button"
+          accessibilityLabel={isFavorited === true ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+        >
+          <Text className="text-lg">{heartIcon}</Text>
         </TouchableOpacity>
         {/* Miniaturas */}
         {item.images.length > 1 && (

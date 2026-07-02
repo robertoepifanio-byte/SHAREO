@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
-import { auth } from "@/lib/auth"
+import { resolveUserId } from "@/lib/resolveUserId"
 import { prisma } from "@/lib/prisma"
 import { CreateItemSchema, ListItemsQuerySchema } from "@/lib/validations/items"
 import { geocodeItem } from "@/lib/geocodeItem"
@@ -96,10 +96,11 @@ export async function GET(req: NextRequest) {
   }
 }
 
+// Aceita Bearer token (mobile) ou cookie de sessão (web) via resolveUserId
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 }
@@ -108,7 +109,7 @@ export async function POST(req: NextRequest) {
 
     // Cadastro progressivo — anunciar exige cadastro completo (reforço server-side do gate da página)
     const me = await prisma.user.findUnique({
-      where:  { id: session.user.id },
+      where:  { id: userId },
       select: { profileCompletedAt: true },
     })
     if (!me?.profileCompletedAt) {
@@ -139,7 +140,7 @@ export async function POST(req: NextRequest) {
     // The images endpoint promotes DRAFT → AVAILABLE when the first photo is added.
     const item = await prisma.item.create({
       data: {
-        ownerId:       session.user.id,
+        ownerId:       userId,
         categoryId:    d.categoryId,
         title:         d.title,
         description:   d.description,

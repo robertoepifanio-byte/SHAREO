@@ -2,10 +2,11 @@
  * POST /api/users/me/id-verification
  * Envia documentos para verificação de identidade.
  * Body: FormData com "document" (foto do doc) e "selfie" (selfie do usuário)
+ * Aceita Bearer token (mobile) ou cookie de sessão (web) via resolveUserId.
  */
 import type { NextRequest } from "next/server"
 import { NextResponse }     from "next/server"
-import { auth }             from "@/lib/auth"
+import { resolveUserId }    from "@/lib/resolveUserId"
 import { prisma }           from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getUploadLimits, getBiometricConsentConfig } from "@/lib/platform-config"
@@ -18,13 +19,14 @@ import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 
 export async function POST(req: NextRequest) {
   const supabase = createAdminClient()
-  const session = await auth()
-  if (!session) return NextResponse.json({ error: { code: "UNAUTHORIZED" } }, { status: 401 })
+
+  const userId = await resolveUserId(req)
+  if (!userId) return NextResponse.json({ error: { code: "UNAUTHORIZED" } }, { status: 401 })
 
   // M4 (SEC-MED): rate limit por usuário — mesmo padrão de checkRateLimit/rateLimitResponse
   // já usado em POST /api/bookings e RATE_LIMITS em lib/rateLimit.ts.
   const rl = await checkRateLimit(
-    `upload:${session.user.id}`,
+    `upload:${userId}`,
     RATE_LIMITS.upload.limit,
     RATE_LIMITS.upload.windowMs,
     req,
@@ -32,7 +34,7 @@ export async function POST(req: NextRequest) {
   if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
   const user = await prisma.user.findUnique({
-    where:  { id: session.user.id },
+    where:  { id: userId },
     select: { idVerificationStatus: true },
   })
 
@@ -98,8 +100,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const userId = session.user.id
-  const now    = Date.now()
+  const now = Date.now()
 
   const [docArr, selfieArr] = await Promise.all([
     docFile.arrayBuffer(),

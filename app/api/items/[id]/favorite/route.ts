@@ -1,23 +1,23 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { resolveUserId } from "@/lib/resolveUserId"
 import { prisma } from "@/lib/prisma"
 
 type Params = { params: Promise<{ id: string }> }
 
 // POST toggles: adds if not present, removes if present
-export async function POST(_req: NextRequest, { params }: Params) {
+// Aceita Bearer token (mobile) ou cookie de sessão (web) via resolveUserId
+export async function POST(req: NextRequest, { params }: Params) {
   try {
-    const session = await auth()
-    if (!session) {
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 },
       )
     }
 
-    const { id }   = await params
-    const userId   = session.user.id
+    const { id } = await params
 
     const item = await prisma.item.findFirst({
       where:  { id, deletedAt: null },

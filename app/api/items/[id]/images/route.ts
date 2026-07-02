@@ -2,10 +2,10 @@ import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
 import { fileTypeFromBuffer } from "file-type"
 import { auth } from "@/lib/auth"
+import { resolveUserId } from "@/lib/resolveUserId"
 import { prisma } from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getUploadLimits } from "@/lib/platform-config"
-import { assertOwnerOrAdmin } from "@/lib/auth/ownership"
 import { ALLOWED_IMAGE_MIMES, EXT_BY_MIME } from "@/lib/imageUpload"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 
@@ -23,10 +23,13 @@ async function isMagicBytesValid(buffer: ArrayBuffer): Promise<boolean> {
 
 type RouteContext = { params: Promise<{ id: string }> }
 
+// Aceita Bearer token (mobile) ou cookie de sessão (web) via resolveUserId.
+// A checagem de propriedade (ownerId === userId || isAdmin) é feita localmente
+// porque assertOwnerOrAdmin requer um objeto Session completo do NextAuth.
 export async function POST(req: NextRequest, { params }: RouteContext) {
   try {
-    const session = await auth()
-    if (!session) {
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 }
@@ -34,7 +37,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     }
 
     const rl = await checkRateLimit(
-      `upload:${session.user.id}`,
+      `upload:${userId}`,
       RATE_LIMITS.upload.limit,
       RATE_LIMITS.upload.windowMs,
       req,
@@ -54,11 +57,18 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       )
     }
 
-    if (!assertOwnerOrAdmin(item.ownerId, session)) {
-      return NextResponse.json(
-        { error: { code: "FORBIDDEN", message: "Sem permissão." } },
-        { status: 403 }
-      )
+    // Verifica propriedade: dono do item OU admin (role verificado via session cookie)
+    const isOwner = item.ownerId === userId
+    if (!isOwner) {
+      // Verifica se é admin — apenas para sessões web (Bearer mobile não tem role admin)
+      const session = await auth().catch(() => null)
+      const isAdmin = session?.user.role === "ADMIN"
+      if (!isAdmin) {
+        return NextResponse.json(
+          { error: { code: "FORBIDDEN", message: "Sem permissão." } },
+          { status: 403 }
+        )
+      }
     }
 
     const { maxImagesPerItem, maxUploadSizeMB } = await getUploadLimits()
@@ -175,7 +185,9 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
       )
     }
 
-    if (!assertOwnerOrAdmin(image.item.ownerId, session)) {
+    const isOwner = image.item.ownerId === session.user.id
+    const isAdmin = session.user.role === "ADMIN"
+    if (!isOwner && !isAdmin) {
       return NextResponse.json(
         { error: { code: "FORBIDDEN", message: "Sem permissão." } },
         { status: 403 }

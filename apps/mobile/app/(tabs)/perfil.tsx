@@ -38,11 +38,27 @@ export default function PerfilScreen() {
   }
 
   const items: MenuItem[] = [
-    { label: "Meus anúncios",  icon: "📋", onPress: () => {} },
-    { label: "Favoritos",      icon: "❤️",  onPress: () => {} },
-    { label: "Ganhos",         icon: "💰", onPress: () => {} },
-    { label: "Calculadora de ganhos", icon: "📊", onPress: () => {} },
-    { label: "Sair",           icon: "🚪", onPress: handleLogout, danger: true },
+    {
+      label: "Anunciar item",
+      icon: "➕",
+      onPress: () => router.push("/itens/novo" as never),
+    },
+    {
+      label: "Meus anúncios",
+      icon: "📋",
+      onPress: () => router.push("/meus-anuncios" as never),
+    },
+    {
+      label: "Favoritos",
+      icon: "❤️",
+      onPress: () => router.push("/favoritos" as never),
+    },
+    {
+      label: "Verificação de identidade",
+      icon: "🪪",
+      onPress: () => router.push("/kyc" as never),
+    },
+    { label: "Sair", icon: "🚪", onPress: handleLogout, danger: true },
   ]
 
   const initial = user.name[0]?.toUpperCase() ?? "?"
@@ -75,6 +91,8 @@ export default function PerfilScreen() {
             className={`flex-row items-center gap-3 px-4 py-4 ${i < items.length - 1 ? "border-b border-border" : ""}`}
             onPress={item.onPress}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={item.label}
           >
             <Text className="text-xl">{item.icon}</Text>
             <Text className={`flex-1 text-sm font-medium ${item.danger ? "text-red-600" : "text-foreground"}`}>
