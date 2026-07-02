@@ -1,6 +1,7 @@
 // Fonte: components/layout/BottomNav.tsx
 // Transcrição LITERAL de BottomNav.tsx do site para React Native.
 // SVGs, rótulos, ordem e comportamento do FAB transcritos verbatim do arquivo-fonte.
+// Lote 2: rotas ajustadas para expo-router — /explorar (tab Explorar), /chat (tab Chat), /perfil (tab Perfil).
 
 import React from "react"
 import {
@@ -19,10 +20,11 @@ function useActiveTab() {
   const pathname = usePathname()
   return {
     isHome:     pathname === "/" || pathname === "/index",
-    isExplore:  pathname.startsWith("/itens") && !pathname.includes("/novo"),
+    isExplore:  pathname === "/explorar" || (pathname.startsWith("/itens") && !pathname.includes("/novo")),
     isAnunciar: pathname.includes("/novo") || pathname.startsWith("/anunciar"),
-    isChat:     pathname.startsWith("/mensagens"),
+    isChat:     pathname === "/chat" || pathname.startsWith("/mensagens"),
     isDash:     (
+      pathname === "/perfil" ||
       pathname === "/dashboard" ||
       pathname.startsWith("/perfil") ||
       pathname === "/reservas" ||
@@ -143,13 +145,13 @@ export function BottomNav() {
       accessibilityRole="tabbar"
       accessibilityLabel="Navegação mobile"
     >
-      {/* 1. Início — href "/" */}
+      {/* 1. Início — tab index "/" */}
       <TabItem active={isHome} label="Início" onPress={() => router.push("/")} accessibilityCurrent={isHome}>
         <HomeIcon active={isHome} />
       </TabItem>
 
-      {/* 2. Explorar — href "/itens" */}
-      <TabItem active={isExplore} label="Explorar" onPress={() => router.push("/itens")} accessibilityCurrent={isExplore}>
+      {/* 2. Explorar — tab "/explorar" */}
+      <TabItem active={isExplore} label="Explorar" onPress={() => router.push("/explorar")} accessibilityCurrent={isExplore}>
         <ExploreIcon active={isExplore} />
       </TabItem>
 
@@ -171,13 +173,13 @@ export function BottomNav() {
         <Text style={styles.fabLabel}>Anunciar</Text>
       </Pressable>
 
-      {/* 4. Chat — href "/mensagens" */}
-      <TabItem active={isChat} label="Chat" onPress={() => router.push("/mensagens")} accessibilityCurrent={isChat}>
+      {/* 4. Chat — tab "/chat" (wrapper de mensagens) */}
+      <TabItem active={isChat} label="Chat" onPress={() => router.push("/chat")} accessibilityCurrent={isChat}>
         <ChatIcon active={isChat} />
       </TabItem>
 
-      {/* 5. Perfil — href "/dashboard" */}
-      <TabItem active={isDash} label="Perfil" onPress={() => router.push("/dashboard")} accessibilityCurrent={isDash}>
+      {/* 5. Perfil — tab "/perfil" */}
+      <TabItem active={isDash} label="Perfil" onPress={() => router.push("/perfil")} accessibilityCurrent={isDash}>
         <ProfileIcon active={isDash} />
       </TabItem>
     </View>
