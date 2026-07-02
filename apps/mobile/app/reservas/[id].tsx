@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from "react-native"
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Linking } from "react-native"
 import { useState } from "react"
 import { router, useLocalSearchParams } from "expo-router"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -9,13 +9,14 @@ import { useAuth } from "@/lib/auth"
 import { deriveBookingHistory } from "@/lib/bookingHistory"
 
 interface BookingDetail {
-  id:         string
-  status:     string
-  startDate:  string
-  endDate:    string
-  totalPrice: number
+  id:            string
+  status:        string
+  paymentStatus: string | null
+  startDate:     string
+  endDate:       string
+  totalPrice:    number
   depositAmount: number | null
-  borrowerNote: string | null
+  borrowerNote:  string | null
   createdAt:            string
   respondedAt:          string | null
   paidAt:               string | null
@@ -101,6 +102,60 @@ export default function BookingDetailScreen() {
       Alert.alert("Erro", e instanceof Error ? e.message : "Não foi possível concluir a ação."),
   })
 
+  // Checkout Mercado Pago — abre o init_point via Linking (navegador externo ou WebView nativa)
+  // Usa a rota web unificada /api/payments/mp/checkout (aceita Bearer JWT via resolveUserId);
+  // `client: "mobile"` faz o backend usar back_urls por deep-link shareo://.
+  // Inerte-seguro: quando a flag mercadoPagoEnabled está OFF, o endpoint retorna 404
+  // e exibimos mensagem amigável ("pagamento indisponível") sem quebrar o fluxo.
+  const mpCheckout = useMutation({
+    mutationFn: async () => {
+      const res = await apiFetch<{ data: { url: string | null } }>(
+        "/api/payments/mp/checkout",
+        { method: "POST", body: JSON.stringify({ bookingId: id, client: "mobile" }) },
+      )
+      return res.data.url
+    },
+    onSuccess: async (url) => {
+      if (!url) {
+        Alert.alert(
+          "Pagamento indisponível",
+          "O pagamento online ainda não está disponível nesta versão. Entre em contato com o proprietário para combinar o pagamento.",
+        )
+        return
+      }
+      // Abre o Checkout MP no navegador do sistema operacional.
+      // O retorno acontece via deep-link shareo:// quando o usuário conclui,
+      // cancela ou a transação fica pendente no lado do MP.
+      const canOpen = await Linking.canOpenURL(url)
+      if (canOpen) {
+        await Linking.openURL(url)
+      } else {
+        Alert.alert("Erro", "Não foi possível abrir o link de pagamento.")
+      }
+    },
+    onError: (e) => {
+      const msg = e instanceof Error ? e.message : ""
+      if (msg.includes("404") || msg.includes("indisponível") || msg.includes("NOT_FOUND")) {
+        Alert.alert(
+          "Pagamento indisponível",
+          "O pagamento online ainda não está disponível nesta versão.",
+        )
+      } else if (msg.includes("OWNER_NOT_CONNECTED")) {
+        Alert.alert(
+          "Proprietário sem conta de pagamento",
+          "O proprietário ainda não conectou uma conta para receber. Entre em contato via chat.",
+        )
+      } else if (msg.includes("BOOKING_NOT_CONFIRMED")) {
+        Alert.alert(
+          "Aguardando confirmação",
+          "O proprietário precisa confirmar a reserva antes do pagamento.",
+        )
+      } else {
+        Alert.alert("Erro", msg || "Não foi possível iniciar o pagamento.")
+      }
+    },
+  })
+
   const booking = data?.data
 
   if (!user) {
@@ -137,6 +192,8 @@ export default function BookingDetailScreen() {
   const canCancel        = (booking.status === "PENDING" || booking.status === "ACTIVE") && isBorrower
   const canReturn        = booking.status === "ACTIVE"   && isBorrower
   const canConfirmReturn = booking.status === "RETURNED" && isOwner
+  // Pagamento MP: somente o locatário, reserva CONFIRMED, ainda não paga
+  const canPay = isBorrower && booking.status === "CONFIRMED" && booking.paymentStatus !== "PAID"
   const thumb            = booking.item.images[0]?.url
 
   function handleCancel() {
@@ -377,13 +434,33 @@ export default function BookingDetailScreen() {
         className="border-t border-border bg-surface px-4 py-3 gap-3"
         style={{ paddingBottom: insets.bottom + 12 }}
       >
+        {/* Pagamento MP — somente quando locador confirmou e ainda não foi pago */}
+        {canPay && (
+          <TouchableOpacity
+            className="min-h-[52px] items-center justify-center rounded-xl bg-brand"
+            onPress={() => mpCheckout.mutate()}
+            activeOpacity={0.85}
+            disabled={mpCheckout.isPending}
+            accessibilityRole="button"
+            accessibilityLabel="Pagar com Mercado Pago"
+          >
+            {mpCheckout.isPending ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text className="text-sm font-bold text-white">Pagar reserva</Text>
+            )}
+          </TouchableOpacity>
+        )}
+
         {booking.conversation && (
           <TouchableOpacity
-            className="rounded-xl border border-brand py-3 items-center"
+            className="min-h-[44px] items-center justify-center rounded-xl border border-brand py-3"
             onPress={() => router.push(`/mensagens/${booking.conversation!.id}`)}
             activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Abrir conversa com o proprietário"
           >
-            <Text className="text-sm font-bold text-brand">💬 Abrir conversa</Text>
+            <Text className="text-sm font-bold text-brand">Abrir conversa</Text>
           </TouchableOpacity>
         )}
         {canReturn && (

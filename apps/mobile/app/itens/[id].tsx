@@ -6,6 +6,7 @@ import { Image } from "expo-image"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { apiFetch } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
+import { fmtCurrency } from "@/lib/pricing"
 
 interface ItemDetail {
   id:          string
@@ -31,9 +32,6 @@ interface ItemDetail {
   reviews:     { id: string; rating: number; comment: string | null; reviewer: { name: string } }[]
   _count:      { reviews: number; favorites: number }
 }
-
-const fmt = (cents: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
 
 const CONDITION: Record<string, string> = {
   NEW: "Novo", EXCELLENT: "Seminovo", GOOD: "Bom estado", FAIR: "Regular",
@@ -86,11 +84,18 @@ export default function ItemDetailScreen() {
       ])
       return
     }
-    Alert.alert(
-      "Reservar item",
-      "A seleção de datas e pagamento está disponível no site. Acesse shareo.com.br para concluir sua reserva.",
-      [{ text: "OK" }]
-    )
+    if (!item) return // item é definido neste ponto mas o TS não infere pelo early-return acima
+    // Navega para a tela de checkout passando os preços via params (centavos como string)
+    router.push({
+      pathname: "/reservas/checkout" as never,
+      params: {
+        itemId:       item.id,
+        title:        item.title,
+        pricePerDay:  String(item.pricePerDay),
+        ...(item.pricePerWeek  ? { pricePerWeek:  String(item.pricePerWeek)  } : {}),
+        ...(item.pricePerMonth ? { pricePerMonth: String(item.pricePerMonth) } : {}),
+      },
+    })
   }
 
   return (
@@ -106,8 +111,10 @@ export default function ItemDetailScreen() {
         )}
         {/* Botão voltar */}
         <TouchableOpacity
-          className="absolute left-4 top-10 h-9 w-9 items-center justify-center rounded-full bg-black/40"
+          className="absolute left-4 top-10 h-11 w-11 items-center justify-center rounded-full bg-black/40"
           onPress={() => router.back()}
+          accessibilityLabel="Voltar"
+          accessibilityRole="button"
         >
           <Text className="text-base font-bold text-white">‹</Text>
         </TouchableOpacity>
@@ -158,19 +165,19 @@ export default function ItemDetailScreen() {
         {/* Preço */}
         <View className="mt-4 rounded-xl border border-border bg-surface p-4">
           <View className="flex-row items-baseline gap-1">
-            <Text className="text-3xl font-extrabold text-foreground">{fmt(item.pricePerDay)}</Text>
+            <Text className="text-3xl font-extrabold text-foreground">{fmtCurrency(item.pricePerDay)}</Text>
             <Text className="text-sm text-muted">/dia</Text>
           </View>
           {(item.pricePerWeek || item.pricePerMonth) && (
             <View className="mt-2 flex-row gap-2">
               {item.pricePerWeek && (
                 <View className="rounded-md border border-border px-2 py-1">
-                  <Text className="text-xs text-muted">{fmt(item.pricePerWeek)}/sem</Text>
+                  <Text className="text-xs text-muted">{fmtCurrency(item.pricePerWeek)}/sem</Text>
                 </View>
               )}
               {item.pricePerMonth && (
                 <View className="rounded-md border border-border px-2 py-1">
-                  <Text className="text-xs text-muted">{fmt(item.pricePerMonth)}/mês</Text>
+                  <Text className="text-xs text-muted">{fmtCurrency(item.pricePerMonth)}/mês</Text>
                 </View>
               )}
             </View>
@@ -178,7 +185,7 @@ export default function ItemDetailScreen() {
           {item.depositAmount != null && item.depositAmount > 0 && (
             <View className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
               <Text className="text-xs text-amber-800">
-                🔒 Caução: <Text className="font-bold">{fmt(item.depositAmount)}</Text> — devolvida após devolução do item
+                🔒 Caução: <Text className="font-bold">{fmtCurrency(item.depositAmount)}</Text> — devolvida após devolução do item
               </Text>
             </View>
           )}
@@ -232,14 +239,16 @@ export default function ItemDetailScreen() {
           style={{ paddingBottom: insets.bottom + 12 }}
         >
           <TouchableOpacity
-            className="rounded-xl bg-brand py-4 items-center"
+            className="min-h-[52px] items-center justify-center rounded-xl bg-brand"
             onPress={handleReservar}
             activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Reservar item"
           >
             <Text className="text-base font-bold text-white">Reservar item</Text>
           </TouchableOpacity>
           <Text className="mt-2 text-center text-xs text-muted">
-            🔒 Pagamento processado com segurança
+            Pagamento processado com segurança
           </Text>
         </View>
       )}

@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { auth } from "@/lib/auth"
+import { resolveUserId } from "@/lib/resolveUserId"
 import { prisma } from "@/lib/prisma"
 import { APP_URL } from "@/lib/app-url"
 import { encryptPII, decryptPII } from "@/lib/crypto"
@@ -16,7 +16,12 @@ import {
   MP_WEBHOOK_PATH,
 } from "@/lib/mercadopago"
 
-const Schema = z.object({ bookingId: z.string().min(1) })
+// `client` opcional: "mobile" → back_urls por deep-link (shareo://) para o app Android;
+// omitido/"web" → back_urls do site (comportamento atual inalterado).
+const Schema = z.object({
+  bookingId: z.string().min(1),
+  client:    z.enum(["web", "mobile"]).optional(),
+})
 
 function err(code: string, message: string, status: number) {
   return NextResponse.json({ error: { code, message } }, { status })
@@ -37,15 +42,17 @@ export async function POST(req: NextRequest) {
       return err("NOT_FOUND", "Recurso indisponível.", 404)
     }
 
-    const session = await auth()
-    if (!session?.user?.id) return err("UNAUTHORIZED", "Autenticação necessária.", 401)
+    // resolveUserId aceita Bearer JWT (app Android) ou cookie de sessão (web) —
+    // mesmo padrão já usado em /api/bookings, /api/conversations, /api/users/me.
+    const userId = await resolveUserId(req)
+    if (!userId) return err("UNAUTHORIZED", "Autenticação necessária.", 401)
 
-    const rl = await checkRateLimit(`checkout:${session.user.id}`, RATE_LIMITS.checkout.limit, RATE_LIMITS.checkout.windowMs)
+    const rl = await checkRateLimit(`checkout:${userId}`, RATE_LIMITS.checkout.limit, RATE_LIMITS.checkout.windowMs)
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const parsed = Schema.safeParse(await req.json())
     if (!parsed.success) return err("VALIDATION_ERROR", "bookingId inválido.", 400)
-    const { bookingId } = parsed.data
+    const { bookingId, client } = parsed.data
 
     const booking = await prisma.booking.findUnique({
       where:  { id: bookingId },
@@ -58,7 +65,7 @@ export async function POST(req: NextRequest) {
     })
 
     if (!booking) return err("NOT_FOUND", "Reserva não encontrada.", 404)
-    if (booking.borrowerId !== session.user.id) return err("FORBIDDEN", "Acesso negado.", 403)
+    if (booking.borrowerId !== userId) return err("FORBIDDEN", "Acesso negado.", 403)
     if (booking.status !== "CONFIRMED") {
       return err("BOOKING_NOT_CONFIRMED", "A reserva precisa ser confirmada pelo locador antes do pagamento.", 422)
     }
@@ -99,6 +106,21 @@ export async function POST(req: NextRequest) {
     const grossSplit = calcSplit(booking.totalPrice + discount, feeRate)
     const platformFeeAmount = Math.max(0, grossSplit.platformFeeAmount - discount)
 
+    // Retorno do Checkout Pro: web volta para o site; o app Android volta por
+    // deep-link (scheme shareo:// já registrado no app.json).
+    const backUrls =
+      client === "mobile"
+        ? {
+            success: `shareo://pagamento/sucesso?bookingId=${bookingId}`,
+            failure: `shareo://pagamento/cancelado?bookingId=${bookingId}`,
+            pending: `shareo://pagamento/pendente?bookingId=${bookingId}`,
+          }
+        : {
+            success: `${APP_URL}/reservas/sucesso?bookingId=${bookingId}`,
+            failure: `${APP_URL}/reservas/${bookingId}?payment=cancelled`,
+            pending: `${APP_URL}/reservas/${bookingId}?payment=pending`,
+          }
+
     const pref = await getPreferenceClient(sellerToken).create({
       body: {
         items: [
@@ -120,11 +142,7 @@ export async function POST(req: NextRequest) {
         // Central de Ajuda). Ver docs/mp-pendencias-go-live.md item 3.
         payment_methods:    { excluded_payment_types: [{ id: "ticket" }] },
         payer:              booking.borrower.email ? { email: booking.borrower.email } : undefined,
-        back_urls: {
-          success: `${APP_URL}/reservas/sucesso?bookingId=${bookingId}`,
-          failure: `${APP_URL}/reservas/${bookingId}?payment=cancelled`,
-          pending: `${APP_URL}/reservas/${bookingId}?payment=pending`,
-        },
+        back_urls:          backUrls,
       },
     })
 
