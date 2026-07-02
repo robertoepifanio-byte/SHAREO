@@ -28,7 +28,7 @@ export default function MensagensScreen() {
   const insets = useSafeAreaInsets()
   const user   = useAuth((s) => s.user)
 
-  const { data, isLoading, isRefetching, refetch } = useQuery({
+  const { data, isLoading, isRefetching, isError, refetch } = useQuery({
     queryKey: ["conversations"],
     queryFn:  () => apiFetch<{ data: Conversation[] }>("/api/conversations"),
     enabled:  !!user,
@@ -94,18 +94,37 @@ export default function MensagensScreen() {
               </View>
 
               {c.unreadCount > 0 && (
-                <View className="h-5 min-w-5 items-center justify-center rounded-full bg-brand px-1">
-                  <Text className="text-[10px] font-bold text-white">{c.unreadCount}</Text>
+                <View
+                  className="h-6 min-w-6 items-center justify-center rounded-full bg-brand px-1"
+                  accessibilityLabel={`${c.unreadCount} mensagens não lidas`}
+                >
+                  <Text className="text-[11px] font-bold text-white">{c.unreadCount}</Text>
                 </View>
               )}
             </TouchableOpacity>
           )}
           ListEmptyComponent={
-            <View className="items-center py-16">
-              <Text className="text-4xl">💬</Text>
-              <Text className="mt-3 text-base font-semibold text-primary">Nenhuma conversa ainda</Text>
-              <Text className="mt-1 text-sm text-muted">Inicie uma reserva para conversar com o proprietário</Text>
-            </View>
+            isError ? (
+              <View className="items-center py-16">
+                <Text className="text-4xl">⚠️</Text>
+                <Text className="mt-3 text-base font-semibold text-primary">Não foi possível carregar as conversas</Text>
+                <Text className="mt-1 text-sm text-muted">Verifique sua conexão e tente novamente</Text>
+                <TouchableOpacity
+                  className="mt-4 min-h-[44px] justify-center rounded-xl bg-brand px-6"
+                  onPress={() => refetch()}
+                  accessibilityRole="button"
+                  accessibilityLabel="Tentar novamente"
+                >
+                  <Text className="text-sm font-bold text-white">Tentar novamente</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View className="items-center py-16">
+                <Text className="text-4xl">💬</Text>
+                <Text className="mt-3 text-base font-semibold text-primary">Nenhuma conversa ainda</Text>
+                <Text className="mt-1 text-sm text-muted">Inicie uma reserva para conversar com o proprietário</Text>
+              </View>
+            )
           }
         />
       )}

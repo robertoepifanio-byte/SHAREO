@@ -11,6 +11,8 @@ export default function LoginScreen() {
   const [email,    setEmail]    = useState("")
   const [password, setPassword] = useState("")
   const [loading,  setLoading]  = useState(false)
+  const [emailFocused,    setEmailFocused]    = useState(false)
+  const [passwordFocused, setPasswordFocused] = useState(false)
 
   async function handleLogin() {
     if (!email.trim() || !password.trim()) {
@@ -36,79 +38,87 @@ export default function LoginScreen() {
     >
       <ScrollView
         className="flex-1"
-        contentContainerClassName="flex-1 justify-center px-6 py-12"
+        contentContainerClassName="flex-grow"
         keyboardShouldPersistTaps="handled"
       >
-        {/* Logo */}
-        <View className="mb-10 items-center">
-          <Text className="text-4xl font-black tracking-tight text-primary">
-            Share<Text className="text-brand">O</Text>
+        {/* Logo — bloco navy no topo, alinhado à marca */}
+        <View className="items-center justify-center bg-primary px-6 pb-10 pt-16">
+          <Text className="font-display text-4xl font-black tracking-tight text-white">
+            Share<Text className="text-accent">O</Text>
           </Text>
-          <Text className="mt-1 text-xs font-semibold uppercase tracking-widest text-muted">
+          <Text className="mt-1 text-xs font-semibold uppercase tracking-widest text-white/70">
             Use Mais. Possua Menos.
           </Text>
         </View>
 
-        {/* Form */}
-        <View className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
-          <Text className="mb-6 text-xl font-bold text-primary">Entrar</Text>
+        <View className="flex-1 justify-center px-6 py-8">
+          {/* Form */}
+          <View className="-mt-8 rounded-2xl bg-surface p-6 shadow-sm">
+            <Text className="mb-6 text-xl font-bold text-primary">Entrar</Text>
 
-          <View className="mb-4">
-            <Text className="mb-1.5 text-sm font-medium text-foreground">E-mail</Text>
-            <TextInput
-              className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground"
-              placeholder="seu@email.com"
-              placeholderTextColor="#94A3B8"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-              value={email}
-              onChangeText={setEmail}
-              editable={!loading}
-            />
+            <View className="mb-4">
+              <Text className="mb-1.5 text-sm font-medium text-foreground">E-mail</Text>
+              <TextInput
+                className={`rounded-xl border bg-background px-4 py-3 text-sm text-foreground ${emailFocused ? "border-brand" : "border-border"}`}
+                placeholder="seu@email.com"
+                placeholderTextColor="#94A3B8"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                value={email}
+                onChangeText={setEmail}
+                editable={!loading}
+                onFocus={() => setEmailFocused(true)}
+                onBlur={() => setEmailFocused(false)}
+                accessibilityLabel="E-mail"
+              />
+            </View>
+
+            <View className="mb-6">
+              <Text className="mb-1.5 text-sm font-medium text-foreground">Senha</Text>
+              <TextInput
+                className={`rounded-xl border bg-background px-4 py-3 text-sm text-foreground ${passwordFocused ? "border-brand" : "border-border"}`}
+                placeholder="••••••••"
+                placeholderTextColor="#94A3B8"
+                secureTextEntry
+                value={password}
+                onChangeText={setPassword}
+                editable={!loading}
+                onSubmitEditing={handleLogin}
+                returnKeyType="done"
+                onFocus={() => setPasswordFocused(true)}
+                onBlur={() => setPasswordFocused(false)}
+                accessibilityLabel="Senha"
+              />
+            </View>
+
+            <TouchableOpacity
+              className={`rounded-xl py-4 items-center ${loading ? "bg-brand/50" : "bg-brand"}`}
+              onPress={handleLogin}
+              disabled={loading}
+              activeOpacity={0.85}
+            >
+              <Text className="text-base font-bold text-white">
+                {loading ? "Entrando…" : "Entrar"}
+              </Text>
+            </TouchableOpacity>
+
+            <Link href="/(auth)/forgot-password" asChild>
+              <TouchableOpacity className="mt-4 min-h-[44px] items-center justify-center py-2">
+                <Text className="text-sm text-muted">Esqueci minha senha</Text>
+              </TouchableOpacity>
+            </Link>
           </View>
 
-          <View className="mb-6">
-            <Text className="mb-1.5 text-sm font-medium text-foreground">Senha</Text>
-            <TextInput
-              className="rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground"
-              placeholder="••••••••"
-              placeholderTextColor="#94A3B8"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-              editable={!loading}
-              onSubmitEditing={handleLogin}
-              returnKeyType="done"
-            />
+          {/* Cadastro */}
+          <View className="mt-6 flex-row items-center justify-center gap-1">
+            <Text className="text-sm text-muted">Não tem conta?</Text>
+            <Link href="/(auth)/register" asChild>
+              <TouchableOpacity className="min-h-[44px] justify-center">
+                <Text className="text-sm font-semibold text-brand">Criar conta</Text>
+              </TouchableOpacity>
+            </Link>
           </View>
-
-          <TouchableOpacity
-            className={`rounded-xl py-4 items-center ${loading ? "bg-brand/50" : "bg-brand"}`}
-            onPress={handleLogin}
-            disabled={loading}
-            activeOpacity={0.85}
-          >
-            <Text className="text-base font-bold text-white">
-              {loading ? "Entrando…" : "Entrar"}
-            </Text>
-          </TouchableOpacity>
-
-          <Link href="/(auth)/forgot-password" asChild>
-            <TouchableOpacity className="mt-4 items-center py-2">
-              <Text className="text-sm text-muted">Esqueci minha senha</Text>
-            </TouchableOpacity>
-          </Link>
-        </View>
-
-        {/* Cadastro */}
-        <View className="mt-6 flex-row items-center justify-center gap-1">
-          <Text className="text-sm text-muted">Não tem conta?</Text>
-          <Link href="/(auth)/register" asChild>
-            <TouchableOpacity>
-              <Text className="text-sm font-semibold text-brand">Criar conta</Text>
-            </TouchableOpacity>
-          </Link>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

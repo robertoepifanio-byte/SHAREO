@@ -4,9 +4,20 @@ import { router } from "expo-router"
 export default function RegisterScreen() {
   return (
     <ScrollView className="flex-1 bg-background" contentContainerClassName="justify-center px-6 py-12">
-      <TouchableOpacity className="mb-6 self-start" onPress={() => router.back()}>
+      <TouchableOpacity
+        className="mb-6 min-h-[44px] -ml-2 self-start justify-center px-2"
+        onPress={() => router.back()}
+        accessibilityRole="button"
+        accessibilityLabel="Voltar"
+      >
         <Text className="text-sm text-muted">← Voltar</Text>
       </TouchableOpacity>
+
+      <View className="mb-6 items-center">
+        <Text className="font-display text-3xl font-black tracking-tight text-primary">
+          Share<Text className="text-brand">O</Text>
+        </Text>
+      </View>
 
       <Text className="mb-2 text-2xl font-bold text-primary">Criar conta</Text>
       <Text className="mb-8 text-sm text-muted">
@@ -14,7 +25,7 @@ export default function RegisterScreen() {
         <Text className="text-brand font-semibold">shareo.com.br</Text> pelo navegador para criar sua conta.
       </Text>
 
-      <View className="rounded-2xl border border-border bg-surface p-6">
+      <View className="rounded-2xl bg-surface p-6 shadow-sm">
         <Text className="mb-4 text-sm text-foreground">
           Após criar sua conta no site, use o mesmo e-mail e senha para entrar aqui.
         </Text>

@@ -236,7 +236,12 @@ export default function BookingDetailScreen() {
         className="flex-row items-center gap-3 border-b border-border bg-surface px-4 pb-3"
         style={{ paddingTop: insets.top + 8 }}
       >
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          accessibilityLabel="Voltar"
+          accessibilityRole="button"
+          className="min-h-[44px] min-w-[44px] items-center justify-center"
+        >
           <Text className="text-2xl text-muted">‹</Text>
         </TouchableOpacity>
         <Text className="flex-1 text-lg font-bold text-primary">Reserva</Text>
@@ -326,7 +331,7 @@ export default function BookingDetailScreen() {
                             {isFirst ? (
                               <Text className="text-white text-xs font-bold">✓</Text>
                             ) : (
-                              <View className="h-2 w-2 rounded-full bg-border" />
+                              <View className="h-2 w-2 rounded-full bg-muted" />
                             )}
                           </View>
                           {!isLast && (
@@ -465,10 +470,12 @@ export default function BookingDetailScreen() {
         )}
         {canReturn && (
           <TouchableOpacity
-            className="rounded-xl bg-brand py-3 items-center"
+            className="min-h-[44px] rounded-xl bg-brand py-3 items-center justify-center"
             onPress={handleReturn}
             activeOpacity={0.85}
             disabled={returnAction.isPending}
+            accessibilityRole="button"
+            accessibilityLabel="Devolver item"
           >
             {returnAction.isPending ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
@@ -479,10 +486,12 @@ export default function BookingDetailScreen() {
         )}
         {canConfirmReturn && (
           <TouchableOpacity
-            className="rounded-xl bg-brand py-3 items-center"
+            className="min-h-[44px] rounded-xl bg-brand py-3 items-center justify-center"
             onPress={handleConfirmReturn}
             activeOpacity={0.85}
             disabled={returnAction.isPending}
+            accessibilityRole="button"
+            accessibilityLabel="Confirmar recebimento do item"
           >
             {returnAction.isPending ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
@@ -493,10 +502,12 @@ export default function BookingDetailScreen() {
         )}
         {canCancel && (
           <TouchableOpacity
-            className="rounded-xl bg-red-50 border border-red-200 py-3 items-center"
+            className="min-h-[44px] rounded-xl bg-red-50 border border-red-200 py-3 items-center justify-center"
             onPress={handleCancel}
             activeOpacity={0.85}
             disabled={cancel.isPending}
+            accessibilityRole="button"
+            accessibilityLabel="Cancelar reserva"
           >
             {cancel.isPending ? (
               <ActivityIndicator size="small" color="#dc2626" />

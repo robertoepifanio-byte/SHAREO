@@ -213,7 +213,7 @@ export default function BookingCheckoutScreen() {
         {/* ── Modalidade (tabs) ── */}
         {availableModes.length > 1 && (
           <View className="mb-5">
-            <Text className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
+            <Text className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-600">
               Modalidade
             </Text>
             <View className="flex-row gap-2">
@@ -230,7 +230,7 @@ export default function BookingCheckoutScreen() {
                     className={[
                       "flex-1 items-center rounded-xl border py-3 px-2",
                       active
-                        ? "border-brand bg-emerald-50"
+                        ? "border-brand bg-emerald-50 shadow-sm"
                         : "border-border bg-surface",
                     ].join(" ")}
                   >
@@ -262,7 +262,7 @@ export default function BookingCheckoutScreen() {
 
         {/* ── Data de retirada ── */}
         <View className="mb-4">
-          <Text className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
+          <Text className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-600">
             Data de retirada
           </Text>
           <TouchableOpacity
@@ -298,7 +298,7 @@ export default function BookingCheckoutScreen() {
         {/* ── Quantidade de dias (apenas modo diário) ── */}
         {mode === "daily" && (
           <View className="mb-4">
-            <Text className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
+            <Text className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-600">
               Quantidade de dias
             </Text>
             <View className="flex-row items-center gap-3">
@@ -306,9 +306,9 @@ export default function BookingCheckoutScreen() {
                 onPress={() => setNumDays((n) => Math.max(1, n - 1))}
                 accessibilityRole="button"
                 accessibilityLabel="Diminuir dias"
-                className="min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-border bg-surface"
+                className="min-h-[44px] min-w-[44px] items-center justify-center rounded-lg bg-primary/10"
               >
-                <Text className="text-xl font-bold text-muted">−</Text>
+                <Text className="text-xl font-bold text-primary">−</Text>
               </TouchableOpacity>
               <TextInput
                 value={String(numDays)}
@@ -324,9 +324,9 @@ export default function BookingCheckoutScreen() {
                 onPress={() => setNumDays((n) => Math.min(365, n + 1))}
                 accessibilityRole="button"
                 accessibilityLabel="Aumentar dias"
-                className="min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-border bg-surface"
+                className="min-h-[44px] min-w-[44px] items-center justify-center rounded-lg bg-primary/10"
               >
-                <Text className="text-xl font-bold text-muted">+</Text>
+                <Text className="text-xl font-bold text-primary">+</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -334,7 +334,7 @@ export default function BookingCheckoutScreen() {
 
         {/* ── Data de devolução (calculada automaticamente) ── */}
         <View className="mb-5">
-          <Text className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
+          <Text className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-600">
             Devolução{" "}
             <Text className="font-normal normal-case text-[10px]">(calculado automaticamente)</Text>
           </Text>
@@ -388,7 +388,7 @@ export default function BookingCheckoutScreen() {
 
           <View className="flex-row items-center justify-between">
             <Text className="text-base font-bold text-foreground">Total do aluguel</Text>
-            <Text className="text-base font-bold text-foreground">{fmtCurrency(subtotalCents)}</Text>
+            <Text className="text-xl font-extrabold text-primary">{fmtCurrency(subtotalCents)}</Text>
           </View>
 
           <Text className="mt-2 text-[11px] leading-relaxed text-muted">
@@ -414,7 +414,7 @@ export default function BookingCheckoutScreen() {
 
         {/* ── Nota ao proprietário ── */}
         <View className="mb-5">
-          <Text className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
+          <Text className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-600">
             Mensagem ao proprietário{" "}
             <Text className="font-normal normal-case">(opcional)</Text>
           </Text>

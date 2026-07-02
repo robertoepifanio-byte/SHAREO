@@ -274,7 +274,7 @@ export default function AnunciarScreen() {
 
         {/* ── Título ── */}
         <View className="mb-4">
-          <Text className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted">
+          <Text className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-600">
             Título <Text className="text-red-500">*</Text>
           </Text>
           <TextInput
@@ -291,7 +291,7 @@ export default function AnunciarScreen() {
 
         {/* ── Descrição ── */}
         <View className="mb-4">
-          <Text className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted">
+          <Text className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-600">
             Descrição <Text className="text-red-500">*</Text>
           </Text>
           <TextInput
@@ -311,7 +311,7 @@ export default function AnunciarScreen() {
 
         {/* ── Categoria ── */}
         <View className="mb-4">
-          <Text className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted">
+          <Text className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-600">
             Categoria <Text className="text-red-500">*</Text>
           </Text>
           {categories.length === 0 ? (
@@ -346,7 +346,7 @@ export default function AnunciarScreen() {
 
         {/* ── Condição ── */}
         <View className="mb-4">
-          <Text className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted">
+          <Text className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-600">
             Estado de conservação <Text className="text-red-500">*</Text>
           </Text>
           <View className="flex-row gap-2">
@@ -375,7 +375,7 @@ export default function AnunciarScreen() {
 
         {/* ── Preços ── */}
         <View className="mb-4">
-          <Text className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted">
+          <Text className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-600">
             Preços
           </Text>
           <View className="rounded-xl border border-border bg-surface p-4 gap-3">
@@ -437,7 +437,7 @@ export default function AnunciarScreen() {
 
         {/* ── Endereço (read-only do perfil) ── */}
         <View className="mb-4">
-          <Text className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted">
+          <Text className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-600">
             Localização (do seu perfil)
           </Text>
           <View
@@ -457,8 +457,10 @@ export default function AnunciarScreen() {
           </View>
           {!profile?.city && (
             <TouchableOpacity
-              className="mt-2"
+              className="mt-2 min-h-[44px] justify-center"
               onPress={() => router.push("/(tabs)/perfil" as never)}
+              accessibilityRole="button"
+              accessibilityLabel="Completar perfil"
             >
               <Text className="text-sm font-semibold text-brand">Completar perfil →</Text>
             </TouchableOpacity>
@@ -467,7 +469,7 @@ export default function AnunciarScreen() {
 
         {/* ── Fotos ── */}
         <View className="mb-5">
-          <Text className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted">
+          <Text className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-600">
             Fotos{" "}
             <Text className="font-normal normal-case text-[10px]">
               ({photos.length}/8 — a 1ª foto publica o anúncio)
@@ -482,6 +484,7 @@ export default function AnunciarScreen() {
                   onPress={() => handleRemovePhoto(i)}
                   accessibilityLabel={`Remover foto ${i + 1}`}
                   accessibilityRole="button"
+                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                   className="absolute right-1 top-1 h-6 w-6 items-center justify-center rounded-full bg-black/60"
                 >
                   <Text className="text-xs font-bold text-white">×</Text>
@@ -494,10 +497,10 @@ export default function AnunciarScreen() {
                 onPress={handlePickPhoto}
                 accessibilityRole="button"
                 accessibilityLabel="Adicionar foto"
-                className="h-24 w-24 items-center justify-center rounded-xl border-2 border-dashed border-border bg-surface"
+                className="h-24 w-24 items-center justify-center rounded-xl border-2 border-dashed border-brand/40 bg-surface"
               >
-                <Text className="text-2xl text-muted">+</Text>
-                <Text className="mt-0.5 text-[10px] text-muted">Foto</Text>
+                <Text className="text-2xl text-brand">+</Text>
+                <Text className="mt-0.5 text-[10px] text-brand">Foto</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -551,7 +554,9 @@ export default function AnunciarScreen() {
           )}
         </TouchableOpacity>
         <Text className="mt-2 text-center text-xs text-muted">
-          Anúncio revisado pela equipe ShareO antes de ir ao ar
+          {photos.length > 0
+            ? "Seu anúncio fica visível assim que publicado"
+            : "Adicione uma foto para publicar o anúncio"}
         </Text>
       </View>
     </View>

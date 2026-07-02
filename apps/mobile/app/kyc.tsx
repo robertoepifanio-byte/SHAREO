@@ -86,7 +86,29 @@ export default function KycScreen() {
   })
 
   // ── Selecionar imagem ──────────────────────────────────────────────────────
+  // Selfie sempre pela câmera ao vivo (não pela galeria) — permitir galeria aqui
+  // possibilitaria enviar a foto de outra pessoa, comprometendo a verificação.
   async function pickImage(target: "document" | "selfie") {
+    if (target === "selfie") {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync()
+      if (status !== "granted") {
+        Alert.alert("Permissão negada", "Precisamos de acesso à câmera para tirar sua selfie.")
+        return
+      }
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ["images"],
+        cameraType: ImagePicker.CameraType.front,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.85,
+      })
+      if (!result.canceled && result.assets[0]) {
+        setSelfieAsset(result.assets[0])
+        setError(null)
+      }
+      return
+    }
+
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync()
     if (status !== "granted") {
       Alert.alert("Permissão negada", "Precisamos de acesso à galeria para enviar seus documentos.")
@@ -94,13 +116,10 @@ export default function KycScreen() {
     }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
-      allowsEditing: target === "selfie", // crop square para selfie
-      aspect: target === "selfie" ? [1, 1] : undefined,
       quality: 0.85,
     })
     if (!result.canceled && result.assets[0]) {
-      if (target === "document") setDocAsset(result.assets[0])
-      else setSelfieAsset(result.assets[0])
+      setDocAsset(result.assets[0])
       setError(null)
     }
   }
@@ -258,7 +277,7 @@ export default function KycScreen() {
         {/* ── Explicação ── */}
         {verificationStatus !== "VERIFIED" && verificationStatus !== "PENDING" && uploadState !== "success" && (
           <>
-            <View className="mb-5 rounded-xl border border-border bg-surface p-4">
+            <View className="mb-5 rounded-xl border border-brand/20 bg-emerald-50 p-4">
               <Text className="mb-2 text-sm font-bold text-primary">Por que verificar sua identidade?</Text>
               <Text className="text-sm leading-relaxed text-muted">
                 A verificação aumenta a confiança entre locatários e proprietários, tornando o ShareO mais seguro para todos. Itens de proprietários verificados têm maior taxa de reserva.
@@ -298,7 +317,7 @@ export default function KycScreen() {
 
             {/* ── Upload documento ── */}
             <View className="mb-4">
-              <Text className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted">
+              <Text className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-600">
                 1. Foto do documento (RG ou CNH) <Text className="text-red-500">*</Text>
               </Text>
               <TouchableOpacity
@@ -331,7 +350,7 @@ export default function KycScreen() {
 
             {/* ── Upload selfie ── */}
             <View className="mb-5">
-              <Text className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted">
+              <Text className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-600">
                 2. Selfie segurando o documento <Text className="text-red-500">*</Text>
               </Text>
               <Text className="mb-2 text-xs text-muted">
@@ -417,7 +436,9 @@ export default function KycScreen() {
                 <Text className="text-base font-bold text-white">Enviando...</Text>
               </View>
             ) : (
-              <Text className="text-base font-bold text-white">Enviar para verificação</Text>
+              <Text className="text-base font-bold text-white">
+                {uploadState === "error" ? "Tentar enviar novamente" : "Enviar para verificação"}
+              </Text>
             )}
           </TouchableOpacity>
           <Text className="mt-2 text-center text-xs text-muted">

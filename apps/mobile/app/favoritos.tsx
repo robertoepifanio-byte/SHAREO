@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from "react-native"
 import { router } from "expo-router"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -55,6 +56,7 @@ export default function FavoritosScreen() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["favorites"] })
     },
+    onError: () => Alert.alert("Erro", "Não foi possível remover dos favoritos. Tente novamente."),
   })
 
   const items = data?.data ?? []
@@ -131,7 +133,7 @@ export default function FavoritosScreen() {
               activeOpacity={0.85}
               accessibilityRole="button"
               accessibilityLabel={`Ver detalhes de ${item.title}`}
-              className="mb-3 overflow-hidden rounded-2xl border border-border bg-surface"
+              className="mb-3 overflow-hidden rounded-2xl bg-surface shadow-sm"
             >
               <View className="flex-row">
                 {/* Thumb */}
@@ -159,7 +161,7 @@ export default function FavoritosScreen() {
                       {item.title}
                     </Text>
                     <Text className="mt-0.5 text-xs text-muted">
-                      {item.neighborhood ?? item.city}, {item.state}
+                      📍 {item.neighborhood ?? item.city}, {item.state}
                     </Text>
                   </View>
                   <View className="flex-row items-center justify-between">

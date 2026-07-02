@@ -169,7 +169,13 @@ export default function ItemDetailScreen() {
         {item.images.length > 1 && (
           <View className="absolute bottom-2 left-0 right-0 flex-row justify-center gap-1">
             {item.images.map((_, i) => (
-              <TouchableOpacity key={i} onPress={() => setImgIdx(i)}>
+              <TouchableOpacity
+                key={i}
+                onPress={() => setImgIdx(i)}
+                className="h-8 items-center justify-center px-1.5"
+                accessibilityRole="button"
+                accessibilityLabel={`Ver foto ${i + 1} de ${item.images.length}`}
+              >
                 <View className={`h-1.5 rounded-full ${i === imgIdx ? "w-4 bg-white" : "w-1.5 bg-white/50"}`} />
               </TouchableOpacity>
             ))}
@@ -210,7 +216,7 @@ export default function ItemDetailScreen() {
         </View>
 
         {/* Preço */}
-        <View className="mt-4 rounded-xl border border-border bg-surface p-4">
+        <View className="mt-4 rounded-xl border border-brand/20 bg-emerald-50 p-4">
           <View className="flex-row items-baseline gap-1">
             <Text className="text-3xl font-extrabold text-foreground">{fmtCurrency(item.pricePerDay)}</Text>
             <Text className="text-sm text-muted">/dia</Text>
@@ -243,11 +249,8 @@ export default function ItemDetailScreen() {
         <Text className="mt-1 text-sm leading-relaxed text-muted">{item.description}</Text>
 
         {/* Proprietário */}
-        <TouchableOpacity
-          className="mt-4 flex-row items-center gap-3 rounded-xl border border-border bg-surface p-3"
-          onPress={() => {}} activeOpacity={0.85}
-        >
-          <View className="h-10 w-10 items-center justify-center rounded-full bg-primary">
+        <View className="mt-4 flex-row items-center gap-3 rounded-xl border border-border bg-surface p-3 shadow-sm">
+          <View className={`h-12 w-12 items-center justify-center rounded-full bg-primary ${item.owner.isVerified ? "border-2 border-brand/30" : ""}`}>
             <Text className="text-base font-bold text-white">{item.owner.name[0]?.toUpperCase()}</Text>
           </View>
           <View className="flex-1">
@@ -257,8 +260,7 @@ export default function ItemDetailScreen() {
             </Text>
             {item.owner.city && <Text className="text-xs text-muted">📍 {item.owner.city}</Text>}
           </View>
-          <Text className="text-xl text-muted">›</Text>
-        </TouchableOpacity>
+        </View>
 
         {/* Avaliações */}
         {item.reviews.length > 0 && (
@@ -294,8 +296,8 @@ export default function ItemDetailScreen() {
           >
             <Text className="text-base font-bold text-white">Reservar item</Text>
           </TouchableOpacity>
-          <Text className="mt-2 text-center text-xs text-muted">
-            Pagamento processado com segurança
+          <Text className="mt-2 text-center text-xs text-foreground">
+            🔒 Pagamento processado com segurança
           </Text>
         </View>
       )}

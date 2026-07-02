@@ -12,11 +12,12 @@ export default function ForgotPasswordScreen() {
     if (!email.trim()) { Alert.alert("Atenção", "Digite seu e-mail."); return }
     setLoading(true)
     try {
-      await fetch(`${API_URL}/api/auth/forgot-password`, {
+      const res = await fetch(`${API_URL}/api/auth/forgot-password`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ email: email.trim().toLowerCase() }),
       })
+      if (!res.ok) throw new Error("request failed")
       setSent(true)
     } catch {
       Alert.alert("Erro", "Tente novamente em alguns instantes.")
@@ -49,7 +50,12 @@ export default function ForgotPasswordScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <View className="flex-1 justify-center px-6">
-        <TouchableOpacity className="mb-6 self-start" onPress={() => router.back()}>
+        <TouchableOpacity
+          className="mb-6 min-h-[44px] -ml-2 self-start justify-center px-2"
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Voltar"
+        >
           <Text className="text-sm text-muted">← Voltar</Text>
         </TouchableOpacity>
 

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react"
 import {
   View, Text, TextInput, FlatList, TouchableOpacity,
-  ActivityIndicator, KeyboardAvoidingView, Platform,
+  ActivityIndicator, KeyboardAvoidingView, Platform, Alert,
 } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -60,6 +60,7 @@ export default function ChatScreen() {
       qc.invalidateQueries({ queryKey: ["conversations"] })
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100)
     },
+    onError: () => Alert.alert("Erro", "Não foi possível enviar a mensagem. Tente novamente."),
   })
 
   useEffect(() => {
@@ -87,7 +88,12 @@ export default function ChatScreen() {
         className="flex-row items-center gap-3 border-b border-border bg-surface px-4 pb-3 pt-4"
         style={{ paddingTop: insets.top + 8 }}
       >
-        <TouchableOpacity onPress={() => router.back()} className="mr-1">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          accessibilityLabel="Voltar"
+          accessibilityRole="button"
+          className="min-h-[44px] min-w-[44px] items-center justify-center"
+        >
           <Text className="text-2xl text-muted">‹</Text>
         </TouchableOpacity>
         <View className="h-9 w-9 items-center justify-center rounded-full bg-primary">
@@ -131,7 +137,7 @@ export default function ChatScreen() {
               <View className={`mb-2 flex-row ${isMe ? "justify-end" : "justify-start"}`}>
                 <View
                   className={`max-w-[75%] rounded-2xl px-3 py-2 ${
-                    isMe ? "rounded-tr-sm bg-brand" : "rounded-tl-sm bg-surface border border-border"
+                    isMe ? "rounded-tr-sm bg-brand" : "rounded-tl-sm bg-slate-100"
                   }`}
                 >
                   <Text className={`text-sm ${isMe ? "text-white" : "text-foreground"}`}>
@@ -166,11 +172,13 @@ export default function ChatScreen() {
           }}
         />
         <TouchableOpacity
-          className={`h-10 w-10 items-center justify-center rounded-full ${
+          className={`h-11 w-11 items-center justify-center rounded-full ${
             text.trim() ? "bg-brand" : "bg-border"
           }`}
           onPress={() => { if (text.trim()) send.mutate(text.trim()) }}
           disabled={!text.trim() || send.isPending}
+          accessibilityRole="button"
+          accessibilityLabel="Enviar mensagem"
         >
           {send.isPending ? (
             <ActivityIndicator size="small" color="#fff" />
