@@ -41,6 +41,22 @@ jest.mock("expo-constants", () => ({
   default: { expoConfig: { name: "ShareO", slug: "shareo" } },
 }))
 
+// Mock de @react-native-community/datetimepicker — componente nativo que
+// não existe no ambiente Jest. Renderiza null sem erros.
+jest.mock("@react-native-community/datetimepicker", () => {
+  const React = require("react")
+  return {
+    __esModule: true,
+    default: () => React.createElement(React.Fragment, null),
+  }
+})
+
+// Mock de react-native Linking para testes que envolvem abertura de URLs.
+jest.mock("react-native/Libraries/Linking/Linking", () => ({
+  canOpenURL: jest.fn(async () => true),
+  openURL:    jest.fn(async () => undefined),
+}))
+
 // Silenciar warnings de console durante os testes para manter a saída limpa.
 // Remova ou comente se precisar depurar avisos de um pacote específico.
 const originalWarn = console.warn
