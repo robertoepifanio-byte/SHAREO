@@ -156,7 +156,14 @@ testado ainda | ➡️ abre no site por decisão de escopo (não testar como bug
 | Lista — badge "+N itens" (Story B, multi-item) | 🔧 **não existia** — precisava de `_count.bookingItems`, ausente da API (`GET /api/bookings` estendido, aditivo) |
 | Lista — botão "⭐ Avaliar" | 🔧 **não existia** — mesma causa raiz (`_count.reviews` ausente da API, agora incluído). Sem isso não havia como chegar ao fluxo de avaliação pela lista |
 | Detalhe — token de retirada, avisos de status, ações (Pagar/Devolver/Confirmar/Cancelar) | 🔧 reescrita completa (hooks quebrados + cores não mapeadas) — nunca testada em device |
-| ⏸️ Pendente (auditoria elemento-por-elemento ainda não feita nesta rodada) | Detalhe completo (5 subcomponentes do site: `_BookingActions`, `_CheckInOut`, `_ContractBanner`, `_PixPaymentPanel`, `_ReviewForm`) e Checkout — próximos desta sequência |
+| Detalhe — **bug crítico**: `paymentStatus`/timestamps de histórico ausentes da API | 🔧 **achado desta rodada**: `GET /api/bookings/[id]` nunca selecionava `paymentStatus`/`activatedAt`/`paidAt`/etc. — `canPay` sempre avaliava `true` (botão de pagar aparecia mesmo em reserva já paga) e o box de código de retirada nunca aparecia. API estendida (aditivo); **prioridade alta de re-teste** ao voltar |
+| Detalhe — "+N itens" + lista "Itens desta locação" (Story B) | 🔧 **não existia** — auditado contra `page.tsx:214-246` |
+| Detalhe — split "Taxa Shareo (X%) / Você recebe" | 🔧 **não existia** — auditado contra `page.tsx:303-313`; replica a fórmula exata do site (`calcSplit` sobre total+desconto), taxa via `/api/stats` (nunca hardcode) |
+| Detalhe — desconto (cupom) na quebra de valores | 🔧 **não existia** — auditado contra `page.tsx:285-290` |
+| Detalhe — endereço de retirada + aviso de segurança | 🔧 **não existia** — auditado contra `page.tsx:371-395`. Relevante pra segurança do usuário (onde retirar o item), não só cosmético |
+| Detalhe — taxa de atraso | 🔧 **não existia** — auditado contra `page.tsx:549-561` |
+| Checkout — modalidade, calendário, teto R$500, MP | ❌ ainda não auditado elemento-por-elemento nesta rodada |
+| ⏸️ Pendente (componentes maiores do site, cada um precisaria de tela/estado próprio) | `ReturnCountdown`, `ContractBanner` (assinatura de contrato), `ReturnChecklist`, `ReturnConditionForm`, `CheckInOut` (fotos, precisa upload de imagem), `ReviewForm` (avaliações pós-devolução) |
 
 ### Chat
 | Elemento | Status |
