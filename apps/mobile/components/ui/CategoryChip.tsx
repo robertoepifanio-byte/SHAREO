@@ -82,8 +82,13 @@ const styles = StyleSheet.create({
   // size={52} no site — page.tsx:304,321
   icon: { width: 40, height: 40 },
   labelWrap: {
-    // "flex flex-col items-center leading-tight" — page.tsx:305,322
+    // "flex flex-col items-center leading-tight text-center max-w-[72px]" —
+    // page.tsx:305,322. maxWidth ausente era a causa real da distribuição
+    // "desproporcional" reportada testando ao vivo: sem o teto de 72px, o
+    // rótulo mais longo (ex. "Casa e Jardim") deixava aquele chip bem mais
+    // largo que os outros, quebrando o ritmo visual da fila inteira.
     alignItems: "center",
+    maxWidth:   72,
   },
   label: {
     fontSize:   11,
