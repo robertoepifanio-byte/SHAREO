@@ -20,6 +20,7 @@ import {
 import { router, useLocalSearchParams } from "expo-router"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Image } from "expo-image"
+import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { apiFetch } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
@@ -80,6 +81,19 @@ function localToday(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
 }
 
+// Converte Date (do DateTimePicker nativo) para "AAAA-MM-DD" — mesmo formato
+// que o resto da tela já usa (endDate/days calculados via addDays/fmtDate
+// acima). Trocamos só o controle de entrada, não a lógica de cálculo.
+function dateToISO(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+}
+
+const todayDate = (() => {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  return d
+})()
+
 function Stars({ rating, total = 5 }: { rating: number; total?: number }) {
   const full  = Math.round(rating)
   const empty = total - full
@@ -134,6 +148,7 @@ export default function ItemDetailScreen() {
   // ── Estado do PriceCalc ────────────────────────────────────────────────────
   const [mode, setMode]           = useState<Mode>("daily")
   const [startDate, setStartDate] = useState("")
+  const [showDatePicker, setShowDatePicker] = useState(false)
   const [numDays, setNumDays]     = useState(1)
   const [note, setNote]           = useState("")
   const [bookingError, setBookingError] = useState("")
@@ -227,6 +242,14 @@ export default function ItemDetailScreen() {
     setMode(m)
     setBookingError("")
     if (m === "daily") setNumDays(1)
+  }
+
+  function handleDateChange(_: DateTimePickerEvent, selected?: Date) {
+    setShowDatePicker(Platform.OS === "ios")
+    if (selected) {
+      setStartDate(dateToISO(selected))
+      setBookingError("")
+    }
   }
 
   // ── Ações ──────────────────────────────────────────────────────────────────
@@ -475,20 +498,38 @@ export default function ItemDetailScreen() {
               </View>
             )}
 
-            {/* Data de retirada */}
+            {/* Data de retirada — calendário nativo, mesmo padrão de reservas/checkout.tsx
+                (equivalente ao <input type="date"> do site, que abre o calendário do
+                navegador; RN não tem isso embutido em TextInput, precisa do picker). */}
             <View style={s.fieldGroup}>
               <Text style={[s.fieldLabel, { color: tokens.muted }]}>RETIRADA</Text>
-              <TextInput
-                style={[s.dateInput, { borderColor: tokens.border, color: tokens.text, backgroundColor: tokens.surface }]}
-                placeholder="AAAA-MM-DD"
-                placeholderTextColor={tokens.muted}
-                value={startDate}
-                onChangeText={(v) => { setStartDate(v); setBookingError("") }}
-                keyboardType="numeric"
-                maxLength={10}
-                accessibilityLabel="Data de retirada"
-                accessibilityHint="Digite no formato AAAA-MM-DD"
-              />
+              <TouchableOpacity
+                onPress={() => setShowDatePicker(true)}
+                style={[s.dateInput, s.dateBtn, { borderColor: tokens.border, backgroundColor: tokens.surface }]}
+                accessibilityRole="button"
+                accessibilityLabel={`Data de retirada: ${startDate ? fmtDate(startDate) : "não selecionada"}. Toque para escolher`}
+              >
+                <Text style={{ color: startDate ? tokens.text : tokens.muted, fontSize: 14 }}>
+                  {startDate ? fmtDate(startDate) : "Selecionar data"}
+                </Text>
+              </TouchableOpacity>
+              {showDatePicker && (
+                <DateTimePicker
+                  value={startDate ? new Date(`${startDate}T12:00:00`) : todayDate}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  minimumDate={todayDate}
+                  onChange={handleDateChange}
+                />
+              )}
+              {showDatePicker && Platform.OS === "ios" && (
+                <TouchableOpacity
+                  onPress={() => setShowDatePicker(false)}
+                  style={{ alignItems: "flex-end", marginTop: 8 }}
+                >
+                  <Text style={{ color: tokens.green, fontSize: 14, fontWeight: "600" }}>Confirmar</Text>
+                </TouchableOpacity>
+              )}
             </View>
 
             {/* Quantidade de dias (modo diário) — fonte: _PriceCalc.tsx linhas 256-292 */}
@@ -770,6 +811,7 @@ const s = StyleSheet.create({
     height: 44, borderWidth: 1, borderRadius: 8,
     paddingHorizontal: 12, fontSize: 14,
   },
+  dateBtn: { justifyContent: "center" },
   dateReadOnly: {
     height: 44, borderWidth: 1, borderRadius: 8,
     paddingHorizontal: 12, justifyContent: "center",
