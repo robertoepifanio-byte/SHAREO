@@ -1,4 +1,5 @@
-// Fonte: app/mensagens/page.tsx + app/api/conversations/[id]/messages/route.ts
+// Fonte: app/mensagens/[id]/page.tsx + app/api/conversations/[id]/route.ts
+//        + app/api/conversations/[id]/messages/route.ts
 // Thread do chat — polling a cada 5s (Supabase Realtime não é seguro para RN/Expo no MVP).
 // Documentado como follow-up: migrar para Supabase Realtime quando canal for estabilizado.
 // StyleSheet + tokens; funcionalidade preservada: send + scroll automático.
@@ -129,7 +130,7 @@ export default function ChatScreen() {
         </TouchableOpacity>
         <View style={[s.avatar, { backgroundColor: tokens.navy }]}>
           <Text style={s.avatarInitial}>
-            {conv?.otherUser?.name[0]?.toUpperCase() ?? "?"}
+            {(conv?.otherUser?.name ?? "").charAt(0).toUpperCase() || "?"}
           </Text>
         </View>
         <View style={{ flex: 1 }}>
