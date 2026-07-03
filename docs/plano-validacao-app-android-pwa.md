@@ -90,7 +90,7 @@ escopo (não testar como bug).
 ### Início (Home)
 | Seção | Status |
 |---|---|
-| Hero (H1, CTAs, busca, 4 stats) | 🔧 stats dependiam de `/api/stats`, que não existia — criado hoje; re-confirmar os 4 números aparecem |
+| Hero (H1, CTAs, busca, 4 stats) | ✅ **CONFIRMADO EM DEVICE 2026-07-03 à noite** — 4 números aparecem corretos (itens/proprietários/custo/categorias) após deploy de staging. H1 e CTAs continuam ok; falta só a imagem dos itens e a alternância do placeholder (ver TODOs abaixo) |
 | **TODO — Hero: imagem dos itens ausente** | ❌ **achado em teste ao vivo 2026-07-03**: o site usa `<Image src="/logos/hero-items.webp">` (`app/page.tsx` linha ~159, furadeira/câmera/caixa de som/bike/escada) logo abaixo do H1 — o mobile só tem o texto, sem a imagem. Não implementado ainda (usuário pediu só pra registrar no TODO por ora) |
 | **TODO — Hero: placeholder da busca não alterna** | ❌ **achado em teste ao vivo 2026-07-03**: `components/home/HeroSearch.tsx` alterna o placeholder do campo de busca a cada 3s entre "O que você precisa alugar?" e "O que você tem para alugar?" (`setInterval`, para ao focar o campo). Mobile já tem o botão "QUERO ALUGAR" certo e mostra o 1º texto, mas é estático — nunca alterna pro 2º. Não implementado ainda (só registrar) |
 | Simulador de Renda (tabela + busca interativa) | 🔧 seção nova hoje — nunca testada em device |
@@ -109,6 +109,10 @@ escopo (não testar como bug).
 | Chips de categoria (ícone + clique filtra) | 🔧 corrigido (ícone errado + filtro não funcionava) — re-testar os dois |
 | Grid de itens (2 colunas, foto, preço, favoritar, verificado) | 🔧 auditado no código (loop autônomo, sem device) contra `components/items/ItemCard.tsx` — badge "Eco" inventado removido, botão de favoritar e badge de verificado adicionados (faltavam por completo) |
 | Pull-to-refresh | 🔍 auditado nesta rodada — `RefreshControl` corretamente ligado a `isRefetching`/`refetch` da query real, mesmo padrão já validado em Favoritos/Reservas/Chat. Sem gap |
+| **TODO — Botão "Filtros" (bottom sheet)** | ❌ **achado em teste ao vivo 2026-07-03**: site tem botão "Filtros" com ícone de funil que abre um bottom sheet (`FilterTrigger`/`FilterForm`, `app/itens/page.tsx` linha ~342) com filtros extras (preço máx, distância, etc.). Ausente por completo no mobile — confirmado 0 ocorrências de "Filtros" em `explorar.tsx` |
+| **TODO — Ordenação ("Mais próximos" ▾)** | ❌ **achado em teste ao vivo 2026-07-03**: dropdown de ordenação (mais próximos/mais alugados/mais bem avaliados etc.) ausente no mobile — confirmado 0 ocorrências de "sort" em `explorar.tsx`. Relacionado ao TODO já existente do menu lateral (filtros view=map/sort=views/minRating não wireados nativamente) |
+| **TODO — "Ver no mapa"** | ❌ **achado em teste ao vivo 2026-07-03**: botão/link "Ver no mapa" (visualização em mapa dos itens) ausente no mobile — confirmado 0 ocorrências de "mapa"/"map" ligado a resultados em `explorar.tsx`. Mapa é feature adiada há mais tempo no projeto (Mapbox no app, ver `project-mobile-eas-build` na memória) |
+| **Nota — ícones de categoria (estilo)** | 🔍 usuário observou que os ícones do site (`CategoryIcon.tsx`, PNG com círculo colorido já embutido na imagem) parecem "mais harmônicos" que os do app. Os PNGs de origem são os MESMOS arquivos (`public/icons/*.png`, copiados pra `apps/mobile/assets/icons/`), mas o CONTAINER ao redor difere: site (nesta tela `/itens`) mostra ícone grande + label abaixo, sem pílula; mobile usa pílula horizontal com borda (ícone+label lado a lado). Não investigado a fundo — possível ajuste de estilo, não gap de conteúdo |
 | ⏸️ Pendente (exigiria estender API, não implementado) | Estrelas de avaliação e distância em km — `/api/items` não calcula `avgRating`/`distanceKm` hoje |
 
 ### Detalhe do item
@@ -129,7 +133,7 @@ escopo (não testar como bug).
 | Link "✏️ Editar anúncio" (modo proprietário) | 🔧 **não existia nenhuma forma de editar o anúncio pelo app** — adicionado como fallback `Linking`→site (não há tela nativa de edição ainda) |
 | Trust Box "🔒 Sua locação está protegida" | 🔧 auditado no código contra `page.tsx:618-635` — faltava por completo, adicionado (conteúdo estático, 3 linhas) |
 | Política de cancelamento (3 faixas de reembolso) | 🔧 auditado no código contra `page.tsx:637-665` — faltava por completo, adicionado (usa os mesmos valores estáticos que o próprio site usa hoje, não a config dinâmica) |
-| Stats do proprietário (locações concluídas + taxa de resposta) | 🔧 **implementado depois do relatório inicial** — pedido explícito do usuário testando ao vivo. `GET /api/items/[id]` estendido (aditivo) com a mesma lógica exata do site; badge "⚡ Responde em ~Xh" + grid de 2 estatísticas no card do proprietário |
+| Stats do proprietário (locações concluídas + taxa de resposta) | ✅ **CONFIRMADO EM DEVICE 2026-07-03 à noite** — pedido explícito do usuário testando ao vivo, implementado (`GET /api/items/[id]` estendido) e agora confirmado funcionando pós-deploy |
 | ⏸️ Pendente (fora de escopo — precisa endpoint novo ou tela própria) | `AvailabilityCalendar` (calendário de disponibilidade), grids "Itens do mesmo anunciante" e "Você também pode gostar" no rodapé, carrinho multi-item `AddToRentalButton` (Story B) |
 
 ### Anunciar (`itens/novo`)
