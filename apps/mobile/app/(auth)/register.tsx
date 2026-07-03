@@ -1,31 +1,52 @@
-// Fonte: app/(auth)/register.tsx (decisão D1 do handoff) + app/(auth)/layout.tsx
-// Cadastro redireciona para o site — decisão D1 do handoff §5 mantida.
-// Frame "Cadastro" do protótipo: logo solta + card explicativo + CTA "Ir para o site" + link "Já tenho conta".
-// Sem formulário nativo — evita duplicação de validação e verificação de email.
+// Fonte: app/(auth)/cadastro/RegisterForm.tsx + app/(auth)/layout.tsx
+// Cadastro redireciona para o site — decisão de arquitetura documentada no handoff §5.
+//
+// Racional da decisão (não inventado):
+//   O formulário do site (RegisterForm.tsx) requer:
+//     - signIn("credentials") do next-auth (browser-only)
+//     - validação server-side com consentVersion (LGPD), referralCode, city/state
+//     - auto-login pós-cadastro + redirect para /bem-vindo
+//   Reimplementar tudo em nativo duplicaria validação e fluxo LGPD, criando risco
+//   de divergência. Decisão: abrir o site no browser e instruir o usuário a retornar.
+//
+// Frame "Cadastro" transcrito do protótipo + handoff:
+//   - Logo solta (sem caixa navy) — verbatim de AuthLayout
+//   - Slogan "Use Mais. Possua Menos."
+//   - Título "Criar conta" (verbatim do site RegisterForm linha 189)
+//   - Descrição + CTA "Criar conta no site →"
+//   - Link "Já tenho conta — Entrar"
+//
+// TODO(revisão): quando o site definir /bem-vindo como rota acessível sem sessão do
+//   next-auth (ex.: deep link retorna com token), implementar cadastro nativo seguindo
+//   RegisterForm.tsx campo a campo.
 
 import { View, Text, TouchableOpacity, ScrollView, Linking, StyleSheet } from "react-native"
 import { Image } from "expo-image"
 import { router } from "expo-router"
+import { useTheme } from "@/lib/theme"
 
 export default function RegisterScreen() {
+  const { tokens } = useTheme()
+
   function handleOpenSite() {
+    // Rota do site é /cadastro (não /register) — verbatim de app/(auth)/cadastro/page.tsx
     Linking.openURL("https://staging.shareo.com.br/cadastro")
   }
 
   return (
     <ScrollView
-      style={s.scroll}
+      style={[s.scroll, { backgroundColor: tokens.bg }]}
       contentContainerStyle={s.content}
       keyboardShouldPersistTaps="handled"
     >
-      {/* Botão Voltar — "← Voltar" no topo (sem header/nav nas telas de auth) */}
+      {/* Botão Voltar — link de retorno no topo (sem header/nav nas telas de auth) */}
       <TouchableOpacity
         style={s.back}
         onPress={() => router.back()}
         accessibilityRole="button"
         accessibilityLabel="Voltar"
       >
-        <Text style={s.backText}>← Voltar</Text>
+        <Text style={[s.backText, { color: tokens.muted }]}>← Voltar</Text>
       </TouchableOpacity>
 
       {/* Logo solta — transcrita de AuthLayout (sem caixa navy) */}
@@ -36,25 +57,27 @@ export default function RegisterScreen() {
           contentFit="contain"
           accessibilityLabel="ShareO"
         />
-        <Text style={s.slogan}>Use Mais. Possua Menos.</Text>
+        {/* Slogan — verbatim do site e app/globals.css */}
+        <Text style={[s.slogan, { color: tokens.muted }]}>Use Mais. Possua Menos.</Text>
       </View>
 
-      <Text style={s.title}>Criar conta</Text>
-      <Text style={s.desc}>
+      {/* Título — verbatim do site RegisterForm.tsx linha 189 */}
+      <Text style={[s.title, { color: tokens.navy }]}>Criar conta</Text>
+      <Text style={[s.desc, { color: tokens.muted }]}>
         O cadastro completo está disponível no site. Acesse{" "}
-        <Text style={s.link}>shareo.com.br</Text> pelo navegador para criar sua conta.
+        <Text style={[s.link, { color: tokens.green }]}>shareo.com.br</Text> pelo navegador para criar sua conta.
       </Text>
 
       {/* Card informativo */}
-      <View style={s.card}>
-        <Text style={s.cardText}>
+      <View style={[s.card, { backgroundColor: tokens.surface, borderColor: tokens.border }]}>
+        <Text style={[s.cardText, { color: tokens.text }]}>
           Após criar sua conta no site, use o mesmo e-mail e senha para entrar aqui.
         </Text>
 
         {/* CTA principal — abre site */}
         <TouchableOpacity
           onPress={handleOpenSite}
-          style={s.btnPrimary}
+          style={[s.btnPrimary, { backgroundColor: tokens.green }]}
           activeOpacity={0.85}
           accessibilityRole="link"
           accessibilityLabel="Criar conta no site ShareO"
@@ -65,11 +88,12 @@ export default function RegisterScreen() {
         {/* CTA secundário — já tem conta */}
         <TouchableOpacity
           onPress={() => router.replace("/(auth)/login")}
-          style={s.btnSecondary}
+          style={[s.btnSecondary, { borderColor: tokens.border }]}
           activeOpacity={0.85}
           accessibilityRole="button"
+          accessibilityLabel="Já tenho conta, entrar"
         >
-          <Text style={s.btnSecondaryText}>Já tenho conta — Entrar</Text>
+          <Text style={[s.btnSecondaryText, { color: tokens.navy }]}>Já tenho conta — Entrar</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -78,8 +102,7 @@ export default function RegisterScreen() {
 
 const s = StyleSheet.create({
   scroll: {
-    flex:            1,
-    backgroundColor: "#F8FAFC",
+    flex: 1,
   },
   content: {
     flexGrow:          1,
@@ -87,14 +110,13 @@ const s = StyleSheet.create({
     paddingVertical:   24,
   },
   back: {
-    alignSelf: "flex-start",
-    minHeight: 44,
+    alignSelf:      "flex-start",
+    minHeight:      44,
     justifyContent: "center",
-    marginBottom: 8,
+    marginBottom:   8,
   },
   backText: {
     fontSize: 14,
-    color:    "#64748B",
   },
   logoWrap: {
     alignItems:   "center",
@@ -108,46 +130,38 @@ const s = StyleSheet.create({
     marginTop:     8,
     fontSize:      11,
     fontWeight:    "600",
-    color:         "#64748B",
     letterSpacing: 1,
     textTransform: "uppercase",
   },
   title: {
     fontSize:     24,
     fontFamily:   "Montserrat_700Bold",
-    color:        "#003366",
     marginBottom: 8,
   },
   desc: {
     fontSize:     14,
-    color:        "#64748B",
     lineHeight:   20,
     marginBottom: 24,
   },
   link: {
-    color:      "#007B3C",
     fontWeight: "600",
   },
   card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius:    16,
-    borderWidth:     1,
-    borderColor:     "#E2E8F0",
-    padding:         24,
-    gap:             12,
+    borderRadius: 16,
+    borderWidth:  1,
+    padding:      24,
+    gap:          12,
   },
   cardText: {
     fontSize:     14,
-    color:        "#0F172A",
     lineHeight:   20,
     marginBottom: 4,
   },
   btnPrimary: {
-    backgroundColor: "#007B3C",
-    borderRadius:    10,
-    minHeight:       52,
-    alignItems:      "center",
-    justifyContent:  "center",
+    borderRadius:   10,
+    minHeight:      52,
+    alignItems:     "center",
+    justifyContent: "center",
   },
   btnText: {
     fontSize:   15,
@@ -155,16 +169,14 @@ const s = StyleSheet.create({
     color:      "#FFFFFF",
   },
   btnSecondary: {
-    borderRadius: 10,
-    borderWidth:  1,
-    borderColor:  "#E2E8F0",
-    minHeight:    52,
-    alignItems:   "center",
+    borderRadius:   10,
+    borderWidth:    1,
+    minHeight:      52,
+    alignItems:     "center",
     justifyContent: "center",
   },
   btnSecondaryText: {
     fontSize:   14,
     fontWeight: "600",
-    color:      "#003366",
   },
 })
