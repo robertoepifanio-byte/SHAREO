@@ -69,6 +69,14 @@ export async function GET(req: NextRequest) {
           borrower: { select: userMiniSelect },
           owner:    { select: userMiniSelect },
           conversation: { select: { id: true } },
+          // Fonte: app/reservas/page.tsx linhas 54-59 — mesmos agregados do
+          // site (badge "+N itens" de Story B, CTA "Avaliar" condicional).
+          _count: {
+            select: {
+              bookingItems: true,
+              reviews: { where: { reviewerId: userId } },
+            },
+          },
         },
       }),
       prisma.booking.count({ where }),

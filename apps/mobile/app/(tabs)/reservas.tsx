@@ -15,6 +15,7 @@ import {
 } from "react-native"
 import { router } from "expo-router"
 import { useQuery } from "@tanstack/react-query"
+import { Image } from "expo-image"
 import { apiFetch } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
 import { useTheme } from "@/lib/theme"
@@ -33,6 +34,7 @@ interface Booking {
   owner:    { id: string; name: string }
   borrower: { id: string; name: string }
   conversation: { id: string } | null
+  _count: { bookingItems: number; reviews: number }
 }
 
 interface BookingsResponse {
@@ -179,6 +181,10 @@ export default function ReservasScreen() {
           else if (isOwner && b.status === "PENDING") primaryLabel = "✅ Aprovar solicitação"
           else if (isOwner && b.status === "RETURNED") primaryLabel = "📦 Confirmar recebimento"
           else if (b.status === "CONFIRMED")          primaryLabel = "💳 Ver pagamento"
+          // CTA "Avaliar" — fonte: app/reservas/page.tsx linha 196
+          const canReview = (b.status === "RETURNED" || b.status === "COMPLETED") && b._count.reviews === 0
+          const extraItems = b._count.bookingItems - 1
+          const thumb = b.item.images[0]?.url
           return (
             <TouchableOpacity
               style={[s.card, { backgroundColor: tokens.surface, borderColor: tokens.border }]}
@@ -187,30 +193,49 @@ export default function ReservasScreen() {
               accessibilityRole="button"
               accessibilityLabel={`${b.item.title}, ${st.label}`}
             >
-              <View style={s.cardHeader}>
-                <Text style={[s.cardTitle, { color: tokens.navy }]} numberOfLines={2}>
-                  {b.item.title}
-                </Text>
-                {/* Badge de status */}
-                <View style={[s.badge, { backgroundColor: st.bgColor }]}>
-                  <Text style={[s.badgeText, { color: st.textColor }]}>{st.label}</Text>
+              <View style={s.cardTop}>
+                {/* Thumbnail — fonte: app/reservas/page.tsx linhas 134-145 */}
+                <View style={[s.thumb, { backgroundColor: tokens.bg }]}>
+                  {thumb ? (
+                    <Image source={{ uri: thumb }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
+                  ) : (
+                    <Text style={{ fontSize: 24 }}>📦</Text>
+                  )}
+                </View>
+
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <View style={s.cardHeader}>
+                    <Text style={[s.cardTitle, { color: tokens.navy }]} numberOfLines={2}>
+                      {b.item.title}
+                      {/* "+N itens" — Story B, locação multi-item do mesmo dono */}
+                      {extraItems > 0 && (
+                        <Text style={{ fontWeight: "400", color: tokens.muted }}>
+                          {" "}+ {extraItems} {extraItems === 1 ? "item" : "itens"}
+                        </Text>
+                      )}
+                    </Text>
+                    {/* Badge de status */}
+                    <View style={[s.badge, { backgroundColor: st.bgColor }]}>
+                      <Text style={[s.badgeText, { color: st.textColor }]}>{st.label}</Text>
+                    </View>
+                  </View>
+
+                  {/* Contraparte — fonte: app/reservas/page.tsx linhas 162-165 */}
+                  <Text style={[s.counterpart, { color: tokens.muted }]}>
+                    {tab === "borrower" ? "Proprietário" : "Locatário"}:{" "}
+                    <Text style={[s.counterpartName, { color: tokens.text }]}>
+                      {tab === "borrower" ? b.owner.name : b.borrower.name}
+                    </Text>
+                  </Text>
+
+                  {/* Datas — fonte: app/reservas/page.tsx linha 169 */}
+                  <Text style={[s.dates, { color: tokens.muted }]}>
+                    📅 {fmtDate(b.startDate)} → {fmtDate(b.endDate)}{" "}
+                    · {b.totalDays} dia{b.totalDays !== 1 ? "s" : ""}{" "}
+                    · <Text style={{ fontWeight: "700", color: tokens.text }}>{fmt(b.totalPrice)}</Text>
+                  </Text>
                 </View>
               </View>
-
-              {/* Contraparte — fonte: app/reservas/page.tsx linhas 162-165 */}
-              <Text style={[s.counterpart, { color: tokens.muted }]}>
-                {tab === "borrower" ? "Proprietário" : "Locatário"}:{" "}
-                <Text style={[s.counterpartName, { color: tokens.text }]}>
-                  {tab === "borrower" ? b.owner.name : b.borrower.name}
-                </Text>
-              </Text>
-
-              {/* Datas — fonte: app/reservas/page.tsx linha 169 */}
-              <Text style={[s.dates, { color: tokens.muted }]}>
-                📅 {fmtDate(b.startDate)} → {fmtDate(b.endDate)}{" "}
-                · {b.totalDays} dia{b.totalDays !== 1 ? "s" : ""}{" "}
-                · <Text style={{ fontWeight: "700", color: tokens.text }}>{fmt(b.totalPrice)}</Text>
-              </Text>
 
               {/* Ações */}
               <View style={s.actions}>
@@ -245,6 +270,22 @@ export default function ReservasScreen() {
                     accessibilityRole="button"
                   >
                     <Text style={[s.actionBtnText, { color: tokens.text }]}>Ver detalhes</Text>
+                  </TouchableOpacity>
+                )}
+
+                {/* Avaliar — fonte: app/reservas/page.tsx linhas 215-223. O site usa
+                    um link de âncora #avaliar (scroll até o formulário na mesma
+                    página); RN não tem âncora de URL — navega pra tela de detalhe
+                    (TODO(revisão): se reservas/[id].tsx tiver seção de avaliação,
+                    fazer scroll/foco nela ao chegar via este botão). */}
+                {canReview && (
+                  <TouchableOpacity
+                    style={[s.actionBtn, { backgroundColor: tokens.surface, borderColor: "#007B3C", borderWidth: 1 }]}
+                    onPress={() => router.push(`/reservas/${b.id}` as never)}
+                    activeOpacity={0.85}
+                    accessibilityRole="button"
+                  >
+                    <Text style={[s.actionBtnText, { color: "#007B3C" }]}>⭐ Avaliar</Text>
                   </TouchableOpacity>
                 )}
 
@@ -353,6 +394,11 @@ const s = StyleSheet.create({
     borderWidth:   1,
     padding:       16,
     marginBottom:  12,
+  },
+  cardTop: { flexDirection: "row", gap: 12, marginBottom: 6 },
+  thumb: {
+    width: 64, height: 64, borderRadius: 10, overflow: "hidden",
+    alignItems: "center", justifyContent: "center", flexShrink: 0,
   },
   cardHeader: {
     flexDirection:  "row",
