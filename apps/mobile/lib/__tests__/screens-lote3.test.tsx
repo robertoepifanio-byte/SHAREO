@@ -132,20 +132,21 @@ describe("FavoritosScreen", () => {
     expect(await screen.findByText("Nenhum favorito ainda")).toBeTruthy()
   })
 
-  it("logado sem favoritos: 'Toque no coração em qualquer item para salvar' (verbatim)", async () => {
+  it("logado sem favoritos: 'Toque no coração em qualquer item para salvá-lo aqui.' (verbatim do site, favoritos/page.tsx:63)", async () => {
     withUser()
     const { apiFetch } = require("@/lib/api") as { apiFetch: jest.Mock }
     apiFetch.mockResolvedValueOnce({ data: [] })
     wrap(<FavoritosScreen />)
-    expect(await screen.findByText("Toque no coração em qualquer item para salvar")).toBeTruthy()
+    expect(await screen.findByText("Toque no coração em qualquer item para salvá-lo aqui.")).toBeTruthy()
   })
 
-  it("logado sem favoritos: botão 'Explorar itens' (verbatim)", async () => {
+  it("logado sem favoritos: sem botão CTA inventado (site não passa `action` ao EmptyState, favoritos/page.tsx:60-64)", async () => {
     withUser()
     const { apiFetch } = require("@/lib/api") as { apiFetch: jest.Mock }
     apiFetch.mockResolvedValueOnce({ data: [] })
     wrap(<FavoritosScreen />)
-    expect(await screen.findByText("Explorar itens")).toBeTruthy()
+    await screen.findByText("Nenhum favorito ainda")
+    expect(screen.queryByText("Explorar itens")).toBeNull()
   })
 
   it("logado com favoritos: exibe título do item (mock)", async () => {

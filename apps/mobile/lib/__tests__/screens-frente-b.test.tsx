@@ -150,20 +150,21 @@ describe("FavoritosScreen (re-auditoria Frente B)", () => {
     expect(await screen.findByText("Nenhum favorito ainda")).toBeTruthy()
   })
 
-  it("logado sem itens: 'Toque no coração em qualquer item para salvar' (verbatim do site)", async () => {
+  it("logado sem itens: 'Toque no coração em qualquer item para salvá-lo aqui.' (verbatim do site, favoritos/page.tsx:63)", async () => {
     withUser()
     const { apiFetch } = require("@/lib/api") as { apiFetch: jest.Mock }
     apiFetch.mockResolvedValueOnce({ data: [] })
     wrap(<FavoritosScreen />)
-    expect(await screen.findByText("Toque no coração em qualquer item para salvar")).toBeTruthy()
+    expect(await screen.findByText("Toque no coração em qualquer item para salvá-lo aqui.")).toBeTruthy()
   })
 
-  it("logado sem itens: botão 'Explorar itens' (verbatim)", async () => {
+  it("logado sem itens: sem botão CTA inventado (site não passa `action` ao EmptyState, favoritos/page.tsx:60-64)", async () => {
     withUser()
     const { apiFetch } = require("@/lib/api") as { apiFetch: jest.Mock }
     apiFetch.mockResolvedValueOnce({ data: [] })
     wrap(<FavoritosScreen />)
-    expect(await screen.findByText("Explorar itens")).toBeTruthy()
+    await screen.findByText("Nenhum favorito ainda")
+    expect(screen.queryByText("Explorar itens")).toBeNull()
   })
 
   it("logado com itens: exibe título do item (mock)", async () => {
@@ -174,7 +175,7 @@ describe("FavoritosScreen (re-auditoria Frente B)", () => {
         id: "item-1", title: "Furadeira Bosch",
         pricePerDay: 3500, condition: "BOM",
         city: "São Paulo", state: "SP", neighborhood: "Pinheiros",
-        images: [], category: { name: "Ferramentas" },
+        images: [], category: { name: "Ferramentas", slug: "ferramentas" },
         owner: { name: "João", isVerified: true },
         _count: { reviews: 5, favorites: 12 },
         favoritedAt: new Date().toISOString(),
@@ -184,7 +185,7 @@ describe("FavoritosScreen (re-auditoria Frente B)", () => {
     expect(await screen.findByText("Furadeira Bosch")).toBeTruthy()
   })
 
-  it("logado com itens: exibe categoria em uppercase (verbatim do site, FERRAMENTAS)", async () => {
+  it("logado com itens: exibe categoria (uppercase é CSS textTransform, não JS — mesmo padrão de components/items/ItemCard.tsx)", async () => {
     withUser()
     const { apiFetch } = require("@/lib/api") as { apiFetch: jest.Mock }
     apiFetch.mockResolvedValueOnce({
@@ -192,14 +193,14 @@ describe("FavoritosScreen (re-auditoria Frente B)", () => {
         id: "item-1", title: "Furadeira Bosch",
         pricePerDay: 3500, condition: "BOM",
         city: "São Paulo", state: "SP", neighborhood: "Pinheiros",
-        images: [], category: { name: "Ferramentas" },
+        images: [], category: { name: "Ferramentas", slug: "ferramentas" },
         owner: { name: "João", isVerified: true },
         _count: { reviews: 5, favorites: 12 },
         favoritedAt: new Date().toISOString(),
       }],
     })
     wrap(<FavoritosScreen />)
-    expect(await screen.findByText("FERRAMENTAS")).toBeTruthy()
+    expect(await screen.findByText("Ferramentas")).toBeTruthy()
   })
 })
 
