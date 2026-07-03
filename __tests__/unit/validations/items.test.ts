@@ -282,12 +282,14 @@ describe("ListItemsQuerySchema", () => {
   })
 
   describe("limites válidos", () => {
-    it("aceita limit máximo de 50", () => {
-      expect(ListItemsQuerySchema.safeParse({ limit: "50" }).success).toBe(true)
+    it("aceita limit máximo de 100", () => {
+      // Teto elevado 50 → 100: o app mobile pede mais itens quando há filtros
+      // client-side (distância/avaliação, aplicados em JS pós-fetch como no site).
+      expect(ListItemsQuerySchema.safeParse({ limit: "100" }).success).toBe(true)
     })
 
-    it("rejeita limit acima de 50", () => {
-      expect(ListItemsQuerySchema.safeParse({ limit: "51" }).success).toBe(false)
+    it("rejeita limit acima de 100", () => {
+      expect(ListItemsQuerySchema.safeParse({ limit: "101" }).success).toBe(false)
     })
 
     it("rejeita page menor que 1", () => {
