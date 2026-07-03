@@ -16,13 +16,14 @@ import {
   Alert,
   TextInput,
   Platform,
+  Linking,
 } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Image } from "expo-image"
 import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { apiFetch } from "@/lib/api"
+import { apiFetch, API_URL } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
 import { fmtCurrency, calcBookingTotal } from "@/lib/pricing"
 import { useTheme } from "@/lib/theme"
@@ -43,8 +44,12 @@ interface ItemDetail {
   neighborhood:  string | null
   status:        string
   ownerId:       string
+  rules:                  string | null
+  estimatedRetailPrice:   number | null
+  requireIdVerification:  boolean
+  requirePhone:           boolean
   category:      { name: string }
-  owner:         { id: string; name: string; isVerified: boolean; city: string | null }
+  owner:         { id: string; name: string; avatarUrl: string | null; isVerified: boolean; city: string | null }
   images:        { url: string }[]
   reviews:       { id: string; rating: number; comment: string | null; reviewer: { name: string } }[]
   _count:        { reviews: number; favorites: number }
@@ -430,6 +435,9 @@ export default function ItemDetailScreen() {
             <Text style={[s.ratingText, { color: tokens.muted }]}>
               {avgRating.toFixed(1)} ({item._count.reviews})
             </Text>
+            <View style={s.ecoBadge}>
+              <Text style={s.ecoBadgeText}>🌿 Eco</Text>
+            </View>
           </View>
         )}
 
@@ -454,11 +462,57 @@ export default function ItemDetailScreen() {
           )}
         </View>
 
-        {/* ── Proprietário ── */}
-        <View style={[s.ownerCard, { backgroundColor: tokens.surface, borderColor: tokens.border }]}>
-          <View style={[s.ownerAvatar, { backgroundColor: tokens.navy }]}>
-            <Text style={s.ownerAvatarText}>{item.owner.name[0]?.toUpperCase()}</Text>
+        {/* Regras do anunciante — fonte: page.tsx linhas 456-471 (P2-51) */}
+        {item.rules && item.rules.trim().length > 0 && (
+          <View style={[s.infoBox, { borderColor: "#FCD34D", backgroundColor: "#FFFBEB" }]}>
+            <Text style={s.infoBoxIcon}>📄</Text>
+            <Text style={[s.infoBoxText, { color: "#92400E" }]}>
+              <Text style={{ fontWeight: "700" }}>Regras do anunciante: </Text>
+              {item.rules}
+            </Text>
           </View>
+        )}
+
+        {/* Calculadora alugar vs comprar — fonte: page.tsx linhas 473-488 */}
+        {item.estimatedRetailPrice != null && item.estimatedRetailPrice > 0 && (
+          <View style={[s.infoBox, { borderColor: tokens.green, backgroundColor: "#F0FDF4" }]}>
+            <Text style={s.infoBoxIcon}>💡</Text>
+            <Text style={[s.infoBoxText, { color: tokens.muted }]}>
+              Comprar este item custa{" "}
+              <Text style={{ color: tokens.text, fontWeight: "700" }}>
+                ~{fmtCurrency(item.estimatedRetailPrice)}
+              </Text>
+              . Alugar por 1 dia sai a{" "}
+              <Text style={{ color: tokens.green, fontWeight: "700" }}>
+                {fmtCurrency(item.pricePerDay)}
+              </Text>{" "}
+              — economia de{" "}
+              <Text style={{ color: tokens.success, fontWeight: "700" }}>
+                {Math.round((1 - item.pricePerDay / item.estimatedRetailPrice) * 100)}%
+              </Text>{" "}
+              vs comprar novo.
+            </Text>
+          </View>
+        )}
+
+        {/* ── Proprietário ── fonte: page.tsx linhas 566-590 (mini card com link p/ perfil) ── */}
+        <TouchableOpacity
+          style={[s.ownerCard, { backgroundColor: tokens.surface, borderColor: tokens.border }]}
+          onPress={() => Linking.openURL(`${API_URL}/perfil/${item.owner.id}`)}
+          accessibilityRole="link"
+          accessibilityLabel={`Ver perfil de ${item.owner.name}`}
+        >
+          {item.owner.avatarUrl ? (
+            <Image
+              source={{ uri: item.owner.avatarUrl }}
+              style={[s.ownerAvatar, { backgroundColor: tokens.border }]}
+              contentFit="cover"
+            />
+          ) : (
+            <View style={[s.ownerAvatar, { backgroundColor: tokens.navy }]}>
+              <Text style={s.ownerAvatarText}>{item.owner.name[0]?.toUpperCase()}</Text>
+            </View>
+          )}
           <View style={{ flex: 1 }}>
             <Text style={[s.ownerName, { color: tokens.text }]}>
               {item.owner.name}
@@ -471,7 +525,22 @@ export default function ItemDetailScreen() {
               <Text style={[s.ownerCity, { color: tokens.muted }]}>📍 {item.owner.city}</Text>
             )}
           </View>
-        </View>
+          <Text style={{ fontSize: 18, color: tokens.muted }} accessibilityElementsHidden>›</Text>
+        </TouchableOpacity>
+
+        {/* Editar anúncio — modo proprietário. Sem tela nativa de edição ainda;
+            segue o mesmo padrão de fallback já usado em MobileMenu.tsx (Linking
+            p/ o site) até que apps/mobile/app/itens/[id]/editar.tsx exista. */}
+        {isOwner && (
+          <TouchableOpacity
+            style={[s.editListingBtn, { borderColor: tokens.border }]}
+            onPress={() => Linking.openURL(`${API_URL}/itens/${item.id}/editar`)}
+            accessibilityRole="link"
+            accessibilityLabel="Editar anúncio"
+          >
+            <Text style={[s.editListingBtnText, { color: tokens.text }]}>✏️ Editar anúncio</Text>
+          </TouchableOpacity>
+        )}
 
         {/* ── Solicitações pendentes (modo proprietário) ── */}
         {isOwner && item.pendingBookings && item.pendingBookings.length > 0 && (
@@ -505,7 +574,22 @@ export default function ItemDetailScreen() {
         {/* ── PriceCalc — só para locatários ── */}
         {!isOwner && (
           <>
-            <Text style={[s.sectionTitle, { color: tokens.navy, marginTop: 24 }]}>
+            {/* Requisitos do proprietário — fonte: page.tsx linhas 490-511 */}
+            {(item.requireIdVerification || item.requirePhone) && (
+              <View style={[s.infoBox, { borderColor: "#FCD34D", backgroundColor: "#FFFBEB", marginTop: 20 }]}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[s.reqTitle, { color: "#92400E" }]}>📋 Requisitos do proprietário</Text>
+                  {item.requireIdVerification && (
+                    <Text style={[s.reqItem, { color: "#B45309" }]}>✓ Identidade verificada</Text>
+                  )}
+                  {item.requirePhone && (
+                    <Text style={[s.reqItem, { color: "#B45309" }]}>✓ Telefone cadastrado</Text>
+                  )}
+                </View>
+              </View>
+            )}
+
+            <Text style={[s.sectionTitle, { color: tokens.navy, marginTop: item.requireIdVerification || item.requirePhone ? 8 : 24 }]}>
               Calcular locação
             </Text>
 
@@ -737,6 +821,41 @@ export default function ItemDetailScreen() {
               </View>
             )}
 
+            {/* Trust Box — fonte: page.tsx linhas 618-635 (conteúdo estático) */}
+            <View style={[s.trustBox, { borderColor: tokens.green, backgroundColor: "#F0FDF4" }]}>
+              <Text style={[s.trustBoxTitle, { color: tokens.green }]}>🔒 Sua locação está protegida</Text>
+              {[
+                "Cancelamento gratuito até 24h antes",
+                "Item protegido durante a locação",
+                "Suporte ShareO disponível 7 dias por semana",
+              ].map((line) => (
+                <View key={line} style={s.trustBoxRow}>
+                  <Text style={{ color: tokens.green, fontSize: 13 }}>✓</Text>
+                  <Text style={[s.trustBoxText, { color: tokens.text }]}>{line}</Text>
+                </View>
+              ))}
+            </View>
+
+            {/* Política de cancelamento — fonte: page.tsx linhas 637-665 +
+                lib/cancellationPolicy.ts DEFAULTS (o site também usa o export
+                estático CANCELLATION_POLICY_LINES, não a config dinâmica). */}
+            <View style={[s.trustBox, { borderColor: tokens.border, backgroundColor: tokens.surface }]}>
+              <Text style={[s.trustBoxTitle, { color: tokens.navy }]}>Política de cancelamento</Text>
+              {[
+                { label: "Até 24h antes", detail: "reembolso total (100%)" },
+                { label: "Entre 24h e 6h antes", detail: "70% de reembolso" },
+                { label: "Menos de 6h antes", detail: "50% de reembolso" },
+              ].map((line) => (
+                <View key={line.label} style={s.trustBoxRow}>
+                  <Text style={{ color: tokens.muted, fontSize: 13 }}>•</Text>
+                  <Text style={[s.trustBoxText, { color: tokens.text }]}>
+                    <Text style={{ fontWeight: "700" }}>{line.label}: </Text>
+                    <Text style={{ color: tokens.muted }}>{line.detail}</Text>
+                  </Text>
+                </View>
+              ))}
+            </View>
+
             {/* Erro de booking */}
             {bookingError ? (
               <View style={s.errorBox} accessibilityRole="alert">
@@ -853,11 +972,27 @@ const s = StyleSheet.create({
   title:    { fontSize: 22, fontWeight: "800", marginTop: 4, lineHeight: 28 },
   ratingRow:{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
   ratingText:{ fontSize: 12 },
+  ecoBadge: {
+    marginLeft: 4, borderWidth: 1, borderColor: "rgba(0,123,60,0.3)",
+    backgroundColor: "rgba(0,123,60,0.1)", borderRadius: 20,
+    paddingHorizontal: 8, paddingVertical: 2,
+  },
+  ecoBadgeText: { fontSize: 11, fontWeight: "700", color: "#007B3C" },
 
   // Tags
   tags: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
   tag:  { borderWidth: 1, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4 },
   tagText: { fontSize: 12 },
+
+  // Boxes informativos (regras / calculadora / requisitos) — fonte: page.tsx
+  infoBox: {
+    flexDirection: "row", alignItems: "flex-start", gap: 8,
+    borderWidth: 1, borderRadius: 10, padding: 12, marginTop: 12,
+  },
+  infoBoxIcon: { fontSize: 14, marginTop: 1 },
+  infoBoxText: { flex: 1, fontSize: 12, lineHeight: 18 },
+  reqTitle: { fontSize: 12, fontWeight: "700", marginBottom: 4 },
+  reqItem:  { fontSize: 12, marginTop: 2 },
 
   // Proprietário
   ownerCard: {
@@ -871,6 +1006,17 @@ const s = StyleSheet.create({
   ownerAvatarText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
   ownerName: { fontSize: 14, fontWeight: "600" },
   ownerCity: { fontSize: 12, marginTop: 2 },
+  editListingBtn: {
+    marginTop: 10, height: 44, borderWidth: 1, borderRadius: 10,
+    alignItems: "center", justifyContent: "center",
+  },
+  editListingBtnText: { fontSize: 13, fontWeight: "600" },
+
+  // Trust box / política de cancelamento — fonte: page.tsx linhas 618-665
+  trustBox: { borderWidth: 1, borderRadius: 10, padding: 14, marginTop: 12 },
+  trustBoxTitle: { fontSize: 12, fontWeight: "700", marginBottom: 8 },
+  trustBoxRow: { flexDirection: "row", alignItems: "flex-start", gap: 8, marginTop: 6 },
+  trustBoxText: { flex: 1, fontSize: 12, lineHeight: 17 },
 
   // Solicitações pendentes
   pendingBox:  { borderRadius: 10, borderWidth: 1, padding: 12, marginTop: 16 },
