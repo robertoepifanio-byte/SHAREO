@@ -68,22 +68,24 @@ Print sozinho força uma investigação de código às cegas. Junto ao print, in
 
 ## Checklist de validação por tela
 
-Marcar cada linha: ✅ confirmado igual ao site | 🔧 corrigido hoje (re-testar) | ❌ não
-testado ainda | ➡️ abre no site por decisão de escopo (não testar como bug).
+Marcar cada linha: ✅ confirmado igual ao site | 🔧 corrigido hoje (re-testar) | 🔍
+auditado no código, sem gaps encontrados (ainda assim requer confirmação em device —
+nunca ✅ sem teste ao vivo) | ❌ não testado ainda | ➡️ abre no site por decisão de
+escopo (não testar como bug).
 
 ### Autenticação
 | Tela | Elemento a comparar | Status |
 |---|---|---|
 | Login | Layout, campos, olho de senha, mensagens de erro | 🔧 auditado nesta rodada — faltavam 4 elementos de texto verbatim: "← Voltar para o início", título completo "Entrar na sua conta" (só tinha "Entrar"), subtítulo "Bem-vindo de volta ao ShareO", "grátis" em "Criar conta grátis" |
 | Cadastro | ➡️ Redireciona 100% pro site (decisão do fundador 2026-07-03) — não é bug | ➡️ |
-| Esqueci senha | Reescrita pela Frente B — subtítulo, estado enviado, "tente novamente", rodapé | ❌ não testado |
+| Esqueci senha | Reescrita pela Frente B — subtítulo, estado enviado, "tente novamente", rodapé | 🔍 auditado nesta rodada contra `_ForgotPasswordForm.tsx` elemento-por-elemento — já em paridade real, nenhum gap encontrado (payload da API confirmado) |
 
 ### Navegação global
 | Elemento | Status |
 |---|---|
 | BottomNav (5 abas + FAB) | 🔧 corrigido (crash `tabbar`) — re-testar cada aba abre a tela certa |
 | Menu lateral (drawer) — TODOS os 34 links | 🔧 corrigido (27 redirecionavam errado) — re-testar cada seção expansível (Explorar/Anunciar/Atividade/Minha Conta/Ajuda) |
-| Toggle de tema (Claro/Sistema/Escuro) no menu | ❌ não testado nesta rodada |
+| Toggle de tema (Claro/Sistema/Escuro) no menu | 🔧 **bug de cor achado**: item ativo usava verde sólido `#007B3C` (citava "handoff §1.17"); o `ThemeToggle.tsx` real do site usa branco translúcido (`bg-white/15`) em ambas as variantes — corrigido a favor do código-fonte real |
 
 ### Início (Home)
 | Seção | Status |
@@ -102,7 +104,7 @@ testado ainda | ➡️ abre no site por decisão de escopo (não testar como bug
 | Busca por texto | 🔧 corrigido (parâmetro errado) — re-testar que resultado muda |
 | Chips de categoria (ícone + clique filtra) | 🔧 corrigido (ícone errado + filtro não funcionava) — re-testar os dois |
 | Grid de itens (2 colunas, foto, preço, favoritar, verificado) | 🔧 auditado no código (loop autônomo, sem device) contra `components/items/ItemCard.tsx` — badge "Eco" inventado removido, botão de favoritar e badge de verificado adicionados (faltavam por completo) |
-| Pull-to-refresh | ❌ não testado (implementação já existente, não auditada nesta rodada) |
+| Pull-to-refresh | 🔍 auditado nesta rodada — `RefreshControl` corretamente ligado a `isRefetching`/`refetch` da query real, mesmo padrão já validado em Favoritos/Reservas/Chat. Sem gap |
 | ⏸️ Pendente (exigiria estender API, não implementado) | Estrelas de avaliação e distância em km — `/api/items` não calcula `avgRating`/`distanceKm` hoje |
 
 ### Detalhe do item
@@ -133,7 +135,7 @@ testado ainda | ➡️ abre no site por decisão de escopo (não testar como bug
 | Voltagem (categorias elétricas) | 🔧 campo novo — nunca testado |
 | Fotos: botões Câmera/Galeria separados, limite 3 (era 8, corrigido) | 🔧 nunca testado em device |
 | Requisitos para reserva (2 checkboxes) | 🔧 seção nova — nunca testada em device |
-| Publicar anúncio (fim a fim) | ❌ não testado nesta rodada |
+| Publicar anúncio (fim a fim) | 🔍 revisão rápida nesta rodada — todos os labels do form presentes (categoria, condição, preços, voltagem, requisitos, valor estimado), padrão de endereço somente-leitura do perfil confirmado correto. Fluxo fim a fim continua não testado em device |
 
 ### Perfil
 | Elemento | Status |
@@ -145,7 +147,7 @@ testado ainda | ➡️ abre no site por decisão de escopo (não testar como bug
 | "Meus Anúncios" | 🔧 corrigido (abre no navegador agora) |
 | "Minha Conta" — 9 submenus | 🔧 corrigido (8 de 9 abrem no navegador) — re-testar cada um. Fix adicional nesta rodada: URL hardcoded (`BASE_URL` duplicando `API_URL` de `lib/api.ts`) trocada pelo import real — eliminava risco de divergência silenciosa se o ambiente mudasse |
 | Favoritos | 🔧 **layout errado** — auditado a fundo nesta rodada (a Frente B tinha marcado "sem alterações", mas não comparou against o site de verdade): mobile usava lista de 1 coluna com card próprio; site usa grid 2 colunas com o mesmo `ItemCard` do Explorar. Corrigido + texto do empty state errado ("...para salvar" → "...para salvá-lo aqui.") + botão "Explorar itens" inventado (removido, site não tem) |
-| KYC | 🔧 fix pontual de imagem — nunca testado em device |
+| KYC | 🔧 auditado a fundo nesta rodada contra `_IdVerification.tsx` — box explicativo tinha título e texto inventados (paráfrase), corrigido pro texto real; citação de fonte errada corrigida ("app/kyc/page.tsx" não existe no site). Diferença arquitetural documentada (não corrigida): consentimento biométrico é descoberto reativamente no mobile vs. proativamente no site — invisível hoje pois a flag está OFF |
 | Sair (logout) | 🔧 auditado — mobile tem diálogo de confirmação que o site não tem (`UserDropdown.tsx` desloga direto, sem confirmar); mantido de propósito como adaptação de plataforma (proteção contra toque acidental em touchscreen), não é bug |
 
 ### Reservas
@@ -284,7 +286,19 @@ estimativa qualificada, não um número medido:
 **Recomendação:** não vale continuar o loop em modo "auditoria rápida e fix" pras
 pendências grandes listadas acima — cada uma é um projeto próprio (ex.: CheckInOut
 precisa de upload de imagem + Storage, ContractBanner precisa de fluxo de assinatura).
-Melhor retomar com o usuário: (1) validar em device os ~35 itens 🔧 desta sessão
+Melhor retomar com o usuário: (1) validar em device os ~40 itens 🔧 desta sessão
 primeiro (prioridade #1 continua sendo o campo de data em `itens/[id].tsx`), (2) decidir
 o destino de `checkout.tsx`, (3) priorizar quais das 6 pendências grandes valem
 sessões dedicadas vs. ficam como follow-up de longo prazo.
+
+### Última rodada (itens menores) e encerramento do loop
+
+Depois do relatório acima, mais uma iteração cobriu os itens pequenos restantes no
+padrão de auditoria rápida: Esqueci senha (🔍 sem gaps), toggle de tema (🔧 bug de cor —
+verde sólido vs. branco translúcido real), KYC (🔧 box explicativo com texto inventado +
+citação de fonte errada corrigida), Anunciar (🔍 revisão rápida, sem gaps novos),
+Explorar pull-to-refresh (🔍 sem gaps). Com isso, **não resta mais nenhum item auditável
+no padrão "ler os dois arquivos, comparar, corrigir"** — o que sobra são as 6
+pendências grandes já listadas acima (projetos próprios) e a validação em device de
+tudo que foi corrigido hoje. **Loop autônomo encerrado aqui**, conforme instrução —
+não reagendado. Retomar com o usuário quando ele voltar.
