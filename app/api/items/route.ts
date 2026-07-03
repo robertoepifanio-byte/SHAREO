@@ -18,8 +18,21 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    const { page, limit, search, categoryId, city, state, minPrice, maxPrice, ownerId } = query.data
+    const { page, limit, search, categoryId, city, state, minPrice, maxPrice, ownerId, sort } = query.data
     const skip = (page - 1) * limit
+
+    // Ordenação — espelha getOrderBy() de app/itens/page.tsx (fonte: _SortSelect.tsx).
+    // id como tiebreaker garante ordenação estável entre queries (evita duplicatas em offset pagination).
+    function getOrderBy(s?: string) {
+      const id = { id: "asc" as const }
+      switch (s) {
+        case "price_asc":  return [{ pricePerDay: "asc"  as const }, id]
+        case "price_desc": return [{ pricePerDay: "desc" as const }, id]
+        case "views":      return [{ viewCount:   "desc" as const }, id]
+        case "rented":     return [{ bookings: { _count: "desc" as const } }, id]
+        default:           return [{ createdAt:   "desc" as const }, id]
+      }
+    }
 
     const where = {
       // Public listings: only AVAILABLE items; owner queries exclude DELETED
@@ -51,7 +64,7 @@ export async function GET(req: NextRequest) {
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: "desc" },
+        orderBy: getOrderBy(sort),
         select: {
           id: true,
           title: true,
