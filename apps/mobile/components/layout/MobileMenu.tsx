@@ -11,12 +11,18 @@ import {
   StyleSheet,
   Modal,
   SafeAreaView,
+  Linking,
 } from "react-native"
 import { router } from "expo-router"
 import Svg, { Path, Line, Circle, Rect, Polyline, Polygon } from "react-native-svg"
 import { ThemeToggle } from "@/components/ui/ThemeToggle"
 import { useTheme } from "@/lib/theme"
 import type { ThemePreference } from "@/lib/theme"
+import { API_URL } from "@/lib/api"
+
+// Rotas que existem no site mas ainda não têm tela nativa — abrem no navegador
+// em vez de dar "Unmatched Route". Remover daqui quando a tela nativa existir.
+const EXTERNAL_ONLY_ROUTES = new Set(["/sobre"])
 
 // ── Constantes — transcritas VERBATIM de MobileMenu.tsx do site ──────────────
 
@@ -142,6 +148,10 @@ export function MobileMenu({ visible, onClose, isLoggedIn, role, onLogout }: Mob
 
   function navigate(href: string) {
     onClose()
+    if (EXTERNAL_ONLY_ROUTES.has(href)) {
+      Linking.openURL(`${API_URL}${href}`)
+      return
+    }
     // Converte href do site para rota do expo-router
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     router.push(href as Parameters<typeof router.push>[0])
