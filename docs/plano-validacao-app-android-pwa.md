@@ -133,7 +133,7 @@ escopo (não testar como bug).
 | Link "✏️ Editar anúncio" (modo proprietário) | 🔧 **não existia nenhuma forma de editar o anúncio pelo app** — adicionado como fallback `Linking`→site (não há tela nativa de edição ainda) |
 | Trust Box "🔒 Sua locação está protegida" | 🔧 auditado no código contra `page.tsx:618-635` — faltava por completo, adicionado (conteúdo estático, 3 linhas) |
 | Política de cancelamento (3 faixas de reembolso) | 🔧 auditado no código contra `page.tsx:637-665` — faltava por completo, adicionado (usa os mesmos valores estáticos que o próprio site usa hoje, não a config dinâmica) |
-| Stats do proprietário (locações concluídas + taxa de resposta) | 🔧 **implementado depois do relatório inicial** — pedido explícito do usuário testando ao vivo. `GET /api/items/[id]` estendido (aditivo) com a mesma lógica exata do site; badge "⚡ Responde em ~Xh" + grid de 2 estatísticas no card do proprietário |
+| Stats do proprietário (locações concluídas + taxa de resposta) | ✅ **CONFIRMADO EM DEVICE 2026-07-03 à noite** — pedido explícito do usuário testando ao vivo, implementado (`GET /api/items/[id]` estendido) e agora confirmado funcionando pós-deploy |
 | ⏸️ Pendente (fora de escopo — precisa endpoint novo ou tela própria) | `AvailabilityCalendar` (calendário de disponibilidade), grids "Itens do mesmo anunciante" e "Você também pode gostar" no rodapé, carrinho multi-item `AddToRentalButton` (Story B) |
 
 ### Anunciar (`itens/novo`)
