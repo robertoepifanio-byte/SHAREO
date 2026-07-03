@@ -23,6 +23,7 @@ import Svg, {
 } from "react-native-svg"
 import { apiFetch } from "@/lib/api"
 import { useTheme } from "@/lib/theme"
+import { CategoryChip } from "@/components/ui/CategoryChip"
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 interface Item {
@@ -86,35 +87,8 @@ function CategorySvg({ slug, stroke }: { slug: string; stroke: string }) {
   }
 }
 
-// ── CategoryChip — transcrito de CategoryChip.tsx do Lote 1 ──────────────────
-function CategoryChip({
-  slug, label, active, onPress,
-}: { slug: string; label: string; active: boolean; onPress: () => void }) {
-  const colors = CAT_COLORS[slug] ?? { bg: "#F1F5F9", stroke: "#64748B" }
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.85}
-      accessibilityRole="button"
-      accessibilityState={{ selected: active }}
-      accessibilityLabel={label}
-      style={[
-        s.chip,
-        active
-          ? { borderColor: "#007B3C", backgroundColor: "#D1FAE5" }
-          : { borderColor: "#E2E8F0", backgroundColor: "#FFFFFF" },
-      ]}
-    >
-      {/* Ícone fundo colorido arredondado 36×36 */}
-      <View style={[s.chipIcon, { backgroundColor: colors.bg }]}>
-        <CategorySvg slug={slug} stroke={colors.stroke} />
-      </View>
-      <Text style={[s.chipLabel, { color: active ? "#007B3C" : "#64748B" }]}>
-        {label}
-      </Text>
-    </TouchableOpacity>
-  )
-}
+// CategoryChip local removido — duplicava (com bugs) o componente compartilhado
+// components/ui/CategoryChip.tsx (PNG real + pill horizontal), agora importado acima.
 
 // ── SkeletonBox — animação de carregamento ────────────────────────────────────
 function SkeletonBox({ width, height, style }: { width?: number | string; height: number; style?: object }) {
@@ -198,13 +172,18 @@ export default function ExplorarScreen() {
   })
   const categories = catData?.data ?? []
 
-  // Busca de itens com q + categoria
+  // Categoria ativa → precisa do id (a API filtra por categoryId, não slug)
+  const activeCategoryId = categories.find((c) => c.slug === activeSlug)?.id ?? null
+
+  // Busca de itens com busca + categoria
+  // Fonte: lib/validations/items.ts (ListItemsQuerySchema) — params aceitos
+  // são "search" (não "q") e "categoryId" (id real, não slug).
   const { data, isLoading, isRefetching, refetch } = useQuery<ApiResponse>({
-    queryKey: ["items", search, activeSlug],
+    queryKey: ["items", search, activeCategoryId],
     queryFn:  () => {
       const params = new URLSearchParams({ limit: "20" })
-      if (search)     params.set("q",        search)
-      if (activeSlug) params.set("category", activeSlug)
+      if (search)          params.set("search",     search)
+      if (activeCategoryId) params.set("categoryId", activeCategoryId)
       return apiFetch<ApiResponse>(`/api/items?${params}`)
     },
   })
