@@ -1,4 +1,5 @@
 import { getToken } from "next-auth/jwt"
+import { jwtVerify } from "jose"
 import { NextResponse, type NextRequest } from "next/server"
 import { isSessionStale } from "@/lib/redis-admin-blocklist"
 
@@ -121,7 +122,30 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/dashboard", req.url))
   }
 
-  if ((isProtectedRoute || isAdminRoute) && !token) {
+  // App mobile autentica via "Authorization: Bearer <JWT>" (sem cookie).
+  // resolveUserId() já sabe validar esse Bearer dentro da rota, mas o middleware
+  // roda ANTES e só enxergava sessão-cookie via getToken() — barrando toda
+  // chamada mobile a rota protegida com 401 antes da rota rodar. Reconhece o
+  // Bearer aqui para rotas protegidas não-admin (admin continua cookie-only,
+  // ver SEC-CRIT-01 acima: "Um Bearer não pode abrir o painel admin").
+  let bearerAuthenticated = false
+  if (isProtectedRoute && !isAdminRoute && !token) {
+    const authHeader = req.headers.get("authorization")
+    if (authHeader?.startsWith("Bearer ")) {
+      try {
+        const key = new TextEncoder().encode(process.env.AUTH_SECRET ?? "")
+        const { payload } = await jwtVerify(authHeader.slice(7), key)
+        if (typeof payload.sub === "string") {
+          const iat = typeof payload.iat === "number" ? payload.iat : undefined
+          bearerAuthenticated = !(await isSessionStale(payload.sub, iat))
+        }
+      } catch {
+        // Bearer inválido/expirado — segue sem autenticação
+      }
+    }
+  }
+
+  if ((isProtectedRoute || isAdminRoute) && !token && !bearerAuthenticated) {
     // API routes retornam 401 JSON (fetch não segue redirect; cliente trata via React Query)
     if (pathname.startsWith("/api/")) {
       return NextResponse.json(
