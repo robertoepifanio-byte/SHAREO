@@ -139,12 +139,14 @@ testado ainda | ➡️ abre no site por decisão de escopo (não testar como bug
 | Elemento | Status |
 |---|---|
 | Card do usuário (avatar, badges, bio, localização) | 🔧 reescrito pela Frente B — nunca testado em device |
+| Estatísticas (itens/aluguéis/nota) | 🔧 **não existia** — auditado contra `perfil/page.tsx:186-203`; a Frente B tinha corretamente adiado isso (TODO próprio, não inventou), pois `/api/users/me` não retornava `_count`/reviews. Fechado nesta rodada: API estendida (`_count` + `reviewsReceived` + `avgRating`/`reviewCount`, aditivo) + 3 stat cards implementados verbatim |
+| Avaliações recebidas (últimas 5) | 🔧 **não existia** — mesmo motivo/fix acima, verbatim de `perfil/page.tsx:205-248` (`REVIEW_TYPE_LABEL`, paginação "últimas 5 de N") |
 | "Dashboard" (ícone `database`) | 🔧 corrigido (crash `<ellipse>`) — re-testar que abre sem crash |
 | "Meus Anúncios" | 🔧 corrigido (abre no navegador agora) |
-| "Minha Conta" — 9 submenus | 🔧 corrigido (8 de 9 abrem no navegador) — re-testar cada um |
-| Favoritos | ❌ auditado sem alterações pela Frente B — testar mesmo assim |
+| "Minha Conta" — 9 submenus | 🔧 corrigido (8 de 9 abrem no navegador) — re-testar cada um. Fix adicional nesta rodada: URL hardcoded (`BASE_URL` duplicando `API_URL` de `lib/api.ts`) trocada pelo import real — eliminava risco de divergência silenciosa se o ambiente mudasse |
+| Favoritos | 🔧 **layout errado** — auditado a fundo nesta rodada (a Frente B tinha marcado "sem alterações", mas não comparou against o site de verdade): mobile usava lista de 1 coluna com card próprio; site usa grid 2 colunas com o mesmo `ItemCard` do Explorar. Corrigido + texto do empty state errado ("...para salvar" → "...para salvá-lo aqui.") + botão "Explorar itens" inventado (removido, site não tem) |
 | KYC | 🔧 fix pontual de imagem — nunca testado em device |
-| Sair (logout) | ❌ não testado |
+| Sair (logout) | 🔧 auditado — mobile tem diálogo de confirmação que o site não tem (`UserDropdown.tsx` desloga direto, sem confirmar); mantido de propósito como adaptação de plataforma (proteção contra toque acidental em touchscreen), não é bug |
 
 ### Reservas
 | Elemento | Status |
@@ -189,8 +191,19 @@ cancelamento (commit `d895b3a`).
 ## Progresso da rodada autônoma (`/loop`, sem device — 2026-07-03 à noite)
 
 Trabalho de auditoria **a nível de código apenas** (celular fora do alcance) seguindo
-`docs/meta-app-android-retranscricao-s41.md`. Cobertura até agora: **Detalhe do item**
-(gap grande fechado — 8 seções inteiras que faltavam, ver tabela acima). Nada aqui foi
-testado em device — todo item novo marcado 🔧, nunca ✅. Próximo na ordem do plano:
-Perfil (card/logout/Favoritos) → Reservas (lista/detalhe/checkout fim a fim) → Chat
+`docs/meta-app-android-retranscricao-s41.md`. Nada aqui foi testado em device — todo
+item novo marcado 🔧, nunca ✅. Cobertura até agora:
+
+1. **Detalhe do item** — 8 seções inteiras que faltavam (badge Eco, regras do
+   anunciante, calculadora comprar-vs-alugar, requisitos, card do proprietário
+   navegável, editar anúncio, trust box, política de cancelamento).
+2. **Perfil** — estatísticas + avaliações recebidas não existiam (API estendida,
+   aditivo); fix de hardcode de URL; logout revisado (diálogo de confirmação é
+   adaptação de plataforma aceita, não bug).
+3. **Favoritos** — layout errado (lista 1 coluna → devia ser grid 2 colunas, mesmo
+   `ItemCard` do Explorar); texto do empty state errado; botão CTA inventado
+   removido. Extraído `components/items/ItemCard.tsx` compartilhado (elimina uma
+   duplicação que já tinha causado o gap de layout).
+
+Próximo na ordem do plano: Reservas (lista/detalhe/checkout fim a fim) → Chat
 (lista/thread) → Login → relatório de progresso final.
