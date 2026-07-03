@@ -22,7 +22,8 @@ import { API_URL } from "@/lib/api"
 
 // Rotas que existem no site mas ainda não têm tela nativa — abrem no navegador
 // em vez de dar "Unmatched Route". Remover daqui quando a tela nativa existir.
-const EXTERNAL_ONLY_ROUTES = new Set(["/sobre"])
+// MOB-BL-meus-anuncios: mesmo tratamento já aplicado em app/(tabs)/perfil.tsx.
+const EXTERNAL_ONLY_ROUTES = new Set(["/sobre", "/meus-anuncios"])
 
 // ── Constantes — transcritas VERBATIM de MobileMenu.tsx do site ──────────────
 
