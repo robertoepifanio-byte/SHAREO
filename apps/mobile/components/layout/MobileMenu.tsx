@@ -238,9 +238,14 @@ export function MobileMenu({ visible, onClose, isLoggedIn, role, onLogout }: Mob
           <Divider />
 
           {/* ── Explorar expansível ── */}
+          {/* key=link.label (não link.href): as 5 entradas apontam pro mesmo
+              /explorar (comentário acima de EXPLORAR_LINKS) — usar href como
+              key causava "Encountered two children with the same key" (achado
+              testando ao vivo em device, 2026-07-03), risco real de reconciliação
+              React duplicar/omitir itens. label é único entre as 5 entradas. */}
           <SectionBtn label="Explorar" open={explorarOpen} onToggle={() => setExplorarOpen(v => !v)} />
           {explorarOpen && EXPLORAR_LINKS.map(link => (
-            <SubLink key={link.href} href={link.href} icon={link.icon} label={link.label} />
+            <SubLink key={link.label} href={link.href} icon={link.icon} label={link.label} />
           ))}
 
           {/* ── Anunciar — pill verde (não-admins) ── */}

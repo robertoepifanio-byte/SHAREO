@@ -132,15 +132,29 @@ export default function ExplorarScreen() {
           ? [0, 1, 2, 3].map((i) => (
               <View key={i} style={[s.chipSkeleton, { backgroundColor: "#E2E8F0" }]} />
             ))
-          : categories.map((cat) => (
+          : (
+            <>
+              {/* "Todas Categorias" — fonte: page.tsx linhas 295-309, vem SEMPRE
+                  primeiro, antes da lista buscada. Faltava por completo — a
+                  distribuição visual dos chips parecia "desproporcional" sem
+                  ele ocupando o 1º slot. */}
               <CategoryChip
-                key={cat.id}
-                slug={cat.slug}
-                label={cat.name}
-                active={activeSlug === cat.slug}
-                onPress={() => handleCatPress(cat.slug)}
+                slug="todas"
+                label="Todas Categorias"
+                active={activeSlug === null}
+                onPress={() => setActiveSlug(null)}
               />
-            ))
+              {categories.map((cat) => (
+                <CategoryChip
+                  key={cat.id}
+                  slug={cat.slug}
+                  label={cat.name}
+                  active={activeSlug === cat.slug}
+                  onPress={() => handleCatPress(cat.slug)}
+                />
+              ))}
+            </>
+          )
         }
       </ScrollView>
 
