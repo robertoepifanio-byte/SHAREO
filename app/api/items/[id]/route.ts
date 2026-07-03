@@ -6,6 +6,7 @@ import { UpdateItemSchema } from "@/lib/validations/items"
 import { geocodeItem } from "@/lib/geocodeItem"
 import { userPublicSelect } from "@/lib/prisma/selects"
 import { assertOwnerOrAdmin } from "@/lib/auth/ownership"
+import { getOwnerResponseBadge } from "@/lib/ownerStats"
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -59,15 +60,39 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
       prisma.item.update({ where: { id }, data: { viewCount: { increment: 1 } } }).catch((e) => console.error("[viewCount]", e instanceof Error ? e.message : e))
     )
 
+    // Estatísticas do proprietário — fonte: app/itens/[id]/page.tsx linhas
+    // 122-139 (mesma lógica exata, replicada aqui pra expor via API pro
+    // mobile; a página do site roda isso direto via Server Component, não
+    // consome este endpoint).
+    const [responseBadge, ownerStats] = await Promise.all([
+      getOwnerResponseBadge(item.ownerId),
+      prisma.booking.groupBy({
+        by: ["status"],
+        where: { ownerId: item.ownerId, deletedAt: null },
+        _count: true,
+      }).then((rows) => {
+        const byStatus   = new Map(rows.map((r) => [r.status, r._count]))
+        const totalCount = rows.reduce((s, r) => s + r._count, 0)
+        const completed  = byStatus.get("COMPLETED") ?? 0
+        const responded  = (["CONFIRMED", "ACTIVE", "RETURNED", "COMPLETED"] as const)
+          .reduce((s, k) => s + (byStatus.get(k) ?? 0), 0)
+        return {
+          completedCount: completed,
+          responseRate: totalCount > 0 ? Math.round((responded / totalCount) * 100) : null,
+        }
+      }),
+    ])
+
     // Privacidade (SEC-MIN-06 / MAJ-S14-04): coordenada exata e endereço só p/ dono/admin.
     // Público recebe lat/lng truncadas (~110m) e address omitido.
     const data = (isOwner || isAdmin)
-      ? item
+      ? { ...item, responseBadge, ownerStats }
       : {
           ...item,
           address:   null,
           latitude:  Math.round(item.latitude  * 1000) / 1000,
           longitude: Math.round(item.longitude * 1000) / 1000,
+          responseBadge, ownerStats,
         }
     return NextResponse.json({ data })
   } catch (e) {

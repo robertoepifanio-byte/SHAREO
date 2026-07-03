@@ -56,6 +56,9 @@ interface ItemDetail {
   _count:        { reviews: number; favorites: number }
   // Solicitações pendentes — retornadas apenas quando o usuário é o proprietário
   pendingBookings?: { id: string; borrower: { name: string }; startDate: string }[]
+  // Estatísticas do proprietário — fonte: app/itens/[id]/page.tsx linhas 122-139
+  responseBadge: { label: string; avgHours: number } | null
+  ownerStats:    { completedCount: number; responseRate: number | null }
 }
 
 interface FavoriteStatusResponse { data: { favorited: boolean } }
@@ -515,9 +518,39 @@ export default function ItemDetailScreen() {
             {item.owner.city && (
               <Text style={[s.ownerCity, { color: tokens.muted }]}>📍 {item.owner.city}</Text>
             )}
+            {/* Badge de resposta — fonte: page.tsx linhas 583-587 */}
+            {item.responseBadge && (
+              <Text style={[s.ownerResponseBadge, { color: tokens.green }]}>
+                ⚡ {item.responseBadge.label}
+              </Text>
+            )}
           </View>
           <Text style={{ fontSize: 18, color: tokens.muted }} accessibilityElementsHidden>›</Text>
         </TouchableOpacity>
+
+        {/* Estatísticas do proprietário — fonte: page.tsx linhas 592-616 (P1-23) */}
+        {(item.ownerStats.completedCount > 0 || item.ownerStats.responseRate !== null) && (
+          <View style={[s.ownerStatsGrid, { backgroundColor: tokens.bg, borderColor: tokens.border }]}>
+            {item.ownerStats.completedCount > 0 && (
+              <View style={s.ownerStatCell}>
+                <Text style={[s.ownerStatValue, { color: tokens.navy }]}>
+                  {item.ownerStats.completedCount}
+                </Text>
+                <Text style={[s.ownerStatLabel, { color: tokens.muted }]}>
+                  locaç{item.ownerStats.completedCount === 1 ? "ão" : "ões"} concluída{item.ownerStats.completedCount !== 1 ? "s" : ""}
+                </Text>
+              </View>
+            )}
+            {item.ownerStats.responseRate !== null && (
+              <View style={s.ownerStatCell}>
+                <Text style={[s.ownerStatValue, { color: tokens.navy }]}>
+                  {item.ownerStats.responseRate}%
+                </Text>
+                <Text style={[s.ownerStatLabel, { color: tokens.muted }]}>taxa de resposta</Text>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Editar anúncio — modo proprietário. Sem tela nativa de edição ainda;
             segue o mesmo padrão de fallback já usado em MobileMenu.tsx (Linking
@@ -997,6 +1030,17 @@ const s = StyleSheet.create({
   ownerAvatarText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
   ownerName: { fontSize: 14, fontWeight: "600" },
   ownerCity: { fontSize: 12, marginTop: 2 },
+  ownerResponseBadge: { fontSize: 12, fontWeight: "600", marginTop: 2 },
+
+  // Estatísticas do proprietário — fonte: page.tsx linhas 592-616
+  ownerStatsGrid: {
+    flexDirection: "row", marginTop: 10, borderRadius: 10, borderWidth: 1,
+    paddingHorizontal: 12, paddingVertical: 10,
+  },
+  ownerStatCell: { flex: 1, alignItems: "center" },
+  ownerStatValue: { fontSize: 16, fontWeight: "800" },
+  ownerStatLabel: { fontSize: 10, textAlign: "center", lineHeight: 13, marginTop: 2 },
+
   editListingBtn: {
     marginTop: 10, height: 44, borderWidth: 1, borderRadius: 10,
     alignItems: "center", justifyContent: "center",
