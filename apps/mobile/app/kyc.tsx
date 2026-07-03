@@ -18,10 +18,10 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  Image,
   StyleSheet,
   Platform,
 } from "react-native"
+import { Image } from "expo-image"
 import { router } from "expo-router"
 import { useQuery } from "@tanstack/react-query"
 import * as ImagePicker from "expo-image-picker"
@@ -349,7 +349,7 @@ export default function KycScreen() {
                     <Image
                       source={{ uri: docAsset.uri }}
                       style={s.imagePreview}
-                      resizeMode="cover"
+                      contentFit="cover"
                       accessibilityLabel="Foto do documento selecionada"
                     />
                     <View style={s.changeOverlay}>
@@ -397,7 +397,7 @@ export default function KycScreen() {
                     <Image
                       source={{ uri: selfieAsset.uri }}
                       style={s.imagePreview}
-                      resizeMode="cover"
+                      contentFit="cover"
                       accessibilityLabel="Selfie selecionada"
                     />
                     <View style={s.changeOverlay}>
