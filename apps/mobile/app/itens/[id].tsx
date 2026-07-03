@@ -64,6 +64,32 @@ const CONDITION: Record<string, string> = {
 
 type Mode = "daily" | "weekly" | "monthly"
 
+// Fonte: _PriceCalc.tsx linhas 48-71 — VERBATIM. calcBookingTotal aplica a
+// melhor tarifa (dia/semana/mês) pelo TOTAL de dias, independente do `mode`
+// escolhido na aba (ex.: 10 dias no modo "Diário" com pricePerWeek definido
+// usa tarifa semanal internamente) — o texto do resumo precisa refletir isso,
+// senão o breakdown mostrado diverge do total realmente cobrado.
+function buildBreakdown(
+  days: number, pricePerDay: number,
+  pricePerWeek?: number | null, pricePerMonth?: number | null,
+): string {
+  if (days >= 30 && pricePerMonth) {
+    const months = Math.floor(days / 30), restDays = days % 30
+    const parts: string[] = []
+    if (months > 0)   parts.push(`${months} mês${months > 1 ? "es" : ""} × ${fmtCurrency(pricePerMonth)}`)
+    if (restDays > 0) parts.push(`${restDays} dia${restDays > 1 ? "s" : ""} × ${fmtCurrency(pricePerDay)}`)
+    return parts.join(" + ")
+  }
+  if (days >= 7 && pricePerWeek) {
+    const weeks = Math.floor(days / 7), restDays = days % 7
+    const parts: string[] = []
+    if (weeks > 0)    parts.push(`${weeks} sem${weeks > 1 ? "anas" : "ana"} × ${fmtCurrency(pricePerWeek)}`)
+    if (restDays > 0) parts.push(`${restDays} dia${restDays > 1 ? "s" : ""} × ${fmtCurrency(pricePerDay)}`)
+    return parts.join(" + ")
+  }
+  return `${days} dia${days > 1 ? "s" : ""} × ${fmtCurrency(pricePerDay)}`
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 // Defensivo: `iso` vem do DateTimePicker nativo via dateToISO(), mas "Date value
 // out of bounds" foi reproduzido em device real (causa exata não confirmada —
@@ -161,6 +187,7 @@ export default function ItemDetailScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [numDays, setNumDays]     = useState(1)
   const [note, setNote]           = useState("")
+  const [coupon, setCoupon]       = useState("")
   const [bookingError, setBookingError] = useState("")
   const [pending, setPending]     = useState(false)
   const [success, setSuccess]     = useState(false)
@@ -171,6 +198,16 @@ export default function ItemDetailScreen() {
     queryFn:  () => apiFetch<{ data: ItemDetail }>(`/api/items/${id}`),
     enabled:  !!id,
   })
+
+  // Taxa da plataforma — NUNCA hardcode (regra do CLAUDE.md). Fonte: _PriceCalc.tsx
+  // prop feeRatePct, vindo de getPlatformFeeRate() no Server Component pai do site.
+  // Mobile reaproveita /api/stats (já expõe feeRate em basis points).
+  const { data: statsData } = useQuery({
+    queryKey: ["platform-stats"],
+    queryFn:  () => apiFetch<{ data: { feeRate: number } }>("/api/stats"),
+    staleTime: 5 * 60_000,
+  })
+  const feeRatePct = statsData ? statsData.data.feeRate / 100 : null
 
   const toggleFavorite = useMutation({
     mutationFn: () =>
@@ -238,10 +275,14 @@ export default function ItemDetailScreen() {
     ...(item.pricePerMonth ? ["monthly" as Mode] : []),
   ]
 
-  // ── Cálculo de preço ───────────────────────────────────────────────────────
-  const { totalPrice: subtotalCents } = days > 0
+  // ── Cálculo de preço — fonte: _PriceCalc.tsx linhas 118-131 ───────────────
+  const { totalPrice: subtotalCents, savings: savingsCents } = days > 0
     ? calcBookingTotal(days, item.pricePerDay, item.pricePerWeek, item.pricePerMonth)
-    : { totalPrice: 0 }
+    : { totalPrice: 0, savings: 0 }
+
+  const breakdown = days > 0
+    ? buildBreakdown(days, item.pricePerDay, item.pricePerWeek, item.pricePerMonth)
+    : ""
 
   // Teto D2: fonte _PriceCalc.tsx linha 134
   const overLimit = subtotalCents > CHECKOUT_MAX_CENTS
@@ -293,6 +334,7 @@ export default function ItemDetailScreen() {
           startDate: new Date(`${startDate}T12:00:00`).toISOString(),
           endDate:   new Date(`${endDate}T12:00:00`).toISOString(),
           borrowerNote: note || undefined,
+          couponCode:   coupon.trim() || undefined,
           client: "mobile",
         }),
       })
@@ -597,13 +639,22 @@ export default function ItemDetailScreen() {
               {days > 0 && startDate ? (
                 <>
                   <View style={s.summaryRow}>
-                    <Text style={[s.summaryLabel, { color: tokens.muted }]}>
-                      {days} dia{days > 1 ? "s" : ""} × {fmtCurrency(item.pricePerDay)}
-                    </Text>
+                    <Text style={[s.summaryLabel, { color: tokens.muted }]}>{breakdown}</Text>
                     <Text style={[s.summaryValue, { color: tokens.muted }]}>
                       {fmtCurrency(subtotalCents)}
                     </Text>
                   </View>
+                  {/* Desconto por período — fonte: _PriceCalc.tsx linhas 332-337 */}
+                  {savingsCents > 0 && (
+                    <View style={s.summaryRow}>
+                      <Text style={[s.summaryLabel, { color: tokens.success, fontSize: 12, fontWeight: "600" }]}>
+                        🏷️ Desconto por período
+                      </Text>
+                      <Text style={{ color: tokens.success, fontSize: 12, fontWeight: "600" }}>
+                        -{fmtCurrency(savingsCents)}
+                      </Text>
+                    </View>
+                  )}
                   <View style={[s.summaryDivider, { backgroundColor: tokens.border }]} />
                   <View style={s.summaryRow}>
                     <Text style={[s.summaryTotal, { color: tokens.text }]}>Total do aluguel</Text>
@@ -611,6 +662,13 @@ export default function ItemDetailScreen() {
                       {fmtCurrency(subtotalCents)}
                     </Text>
                   </View>
+                  {/* Transparência da taxa — copy verbatim de _PriceCalc.tsx linha 364,
+                      feeRatePct SEMPRE dinâmico (nunca hardcode — regra do CLAUDE.md) */}
+                  {feeRatePct != null && (
+                    <Text style={[s.summaryFeeNote, { color: tokens.muted }]}>
+                      Você paga apenas o valor da locação. A ShareO retém {feeRatePct % 1 === 0 ? feeRatePct.toFixed(0) : feeRatePct}% do repasse ao proprietário.
+                    </Text>
+                  )}
                 </>
               ) : (
                 <View style={s.summaryRow}>
@@ -653,6 +711,29 @@ export default function ItemDetailScreen() {
                   textAlignVertical="top"
                   accessibilityLabel="Mensagem ao proprietário"
                 />
+              </View>
+            )}
+
+            {/* Cupom de desconto — fonte: _PriceCalc.tsx linhas 393-413 (P3-20) */}
+            {isReady && user && (
+              <View style={s.fieldGroup}>
+                <Text style={[s.fieldLabel, { color: tokens.muted }]}>
+                  CUPOM DE DESCONTO (OPCIONAL)
+                </Text>
+                <TextInput
+                  style={[s.dateInput, { borderColor: tokens.border, color: tokens.text, backgroundColor: tokens.surface, textTransform: "uppercase" }]}
+                  placeholder="Ex.: PROMO-AB2CD"
+                  placeholderTextColor={tokens.muted}
+                  value={coupon}
+                  onChangeText={(v) => setCoupon(v.toUpperCase())}
+                  maxLength={30}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  accessibilityLabel="Cupom de desconto"
+                />
+                <Text style={[s.devNote, { color: tokens.muted }]}>
+                  O desconto é aplicado no valor final da reserva.
+                </Text>
               </View>
             )}
 
@@ -850,6 +931,7 @@ const s = StyleSheet.create({
   summaryValue:   { fontSize: 13 },
   summaryDivider: { height: 1, marginVertical: 8 },
   summaryTotal:   { fontSize: 14, fontWeight: "700" },
+  summaryFeeNote: { fontSize: 11, lineHeight: 16, marginTop: 8 },
 
   // Aviso de teto — copy verbatim de _PriceCalc.tsx
   limitWarn: {
