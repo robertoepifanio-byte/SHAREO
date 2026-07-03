@@ -101,8 +101,9 @@ testado ainda | ➡️ abre no site por decisão de escopo (não testar como bug
 |---|---|
 | Busca por texto | 🔧 corrigido (parâmetro errado) — re-testar que resultado muda |
 | Chips de categoria (ícone + clique filtra) | 🔧 corrigido (ícone errado + filtro não funcionava) — re-testar os dois |
-| Grid de itens (2 colunas, foto, preço, favoritar) | ❌ não testado nesta rodada |
-| Pull-to-refresh | ❌ não testado |
+| Grid de itens (2 colunas, foto, preço, favoritar, verificado) | 🔧 auditado no código (loop autônomo, sem device) contra `components/items/ItemCard.tsx` — badge "Eco" inventado removido, botão de favoritar e badge de verificado adicionados (faltavam por completo) |
+| Pull-to-refresh | ❌ não testado (implementação já existente, não auditada nesta rodada) |
+| ⏸️ Pendente (exigiria estender API, não implementado) | Estrelas de avaliação e distância em km — `/api/items` não calcula `avgRating`/`distanceKm` hoje |
 
 ### Detalhe do item
 | Elemento | Status |
@@ -110,8 +111,8 @@ testado ainda | ➡️ abre no site por decisão de escopo (não testar como bug
 | Galeria de fotos | ❌ não testado |
 | Modo locatário: tabs diária/semanal/mensal | ❌ não testado |
 | **Campo de data de retirada (calendário nativo)** | 🔧 corrigido 2× hoje (era TextInput; depois crash "Date value out of bounds") — **prioridade #1 no retorno**, não foi possível confirmar se o fix definitivo funciona |
-| Resumo de preço + aviso de teto R$500 | ❌ não testado |
-| Botão "Solicitar locação" | ❌ não testado |
+| Resumo de preço + aviso de teto R$500 | 🔧 auditado no código contra `_PriceCalc.tsx` (473 linhas, lido por inteiro) — breakdown corrigido (mostrava "N dias × diária" mesmo quando a tarifa semanal/mensal era aplicada internamente, divergindo do total), desconto por período estava sendo calculado mas nunca exibido, texto de transparência da taxa ausente (adicionado, taxa via `/api/stats`, nunca hardcode), campo de cupom (P3-20) ausente (adicionado, `couponCode` confirmado no schema real) |
+| Botão "Solicitar locação" | ❌ não testado (payload atualizado com `couponCode` — não testado fim a fim) |
 | Modo proprietário: badge "Seu item" + solicitações pendentes | ❌ não testado |
 | Rules of Hooks (não deve mais dar "Rendered more hooks") | 🔧 corrigido — re-confirmar ao abrir qualquer item |
 
