@@ -164,6 +164,24 @@ export default function ItemDetailScreen() {
 
   const item = data?.data
 
+  // ── Data de devolução calculada automaticamente ────────────────────────────
+  // Fonte: _PriceCalc.tsx linhas 104-109
+  // Hooks ficam ANTES de qualquer return condicional (Rules of Hooks) — não
+  // dependem de `item`, só de state, então é seguro calculá-los sempre.
+  const endDate = useMemo(() => {
+    if (!startDate) return ""
+    if (mode === "weekly")  return addDays(startDate, 7)
+    if (mode === "monthly") return addDays(startDate, 30)
+    return addDays(startDate, numDays)
+  }, [startDate, mode, numDays])
+
+  const days = useMemo(() => {
+    if (!startDate) return 0
+    if (mode === "weekly")  return 7
+    if (mode === "monthly") return 30
+    return numDays
+  }, [startDate, mode, numDays])
+
   // ── Skeleton ───────────────────────────────────────────────────────────────
   if (isLoading) return <ItemDetailSkeleton />
 
@@ -194,22 +212,6 @@ export default function ItemDetailScreen() {
     ...(item.pricePerWeek  ? ["weekly"  as Mode] : []),
     ...(item.pricePerMonth ? ["monthly" as Mode] : []),
   ]
-
-  // ── Data de devolução calculada automaticamente ────────────────────────────
-  // Fonte: _PriceCalc.tsx linhas 104-109
-  const endDate = useMemo(() => {
-    if (!startDate) return ""
-    if (mode === "weekly")  return addDays(startDate, 7)
-    if (mode === "monthly") return addDays(startDate, 30)
-    return addDays(startDate, numDays)
-  }, [startDate, mode, numDays])
-
-  const days = useMemo(() => {
-    if (!startDate) return 0
-    if (mode === "weekly")  return 7
-    if (mode === "monthly") return 30
-    return numDays
-  }, [startDate, mode, numDays])
 
   // ── Cálculo de preço ───────────────────────────────────────────────────────
   const { totalPrice: subtotalCents } = days > 0
