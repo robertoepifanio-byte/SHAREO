@@ -91,6 +91,7 @@ escopo (não testar como bug).
 | Seção | Status |
 |---|---|
 | Hero (H1, CTAs, busca, 4 stats) | 🔧 stats dependiam de `/api/stats`, que não existia — criado hoje; re-confirmar os 4 números aparecem |
+| **TODO — Hero: imagem dos itens ausente** | ❌ **achado em teste ao vivo 2026-07-03**: o site usa `<Image src="/logos/hero-items.webp">` (`app/page.tsx` linha ~159, furadeira/câmera/caixa de som/bike/escada) logo abaixo do H1 — o mobile só tem o texto, sem a imagem. Não implementado ainda (usuário pediu só pra registrar no TODO por ora) |
 | Simulador de Renda (tabela + busca interativa) | 🔧 seção nova hoje — nunca testada em device |
 | Explorar por categoria (cards com PNG) | 🔧 seção nova — nunca testada em device |
 | Como funciona (3 passos) | 🔧 seção nova — nunca testada em device |
