@@ -73,6 +73,26 @@ algo parecido, mas nunca rodou o app de verdade nem comparou elemento a elemento
    inventar comportamento. Já aconteceu 2× nesta campanha de agentes inventarem layout
    quando o site tinha a resposta certa a um grep de distância.
 
+## Lição adicional (achada testando ao vivo pós-campanha)
+
+Mesmo depois da campanha de 3 frentes + validação de gates, o teste ao vivo no device
+achou **3 bugs novos** que nenhum gate automatizado pega:
+1. `<ellipse>` minúsculo em vez de `<Ellipse>` do react-native-svg (crash nativo,
+   `tsc` não acusa porque JSX aceita qualquer string como nome de elemento host).
+2. Link do menu lateral para `/meus-anuncios` não coberto pelo mesmo fix já aplicado
+   em `perfil.tsx` — **corrigir o mesmo tipo de bug em UM lugar não garante que TODAS
+   as ocorrências foram cobertas**, se houver mais de um caminho de código para o mesmo link.
+3. **Praticamente todo submenu do `MobileMenu.tsx` estava quebrado** — 27 de 34 hrefs
+   do arquivo não correspondiam a nenhuma rota nativa. O grep de rotas do protocolo
+   (seção 7) pega isso SE for rodado no arquivo certo — a Frente B/C rodaram o grep
+   nos arquivos que tocaram, mas `MobileMenu.tsx` não fazia parte do escopo declarado
+   de nenhuma frente, então nunca foi auditado.
+
+**Correção ao protocolo:** o grep de rotas (seção 7) precisa rodar sobre **`app/` E
+`components/`, sempre o repo inteiro**, não só os arquivos que a frente tocou —
+componentes compartilhados como `MobileMenu.tsx`/`BottomNav.tsx`/`AppHeader.tsx` têm
+links que nenhuma frente "possui", mas que todas as telas renderizam.
+
 ## Escopo desta rodada
 
 | Frente | Telas/arquivos | Status |
