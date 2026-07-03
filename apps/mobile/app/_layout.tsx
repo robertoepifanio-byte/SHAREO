@@ -15,6 +15,7 @@ import {
 } from "@expo-google-fonts/montserrat"
 import { useAuth } from "@/lib/auth"
 import { ThemeProvider } from "@/lib/theme"
+import { ErrorBoundary } from "@/components/ErrorBoundary"
 import "../global.css"
 
 const queryClient = new QueryClient({
@@ -37,15 +38,17 @@ export default function RootLayout() {
   if (!fontsLoaded) return null
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <ThemeProvider>
-          <QueryClientProvider client={queryClient}>
-            <StatusBar style="auto" />
-            <Stack screenOptions={{ headerShown: false }} />
-          </QueryClientProvider>
-        </ThemeProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <ErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <ThemeProvider>
+            <QueryClientProvider client={queryClient}>
+              <StatusBar style="auto" />
+              <Stack screenOptions={{ headerShown: false }} />
+            </QueryClientProvider>
+          </ThemeProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   )
 }
