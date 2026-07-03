@@ -74,7 +74,9 @@ export default function PerfilScreen() {
 
   const menuItems: MenuItem[] = [
     { label: "Anunciar item",            icon: "plus",    onPress: () => router.push("/itens/novo") },
-    { label: "Meus anúncios",            icon: "package", onPress: () => router.push("/meus-anuncios") },
+    // TODO(MOB-BL-meus-anuncios): tela "/meus-anuncios" nunca foi criada — rota inexistente,
+    // botão sempre foi inerte. Cast p/ destravar tsc sem inventar a tela sob pressão de prazo.
+    { label: "Meus anúncios",            icon: "package", onPress: () => router.push("/meus-anuncios" as never) },
     { label: "Favoritos",                icon: "heart",   onPress: () => router.push("/favoritos") },
     { label: "Verificação de identidade", icon: "idcard",  onPress: () => router.push("/kyc") },
     { label: "Sair",                     icon: "logout",  onPress: handleLogout, danger: true },
