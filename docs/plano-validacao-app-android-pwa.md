@@ -99,6 +99,7 @@ escopo (não testar como bug).
 | Quem já está ganhando (depoimentos) | 🔧 seção nova — nunca testada em device |
 | Itens mais procurados (grid) | 🔧 seção nova — nunca testada em device |
 | Segurança (3 pilares + taxa dinâmica) | 🔧 seção nova — conferir que a % da taxa bate com `/admin/financeiro` |
+| **TODO — Lista VIP / captação de fundadores (`ListaVIP.tsx`)** | ❌ **achado em teste ao vivo 2026-07-03 (revisão da decisão anterior)**: seção inteira do site ausente no mobile — badge "Pré-lançamento · Primeiros no Brasil", título "O Shareo está chegando. Entre na lista.", 4 cards (Condições especiais / Verificação de perfil gratuita / Acesso antecipado / Primeiro a descobrir), formulário `FounderCaptureForm` (captura lead), contador social dinâmico (`founderLead.count`). Tinha sido decidido pular na 1ª rodada do redesign do Home (ver [[project-mobile-redesign-transcricao]]); usuário reconsiderou testando ao vivo e agora quer no TODO. Escopo maior — formulário + dado real do banco, não é só conteúdo estático |
 
 ### Explorar
 | Elemento | Status |
