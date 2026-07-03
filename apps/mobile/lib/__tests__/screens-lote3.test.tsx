@@ -132,20 +132,21 @@ describe("FavoritosScreen", () => {
     expect(await screen.findByText("Nenhum favorito ainda")).toBeTruthy()
   })
 
-  it("logado sem favoritos: 'Toque no coração em qualquer item para salvar' (verbatim)", async () => {
+  it("logado sem favoritos: 'Toque no coração em qualquer item para salvá-lo aqui.' (verbatim do site, favoritos/page.tsx:63)", async () => {
     withUser()
     const { apiFetch } = require("@/lib/api") as { apiFetch: jest.Mock }
     apiFetch.mockResolvedValueOnce({ data: [] })
     wrap(<FavoritosScreen />)
-    expect(await screen.findByText("Toque no coração em qualquer item para salvar")).toBeTruthy()
+    expect(await screen.findByText("Toque no coração em qualquer item para salvá-lo aqui.")).toBeTruthy()
   })
 
-  it("logado sem favoritos: botão 'Explorar itens' (verbatim)", async () => {
+  it("logado sem favoritos: sem botão CTA inventado (site não passa `action` ao EmptyState, favoritos/page.tsx:60-64)", async () => {
     withUser()
     const { apiFetch } = require("@/lib/api") as { apiFetch: jest.Mock }
     apiFetch.mockResolvedValueOnce({ data: [] })
     wrap(<FavoritosScreen />)
-    expect(await screen.findByText("Explorar itens")).toBeTruthy()
+    await screen.findByText("Nenhum favorito ainda")
+    expect(screen.queryByText("Explorar itens")).toBeNull()
   })
 
   it("logado com favoritos: exibe título do item (mock)", async () => {
@@ -185,20 +186,22 @@ describe("KycScreen", () => {
     expect(screen.getByText("Entrar")).toBeTruthy()
   })
 
-  it("logado: header 'Verificação de identidade' (verbatim)", async () => {
+  it("logado: 'Verificação de identidade' aparece 2× — header da tela + título do box explicativo (verbatim de app/perfil/documentos/page.tsx:89, corrigido de 'Por que verificar sua identidade?' que era paráfrase inventada)", async () => {
     withUser()
     const { apiFetch } = require("@/lib/api") as { apiFetch: jest.Mock }
     apiFetch.mockResolvedValueOnce({ data: { idVerificationStatus: null, isVerified: false } })
     wrap(<KycScreen />)
-    expect(await screen.findByText("Verificação de identidade")).toBeTruthy()
+    expect(await screen.findAllByText("Verificação de identidade")).toHaveLength(2)
   })
 
-  it("logado: 'Por que verificar sua identidade?' (verbatim)", async () => {
+  it("logado: texto do box explicativo verbatim de app/perfil/documentos/page.tsx:91", async () => {
     withUser()
     const { apiFetch } = require("@/lib/api") as { apiFetch: jest.Mock }
     apiFetch.mockResolvedValueOnce({ data: { idVerificationStatus: null, isVerified: false } })
     wrap(<KycScreen />)
-    expect(await screen.findByText("Por que verificar sua identidade?")).toBeTruthy()
+    expect(await screen.findByText(
+      "A verificação de identidade aumenta a confiança dos outros usuários e desbloqueia locações de maior valor."
+    )).toBeTruthy()
   })
 
   it("logado: labels de upload verbatim do site", async () => {
@@ -289,7 +292,7 @@ describe("ChatThreadScreen (mensagens/[id])", () => {
     expect(screen.getByText("Faça login para ver mensagens")).toBeTruthy()
   })
 
-  it("logado, sem mensagens: empty state '💬' + 'Nenhuma mensagem ainda' (verbatim)", async () => {
+  it("logado, sem mensagens: empty state personalizado 'Diga olá para {nome}!' (verbatim de _ChatWindow.tsx:200-203, não 'Seja o primeiro...' que nunca existiu no site)", async () => {
     withUser()
     const { apiFetch } = require("@/lib/api") as { apiFetch: jest.Mock }
     apiFetch.mockResolvedValueOnce({
@@ -300,21 +303,7 @@ describe("ChatThreadScreen (mensagens/[id])", () => {
       },
     })
     wrap(<ChatThreadScreen />)
-    expect(await screen.findByText("Nenhuma mensagem ainda")).toBeTruthy()
-  })
-
-  it("logado, sem mensagens: 'Seja o primeiro a dizer olá!' (verbatim)", async () => {
-    withUser()
-    const { apiFetch } = require("@/lib/api") as { apiFetch: jest.Mock }
-    apiFetch.mockResolvedValueOnce({
-      data: {
-        id: "conv-123", otherUser: { id: "u2", name: "Maria", avatarUrl: null },
-        booking: null, messages: [],
-        meta: { total: 0, page: 1, limit: 20, hasMore: false },
-      },
-    })
-    wrap(<ChatThreadScreen />)
-    expect(await screen.findByText("Seja o primeiro a dizer olá!")).toBeTruthy()
+    expect(await screen.findByText("Nenhuma mensagem ainda. Diga olá para Maria!")).toBeTruthy()
   })
 
   it("logado: campo de input com placeholder 'Escreva uma mensagem...' (verbatim)", async () => {

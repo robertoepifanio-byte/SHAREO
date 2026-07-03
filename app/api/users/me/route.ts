@@ -207,24 +207,52 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    const user = await prisma.user.findUnique({
-      where:  { id: userId },
-      select: {
-        id:           true,
-        name:         true,
-        email:        true,
-        bio:          true,
-        phone:        true,
-        city:         true,
-        state:        true,
-        neighborhood: true,
-        street:       true,
-        avatarUrl:    true,
-        userType:     true,
-        isVerified:   true,
-        createdAt:    true,
-      },
-    })
+    // Fonte: app/perfil/page.tsx linhas 40-81 — mesmos agregados do perfil
+    // web (stats + últimas 5 avaliações recebidas), pra permitir paridade
+    // no app mobile sem duplicar a query em dois shapes diferentes.
+    const [user, reviewStats] = await Promise.all([
+      prisma.user.findUnique({
+        where:  { id: userId },
+        select: {
+          id:           true,
+          name:         true,
+          email:        true,
+          bio:          true,
+          phone:        true,
+          city:         true,
+          state:        true,
+          neighborhood: true,
+          street:       true,
+          avatarUrl:    true,
+          userType:     true,
+          isVerified:   true,
+          createdAt:    true,
+          _count: {
+            select: {
+              items:              { where: { status: { in: ["AVAILABLE", "PAUSED", "DRAFT"] }, deletedAt: null } },
+              bookingsAsBorrower: { where: { status: { in: ["RETURNED", "COMPLETED"] } } },
+              bookingsAsOwner:    { where: { status: { in: ["RETURNED", "COMPLETED"] } } },
+            },
+          },
+          reviewsReceived: {
+            select: {
+              rating:     true,
+              comment:    true,
+              reviewType: true,
+              reviewer:   { select: { name: true, avatarUrl: true } },
+              createdAt:  true,
+            },
+            orderBy: { createdAt: "desc" },
+            take:    5,
+          },
+        },
+      }),
+      prisma.review.aggregate({
+        where:  { revieweeId: userId },
+        _avg:   { rating: true },
+        _count: { _all: true },
+      }),
+    ])
 
     if (!user) {
       return NextResponse.json(
@@ -243,7 +271,13 @@ export async function GET(req: NextRequest) {
       requestId: req.headers.get("x-vercel-id"),
     })
 
-    return NextResponse.json({ data: user })
+    return NextResponse.json({
+      data: {
+        ...user,
+        avgRating:   reviewStats._avg.rating,
+        reviewCount: reviewStats._count._all,
+      },
+    })
   } catch (e) {
     console.error("[GET /api/users/me]", e instanceof Error ? e.message : e)
     return NextResponse.json(

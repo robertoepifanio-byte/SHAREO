@@ -112,8 +112,11 @@ export async function GET(req: NextRequest, { params }: Params) {
       data: {
         id:        conv.id,
         createdAt: conv.createdAt,
+        // id/item.id — fonte: app/mensagens/[id]/page.tsx linhas 93-109 ("Ver
+        // reserva" + link do item no cabeçalho). Já vinham do select acima, só
+        // não estavam no shape de saída.
         booking:   conv.booking
-          ? { item: { title: conv.booking.item.title } }
+          ? { id: conv.booking.id, item: { id: conv.booking.item.id, title: conv.booking.item.title } }
           : null,
         otherUser: other
           ? { id: other.user.id, name: other.user.name, avatarUrl: other.user.avatarUrl }
@@ -124,9 +127,12 @@ export async function GET(req: NextRequest, { params }: Params) {
           avatarUrl: p.user.avatarUrl,
           lastReadAt: p.lastReadAt,
         })),
+        // readAt — fonte: _ChatWindow.tsx linha 232 (recibo "✓✓" quando a
+        // própria mensagem foi lida pelo destinatário).
         messages: messages.map((m) => ({
           id:        m.id,
           body:      m.content,
+          readAt:    m.readAt,
           createdAt: m.createdAt,
           sender:    { id: m.sender.id, name: m.sender.name },
         })),

@@ -70,8 +70,11 @@ export async function GET(req: NextRequest) {
         otherUser: other
           ? { id: other.user.id, name: other.user.name, avatarUrl: other.user.avatarUrl }
           : null,
+        // senderId — fonte: app/mensagens/page.tsx linha 111 (prefixo "Você: "
+        // quando o remetente é o próprio usuário). Já vinha do select acima,
+        // só não estava no shape de saída.
         lastMessage: lastMsg
-          ? { body: lastMsg.content.slice(0, 100), createdAt: lastMsg.createdAt }
+          ? { body: lastMsg.content.slice(0, 100), createdAt: lastMsg.createdAt, senderId: lastMsg.senderId }
           : null,
       }
     })

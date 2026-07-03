@@ -387,6 +387,9 @@ export default function BookingCheckoutScreen() {
           </View>
         )}
 
+        {/* TODO(revisão): cupom de desconto — _PriceCalc.tsx linhas 393-413.
+            Campo couponCode no site; ausente no mobile. Adicionar quando decidido (P3-20). */}
+
         {/* ── Nota ao proprietário — verbatim de _PriceCalc.tsx linhas 376-391 ── */}
         <View style={{ marginBottom: 20 }}>
           <Text style={[s.fieldLabel, { color: tokens.muted }]}>

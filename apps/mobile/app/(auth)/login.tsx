@@ -86,7 +86,17 @@ export default function LoginScreen() {
 
         {/* Card branco */}
         <View style={s.card}>
-          <Text style={s.cardTitle}>Entrar</Text>
+          {/* "← Voltar para o início" — fonte: LoginForm.tsx linhas 53-63 (ausente até então) */}
+          <Link href="/" asChild>
+            <TouchableOpacity style={s.backHomeLink} accessibilityRole="link">
+              <Text style={s.backHomeLinkText}>← Voltar para o início</Text>
+            </TouchableOpacity>
+          </Link>
+
+          {/* Título + subtítulo — verbatim de LoginForm.tsx linhas 65-68
+              (mobile tinha só "Entrar", faltava "na sua conta" + o subtítulo inteiro) */}
+          <Text style={s.cardTitle}>Entrar na sua conta</Text>
+          <Text style={s.cardSubtitle}>Bem-vindo de volta ao ShareO</Text>
 
           {/* Erro inline — estado error */}
           {error && (
@@ -167,7 +177,8 @@ export default function LoginScreen() {
           <Text style={s.createLabel}>Não tem conta? </Text>
           <Link href="/(auth)/register" asChild>
             <TouchableOpacity accessibilityRole="link">
-              <Text style={s.createLink}>Criar conta</Text>
+              {/* "grátis" — verbatim de LoginForm.tsx linha 137, faltava */}
+              <Text style={s.createLink}>Criar conta grátis</Text>
             </TouchableOpacity>
           </Link>
         </View>
@@ -203,10 +214,24 @@ const s = StyleSheet.create({
     borderColor:     "#E2E8F0",
     padding:         24,
   },
+  backHomeLink: {
+    alignSelf:    "flex-start",
+    minHeight:    32,
+    marginBottom: 8,
+    justifyContent: "center",
+  },
+  backHomeLinkText: { fontSize: 13, color: "#64748B" },
   cardTitle: {
     fontSize:     22,
     fontFamily:   "Montserrat_700Bold",
     color:        "#003366",
+    textAlign:    "center",
+    marginBottom: 4,
+  },
+  cardSubtitle: {
+    fontSize:     13,
+    color:        "#64748B",
+    textAlign:    "center",
     marginBottom: 20,
   },
   errorBox: {

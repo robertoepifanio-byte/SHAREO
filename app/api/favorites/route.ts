@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
             isApproved:  true,
             deletedAt:   true,
             images:   { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
-            category: { select: { name: true } },
+            category: { select: { name: true, slug: true } },
             owner:    { select: { name: true, isVerified: true } },
             _count:   { select: { reviews: true, favorites: true } },
           },

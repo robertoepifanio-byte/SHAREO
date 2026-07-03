@@ -16,15 +16,18 @@ import {
   Alert,
   TextInput,
   Platform,
+  Linking,
 } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Image } from "expo-image"
+import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { apiFetch } from "@/lib/api"
+import { apiFetch, API_URL } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
 import { fmtCurrency, calcBookingTotal } from "@/lib/pricing"
 import { useTheme } from "@/lib/theme"
+import { Stars } from "@/components/ui/Stars"
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 interface ItemDetail {
@@ -42,13 +45,25 @@ interface ItemDetail {
   neighborhood:  string | null
   status:        string
   ownerId:       string
+  rules:                  string | null
+  estimatedRetailPrice:   number | null
+  requireIdVerification:  boolean
+  requirePhone:           boolean
   category:      { name: string }
-  owner:         { id: string; name: string; isVerified: boolean; city: string | null }
+  owner:         { id: string; name: string; avatarUrl: string | null; isVerified: boolean; city: string | null }
   images:        { url: string }[]
   reviews:       { id: string; rating: number; comment: string | null; reviewer: { name: string } }[]
   _count:        { reviews: number; favorites: number }
   // Solicitações pendentes — retornadas apenas quando o usuário é o proprietário
   pendingBookings?: { id: string; borrower: { name: string }; startDate: string }[]
+  // Estatísticas do proprietário — fonte: app/itens/[id]/page.tsx linhas 122-139
+  // Opcionais: a API que retorna esses campos (commit 7ab2b9f) ainda não foi
+  // implantada em staging quando este código foi testado ao vivo pela 1ª vez —
+  // o app deve tolerar uma resposta antiga sem esses campos, não assumir que
+  // sempre existem (causou crash real: "Cannot read property 'completedCount'
+  // of undefined").
+  responseBadge?: { label: string; avgHours: number } | null
+  ownerStats?:    { completedCount: number; responseRate: number | null }
 }
 
 interface FavoriteStatusResponse { data: { favorited: boolean } }
@@ -63,11 +78,47 @@ const CONDITION: Record<string, string> = {
 
 type Mode = "daily" | "weekly" | "monthly"
 
+// Fonte: _PriceCalc.tsx linhas 48-71 — VERBATIM. calcBookingTotal aplica a
+// melhor tarifa (dia/semana/mês) pelo TOTAL de dias, independente do `mode`
+// escolhido na aba (ex.: 10 dias no modo "Diário" com pricePerWeek definido
+// usa tarifa semanal internamente) — o texto do resumo precisa refletir isso,
+// senão o breakdown mostrado diverge do total realmente cobrado.
+function buildBreakdown(
+  days: number, pricePerDay: number,
+  pricePerWeek?: number | null, pricePerMonth?: number | null,
+): string {
+  if (days >= 30 && pricePerMonth) {
+    const months = Math.floor(days / 30), restDays = days % 30
+    const parts: string[] = []
+    if (months > 0)   parts.push(`${months} mês${months > 1 ? "es" : ""} × ${fmtCurrency(pricePerMonth)}`)
+    if (restDays > 0) parts.push(`${restDays} dia${restDays > 1 ? "s" : ""} × ${fmtCurrency(pricePerDay)}`)
+    return parts.join(" + ")
+  }
+  if (days >= 7 && pricePerWeek) {
+    const weeks = Math.floor(days / 7), restDays = days % 7
+    const parts: string[] = []
+    if (weeks > 0)    parts.push(`${weeks} sem${weeks > 1 ? "anas" : "ana"} × ${fmtCurrency(pricePerWeek)}`)
+    if (restDays > 0) parts.push(`${restDays} dia${restDays > 1 ? "s" : ""} × ${fmtCurrency(pricePerDay)}`)
+    return parts.join(" + ")
+  }
+  return `${days} dia${days > 1 ? "s" : ""} × ${fmtCurrency(pricePerDay)}`
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
+// Defensivo: `iso` vem do DateTimePicker nativo via dateToISO(), mas "Date value
+// out of bounds" foi reproduzido em device real (causa exata não confirmada —
+// suspeita de parsing de string de data divergente entre motores JS/Android).
+// Nunca deixa a tela inteira crashar por causa de 1 data mal formada.
 function addDays(iso: string, days: number): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return ""
   const d = new Date(`${iso}T12:00:00`)
+  if (Number.isNaN(d.getTime())) return ""
   d.setDate(d.getDate() + days)
-  return d.toISOString().split("T")[0]
+  if (Number.isNaN(d.getTime())) return ""
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  return `${y}-${m}-${day}`
 }
 
 function fmtDate(iso: string) {
@@ -80,15 +131,18 @@ function localToday(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
 }
 
-function Stars({ rating, total = 5 }: { rating: number; total?: number }) {
-  const full  = Math.round(rating)
-  const empty = total - full
-  return (
-    <Text style={{ color: "#F59E0B", fontSize: 14 }}>
-      {"★".repeat(full)}{"☆".repeat(empty)}
-    </Text>
-  )
+// Converte Date (do DateTimePicker nativo) para "AAAA-MM-DD" — mesmo formato
+// que o resto da tela já usa (endDate/days calculados via addDays/fmtDate
+// acima). Trocamos só o controle de entrada, não a lógica de cálculo.
+function dateToISO(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
 }
+
+const todayDate = (() => {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  return d
+})()
 
 // ── Skeleton de loading — equivalente ao <Skeleton> do site ──────────────────
 function SkeletonBox({ h, w = "100%", style }: { h: number; w?: number | string; style?: object }) {
@@ -134,8 +188,10 @@ export default function ItemDetailScreen() {
   // ── Estado do PriceCalc ────────────────────────────────────────────────────
   const [mode, setMode]           = useState<Mode>("daily")
   const [startDate, setStartDate] = useState("")
+  const [showDatePicker, setShowDatePicker] = useState(false)
   const [numDays, setNumDays]     = useState(1)
   const [note, setNote]           = useState("")
+  const [coupon, setCoupon]       = useState("")
   const [bookingError, setBookingError] = useState("")
   const [pending, setPending]     = useState(false)
   const [success, setSuccess]     = useState(false)
@@ -146,6 +202,16 @@ export default function ItemDetailScreen() {
     queryFn:  () => apiFetch<{ data: ItemDetail }>(`/api/items/${id}`),
     enabled:  !!id,
   })
+
+  // Taxa da plataforma — NUNCA hardcode (regra do CLAUDE.md). Fonte: _PriceCalc.tsx
+  // prop feeRatePct, vindo de getPlatformFeeRate() no Server Component pai do site.
+  // Mobile reaproveita /api/stats (já expõe feeRate em basis points).
+  const { data: statsData } = useQuery({
+    queryKey: ["platform-stats"],
+    queryFn:  () => apiFetch<{ data: { feeRate: number } }>("/api/stats"),
+    staleTime: 5 * 60_000,
+  })
+  const feeRatePct = statsData ? statsData.data.feeRate / 100 : null
 
   const toggleFavorite = useMutation({
     mutationFn: () =>
@@ -163,6 +229,24 @@ export default function ItemDetailScreen() {
   })
 
   const item = data?.data
+
+  // ── Data de devolução calculada automaticamente ────────────────────────────
+  // Fonte: _PriceCalc.tsx linhas 104-109
+  // Hooks ficam ANTES de qualquer return condicional (Rules of Hooks) — não
+  // dependem de `item`, só de state, então é seguro calculá-los sempre.
+  const endDate = useMemo(() => {
+    if (!startDate) return ""
+    if (mode === "weekly")  return addDays(startDate, 7)
+    if (mode === "monthly") return addDays(startDate, 30)
+    return addDays(startDate, numDays)
+  }, [startDate, mode, numDays])
+
+  const days = useMemo(() => {
+    if (!startDate) return 0
+    if (mode === "weekly")  return 7
+    if (mode === "monthly") return 30
+    return numDays
+  }, [startDate, mode, numDays])
 
   // ── Skeleton ───────────────────────────────────────────────────────────────
   if (isLoading) return <ItemDetailSkeleton />
@@ -185,6 +269,9 @@ export default function ItemDetailScreen() {
   const avgRating = item.reviews.length
     ? item.reviews.reduce((sum, r) => sum + r.rating, 0) / item.reviews.length
     : null
+  // Fallback defensivo: ownerStats pode faltar se a API respondendo ainda for
+  // uma versão sem o campo (deploy de staging atrasado em relação a este código).
+  const ownerStats = item.ownerStats ?? { completedCount: 0, responseRate: null }
 
   const heartIcon = isFavorited === true ? "❤️" : "🤍"
 
@@ -195,26 +282,14 @@ export default function ItemDetailScreen() {
     ...(item.pricePerMonth ? ["monthly" as Mode] : []),
   ]
 
-  // ── Data de devolução calculada automaticamente ────────────────────────────
-  // Fonte: _PriceCalc.tsx linhas 104-109
-  const endDate = useMemo(() => {
-    if (!startDate) return ""
-    if (mode === "weekly")  return addDays(startDate, 7)
-    if (mode === "monthly") return addDays(startDate, 30)
-    return addDays(startDate, numDays)
-  }, [startDate, mode, numDays])
-
-  const days = useMemo(() => {
-    if (!startDate) return 0
-    if (mode === "weekly")  return 7
-    if (mode === "monthly") return 30
-    return numDays
-  }, [startDate, mode, numDays])
-
-  // ── Cálculo de preço ───────────────────────────────────────────────────────
-  const { totalPrice: subtotalCents } = days > 0
+  // ── Cálculo de preço — fonte: _PriceCalc.tsx linhas 118-131 ───────────────
+  const { totalPrice: subtotalCents, savings: savingsCents } = days > 0
     ? calcBookingTotal(days, item.pricePerDay, item.pricePerWeek, item.pricePerMonth)
-    : { totalPrice: 0 }
+    : { totalPrice: 0, savings: 0 }
+
+  const breakdown = days > 0
+    ? buildBreakdown(days, item.pricePerDay, item.pricePerWeek, item.pricePerMonth)
+    : ""
 
   // Teto D2: fonte _PriceCalc.tsx linha 134
   const overLimit = subtotalCents > CHECKOUT_MAX_CENTS
@@ -225,6 +300,14 @@ export default function ItemDetailScreen() {
     setMode(m)
     setBookingError("")
     if (m === "daily") setNumDays(1)
+  }
+
+  function handleDateChange(_: DateTimePickerEvent, selected?: Date) {
+    setShowDatePicker(Platform.OS === "ios")
+    if (selected) {
+      setStartDate(dateToISO(selected))
+      setBookingError("")
+    }
   }
 
   // ── Ações ──────────────────────────────────────────────────────────────────
@@ -258,6 +341,7 @@ export default function ItemDetailScreen() {
           startDate: new Date(`${startDate}T12:00:00`).toISOString(),
           endDate:   new Date(`${endDate}T12:00:00`).toISOString(),
           borrowerNote: note || undefined,
+          couponCode:   coupon.trim() || undefined,
           client: "mobile",
         }),
       })
@@ -353,6 +437,9 @@ export default function ItemDetailScreen() {
             <Text style={[s.ratingText, { color: tokens.muted }]}>
               {avgRating.toFixed(1)} ({item._count.reviews})
             </Text>
+            <View style={s.ecoBadge}>
+              <Text style={s.ecoBadgeText}>🌿 Eco</Text>
+            </View>
           </View>
         )}
 
@@ -377,11 +464,57 @@ export default function ItemDetailScreen() {
           )}
         </View>
 
-        {/* ── Proprietário ── */}
-        <View style={[s.ownerCard, { backgroundColor: tokens.surface, borderColor: tokens.border }]}>
-          <View style={[s.ownerAvatar, { backgroundColor: tokens.navy }]}>
-            <Text style={s.ownerAvatarText}>{item.owner.name[0]?.toUpperCase()}</Text>
+        {/* Regras do anunciante — fonte: page.tsx linhas 456-471 (P2-51) */}
+        {item.rules && item.rules.trim().length > 0 && (
+          <View style={[s.infoBox, { borderColor: "#FCD34D", backgroundColor: "#FFFBEB" }]}>
+            <Text style={s.infoBoxIcon}>📄</Text>
+            <Text style={[s.infoBoxText, { color: "#92400E" }]}>
+              <Text style={{ fontWeight: "700" }}>Regras do anunciante: </Text>
+              {item.rules}
+            </Text>
           </View>
+        )}
+
+        {/* Calculadora alugar vs comprar — fonte: page.tsx linhas 473-488 */}
+        {item.estimatedRetailPrice != null && item.estimatedRetailPrice > 0 && (
+          <View style={[s.infoBox, { borderColor: tokens.green, backgroundColor: "#F0FDF4" }]}>
+            <Text style={s.infoBoxIcon}>💡</Text>
+            <Text style={[s.infoBoxText, { color: tokens.muted }]}>
+              Comprar este item custa{" "}
+              <Text style={{ color: tokens.text, fontWeight: "700" }}>
+                ~{fmtCurrency(item.estimatedRetailPrice)}
+              </Text>
+              . Alugar por 1 dia sai a{" "}
+              <Text style={{ color: tokens.green, fontWeight: "700" }}>
+                {fmtCurrency(item.pricePerDay)}
+              </Text>{" "}
+              — economia de{" "}
+              <Text style={{ color: tokens.success, fontWeight: "700" }}>
+                {Math.round((1 - item.pricePerDay / item.estimatedRetailPrice) * 100)}%
+              </Text>{" "}
+              vs comprar novo.
+            </Text>
+          </View>
+        )}
+
+        {/* ── Proprietário ── fonte: page.tsx linhas 566-590 (mini card com link p/ perfil) ── */}
+        <TouchableOpacity
+          style={[s.ownerCard, { backgroundColor: tokens.surface, borderColor: tokens.border }]}
+          onPress={() => Linking.openURL(`${API_URL}/perfil/${item.owner.id}`)}
+          accessibilityRole="link"
+          accessibilityLabel={`Ver perfil de ${item.owner.name}`}
+        >
+          {item.owner.avatarUrl ? (
+            <Image
+              source={{ uri: item.owner.avatarUrl }}
+              style={[s.ownerAvatar, { backgroundColor: tokens.border }]}
+              contentFit="cover"
+            />
+          ) : (
+            <View style={[s.ownerAvatar, { backgroundColor: tokens.navy }]}>
+              <Text style={s.ownerAvatarText}>{item.owner.name[0]?.toUpperCase()}</Text>
+            </View>
+          )}
           <View style={{ flex: 1 }}>
             <Text style={[s.ownerName, { color: tokens.text }]}>
               {item.owner.name}
@@ -393,8 +526,53 @@ export default function ItemDetailScreen() {
             {item.owner.city && (
               <Text style={[s.ownerCity, { color: tokens.muted }]}>📍 {item.owner.city}</Text>
             )}
+            {/* Badge de resposta — fonte: page.tsx linhas 583-587 */}
+            {item.responseBadge && (
+              <Text style={[s.ownerResponseBadge, { color: tokens.green }]}>
+                ⚡ {item.responseBadge.label}
+              </Text>
+            )}
           </View>
-        </View>
+          <Text style={{ fontSize: 18, color: tokens.muted }} accessibilityElementsHidden>›</Text>
+        </TouchableOpacity>
+
+        {/* Estatísticas do proprietário — fonte: page.tsx linhas 592-616 (P1-23) */}
+        {(ownerStats.completedCount > 0 || ownerStats.responseRate !== null) && (
+          <View style={[s.ownerStatsGrid, { backgroundColor: tokens.bg, borderColor: tokens.border }]}>
+            {ownerStats.completedCount > 0 && (
+              <View style={s.ownerStatCell}>
+                <Text style={[s.ownerStatValue, { color: tokens.navy }]}>
+                  {ownerStats.completedCount}
+                </Text>
+                <Text style={[s.ownerStatLabel, { color: tokens.muted }]}>
+                  locaç{ownerStats.completedCount === 1 ? "ão" : "ões"} concluída{ownerStats.completedCount !== 1 ? "s" : ""}
+                </Text>
+              </View>
+            )}
+            {ownerStats.responseRate !== null && (
+              <View style={s.ownerStatCell}>
+                <Text style={[s.ownerStatValue, { color: tokens.navy }]}>
+                  {ownerStats.responseRate}%
+                </Text>
+                <Text style={[s.ownerStatLabel, { color: tokens.muted }]}>taxa de resposta</Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Editar anúncio — modo proprietário. Sem tela nativa de edição ainda;
+            segue o mesmo padrão de fallback já usado em MobileMenu.tsx (Linking
+            p/ o site) até que apps/mobile/app/itens/[id]/editar.tsx exista. */}
+        {isOwner && (
+          <TouchableOpacity
+            style={[s.editListingBtn, { borderColor: tokens.border }]}
+            onPress={() => Linking.openURL(`${API_URL}/itens/${item.id}/editar`)}
+            accessibilityRole="link"
+            accessibilityLabel="Editar anúncio"
+          >
+            <Text style={[s.editListingBtnText, { color: tokens.text }]}>✏️ Editar anúncio</Text>
+          </TouchableOpacity>
+        )}
 
         {/* ── Solicitações pendentes (modo proprietário) ── */}
         {isOwner && item.pendingBookings && item.pendingBookings.length > 0 && (
@@ -428,7 +606,22 @@ export default function ItemDetailScreen() {
         {/* ── PriceCalc — só para locatários ── */}
         {!isOwner && (
           <>
-            <Text style={[s.sectionTitle, { color: tokens.navy, marginTop: 24 }]}>
+            {/* Requisitos do proprietário — fonte: page.tsx linhas 490-511 */}
+            {(item.requireIdVerification || item.requirePhone) && (
+              <View style={[s.infoBox, { borderColor: "#FCD34D", backgroundColor: "#FFFBEB", marginTop: 20 }]}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[s.reqTitle, { color: "#92400E" }]}>📋 Requisitos do proprietário</Text>
+                  {item.requireIdVerification && (
+                    <Text style={[s.reqItem, { color: "#B45309" }]}>✓ Identidade verificada</Text>
+                  )}
+                  {item.requirePhone && (
+                    <Text style={[s.reqItem, { color: "#B45309" }]}>✓ Telefone cadastrado</Text>
+                  )}
+                </View>
+              </View>
+            )}
+
+            <Text style={[s.sectionTitle, { color: tokens.navy, marginTop: item.requireIdVerification || item.requirePhone ? 8 : 24 }]}>
               Calcular locação
             </Text>
 
@@ -473,20 +666,38 @@ export default function ItemDetailScreen() {
               </View>
             )}
 
-            {/* Data de retirada */}
+            {/* Data de retirada — calendário nativo, mesmo padrão de reservas/checkout.tsx
+                (equivalente ao <input type="date"> do site, que abre o calendário do
+                navegador; RN não tem isso embutido em TextInput, precisa do picker). */}
             <View style={s.fieldGroup}>
               <Text style={[s.fieldLabel, { color: tokens.muted }]}>RETIRADA</Text>
-              <TextInput
-                style={[s.dateInput, { borderColor: tokens.border, color: tokens.text, backgroundColor: tokens.surface }]}
-                placeholder="AAAA-MM-DD"
-                placeholderTextColor={tokens.muted}
-                value={startDate}
-                onChangeText={(v) => { setStartDate(v); setBookingError("") }}
-                keyboardType="numeric"
-                maxLength={10}
-                accessibilityLabel="Data de retirada"
-                accessibilityHint="Digite no formato AAAA-MM-DD"
-              />
+              <TouchableOpacity
+                onPress={() => setShowDatePicker(true)}
+                style={[s.dateInput, s.dateBtn, { borderColor: tokens.border, backgroundColor: tokens.surface }]}
+                accessibilityRole="button"
+                accessibilityLabel={`Data de retirada: ${startDate ? fmtDate(startDate) : "não selecionada"}. Toque para escolher`}
+              >
+                <Text style={{ color: startDate ? tokens.text : tokens.muted, fontSize: 14 }}>
+                  {startDate ? fmtDate(startDate) : "Selecionar data"}
+                </Text>
+              </TouchableOpacity>
+              {showDatePicker && (
+                <DateTimePicker
+                  value={startDate ? new Date(`${startDate}T12:00:00`) : todayDate}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  minimumDate={todayDate}
+                  onChange={handleDateChange}
+                />
+              )}
+              {showDatePicker && Platform.OS === "ios" && (
+                <TouchableOpacity
+                  onPress={() => setShowDatePicker(false)}
+                  style={{ alignItems: "flex-end", marginTop: 8 }}
+                >
+                  <Text style={{ color: tokens.green, fontSize: 14, fontWeight: "600" }}>Confirmar</Text>
+                </TouchableOpacity>
+              )}
             </View>
 
             {/* Quantidade de dias (modo diário) — fonte: _PriceCalc.tsx linhas 256-292 */}
@@ -544,13 +755,22 @@ export default function ItemDetailScreen() {
               {days > 0 && startDate ? (
                 <>
                   <View style={s.summaryRow}>
-                    <Text style={[s.summaryLabel, { color: tokens.muted }]}>
-                      {days} dia{days > 1 ? "s" : ""} × {fmtCurrency(item.pricePerDay)}
-                    </Text>
+                    <Text style={[s.summaryLabel, { color: tokens.muted }]}>{breakdown}</Text>
                     <Text style={[s.summaryValue, { color: tokens.muted }]}>
                       {fmtCurrency(subtotalCents)}
                     </Text>
                   </View>
+                  {/* Desconto por período — fonte: _PriceCalc.tsx linhas 332-337 */}
+                  {savingsCents > 0 && (
+                    <View style={s.summaryRow}>
+                      <Text style={[s.summaryLabel, { color: tokens.success, fontSize: 12, fontWeight: "600" }]}>
+                        🏷️ Desconto por período
+                      </Text>
+                      <Text style={{ color: tokens.success, fontSize: 12, fontWeight: "600" }}>
+                        -{fmtCurrency(savingsCents)}
+                      </Text>
+                    </View>
+                  )}
                   <View style={[s.summaryDivider, { backgroundColor: tokens.border }]} />
                   <View style={s.summaryRow}>
                     <Text style={[s.summaryTotal, { color: tokens.text }]}>Total do aluguel</Text>
@@ -558,6 +778,13 @@ export default function ItemDetailScreen() {
                       {fmtCurrency(subtotalCents)}
                     </Text>
                   </View>
+                  {/* Transparência da taxa — copy verbatim de _PriceCalc.tsx linha 364,
+                      feeRatePct SEMPRE dinâmico (nunca hardcode — regra do CLAUDE.md) */}
+                  {feeRatePct != null && (
+                    <Text style={[s.summaryFeeNote, { color: tokens.muted }]}>
+                      Você paga apenas o valor da locação. A ShareO retém {feeRatePct % 1 === 0 ? feeRatePct.toFixed(0) : feeRatePct}% do repasse ao proprietário.
+                    </Text>
+                  )}
                 </>
               ) : (
                 <View style={s.summaryRow}>
@@ -602,6 +829,64 @@ export default function ItemDetailScreen() {
                 />
               </View>
             )}
+
+            {/* Cupom de desconto — fonte: _PriceCalc.tsx linhas 393-413 (P3-20) */}
+            {isReady && user && (
+              <View style={s.fieldGroup}>
+                <Text style={[s.fieldLabel, { color: tokens.muted }]}>
+                  CUPOM DE DESCONTO (OPCIONAL)
+                </Text>
+                <TextInput
+                  style={[s.dateInput, { borderColor: tokens.border, color: tokens.text, backgroundColor: tokens.surface, textTransform: "uppercase" }]}
+                  placeholder="Ex.: PROMO-AB2CD"
+                  placeholderTextColor={tokens.muted}
+                  value={coupon}
+                  onChangeText={(v) => setCoupon(v.toUpperCase())}
+                  maxLength={30}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  accessibilityLabel="Cupom de desconto"
+                />
+                <Text style={[s.devNote, { color: tokens.muted }]}>
+                  O desconto é aplicado no valor final da reserva.
+                </Text>
+              </View>
+            )}
+
+            {/* Trust Box — fonte: page.tsx linhas 618-635 (conteúdo estático) */}
+            <View style={[s.trustBox, { borderColor: tokens.green, backgroundColor: "#F0FDF4" }]}>
+              <Text style={[s.trustBoxTitle, { color: tokens.green }]}>🔒 Sua locação está protegida</Text>
+              {[
+                "Cancelamento gratuito até 24h antes",
+                "Item protegido durante a locação",
+                "Suporte ShareO disponível 7 dias por semana",
+              ].map((line) => (
+                <View key={line} style={s.trustBoxRow}>
+                  <Text style={{ color: tokens.green, fontSize: 13 }}>✓</Text>
+                  <Text style={[s.trustBoxText, { color: tokens.text }]}>{line}</Text>
+                </View>
+              ))}
+            </View>
+
+            {/* Política de cancelamento — fonte: page.tsx linhas 637-665 +
+                lib/cancellationPolicy.ts DEFAULTS (o site também usa o export
+                estático CANCELLATION_POLICY_LINES, não a config dinâmica). */}
+            <View style={[s.trustBox, { borderColor: tokens.border, backgroundColor: tokens.surface }]}>
+              <Text style={[s.trustBoxTitle, { color: tokens.navy }]}>Política de cancelamento</Text>
+              {[
+                { label: "Até 24h antes", detail: "reembolso total (100%)" },
+                { label: "Entre 24h e 6h antes", detail: "70% de reembolso" },
+                { label: "Menos de 6h antes", detail: "50% de reembolso" },
+              ].map((line) => (
+                <View key={line.label} style={s.trustBoxRow}>
+                  <Text style={{ color: tokens.muted, fontSize: 13 }}>•</Text>
+                  <Text style={[s.trustBoxText, { color: tokens.text }]}>
+                    <Text style={{ fontWeight: "700" }}>{line.label}: </Text>
+                    <Text style={{ color: tokens.muted }}>{line.detail}</Text>
+                  </Text>
+                </View>
+              ))}
+            </View>
 
             {/* Erro de booking */}
             {bookingError ? (
@@ -719,11 +1004,27 @@ const s = StyleSheet.create({
   title:    { fontSize: 22, fontWeight: "800", marginTop: 4, lineHeight: 28 },
   ratingRow:{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
   ratingText:{ fontSize: 12 },
+  ecoBadge: {
+    marginLeft: 4, borderWidth: 1, borderColor: "rgba(0,123,60,0.3)",
+    backgroundColor: "rgba(0,123,60,0.1)", borderRadius: 20,
+    paddingHorizontal: 8, paddingVertical: 2,
+  },
+  ecoBadgeText: { fontSize: 11, fontWeight: "700", color: "#007B3C" },
 
   // Tags
   tags: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
   tag:  { borderWidth: 1, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4 },
   tagText: { fontSize: 12 },
+
+  // Boxes informativos (regras / calculadora / requisitos) — fonte: page.tsx
+  infoBox: {
+    flexDirection: "row", alignItems: "flex-start", gap: 8,
+    borderWidth: 1, borderRadius: 10, padding: 12, marginTop: 12,
+  },
+  infoBoxIcon: { fontSize: 14, marginTop: 1 },
+  infoBoxText: { flex: 1, fontSize: 12, lineHeight: 18 },
+  reqTitle: { fontSize: 12, fontWeight: "700", marginBottom: 4 },
+  reqItem:  { fontSize: 12, marginTop: 2 },
 
   // Proprietário
   ownerCard: {
@@ -737,6 +1038,28 @@ const s = StyleSheet.create({
   ownerAvatarText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
   ownerName: { fontSize: 14, fontWeight: "600" },
   ownerCity: { fontSize: 12, marginTop: 2 },
+  ownerResponseBadge: { fontSize: 12, fontWeight: "600", marginTop: 2 },
+
+  // Estatísticas do proprietário — fonte: page.tsx linhas 592-616
+  ownerStatsGrid: {
+    flexDirection: "row", marginTop: 10, borderRadius: 10, borderWidth: 1,
+    paddingHorizontal: 12, paddingVertical: 10,
+  },
+  ownerStatCell: { flex: 1, alignItems: "center" },
+  ownerStatValue: { fontSize: 16, fontWeight: "800" },
+  ownerStatLabel: { fontSize: 10, textAlign: "center", lineHeight: 13, marginTop: 2 },
+
+  editListingBtn: {
+    marginTop: 10, height: 44, borderWidth: 1, borderRadius: 10,
+    alignItems: "center", justifyContent: "center",
+  },
+  editListingBtnText: { fontSize: 13, fontWeight: "600" },
+
+  // Trust box / política de cancelamento — fonte: page.tsx linhas 618-665
+  trustBox: { borderWidth: 1, borderRadius: 10, padding: 14, marginTop: 12 },
+  trustBoxTitle: { fontSize: 12, fontWeight: "700", marginBottom: 8 },
+  trustBoxRow: { flexDirection: "row", alignItems: "flex-start", gap: 8, marginTop: 6 },
+  trustBoxText: { flex: 1, fontSize: 12, lineHeight: 17 },
 
   // Solicitações pendentes
   pendingBox:  { borderRadius: 10, borderWidth: 1, padding: 12, marginTop: 16 },
@@ -768,6 +1091,7 @@ const s = StyleSheet.create({
     height: 44, borderWidth: 1, borderRadius: 8,
     paddingHorizontal: 12, fontSize: 14,
   },
+  dateBtn: { justifyContent: "center" },
   dateReadOnly: {
     height: 44, borderWidth: 1, borderRadius: 8,
     paddingHorizontal: 12, justifyContent: "center",
@@ -796,6 +1120,7 @@ const s = StyleSheet.create({
   summaryValue:   { fontSize: 13 },
   summaryDivider: { height: 1, marginVertical: 8 },
   summaryTotal:   { fontSize: 14, fontWeight: "700" },
+  summaryFeeNote: { fontSize: 11, lineHeight: 16, marginTop: 8 },
 
   // Aviso de teto — copy verbatim de _PriceCalc.tsx
   limitWarn: {

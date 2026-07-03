@@ -17,7 +17,7 @@ interface Conversation {
   updatedAt:   string
   unreadCount: number
   otherUser:   { id: string; name: string; avatarUrl: string | null } | null
-  lastMessage: { body: string; createdAt: string } | null
+  lastMessage: { body: string; createdAt: string; senderId: string } | null
   booking:     { item: { title: string } } | null
 }
 
@@ -99,7 +99,11 @@ export default function ChatScreen() {
           <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#007B3C" />
         }
         ItemSeparatorComponent={() => <View style={[s.sep, { backgroundColor: tokens.border }]} />}
-        renderItem={({ item: c }) => (
+        renderItem={({ item: c }) => {
+          // isUnread — fonte: app/mensagens/page.tsx linhas 79-80 (aqui via
+          // unreadCount, que já reflete o mesmo cálculo server-side)
+          const isUnread = c.unreadCount > 0
+          return (
           <TouchableOpacity
             style={[s.convRow, { backgroundColor: tokens.surface }]}
             onPress={() => router.push(`/mensagens/${c.id}`)}
@@ -107,7 +111,7 @@ export default function ChatScreen() {
             accessibilityRole="button"
             accessibilityLabel={
               c.otherUser
-                ? `Conversa com ${c.otherUser.name}${c.unreadCount > 0 ? `, ${c.unreadCount} mensagens não lidas` : ""}`
+                ? `Conversa com ${c.otherUser.name}${isUnread ? `, ${c.unreadCount} mensagens não lidas` : ""}`
                 : "Conversa"
             }
           >
@@ -120,7 +124,13 @@ export default function ChatScreen() {
 
             <View style={s.convBody}>
               <View style={s.convHeader}>
-                <Text style={[s.convName, { color: tokens.text }]}>
+                {/* Nome — negrito se não lida, senão peso normal (fonte: page.tsx linha 99) */}
+                <Text
+                  style={[
+                    s.convName,
+                    { color: tokens.text, fontWeight: isUnread ? "700" : "400", opacity: isUnread ? 1 : 0.8 },
+                  ]}
+                >
                   {c.otherUser?.name ?? "Usuário"}
                 </Text>
                 {c.lastMessage && (
@@ -137,22 +147,32 @@ export default function ChatScreen() {
                 </Text>
               )}
 
-              {/* Última mensagem */}
+              {/* Última mensagem — prefixo "Você: " + negrito se não lida (fonte: page.tsx linhas 109-113) */}
               {c.lastMessage && (
-                <Text style={[s.convLast, { color: tokens.muted }]} numberOfLines={1}>
-                  {c.lastMessage.body}
+                <Text
+                  style={[
+                    s.convLast,
+                    { color: isUnread ? tokens.text : tokens.muted, fontWeight: isUnread ? "600" : "400" },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {c.lastMessage.senderId === user.id ? "Você: " : ""}{c.lastMessage.body}
                 </Text>
               )}
             </View>
 
-            {/* Badge de não lidas */}
-            {c.unreadCount > 0 && (
+            {/* Badge de não lidas — o site usa só uma bolinha indicadora (sem
+                número); mobile mostra a contagem real (já vem correta da API),
+                adaptação de plataforma aceita — mesmo critério do diálogo de
+                confirmação de logout em perfil.tsx. */}
+            {isUnread && (
               <View style={s.unreadBadge}>
                 <Text style={s.unreadText}>{c.unreadCount}</Text>
               </View>
             )}
           </TouchableOpacity>
-        )}
+          )
+        }}
       />
     </View>
   )

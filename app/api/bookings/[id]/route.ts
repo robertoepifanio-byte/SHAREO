@@ -33,11 +33,13 @@ export async function GET(req: NextRequest, { params }: Params) {
       select: {
         id:            true,
         status:        true,
+        paymentStatus: true,
         startDate:     true,
         endDate:       true,
         totalDays:     true,
         dailyPrice:    true,
         totalPrice:    true,
+        discountCents: true,
         depositAmount: true,
         borrowerNote:  true,
         ownerNote:     true,
@@ -45,6 +47,24 @@ export async function GET(req: NextRequest, { params }: Params) {
         cancelReason:  true,
         createdAt:     true,
         updatedAt:     true,
+        // Fonte: app/reservas/[id]/page.tsx linhas 84-96 — mesmos timestamps de
+        // histórico (deriveBookingHistory), status de pagamento e extensão que
+        // o site usa. Ausentes aqui antes (mobile assumia que existiam — os
+        // checks de paymentStatus/activatedAt/etc. rodavam sempre com undefined).
+        respondedAt:               true,
+        paidAt:                    true,
+        pixDeclaredAt:             true,
+        contractSignedAt:          true,
+        activatedAt:               true,
+        returnRequestedAt:         true,
+        returnedAt:                true,
+        extensionRequestedAt:      true,
+        extensionRespondedAt:      true,
+        extensionStatus:           true,
+        extensionRequestedEndDate: true,
+        lateFeeAmount:             true,
+        pickupTokenUsedAt:         true,
+        photos: { select: { id: true, url: true, phase: true, createdAt: true }, orderBy: { createdAt: "asc" } },
         item: {
           select: {
             id:     true,
@@ -54,8 +74,22 @@ export async function GET(req: NextRequest, { params }: Params) {
             images: { select: { url: true }, orderBy: { order: "asc" } },
           },
         },
-        borrower:     { select: userMiniSelect },
-        owner:        { select: userMiniSelect },
+        // Story B — itens da locação (fonte: app/reservas/[id]/page.tsx linhas 107-114)
+        bookingItems: {
+          select: {
+            itemId:     true,
+            totalPrice: true,
+            item: { select: { title: true, images: { select: { url: true }, orderBy: { order: "asc" }, take: 1 } } },
+          },
+        },
+        borrower: { select: userMiniSelect },
+        // Endereço de retirada — fonte: app/reservas/[id]/page.tsx linhas 120-125, 371-395
+        owner: {
+          select: {
+            ...userMiniSelect,
+            cep: true, street: true, neighborhood: true, city: true, state: true,
+          },
+        },
         conversation: { select: { id: true } },
         pickupToken:  true,
       reviews:      {

@@ -1,6 +1,13 @@
-// Fonte: app/favoritos/page.tsx + components/ui/ItemCard.tsx
+// Fonte: app/favoritos/page.tsx + components/items/ItemCard.tsx
 // Tela de favoritos do app mobile — adota StyleSheet + tokens do design system.
-// Funcionalidade preservada: GET /api/favorites, desfavoritar (optimistic).
+// Funcionalidade preservada: GET /api/favorites, desfavoritar (optimistic, dentro
+// do próprio ItemCard compartilhado).
+//
+// Layout corrigido nesta rodada (auditoria de código, sem device): a versão
+// anterior renderizava uma lista de linhas horizontais (1 coluna) — o site usa
+// "grid grid-cols-2" (app/favoritos/page.tsx linha 66) com o mesmo ItemCard do
+// Explorar. Agora reusa components/items/ItemCard.tsx (extraído de explorar.tsx
+// nesta mesma rodada) num FlatList numColumns=2, igual à grade real do site.
 
 import React from "react"
 import {
@@ -14,52 +21,30 @@ import {
   Platform,
 } from "react-native"
 import { router } from "expo-router"
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Image } from "expo-image"
+import { useQuery } from "@tanstack/react-query"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { apiFetch } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
-import { fmtCurrency } from "@/lib/pricing"
 import { useTheme } from "@/lib/theme"
+import { ItemCard, type ItemCardItem } from "@/components/items/ItemCard"
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
-interface FavoriteItem {
-  id:           string
-  title:        string
-  pricePerDay:  number
-  condition:    string
-  city:         string
-  state:        string
-  neighborhood: string | null
-  images:       { url: string }[]
-  category:     { name: string }
-  owner:        { name: string; isVerified: boolean }
-  _count:       { reviews: number; favorites: number }
-  favoritedAt:  string
+interface FavoriteItem extends ItemCardItem {
+  favoritedAt: string
 }
 
 interface FavoritesResponse { data: FavoriteItem[] }
-interface ToggleResponse    { data: { favorited: boolean } }
 
 // ── Tela ──────────────────────────────────────────────────────────────────────
 export default function FavoritosScreen() {
   const insets     = useSafeAreaInsets()
   const user       = useAuth((s) => s.user)
-  const qc         = useQueryClient()
   const { tokens } = useTheme()
 
   const { data, isLoading, isRefetching, refetch } = useQuery({
     queryKey: ["favorites"],
     queryFn:  () => apiFetch<FavoritesResponse>("/api/favorites"),
     enabled:  !!user,
-  })
-
-  const unfavorite = useMutation({
-    mutationFn: (itemId: string) =>
-      apiFetch<ToggleResponse>(`/api/items/${itemId}/favorite`, { method: "POST" }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["favorites"] })
-    },
   })
 
   const items = data?.data ?? []
@@ -109,7 +94,16 @@ export default function FavoritosScreen() {
         <Text style={[s.headerTitle, { color: tokens.navy }]}>Favoritos</Text>
       </View>
 
-      {/* ── Lista ── */}
+      {/* ── Contador — verbatim de favoritos/page.tsx linhas 53-57 ── */}
+      {!isLoading && (
+        <Text style={[s.counter, { color: tokens.muted }]}>
+          {items.length === 0
+            ? "Nenhum item salvo ainda."
+            : `${items.length} ${items.length === 1 ? "item salvo" : "itens salvos"}`}
+        </Text>
+      )}
+
+      {/* ── Grid 2 colunas — fonte: favoritos/page.tsx linha 66 "grid grid-cols-2" ── */}
       {isLoading ? (
         <View style={s.center}>
           <ActivityIndicator size="large" color={tokens.green} />
@@ -118,6 +112,8 @@ export default function FavoritosScreen() {
         <FlatList
           data={items}
           keyExtractor={(i) => i.id}
+          numColumns={2}
+          columnWrapperStyle={s.row}
           contentContainerStyle={{ padding: 16 }}
           refreshControl={
             <RefreshControl
@@ -127,80 +123,21 @@ export default function FavoritosScreen() {
             />
           }
           ListEmptyComponent={
+            // Fonte: favoritos/page.tsx linhas 60-64 — EmptyState sem prop `action`
+            // (nenhum botão no site). Ícone mantido por convenção já usada em
+            // outros empty states do app (explorar.tsx), mas sem CTA inventado.
             <View style={s.emptyState}>
               <Text style={{ fontSize: 48 }}>❤️</Text>
               <Text style={[s.emptyTitle, { color: tokens.navy }]}>
                 Nenhum favorito ainda
               </Text>
               <Text style={[s.emptyDesc, { color: tokens.muted }]}>
-                Toque no coração em qualquer item para salvar
+                Toque no coração em qualquer item para salvá-lo aqui.
               </Text>
-              <TouchableOpacity
-                style={[s.ctaBtn, { backgroundColor: tokens.green }]}
-                onPress={() => router.push("/" as never)}
-                accessibilityRole="button"
-                accessibilityLabel="Explorar itens"
-              >
-                <Text style={s.ctaBtnText}>Explorar itens</Text>
-              </TouchableOpacity>
             </View>
           }
           renderItem={({ item }) => (
-            <TouchableOpacity
-              onPress={() => router.push(`/itens/${item.id}` as never)}
-              activeOpacity={0.85}
-              accessibilityRole="button"
-              accessibilityLabel={`Ver detalhes de ${item.title}`}
-              style={[s.card, { backgroundColor: tokens.surface, borderColor: tokens.border }]}
-            >
-              <View style={s.cardInner}>
-                {/* Thumbnail */}
-                <View style={s.thumb}>
-                  {item.images[0]?.url ? (
-                    <Image
-                      source={{ uri: item.images[0].url }}
-                      style={StyleSheet.absoluteFillObject}
-                      contentFit="cover"
-                      accessibilityLabel={`Foto de ${item.title}`}
-                    />
-                  ) : (
-                    <View style={s.thumbPlaceholder}>
-                      <Text style={{ fontSize: 28 }}>📦</Text>
-                    </View>
-                  )}
-                </View>
-
-                {/* Info */}
-                <View style={s.info}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[s.category, { color: tokens.green }]}>
-                      {item.category.name.toUpperCase()}
-                    </Text>
-                    <Text style={[s.title, { color: tokens.navy }]} numberOfLines={2}>
-                      {item.title}
-                    </Text>
-                    <Text style={[s.location, { color: tokens.muted }]}>
-                      {item.neighborhood ?? item.city}, {item.state}
-                    </Text>
-                  </View>
-                  <View style={s.footer}>
-                    <Text style={[s.price, { color: tokens.text }]}>
-                      {fmtCurrency(item.pricePerDay)}
-                      <Text style={[s.priceUnit, { color: tokens.muted }]}>/dia</Text>
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => unfavorite.mutate(item.id)}
-                      disabled={unfavorite.isPending}
-                      accessibilityRole="button"
-                      accessibilityLabel="Remover dos favoritos"
-                      style={s.heartBtn}
-                    >
-                      <Text style={{ fontSize: 20 }}>❤️</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
-            </TouchableOpacity>
+            <ItemCard item={item} onPress={() => router.push(`/itens/${item.id}` as never)} />
           )}
         />
       )}
@@ -226,6 +163,7 @@ const s = StyleSheet.create({
   backBtn:      { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   backBtnText:  { fontSize: 28, fontWeight: "700", lineHeight: 32 },
   headerTitle:  { flex: 1, fontSize: 17, fontWeight: "700" },
+  counter:      { fontSize: 12, paddingHorizontal: 16, paddingTop: 12 },
 
   // Guard / empty
   guardTitle: { fontSize: 16, fontWeight: "600", marginTop: 12, marginBottom: 24, textAlign: "center" },
@@ -233,27 +171,10 @@ const s = StyleSheet.create({
   emptyTitle: { fontSize: 16, fontWeight: "700", marginTop: 12 },
   emptyDesc:  { fontSize: 13, marginTop: 4, textAlign: "center" },
 
-  // CTA
+  // CTA (guard "Entrar")
   ctaBtn:    { borderRadius: 12, paddingHorizontal: 32, paddingVertical: 12, marginTop: 20, minHeight: 44 },
   ctaBtnText:{ color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
 
-  // Card
-  card: {
-    borderRadius: 16, borderWidth: 1, marginBottom: 12, overflow: "hidden",
-    ...Platform.select({
-      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6 },
-      android: { elevation: 2 },
-    }),
-  },
-  cardInner:  { flexDirection: "row" },
-  thumb:      { width: 96, height: 96, position: "relative" },
-  thumbPlaceholder: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#F1F5F9" },
-  info:       { flex: 1, padding: 12, justifyContent: "space-between" },
-  category:   { fontSize: 9, fontWeight: "700", letterSpacing: 0.8 },
-  title:      { fontSize: 13, fontWeight: "700", marginTop: 2 },
-  location:   { fontSize: 11, marginTop: 2 },
-  footer:     { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 6 },
-  price:      { fontSize: 15, fontWeight: "800" },
-  priceUnit:  { fontSize: 11, fontWeight: "400" },
-  heartBtn:   { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
+  // Grid — card em si vive em components/items/ItemCard.tsx
+  row: { gap: 12 },
 })
