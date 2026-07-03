@@ -142,7 +142,7 @@ export function BottomNav() {
         styles.nav,
         { paddingBottom: Math.max(insets.bottom, 8) },
       ]}
-      accessibilityRole="tabbar"
+      accessibilityRole="tablist"
       accessibilityLabel="Navegação mobile"
     >
       {/* 1. Início — tab index "/" */}
