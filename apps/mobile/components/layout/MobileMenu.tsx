@@ -22,17 +22,32 @@ import { API_URL } from "@/lib/api"
 
 // Rotas que existem no site mas ainda não têm tela nativa — abrem no navegador
 // em vez de dar "Unmatched Route". Remover daqui quando a tela nativa existir.
-// MOB-BL-meus-anuncios: mesmo tratamento já aplicado em app/(tabs)/perfil.tsx.
-const EXTERNAL_ONLY_ROUTES = new Set(["/sobre", "/meus-anuncios"])
+// Achado 2026-07-03 testando ao vivo no device: quase todo submenu do drawer
+// (Minha Conta, Ajuda, parte de Anunciar/Atividade) apontava pra rota
+// inexistente — mesmo tratamento já validado em app/(tabs)/perfil.tsx (Frente B).
+// Prefixos (não precisa listar cada variante de query/hash) + exatas.
+const EXTERNAL_ONLY_PREFIXES = ["/perfil/", "/ajuda"]
+const EXTERNAL_ONLY_ROUTES = new Set([
+  "/sobre", "/meus-anuncios", "/dashboard",
+  "/anunciar/estimativa", "/anunciar/dicas",
+])
+function isExternalOnly(href: string): boolean {
+  return EXTERNAL_ONLY_ROUTES.has(href) || EXTERNAL_ONLY_PREFIXES.some((p) => href.startsWith(p))
+}
 
 // ── Constantes — transcritas VERBATIM de MobileMenu.tsx do site ──────────────
 
+// EXPLORAR_LINKS: no site aponta pra /itens?<filtro>; no app o equivalente
+// nativo é /explorar. TODO(revisão): explorar.tsx só suporta ?q= hoje — os
+// filtros view=map/sort=views/minRating=4 não estão wireados nativamente
+// ainda, então por ora todos abrem a tela sem o filtro pré-aplicado (melhor
+// que Unmatched Route; não inventamos suporte a filtro que não existe).
 const EXPLORAR_LINKS = [
-  { href: "/itens?intent=rent", icon: "cart",     label: "Quero alugar algo" },
-  { href: "/itens",             icon: "list",     label: "Ver todos os itens" },
-  { href: "/itens?view=map",    icon: "map",      label: "Buscar no mapa" },
-  { href: "/itens?sort=views",  icon: "trending", label: "Mais alugados" },
-  { href: "/itens?minRating=4", icon: "star",     label: "Mais bem avaliados" },
+  { href: "/explorar", icon: "cart",     label: "Quero alugar algo" },
+  { href: "/explorar", icon: "list",     label: "Ver todos os itens" },
+  { href: "/explorar", icon: "map",      label: "Buscar no mapa" },
+  { href: "/explorar", icon: "trending", label: "Mais alugados" },
+  { href: "/explorar", icon: "star",     label: "Mais bem avaliados" },
 ]
 
 const ANUNCIAR_LINKS = [
@@ -149,7 +164,7 @@ export function MobileMenu({ visible, onClose, isLoggedIn, role, onLogout }: Mob
 
   function navigate(href: string) {
     onClose()
-    if (EXTERNAL_ONLY_ROUTES.has(href)) {
+    if (isExternalOnly(href)) {
       Linking.openURL(`${API_URL}${href}`)
       return
     }
