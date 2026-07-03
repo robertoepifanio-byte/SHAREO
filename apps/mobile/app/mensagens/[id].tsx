@@ -18,6 +18,7 @@ import {
 } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { Image } from "expo-image"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { apiFetch } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
@@ -27,6 +28,7 @@ import { useTheme } from "@/lib/theme"
 interface Message {
   id:        string
   body:      string
+  readAt:    string | null
   createdAt: string
   sender:    { id: string; name: string }
 }
@@ -34,10 +36,19 @@ interface Message {
 interface ConversationDetail {
   id:        string
   otherUser: { id: string; name: string; avatarUrl: string | null } | null
-  booking:   { item: { title: string } } | null
+  booking:   { id: string; item: { id: string; title: string } } | null
   messages:  Message[]
   meta:      { total: number; page: number; limit: number; hasMore: boolean }
 }
+
+// Fonte: _ChatWindow.tsx linhas 246-265 (P3-66 — templates de mensagem)
+const MESSAGE_TEMPLATES = [
+  "Ainda está disponível?",
+  "Qual o prazo mínimo?",
+  "Posso retirar hoje?",
+  "Aceita entrega?",
+  "Tenho uma dúvida…",
+]
 
 // ── Utilitário de tempo relativo ───────────────────────────────────────────────
 // Fonte: app/mensagens/page.tsx — verbatim
@@ -49,6 +60,16 @@ function relTime(d: string): string {
   const hrs = Math.floor(mins / 60)
   if (hrs < 24)  return `${hrs}h`
   return new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })
+}
+
+// Divisor de dia — fonte: _ChatWindow.tsx linhas 37-44 (fmtDay)
+function fmtDay(d: string): string {
+  const date  = new Date(d)
+  const today = new Date()
+  const yest  = new Date(); yest.setDate(yest.getDate() - 1)
+  if (date.toDateString() === today.toDateString()) return "Hoje"
+  if (date.toDateString() === yest.toDateString())  return "Ontem"
+  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "long" })
 }
 
 // ── Tela ──────────────────────────────────────────────────────────────────────
@@ -128,21 +149,46 @@ export default function ChatScreen() {
         >
           <Text style={[s.backBtnText, { color: tokens.muted }]}>‹</Text>
         </TouchableOpacity>
-        <View style={[s.avatar, { backgroundColor: tokens.navy }]}>
-          <Text style={s.avatarInitial}>
-            {(conv?.otherUser?.name ?? "").charAt(0).toUpperCase() || "?"}
-          </Text>
-        </View>
+        {conv?.otherUser?.avatarUrl ? (
+          <Image
+            source={{ uri: conv.otherUser.avatarUrl }}
+            style={[s.avatar, { backgroundColor: tokens.border }]}
+            contentFit="cover"
+          />
+        ) : (
+          <View style={[s.avatar, { backgroundColor: tokens.navy }]}>
+            <Text style={s.avatarInitial}>
+              {(conv?.otherUser?.name ?? "").charAt(0).toUpperCase() || "?"}
+            </Text>
+          </View>
+        )}
         <View style={{ flex: 1 }}>
           <Text style={[s.convName, { color: tokens.text }]} numberOfLines={1}>
             {conv?.otherUser?.name ?? "…"}
           </Text>
+          {/* Item da reserva — clicável, fonte: page.tsx linhas 93-100 */}
           {conv?.booking?.item.title ? (
-            <Text style={[s.convItem, { color: tokens.green }]} numberOfLines={1}>
-              {conv.booking.item.title}
-            </Text>
+            <TouchableOpacity
+              onPress={() => router.push(`/itens/${conv.booking!.item.id}` as never)}
+              accessibilityRole="link"
+            >
+              <Text style={[s.convItem, { color: tokens.green }]} numberOfLines={1}>
+                {conv.booking.item.title}
+              </Text>
+            </TouchableOpacity>
           ) : null}
         </View>
+        {/* "Ver reserva" — fonte: page.tsx linhas 103-110 */}
+        {conv?.booking && (
+          <TouchableOpacity
+            style={[s.viewBookingBtn, { borderColor: tokens.border }]}
+            onPress={() => router.push(`/reservas/${conv.booking!.id}` as never)}
+            accessibilityRole="button"
+            accessibilityLabel="Ver reserva"
+          >
+            <Text style={[s.viewBookingBtnText, { color: tokens.text }]}>Ver reserva</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* ── Mensagens ── */}
@@ -157,44 +203,80 @@ export default function ChatScreen() {
           keyExtractor={(m) => m.id}
           contentContainerStyle={{ padding: 16, flexGrow: 1 }}
           ListEmptyComponent={
+            // Fonte: _ChatWindow.tsx linhas 200-203 — texto personalizado com o
+            // nome do outro participante ("Diga olá para {otherName}!")
             <View style={s.emptyState}>
               <Text style={{ fontSize: 40 }}>💬</Text>
               <Text style={[s.emptyTitle, { color: tokens.muted }]}>
-                Nenhuma mensagem ainda
-              </Text>
-              <Text style={[s.emptySub, { color: tokens.muted }]}>
-                Seja o primeiro a dizer olá!
+                Nenhuma mensagem ainda. Diga olá para {conv?.otherUser?.name ?? "essa pessoa"}!
               </Text>
             </View>
           }
-          renderItem={({ item: m }) => {
+          renderItem={({ item: m, index }) => {
             const isMe = m.sender.id === user.id
+            // Divisor de dia — fonte: _ChatWindow.tsx linhas 208-220
+            const day = fmtDay(m.createdAt)
+            const prevDay = index > 0 ? fmtDay(conv!.messages[index - 1].createdAt) : null
+            const showDay = day !== prevDay
             return (
-              <View style={[s.msgRow, { justifyContent: isMe ? "flex-end" : "flex-start" }]}>
-                <View
-                  style={[
-                    s.bubble,
-                    isMe
-                      ? [s.bubbleMe, { backgroundColor: tokens.green }]
-                      : [s.bubbleOther, { backgroundColor: tokens.surface, borderColor: tokens.border }],
-                  ]}
-                >
-                  <Text style={[s.bubbleText, { color: isMe ? "#FFFFFF" : tokens.text }]}>
-                    {m.body}
-                  </Text>
-                  <Text
+              <View>
+                {showDay && (
+                  <View style={s.dayDivider}>
+                    <View style={[s.dayDividerLine, { backgroundColor: tokens.border }]} />
+                    <Text style={[s.dayDividerText, { color: tokens.muted }]}>{day}</Text>
+                    <View style={[s.dayDividerLine, { backgroundColor: tokens.border }]} />
+                  </View>
+                )}
+                <View style={[s.msgRow, { justifyContent: isMe ? "flex-end" : "flex-start" }]}>
+                  <View
                     style={[
-                      s.bubbleTime,
-                      { color: isMe ? "rgba(255,255,255,0.7)" : tokens.muted },
+                      s.bubble,
+                      isMe
+                        ? [s.bubbleMe, { backgroundColor: tokens.green }]
+                        : [s.bubbleOther, { backgroundColor: tokens.surface, borderColor: tokens.border }],
                     ]}
                   >
-                    {relTime(m.createdAt)}
-                  </Text>
+                    <Text style={[s.bubbleText, { color: isMe ? "#FFFFFF" : tokens.text }]}>
+                      {m.body}
+                    </Text>
+                    <Text
+                      style={[
+                        s.bubbleTime,
+                        { color: isMe ? "rgba(255,255,255,0.7)" : tokens.muted },
+                      ]}
+                    >
+                      {relTime(m.createdAt)}
+                      {/* Recibo de leitura — fonte: _ChatWindow.tsx linha 232 */}
+                      {isMe && m.readAt && " ✓✓"}
+                    </Text>
+                  </View>
                 </View>
               </View>
             )
           }}
         />
+      )}
+
+      {/* ── Templates de mensagem — fonte: _ChatWindow.tsx linhas 246-265 (P3-66) ── */}
+      {!text && (
+        <View
+          style={[
+            s.templatesRow,
+            { backgroundColor: tokens.surface, borderTopColor: tokens.border },
+          ]}
+        >
+          {MESSAGE_TEMPLATES.map((tpl) => (
+            <TouchableOpacity
+              key={tpl}
+              onPress={() => setText(tpl)}
+              style={[s.templateChip, { borderColor: tokens.border, backgroundColor: tokens.bg }]}
+              accessibilityRole="button"
+              accessibilityLabel={`Usar mensagem: ${tpl}`}
+            >
+              <Text style={[s.templateChipText, { color: tokens.muted }]}>{tpl}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       )}
 
       {/* ── Input ── */}
@@ -268,15 +350,24 @@ const s = StyleSheet.create({
   },
   backBtn:     { width: 44, height: 44, alignItems: "center", justifyContent: "center", marginRight: 4 },
   backBtnText: { fontSize: 28, fontWeight: "700", lineHeight: 32 },
-  avatar:      { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  avatar:      { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", overflow: "hidden" },
   avatarInitial:{ fontSize: 14, fontWeight: "700", color: "#FFFFFF" },
   convName:    { fontSize: 14, fontWeight: "600" },
   convItem:    { fontSize: 10, marginTop: 1 },
+  viewBookingBtn: {
+    borderWidth: 1, borderRadius: 8,
+    paddingHorizontal: 10, minHeight: 32, justifyContent: "center",
+  },
+  viewBookingBtnText: { fontSize: 11, fontWeight: "700" },
 
   // Empty state
-  emptyState: { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 64 },
-  emptyTitle: { fontSize: 13, fontWeight: "600", marginTop: 10 },
-  emptySub:   { fontSize: 11, marginTop: 2 },
+  emptyState: { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 64, paddingHorizontal: 32 },
+  emptyTitle: { fontSize: 13, fontWeight: "600", marginTop: 10, textAlign: "center", lineHeight: 18 },
+
+  // Divisor de dia
+  dayDivider: { flexDirection: "row", alignItems: "center", gap: 10, marginVertical: 14 },
+  dayDividerLine: { flex: 1, height: 1 },
+  dayDividerText: { fontSize: 11 },
 
   // Mensagens
   msgRow: { flexDirection: "row", marginBottom: 8 },
@@ -290,6 +381,18 @@ const s = StyleSheet.create({
   bubbleOther: { borderTopLeftRadius: 4, borderWidth: 1 },
   bubbleText:  { fontSize: 14, lineHeight: 20 },
   bubbleTime:  { fontSize: 10, marginTop: 3, textAlign: "right" },
+
+  // Templates de mensagem
+  templatesRow: {
+    flexDirection: "row", flexWrap: "wrap", gap: 6,
+    paddingHorizontal: 16, paddingTop: 10, paddingBottom: 2,
+    borderTopWidth: 1,
+  },
+  templateChip: {
+    borderWidth: 1, borderRadius: 20,
+    paddingHorizontal: 12, minHeight: 32, justifyContent: "center",
+  },
+  templateChipText: { fontSize: 12 },
 
   // Input bar
   inputBar: {

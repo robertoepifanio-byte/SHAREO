@@ -290,7 +290,7 @@ describe("ChatThreadScreen (mensagens/[id])", () => {
     expect(screen.getByText("Faça login para ver mensagens")).toBeTruthy()
   })
 
-  it("logado, sem mensagens: empty state '💬' + 'Nenhuma mensagem ainda' (verbatim)", async () => {
+  it("logado, sem mensagens: empty state personalizado 'Diga olá para {nome}!' (verbatim de _ChatWindow.tsx:200-203, não 'Seja o primeiro...' que nunca existiu no site)", async () => {
     withUser()
     const { apiFetch } = require("@/lib/api") as { apiFetch: jest.Mock }
     apiFetch.mockResolvedValueOnce({
@@ -301,21 +301,7 @@ describe("ChatThreadScreen (mensagens/[id])", () => {
       },
     })
     wrap(<ChatThreadScreen />)
-    expect(await screen.findByText("Nenhuma mensagem ainda")).toBeTruthy()
-  })
-
-  it("logado, sem mensagens: 'Seja o primeiro a dizer olá!' (verbatim)", async () => {
-    withUser()
-    const { apiFetch } = require("@/lib/api") as { apiFetch: jest.Mock }
-    apiFetch.mockResolvedValueOnce({
-      data: {
-        id: "conv-123", otherUser: { id: "u2", name: "Maria", avatarUrl: null },
-        booking: null, messages: [],
-        meta: { total: 0, page: 1, limit: 20, hasMore: false },
-      },
-    })
-    wrap(<ChatThreadScreen />)
-    expect(await screen.findByText("Seja o primeiro a dizer olá!")).toBeTruthy()
+    expect(await screen.findByText("Nenhuma mensagem ainda. Diga olá para Maria!")).toBeTruthy()
   })
 
   it("logado: campo de input com placeholder 'Escreva uma mensagem...' (verbatim)", async () => {
