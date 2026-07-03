@@ -1,9 +1,13 @@
 // Fonte: app/page.tsx (Home completa) + components/home/HeroSearch.tsx
+//   + components/home/ListaVIP.tsx + components/home/FounderCaptureForm.tsx
+//   + components/layout/AppFooter.tsx
 // Transcrição literal de TODAS as seções da Home do site, na mesma ordem:
-// Hero → Simulador de Renda → Categorias → Como Funciona → Casos de Renda →
-// Itens Procurados → Segurança. (ListaVIP fora — pré-lançamento, ver handoff.)
+// Hero (imagem + placeholder rotativo) → Simulador de Renda → Categorias →
+// Como Funciona → Casos de Renda → Itens Procurados → Segurança →
+// Lista VIP (1ª ocorrência, completa) → FounderCaptureForm colapsado (2ª ocorrência) →
+// AppFooter.
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import {
   View,
   Text,
@@ -12,6 +16,7 @@ import {
   ScrollView,
   StyleSheet,
   StatusBar,
+  Image,
 } from "react-native"
 import { router } from "expo-router"
 import { useQuery } from "@tanstack/react-query"
@@ -23,6 +28,9 @@ import { CategoriasSection } from "@/components/home/CategoriasSection"
 import { CasosRenda } from "@/components/home/CasosRenda"
 import { ItensProcurados } from "@/components/home/ItensProcurados"
 import { Seguranca } from "@/components/home/Seguranca"
+import { ListaVIP } from "@/components/home/ListaVIP"
+import { FounderCaptureForm } from "@/components/home/FounderCaptureForm"
+import { AppFooter } from "@/components/layout/AppFooter"
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 interface PlatformStats {
@@ -40,6 +48,13 @@ const STEPS = [
     icon: <Circle cx="11" cy="11" r="8" stroke="#007B3C" strokeWidth={2} fill="none" /> },
   { num: "2", title: "Combine com o proprietário", desc: "Envie mensagem pelo chat do ShareO, combine as datas e a retirada do item com segurança." },
   { num: "3", title: "Use e devolva", desc: "Retire, use pelo período combinado e devolva. Avalie a experiência e construa sua reputação." },
+]
+
+// ── Placeholders do campo de busca — transcritos de HeroSearch.tsx do site ───
+// Alternância a cada 3s; para ao focar o campo. (components/home/HeroSearch.tsx)
+const PLACEHOLDERS = [
+  "O que você precisa alugar?",
+  "O que você tem para alugar?",
 ]
 
 // ── Ícones do hero — transcritos de HeroSearch.tsx / page.tsx do site ────────
@@ -91,6 +106,25 @@ export default function HomeScreen() {
   const { tokens } = useTheme()
   const [searchQuery, setSearchQuery] = useState("")
 
+  // ── Alternância de placeholder — fonte: components/home/HeroSearch.tsx ───────
+  // setInterval a cada 3s, limpo ao focar o campo (mesma lógica do site).
+  // Hooks no topo do componente, sem condicionais — Rules of Hooks respeitadas.
+  const [placeholderIdx, setPlaceholderIdx] = useState(0)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => {
+    intervalRef.current = setInterval(() => {
+      setPlaceholderIdx((prev) => (prev + 1) % PLACEHOLDERS.length)
+    }, 3000)
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+    }
+  }, [])
+
+  function handleSearchFocus() {
+    if (intervalRef.current) clearInterval(intervalRef.current)
+  }
+
   const { data: statsData } = useQuery<{ data: PlatformStats }>({
     queryKey: ["platform-stats"],
     queryFn:  () => apiFetch<{ data: PlatformStats }>("/api/stats"),
@@ -124,6 +158,19 @@ export default function HomeScreen() {
           {"Ganhe dinheiro com o que\n"}
           <Text style={styles.h1Accent}>está parado na sua casa.</Text>
         </Text>
+
+        {/* Hero image — fonte: app/page.tsx linha ~159
+            <Image src="/logos/hero-items.webp" width={1100} height={702}
+                   className="h-auto w-[230px]" priority />
+            Dimensões mobile: w=230px, h≈147px (proporção 1100/702 ≈ 1.567) */}
+        <Image
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          source={require("../../assets/hero-items.webp")}
+          style={styles.heroImage}
+          resizeMode="contain"
+          accessibilityLabel="Itens disponíveis para alugar no ShareO: furadeira, câmera, caixa de som, bicicleta, escada e projetor."
+        />
+
         <Text style={styles.subtitle}>Tudo perto de você.</Text>
 
         <View style={styles.ctaGroup} accessibilityRole="none" accessibilityLabel="Ações principais">
@@ -143,7 +190,8 @@ export default function HomeScreen() {
             value={searchQuery}
             onChangeText={setSearchQuery}
             onSubmitEditing={handleSearch}
-            placeholder="O que você precisa alugar?"
+            onFocus={handleSearchFocus}
+            placeholder={PLACEHOLDERS[placeholderIdx]}
             placeholderTextColor="#94A3B8"
             returnKeyType="search"
             style={styles.searchInput}
@@ -191,6 +239,24 @@ export default function HomeScreen() {
 
       {/* ── SEGURANÇA ── */}
       <Seguranca feeRate={stats?.feeRate ?? null} checkoutMaxCents={stats?.checkoutMaxCents ?? null} />
+
+      {/* ── LISTA VIP — 1ª ocorrência (seção completa) ──
+          Fonte: components/home/ListaVIP.tsx + FounderCaptureForm.tsx
+          Badge "Pré-lançamento", 4 cards de benefícios, formulário, contador dinâmico. */}
+      <ListaVIP />
+
+      {/* ── LISTA VIP — 2ª ocorrência (FounderCaptureForm colapsado perto do rodapé) ──
+          O mesmo FounderCaptureForm colapsado reaparece perto do rodapé no site.
+          Fonte: components/home/ListaVIP.tsx do site (nota do plano de validação 2026-07-03). */}
+      <View style={styles.founderCtaSection}>
+        <Text style={styles.founderCtaTitle}>Quer ser avisado no lançamento?</Text>
+        <FounderCaptureForm />
+      </View>
+
+      {/* ── RODAPÉ GLOBAL ──
+          Fonte: components/layout/AppFooter.tsx
+          Logo, tagline, 3 colunas de links, copyright, 3 selos de confiança. */}
+      <AppFooter />
     </ScrollView>
   )
 }
@@ -233,6 +299,32 @@ const styles = StyleSheet.create({
   statItem: { alignItems: "center", minWidth: 72 },
   statNum: { fontSize: 22, fontFamily: "Montserrat_800ExtraBold", lineHeight: 24, color: "#59C686" },
   statLabel: { fontSize: 12, color: "rgba(255,255,255,0.60)", marginTop: 2, textAlign: "center" },
+
+  // Hero image — fonte: app/page.tsx linha ~159 (className="h-auto w-[230px]")
+  // Dimensões: 230px × 147px (proporção 1100/702 ≈ 1.567)
+  heroImage: {
+    width: 230,
+    height: 147,
+    alignSelf: "center",
+    marginTop: 16,
+    marginBottom: 4,
+  },
+
+  // FounderCaptureForm colapsado (2ª ocorrência) perto do rodapé
+  founderCtaSection: {
+    backgroundColor: "#003366",
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+    gap: 12,
+    alignItems: "center",
+  },
+  founderCtaTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    textAlign: "center",
+    marginBottom: 4,
+  },
 
   stepsSection: { backgroundColor: "#F8FAFC", padding: 20 },
   stepsTitle: { fontSize: 20, fontFamily: "Montserrat_700Bold", color: "#003366", marginBottom: 16 },
