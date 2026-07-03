@@ -186,20 +186,22 @@ describe("KycScreen", () => {
     expect(screen.getByText("Entrar")).toBeTruthy()
   })
 
-  it("logado: header 'Verificação de identidade' (verbatim)", async () => {
+  it("logado: 'Verificação de identidade' aparece 2× — header da tela + título do box explicativo (verbatim de app/perfil/documentos/page.tsx:89, corrigido de 'Por que verificar sua identidade?' que era paráfrase inventada)", async () => {
     withUser()
     const { apiFetch } = require("@/lib/api") as { apiFetch: jest.Mock }
     apiFetch.mockResolvedValueOnce({ data: { idVerificationStatus: null, isVerified: false } })
     wrap(<KycScreen />)
-    expect(await screen.findByText("Verificação de identidade")).toBeTruthy()
+    expect(await screen.findAllByText("Verificação de identidade")).toHaveLength(2)
   })
 
-  it("logado: 'Por que verificar sua identidade?' (verbatim)", async () => {
+  it("logado: texto do box explicativo verbatim de app/perfil/documentos/page.tsx:91", async () => {
     withUser()
     const { apiFetch } = require("@/lib/api") as { apiFetch: jest.Mock }
     apiFetch.mockResolvedValueOnce({ data: { idVerificationStatus: null, isVerified: false } })
     wrap(<KycScreen />)
-    expect(await screen.findByText("Por que verificar sua identidade?")).toBeTruthy()
+    expect(await screen.findByText(
+      "A verificação de identidade aumenta a confiança dos outros usuários e desbloqueia locações de maior valor."
+    )).toBeTruthy()
   })
 
   it("logado: labels de upload verbatim do site", async () => {

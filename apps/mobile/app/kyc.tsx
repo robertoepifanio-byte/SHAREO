@@ -1,4 +1,7 @@
-// Fonte: app/kyc/page.tsx + lib/legal/biometric-consent-text.ts + app/api/users/me/id-verification
+// Fonte: app/perfil/documentos/page.tsx + app/perfil/_IdVerification.tsx
+//        + lib/legal/biometric-consent-text.ts + app/api/users/me/id-verification
+// (app/kyc/page.tsx NÃO existe no site — citação anterior estava errada; a
+// verificação de identidade real vive dentro de /perfil/documentos)
 // Tela de verificação de identidade (KYC) — StyleSheet + tokens, funcionalidade preservada.
 // LGPD: texto canônico de consentimento replicado de lib/legal/biometric-consent-text.ts. Manter IDÊNTICO.
 //
@@ -66,7 +69,12 @@ export default function KycScreen() {
   const [selfieAsset,  setSelfieAsset]  = useState<ImagePicker.ImagePickerAsset | null>(null)
   const [uploadState,  setUploadState]  = useState<UploadState>("idle")
   const [error,        setError]        = useState<string | null>(null)
-  // Consentimento biométrico — exibido apenas quando o servidor retorna 412
+  // Consentimento biométrico — exibido apenas quando o servidor retorna 412.
+  // TODO(revisão): diferença arquitetural do site — lá, biometricConsentRequired
+  // vem do SSR e o checkbox já aparece ANTES do 1º envio; aqui é descoberto
+  // reativamente (1º submit falha com 412, DEPOIS mostra o checkbox, exige um
+  // 2º submit). Hoje a flag está OFF (só liga pós-D4), então não é visível na
+  // prática — documentado pra não esquecer se a flag for ligada.
   const [needsConsent, setNeedsConsent] = useState(false)
   const [consentGiven, setConsentGiven] = useState(false)
 
@@ -287,10 +295,12 @@ export default function KycScreen() {
         {/* ── Explicação + formulário ── */}
         {verificationStatus !== "VERIFIED" && verificationStatus !== "PENDING" && uploadState !== "success" && (
           <>
+            {/* Verbatim de app/perfil/documentos/page.tsx linhas 89-91 — mobile
+                tinha um título e um texto diferentes (paráfrase, não o real) */}
             <View style={[s.infoBox, { backgroundColor: tokens.surface, borderColor: tokens.border }]}>
-              <Text style={[s.infoTitle, { color: tokens.navy }]}>Por que verificar sua identidade?</Text>
+              <Text style={[s.infoTitle, { color: tokens.navy }]}>Verificação de identidade</Text>
               <Text style={[s.infoText, { color: tokens.muted }]}>
-                A verificação aumenta a confiança entre locatários e proprietários, tornando o ShareO mais seguro para todos. Itens de proprietários verificados têm maior taxa de reserva.
+                A verificação de identidade aumenta a confiança dos outros usuários e desbloqueia locações de maior valor.
               </Text>
             </View>
 
