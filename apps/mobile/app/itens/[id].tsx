@@ -65,10 +65,20 @@ const CONDITION: Record<string, string> = {
 type Mode = "daily" | "weekly" | "monthly"
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+// Defensivo: `iso` vem do DateTimePicker nativo via dateToISO(), mas "Date value
+// out of bounds" foi reproduzido em device real (causa exata não confirmada —
+// suspeita de parsing de string de data divergente entre motores JS/Android).
+// Nunca deixa a tela inteira crashar por causa de 1 data mal formada.
 function addDays(iso: string, days: number): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return ""
   const d = new Date(`${iso}T12:00:00`)
+  if (Number.isNaN(d.getTime())) return ""
   d.setDate(d.getDate() + days)
-  return d.toISOString().split("T")[0]
+  if (Number.isNaN(d.getTime())) return ""
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  return `${y}-${m}-${day}`
 }
 
 function fmtDate(iso: string) {
