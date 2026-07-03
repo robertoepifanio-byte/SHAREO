@@ -125,7 +125,8 @@ escopo (não testar como bug).
 | Link "✏️ Editar anúncio" (modo proprietário) | 🔧 **não existia nenhuma forma de editar o anúncio pelo app** — adicionado como fallback `Linking`→site (não há tela nativa de edição ainda) |
 | Trust Box "🔒 Sua locação está protegida" | 🔧 auditado no código contra `page.tsx:618-635` — faltava por completo, adicionado (conteúdo estático, 3 linhas) |
 | Política de cancelamento (3 faixas de reembolso) | 🔧 auditado no código contra `page.tsx:637-665` — faltava por completo, adicionado (usa os mesmos valores estáticos que o próprio site usa hoje, não a config dinâmica) |
-| ⏸️ Pendente (fora de escopo desta rodada — precisa endpoint novo ou tela própria) | `AvailabilityCalendar` (calendário de disponibilidade), stats do proprietário (locações concluídas / taxa de resposta — hoje só calculado no Server Component do site, não exposto via API), grids "Itens do mesmo anunciante" e "Você também pode gostar" no rodapé, carrinho multi-item `AddToRentalButton` (Story B) |
+| Stats do proprietário (locações concluídas + taxa de resposta) | 🔧 **implementado depois do relatório inicial** — pedido explícito do usuário testando ao vivo. `GET /api/items/[id]` estendido (aditivo) com a mesma lógica exata do site; badge "⚡ Responde em ~Xh" + grid de 2 estatísticas no card do proprietário |
+| ⏸️ Pendente (fora de escopo — precisa endpoint novo ou tela própria) | `AvailabilityCalendar` (calendário de disponibilidade), grids "Itens do mesmo anunciante" e "Você também pode gostar" no rodapé, carrinho multi-item `AddToRentalButton` (Story B) |
 
 ### Anunciar (`itens/novo`)
 | Elemento | Status |
@@ -260,7 +261,7 @@ Estes não são "faltando 1 elemento" — cada um precisaria de tela/estado/lóg
 própria, escopo de uma sessão dedicada, não de um ciclo de auditoria-e-fix:
 
 - **AvailabilityCalendar** (calendário de disponibilidade no detalhe do item)
-- **Stats do proprietário** (locações concluídas / taxa de resposta) no detalhe do item
+- ~~Stats do proprietário~~ — ✅ implementado depois deste relatório, pedido em teste ao vivo (ver tabela "Detalhe do item")
 - **Grids "Itens do mesmo anunciante"** e **"Você também pode gostar"** (detalhe do item)
 - **Carrinho multi-item** (`AddToRentalButton`, Story B) no detalhe do item
 - **Tela nativa de editar anúncio** (hoje cai no site via `Linking`)
