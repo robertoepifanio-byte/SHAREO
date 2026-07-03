@@ -73,10 +73,12 @@ export function ThemeToggle({ value, onChange }: ThemeToggleProps) {
     >
       {OPTIONS.map(({ value: opt, label }) => {
         const isActive = value === opt
-        // handoff §1.17:
-        // ativo: bg #007B3C, border #007B3C, text #fff
-        // inativo (sobre navy): bg transparente, border rgba(255,255,255,.3), text rgba(255,255,255,.7)
-        const iconColor = isActive ? "#FFFFFF" : "rgba(255,255,255,0.7)"
+        // Fonte real: components/layout/ThemeToggle.tsx linhas 43-45/75-77 — em
+        // AMBAS as variantes (header/menu) o ativo é branco translúcido sobre o
+        // navy (bg-white/15 text-white), nunca verde sólido. O comentário
+        // anterior citava "handoff §1.17: bg #007B3C", que diverge do código-fonte
+        // real e foi corrigido a favor do código (fonte da verdade).
+        const iconColor = isActive ? "#FFFFFF" : "rgba(255,255,255,0.6)"
 
         return (
           <Pressable
@@ -121,7 +123,7 @@ const styles = StyleSheet.create({
     gap:            3,
   },
   optionActive: {
-    backgroundColor: "#007B3C",
+    backgroundColor: "rgba(255,255,255,0.15)",
   },
   optionInactive: {
     backgroundColor: "transparent",
