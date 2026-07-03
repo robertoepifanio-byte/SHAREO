@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     // rótulo mais longo (ex. "Casa e Jardim") deixava aquele chip bem mais
     // largo que os outros, quebrando o ritmo visual da fila inteira.
     alignItems: "center",
-    maxWidth:   72,
+    maxWidth:   84,
   },
   label: {
     fontSize:   11,
