@@ -37,7 +37,7 @@ describe("Avatar", () => {
     render(<Avatar name="Test" size="sm" />)
     const circle = screen.getByTestId("avatar-32")
     const styles = Array.isArray(circle.props.style) ? circle.props.style : [circle.props.style]
-    const dims = styles.reduce((acc, s) => ({ ...acc, ...(s ?? {}) }), {} as Record<string, number>)
+    const dims = styles.reduce((acc: Record<string, number>, s: Record<string, number> | null | undefined) => ({ ...acc, ...(s ?? {}) }), {} as Record<string, number>)
     expect(dims.width).toBe(32)
     expect(dims.height).toBe(32)
   })
@@ -46,7 +46,7 @@ describe("Avatar", () => {
     render(<Avatar name="Test" size="md" />)
     const circle = screen.getByTestId("avatar-44")
     const styles = Array.isArray(circle.props.style) ? circle.props.style : [circle.props.style]
-    const dims = styles.reduce((acc, s) => ({ ...acc, ...(s ?? {}) }), {} as Record<string, number>)
+    const dims = styles.reduce((acc: Record<string, number>, s: Record<string, number> | null | undefined) => ({ ...acc, ...(s ?? {}) }), {} as Record<string, number>)
     expect(dims.width).toBe(44)
     expect(dims.height).toBe(44)
   })
@@ -55,7 +55,7 @@ describe("Avatar", () => {
     render(<Avatar name="Test" size="lg" />)
     const circle = screen.getByTestId("avatar-72")
     const styles = Array.isArray(circle.props.style) ? circle.props.style : [circle.props.style]
-    const dims = styles.reduce((acc, s) => ({ ...acc, ...(s ?? {}) }), {} as Record<string, number>)
+    const dims = styles.reduce((acc: Record<string, number>, s: Record<string, number> | null | undefined) => ({ ...acc, ...(s ?? {}) }), {} as Record<string, number>)
     expect(dims.width).toBe(72)
     expect(dims.height).toBe(72)
   })
@@ -64,7 +64,7 @@ describe("Avatar", () => {
     render(<Avatar name="Test" size="xl" />)
     const circle = screen.getByTestId("avatar-88")
     const styles = Array.isArray(circle.props.style) ? circle.props.style : [circle.props.style]
-    const dims = styles.reduce((acc, s) => ({ ...acc, ...(s ?? {}) }), {} as Record<string, number>)
+    const dims = styles.reduce((acc: Record<string, number>, s: Record<string, number> | null | undefined) => ({ ...acc, ...(s ?? {}) }), {} as Record<string, number>)
     expect(dims.width).toBe(88)
     expect(dims.height).toBe(88)
   })

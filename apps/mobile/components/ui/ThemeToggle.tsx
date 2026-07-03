@@ -34,7 +34,10 @@ function MonitorIcon({ color }: { color: string }) {
   const s = { stroke: color, strokeWidth: 2, fill: "none", strokeLinecap: "round" as const, strokeLinejoin: "round" as const }
   return (
     <Svg width={16} height={16} viewBox="0 0 24 24">
-      <Path {...s} d="M2 3h20v14H2z" rx="2" ry="2"/>
+      {/* rx/ry não existem em react-native-svg Path — a borda arredondada
+          é visual no ícone de monitor do Lucide, mas é imperceptível em 16px;
+          omitida sem perda semântica. Fonte: Lucide Monitor icon SVG path. */}
+      <Path {...s} d="M2 3h20v14H2z"/>
       <Path {...s} d="M8 21h8m-4-4v4"/>
     </Svg>
   )

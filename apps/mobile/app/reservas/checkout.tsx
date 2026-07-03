@@ -1,19 +1,10 @@
-/**
- * BookingCheckoutScreen — apps/mobile/app/reservas/checkout.tsx
- *
- * Tela de seleção de datas e criação de reserva no app Android.
- * Espelha a lógica de app/itens/[id]/_PriceCalc.tsx (web), adaptada para RN.
- *
- * Fluxo:
- *  1. Usuário seleciona modalidade (diária/semanal/mensal) + data de retirada
- *  2. Devolução calculada automaticamente
- *  3. Resumo de preço exibido em tempo real
- *  4. "Solicitar locação" → POST /api/bookings (Bearer)
- *  5. Após criar, navega para /reservas/[id] (tela de detalhe existente)
- *
- * O pagamento MP é iniciado a partir da tela de detalhe da reserva,
- * quando o locador confirmar (status CONFIRMED).
- */
+// Fonte: app/itens/[id]/_PriceCalc.tsx + lib/platform-config.ts
+// Tela de checkout do app mobile — espelha _PriceCalc.tsx do site.
+// Integração Mercado Pago preservada (rota unificada resolveUserId + client:"mobile").
+// Aviso de teto R$500: copy verbatim de _PriceCalc.tsx linha 434.
+// Modalidade diária/semanal/mensal: verbatim de _PriceCalc.tsx linhas 86-90 e 205-235.
+
+import React, { useState, useMemo } from "react"
 import {
   View,
   Text,
@@ -23,8 +14,8 @@ import {
   TextInput,
   Platform,
   Alert,
+  StyleSheet,
 } from "react-native"
-import { useState, useMemo } from "react"
 import { router, useLocalSearchParams } from "expo-router"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker"
@@ -32,22 +23,17 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { apiFetch } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
 import { calcBookingTotal, fmtCurrency, addDays, CHECKOUT_MAX_CENTS } from "@/lib/pricing"
+import { useTheme } from "@/lib/theme"
 
-// ─── Tipos ───────────────────────────────────────────────────────────────────
-
+// ── Tipos ──────────────────────────────────────────────────────────────────────
 type Mode = "daily" | "weekly" | "monthly"
-
-// useLocalSearchParams requer Record<string, string> — todos os campos como string.
-// Campos opcionais chegam como string vazia ("") quando ausentes.
 type CheckoutParams = Record<string, string>
 
 interface CreateBookingResponse {
   data: { id: string; status: string }
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-/** Data local no formato YYYY-MM-DD sem conversão UTC (evita virada de dia no Brasil) */
+// ── Helpers ────────────────────────────────────────────────────────────────────
 function toLocalISODate(date: Date): string {
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, "0")
@@ -55,16 +41,10 @@ function toLocalISODate(date: Date): string {
   return `${y}-${m}-${d}`
 }
 
-/** Formata data local para exibição pt-BR: seg., 01 jan. 2026 */
 function fmtDisplayDate(date: Date): string {
   return date.toLocaleDateString("pt-BR", {
     weekday: "short", day: "2-digit", month: "short", year: "numeric",
   })
-}
-
-/** Número de dias entre duas datas (inteiro, sem milissegundos) */
-function daysBetween(start: Date, end: Date): number {
-  return Math.round((end.getTime() - start.getTime()) / 86_400_000)
 }
 
 const today = (() => {
@@ -73,37 +53,38 @@ const today = (() => {
   return d
 })()
 
-// ─── Componente ──────────────────────────────────────────────────────────────
-
+// ── Tela principal ─────────────────────────────────────────────────────────────
 export default function BookingCheckoutScreen() {
-  const insets = useSafeAreaInsets()
-  const user   = useAuth((s) => s.user)
-  const qc     = useQueryClient()
+  const insets     = useSafeAreaInsets()
+  const user       = useAuth((s) => s.user)
+  const qc         = useQueryClient()
+  const { tokens } = useTheme()
 
   const params = useLocalSearchParams<CheckoutParams>()
 
-  const itemId = params.itemId ?? ""
-  const title  = params.title  ?? ""
+  const itemId        = params.itemId ?? ""
+  const title         = params.title  ?? "Solicitar locação"
   const pricePerDay   = parseInt(params.pricePerDay   ?? "0", 10)
   const pricePerWeek  = params.pricePerWeek  ? parseInt(params.pricePerWeek,  10) : null
   const pricePerMonth = params.pricePerMonth ? parseInt(params.pricePerMonth, 10) : null
 
+  // Modos disponíveis — verbatim de _PriceCalc.tsx linhas 86-90
   const availableModes: Mode[] = [
     "daily",
     ...(pricePerWeek  ? (["weekly"]  as Mode[]) : []),
     ...(pricePerMonth ? (["monthly"] as Mode[]) : []),
   ]
 
-  // ── State ────────────────────────────────────────────────────────────────
-  const [mode,           setMode]           = useState<Mode>("daily")
-  const [startDate,      setStartDate]      = useState<Date>(today)
-  const [numDays,        setNumDays]        = useState(1)
-  const [note,           setNote]           = useState("")
-  const [showPicker,     setShowPicker]     = useState(false)
-  const [error,          setError]          = useState<string | null>(null)
-  const [needsComplete,  setNeedsComplete]  = useState(false)
+  // ── Estado ────────────────────────────────────────────────────────────────
+  const [mode,          setMode]          = useState<Mode>("daily")
+  const [startDate,     setStartDate]     = useState<Date>(today)
+  const [numDays,       setNumDays]       = useState(1)
+  const [note,          setNote]          = useState("")
+  const [showPicker,    setShowPicker]    = useState(false)
+  const [error,         setError]         = useState<string | null>(null)
+  const [needsComplete, setNeedsComplete] = useState(false)
 
-  // ── Datas calculadas ─────────────────────────────────────────────────────
+  // ── Devolução calculada automaticamente — verbatim de _PriceCalc.tsx 104-109
   const endDate = useMemo<Date>(() => {
     if (mode === "weekly")  return addDays(startDate, 7)
     if (mode === "monthly") return addDays(startDate, 30)
@@ -116,41 +97,48 @@ export default function BookingCheckoutScreen() {
     return numDays
   }, [mode, numDays])
 
-  // ── Cálculo de preço ─────────────────────────────────────────────────────
+  // ── Cálculo de preço (verbatim de _PriceCalc.tsx linhas 118-131) ──────────
   const { totalPrice: subtotalCents, savings: savingsCents } = useMemo(
     () => calcBookingTotal(totalDays, pricePerDay, pricePerWeek, pricePerMonth),
     [totalDays, pricePerDay, pricePerWeek, pricePerMonth],
   )
 
+  // Teto D2 — verbatim de _PriceCalc.tsx linha 134
   const overLimit = subtotalCents > CHECKOUT_MAX_CENTS
 
-  // ── Mutação de criação ───────────────────────────────────────────────────
+  // ── Mutação — integração MP preservada (client:"mobile") ──────────────────
+  // Fonte: PR #161 feat/mobile-booking-checkout — rota unificada resolveUserId
   const createBooking = useMutation({
     mutationFn: () =>
       apiFetch<CreateBookingResponse>("/api/bookings", {
         method: "POST",
         body: JSON.stringify({
           itemId,
-          // Envia às 12h local para evitar ambiguidade de fuso
           startDate: new Date(`${toLocalISODate(startDate)}T12:00:00`).toISOString(),
           endDate:   new Date(`${toLocalISODate(endDate)}T12:00:00`).toISOString(),
           borrowerNote: note.trim() || undefined,
+          client: "mobile",   // flag para resolveUserId — PR #161
         }),
       }),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["bookings"] })
-      router.replace(`/reservas/${res.data.id}`)
+      router.replace(`/reservas/${res.data.id}` as never)
     },
     onError: (e) => {
       const msg = e instanceof Error ? e.message : "Erro ao solicitar reserva."
-      if (msg.includes("Complete seu cadastro")) {
-        setNeedsComplete(true)
-      }
+      if (msg.includes("Complete seu cadastro")) setNeedsComplete(true)
       setError(msg)
     },
   })
 
-  // ── Handlers ─────────────────────────────────────────────────────────────
+  // ── Rótulos de modalidade — verbatim de _PriceCalc.tsx linhas 190-194 ─────
+  const MODE_LABELS: Record<Mode, { label: string; price: number; unit: string }> = {
+    daily:   { label: "Diário",  price: pricePerDay,        unit: "/dia" },
+    weekly:  { label: "Semanal", price: pricePerWeek  ?? 0, unit: "/sem" },
+    monthly: { label: "Mensal",  price: pricePerMonth ?? 0, unit: "/mês" },
+  }
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
   function handleModeChange(m: Mode) {
     setMode(m)
     setError(null)
@@ -158,7 +146,7 @@ export default function BookingCheckoutScreen() {
   }
 
   function handleDateChange(_: DateTimePickerEvent, selected?: Date) {
-    setShowPicker(Platform.OS === "ios") // iOS mantém o picker aberto
+    setShowPicker(Platform.OS === "ios")
     if (selected) {
       selected.setHours(0, 0, 0, 0)
       setStartDate(selected)
@@ -181,42 +169,46 @@ export default function BookingCheckoutScreen() {
 
   const isReady = totalDays > 0 && !overLimit && !!itemId
 
-  // ─── Rótulos de modalidade ───────────────────────────────────────────────
-  const MODE_LABELS: Record<Mode, { label: string; price: number; unit: string }> = {
-    daily:   { label: "Diário",  price: pricePerDay,          unit: "/dia" },
-    weekly:  { label: "Semanal", price: pricePerWeek  ?? 0,   unit: "/sem" },
-    monthly: { label: "Mensal",  price: pricePerMonth ?? 0,   unit: "/mês" },
-  }
-
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <View className="flex-1 bg-background">
+    <View style={[s.root, { backgroundColor: tokens.bg }]}>
+
       {/* Header */}
       <View
-        className="flex-row items-center gap-3 border-b border-border bg-surface px-4 pb-3"
-        style={{ paddingTop: insets.top + 8 }}
+        style={[
+          s.header,
+          {
+            paddingTop:      insets.top + 8,
+            backgroundColor: tokens.surface,
+            borderBottomColor: tokens.border,
+          },
+        ]}
       >
         <TouchableOpacity
+          style={s.backBtn}
           onPress={() => router.back()}
-          accessibilityLabel="Voltar"
           accessibilityRole="button"
-          className="min-h-[44px] min-w-[44px] items-center justify-center"
+          accessibilityLabel="Voltar"
         >
-          <Text className="text-2xl text-muted">‹</Text>
+          <Text style={[s.backBtnText, { color: tokens.muted }]}>‹</Text>
         </TouchableOpacity>
-        <Text className="flex-1 text-lg font-bold text-primary" numberOfLines={1}>
-          {title ?? "Solicitar locação"}
+        <Text style={[s.headerTitle, { color: tokens.navy }]} numberOfLines={1}>
+          {title}
         </Text>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 120 }}>
+      <ScrollView
+        style={s.scroll}
+        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
 
-        {/* ── Modalidade (tabs) ── */}
+        {/* ── Tabs de modalidade — verbatim de _PriceCalc.tsx 205-235 ── */}
         {availableModes.length > 1 && (
-          <View className="mb-5">
-            <Text className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
-              Modalidade
-            </Text>
-            <View className="flex-row gap-2">
+          <View style={{ marginBottom: 20 }}>
+            <Text style={[s.fieldLabel, { color: tokens.muted }]}>MODALIDADE</Text>
+            <View style={s.modeTabs}>
               {availableModes.map((m) => {
                 const { label, price, unit } = MODE_LABELS[m]
                 const active = mode === m
@@ -227,30 +219,19 @@ export default function BookingCheckoutScreen() {
                     accessibilityRole="button"
                     accessibilityState={{ selected: active }}
                     accessibilityLabel={`${label}: ${fmtCurrency(price)}${unit}`}
-                    className={[
-                      "flex-1 items-center rounded-xl border py-3 px-2",
-                      active
-                        ? "border-brand bg-emerald-50"
-                        : "border-border bg-surface",
-                    ].join(" ")}
+                    style={[
+                      s.modeTab,
+                      { borderColor: active ? tokens.green : tokens.border },
+                      active && { backgroundColor: "#F0FDF4" },
+                    ]}
                   >
-                    <Text
-                      className={[
-                        "text-[10px] font-semibold uppercase tracking-wider",
-                        active ? "text-brand" : "text-muted",
-                      ].join(" ")}
-                    >
-                      {label}
+                    <Text style={[s.modeTabLabel, { color: active ? tokens.green : tokens.muted }]}>
+                      {label.toUpperCase()}
                     </Text>
-                    <Text
-                      className={[
-                        "mt-0.5 text-base font-extrabold leading-tight",
-                        active ? "text-foreground" : "text-muted",
-                      ].join(" ")}
-                    >
+                    <Text style={[s.modeTabPrice, { color: active ? tokens.text : tokens.muted }]}>
                       {fmtCurrency(price)}
                     </Text>
-                    <Text className={active ? "text-[10px] text-brand" : "text-[10px] text-muted"}>
+                    <Text style={[s.modeTabUnit, { color: active ? tokens.green : tokens.muted }]}>
                       {unit}
                     </Text>
                   </TouchableOpacity>
@@ -261,18 +242,18 @@ export default function BookingCheckoutScreen() {
         )}
 
         {/* ── Data de retirada ── */}
-        <View className="mb-4">
-          <Text className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
-            Data de retirada
-          </Text>
+        <View style={{ marginBottom: 16 }}>
+          <Text style={[s.fieldLabel, { color: tokens.muted }]}>DATA DE RETIRADA</Text>
           <TouchableOpacity
             onPress={() => setShowPicker(true)}
             accessibilityRole="button"
             accessibilityLabel={`Data de retirada: ${fmtDisplayDate(startDate)}. Toque para alterar`}
-            className="min-h-[44px] flex-row items-center rounded-lg border border-border bg-surface px-4"
+            style={[s.dateBtn, { borderColor: tokens.border, backgroundColor: tokens.surface }]}
           >
-            <Text className="flex-1 text-sm text-foreground">{fmtDisplayDate(startDate)}</Text>
-            <Text className="text-sm text-brand">Alterar</Text>
+            <Text style={[s.dateBtnDate, { color: tokens.text }]}>
+              {fmtDisplayDate(startDate)}
+            </Text>
+            <Text style={[s.dateBtnChange, { color: tokens.green }]}>Alterar</Text>
           </TouchableOpacity>
           {showPicker && (
             <DateTimePicker
@@ -281,34 +262,32 @@ export default function BookingCheckoutScreen() {
               display={Platform.OS === "ios" ? "spinner" : "default"}
               minimumDate={today}
               onChange={handleDateChange}
-              locale="pt-BR"
             />
           )}
-          {/* iOS: botão para fechar o picker quando display="spinner" */}
           {showPicker && Platform.OS === "ios" && (
             <TouchableOpacity
               onPress={() => setShowPicker(false)}
-              className="mt-2 items-end"
+              style={{ alignItems: "flex-end", marginTop: 8 }}
             >
-              <Text className="text-sm font-semibold text-brand">Confirmar</Text>
+              <Text style={[{ color: tokens.green, fontSize: 14, fontWeight: "600" }]}>
+                Confirmar
+              </Text>
             </TouchableOpacity>
           )}
         </View>
 
-        {/* ── Quantidade de dias (apenas modo diário) ── */}
+        {/* ── Quantidade de dias (modo diário) — verbatim de _PriceCalc.tsx 256-292 ── */}
         {mode === "daily" && (
-          <View className="mb-4">
-            <Text className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
-              Quantidade de dias
-            </Text>
-            <View className="flex-row items-center gap-3">
+          <View style={{ marginBottom: 16 }}>
+            <Text style={[s.fieldLabel, { color: tokens.muted }]}>QUANTIDADE DE DIAS</Text>
+            <View style={s.stepper}>
               <TouchableOpacity
                 onPress={() => setNumDays((n) => Math.max(1, n - 1))}
                 accessibilityRole="button"
                 accessibilityLabel="Diminuir dias"
-                className="min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-border bg-surface"
+                style={[s.stepBtn, { borderColor: tokens.border }]}
               >
-                <Text className="text-xl font-bold text-muted">−</Text>
+                <Text style={[s.stepBtnText, { color: tokens.muted }]}>−</Text>
               </TouchableOpacity>
               <TextInput
                 value={String(numDays)}
@@ -318,105 +297,100 @@ export default function BookingCheckoutScreen() {
                 }}
                 keyboardType="number-pad"
                 accessibilityLabel="Número de dias"
-                className="min-h-[44px] flex-1 rounded-lg border border-border bg-surface px-3 text-center text-base font-semibold text-foreground"
+                style={[s.stepInput, { borderColor: tokens.border, backgroundColor: tokens.surface, color: tokens.text }]}
               />
               <TouchableOpacity
                 onPress={() => setNumDays((n) => Math.min(365, n + 1))}
                 accessibilityRole="button"
                 accessibilityLabel="Aumentar dias"
-                className="min-h-[44px] min-w-[44px] items-center justify-center rounded-lg border border-border bg-surface"
+                style={[s.stepBtn, { borderColor: tokens.border }]}
               >
-                <Text className="text-xl font-bold text-muted">+</Text>
+                <Text style={[s.stepBtnText, { color: tokens.muted }]}>+</Text>
               </TouchableOpacity>
             </View>
           </View>
         )}
 
-        {/* ── Data de devolução (calculada automaticamente) ── */}
-        <View className="mb-5">
-          <Text className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
-            Devolução{" "}
-            <Text className="font-normal normal-case text-[10px]">(calculado automaticamente)</Text>
+        {/* ── Devolução — calculada automaticamente — verbatim de _PriceCalc.tsx 295-321 ── */}
+        <View style={{ marginBottom: 20 }}>
+          <Text style={[s.fieldLabel, { color: tokens.muted }]}>
+            DEVOLUÇÃO{" "}
+            <Text style={{ fontSize: 10, fontWeight: "400", textTransform: "none" }}>
+              (calculado automaticamente)
+            </Text>
           </Text>
-          <View
-            className="min-h-[44px] flex-row items-center rounded-lg border border-border bg-muted/20 px-4"
-            accessibilityLabel={`Data de devolução: ${fmtDisplayDate(endDate)}`}
-            accessible
-          >
-            <Text className="text-sm text-foreground">{fmtDisplayDate(endDate)}</Text>
+          <View style={[s.dateReadOnly, { borderColor: tokens.border, backgroundColor: "#F1F5F9" }]}>
+            <Text style={[{ color: tokens.text, fontSize: 14 }]}>
+              {fmtDisplayDate(endDate)}
+            </Text>
           </View>
-          <Text className="mt-1 text-[11px] text-muted">
+          <Text style={[s.devNote, { color: tokens.muted }]}>
             {mode === "daily"
-              ? `Retirada + ${numDays} dia${numDays > 1 ? "s" : ""} — devolução no mesmo horário`
+              ? `Retirada + ${numDays} dia${numDays > 1 ? "s" : ""} — devolução no mesmo horário da retirada`
               : mode === "weekly"
-              ? "Retirada + 7 dias — devolução no mesmo horário"
-              : "Retirada + 30 dias — devolução no mesmo horário"}
+              ? "Retirada + 7 dias — devolução no mesmo horário da retirada"
+              : "Retirada + 30 dias — devolução no mesmo horário da retirada"}
           </Text>
         </View>
 
-        {/* ── Resumo de preço ── */}
+        {/* ── Resumo de preço — verbatim de _PriceCalc.tsx linhas 324-373 ── */}
         <View
-          className="mb-5 rounded-xl border border-border bg-surface p-4"
+          style={[s.summary, { backgroundColor: tokens.bg, borderColor: tokens.border }]}
           accessibilityLabel="Resumo de preço"
           accessible
         >
-          <Text className="mb-2 text-[11px] font-bold uppercase tracking-widest text-muted">
-            Resumo
-          </Text>
+          <Text style={[s.summaryHeader, { color: tokens.muted }]}>RESUMO</Text>
 
-          <View className="flex-row items-center justify-between">
-            <Text className="text-sm text-muted">
+          <View style={s.summaryRow}>
+            <Text style={[s.summaryLabel, { color: tokens.muted }]}>
               {mode === "daily"
                 ? `${totalDays} dia${totalDays > 1 ? "s" : ""} × ${fmtCurrency(pricePerDay)}`
                 : mode === "weekly"
                 ? `1 semana × ${fmtCurrency(pricePerWeek ?? 0)}`
                 : `1 mês × ${fmtCurrency(pricePerMonth ?? 0)}`}
             </Text>
-            <Text className="text-sm font-semibold text-foreground">
+            <Text style={[s.summaryValue, { color: tokens.text }]}>
               {fmtCurrency(subtotalCents)}
             </Text>
           </View>
 
           {savingsCents > 0 && (
-            <View className="mt-1.5 flex-row items-center justify-between">
-              <Text className="text-xs font-medium text-success">Desconto por período</Text>
-              <Text className="text-xs font-medium text-success">-{fmtCurrency(savingsCents)}</Text>
+            <View style={s.summaryRow}>
+              <Text style={[s.savingsLabel, { color: tokens.success }]}>🏷️ Desconto por período</Text>
+              <Text style={[s.savingsValue, { color: tokens.success }]}>-{fmtCurrency(savingsCents)}</Text>
             </View>
           )}
 
-          <View className="my-3 h-px bg-border" />
+          <View style={[s.divider, { backgroundColor: tokens.border }]} />
 
-          <View className="flex-row items-center justify-between">
-            <Text className="text-base font-bold text-foreground">Total do aluguel</Text>
-            <Text className="text-base font-bold text-foreground">{fmtCurrency(subtotalCents)}</Text>
+          <View style={s.summaryRow}>
+            <Text style={[s.totalLabel, { color: tokens.text }]}>Total do aluguel</Text>
+            <Text style={[s.totalValue, { color: tokens.text }]}>{fmtCurrency(subtotalCents)}</Text>
           </View>
 
-          <Text className="mt-2 text-[11px] leading-relaxed text-muted">
+          <Text style={[s.feeNote, { color: tokens.muted }]}>
             Você paga apenas o valor da locação. A ShareO retém um percentual do repasse ao proprietário.
           </Text>
         </View>
 
-        {/* ── Aviso de teto D2 ── */}
+        {/* ── Aviso de teto R$500 — copy VERBATIM de _PriceCalc.tsx linha 434 ── */}
         {overLimit && (
-          <View
-            className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3"
-            accessibilityRole="alert"
-          >
-            <Text className="text-sm font-semibold text-amber-800">
-              Total acima do limite desta versão
-            </Text>
-            <Text className="mt-0.5 text-xs text-amber-700">
-              Locações acima de {fmtCurrency(CHECKOUT_MAX_CENTS)} não estão disponíveis agora.
+          <View style={s.limitWarn} accessibilityRole="alert">
+            <Text style={s.limitWarnText}>
+              ⚠️ O total excede o limite de{" "}
+              <Text style={{ fontWeight: "700" }}>
+                {fmtCurrency(CHECKOUT_MAX_CENTS)}
+              </Text>
+              {" "}por locação.{"\n"}
               Reduza a quantidade de dias ou escolha outra modalidade.
             </Text>
           </View>
         )}
 
-        {/* ── Nota ao proprietário ── */}
-        <View className="mb-5">
-          <Text className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
-            Mensagem ao proprietário{" "}
-            <Text className="font-normal normal-case">(opcional)</Text>
+        {/* ── Nota ao proprietário — verbatim de _PriceCalc.tsx linhas 376-391 ── */}
+        <View style={{ marginBottom: 20 }}>
+          <Text style={[s.fieldLabel, { color: tokens.muted }]}>
+            MENSAGEM AO PROPRIETÁRIO (OPCIONAL)
           </Text>
           <TextInput
             value={note}
@@ -425,29 +399,31 @@ export default function BookingCheckoutScreen() {
             numberOfLines={3}
             maxLength={500}
             placeholder="Ex.: Preciso para um evento no fim de semana…"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={tokens.muted}
             accessibilityLabel="Mensagem opcional ao proprietário"
-            className="rounded-xl border border-border bg-surface px-4 py-3 text-sm text-foreground"
-            style={{ textAlignVertical: "top", minHeight: 80 }}
+            style={[
+              s.textarea,
+              { borderColor: tokens.border, backgroundColor: tokens.surface, color: tokens.text },
+            ]}
+            textAlignVertical="top"
           />
         </View>
 
         {/* ── Erro ── */}
         {error && (
-          <View
-            className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3"
-            accessibilityRole="alert"
-          >
-            <Text className="text-sm text-red-700">{error}</Text>
+          <View style={s.errorBox} accessibilityRole="alert">
+            <Text style={s.errorText}>{error}</Text>
             {needsComplete && (
               <TouchableOpacity
-                onPress={() => router.push({
-                  pathname: "/cadastro/completar" as never,
-                  params: { callbackUrl: `/itens/${itemId}` },
-                })}
-                className="mt-2"
+                onPress={() =>
+                  router.push({
+                    pathname: "/cadastro/completar" as never,
+                    params: { callbackUrl: `/itens/${itemId}` },
+                  })
+                }
+                style={{ marginTop: 8 }}
               >
-                <Text className="text-sm font-semibold text-brand">
+                <Text style={{ color: tokens.green, fontSize: 13, fontWeight: "600" }}>
                   Completar cadastro →
                 </Text>
               </TouchableOpacity>
@@ -455,12 +431,37 @@ export default function BookingCheckoutScreen() {
           </View>
         )}
 
+        {/* ── Estado enviando / sucesso ── */}
+        {createBooking.isPending && (
+          <View style={[s.stateBox, { backgroundColor: "#EFF6FF", borderColor: "#BFDBFE" }]}>
+            <ActivityIndicator size="small" color="#1D4ED8" />
+            <Text style={{ color: "#1E40AF", fontSize: 13, marginLeft: 8 }}>Enviando solicitação…</Text>
+          </View>
+        )}
+
+        {createBooking.isSuccess && (
+          <View style={[s.stateBox, { backgroundColor: "#F0FDF4", borderColor: "#86EFAC" }]}>
+            <Text style={{ color: "#166534", fontSize: 14, fontWeight: "700" }}>
+              ✓ Solicitação enviada com sucesso!
+            </Text>
+            <Text style={{ color: "#166534", fontSize: 12, marginTop: 4 }}>
+              O proprietário precisa confirmar antes do pagamento.
+            </Text>
+          </View>
+        )}
+
       </ScrollView>
 
       {/* ── CTA fixo ── */}
       <View
-        className="border-t border-border bg-surface px-4 py-3"
-        style={{ paddingBottom: insets.bottom + 12 }}
+        style={[
+          s.cta,
+          {
+            backgroundColor:  tokens.surface,
+            borderTopColor:   tokens.border,
+            paddingBottom:    insets.bottom + 12,
+          },
+        ]}
       >
         <TouchableOpacity
           onPress={handleSolicitar}
@@ -468,23 +469,130 @@ export default function BookingCheckoutScreen() {
           accessibilityRole="button"
           accessibilityLabel="Solicitar locação"
           accessibilityState={{ disabled: !isReady || createBooking.isPending }}
-          className={[
-            "min-h-[52px] items-center justify-center rounded-xl",
-            isReady && !createBooking.isPending ? "bg-brand" : "bg-brand/50",
-          ].join(" ")}
+          style={[
+            s.ctaBtn,
+            { backgroundColor: isReady && !createBooking.isPending ? tokens.green : "#94A3B8" },
+          ]}
         >
           {createBooking.isPending ? (
             <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
-            <Text className="text-base font-bold text-white">
-              Solicitar locação
-            </Text>
+            <Text style={s.ctaBtnText}>💬 Solicitar locação</Text>
           )}
         </TouchableOpacity>
-        <Text className="mt-2 text-center text-xs text-muted">
+        <Text style={[s.ctaNote, { color: tokens.muted }]}>
           O proprietário precisa confirmar antes do pagamento
         </Text>
       </View>
+
     </View>
   )
 }
+
+// ── Estilos ────────────────────────────────────────────────────────────────────
+const s = StyleSheet.create({
+  root:   { flex: 1 },
+  scroll: { flex: 1 },
+
+  // Header
+  header: {
+    flexDirection: "row", alignItems: "center", gap: 8,
+    paddingBottom: 12, paddingHorizontal: 16,
+    borderBottomWidth: 1,
+  },
+  backBtn:      { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
+  backBtnText:  { fontSize: 28, fontWeight: "700", lineHeight: 32 },
+  headerTitle:  { flex: 1, fontSize: 17, fontWeight: "700" },
+
+  // Campos
+  fieldLabel: { fontSize: 11, fontWeight: "600", letterSpacing: 0.4, marginBottom: 6 },
+
+  // Tabs de modalidade
+  modeTabs: { flexDirection: "row", gap: 8 },
+  modeTab: {
+    flex: 1, borderWidth: 1, borderRadius: 12,
+    paddingVertical: 10, paddingHorizontal: 8,
+    alignItems: "center",
+  },
+  modeTabLabel: { fontSize: 9, fontWeight: "700", letterSpacing: 0.5 },
+  modeTabPrice: { fontSize: 15, fontWeight: "800", marginTop: 2 },
+  modeTabUnit:  { fontSize: 9, marginTop: 1 },
+
+  // Seletor de data
+  dateBtn: {
+    minHeight: 44, flexDirection: "row", alignItems: "center",
+    borderWidth: 1, borderRadius: 8, paddingHorizontal: 12,
+  },
+  dateBtnDate:   { flex: 1, fontSize: 14 },
+  dateBtnChange: { fontSize: 14, fontWeight: "600" },
+  dateReadOnly: {
+    minHeight: 44, justifyContent: "center",
+    borderWidth: 1, borderRadius: 8, paddingHorizontal: 12,
+  },
+  devNote: { fontSize: 11, marginTop: 4, lineHeight: 16 },
+
+  // Stepper de dias
+  stepper: { flexDirection: "row", gap: 8 },
+  stepBtn: {
+    width: 44, height: 44, borderWidth: 1, borderRadius: 8,
+    alignItems: "center", justifyContent: "center", flexShrink: 0,
+  },
+  stepBtnText: { fontSize: 20, lineHeight: 24 },
+  stepInput: {
+    flex: 1, height: 44, borderWidth: 1, borderRadius: 8,
+    textAlign: "center", fontSize: 16, fontWeight: "700",
+  },
+
+  // Resumo de preço
+  summary: { borderWidth: 1, borderRadius: 12, padding: 16, marginBottom: 16 },
+  summaryHeader: { fontSize: 11, fontWeight: "700", letterSpacing: 0.8, marginBottom: 12 },
+  summaryRow: { flexDirection: "row", justifyContent: "space-between", marginVertical: 4 },
+  summaryLabel:  { fontSize: 13, flex: 1, marginRight: 8 },
+  summaryValue:  { fontSize: 13, fontWeight: "600" },
+  savingsLabel:  { fontSize: 12, fontWeight: "600" },
+  savingsValue:  { fontSize: 12, fontWeight: "600" },
+  divider:       { height: 1, marginVertical: 10 },
+  totalLabel:    { fontSize: 15, fontWeight: "700" },
+  totalValue:    { fontSize: 15, fontWeight: "700" },
+  feeNote:       { fontSize: 11, marginTop: 8, lineHeight: 16 },
+
+  // Aviso de teto — copy verbatim de _PriceCalc.tsx
+  limitWarn: {
+    borderRadius: 10, borderWidth: 1,
+    borderColor: "#FCD34D", backgroundColor: "#FFFBEB",
+    padding: 12, marginBottom: 16,
+  },
+  limitWarnText: { color: "#92400E", fontSize: 13, lineHeight: 20 },
+
+  // Textarea
+  textarea: {
+    borderWidth: 1, borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 10,
+    fontSize: 14, minHeight: 80,
+  },
+
+  // Erro
+  errorBox:  { backgroundColor: "#FEF2F2", borderRadius: 8, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: "#FECACA" },
+  errorText: { color: "#B91C1C", fontSize: 13 },
+
+  // Estado
+  stateBox: {
+    flexDirection: "row", alignItems: "center",
+    borderRadius: 8, padding: 12, marginBottom: 12, borderWidth: 1,
+  },
+
+  // CTA
+  cta: {
+    borderTopWidth: 1, paddingTop: 12, paddingHorizontal: 16,
+    ...Platform.select({
+      ios: { shadowColor: "#000", shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.08, shadowRadius: 10 },
+      android: { elevation: 8 },
+    }),
+  },
+  ctaBtn: {
+    minHeight: 52, borderRadius: 12,
+    alignItems: "center", justifyContent: "center",
+  },
+  ctaBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
+  ctaNote:    { fontSize: 11, textAlign: "center", marginTop: 6 },
+})
