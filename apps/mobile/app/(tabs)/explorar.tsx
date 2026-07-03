@@ -14,14 +14,16 @@ import {
   ScrollView,
   StyleSheet,
   Platform,
+  Alert,
 } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Image } from "expo-image"
 import Svg, {
   Path, Circle, Line, Rect, Polyline, Polygon
 } from "react-native-svg"
 import { apiFetch } from "@/lib/api"
+import { useAuth } from "@/lib/auth"
 import { useTheme } from "@/lib/theme"
 import { CategoryChip } from "@/components/ui/CategoryChip"
 
@@ -109,6 +111,49 @@ function ItemCardSkeleton() {
 }
 
 // ── ItemCard — 2 colunas — transcrito de ItemCard do site ────────────────────
+// Coração de favoritar — transcrito do componente components/items/FavoriteButton.tsx
+// do site: autocontido, toggle otimista via POST /api/items/[id]/favorite (mesmo
+// endpoint já usado em itens/[id].tsx). O site não pré-busca o estado inicial na
+// listagem geral (isFavorited default=false em ItemCard.tsx) — replicado aqui.
+function FavoriteHeart({ itemId }: { itemId: string }) {
+  const qc = useQueryClient()
+  const user = useAuth((s) => s.user)
+  const [favorited, setFavorited] = useState<boolean | null>(null)
+  const toggle = useMutation({
+    mutationFn: () => apiFetch<{ data: { favorited: boolean } }>(`/api/items/${itemId}/favorite`, { method: "POST" }),
+    onMutate: () => setFavorited((prev) => (prev === null ? true : !prev)),
+    onSuccess: (res) => {
+      setFavorited(res.data.favorited)
+      qc.invalidateQueries({ queryKey: ["favorites"] })
+    },
+    onError: () => setFavorited((prev) => (prev === null ? null : !prev)),
+  })
+  function handlePress(e: { stopPropagation?: () => void }) {
+    e.stopPropagation?.()
+    // Fonte: itens/[id].tsx handleToggleFavorite — mesmo guard de login antes
+    // de chamar o endpoint (que responde 401 sem isso).
+    if (!user) {
+      Alert.alert("Login necessário", "Faça login para salvar favoritos.", [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Entrar", onPress: () => router.push("/(auth)/login") },
+      ])
+      return
+    }
+    toggle.mutate()
+  }
+  return (
+    <TouchableOpacity
+      onPress={handlePress}
+      disabled={toggle.isPending}
+      style={s.favBtn}
+      accessibilityRole="button"
+      accessibilityLabel={favorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+    >
+      <Text style={{ fontSize: 14 }}>{favorited ? "❤️" : "🤍"}</Text>
+    </TouchableOpacity>
+  )
+}
+
 function ItemCard({ item, onPress }: { item: Item; onPress: () => void }) {
   const thumb = item.images[0]?.url
   const catColors = CAT_COLORS[item.category.slug] ?? { bg: "#F1F5F9", stroke: "#64748B" }
@@ -129,10 +174,14 @@ function ItemCard({ item, onPress }: { item: Item; onPress: () => void }) {
             <CategorySvg slug={item.category.slug} stroke={catColors.stroke} />
           </View>
         )}
-        {/* Badge Eco — "absolute right-2 top-2 bg-success/90" */}
-        <View style={s.ecoBadge}>
-          <Text style={s.ecoBadgeText}>Eco</Text>
-        </View>
+        {/* Favoritar — fonte: ItemCard.tsx linhas 93-96 (FavoriteButton, showActions=false) */}
+        <FavoriteHeart itemId={item.id} />
+        {/* Verificado — fonte: ItemCard.tsx linhas 98-110 (bg-success/90, canto inferior direito) */}
+        {item.owner.isVerified && (
+          <View style={s.verifiedBadge} accessibilityRole="image" accessibilityLabel="Anunciante verificado">
+            <Text style={{ color: "#FFFFFF", fontSize: 9, fontWeight: "700" }}>✓</Text>
+          </View>
+        )}
       </View>
 
       {/* Corpo */}
@@ -141,6 +190,12 @@ function ItemCard({ item, onPress }: { item: Item; onPress: () => void }) {
         <Text style={s.cardCat} numberOfLines={1}>{item.category.name}</Text>
         {/* Título — "text-sm font-bold text-primary" */}
         <Text style={s.cardTitle} numberOfLines={2}>{item.title}</Text>
+        {/* TODO(revisão): estrelas de avaliação (ItemCard.tsx linhas 120-125,
+            RatingStars com avgRating/_count.reviews) e distanceKm (linhas 137-141)
+            não vêm de /api/items hoje — só app/itens/page.tsx (SSR) calcula isso
+            numa query Prisma separada com reviews:{select:{rating}}. Extender
+            /api/items exigiria decisão de escopo (mesmo padrão de /api/stats);
+            não implementado nesta rodada pra não inventar contrato de API. */}
         {/* Preço + localização */}
         <View style={s.cardFooter}>
           <View>
@@ -431,19 +486,29 @@ const s = StyleSheet.create({
     alignItems:     "center",
     justifyContent: "center",
   },
-  ecoBadge: {
+  // Favoritar — fonte: ItemCard.tsx (FavoriteButton posicionado no canto da imagem)
+  favBtn: {
     position:        "absolute",
-    top:             8,
-    right:           8,
-    backgroundColor: "rgba(0,123,60,0.88)",
-    borderRadius:    20,
-    paddingHorizontal: 6,
-    paddingVertical:   2,
+    top:             6,
+    right:           6,
+    width:           28,
+    height:          28,
+    borderRadius:    14,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    alignItems:      "center",
+    justifyContent:  "center",
   },
-  ecoBadgeText: {
-    fontSize:   10,
-    fontWeight: "700",
-    color:      "#FFFFFF",
+  // Verificado — fonte: ItemCard.tsx linhas 98-110 ("bg-success/90", canto inferior direito)
+  verifiedBadge: {
+    position:        "absolute",
+    bottom:          6,
+    right:           6,
+    width:           18,
+    height:          18,
+    borderRadius:    9,
+    backgroundColor: "rgba(0,123,60,0.9)",
+    alignItems:      "center",
+    justifyContent:  "center",
   },
   cardBody: {
     padding: 10,
