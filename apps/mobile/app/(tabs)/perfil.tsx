@@ -6,20 +6,21 @@
 //     incluindo href, icon e label. Sub-páginas sem equivalente nativo abrem no
 //     navegador via Linking.openURL. Isso é preferível a suprimir itens ou inventar
 //     comportamento — o usuário pode gerenciar a conta completa pelo browser.
-//   - Estatísticas (itens, aluguéis, nota) e avaliações recebidas: o endpoint
-//     GET /api/users/me NÃO retorna esses agregados (confirmar em app/api/users/me/route.ts
-//     linhas 213-227). TODO(revisão): quando o endpoint for atualizado para incluir
-//     _count e reviewsReceived, implementar as seções de stats + reviews verbatim do site
-//     (perfil/page.tsx linhas 186-248).
+//   - Estatísticas (itens, aluguéis, nota) e avaliações recebidas: GET /api/users/me
+//     agora retorna _count/reviewsReceived/avgRating/reviewCount (estendido em
+//     app/api/users/me/route.ts pra espelhar app/perfil/page.tsx linhas 40-81)
+//     — seções implementadas verbatim das linhas 186-248 do site.
 //   - Telas nativas existentes: Favoritos (/favoritos), KYC (/kyc),
 //     Anunciar (/itens/novo), Meus Anúncios (TODO: rota não existe ainda — MOB-BL-meus-anuncios).
 //
 // Elemento-por-elemento (seções implementadas):
-//   site perfil/page.tsx linha 106: gradient header + Avatar     → profileCard com Avatar
-//   site perfil/page.tsx linha 124: nome + badges verificado/PJ  → name + verifiedBadge
-//   site perfil/page.tsx linha 136: bio em destaque              → bio (quando presente)
-//   site perfil/page.tsx linha 141: localização + membro desde   → metaInfo
-//   site perfil/page.tsx linha 254-278: CONFIG_LINKS (9 itens)   → menuItems (9 itens)
+//   site perfil/page.tsx linha 106: gradient header + Avatar        → profileCard com Avatar
+//   site perfil/page.tsx linha 124: nome + badges verificado/PJ     → name + verifiedBadge
+//   site perfil/page.tsx linha 136: bio em destaque                 → bio (quando presente)
+//   site perfil/page.tsx linha 141: localização + membro desde      → metaInfo
+//   site perfil/page.tsx linha 186-203: 3 stat cards                → statsRow
+//   site perfil/page.tsx linha 205-248: avaliações recebidas (≤5)   → reviewsCard
+//   site perfil/page.tsx linha 254-278: CONFIG_LINKS (9 itens)      → menuItems (9 itens)
 
 import { Linking, View, Text, TouchableOpacity, ScrollView, Alert, StyleSheet, Platform } from "react-native"
 import { router } from "expo-router"
@@ -28,10 +29,19 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useAuth } from "@/lib/auth"
 import { useTheme } from "@/lib/theme"
 import { Avatar } from "@/components/ui/Avatar"
-import { apiFetch } from "@/lib/api"
+import { Stars } from "@/components/ui/Stars"
+import { apiFetch, API_URL } from "@/lib/api"
 import Svg, { Path, Line, Polyline, Rect, Circle, Ellipse } from "react-native-svg"
 
 // ── Tipo do usuário retornado por /api/users/me ──────────────────────────────
+interface MeReview {
+  rating:     number
+  comment:    string | null
+  reviewType: string
+  reviewer:   { name: string; avatarUrl: string | null }
+  createdAt:  string
+}
+
 interface MeData {
   id:           string
   name:         string
@@ -44,6 +54,21 @@ interface MeData {
   userType:     "PF" | "PJ"
   isVerified:   boolean
   createdAt:    string
+  _count: {
+    items:              number
+    bookingsAsBorrower: number
+    bookingsAsOwner:    number
+  }
+  reviewsReceived: MeReview[]
+  avgRating:   number | null
+  reviewCount: number
+}
+
+// Fonte: perfil/page.tsx linhas 15-19 — rótulo por tipo de avaliação
+const REVIEW_TYPE_LABEL: Record<string, string> = {
+  ITEM:     "sobre o item",
+  OWNER:    "sobre você como proprietário",
+  BORROWER: "sobre você como locatário",
 }
 
 // ── Ícones de menu — SVG Lucide verbatim das polylines/paths do site ─────────
@@ -81,9 +106,8 @@ function formatMonthYear(dateStr: string): string {
 
 // ── CONFIG_LINKS — verbatim de app/perfil/page.tsx linhas 22-30 ─────────────
 // href, icon e label copiados literalmente. Semântica de cada item preservada.
-// Sub-páginas sem equivalente nativo → Linking.openURL(staging + href).
+// Sub-páginas sem equivalente nativo → Linking.openURL(API_URL + href).
 // TODO(revisão): substituir Linking por rota nativa quando cada tela for implementada.
-const BASE_URL = "https://staging.shareo.com.br"
 
 interface MenuItem {
   href:    string
@@ -161,6 +185,12 @@ export default function PerfilScreen() {
   const state          = meData?.state      ?? null
   const neighborhood   = meData?.neighborhood ?? null
   const createdAt      = meData?.createdAt  ?? null
+
+  // Fonte: perfil/page.tsx linhas 86-88 — mesmos agregados
+  const itemCount      = meData?._count.items ?? 0
+  const totalBookings  = meData ? meData._count.bookingsAsBorrower + meData._count.bookingsAsOwner : 0
+  const avgRating      = meData?.avgRating ?? null
+  const reviewCount    = meData?.reviewCount ?? 0
 
   // ── CONFIG_LINKS — verbatim de app/perfil/page.tsx linhas 22-30 ─────────────
   // Items com tela nativa usam router.push. Demais abrem no browser (Linking).
@@ -274,7 +304,7 @@ export default function PerfilScreen() {
             {/* Botão Editar — verbatim link "/perfil/editar" do site */}
             <TouchableOpacity
               style={[s.editBtn, { borderColor: tokens.border }]}
-              onPress={() => Linking.openURL(`${BASE_URL}/perfil/editar`)}
+              onPress={() => Linking.openURL(`${API_URL}/perfil/editar`)}
               accessibilityRole="button"
               accessibilityLabel="Editar perfil"
             >
@@ -321,13 +351,74 @@ export default function PerfilScreen() {
         </View>
       </View>
 
-      {/* ── TODO(revisão): seções de Estatísticas e Avaliações recebidas ─────────
-          O endpoint GET /api/users/me (app/api/users/me/route.ts linhas 213-227)
-          não retorna _count nem reviewsReceived. Implementar quando o endpoint
-          for atualizado para incluir esses dados, copiando verbatim:
-          - Stats: perfil/page.tsx linhas 186-203 (3 cards: itens, aluguéis, nota)
-          - Reviews: perfil/page.tsx linhas 205-248 (lista de últimas 5 avaliações)
-      */}
+      {/* ── Estatísticas — verbatim de perfil/page.tsx linhas 186-203 ── */}
+      {meData && (
+        <View style={s.statsRow}>
+          {[
+            { value: String(itemCount), label: itemCount === 1 ? "item anunciado" : "itens anunciados", icon: "📦" },
+            { value: String(totalBookings), label: totalBookings === 1 ? "aluguel" : "aluguéis", icon: "🔄" },
+            {
+              value: avgRating !== null ? avgRating.toFixed(1) : "—",
+              label: avgRating !== null ? `★ nota (${reviewCount})` : "sem avaliações",
+              icon:  "⭐",
+            },
+          ].map((stat) => (
+            <View key={stat.label} style={[s.statCard, { backgroundColor: tokens.surface, borderColor: tokens.border }]}>
+              <Text style={s.statIcon} accessibilityElementsHidden>{stat.icon}</Text>
+              <Text style={[s.statValue, { color: tokens.navy }]}>{stat.value}</Text>
+              <Text style={[s.statLabel, { color: tokens.muted }]}>{stat.label}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* ── Avaliações recebidas — verbatim de perfil/page.tsx linhas 205-248 ── */}
+      {meData && meData.reviewsReceived.length > 0 && (
+        <View style={[s.reviewsCard, { backgroundColor: tokens.surface, borderColor: tokens.border }]}>
+          <View style={s.reviewsHeader}>
+            <Text style={[s.reviewsTitle, { color: tokens.text }]}>
+              Avaliações recebidas
+              {reviewCount > 5 && (
+                <Text style={[s.reviewsSubtitle, { color: tokens.muted }]}>
+                  {" "}(últimas 5 de {reviewCount})
+                </Text>
+              )}
+            </Text>
+            {avgRating !== null && <Stars rating={avgRating} />}
+          </View>
+
+          {meData.reviewsReceived.map((review, i) => (
+            <View
+              key={i}
+              style={[
+                s.reviewRow,
+                i < meData.reviewsReceived.length - 1
+                  ? { borderBottomWidth: 1, borderBottomColor: tokens.border, paddingBottom: 14, marginBottom: 14 }
+                  : { paddingBottom: 0, marginBottom: 0 },
+              ]}
+            >
+              <Avatar name={review.reviewer.name} imageUrl={review.reviewer.avatarUrl} size="sm" />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <View style={s.reviewRowHeader}>
+                  <View style={s.reviewRowNameRating}>
+                    <Text style={[s.reviewerName, { color: tokens.text }]}>{review.reviewer.name}</Text>
+                    <Stars rating={review.rating} />
+                  </View>
+                  <Text style={[s.reviewDate, { color: tokens.muted }]}>
+                    {new Date(review.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                  </Text>
+                </View>
+                <Text style={[s.reviewType, { color: tokens.muted }]}>
+                  {REVIEW_TYPE_LABEL[review.reviewType] ?? review.reviewType}
+                </Text>
+                {review.comment && (
+                  <Text style={[s.reviewComment, { color: tokens.text }]}>{review.comment}</Text>
+                )}
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
 
       {/* ── Configurações da conta — verbatim de perfil/page.tsx linhas 250-279 ── */}
       <View style={[s.menuCard, { backgroundColor: tokens.surface, borderColor: tokens.border }]}>
@@ -340,7 +431,7 @@ export default function PerfilScreen() {
           const isLast = i === menuItems.length - 1
           const handlePress = item.native
             ? item.native
-            : () => Linking.openURL(`${BASE_URL}${item.href}`)
+            : () => Linking.openURL(`${API_URL}${item.href}`)
 
           return (
             <TouchableOpacity
@@ -494,6 +585,58 @@ const s = StyleSheet.create({
     marginTop:      6,
   },
   metaText: { fontSize: 12 },
+
+  // Estatísticas — fonte: perfil/page.tsx linhas 186-203
+  statsRow: {
+    flexDirection:     "row",
+    gap:                12,
+    marginHorizontal:   16,
+    marginTop:          12,
+  },
+  statCard: {
+    flex:              1,
+    borderWidth:       1,
+    borderRadius:      12,
+    paddingVertical:   16,
+    paddingHorizontal: 6,
+    alignItems:        "center",
+  },
+  statIcon:  { fontSize: 12, marginBottom: 4 },
+  statValue: { fontSize: 20, fontWeight: "800" },
+  statLabel: { fontSize: 11, marginTop: 2, textAlign: "center", lineHeight: 14 },
+
+  // Avaliações recebidas — fonte: perfil/page.tsx linhas 205-248
+  reviewsCard: {
+    marginHorizontal: 16,
+    marginTop:        12,
+    borderRadius:     16,
+    borderWidth:      1,
+    padding:          18,
+  },
+  reviewsHeader: {
+    flexDirection:  "row",
+    alignItems:     "center",
+    justifyContent: "space-between",
+    marginBottom:   14,
+    gap:            8,
+  },
+  reviewsTitle:    { fontSize: 14, fontWeight: "600", flexShrink: 1 },
+  reviewsSubtitle: { fontSize: 12, fontWeight: "400" },
+  reviewRow: {
+    flexDirection:  "row",
+    gap:            10,
+  },
+  reviewRowHeader: {
+    flexDirection:  "row",
+    alignItems:     "center",
+    justifyContent: "space-between",
+    gap:            8,
+  },
+  reviewRowNameRating: { flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 1 },
+  reviewerName:  { fontSize: 12, fontWeight: "600" },
+  reviewDate:    { fontSize: 11, flexShrink: 0 },
+  reviewType:    { fontSize: 11, marginTop: 1, marginBottom: 2 },
+  reviewComment: { fontSize: 13, lineHeight: 18, marginTop: 2 },
 
   // Menu
   menuCard: {

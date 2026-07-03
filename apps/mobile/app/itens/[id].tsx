@@ -27,6 +27,7 @@ import { apiFetch, API_URL } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
 import { fmtCurrency, calcBookingTotal } from "@/lib/pricing"
 import { useTheme } from "@/lib/theme"
+import { Stars } from "@/components/ui/Stars"
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 interface ItemDetail {
@@ -134,16 +135,6 @@ const todayDate = (() => {
   d.setHours(0, 0, 0, 0)
   return d
 })()
-
-function Stars({ rating, total = 5 }: { rating: number; total?: number }) {
-  const full  = Math.round(rating)
-  const empty = total - full
-  return (
-    <Text style={{ color: "#F59E0B", fontSize: 14 }}>
-      {"★".repeat(full)}{"☆".repeat(empty)}
-    </Text>
-  )
-}
 
 // ── Skeleton de loading — equivalente ao <Skeleton> do site ──────────────────
 function SkeletonBox({ h, w = "100%", style }: { h: number; w?: number | string; style?: object }) {
