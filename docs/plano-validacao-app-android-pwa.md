@@ -92,6 +92,7 @@ escopo (não testar como bug).
 |---|---|
 | Hero (H1, CTAs, busca, 4 stats) | 🔧 stats dependiam de `/api/stats`, que não existia — criado hoje; re-confirmar os 4 números aparecem |
 | **TODO — Hero: imagem dos itens ausente** | ❌ **achado em teste ao vivo 2026-07-03**: o site usa `<Image src="/logos/hero-items.webp">` (`app/page.tsx` linha ~159, furadeira/câmera/caixa de som/bike/escada) logo abaixo do H1 — o mobile só tem o texto, sem a imagem. Não implementado ainda (usuário pediu só pra registrar no TODO por ora) |
+| **TODO — Hero: placeholder da busca não alterna** | ❌ **achado em teste ao vivo 2026-07-03**: `components/home/HeroSearch.tsx` alterna o placeholder do campo de busca a cada 3s entre "O que você precisa alugar?" e "O que você tem para alugar?" (`setInterval`, para ao focar o campo). Mobile já tem o botão "QUERO ALUGAR" certo e mostra o 1º texto, mas é estático — nunca alterna pro 2º. Não implementado ainda (só registrar) |
 | Simulador de Renda (tabela + busca interativa) | 🔧 seção nova hoje — nunca testada em device |
 | Explorar por categoria (cards com PNG) | 🔧 seção nova — nunca testada em device |
 | Como funciona (3 passos) | 🔧 seção nova — nunca testada em device |
