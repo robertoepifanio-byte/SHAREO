@@ -41,7 +41,10 @@ export type UpdateItemInput = z.infer<typeof UpdateItemSchema>
 
 export const ListItemsQuerySchema = z.object({
   page:       z.coerce.number().int().min(1).default(1),
-  limit:      z.coerce.number().int().min(1).max(50).default(20),
+  // Limite máximo elevado para 100: o app mobile aumenta o limit quando filtros
+  // JS (distância/avaliação) estão ativos, espelhando o comportamento do site
+  // (ARQ-ALTO-09 — até 500 itens no site; 100 é um teto seguro pra mobile).
+  limit:      z.coerce.number().int().min(1).max(100).default(20),
   search:     z.string().max(100).optional(),
   categoryId: z.string().optional(),
   city:       z.string().max(100).optional(),
@@ -49,6 +52,9 @@ export const ListItemsQuerySchema = z.object({
   minPrice:   z.coerce.number().int().min(0).optional(),
   maxPrice:   z.coerce.number().int().optional(),
   ownerId:    z.string().optional(),
+  // Ordenação — espelha as opções de _SortSelect.tsx do site.
+  // Valor padrão (ausente) = createdAt desc (mais recentes primeiro).
+  sort:       z.enum(["recent", "price_asc", "price_desc", "views", "rented"]).optional(),
 })
 
 export type ListItemsQuery = z.infer<typeof ListItemsQuerySchema>
