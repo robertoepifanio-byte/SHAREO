@@ -106,16 +106,17 @@ const mockUser = {
 
 function withUser() {
   const { useAuth } = require("@/lib/auth") as { useAuth: jest.Mock }
-  useAuth.mockImplementation((sel: (s: object) => unknown) =>
-    sel({ user: mockUser, logout: jest.fn(), loading: false })
-  )
+  const state = { user: mockUser, logout: jest.fn(), loading: false }
+  // useAuth() é chamado tanto com seletor (useAuth(s => s.x)) quanto sem
+  // (useAuth() retorna o estado inteiro, padrão Zustand) — o mock precisa
+  // dos dois caminhos, senão "sel is not a function" quando não há seletor.
+  useAuth.mockImplementation((sel?: (s: object) => unknown) => (sel ? sel(state) : state))
 }
 
 function withoutUser() {
   const { useAuth } = require("@/lib/auth") as { useAuth: jest.Mock }
-  useAuth.mockImplementation((sel: (s: object) => unknown) =>
-    sel({ user: null, logout: jest.fn(), loading: false })
-  )
+  const state = { user: null, logout: jest.fn(), loading: false }
+  useAuth.mockImplementation((sel?: (s: object) => unknown) => (sel ? sel(state) : state))
 }
 
 // ── FavoritosScreen ───────────────────────────────────────────────────────────
