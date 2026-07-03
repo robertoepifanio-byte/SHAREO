@@ -25,20 +25,25 @@ interface BookingDetail {
   totalDays:     number
   dailyPrice:    number
   totalPrice:    number
+  discountCents: number | null
   depositAmount: number | null
   borrowerNote:  string | null
   cancelReason:  string | null
+  lateFeeAmount: number | null
   // timestamps de histórico — fonte: app/reservas/[id]/page.tsx linhas 83-96
   createdAt:            string
   respondedAt:          string | null
   paidAt:               string | null
+  pixDeclaredAt:        string | null
+  contractSignedAt:     string | null
   activatedAt:          string | null
   returnRequestedAt:    string | null
   returnedAt:           string | null
   cancelledAt:          string | null
-  extensionRequestedAt: string | null
-  extensionRespondedAt: string | null
-  extensionStatus:      string | null
+  extensionRequestedAt:      string | null
+  extensionRespondedAt:      string | null
+  extensionStatus:           string | null
+  extensionRequestedEndDate: string | null
   // token de retirada — fonte: app/reservas/[id]/page.tsx linhas 116-118
   pickupToken:       string | null
   pickupTokenUsedAt: string | null
@@ -46,9 +51,39 @@ interface BookingDetail {
     id: string; title: string
     images: { url: string }[]
   }
-  owner:    { id: string; name: string }
+  // Story B — fonte: app/reservas/[id]/page.tsx linhas 107-114
+  bookingItems: {
+    itemId: string; totalPrice: number
+    item: { title: string; images: { url: string }[] }
+  }[]
+  owner: {
+    id: string; name: string
+    cep: string | null; street: string | null; neighborhood: string | null
+    city: string | null; state: string | null
+  }
   borrower: { id: string; name: string }
   conversation: { id: string } | null
+}
+
+// Formata o endereço de retirada — fonte: app/reservas/[id]/page.tsx linhas 42-53 (fmtOwnerAddress)
+function fmtOwnerAddress(owner: BookingDetail["owner"]): string | null {
+  const parts: string[] = []
+  if (owner.street)       parts.push(owner.street)
+  if (owner.neighborhood) parts.push(owner.neighborhood)
+  if (owner.city && owner.state) parts.push(`${owner.city} — ${owner.state}`)
+  else if (owner.city)    parts.push(owner.city)
+  if (owner.cep)          parts.push(`CEP ${owner.cep.replace(/(\d{5})(\d{3})/, "$1-$2")}`)
+  return parts.length ? parts.join(", ") : null
+}
+
+// Split da taxa da plataforma — fonte: app/reservas/[id]/page.tsx linhas 147-153.
+// A taxa é RETIDA do repasse ao proprietário (não somada ao locatário); o
+// cupom é absorvido pela taxa, nunca pelo proprietário. feeRateBps SEMPRE
+// dinâmico (nunca hardcode — regra do CLAUDE.md), fonte: /api/stats.
+function calcSplit(totalPrice: number, feeRateBps: number) {
+  const platformFeeAmount = Math.round(totalPrice * feeRateBps / 10000)
+  const ownerNetAmount    = totalPrice - platformFeeAmount
+  return { platformFeeAmount, ownerNetAmount }
 }
 
 // Mapeamento de status — fonte: app/reservas/[id]/page.tsx + BookingStatusBadge.tsx
@@ -97,6 +132,17 @@ export default function BookingDetailScreen() {
     queryFn:  () => apiFetch<{ data: BookingDetail }>(`/api/bookings/${id}`),
     enabled:  !!id && !!user,
   })
+
+  // Taxa da plataforma — NUNCA hardcode (regra do CLAUDE.md). Fonte:
+  // app/reservas/[id]/page.tsx linha 136-137 (getPlatformFeeRate() no
+  // Server Component). Mobile reaproveita /api/stats, mesmo padrão de
+  // app/itens/[id].tsx.
+  const { data: statsData } = useQuery({
+    queryKey: ["platform-stats"],
+    queryFn:  () => apiFetch<{ data: { feeRate: number } }>("/api/stats"),
+    staleTime: 5 * 60_000,
+  })
+  const feeRateBps = statsData?.data.feeRate ?? null
 
   const cancel = useMutation({
     mutationFn: () => apiFetch(`/api/bookings/${id}/cancel`, { method: "POST" }),
@@ -199,6 +245,22 @@ export default function BookingDetailScreen() {
   const canConfirmReturn = booking.status === "RETURNED" && isOwner
   const canPay           = isBorrower && booking.status === "CONFIRMED" && booking.paymentStatus !== "PAID"
   const thumb            = booking.item.images[0]?.url
+  const extraItems       = booking.bookingItems.length - 1
+
+  // Split — fonte: app/reservas/[id]/page.tsx linhas 150-153
+  const discountCents = booking.discountCents ?? 0
+  const split = feeRateBps != null
+    ? (() => {
+        const gross       = calcSplit(booking.totalPrice + discountCents, feeRateBps)
+        const platformFee = Math.max(0, gross.platformFeeAmount - discountCents)
+        return { platformFee, ownerNet: gross.ownerNetAmount }
+      })()
+    : null
+  const feeRatePct   = feeRateBps != null ? feeRateBps / 100 : null
+  const feeRateLabel = feeRatePct != null
+    ? (feeRatePct % 1 === 0 ? feeRatePct.toFixed(0) : String(feeRatePct))
+    : null
+  const pickupAddress = fmtOwnerAddress(booking.owner)
 
   // Histórico de eventos — fonte: lib/bookingHistory.ts (deriveBookingHistory)
   const historyEvents = deriveBookingHistory({
@@ -400,6 +462,12 @@ export default function BookingDetailScreen() {
           <View style={s.itemInfo}>
             <Text style={[s.itemTitle, { color: tokens.navy }]} numberOfLines={2}>
               {booking.item.title}
+              {/* "+N itens" — Story B, fonte: app/reservas/[id]/page.tsx linhas 214-216 */}
+              {extraItems > 0 && (
+                <Text style={{ fontWeight: "600", color: tokens.muted }}>
+                  {" "}+ {extraItems} {extraItems === 1 ? "item" : "itens"}
+                </Text>
+              )}
             </Text>
             <Text style={[s.itemCounterpart, { color: tokens.muted }]}>
               {isOwner ? `Locatário: ${booking.borrower.name}` : `Proprietário: ${booking.owner.name}`}
@@ -407,6 +475,34 @@ export default function BookingDetailScreen() {
           </View>
           <Text style={[s.itemChevron, { color: tokens.muted }]}>›</Text>
         </TouchableOpacity>
+
+        {/* Itens desta locação — Story B, fonte: app/reservas/[id]/page.tsx linhas 226-246 */}
+        {booking.bookingItems.length > 1 && (
+          <View style={[s.section, { borderColor: tokens.border, backgroundColor: tokens.surface }]}>
+            <Text style={[s.sectionLabel, { color: tokens.muted }]}>
+              ITENS DESTA LOCAÇÃO ({booking.bookingItems.length})
+            </Text>
+            {booking.bookingItems.map((bi, i) => (
+              <View
+                key={bi.itemId}
+                style={[
+                  s.multiItemRow,
+                  i < booking.bookingItems.length - 1 ? { borderBottomWidth: 1, borderBottomColor: tokens.border } : undefined,
+                ]}
+              >
+                <View style={[s.multiItemThumb, { backgroundColor: tokens.border }]}>
+                  {bi.item.images[0]?.url && (
+                    <Image source={{ uri: bi.item.images[0].url }} style={{ flex: 1 }} contentFit="cover" />
+                  )}
+                </View>
+                <Text style={[s.multiItemTitle, { color: tokens.text }]} numberOfLines={1}>
+                  {bi.item.title}
+                </Text>
+                <Text style={[s.multiItemPrice, { color: tokens.muted }]}>{fmt(bi.totalPrice)}</Text>
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* Datas — fonte: app/reservas/[id]/page.tsx linhas 255-276 */}
         <View style={[s.section, { borderColor: tokens.border, backgroundColor: tokens.surface }]}>
@@ -419,6 +515,9 @@ export default function BookingDetailScreen() {
               <Text style={[s.dateValue, { color: tokens.text }]}>
                 {fmtDate(booking.activatedAt ?? booking.startDate)}
               </Text>
+              {booking.activatedAt && (
+                <Text style={[s.dateCaption, { color: tokens.success }]}>✓ Confirmada pelo locador</Text>
+              )}
             </View>
             <Text style={[s.dateSep, { color: tokens.muted }]}>→</Text>
             <View style={{ flex: 1, alignItems: "flex-end" }}>
@@ -426,6 +525,9 @@ export default function BookingDetailScreen() {
               <Text style={[s.dateValue, { color: tokens.text }]}>
                 {fmtDate(booking.endDate)}
               </Text>
+              {booking.activatedAt && (
+                <Text style={[s.dateCaption, { color: tokens.muted }]}>Mesmo horário da retirada</Text>
+              )}
             </View>
           </View>
         </View>
@@ -441,6 +543,13 @@ export default function BookingDetailScreen() {
               {fmt(booking.dailyPrice * booking.totalDays)}
             </Text>
           </View>
+          {/* Desconto (cupom) — fonte: app/reservas/[id]/page.tsx linhas 285-290 */}
+          {discountCents > 0 && (
+            <View style={s.finRow}>
+              <Text style={[s.finLabel, { color: tokens.success }]}>Desconto (cupom)</Text>
+              <Text style={[s.finValue, { color: tokens.success }]}>− {fmt(discountCents)}</Text>
+            </View>
+          )}
           <View style={[s.divider, { backgroundColor: tokens.border }]} />
           <View style={s.finRow}>
             <Text style={[s.finTotalLabel, { color: tokens.text }]}>Total da locação</Text>
@@ -452,7 +561,37 @@ export default function BookingDetailScreen() {
               <Text style={[s.finValue, { color: "#B45309" }]}>{fmt(booking.depositAmount)}</Text>
             </View>
           )}
+          {/* Repartição — taxa retida do repasse, não somada ao locatário.
+              Fonte: app/reservas/[id]/page.tsx linhas 303-313. feeRateBps
+              SEMPRE dinâmico (nunca hardcode — regra do CLAUDE.md). */}
+          {split && feeRateLabel != null && (
+            <View style={[s.splitBox, { backgroundColor: tokens.bg }]}>
+              <View style={s.finRow}>
+                <Text style={[s.finLabel, { color: tokens.muted }]}>Taxa Shareo ({feeRateLabel}%)</Text>
+                <Text style={[s.finValue, { color: "#DC2626" }]}>− {fmt(split.platformFee)}</Text>
+              </View>
+              <View style={s.finRow}>
+                <Text style={[s.finTotalLabel, { color: tokens.text, fontSize: 13 }]}>
+                  {isOwner ? "Você recebe" : "Proprietário recebe"}
+                </Text>
+                <Text style={[s.finTotalValue, { color: tokens.green, fontSize: 13 }]}>{fmt(split.ownerNet)}</Text>
+              </View>
+            </View>
+          )}
         </View>
+
+        {/* Taxa de atraso — fonte: app/reservas/[id]/page.tsx linhas 549-561 */}
+        {booking.lateFeeAmount != null && booking.lateFeeAmount > 0 && (
+          <View style={[s.alertBox, { borderColor: "#FCA5A5", backgroundColor: "#FEF2F2" }]}>
+            <Text style={{ fontSize: 16, marginRight: 8 }}>⏱</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[s.alertTitle, { color: "#991B1B" }]}>Taxa de atraso aplicada</Text>
+              <Text style={[s.alertDesc, { color: "#B91C1C" }]}>
+                Item devolvido após o prazo. Taxa adicional: <Text style={{ fontWeight: "700" }}>{fmt(booking.lateFeeAmount)}</Text>
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* Token de retirada — fonte: app/reservas/[id]/page.tsx linhas 348-397 */}
         {/* Exibido: locatário + pagamento confirmado + token presente + não usado */}
@@ -470,6 +609,23 @@ export default function BookingDetailScreen() {
             <Text style={[s.pickupNote, { color: tokens.muted }]}>
               O proprietário digitará este código no app para confirmar a entrega. Guarde-o.
             </Text>
+
+            {/* Endereço de retirada — fonte: app/reservas/[id]/page.tsx linhas 371-395 */}
+            <View style={[s.pickupAddressBox, { borderColor: "#FCD34D", backgroundColor: "#FFFBEB" }]}>
+              <Text style={s.pickupAddressLabel}>📍 Local de retirada (endereço cadastrado do proprietário)</Text>
+              {pickupAddress ? (
+                <>
+                  <Text style={s.pickupAddressValue}>{pickupAddress}</Text>
+                  <Text style={s.pickupAddressWarning}>
+                    Por segurança, a retirada deve ocorrer exclusivamente neste endereço. Não aceite outro local.
+                  </Text>
+                </>
+              ) : (
+                <Text style={s.pickupAddressValue}>
+                  O proprietário ainda não cadastrou endereço. Entre em contato pelo chat para combinar o local de retirada.
+                </Text>
+              )}
+            </View>
           </View>
         )}
 
@@ -535,13 +691,18 @@ export default function BookingDetailScreen() {
           </View>
         )}
 
-        {/* TODO(revisão): Fotos de check-in/checkout — app/reservas/[id]/page.tsx linhas 527-547.
-            Requer upload de imagem via câmera/galeria (react-native-image-picker) +
-            Supabase Storage. Documentado como MOB-BL (follow-up). */}
-
-        {/* TODO(revisão): Avaliações — app/reservas/[id]/page.tsx linhas 619-651.
-            Requer componente ReviewForm mobile com estrelas + textarea.
-            Documentado como MOB-BL (follow-up). */}
+        {/* TODO(revisão): componentes maiores do site ainda não portados — cada um
+            precisaria de tela/estado próprio, não são "faltando 1 elemento":
+            - ReturnCountdown (status ACTIVE) — page.tsx linhas 506-511
+            - ContractBanner (assinatura de contrato digital) — linhas 513-525
+            - ReturnChecklist (locatário em ACTIVE) — linhas 577-582
+            - ReturnConditionForm (locador em RETURNED, substitui o botão simples
+              "Confirmar recebimento" por um formulário de estado do item) — linhas 597-602
+            - CheckInOut ×2 (fotos retirada/devolução) — linhas 527-547, requer
+              câmera/galeria + Supabase Storage
+            - ReviewForm ×1-2 (avaliações pós-devolução) — linhas 619-651, requer
+              componente de estrelas + textarea
+            Documentados como MOB-BL (follow-up), fora do escopo desta rodada. */}
 
       </ScrollView>
 
@@ -733,11 +894,21 @@ const s = StyleSheet.create({
   itemCounterpart:{ fontSize: 12, marginTop: 4 },
   itemChevron:    { fontSize: 22 },
 
+  // Itens desta locação (Story B)
+  multiItemRow: {
+    flexDirection: "row", alignItems: "center", gap: 10,
+    paddingVertical: 8,
+  },
+  multiItemThumb: { width: 36, height: 36, borderRadius: 8, overflow: "hidden" },
+  multiItemTitle: { flex: 1, fontSize: 13 },
+  multiItemPrice: { fontSize: 13, fontWeight: "600" },
+
   // Datas
   datesRow:   { flexDirection: "row", alignItems: "center", gap: 8 },
   dateSubLabel: { fontSize: 11, marginBottom: 3 },
   dateValue:    { fontSize: 14, fontWeight: "600" },
   dateSep:      { fontSize: 16, fontWeight: "600" },
+  dateCaption:  { fontSize: 10, marginTop: 2 },
 
   // Valores
   finRow:       { flexDirection: "row", justifyContent: "space-between", marginVertical: 3 },
@@ -746,6 +917,9 @@ const s = StyleSheet.create({
   finTotalLabel: { fontSize: 15, fontWeight: "700" },
   finTotalValue: { fontSize: 15, fontWeight: "700" },
   divider:      { height: 1, marginVertical: 10 },
+  splitBox: {
+    marginTop: 10, borderRadius: 10, padding: 10, gap: 2,
+  },
 
   // Token de retirada
   pickupCard: {
@@ -768,6 +942,12 @@ const s = StyleSheet.create({
     letterSpacing: 8,
   },
   pickupNote: { fontSize: 11, textAlign: "center", lineHeight: 16 },
+  pickupAddressBox: {
+    marginTop: 12, borderRadius: 10, borderWidth: 1, padding: 12,
+  },
+  pickupAddressLabel: { fontSize: 11, fontWeight: "700", color: "#92400E", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.4 },
+  pickupAddressValue: { fontSize: 13, fontWeight: "500", color: "#78350F" },
+  pickupAddressWarning: { fontSize: 10, color: "#B45309", marginTop: 4 },
 
   // Alertas de status
   alertBox: {
