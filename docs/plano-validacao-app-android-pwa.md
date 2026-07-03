@@ -152,8 +152,11 @@ testado ainda | ➡️ abre no site por decisão de escopo (não testar como bug
 | Elemento | Status |
 |---|---|
 | Lista — tabs "Como locatário"/"Como locador" | 🔧 reescrita completa (bug real: API misturava os dois papéis) — nunca testada em device |
+| Lista — thumbnail do item no card | 🔧 **não existia** — auditado nesta rodada contra `reservas/page.tsx:134-145`; a API já retornava `item.images`, só faltava usar no mobile |
+| Lista — badge "+N itens" (Story B, multi-item) | 🔧 **não existia** — precisava de `_count.bookingItems`, ausente da API (`GET /api/bookings` estendido, aditivo) |
+| Lista — botão "⭐ Avaliar" | 🔧 **não existia** — mesma causa raiz (`_count.reviews` ausente da API, agora incluído). Sem isso não havia como chegar ao fluxo de avaliação pela lista |
 | Detalhe — token de retirada, avisos de status, ações (Pagar/Devolver/Confirmar/Cancelar) | 🔧 reescrita completa (hooks quebrados + cores não mapeadas) — nunca testada em device |
-| Checkout — modalidade, calendário, teto R$500, MP | 🔧 tocado pela Frente C — nunca testado fim a fim |
+| ⏸️ Pendente (auditoria elemento-por-elemento ainda não feita nesta rodada) | Detalhe completo (5 subcomponentes do site: `_BookingActions`, `_CheckInOut`, `_ContractBanner`, `_PixPaymentPanel`, `_ReviewForm`) e Checkout — próximos desta sequência |
 
 ### Chat
 | Elemento | Status |
