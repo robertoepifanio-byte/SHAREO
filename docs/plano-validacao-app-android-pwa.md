@@ -74,7 +74,7 @@ testado ainda | ➡️ abre no site por decisão de escopo (não testar como bug
 ### Autenticação
 | Tela | Elemento a comparar | Status |
 |---|---|---|
-| Login | Layout, campos, "Esqueci minha senha", olho de senha, mensagens de erro | ❌ não testado nesta rodada (testado em sessão anterior) |
+| Login | Layout, campos, olho de senha, mensagens de erro | 🔧 auditado nesta rodada — faltavam 4 elementos de texto verbatim: "← Voltar para o início", título completo "Entrar na sua conta" (só tinha "Entrar"), subtítulo "Bem-vindo de volta ao ShareO", "grátis" em "Criar conta grátis" |
 | Cadastro | ➡️ Redireciona 100% pro site (decisão do fundador 2026-07-03) — não é bug | ➡️ |
 | Esqueci senha | Reescrita pela Frente B — subtítulo, estado enviado, "tente novamente", rodapé | ❌ não testado |
 
@@ -168,8 +168,16 @@ testado ainda | ➡️ abre no site por decisão de escopo (não testar como bug
 ### Chat
 | Elemento | Status |
 |---|---|
-| Lista de conversas | ❌ não testado |
-| Thread (enviar/receber mensagem) | 🔧 fix pontual de crash em nome vazio — nunca testado em device. Lembrete: usa polling 5s, não é bug se a msg demorar até 5s pra aparecer |
+| Lista — distinção visual lida/não-lida (negrito) | 🔧 **não existia** — nome/última mensagem tinham peso fixo independente do status; auditado contra `page.tsx` linhas 99/109-113 |
+| Lista — prefixo "Você: " na última mensagem | 🔧 **não existia** — API descartava `senderId` no shape de saída (estendido, aditivo) |
+| Thread — avatar do outro participante (foto real) | 🔧 mostrava só inicial mesmo com `avatarUrl` disponível — corrigido |
+| Thread — botão "Ver reserva" | 🔧 **ausente por completo** — API descartava `booking.id`/`item.id` (estendido, aditivo) |
+| Thread — item da reserva clicável | 🔧 **não existia** — mesma causa raiz acima |
+| Thread — divisores de dia (Hoje/Ontem/data) | 🔧 **ausentes por completo** — auditado contra `_ChatWindow.tsx:37-44,208-220` |
+| Thread — recibo de leitura "✓✓" | 🔧 **ausente por completo** — API descartava `readAt` das mensagens (estendido, aditivo) |
+| Thread — templates de mensagem (5 chips, P3-20) | 🔧 **ausentes por completo** — auditado contra `_ChatWindow.tsx:246-265` |
+| Thread — empty state | 🔧 **texto errado**: mobile dizia "Seja o primeiro a dizer olá!" — frase que **nunca existiu no site**; real é "Nenhuma mensagem ainda. Diga olá para {nome}!" (personalizado). Teste que fixava o texto errado também corrigido |
+| ➡️ Decisão arquitetural (não é gap) | Polling 5s em vez de Supabase Realtime; sem indicador "ao vivo" (seria enganoso) |
 
 ---
 
@@ -198,22 +206,85 @@ badge Eco, regras do anunciante, calculadora comprar-vs-alugar, requisitos do pr
 card do proprietário navegável+avatar real, link editar anúncio, trust box, política de
 cancelamento (commit `d895b3a`).
 
-## Progresso da rodada autônoma (`/loop`, sem device — 2026-07-03 à noite)
+## Relatório final de progresso — rodada autônoma `/loop` (2026-07-03 à noite)
 
-Trabalho de auditoria **a nível de código apenas** (celular fora do alcance) seguindo
-`docs/meta-app-android-retranscricao-s41.md`. Nada aqui foi testado em device — todo
-item novo marcado 🔧, nunca ✅. Cobertura até agora:
+Trabalho de auditoria **a nível de código apenas** (celular fora do alcance, usuário
+ausente) seguindo `docs/meta-app-android-retranscricao-s41.md`, em 6 iterações
+autopaceadas (~25min entre cada). **Nada foi testado em device** — todo item corrigido
+está marcado 🔧 (auditado no código, pendente confirmação ao vivo), nunca ✅.
 
-1. **Detalhe do item** — 8 seções inteiras que faltavam (badge Eco, regras do
-   anunciante, calculadora comprar-vs-alugar, requisitos, card do proprietário
-   navegável, editar anúncio, trust box, política de cancelamento).
-2. **Perfil** — estatísticas + avaliações recebidas não existiam (API estendida,
-   aditivo); fix de hardcode de URL; logout revisado (diálogo de confirmação é
-   adaptação de plataforma aceita, não bug).
+### O que foi coberto, em ordem
+
+1. **Detalhe do item** (`itens/[id].tsx`) — 8 seções inteiras que faltavam: badge Eco,
+   regras do anunciante, calculadora comprar-vs-alugar, requisitos do proprietário,
+   card do proprietário navegável (+ avatar real), link "Editar anúncio" (dono), trust
+   box, política de cancelamento.
+2. **Perfil** — estatísticas (itens/aluguéis/nota) + avaliações recebidas não
+   existiam; API `/api/users/me` estendida (aditivo). Fix de hardcode de URL. Logout
+   com diálogo de confirmação mantido como adaptação de plataforma aceita.
 3. **Favoritos** — layout errado (lista 1 coluna → devia ser grid 2 colunas, mesmo
    `ItemCard` do Explorar); texto do empty state errado; botão CTA inventado
-   removido. Extraído `components/items/ItemCard.tsx` compartilhado (elimina uma
-   duplicação que já tinha causado o gap de layout).
+   removido. `components/items/ItemCard.tsx` extraído como componente compartilhado.
+4. **Reservas — lista** — thumbnail do item, badge "+N itens" (multi-item) e botão
+   "⭐ Avaliar" ausentes por completo; API `/api/bookings` estendida (aditivo).
+5. **Reservas — detalhe** — **achado crítico**: `GET /api/bookings/[id]` não
+   selecionava `paymentStatus` nem os timestamps de histórico — `canPay` sempre
+   avaliava `true` (botão de pagar aparecia em reserva já paga) e o código de
+   retirada nunca aparecia. API estendida + 6 seções de conteúdo implementadas
+   (itens multi-locação, split de taxa, desconto, endereço de retirada, taxa de
+   atraso, legendas de confirmação).
+6. **Checkout** — achado: `reservas/checkout.tsx` é **código morto** (confirmado via
+   grep no repo inteiro, 0 referências). Tentativa de remoção bloqueada pelo
+   classificador de permissão (escalada de escopo sem autorização explícita) —
+   **decisão pendente do usuário**, documentada acima na tabela de Reservas.
+7. **Chat — lista** — distinção visual lida/não-lida (negrito) e prefixo "Você: "
+   ausentes; API `/api/conversations` estendida (aditivo).
+8. **Chat — thread** — avatar real, botão "Ver reserva", item clicável, divisores de
+   dia, recibo "✓✓" e 5 templates de mensagem ausentes; empty state com texto que
+   **nunca existiu no site** ("Seja o primeiro..." → corrigido pro texto real
+   personalizado). API `/api/conversations/[id]` estendida (aditivo).
+9. **Login** — 4 elementos de texto verbatim ausentes (link voltar, título completo,
+   subtítulo, "grátis" em criar conta).
 
-Próximo na ordem do plano: Reservas (lista/detalhe/checkout fim a fim) → Chat
-(lista/thread) → Login → relatório de progresso final.
+**Padrão sistêmico encontrado 3×** (Reservas, Reservas-detalhe, Chat/Chat-thread):
+campos já buscados no Prisma mas descartados no shape de saída da API — o tipo do
+mobile assumia que existiam, então funcionalidades inteiras rodavam silenciosamente
+com `undefined` (o caso de `paymentStatus` era o mais grave: bug funcional real, não
+só visual). Vale considerar auditar as APIs restantes com essa lente específica.
+
+### O que NÃO foi feito — pendências grandes, documentadas explicitamente
+
+Estes não são "faltando 1 elemento" — cada um precisaria de tela/estado/lógica
+própria, escopo de uma sessão dedicada, não de um ciclo de auditoria-e-fix:
+
+- **AvailabilityCalendar** (calendário de disponibilidade no detalhe do item)
+- **Stats do proprietário** (locações concluídas / taxa de resposta) no detalhe do item
+- **Grids "Itens do mesmo anunciante"** e **"Você também pode gostar"** (detalhe do item)
+- **Carrinho multi-item** (`AddToRentalButton`, Story B) no detalhe do item
+- **Tela nativa de editar anúncio** (hoje cai no site via `Linking`)
+- **ContractBanner** (assinatura de contrato digital), **ReturnCountdown**,
+  **ReturnChecklist**, **ReturnConditionForm**, **CheckInOut** (fotos, precisa
+  câmera/galeria + Storage), **ReviewForm** (avaliações) — todos no detalhe de reserva
+- **26 páginas de Minha Conta/Ajuda** que abrem no site — decisão de escopo já
+  aprovada pelo fundador (2026-07-03), não é gap
+
+### Estimativa honesta de paridade — e por que não é "≥95%" ainda
+
+Não há um inventário numérico formal pra calcular uma % exata, então esta é uma
+estimativa qualificada, não um número medido:
+
+- **Conteúdo/dados dos fluxos centrais já auditados** (autenticação, explorar, ver
+  item, reservar, ver reserva, favoritar, perfil, chat): provavelmente **85-90%** —
+  a esmagadora maioria dos textos, valores, cálculos e avisos de segurança agora bate
+  com o site, incluindo um bug funcional real corrigido (pagamento).
+- **Cobertura de features do produto como um todo**: mais baixa — as 6 pendências
+  grandes acima são funcionalidades **0% construídas** no app (não parciais), então
+  contam pesado contra qualquer % agregada honesta.
+
+**Recomendação:** não vale continuar o loop em modo "auditoria rápida e fix" pras
+pendências grandes listadas acima — cada uma é um projeto próprio (ex.: CheckInOut
+precisa de upload de imagem + Storage, ContractBanner precisa de fluxo de assinatura).
+Melhor retomar com o usuário: (1) validar em device os ~35 itens 🔧 desta sessão
+primeiro (prioridade #1 continua sendo o campo de data em `itens/[id].tsx`), (2) decidir
+o destino de `checkout.tsx`, (3) priorizar quais das 6 pendências grandes valem
+sessões dedicadas vs. ficam como follow-up de longo prazo.
