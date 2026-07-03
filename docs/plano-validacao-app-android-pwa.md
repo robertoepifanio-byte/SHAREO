@@ -112,7 +112,7 @@ escopo (não testar como bug).
 |---|---|
 | Galeria de fotos | ❌ não testado (mobile usa dots+swipe por índice, não o carrossel `_Gallery.tsx` do site — adaptação de plataforma aceita, conteúdo/fotos idênticos) |
 | Modo locatário: tabs diária/semanal/mensal | ❌ não testado |
-| **Campo de data de retirada (calendário nativo)** | 🔧 corrigido 2× hoje (era TextInput; depois crash "Date value out of bounds") — **prioridade #1 no retorno**, não foi possível confirmar se o fix definitivo funciona |
+| **Campo de data de retirada (calendário nativo)** | ✅ **CONFIRMADO EM DEVICE 2026-07-03 à noite** — calendário nativo funciona, sem crash "Date value out of bounds". Prioridade #1 resolvida |
 | Resumo de preço + aviso de teto R$500 | 🔧 auditado no código contra `_PriceCalc.tsx` (473 linhas, lido por inteiro) — breakdown corrigido (mostrava "N dias × diária" mesmo quando a tarifa semanal/mensal era aplicada internamente, divergindo do total), desconto por período estava sendo calculado mas nunca exibido, texto de transparência da taxa ausente (adicionado, taxa via `/api/stats`, nunca hardcode), campo de cupom (P3-20) ausente (adicionado, `couponCode` confirmado no schema real) |
 | Botão "Solicitar locação" | ❌ não testado (payload atualizado com `couponCode` — não testado fim a fim) |
 | Modo proprietário: badge "Seu item" + solicitações pendentes | ❌ não testado |
