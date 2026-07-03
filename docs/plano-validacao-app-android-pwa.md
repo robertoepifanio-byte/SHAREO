@@ -108,13 +108,22 @@ testado ainda | ➡️ abre no site por decisão de escopo (não testar como bug
 ### Detalhe do item
 | Elemento | Status |
 |---|---|
-| Galeria de fotos | ❌ não testado |
+| Galeria de fotos | ❌ não testado (mobile usa dots+swipe por índice, não o carrossel `_Gallery.tsx` do site — adaptação de plataforma aceita, conteúdo/fotos idênticos) |
 | Modo locatário: tabs diária/semanal/mensal | ❌ não testado |
 | **Campo de data de retirada (calendário nativo)** | 🔧 corrigido 2× hoje (era TextInput; depois crash "Date value out of bounds") — **prioridade #1 no retorno**, não foi possível confirmar se o fix definitivo funciona |
 | Resumo de preço + aviso de teto R$500 | 🔧 auditado no código contra `_PriceCalc.tsx` (473 linhas, lido por inteiro) — breakdown corrigido (mostrava "N dias × diária" mesmo quando a tarifa semanal/mensal era aplicada internamente, divergindo do total), desconto por período estava sendo calculado mas nunca exibido, texto de transparência da taxa ausente (adicionado, taxa via `/api/stats`, nunca hardcode), campo de cupom (P3-20) ausente (adicionado, `couponCode` confirmado no schema real) |
 | Botão "Solicitar locação" | ❌ não testado (payload atualizado com `couponCode` — não testado fim a fim) |
 | Modo proprietário: badge "Seu item" + solicitações pendentes | ❌ não testado |
 | Rules of Hooks (não deve mais dar "Rendered more hooks") | 🔧 corrigido — re-confirmar ao abrir qualquer item |
+| Badge "🌿 Eco" ao lado do rating | 🔧 auditado no código contra `page.tsx:436-438` — faltava por completo, adicionado |
+| Box "Regras do anunciante" (`item.rules`) | 🔧 auditado no código contra `page.tsx:456-471` — faltava por completo, adicionado (API já retornava o campo, só não estava no tipo/render do mobile) |
+| Box "Calculadora alugar vs comprar" (`item.estimatedRetailPrice`) | 🔧 auditado no código contra `page.tsx:473-488` — faltava por completo, adicionado |
+| Box "Requisitos do proprietário" (identidade/telefone) | 🔧 auditado no código contra `page.tsx:490-511` — faltava por completo, adicionado |
+| Mini card do proprietário — navegável + avatar real | 🔧 card era estático (sem link, sem foto real); agora abre `/perfil/:id` no site via `Linking` (mesmo padrão do `MobileMenu.tsx`) e usa `owner.avatarUrl` quando existe |
+| Link "✏️ Editar anúncio" (modo proprietário) | 🔧 **não existia nenhuma forma de editar o anúncio pelo app** — adicionado como fallback `Linking`→site (não há tela nativa de edição ainda) |
+| Trust Box "🔒 Sua locação está protegida" | 🔧 auditado no código contra `page.tsx:618-635` — faltava por completo, adicionado (conteúdo estático, 3 linhas) |
+| Política de cancelamento (3 faixas de reembolso) | 🔧 auditado no código contra `page.tsx:637-665` — faltava por completo, adicionado (usa os mesmos valores estáticos que o próprio site usa hoje, não a config dinâmica) |
+| ⏸️ Pendente (fora de escopo desta rodada — precisa endpoint novo ou tela própria) | `AvailabilityCalendar` (calendário de disponibilidade), stats do proprietário (locações concluídas / taxa de resposta — hoje só calculado no Server Component do site, não exposto via API), grids "Itens do mesmo anunciante" e "Você também pode gostar" no rodapé, carrinho multi-item `AddToRentalButton` (Story B) |
 
 ### Anunciar (`itens/novo`)
 | Elemento | Status |
@@ -172,4 +181,16 @@ testado ainda | ➡️ abre no site por decisão de escopo (não testar como bug
 hooks em `itens/[id].tsx` · ícones de categoria (PNG real) · filtro/busca (`search`/`categoryId`) ·
 Home 6 seções + `/api/stats` novo · `/sobre` → externo · Anunciar reconciliado com
 `ItemForm.tsx` · mock `useAuth` · `<ellipse>`→`<Ellipse>` · 27 links do menu → nativo ou
-externo · calendário nativo na data de retirada · `addDays` defensivo.
+externo · calendário nativo na data de retirada · `addDays` defensivo · detalhe do item:
+badge Eco, regras do anunciante, calculadora comprar-vs-alugar, requisitos do proprietário,
+card do proprietário navegável+avatar real, link editar anúncio, trust box, política de
+cancelamento (commit `d895b3a`).
+
+## Progresso da rodada autônoma (`/loop`, sem device — 2026-07-03 à noite)
+
+Trabalho de auditoria **a nível de código apenas** (celular fora do alcance) seguindo
+`docs/meta-app-android-retranscricao-s41.md`. Cobertura até agora: **Detalhe do item**
+(gap grande fechado — 8 seções inteiras que faltavam, ver tabela acima). Nada aqui foi
+testado em device — todo item novo marcado 🔧, nunca ✅. Próximo na ordem do plano:
+Perfil (card/logout/Favoritos) → Reservas (lista/detalhe/checkout fim a fim) → Chat
+(lista/thread) → Login → relatório de progresso final.
