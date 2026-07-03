@@ -111,7 +111,7 @@ escopo (não testar como bug).
 | Pull-to-refresh | 🔍 auditado nesta rodada — `RefreshControl` corretamente ligado a `isRefetching`/`refetch` da query real, mesmo padrão já validado em Favoritos/Reservas/Chat. Sem gap |
 | **TODO — Botão "Filtros" (bottom sheet)** | ✅ **CONFIRMADO EM DEVICE 2026-07-03 à noite** — bottom sheet abre corretamente. 4 seções verbatim (Categoria, Preço máx./dia, Distância, Avaliação mínima). Categoria e Preço máx. enviados à API; distância via expo-location (haversine client-side); avaliação mínima UI presente, filtro client-side (avgRating não vem de /api/items ainda). |
 | **TODO — Ordenação ("Mais próximos" ▾)** | ✅ **CONFIRMADO EM DEVICE 2026-07-03 à noite** — dropdown funciona. 5 opções verbatim de `_SortSelect.tsx`; `sort` adicionado ao `ListItemsQuerySchema` e ao `GET /api/items` (espelha `getOrderBy()` do site). |
-| **TODO — "Ver no mapa"** | ✅➡️ **CONFIRMADO EM DEVICE 2026-07-03 à noite** — botão aparece e, ao tocar, **redireciona para o mapa no site PWA** (`Linking.openURL(API_URL + "/itens?view=map")`), conforme projetado. Mapa nativo (Mapbox) é feature adiada; fallback via site é o mesmo padrão já aprovado pelo fundador no `MobileMenu.tsx`. **Ponto de decisão:** aceitar o fallback como definitivo OU enfileirar mapa nativo como projeto próprio (feature grande — ver pendências grandes). |
+| **TODO — "Ver no mapa"** | ✅➡️ **CONFIRMADO EM DEVICE 2026-07-03 à noite** — botão aparece e, ao tocar, **redireciona para o mapa no site PWA** (`Linking.openURL(API_URL + "/itens?view=map")`), conforme projetado. **Decisão do fundador (2026-07-03):** fallback fica por ora; **mapa nativo enfileirado como projeto próprio** no backlog de pendências grandes (ver seção abaixo). Não é bug. |
 | **Nota — ícones de categoria (estilo)** | 🔍 usuário observou que os ícones do site (`CategoryIcon.tsx`, PNG com círculo colorido já embutido na imagem) parecem "mais harmônicos" que os do app. Os PNGs de origem são os MESMOS arquivos (`public/icons/*.png`, copiados pra `apps/mobile/assets/icons/`), mas o CONTAINER ao redor difere: site (nesta tela `/itens`) mostra ícone grande + label abaixo, sem pílula; mobile usa pílula horizontal com borda (ícone+label lado a lado). Não investigado a fundo — possível ajuste de estilo, não gap de conteúdo |
 | ⏸️ Pendente (exigiria estender API, não implementado) | Estrelas de avaliação e distância em km — `/api/items` não calcula `avgRating`/`distanceKm` hoje |
 
@@ -276,6 +276,10 @@ própria, escopo de uma sessão dedicada, não de um ciclo de auditoria-e-fix:
 - **ContractBanner** (assinatura de contrato digital), **ReturnCountdown**,
   **ReturnChecklist**, **ReturnConditionForm**, **CheckInOut** (fotos, precisa
   câmera/galeria + Storage), **ReviewForm** (avaliações) — todos no detalhe de reserva
+- **Mapa nativo do Explorar ("Ver no mapa")** — decisão do fundador 2026-07-03: hoje
+  o botão abre o mapa no site PWA (fallback aprovado); o mapa nativo (Mapbox no app,
+  com clustering/pins dos itens) fica como projeto próprio no backlog, junto das demais
+  pendências grandes. Feature adiada há tempo (ver `project-mobile-eas-build` na memória).
 - **26 páginas de Minha Conta/Ajuda** que abrem no site — decisão de escopo já
   aprovada pelo fundador (2026-07-03), não é gap
 
