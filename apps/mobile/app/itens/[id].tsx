@@ -57,8 +57,13 @@ interface ItemDetail {
   // Solicitações pendentes — retornadas apenas quando o usuário é o proprietário
   pendingBookings?: { id: string; borrower: { name: string }; startDate: string }[]
   // Estatísticas do proprietário — fonte: app/itens/[id]/page.tsx linhas 122-139
-  responseBadge: { label: string; avgHours: number } | null
-  ownerStats:    { completedCount: number; responseRate: number | null }
+  // Opcionais: a API que retorna esses campos (commit 7ab2b9f) ainda não foi
+  // implantada em staging quando este código foi testado ao vivo pela 1ª vez —
+  // o app deve tolerar uma resposta antiga sem esses campos, não assumir que
+  // sempre existem (causou crash real: "Cannot read property 'completedCount'
+  // of undefined").
+  responseBadge?: { label: string; avgHours: number } | null
+  ownerStats?:    { completedCount: number; responseRate: number | null }
 }
 
 interface FavoriteStatusResponse { data: { favorited: boolean } }
@@ -264,6 +269,9 @@ export default function ItemDetailScreen() {
   const avgRating = item.reviews.length
     ? item.reviews.reduce((sum, r) => sum + r.rating, 0) / item.reviews.length
     : null
+  // Fallback defensivo: ownerStats pode faltar se a API respondendo ainda for
+  // uma versão sem o campo (deploy de staging atrasado em relação a este código).
+  const ownerStats = item.ownerStats ?? { completedCount: 0, responseRate: null }
 
   const heartIcon = isFavorited === true ? "❤️" : "🤍"
 
@@ -529,22 +537,22 @@ export default function ItemDetailScreen() {
         </TouchableOpacity>
 
         {/* Estatísticas do proprietário — fonte: page.tsx linhas 592-616 (P1-23) */}
-        {(item.ownerStats.completedCount > 0 || item.ownerStats.responseRate !== null) && (
+        {(ownerStats.completedCount > 0 || ownerStats.responseRate !== null) && (
           <View style={[s.ownerStatsGrid, { backgroundColor: tokens.bg, borderColor: tokens.border }]}>
-            {item.ownerStats.completedCount > 0 && (
+            {ownerStats.completedCount > 0 && (
               <View style={s.ownerStatCell}>
                 <Text style={[s.ownerStatValue, { color: tokens.navy }]}>
-                  {item.ownerStats.completedCount}
+                  {ownerStats.completedCount}
                 </Text>
                 <Text style={[s.ownerStatLabel, { color: tokens.muted }]}>
-                  locaç{item.ownerStats.completedCount === 1 ? "ão" : "ões"} concluída{item.ownerStats.completedCount !== 1 ? "s" : ""}
+                  locaç{ownerStats.completedCount === 1 ? "ão" : "ões"} concluída{ownerStats.completedCount !== 1 ? "s" : ""}
                 </Text>
               </View>
             )}
-            {item.ownerStats.responseRate !== null && (
+            {ownerStats.responseRate !== null && (
               <View style={s.ownerStatCell}>
                 <Text style={[s.ownerStatValue, { color: tokens.navy }]}>
-                  {item.ownerStats.responseRate}%
+                  {ownerStats.responseRate}%
                 </Text>
                 <Text style={[s.ownerStatLabel, { color: tokens.muted }]}>taxa de resposta</Text>
               </View>
