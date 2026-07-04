@@ -130,7 +130,7 @@ escopo (não testar como bug).
 | Box "Calculadora alugar vs comprar" (`item.estimatedRetailPrice`) | 🔧 auditado no código contra `page.tsx:473-488` — faltava por completo, adicionado |
 | Box "Requisitos do proprietário" (identidade/telefone) | 🔧 auditado no código contra `page.tsx:490-511` — faltava por completo, adicionado |
 | Mini card do proprietário — navegável + avatar real | 🔧 card era estático (sem link, sem foto real); agora abre `/perfil/:id` no site via `Linking` (mesmo padrão do `MobileMenu.tsx`) e usa `owner.avatarUrl` quando existe |
-| Link "✏️ Editar anúncio" (modo proprietário) | 🔧 **não existia nenhuma forma de editar o anúncio pelo app** — adicionado como fallback `Linking`→site (não há tela nativa de edição ainda) |
+| Link "✏️ Editar anúncio" (modo proprietário) | 🔧 **implementado, PENDE confirmação em device** — tela nativa `apps/mobile/app/itens/[id]/editar.tsx` (PR feat/mobile-editar-anuncio-nativo). Substituiu o fallback `Linking`→site por `router.push`. Endpoints ajustados para aceitar Bearer JWT: `PUT /api/items/[id]` e `DELETE /api/items/[id]/images` agora usam `resolveUserId()`. gate: tsc ✅, jest 185 ✅, expo export:embed ✅ |
 | Trust Box "🔒 Sua locação está protegida" | 🔧 auditado no código contra `page.tsx:618-635` — faltava por completo, adicionado (conteúdo estático, 3 linhas) |
 | Política de cancelamento (3 faixas de reembolso) | 🔧 auditado no código contra `page.tsx:637-665` — faltava por completo, adicionado (usa os mesmos valores estáticos que o próprio site usa hoje, não a config dinâmica) |
 | Stats do proprietário (locações concluídas + taxa de resposta) | ✅ **CONFIRMADO EM DEVICE 2026-07-03 à noite** — pedido explícito do usuário testando ao vivo, implementado (`GET /api/items/[id]` estendido) e agora confirmado funcionando pós-deploy |
@@ -272,7 +272,7 @@ própria, escopo de uma sessão dedicada, não de um ciclo de auditoria-e-fix:
 - ~~Stats do proprietário~~ — ✅ implementado depois deste relatório, pedido em teste ao vivo (ver tabela "Detalhe do item")
 - **Grids "Itens do mesmo anunciante"** e **"Você também pode gostar"** (detalhe do item)
 - **Carrinho multi-item** (`AddToRentalButton`, Story B) no detalhe do item
-- **Tela nativa de editar anúncio** (hoje cai no site via `Linking`)
+- ~~**Tela nativa de editar anúncio**~~ — 🔧 **implementado, PENDE confirmação em device** (PR feat/mobile-editar-anuncio-nativo)
 - **ContractBanner** (assinatura de contrato digital), **ReturnCountdown**,
   **ReturnChecklist**, **ReturnConditionForm**, **CheckInOut** (fotos, precisa
   câmera/galeria + Storage), **ReviewForm** (avaliações) — todos no detalhe de reserva
