@@ -1,14 +1,14 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { resolveUserId } from "@/lib/resolveUserId"
 import { prisma } from "@/lib/prisma"
 
 type Params = { params: Promise<{ id: string }> }
 
-export async function PATCH(_req: NextRequest, { params }: Params) {
+export async function PATCH(req: NextRequest, { params }: Params) {
   try {
-    const session = await auth()
-    if (!session) {
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 },
@@ -16,7 +16,6 @@ export async function PATCH(_req: NextRequest, { params }: Params) {
     }
 
     const { id }   = await params
-    const userId   = session.user.id
 
     const conv = await prisma.conversation.findUnique({
       where:  { id },

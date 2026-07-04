@@ -155,8 +155,9 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
 
 export async function DELETE(req: NextRequest, { params }: RouteContext) {
   try {
-    const session = await auth()
-    if (!session) {
+    // Aceita Bearer JWT (mobile) ou session cookie (web) — mesmo padrão de POST nesta mesma rota
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 }
@@ -185,13 +186,18 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
       )
     }
 
-    const isOwner = image.item.ownerId === session.user.id
-    const isAdmin = session.user.role === "ADMIN"
-    if (!isOwner && !isAdmin) {
-      return NextResponse.json(
-        { error: { code: "FORBIDDEN", message: "Sem permissão." } },
-        { status: 403 }
-      )
+    // Dono do item: verificação direta de userId (Bearer ou cookie).
+    // Admin web: verifica role via sessão completa (cookie-only, Bearer não carrega role).
+    const isOwner = image.item.ownerId === userId
+    if (!isOwner) {
+      const session = await auth().catch(() => null)
+      const isAdmin = session?.user?.role === "ADMIN"
+      if (!isAdmin) {
+        return NextResponse.json(
+          { error: { code: "FORBIDDEN", message: "Sem permissão." } },
+          { status: 403 }
+        )
+      }
     }
 
     const url = new URL(image.url)

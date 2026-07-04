@@ -10,15 +10,15 @@
  */
 import type { NextRequest } from "next/server"
 import { NextResponse }     from "next/server"
-import { auth }             from "@/lib/auth"
+import { resolveUserId }    from "@/lib/resolveUserId"
 import { prisma }           from "@/lib/prisma"
 import { RENTAL_CONTRACT_VERSION, RENTAL_CONTRACT_TEXT_HASH } from "@/lib/rental-contract"
 
 type Ctx = { params: Promise<{ id: string }> }
 
 export async function POST(req: NextRequest, { params }: Ctx) {
-  const session = await auth()
-  if (!session) return NextResponse.json({ error: { code: "UNAUTHORIZED" } }, { status: 401 })
+  const userId = await resolveUserId(req)
+  if (!userId) return NextResponse.json({ error: { code: "UNAUTHORIZED" } }, { status: 401 })
 
   const { id } = await params
 
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   if (!booking)
     return NextResponse.json({ error: { code: "NOT_FOUND" } }, { status: 404 })
 
-  if (booking.borrowerId !== session.user.id)
+  if (booking.borrowerId !== userId)
     return NextResponse.json({ error: { code: "FORBIDDEN" } }, { status: 403 })
 
   if (booking.contractSignedAt)

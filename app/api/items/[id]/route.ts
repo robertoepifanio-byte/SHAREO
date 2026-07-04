@@ -5,8 +5,9 @@ import { prisma } from "@/lib/prisma"
 import { UpdateItemSchema } from "@/lib/validations/items"
 import { geocodeItem } from "@/lib/geocodeItem"
 import { userPublicSelect } from "@/lib/prisma/selects"
-import { assertOwnerOrAdmin } from "@/lib/auth/ownership"
 import { getOwnerResponseBadge } from "@/lib/ownerStats"
+import { assertOwnerOrAdmin } from "@/lib/auth/ownership"
+import { resolveUserId } from "@/lib/resolveUserId"
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -64,7 +65,20 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
     // 122-139 (mesma lógica exata, replicada aqui pra expor via API pro
     // mobile; a página do site roda isso direto via Server Component, não
     // consome este endpoint).
-    const [responseBadge, ownerStats] = await Promise.all([
+    //
+    // P1-31 / Story B — itens similares e itens do mesmo anunciante:
+    // Replicam EXATAMENTE as queries de page.tsx linhas 141-181.
+    // `category.slug` incluído p/ o ItemCard do mobile (requer slug p/ ícone).
+    const relatedSelect = {
+      id: true, title: true, pricePerDay: true, condition: true,
+      city: true, state: true, neighborhood: true, status: true,
+      images:   { select: { url: true }, orderBy: { order: "asc" as const }, take: 1 },
+      category: { select: { name: true, slug: true } },
+      owner:    { select: { name: true, isVerified: true } },
+      _count:   { select: { reviews: true, favorites: true } },
+    } as const
+
+    const [responseBadge, ownerStats, similarItems, ownerItems] = await Promise.all([
       getOwnerResponseBadge(item.ownerId),
       prisma.booking.groupBy({
         by: ["status"],
@@ -81,18 +95,49 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
           responseRate: totalCount > 0 ? Math.round((responded / totalCount) * 100) : null,
         }
       }),
+      // P1-31 — itens similares (mesma categoria + cidade, excluindo o atual)
+      // Fonte: page.tsx linhas 141-161
+      prisma.item.findMany({
+        where: {
+          categoryId: item.category.id,
+          city:       item.city,
+          deletedAt:  null,
+          status:     "AVAILABLE",
+          isApproved: true,
+          id:         { not: item.id },
+          owner:      { deletedAt: null },
+        },
+        select: relatedSelect,
+        orderBy: { viewCount: "desc" },
+        take: 4,
+      }),
+      // Story B — outros itens do MESMO anunciante (locação multi-item)
+      // Fonte: page.tsx linhas 162-181
+      prisma.item.findMany({
+        where: {
+          ownerId:    item.ownerId,
+          deletedAt:  null,
+          status:     "AVAILABLE",
+          isApproved: true,
+          id:         { not: item.id },
+        },
+        select: relatedSelect,
+        orderBy: { viewCount: "desc" },
+        take: 4,
+      }),
     ])
 
     // Privacidade (SEC-MIN-06 / MAJ-S14-04): coordenada exata e endereço só p/ dono/admin.
     // Público recebe lat/lng truncadas (~110m) e address omitido.
+    // similarItems e ownerItems retornados para todos — mobile decide exibição por isOwner.
     const data = (isOwner || isAdmin)
-      ? { ...item, responseBadge, ownerStats }
+      ? { ...item, responseBadge, ownerStats, similarItems, ownerItems }
       : {
           ...item,
           address:   null,
           latitude:  Math.round(item.latitude  * 1000) / 1000,
           longitude: Math.round(item.longitude * 1000) / 1000,
-          responseBadge, ownerStats,
+          responseBadge, ownerStats, similarItems, ownerItems,
         }
     return NextResponse.json({ data })
   } catch (e) {
@@ -106,8 +151,9 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
 
 export async function PUT(req: NextRequest, { params }: RouteContext) {
   try {
-    const session = await auth()
-    if (!session) {
+    // Aceita Bearer JWT (mobile) ou session cookie (web) — mesmo padrão de POST /api/items/[id]/images
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 }
@@ -127,11 +173,19 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
       )
     }
 
-    if (!assertOwnerOrAdmin(existing.ownerId, session)) {
-      return NextResponse.json(
-        { error: { code: "FORBIDDEN", message: "Sem permissão." } },
-        { status: 403 }
-      )
+    // Dono do item: verificação direta de userId (Bearer ou cookie).
+    // Admin web: verifica role via sessão completa (só disponível via cookie —
+    // Bearer mobile não carrega role, conforme SEC-CRIT-01).
+    const isOwner = existing.ownerId === userId
+    if (!isOwner) {
+      const session = await auth().catch(() => null)
+      const isAdmin = session?.user?.role === "ADMIN"
+      if (!isAdmin) {
+        return NextResponse.json(
+          { error: { code: "FORBIDDEN", message: "Sem permissão." } },
+          { status: 403 }
+        )
+      }
     }
 
     const body = await req.json()

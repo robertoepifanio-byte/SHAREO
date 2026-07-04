@@ -5,7 +5,7 @@
 // Aviso de teto R$500: copy verbatim de _PriceCalc.tsx linha 434.
 // Skeleton de loading: equivalente ao <Skeleton> do site.
 
-import React, { useState, useMemo } from "react"
+import React, { useState, useMemo, useEffect } from "react"
 import {
   View,
   Text,
@@ -28,6 +28,8 @@ import { useAuth } from "@/lib/auth"
 import { fmtCurrency, calcBookingTotal } from "@/lib/pricing"
 import { useTheme } from "@/lib/theme"
 import { Stars } from "@/components/ui/Stars"
+import { ItemCard, type ItemCardItem } from "@/components/items/ItemCard"
+import { useRentalCart, type RentalCartItem } from "@/lib/rentalCart"
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 interface ItemDetail {
@@ -64,6 +66,10 @@ interface ItemDetail {
   // of undefined").
   responseBadge?: { label: string; avgHours: number } | null
   ownerStats?:    { completedCount: number; responseRate: number | null }
+  // P1-31 / Story B — itens relacionados retornados pelo GET /api/items/[id]
+  // Fonte: app/itens/[id]/page.tsx linhas 670-699
+  ownerItems?:   ItemCardItem[]
+  similarItems?: ItemCardItem[]
 }
 
 interface FavoriteStatusResponse { data: { favorited: boolean } }
@@ -143,6 +149,286 @@ const todayDate = (() => {
   d.setHours(0, 0, 0, 0)
   return d
 })()
+
+// ── AvailabilityCalendar ──────────────────────────────────────────────────────
+// Transcrição de components/items/AvailabilityCalendar.tsx (site).
+// Exibe 2 meses (atual + próximo) com dias coloridos:
+//   verde  = disponível  | vermelho = ocupado  | cinza = passado
+// Fonte dos dados: GET /api/items/[id]/availability → { data: string[] } YYYY-MM-DD.
+// Nenhuma lib de calendário nova necessária — grid manual como no site.
+
+const CAL_MONTH_NAMES = [
+  "Janeiro","Fevereiro","Março","Abril","Maio","Junho",
+  "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro",
+]
+const CAL_DAY_NAMES = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"]
+
+function calDateKey(year: number, month: number, day: number): string {
+  return `${year}-${String(month + 1).padStart(2,"0")}-${String(day).padStart(2,"0")}`
+}
+
+/** Um mês de calendário — sem hooks (componente puro de apresentação). */
+function CalendarMonth({
+  year, month, occupied, todayKey,
+}: { year: number; month: number; occupied: Set<string>; todayKey: string }) {
+  const firstDay    = new Date(year, month, 1).getDay()
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const cells: { day: number | null; key: string | null }[] = []
+  for (let i = 0; i < firstDay; i++) cells.push({ day: null, key: null })
+  for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d, key: calDateKey(year, month, d) })
+  const rows: typeof cells[] = []
+  for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7))
+
+  return (
+    <View style={{ marginBottom: 16 }}>
+      <Text style={calS.monthTitle}>{CAL_MONTH_NAMES[month]} {year}</Text>
+      {/* Cabeçalho dos dias da semana */}
+      <View style={calS.weekRow}>
+        {CAL_DAY_NAMES.map((d) => (
+          <Text key={d} style={calS.dayHeader}>{d}</Text>
+        ))}
+      </View>
+      {/* Células de dia */}
+      {rows.map((row, ri) => (
+        <View key={ri} style={calS.weekRow}>
+          {row.map((cell, ci) => {
+            if (!cell.day || !cell.key) {
+              return <View key={`e-${ri}-${ci}`} style={calS.cell} />
+            }
+            const isPast  = cell.key < todayKey
+            const isOcc   = occupied.has(cell.key)
+            const isToday = cell.key === todayKey
+            // Cores verbatim dos tokens Tailwind do site:
+            // bg-success/15 + text-success | bg-destructive/15 + text-destructive | bg-muted
+            let bg = "#DCFCE7"; let fg = "#16A34A"
+            if (isPast)       { bg = "#F1F5F9"; fg = "#94A3B8" }
+            else if (isOcc)   { bg = "#FEE2E2"; fg = "#DC2626" }
+            return (
+              <View
+                key={cell.key}
+                style={[calS.cell, { backgroundColor: bg }, isToday && calS.cellToday]}
+                accessibilityLabel={`${cell.day} de ${CAL_MONTH_NAMES[month]}: ${isPast ? "passado" : isOcc ? "ocupado" : "disponível"}`}
+              >
+                <Text style={[calS.cellText, { color: fg }]}>{cell.day}</Text>
+              </View>
+            )
+          })}
+        </View>
+      ))}
+    </View>
+  )
+}
+
+/** Wrapper com fetch + loading/error — transcreve AvailabilityCalendar.tsx do site. */
+function MobileAvailabilityCalendar({ itemId }: { itemId: string }) {
+  const today    = new Date()
+  const todayKey = calDateKey(today.getFullYear(), today.getMonth(), today.getDate())
+  const months   = [
+    { year: today.getFullYear(), month: today.getMonth() },
+    {
+      year:  today.getMonth() === 11 ? today.getFullYear() + 1 : today.getFullYear(),
+      month: (today.getMonth() + 1) % 12,
+    },
+  ]
+
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey:  ["item-availability", itemId],
+    queryFn:   () => apiFetch<{ data: string[] }>(`/api/items/${itemId}/availability`),
+    staleTime: 5 * 60_000,  // 5 min — espelha o Cache-Control do endpoint
+    enabled:   !!itemId,
+  })
+  const occupied = new Set<string>(data?.data ?? [])
+
+  if (isLoading) {
+    return (
+      <View style={{ marginTop: 8 }}>
+        {[0, 1].map((i) => (
+          <View key={i} style={{ marginBottom: 16 }}>
+            <View style={{ height: 14, width: 120, backgroundColor: "#E2E8F0", borderRadius: 6, marginBottom: 8, alignSelf: "center" }} />
+            {Array.from({ length: 5 }).map((_, ri) => (
+              <View key={ri} style={calS.weekRow}>
+                {Array.from({ length: 7 }).map((_, ci) => (
+                  <View key={ci} style={[calS.cell, { backgroundColor: "#E2E8F0" }]} />
+                ))}
+              </View>
+            ))}
+          </View>
+        ))}
+      </View>
+    )
+  }
+
+  if (isError) {
+    return (
+      <View style={calS.errorBox}>
+        <Text style={calS.errorText}>Não foi possível carregar o calendário.</Text>
+        <TouchableOpacity onPress={() => void refetch()} style={calS.retryBtn} accessibilityRole="button" accessibilityLabel="Tentar novamente">
+          <Text style={calS.retryText}>Tentar novamente</Text>
+        </TouchableOpacity>
+      </View>
+    )
+  }
+
+  return (
+    <View>
+      {/* Legenda — verbatim do site */}
+      <View style={calS.legend}>
+        <View style={calS.legendItem}><View style={[calS.legendSwatch, { backgroundColor: "#DCFCE7", borderColor: "#86EFAC" }]} /><Text style={calS.legendLabel}>Disponível</Text></View>
+        <View style={calS.legendItem}><View style={[calS.legendSwatch, { backgroundColor: "#FEE2E2", borderColor: "#FCA5A5" }]} /><Text style={calS.legendLabel}>Ocupado</Text></View>
+        <View style={calS.legendItem}><View style={[calS.legendSwatch, { backgroundColor: "#F1F5F9", borderColor: "#CBD5E1" }]} /><Text style={calS.legendLabel}>Passado</Text></View>
+      </View>
+      {months.map((m) => (
+        <CalendarMonth
+          key={`${m.year}-${m.month}`}
+          year={m.year}
+          month={m.month}
+          occupied={occupied}
+          todayKey={todayKey}
+        />
+      ))}
+    </View>
+  )
+}
+
+// Estilos do calendário — separados para não poluir o StyleSheet principal
+const calS = StyleSheet.create({
+  monthTitle: { fontSize: 13, fontWeight: "700", textAlign: "center", marginBottom: 8, color: "#0F172A" },
+  weekRow:    { flexDirection: "row", marginBottom: 2 },
+  dayHeader:  { flex: 1, textAlign: "center", fontSize: 9, fontWeight: "500", color: "#64748B", marginBottom: 4 },
+  cell: {
+    flex: 1, height: 30, borderRadius: 6,
+    alignItems: "center", justifyContent: "center", marginHorizontal: 1,
+  },
+  cellToday:  { borderWidth: 1.5, borderColor: "#007B3C" },
+  cellText:   { fontSize: 11, fontWeight: "500" },
+  legend:     { flexDirection: "row", gap: 12, marginBottom: 12, flexWrap: "wrap" },
+  legendItem: { flexDirection: "row", alignItems: "center", gap: 4 },
+  legendSwatch: { width: 12, height: 12, borderRadius: 3, borderWidth: 1 },
+  legendLabel:  { fontSize: 11, color: "#64748B" },
+  errorBox:  { borderWidth: 1, borderColor: "#E2E8F0", borderRadius: 8, padding: 12, flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 4 },
+  errorText: { fontSize: 12, color: "#64748B", flex: 1 },
+  retryBtn:  { paddingHorizontal: 8, paddingVertical: 4 },
+  retryText: { fontSize: 12, color: "#007B3C", fontWeight: "600", textDecorationLine: "underline" },
+})
+
+// ── AddToRentalButton (Story B) ───────────────────────────────────────────────
+// Transcrição de components/cart/AddToRentalButton.tsx (site).
+// Permite adicionar o item a uma locação multi-item do MESMO anunciante.
+// Estado persistido via Zustand+AsyncStorage (equivale ao localStorage+window events do site).
+// Sem rota nativa "/carrinho" ainda — "Ver carrinho" abre no site via Linking
+// (mesmo padrão de "Editar anúncio" em itens/[id].tsx e links do MobileMenu.tsx).
+// Nenhuma dep nativa nova — não exige novo build EAS.
+
+function MobileAddToRentalButton({
+  ownerId, ownerName, item,
+}: { ownerId: string; ownerName: string; item: RentalCartItem }) {
+  const { cart, load, add, replace } = useRentalCart()
+  const [msg, setMsg] = useState<string | null>(null)
+
+  // Carrega carrinho do AsyncStorage ao montar (idempotente — ok chamar múltiplas vezes)
+  useEffect(() => { void load() }, [load])
+
+  const inCart        = cart?.items.some((i) => i.itemId === item.itemId) ?? false
+  const sameOwnerCount = cart?.ownerId === ownerId ? (cart?.items.length ?? 0) : 0
+
+  function handleAdd() {
+    setMsg(null)
+    const res = add(ownerId, ownerName, item)
+    if (res.ok) return
+    if (res.reason === "ALREADY_IN_CART") {
+      setMsg("Este item já está na sua locação.")
+      return
+    }
+    // Carrinho tem itens de outro anunciante — copy verbatim de AddToRentalButton.tsx linha 35
+    Alert.alert(
+      "Substituir locação",
+      "Sua locação já tem itens de outro anunciante. Deseja esvaziar e começar uma nova locação com este item?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Confirmar", onPress: () => replace(ownerId, ownerName, item) },
+      ],
+    )
+  }
+
+  if (inCart) {
+    return (
+      <View style={{ marginBottom: 10 }}>
+        {/* Verbatim AddToRentalButton.tsx linha 44-49 */}
+        <TouchableOpacity
+          style={addS.inCartBtn}
+          onPress={() => Linking.openURL(`${API_URL}/carrinho`)}
+          accessibilityRole="link"
+          accessibilityLabel={`Ver carrinho${sameOwnerCount > 0 ? ` (${sameOwnerCount} itens)` : ""}`}
+        >
+          <Text style={addS.inCartText}>
+            ✓ Na sua locação · Ver carrinho{sameOwnerCount > 0 ? ` (${sameOwnerCount})` : ""} →
+          </Text>
+        </TouchableOpacity>
+      </View>
+    )
+  }
+
+  return (
+    <View style={{ marginBottom: 10 }}>
+      {/* Verbatim AddToRentalButton.tsx linha 51-56 */}
+      <TouchableOpacity
+        style={addS.addBtn}
+        onPress={handleAdd}
+        accessibilityRole="button"
+        accessibilityLabel="Adicionar a uma locação"
+      >
+        <Text style={addS.addBtnText}>➕ Adicionar a uma locação</Text>
+      </TouchableOpacity>
+
+      {msg && <Text style={addS.msgText}>{msg}</Text>}
+
+      {/* Sub-texto verbatim de AddToRentalButton.tsx linha 63 */}
+      <Text style={addS.hintText}>
+        Junte vários itens deste anunciante e alugue tudo numa só locação.
+        {sameOwnerCount > 0 && (
+          <>
+            {" "}
+            <Text
+              style={addS.cartLink}
+              onPress={() => Linking.openURL(`${API_URL}/carrinho`)}
+              accessibilityRole="link"
+            >
+              Ver carrinho ({sameOwnerCount}) →
+            </Text>
+          </>
+        )}
+      </Text>
+    </View>
+  )
+}
+
+const addS = StyleSheet.create({
+  inCartBtn: {
+    minHeight: 44, borderWidth: 1, borderColor: "#007B3C", backgroundColor: "rgba(0,123,60,0.05)",
+    borderRadius: 10, paddingVertical: 10, paddingHorizontal: 12,
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+  },
+  inCartText: { fontSize: 13, fontWeight: "700", color: "#007B3C" },
+  addBtn: {
+    minHeight: 44, borderWidth: 1, borderColor: "#CBD5E1",
+    borderRadius: 10, paddingVertical: 10, paddingHorizontal: 12,
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+  },
+  addBtnText: { fontSize: 13, fontWeight: "700", color: "#0F172A" },
+  msgText:    { fontSize: 11, color: "#64748B", marginTop: 4 },
+  hintText:   { fontSize: 11, color: "#64748B", marginTop: 4, lineHeight: 16 },
+  cartLink:   { fontWeight: "700", color: "#007B3C" },
+})
+
+// ── Utilitário: divide array em sublistas de `size` elementos ────────────────
+// Usado para montar o grid 2 colunas dentro do ScrollView (FlatList não pode
+// ser aninhado em ScrollView — usamos View+rows manuais igual ao padrão do
+// componente de grid do site para seções não-raiz da tela).
+function chunk<T>(arr: T[], size: number): T[][] {
+  const result: T[][] = []
+  for (let i = 0; i < arr.length; i += size) result.push(arr.slice(i, i + size))
+  return result
+}
 
 // ── Skeleton de loading — equivalente ao <Skeleton> do site ──────────────────
 function SkeletonBox({ h, w = "100%", style }: { h: number; w?: number | string; style?: object }) {
@@ -560,14 +846,13 @@ export default function ItemDetailScreen() {
           </View>
         )}
 
-        {/* Editar anúncio — modo proprietário. Sem tela nativa de edição ainda;
-            segue o mesmo padrão de fallback já usado em MobileMenu.tsx (Linking
-            p/ o site) até que apps/mobile/app/itens/[id]/editar.tsx exista. */}
+        {/* Editar anúncio — modo proprietário. Tela nativa implementada em
+            apps/mobile/app/itens/[id]/editar.tsx (PR feat/mobile-editar-anuncio-nativo). */}
         {isOwner && (
           <TouchableOpacity
             style={[s.editListingBtn, { borderColor: tokens.border }]}
-            onPress={() => Linking.openURL(`${API_URL}/itens/${item.id}/editar`)}
-            accessibilityRole="link"
+            onPress={() => router.push(`/itens/${item.id}/editar` as never)}
+            accessibilityRole="button"
             accessibilityLabel="Editar anúncio"
           >
             <Text style={[s.editListingBtnText, { color: tokens.text }]}>✏️ Editar anúncio</Text>
@@ -602,6 +887,15 @@ export default function ItemDetailScreen() {
         {/* ── Descrição ── */}
         <Text style={[s.sectionTitle, { color: tokens.navy }]}>Sobre o item</Text>
         <Text style={[s.description, { color: tokens.muted }]}>{item.description}</Text>
+
+        {/* ── P1-22 — Calendário de disponibilidade ────────────────────────
+            Fonte: page.tsx linhas 374-379 + components/items/AvailabilityCalendar.tsx.
+            Endpoint: GET /api/items/[id]/availability → { data: string[] }.
+            Mostra mês atual + próximo; verde=disponível, vermelho=ocupado, cinza=passado.
+            Nenhuma dep nativa nova — grid manual como no site. ── */}
+        <View style={{ height: 1, backgroundColor: tokens.border, marginTop: 16, marginBottom: 0 }} />
+        <Text style={[s.sectionTitle, { color: tokens.navy }]}>Disponibilidade</Text>
+        <MobileAvailabilityCalendar itemId={item.id} />
 
         {/* ── PriceCalc — só para locatários ── */}
         {!isOwner && (
@@ -853,6 +1147,29 @@ export default function ItemDetailScreen() {
               </View>
             )}
 
+            {/* Story B — AddToRentalButton ────────────────────────────────────
+                Fonte: page.tsx linhas 536-555 + components/cart/AddToRentalButton.tsx.
+                Separador "ou" verbatim do site (page.tsx linhas 537-541).
+                Estado no useRentalCart (Zustand+AsyncStorage). ── */}
+            <View style={s.orSeparator}>
+              <View style={[s.orLine, { backgroundColor: tokens.border }]} />
+              <Text style={[s.orText, { color: tokens.muted }]}>ou</Text>
+              <View style={[s.orLine, { backgroundColor: tokens.border }]} />
+            </View>
+            <MobileAddToRentalButton
+              ownerId={item.owner.id}
+              ownerName={item.owner.name}
+              item={{
+                itemId:        item.id,
+                title:         item.title,
+                image:         item.images[0]?.url ?? null,
+                pricePerDay:   item.pricePerDay,
+                pricePerWeek:  item.pricePerWeek,
+                pricePerMonth: item.pricePerMonth,
+                depositAmount: item.depositAmount,
+              }}
+            />
+
             {/* Trust Box — fonte: page.tsx linhas 618-635 (conteúdo estático) */}
             <View style={[s.trustBox, { borderColor: tokens.green, backgroundColor: "#F0FDF4" }]}>
               <Text style={[s.trustBoxTitle, { color: tokens.green }]}>🔒 Sua locação está protegida</Text>
@@ -926,6 +1243,58 @@ export default function ItemDetailScreen() {
             ))}
           </View>
         )}
+
+        {/* ── Story B — Itens do mesmo anunciante ────────────────────────────
+            Fonte: page.tsx linhas 670-685.
+            Exibido apenas para locatários (mesmo critério do site: !isOwner).
+            Reutiliza o ItemCard compartilhado (components/items/ItemCard.tsx). ── */}
+        {!isOwner && (item.ownerItems?.length ?? 0) > 0 && (
+          <View style={[s.relatedSection, { borderTopColor: tokens.border }]}>
+            <Text style={[s.sectionTitle, { color: tokens.navy, marginTop: 0 }]}>
+              Itens do mesmo anunciante
+            </Text>
+            <Text style={[s.relatedSubtitle, { color: tokens.muted }]}>
+              De {item.owner.name} — você pode alugar vários itens deste anunciante numa só locação.
+            </Text>
+            {chunk(item.ownerItems ?? [], 2).map((row, i) => (
+              <View key={i} style={s.gridRow}>
+                {row.map((oi) => (
+                  <View key={oi.id} style={s.gridCell}>
+                    <ItemCard item={oi} onPress={() => router.push(`/itens/${oi.id}` as never)} />
+                  </View>
+                ))}
+                {row.length < 2 && <View style={s.gridCell} />}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* ── P1-31 — Você também pode gostar ───────────────────────────────
+            Fonte: page.tsx linhas 687-699.
+            Filtra itens do mesmo dono (já exibidos acima) — mesmo critério do site.
+            Exibido para todos (site não filtra por isOwner nesta seção). ── */}
+        {(() => {
+          const ownerIds = new Set((item.ownerItems ?? []).map((oi) => oi.id))
+          const filtered = (item.similarItems ?? []).filter((si) => !ownerIds.has(si.id))
+          if (filtered.length === 0) return null
+          return (
+            <View style={[s.relatedSection, { borderTopColor: tokens.border }]}>
+              <Text style={[s.sectionTitle, { color: tokens.navy, marginTop: 0 }]}>
+                Você também pode gostar
+              </Text>
+              {chunk(filtered, 2).map((row, i) => (
+                <View key={i} style={s.gridRow}>
+                  {row.map((si) => (
+                    <View key={si.id} style={s.gridCell}>
+                      <ItemCard item={si} onPress={() => router.push(`/itens/${si.id}` as never)} />
+                    </View>
+                  ))}
+                  {row.length < 2 && <View style={s.gridCell} />}
+                </View>
+              ))}
+            </View>
+          )
+        })()}
       </ScrollView>
 
       {/* ── CTA fixo — modo locatário ── */}
@@ -1162,4 +1531,17 @@ const s = StyleSheet.create({
   },
   ctaBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
   ctaNote:    { fontSize: 11, textAlign: "center", marginTop: 6 },
+
+  // Separador "ou" — fonte: page.tsx linhas 537-541 (Story B)
+  orSeparator: { flexDirection: "row", alignItems: "center", gap: 8, marginVertical: 10 },
+  orLine:      { flex: 1, height: 1 },
+  orText:      { fontSize: 12 },
+
+  // Grids de itens relacionados — fonte: page.tsx linhas 670-699
+  relatedSection: {
+    marginTop: 28, borderTopWidth: 1, paddingTop: 20,
+  },
+  relatedSubtitle: { fontSize: 13, marginTop: 2, marginBottom: 12, lineHeight: 19 },
+  gridRow:  { flexDirection: "row", gap: 8, marginBottom: 8 },
+  gridCell: { flex: 1 },
 })

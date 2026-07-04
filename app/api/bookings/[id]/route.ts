@@ -1,7 +1,6 @@
 import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
 import { randomInt } from "node:crypto"
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
 import { userMiniSelect } from "@/lib/prisma/selects"
@@ -144,8 +143,11 @@ const TRANSITIONS: Record<
 
 export async function PATCH(req: NextRequest, { params }: Params) {
   try {
-    const session = await auth()
-    if (!session) {
+    // Bearer (app mobile) OU cookie (web) — igual ao GET acima. Antes usava
+    // apenas auth() (cookie), então TODA ação de ciclo de vida da reserva pelo
+    // app (confirm/cancel/mark_active/mark_returned/confirm_return) caía em 401.
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 },
@@ -165,7 +167,6 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const { action, reason, actualTime, pickupToken } = parsed.data
     // Horário efetivo: usa o informado pelo usuário (se válido e no passado), senão o momento atual
     const effectiveTime = actualTime ? new Date(actualTime) : new Date()
-    const userId = session.user.id
 
     const booking = await prisma.booking.findUnique({
       where:  { id },
