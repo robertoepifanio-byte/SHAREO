@@ -268,10 +268,11 @@ export default function PerfilScreen() {
       native: () => router.push("/perfil/repasses" as never),
     },
     {
-      href:  "/perfil/repasses/informe",
-      icon:  "file-text",
-      label: "Informe de Rendimentos",
-      desc:  "Total anual recebido para declaração de IR",
+      href:   "/perfil/repasses/informe",
+      icon:   "file-text",
+      label:  "Informe de Rendimentos",
+      desc:   "Total anual recebido para declaração de IR",
+      native: () => router.push("/perfil/repasses/informe"),
     },
     {
       href:  "/perfil/indicacoes",
