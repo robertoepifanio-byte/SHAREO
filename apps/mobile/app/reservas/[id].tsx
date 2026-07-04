@@ -5,7 +5,7 @@
 // StyleSheet + tokens (useTheme) — migrado de className NativeWind para garantir
 // compatibilidade com todos os bundles de produção.
 
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Linking, StyleSheet } from "react-native"
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Linking, StyleSheet, Modal, TextInput } from "react-native"
 import { useState } from "react"
 import { router, useLocalSearchParams } from "expo-router"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -125,6 +125,9 @@ export default function BookingDetailScreen() {
   const { tokens } = useTheme()
   const qc         = useQueryClient()
   const [historyExpanded, setHistoryExpanded] = useState(false)
+  // Painel de cancelamento — fonte: _BookingActions.tsx linhas 43-46, 118-119, 262-283
+  const [cancelModalVisible, setCancelModalVisible] = useState(false)
+  const [cancelReason, setCancelReason]             = useState("")
 
   // Todos os hooks ANTES de qualquer return condicional (protocolo item 4)
   const { data, isLoading } = useQuery({
@@ -144,13 +147,25 @@ export default function BookingDetailScreen() {
   })
   const feeRateBps = statsData?.data.feeRate ?? null
 
+  // BUG FIX: o mobile chamava POST /api/bookings/${id}/cancel (rota inexistente → 404)
+  // e não coletava o motivo. O site usa PATCH /api/bookings/${id} com { action:"cancel", reason }
+  // e EXIGE o motivo (textarea, botão desabilitado se vazio — _BookingActions.tsx linhas 118-119,
+  // 227, 262-283). reason é validado no servidor: transition.requiresReason → 400 se ausente.
+  // Fonte: app/api/bookings/[id]/route.ts linhas 138-139, 227-229.
   const cancel = useMutation({
-    mutationFn: () => apiFetch(`/api/bookings/${id}/cancel`, { method: "POST" }),
+    mutationFn: (reason: string) =>
+      apiFetch(`/api/bookings/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ action: "cancel", reason }),
+      }),
     onSuccess: () => {
+      setCancelModalVisible(false)
+      setCancelReason("")
       qc.invalidateQueries({ queryKey: ["booking", id] })
       qc.invalidateQueries({ queryKey: ["bookings"] })
     },
-    onError: () => Alert.alert("Erro", "Não foi possível cancelar a reserva."),
+    onError: (e) =>
+      Alert.alert("Erro", e instanceof Error ? e.message : "Não foi possível cancelar a reserva."),
   })
 
   const returnAction = useMutation({
@@ -240,7 +255,8 @@ export default function BookingDetailScreen() {
   const st         = STATUS_LABEL[booking.status] ?? STATUS_LABEL["CANCELLED"]
   const isOwner    = user.id === booking.owner.id
   const isBorrower = user.id === booking.borrower.id
-  const canCancel        = (booking.status === "PENDING" || booking.status === "ACTIVE") && isBorrower
+  // Site: PENDING ou CONFIRMED, AMBOS os papéis — fonte: _BookingActions.tsx linha 241-242
+  const canCancel        = (booking.status === "PENDING" || booking.status === "CONFIRMED") && (isOwner || isBorrower)
   const canReturn        = booking.status === "ACTIVE"   && isBorrower
   const canConfirmReturn = booking.status === "RETURNED" && isOwner
   const canPay           = isBorrower && booking.status === "CONFIRMED" && booking.paymentStatus !== "PAID"
@@ -282,15 +298,11 @@ export default function BookingDetailScreen() {
   const sorted = [...historyEvents].reverse() // mais recente primeiro
   const latest  = sorted[0]
 
+  // Abre o painel de cancelamento com campo de motivo obrigatório.
+  // Antes: Alert.alert com confirm direto (sem motivo) → 400 do servidor.
+  // Fonte: _BookingActions.tsx linhas 262-283 (panel === "cancel").
   function handleCancel() {
-    Alert.alert(
-      "Cancelar reserva",
-      "Tem certeza que deseja cancelar esta reserva? Esta ação não pode ser desfeita.",
-      [
-        { text: "Voltar", style: "cancel" },
-        { text: "Cancelar reserva", style: "destructive", onPress: () => cancel.mutate() },
-      ]
-    )
+    setCancelModalVisible(true)
   }
 
   function handleReturn() {
@@ -787,7 +799,7 @@ export default function BookingDetailScreen() {
           </TouchableOpacity>
         )}
 
-        {/* Cancelar reserva (locatário + PENDING ou ACTIVE) */}
+        {/* Cancelar reserva (locatário + PENDING ou CONFIRMED) — fonte: _BookingActions.tsx linha 242 */}
         {canCancel && (
           <TouchableOpacity
             style={[s.actionBtn, { backgroundColor: "#FEF2F2", borderWidth: 1, borderColor: "#FECACA" }]}
@@ -806,6 +818,68 @@ export default function BookingDetailScreen() {
           </TouchableOpacity>
         )}
       </View>
+
+      {/* ── Modal de cancelamento — fonte: _BookingActions.tsx linhas 262-283
+          Alert.prompt não existe no Android, portanto Modal + TextInput.
+          Botão desabilitado se motivo vazio — mesmo comportamento do site. ── */}
+      <Modal
+        visible={cancelModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => { setCancelModalVisible(false); setCancelReason("") }}
+      >
+        <View style={s.modalOverlay}>
+          <View style={[s.modalSheet, { backgroundColor: tokens.surface }]}>
+            <Text style={[s.modalTitle, { color: tokens.navy }]}>
+              Cancelar reserva
+            </Text>
+            <Text style={[s.modalDesc, { color: tokens.muted }]}>
+              Informe o motivo do cancelamento <Text style={{ color: "#DC2626" }}>*</Text>
+            </Text>
+            <TextInput
+              style={[s.reasonInput, {
+                color:           tokens.text,
+                borderColor:     tokens.border,
+                backgroundColor: tokens.bg,
+              }]}
+              value={cancelReason}
+              onChangeText={setCancelReason}
+              placeholder="Descreva o motivo..."
+              placeholderTextColor={tokens.muted}
+              multiline
+              numberOfLines={3}
+              maxLength={500}
+              textAlignVertical="top"
+              editable={!cancel.isPending}
+            />
+            <View style={s.modalActions}>
+              <TouchableOpacity
+                style={[s.modalBtnSecondary, { borderColor: tokens.border }]}
+                onPress={() => { setCancelModalVisible(false); setCancelReason("") }}
+                disabled={cancel.isPending}
+                accessibilityRole="button"
+                accessibilityLabel="Voltar"
+              >
+                <Text style={[s.modalBtnSecondaryText, { color: tokens.text }]}>Voltar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.modalBtnDanger, { opacity: !cancelReason.trim() || cancel.isPending ? 0.5 : 1 }]}
+                onPress={() => cancel.mutate(cancelReason)}
+                disabled={!cancelReason.trim() || cancel.isPending}
+                accessibilityRole="button"
+                accessibilityLabel="Confirmar cancelamento"
+                accessibilityState={{ disabled: !cancelReason.trim() || cancel.isPending }}
+              >
+                {cancel.isPending ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={s.modalBtnDangerText}>Confirmar cancelamento</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   )
 }
@@ -987,4 +1061,49 @@ const s = StyleSheet.create({
     justifyContent:    "center",
   },
   actionBtnOutlineText: { fontSize: 14, fontWeight: "700" },
+
+  // Modal de cancelamento — fonte: _BookingActions.tsx linhas 262-283
+  modalOverlay: {
+    flex:             1,
+    backgroundColor:  "rgba(0,0,0,0.5)",
+    justifyContent:   "flex-end",
+  },
+  modalSheet: {
+    borderTopLeftRadius:  16,
+    borderTopRightRadius: 16,
+    padding:              20,
+    gap:                  12,
+  },
+  modalTitle:   { fontSize: 17, fontWeight: "700" },
+  modalDesc:    { fontSize: 13, lineHeight: 18 },
+  reasonInput: {
+    borderWidth:  1,
+    borderRadius: 10,
+    padding:      12,
+    fontSize:     14,
+    minHeight:    80,
+  },
+  modalActions: {
+    flexDirection: "row",
+    gap:           10,
+    marginTop:     4,
+  },
+  modalBtnSecondary: {
+    flex:            1,
+    minHeight:       48,
+    borderRadius:    12,
+    borderWidth:     1,
+    alignItems:      "center",
+    justifyContent:  "center",
+  },
+  modalBtnSecondaryText: { fontSize: 14, fontWeight: "600" },
+  modalBtnDanger: {
+    flex:           1,
+    minHeight:      48,
+    borderRadius:   12,
+    backgroundColor:"#DC2626",
+    alignItems:     "center",
+    justifyContent: "center",
+  },
+  modalBtnDangerText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
 })
