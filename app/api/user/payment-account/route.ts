@@ -1,24 +1,28 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { auth } from "@/lib/auth"
+import { resolveUserId } from "@/lib/resolveUserId"
 import { prisma } from "@/lib/prisma"
+import { getPlatformFeeRate } from "@/lib/platform-config"
 import { PaymentAccountSchema } from "@/lib/validations/payment-account"
 
-export async function GET() {
-  const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
+export async function GET(req: NextRequest) {
+  const userId = await resolveUserId(req)
+  if (!userId) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
 
-  const account = await prisma.ownerPaymentAccount.findUnique({
-    where:  { userId: session.user.id },
-    select: { id: true, pixKeyType: true, pixKey: true, holderName: true, bankName: true, status: true, updatedAt: true },
-  })
+  const [account, feeRateBps] = await Promise.all([
+    prisma.ownerPaymentAccount.findUnique({
+      where:  { userId },
+      select: { id: true, pixKeyType: true, pixKey: true, holderName: true, bankName: true, status: true, updatedAt: true },
+    }),
+    getPlatformFeeRate(),
+  ])
 
-  return NextResponse.json({ account })
+  return NextResponse.json({ account, feeRateBps })
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
+  const userId = await resolveUserId(req)
+  if (!userId) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
 
   const body = await req.json()
   const parsed = PaymentAccountSchema.safeParse(body)
@@ -26,14 +30,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Dados inválidos", details: parsed.error.flatten() }, { status: 400 })
   }
 
-  const existing = await prisma.ownerPaymentAccount.findUnique({ where: { userId: session.user.id } })
+  const existing = await prisma.ownerPaymentAccount.findUnique({ where: { userId } })
   if (existing) {
     return NextResponse.json({ error: "Conta já existe. Use PATCH para atualizar." }, { status: 409 })
   }
 
   const account = await prisma.ownerPaymentAccount.create({
     data: {
-      userId:     session.user.id,
+      userId,
       pixKeyType: parsed.data.pixKeyType,
       pixKey:     parsed.data.pixKey.trim(),
       holderName: parsed.data.holderName.trim(),
@@ -47,8 +51,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const session = await auth()
-  if (!session?.user?.id) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
+  const userId = await resolveUserId(req)
+  if (!userId) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
 
   const body = await req.json()
   const parsed = PaymentAccountSchema.safeParse(body)
@@ -57,9 +61,9 @@ export async function PATCH(req: NextRequest) {
   }
 
   const account = await prisma.ownerPaymentAccount.upsert({
-    where:  { userId: session.user.id },
+    where:  { userId },
     create: {
-      userId:     session.user.id,
+      userId,
       pixKeyType: parsed.data.pixKeyType,
       pixKey:     parsed.data.pixKey.trim(),
       holderName: parsed.data.holderName.trim(),
