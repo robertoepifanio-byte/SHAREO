@@ -5,7 +5,7 @@
 // Aviso de teto R$500: copy verbatim de _PriceCalc.tsx linha 434.
 // Skeleton de loading: equivalente ao <Skeleton> do site.
 
-import React, { useState, useMemo } from "react"
+import React, { useState, useMemo, useEffect } from "react"
 import {
   View,
   Text,
@@ -29,6 +29,7 @@ import { fmtCurrency, calcBookingTotal } from "@/lib/pricing"
 import { useTheme } from "@/lib/theme"
 import { Stars } from "@/components/ui/Stars"
 import { ItemCard, type ItemCardItem } from "@/components/items/ItemCard"
+import { useRentalCart, type RentalCartItem } from "@/lib/rentalCart"
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 interface ItemDetail {
@@ -308,6 +309,115 @@ const calS = StyleSheet.create({
   errorText: { fontSize: 12, color: "#64748B", flex: 1 },
   retryBtn:  { paddingHorizontal: 8, paddingVertical: 4 },
   retryText: { fontSize: 12, color: "#007B3C", fontWeight: "600", textDecorationLine: "underline" },
+})
+
+// ── AddToRentalButton (Story B) ───────────────────────────────────────────────
+// Transcrição de components/cart/AddToRentalButton.tsx (site).
+// Permite adicionar o item a uma locação multi-item do MESMO anunciante.
+// Estado persistido via Zustand+AsyncStorage (equivale ao localStorage+window events do site).
+// Sem rota nativa "/carrinho" ainda — "Ver carrinho" abre no site via Linking
+// (mesmo padrão de "Editar anúncio" em itens/[id].tsx e links do MobileMenu.tsx).
+// Nenhuma dep nativa nova — não exige novo build EAS.
+
+function MobileAddToRentalButton({
+  ownerId, ownerName, item,
+}: { ownerId: string; ownerName: string; item: RentalCartItem }) {
+  const { cart, load, add, replace } = useRentalCart()
+  const [msg, setMsg] = useState<string | null>(null)
+
+  // Carrega carrinho do AsyncStorage ao montar (idempotente — ok chamar múltiplas vezes)
+  useEffect(() => { void load() }, [load])
+
+  const inCart        = cart?.items.some((i) => i.itemId === item.itemId) ?? false
+  const sameOwnerCount = cart?.ownerId === ownerId ? (cart?.items.length ?? 0) : 0
+
+  function handleAdd() {
+    setMsg(null)
+    const res = add(ownerId, ownerName, item)
+    if (res.ok) return
+    if (res.reason === "ALREADY_IN_CART") {
+      setMsg("Este item já está na sua locação.")
+      return
+    }
+    // Carrinho tem itens de outro anunciante — copy verbatim de AddToRentalButton.tsx linha 35
+    Alert.alert(
+      "Substituir locação",
+      "Sua locação já tem itens de outro anunciante. Deseja esvaziar e começar uma nova locação com este item?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { text: "Confirmar", onPress: () => replace(ownerId, ownerName, item) },
+      ],
+    )
+  }
+
+  if (inCart) {
+    return (
+      <View style={{ marginBottom: 10 }}>
+        {/* Verbatim AddToRentalButton.tsx linha 44-49 */}
+        <TouchableOpacity
+          style={addS.inCartBtn}
+          onPress={() => Linking.openURL(`${API_URL}/carrinho`)}
+          accessibilityRole="link"
+          accessibilityLabel={`Ver carrinho${sameOwnerCount > 0 ? ` (${sameOwnerCount} itens)` : ""}`}
+        >
+          <Text style={addS.inCartText}>
+            ✓ Na sua locação · Ver carrinho{sameOwnerCount > 0 ? ` (${sameOwnerCount})` : ""} →
+          </Text>
+        </TouchableOpacity>
+      </View>
+    )
+  }
+
+  return (
+    <View style={{ marginBottom: 10 }}>
+      {/* Verbatim AddToRentalButton.tsx linha 51-56 */}
+      <TouchableOpacity
+        style={addS.addBtn}
+        onPress={handleAdd}
+        accessibilityRole="button"
+        accessibilityLabel="Adicionar a uma locação"
+      >
+        <Text style={addS.addBtnText}>➕ Adicionar a uma locação</Text>
+      </TouchableOpacity>
+
+      {msg && <Text style={addS.msgText}>{msg}</Text>}
+
+      {/* Sub-texto verbatim de AddToRentalButton.tsx linha 63 */}
+      <Text style={addS.hintText}>
+        Junte vários itens deste anunciante e alugue tudo numa só locação.
+        {sameOwnerCount > 0 && (
+          <>
+            {" "}
+            <Text
+              style={addS.cartLink}
+              onPress={() => Linking.openURL(`${API_URL}/carrinho`)}
+              accessibilityRole="link"
+            >
+              Ver carrinho ({sameOwnerCount}) →
+            </Text>
+          </>
+        )}
+      </Text>
+    </View>
+  )
+}
+
+const addS = StyleSheet.create({
+  inCartBtn: {
+    minHeight: 44, borderWidth: 1, borderColor: "#007B3C", backgroundColor: "rgba(0,123,60,0.05)",
+    borderRadius: 10, paddingVertical: 10, paddingHorizontal: 12,
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+  },
+  inCartText: { fontSize: 13, fontWeight: "700", color: "#007B3C" },
+  addBtn: {
+    minHeight: 44, borderWidth: 1, borderColor: "#CBD5E1",
+    borderRadius: 10, paddingVertical: 10, paddingHorizontal: 12,
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+  },
+  addBtnText: { fontSize: 13, fontWeight: "700", color: "#0F172A" },
+  msgText:    { fontSize: 11, color: "#64748B", marginTop: 4 },
+  hintText:   { fontSize: 11, color: "#64748B", marginTop: 4, lineHeight: 16 },
+  cartLink:   { fontWeight: "700", color: "#007B3C" },
 })
 
 // ── Utilitário: divide array em sublistas de `size` elementos ────────────────
@@ -1038,6 +1148,29 @@ export default function ItemDetailScreen() {
               </View>
             )}
 
+            {/* Story B — AddToRentalButton ────────────────────────────────────
+                Fonte: page.tsx linhas 536-555 + components/cart/AddToRentalButton.tsx.
+                Separador "ou" verbatim do site (page.tsx linhas 537-541).
+                Estado no useRentalCart (Zustand+AsyncStorage). ── */}
+            <View style={s.orSeparator}>
+              <View style={[s.orLine, { backgroundColor: tokens.border }]} />
+              <Text style={[s.orText, { color: tokens.muted }]}>ou</Text>
+              <View style={[s.orLine, { backgroundColor: tokens.border }]} />
+            </View>
+            <MobileAddToRentalButton
+              ownerId={item.owner.id}
+              ownerName={item.owner.name}
+              item={{
+                itemId:        item.id,
+                title:         item.title,
+                image:         item.images[0]?.url ?? null,
+                pricePerDay:   item.pricePerDay,
+                pricePerWeek:  item.pricePerWeek,
+                pricePerMonth: item.pricePerMonth,
+                depositAmount: item.depositAmount,
+              }}
+            />
+
             {/* Trust Box — fonte: page.tsx linhas 618-635 (conteúdo estático) */}
             <View style={[s.trustBox, { borderColor: tokens.green, backgroundColor: "#F0FDF4" }]}>
               <Text style={[s.trustBoxTitle, { color: tokens.green }]}>🔒 Sua locação está protegida</Text>
@@ -1399,6 +1532,11 @@ const s = StyleSheet.create({
   },
   ctaBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
   ctaNote:    { fontSize: 11, textAlign: "center", marginTop: 6 },
+
+  // Separador "ou" — fonte: page.tsx linhas 537-541 (Story B)
+  orSeparator: { flexDirection: "row", alignItems: "center", gap: 8, marginVertical: 10 },
+  orLine:      { flex: 1, height: 1 },
+  orText:      { fontSize: 12 },
 
   // Grids de itens relacionados — fonte: page.tsx linhas 670-699
   relatedSection: {
