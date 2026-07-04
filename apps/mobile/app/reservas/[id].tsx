@@ -64,6 +64,8 @@ interface BookingDetail {
   }
   borrower: { id: string; name: string }
   conversation: { id: string } | null
+  // ReviewForm — fonte: app/reservas/[id]/page.tsx linhas 619-651 + _ReviewForm.tsx
+  reviews: { reviewType: string; rating: number; comment: string | null }[]
 }
 
 // Formata o endereço de retirada — fonte: app/reservas/[id]/page.tsx linhas 42-53 (fmtOwnerAddress)
@@ -203,6 +205,12 @@ export default function BookingDetailScreen() {
   const [rcDamageDesc, setRcDamageDesc]     = useState("")
   const [rcSubmitting, setRcSubmitting]     = useState(false)
   const [rcError, setRcError]               = useState<string | null>(null)
+  // ReviewForm — fonte: app/reservas/[id]/_ReviewForm.tsx linhas 82-94
+  // Estado por tipo de avaliação: "idle"|"submitting"|"done"
+  const [rvState, setRvState] = useState<Record<string, "idle" | "submitting" | "done">>({})
+  const [rvRating, setRvRating] = useState<Record<string, number>>({})
+  const [rvComment, setRvComment] = useState<Record<string, string>>({})
+  const [rvError, setRvError] = useState<Record<string, string>>({})
 
   // Todos os hooks ANTES de qualquer return condicional (protocolo item 4)
   const { data, isLoading } = useQuery({
@@ -449,6 +457,34 @@ export default function BookingDetailScreen() {
     } finally {
       setClSubmitting(false)
       setClPhotoLoading(false)
+    }
+  }
+
+  // ReviewForm — Submete avaliação
+  // Fonte: app/reservas/[id]/_ReviewForm.tsx linhas 131-155 (submit)
+  // API: POST /api/bookings/:id/reviews { reviewType, rating, comment }
+  // Schema: lib/validations/reviews.ts (CreateReviewSchema)
+  async function submitReview(reviewType: string) {
+    const rating = rvRating[reviewType] ?? 0
+    if (rating === 0) {
+      setRvError((prev) => ({ ...prev, [reviewType]: "Selecione uma nota." }))
+      return
+    }
+    setRvError((prev) => ({ ...prev, [reviewType]: "" }))
+    setRvState((prev) => ({ ...prev, [reviewType]: "submitting" }))
+    try {
+      await apiFetch(`/api/bookings/${id}/reviews`, {
+        method: "POST",
+        body:   JSON.stringify({
+          reviewType,
+          rating,
+          comment: rvComment[reviewType]?.trim() || undefined,
+        }),
+      })
+      setRvState((prev) => ({ ...prev, [reviewType]: "done" }))
+    } catch (e) {
+      setRvError((prev) => ({ ...prev, [reviewType]: e instanceof Error ? e.message : "Erro ao enviar avaliação." }))
+      setRvState((prev) => ({ ...prev, [reviewType]: "idle" }))
     }
   }
 
@@ -1149,7 +1185,126 @@ export default function BookingDetailScreen() {
           )
         })()}
 
-        {/* TODO(revisão): itens pendentes após ReturnConditionForm: */}
+        {/* ── ReviewForm — avaliações pós-devolução
+            Fonte: app/reservas/[id]/_ReviewForm.tsx linhas 81-296 + page.tsx linhas 619-651
+            Condição: status RETURNED ou COMPLETED
+            Locatário: avalia ITEM + OWNER. Locador: avalia BORROWER.
+            Inicializa como "done" se já existe avaliação desse tipo.
+            API: POST /api/bookings/:id/reviews { reviewType, rating, comment }
+        ── */}
+        {(booking.status === "RETURNED" || booking.status === "COMPLETED") && (() => {
+          // Tipos a renderizar — fonte: page.tsx linhas 624-648
+          const reviewTypesToRender: { type: string; targetName: string }[] = isBorrower
+            ? [
+                { type: "ITEM",  targetName: booking.item.title },
+                { type: "OWNER", targetName: booking.owner.name },
+              ]
+            : isOwner
+              ? [{ type: "BORROWER", targetName: booking.borrower.name }]
+              : []
+          if (reviewTypesToRender.length === 0) return null
+
+          const REVIEW_TITLE: Record<string, string> = {
+            ITEM:     "Avalie o item",
+            OWNER:    "Avalie o proprietário",
+            BORROWER: "Avalie o locatário",
+          }
+
+          return (
+            <View style={{ marginBottom: 12 }}>
+              <Text style={[s.sectionLabel, { color: tokens.text, fontSize: 14, fontWeight: "700", letterSpacing: 0, marginBottom: 8 }]}>
+                Avaliações
+              </Text>
+              {reviewTypesToRender.map(({ type, targetName }) => {
+                const existing = booking.reviews.find((r) => r.reviewType === type)
+                const isDone   = rvState[type] === "done" || !!existing
+                const rating   = rvRating[type] ?? 0
+                const comment  = rvComment[type] ?? ""
+                const isSubmitting = rvState[type] === "submitting"
+
+                return (
+                  <View
+                    key={type}
+                    style={[s.section, { borderColor: tokens.border, backgroundColor: tokens.surface, marginBottom: 10 }]}
+                  >
+                    <Text style={[s.noteText, { color: tokens.text, fontWeight: "700", fontSize: 14 }]}>
+                      {REVIEW_TITLE[type]}
+                    </Text>
+                    <Text style={[s.noteText, { color: tokens.muted, fontSize: 12, marginBottom: 10 }]}>{targetName}</Text>
+                    {isDone ? (
+                      /* Estado "done" — fonte: _ReviewForm.tsx linhas 157-169 */
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                        <Text style={{ color: "#F59E0B", fontSize: 16 }}>
+                          {"★".repeat(existing?.rating ?? (rvRating[type] ?? 0))}{"☆".repeat(5 - (existing?.rating ?? (rvRating[type] ?? 0)))}
+                        </Text>
+                        <Text style={{ color: "#059669", fontWeight: "600", fontSize: 13 }}>Avaliação enviada</Text>
+                      </View>
+                    ) : (
+                      <>
+                        {/* Nota geral via estrelas — fonte: _ReviewForm.tsx linhas 217-237 */}
+                        <Text style={[s.noteText, { color: tokens.text, fontSize: 13, fontWeight: "500", marginBottom: 6 }]}>
+                          Nota geral
+                        </Text>
+                        <View style={sReview.starsRow}>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <TouchableOpacity
+                              key={star}
+                              onPress={() => setRvRating((prev) => ({ ...prev, [type]: star }))}
+                              style={sReview.starBtn}
+                              accessibilityRole="button"
+                              accessibilityLabel={`${star} estrela${star > 1 ? "s" : ""}`}
+                            >
+                              <Text style={{ fontSize: 26, color: rating >= star ? "#F59E0B" : tokens.border }}>★</Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                        <TextInput
+                          style={[s.reasonInput, {
+                            color: tokens.text,
+                            borderColor: tokens.border,
+                            backgroundColor: tokens.bg,
+                            marginTop: 10,
+                          }]}
+                          value={comment}
+                          onChangeText={(v) => setRvComment((prev) => ({ ...prev, [type]: v }))}
+                          placeholder="Comentário opcional…"
+                          placeholderTextColor={tokens.muted}
+                          multiline
+                          numberOfLines={3}
+                          maxLength={1000}
+                          textAlignVertical="top"
+                        />
+                        {rvError[type] ? (
+                          <Text style={{ color: "#DC2626", fontSize: 12, marginTop: 6 }}>{rvError[type]}</Text>
+                        ) : null}
+                        <TouchableOpacity
+                          style={[sChecklist.confirmBtn, {
+                            backgroundColor: rating > 0 && !isSubmitting ? "#007B3C" : tokens.border,
+                            opacity: rating > 0 && !isSubmitting ? 1 : 0.6,
+                            marginTop: 10,
+                          }]}
+                          onPress={() => submitReview(type)}
+                          disabled={rating === 0 || isSubmitting}
+                          accessibilityRole="button"
+                          accessibilityLabel="Enviar avaliação"
+                          accessibilityState={{ disabled: rating === 0 || isSubmitting }}
+                        >
+                          {isSubmitting ? (
+                            <ActivityIndicator size="small" color="#FFFFFF" />
+                          ) : (
+                            <Text style={sReview.btnText}>Enviar avaliação</Text>
+                          )}
+                        </TouchableOpacity>
+                      </>
+                    )}
+                  </View>
+                )
+              })}
+            </View>
+          )
+        })()}
+
+        {/* TODO(revisão): CheckInOut (fotos) — implementado no item 7 */}
 
       </ScrollView>
 
@@ -1707,4 +1862,11 @@ const sRC = StyleSheet.create({
   optLabel:  { fontSize: 13, fontWeight: "600", lineHeight: 18 },
   optDesc:   { fontSize: 11, marginTop: 2, lineHeight: 15 },
   disputeWarning: { borderRadius: 8, borderWidth: 1, padding: 10, marginTop: 8 },
+})
+
+// ReviewForm StyleSheet — fonte: app/reservas/[id]/_ReviewForm.tsx
+const sReview = StyleSheet.create({
+  starsRow: { flexDirection: "row", gap: 4, marginBottom: 2 },
+  starBtn:  { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
+  btnText:  { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
 })
