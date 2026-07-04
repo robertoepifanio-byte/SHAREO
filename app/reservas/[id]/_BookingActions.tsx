@@ -222,26 +222,26 @@ export function BookingActions({
 
   // ─── Botões principais ────────────────────────────────────────────────────
 
-  const buttons: { label: string; variant: "primary" | "danger" | "ghost"; onClick: () => void }[] = []
+  const buttons: { emoji?: string; label: string; variant: "primary" | "danger" | "ghost"; onClick: () => void }[] = []
 
   if (isOwner) {
     if (status === "PENDING")
-      buttons.push({ label: "✅ Confirmar reserva",    variant: "primary", onClick: () => execCore("confirm") })
+      buttons.push({ emoji: "✅", label: "Confirmar reserva",    variant: "primary", onClick: () => execCore("confirm") })
     if (status === "CONFIRMED")
-      buttons.push({ label: "▶️ Marcar como ativo",    variant: "primary", onClick: () => { setPickupTime(nowLocal()); setPanel("pickup_time") } })
+      buttons.push({ emoji: "▶️", label: "Marcar como ativo",    variant: "primary", onClick: () => { setPickupTime(nowLocal()); setPanel("pickup_time") } })
     if (status === "RETURNED" && !hideReturnActions)
-      buttons.push({ label: "📦 Confirmar recebimento", variant: "primary", onClick: () => execCore("confirm_return") })
+      buttons.push({ emoji: "📦", label: "Confirmar recebimento", variant: "primary", onClick: () => execCore("confirm_return") })
   }
   if (isBorrower) {
     if (status === "ACTIVE" && !hideReturnActions)
-      buttons.push({ label: "📦 Devolver",   variant: "primary", onClick: () => { setReturnTime(nowLocal()); setPanel("return_time") } })
+      buttons.push({ emoji: "📦", label: "Devolver",   variant: "primary", onClick: () => { setReturnTime(nowLocal()); setPanel("return_time") } })
     if (status === "ACTIVE")
-      buttons.push({ label: "📅 Solicitar extensão de prazo", variant: "ghost", onClick: () => setPanel("extend_request") })
+      buttons.push({ emoji: "📅", label: "Solicitar extensão de prazo", variant: "ghost", onClick: () => setPanel("extend_request") })
   }
   if (status === "PENDING" || status === "CONFIRMED")
     buttons.push({ label: "Cancelar reserva", variant: "danger", onClick: () => setPanel("cancel") })
   if (status === "ACTIVE" || status === "RETURNED")
-    buttons.push({ label: "⚠️ Reportar problema", variant: "ghost", onClick: () => setPanel("report") })
+    buttons.push({ emoji: "⚠️", label: "Reportar problema", variant: "ghost", onClick: () => setPanel("report") })
 
   // Extensão pendente — proprietário responde
   const showExtendRespond = isOwner && extensionStatus === "PENDING"
@@ -404,11 +404,11 @@ export function BookingActions({
           </p>
           <div className="flex gap-2">
             <button type="button" onClick={() => submitExtendRespond("approve")} disabled={loading}
-              className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-opacity">
-              ✅ Aprovar extensão
+              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 min-h-11 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-opacity">
+              <span aria-hidden="true">✅</span> Aprovar extensão
             </button>
             <button type="button" onClick={() => submitExtendRespond("reject")} disabled={loading}
-              className="rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors">
+              className="rounded-lg border border-red-300 px-4 py-2 min-h-11 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors">
               Recusar
             </button>
           </div>
@@ -485,24 +485,26 @@ export function BookingActions({
         {conversationId && (
           <Link
             href={`/mensagens/${conversationId}`}
-            className="rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-5 py-2.5 min-h-11 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
           >
-            💬 Abrir chat
+            <span aria-hidden="true">💬</span>
+            Abrir chat
           </Link>
         )}
-        {buttons.map(({ label, variant, onClick }) => (
+        {buttons.map(({ emoji, label, variant, onClick }) => (
           <button
             type="button"
             key={label}
             onClick={onClick}
             disabled={loading}
             className={[
-              "rounded-lg px-5 py-2.5 text-sm font-semibold transition-all disabled:opacity-50",
+              "inline-flex items-center gap-1.5 rounded-lg px-5 py-2.5 min-h-11 text-sm font-semibold transition-all disabled:opacity-50",
               variant === "primary" ? "bg-brand text-white hover:opacity-90" :
               variant === "danger"  ? "border border-red-300 text-red-600 hover:bg-red-50" :
                                      "border border-border text-foreground hover:bg-background",
             ].join(" ")}
           >
+            {emoji && <span aria-hidden="true">{emoji}</span>}
             {label}
           </button>
         ))}
