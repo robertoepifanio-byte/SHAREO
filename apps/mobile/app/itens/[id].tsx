@@ -149,6 +149,167 @@ const todayDate = (() => {
   return d
 })()
 
+// ── AvailabilityCalendar ──────────────────────────────────────────────────────
+// Transcrição de components/items/AvailabilityCalendar.tsx (site).
+// Exibe 2 meses (atual + próximo) com dias coloridos:
+//   verde  = disponível  | vermelho = ocupado  | cinza = passado
+// Fonte dos dados: GET /api/items/[id]/availability → { data: string[] } YYYY-MM-DD.
+// Nenhuma lib de calendário nova necessária — grid manual como no site.
+
+const CAL_MONTH_NAMES = [
+  "Janeiro","Fevereiro","Março","Abril","Maio","Junho",
+  "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro",
+]
+const CAL_DAY_NAMES = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"]
+
+function calDateKey(year: number, month: number, day: number): string {
+  return `${year}-${String(month + 1).padStart(2,"0")}-${String(day).padStart(2,"0")}`
+}
+
+/** Um mês de calendário — sem hooks (componente puro de apresentação). */
+function CalendarMonth({
+  year, month, occupied, todayKey,
+}: { year: number; month: number; occupied: Set<string>; todayKey: string }) {
+  const firstDay    = new Date(year, month, 1).getDay()
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const cells: { day: number | null; key: string | null }[] = []
+  for (let i = 0; i < firstDay; i++) cells.push({ day: null, key: null })
+  for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d, key: calDateKey(year, month, d) })
+  const rows: typeof cells[] = []
+  for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7))
+
+  return (
+    <View style={{ marginBottom: 16 }}>
+      <Text style={calS.monthTitle}>{CAL_MONTH_NAMES[month]} {year}</Text>
+      {/* Cabeçalho dos dias da semana */}
+      <View style={calS.weekRow}>
+        {CAL_DAY_NAMES.map((d) => (
+          <Text key={d} style={calS.dayHeader}>{d}</Text>
+        ))}
+      </View>
+      {/* Células de dia */}
+      {rows.map((row, ri) => (
+        <View key={ri} style={calS.weekRow}>
+          {row.map((cell, ci) => {
+            if (!cell.day || !cell.key) {
+              return <View key={`e-${ri}-${ci}`} style={calS.cell} />
+            }
+            const isPast  = cell.key < todayKey
+            const isOcc   = occupied.has(cell.key)
+            const isToday = cell.key === todayKey
+            // Cores verbatim dos tokens Tailwind do site:
+            // bg-success/15 + text-success | bg-destructive/15 + text-destructive | bg-muted
+            let bg = "#DCFCE7"; let fg = "#16A34A"
+            if (isPast)       { bg = "#F1F5F9"; fg = "#94A3B8" }
+            else if (isOcc)   { bg = "#FEE2E2"; fg = "#DC2626" }
+            return (
+              <View
+                key={cell.key}
+                style={[calS.cell, { backgroundColor: bg }, isToday && calS.cellToday]}
+                accessibilityLabel={`${cell.day} de ${CAL_MONTH_NAMES[month]}: ${isPast ? "passado" : isOcc ? "ocupado" : "disponível"}`}
+              >
+                <Text style={[calS.cellText, { color: fg }]}>{cell.day}</Text>
+              </View>
+            )
+          })}
+        </View>
+      ))}
+    </View>
+  )
+}
+
+/** Wrapper com fetch + loading/error — transcreve AvailabilityCalendar.tsx do site. */
+function MobileAvailabilityCalendar({ itemId }: { itemId: string }) {
+  const today    = new Date()
+  const todayKey = calDateKey(today.getFullYear(), today.getMonth(), today.getDate())
+  const months   = [
+    { year: today.getFullYear(), month: today.getMonth() },
+    {
+      year:  today.getMonth() === 11 ? today.getFullYear() + 1 : today.getFullYear(),
+      month: (today.getMonth() + 1) % 12,
+    },
+  ]
+
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey:  ["item-availability", itemId],
+    queryFn:   () => apiFetch<{ data: string[] }>(`/api/items/${itemId}/availability`),
+    staleTime: 5 * 60_000,  // 5 min — espelha o Cache-Control do endpoint
+    enabled:   !!itemId,
+  })
+  const occupied = new Set<string>(data?.data ?? [])
+
+  if (isLoading) {
+    return (
+      <View style={{ marginTop: 8 }}>
+        {[0, 1].map((i) => (
+          <View key={i} style={{ marginBottom: 16 }}>
+            <View style={{ height: 14, width: 120, backgroundColor: "#E2E8F0", borderRadius: 6, marginBottom: 8, alignSelf: "center" }} />
+            {Array.from({ length: 5 }).map((_, ri) => (
+              <View key={ri} style={calS.weekRow}>
+                {Array.from({ length: 7 }).map((_, ci) => (
+                  <View key={ci} style={[calS.cell, { backgroundColor: "#E2E8F0" }]} />
+                ))}
+              </View>
+            ))}
+          </View>
+        ))}
+      </View>
+    )
+  }
+
+  if (isError) {
+    return (
+      <View style={calS.errorBox}>
+        <Text style={calS.errorText}>Não foi possível carregar o calendário.</Text>
+        <TouchableOpacity onPress={() => void refetch()} style={calS.retryBtn} accessibilityRole="button" accessibilityLabel="Tentar novamente">
+          <Text style={calS.retryText}>Tentar novamente</Text>
+        </TouchableOpacity>
+      </View>
+    )
+  }
+
+  return (
+    <View>
+      {/* Legenda — verbatim do site */}
+      <View style={calS.legend}>
+        <View style={calS.legendItem}><View style={[calS.legendSwatch, { backgroundColor: "#DCFCE7", borderColor: "#86EFAC" }]} /><Text style={calS.legendLabel}>Disponível</Text></View>
+        <View style={calS.legendItem}><View style={[calS.legendSwatch, { backgroundColor: "#FEE2E2", borderColor: "#FCA5A5" }]} /><Text style={calS.legendLabel}>Ocupado</Text></View>
+        <View style={calS.legendItem}><View style={[calS.legendSwatch, { backgroundColor: "#F1F5F9", borderColor: "#CBD5E1" }]} /><Text style={calS.legendLabel}>Passado</Text></View>
+      </View>
+      {months.map((m) => (
+        <CalendarMonth
+          key={`${m.year}-${m.month}`}
+          year={m.year}
+          month={m.month}
+          occupied={occupied}
+          todayKey={todayKey}
+        />
+      ))}
+    </View>
+  )
+}
+
+// Estilos do calendário — separados para não poluir o StyleSheet principal
+const calS = StyleSheet.create({
+  monthTitle: { fontSize: 13, fontWeight: "700", textAlign: "center", marginBottom: 8, color: "#0F172A" },
+  weekRow:    { flexDirection: "row", marginBottom: 2 },
+  dayHeader:  { flex: 1, textAlign: "center", fontSize: 9, fontWeight: "500", color: "#64748B", marginBottom: 4 },
+  cell: {
+    flex: 1, height: 30, borderRadius: 6,
+    alignItems: "center", justifyContent: "center", marginHorizontal: 1,
+  },
+  cellToday:  { borderWidth: 1.5, borderColor: "#007B3C" },
+  cellText:   { fontSize: 11, fontWeight: "500" },
+  legend:     { flexDirection: "row", gap: 12, marginBottom: 12, flexWrap: "wrap" },
+  legendItem: { flexDirection: "row", alignItems: "center", gap: 4 },
+  legendSwatch: { width: 12, height: 12, borderRadius: 3, borderWidth: 1 },
+  legendLabel:  { fontSize: 11, color: "#64748B" },
+  errorBox:  { borderWidth: 1, borderColor: "#E2E8F0", borderRadius: 8, padding: 12, flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 4 },
+  errorText: { fontSize: 12, color: "#64748B", flex: 1 },
+  retryBtn:  { paddingHorizontal: 8, paddingVertical: 4 },
+  retryText: { fontSize: 12, color: "#007B3C", fontWeight: "600", textDecorationLine: "underline" },
+})
+
 // ── Utilitário: divide array em sublistas de `size` elementos ────────────────
 // Usado para montar o grid 2 colunas dentro do ScrollView (FlatList não pode
 // ser aninhado em ScrollView — usamos View+rows manuais igual ao padrão do
@@ -617,6 +778,15 @@ export default function ItemDetailScreen() {
         {/* ── Descrição ── */}
         <Text style={[s.sectionTitle, { color: tokens.navy }]}>Sobre o item</Text>
         <Text style={[s.description, { color: tokens.muted }]}>{item.description}</Text>
+
+        {/* ── P1-22 — Calendário de disponibilidade ────────────────────────
+            Fonte: page.tsx linhas 374-379 + components/items/AvailabilityCalendar.tsx.
+            Endpoint: GET /api/items/[id]/availability → { data: string[] }.
+            Mostra mês atual + próximo; verde=disponível, vermelho=ocupado, cinza=passado.
+            Nenhuma dep nativa nova — grid manual como no site. ── */}
+        <View style={{ height: 1, backgroundColor: tokens.border, marginTop: 16, marginBottom: 0 }} />
+        <Text style={[s.sectionTitle, { color: tokens.navy }]}>Disponibilidade</Text>
+        <MobileAvailabilityCalendar itemId={item.id} />
 
         {/* ── PriceCalc — só para locatários ── */}
         {!isOwner && (
