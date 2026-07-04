@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
-import { auth } from "@/lib/auth"
+import { resolveUserId } from "@/lib/resolveUserId"
 import { prisma } from "@/lib/prisma"
 import { userMiniSelect } from "@/lib/prisma/selects"
 import { CreateReviewSchema } from "@/lib/validations/reviews"
@@ -10,10 +10,10 @@ import { issueReviewCoupon } from "@/lib/coupons"
 
 type Params = { params: Promise<{ id: string }> }
 
-export async function GET(_req: NextRequest, { params }: Params) {
+export async function GET(req: NextRequest, { params }: Params) {
   try {
-    const session = await auth()
-    if (!session) {
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 },
@@ -21,7 +21,6 @@ export async function GET(_req: NextRequest, { params }: Params) {
     }
 
     const { id }   = await params
-    const userId   = session.user.id
 
     const booking = await prisma.booking.findUnique({
       where:  { id },
@@ -67,8 +66,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
 export async function POST(req: NextRequest, { params }: Params) {
   try {
-    const session = await auth()
-    if (!session) {
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 },
@@ -92,7 +91,6 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
 
     const { reviewType, rating, comment, sentiment, itemAsDescribed, punctuality, communication, conservation, photoUrl } = parsed.data
-    const userId = session.user.id
 
     const booking = await prisma.booking.findUnique({
       where:  { id },

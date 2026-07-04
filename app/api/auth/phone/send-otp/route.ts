@@ -8,9 +8,10 @@
  * GUARD: autenticação verificada ANTES da validação do body — retorna 401 sem sessão.
  */
 
+import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { auth } from "@/lib/auth"
+import { resolveUserId } from "@/lib/resolveUserId"
 
 const schema = z.object({
   phone: z
@@ -19,10 +20,10 @@ const schema = z.object({
     .regex(/^\+?[1-9]\d{9,14}$/, "Formato inválido — use E.164 (ex: +5584999990000)"),
 })
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   // 1. Autenticação — obrigatoriamente antes de ler/validar o body
-  const session = await auth()
-  if (!session?.user?.id) {
+  const userId = await resolveUserId(req)
+  if (!userId) {
     return NextResponse.json(
       { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
       { status: 401 },
