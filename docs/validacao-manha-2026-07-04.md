@@ -74,6 +74,22 @@ em `plano-validacao-app-android-pwa.md`. Destaques que valem um olhar:
 
 ---
 
+## ⚠️ Achado da auditoria noturna (decisão sua) — painel "Solicitações pendentes"
+
+Auditoria de shape (tipos do mobile × resposta real das APIs): **8 de 9 pares íntegros**
+(o bug histórico `paymentStatus`/timestamps em `bookings/[id]` está remediado). **1 achado:**
+
+- A tela de detalhe do item (`itens/[id]/index.tsx:60,863-885`) tem um painel **"Solicitações
+  pendentes (N)"** para o proprietário, que lê `item.pendingBookings` — mas **nenhuma rota do
+  backend retorna esse campo**, e o **site também não tem** esse painel na página de detalhe do
+  item. Efeito: **nunca renderiza** no app (chega `undefined`; não crasha, guardado por `?.`).
+- **Decisão sua** (não mexi):
+  1. **Remover o painel** (recomendado por paridade — o site não tem isso no detalhe do item;
+     é código morto que viola a regra de transcrição literal). Zero impacto visível.
+  2. **Construir a feature** — estender `GET /api/items/[id]` p/ retornar `pendingBookings`
+     (status PENDING, só p/ dono) + confirmar que o site quer isso no detalhe do item.
+- Não é bloqueador de nada — só um recurso que aparenta existir no código mas está inerte.
+
 ## Como reportar (acelera o conserto)
 
 Print + **qual tela** + **o que tocou** + **o que o site faz aí** (se souber). Se for tela
