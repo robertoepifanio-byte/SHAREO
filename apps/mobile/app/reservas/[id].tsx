@@ -237,10 +237,17 @@ export default function BookingDetailScreen() {
   })
   const feeRateBps = statsData?.data.feeRate ?? null
 
-  // Sincroniza contractSigned ao carregar dados — fonte: _ContractBanner.tsx linha 24 (useState(initialSigned))
+  // Sincroniza contractSigned ao carregar dados — fonte: _ContractBanner.tsx linha 24 (useState(initialSigned)).
+  // Bug real (2026-07-04): guard `contractSigned === null` só sincronizava na 1ª renderização;
+  // se o cache do React Query servisse contractSignedAt=null primeiro (ex.: remontar a tela após
+  // assinar em outra navegação), o estado local travava em `false` e nunca refletia a assinatura
+  // já persistida no backend. contractSignedAt não regride (contrato não é "des-assinado"), então
+  // uma vez true na API sempre reflete true aqui — só usa o guard pra inicializar o `false`.
   useEffect(() => {
-    if (data?.data && contractSigned === null) {
-      setContractSigned(!!data.data.contractSignedAt)
+    if (data?.data?.contractSignedAt) {
+      setContractSigned(true)
+    } else if (data?.data && contractSigned === null) {
+      setContractSigned(false)
     }
   }, [data, contractSigned])
 
