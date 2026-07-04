@@ -1,21 +1,21 @@
+import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { resolveUserId } from "@/lib/resolveUserId"
 import { prisma } from "@/lib/prisma"
 
 // LGPD art. 20 — portabilidade de dados
 // Auditoria s40 / ressalva #3: export estava incompleto — omitia mensagens/conversas,
 // dados financeiros (PlatformTransaction/Payout), KYC/verificação de identidade e ambassador.
-export async function GET() {
+// Bearer token suportado via resolveUserId para acesso pelo app mobile.
+export async function GET(req: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 },
       )
     }
-
-    const userId = session.user.id
 
     const [
       user,

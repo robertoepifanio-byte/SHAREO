@@ -282,10 +282,11 @@ export default function PerfilScreen() {
       native: () => router.push("/perfil/embaixador"),
     },
     {
-      href:  "/perfil/dados",
-      icon:  "database",
-      label: "Privacidade e dados",
-      desc:  "Exportar dados, política de retenção",
+      href:   "/perfil/dados",
+      icon:   "database",
+      label:  "Privacidade e dados",
+      desc:   "Exportar dados, política de retenção",
+      native: () => router.push("/perfil/dados"),
     },
   ]
 
