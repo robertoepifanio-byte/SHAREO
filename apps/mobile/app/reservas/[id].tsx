@@ -1134,7 +1134,14 @@ export default function BookingDetailScreen() {
                   <Text style={sChecklist.confirmText}>Devolver</Text>
                 )}
               </TouchableOpacity>
-              {!canConfirm && (
+              {/* Nota abaixo do botão — fonte: ReturnChecklist.tsx linhas 264-272 */}
+              {canConfirm ? (
+                <Text style={[s.noteText, { color: tokens.muted, fontSize: 11, textAlign: "center", marginTop: 6 }]}>
+                  {"Ao devolver, a locação fica como "}
+                  <Text style={{ fontWeight: "700" }}>Devolução em andamento</Text>
+                  {" até o locador confirmar o recebimento."}
+                </Text>
+              ) : (
                 <Text style={[s.noteText, { color: tokens.muted, fontSize: 11, textAlign: "center", marginTop: 6 }]}>
                   Marque pelo menos 3 itens para habilitar a devolução.
                 </Text>
@@ -1208,7 +1215,7 @@ export default function BookingDetailScreen() {
                     }]}
                     value={rcDamageDesc}
                     onChangeText={setRcDamageDesc}
-                    placeholder="Ex: Tela arranhada na parte superior…"
+                    placeholder="Ex: Tela arranhada na parte superior, caixa com amassado lateral…"
                     placeholderTextColor={tokens.muted}
                     multiline
                     numberOfLines={3}
@@ -1376,6 +1383,14 @@ export default function BookingDetailScreen() {
             API: POST /api/bookings/:id/photos (FormData: phase + file)
         ── */}
         {(booking.status === "ACTIVE" || booking.status === "RETURNED" || booking.status === "COMPLETED") && (() => {
+          // Permissão de upload por fase — fonte: app/reservas/[id]/page.tsx linhas 536, 544
+          // CHECKIN upload: proprietário + status ACTIVE apenas.
+          // CHECKOUT upload: proprietário + status RETURNED ou COMPLETED.
+          // Locatário NUNCA faz upload de fotos de check-in/check-out.
+          const cioCanUpload: Record<"CHECKIN" | "CHECKOUT", boolean> = {
+            CHECKIN:  isOwner && booking.status === "ACTIVE",
+            CHECKOUT: isOwner && (booking.status === "RETURNED" || booking.status === "COMPLETED"),
+          }
           const CIO_PHASES: { key: "CHECKIN" | "CHECKOUT"; label: string; hint: string }[] = [
             { key: "CHECKIN",  label: "Fotos na retirada",  hint: "Registre o estado do item ao retirar." },
             { key: "CHECKOUT", label: "Fotos na devolução", hint: "Registre o estado do item ao devolver." },
@@ -1391,6 +1406,7 @@ export default function BookingDetailScreen() {
               {CIO_PHASES.map(({ key, label, hint }) => {
                 const list      = cioPhotos[key] ?? []
                 const uploading = cioUploading[key] ?? false
+                const canUpload = cioCanUpload[key]
                 const err       = cioError[key]
                 return (
                   <View
@@ -1399,7 +1415,7 @@ export default function BookingDetailScreen() {
                   >
                     <Text style={[s.noteText, { color: tokens.text, fontWeight: "700", fontSize: 13, marginBottom: 2 }]}>{label}</Text>
                     <Text style={[s.noteText, { color: tokens.muted, fontSize: 12, marginBottom: 10 }]}>{hint}</Text>
-                    {list.length > 0 && (
+                    {list.length > 0 ? (
                       <View style={sCIO.grid}>
                         {list.map((photo) => (
                           <RNImage
@@ -1410,26 +1426,34 @@ export default function BookingDetailScreen() {
                           />
                         ))}
                       </View>
+                    ) : (
+                      /* "Sem fotos registradas" — fonte: _CheckInOut.tsx linha 44-46 */
+                      <Text style={[s.noteText, { color: tokens.muted, fontSize: 12, fontStyle: "italic", marginBottom: 8 }]}>
+                        Sem fotos registradas
+                      </Text>
                     )}
-                    <TouchableOpacity
-                      style={[sChecklist.photoBtn, { borderColor: tokens.border }]}
-                      onPress={() => cioUpload(key)}
-                      disabled={uploading}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Adicionar foto ${label.toLowerCase()}`}
-                      accessibilityState={{ disabled: uploading }}
-                    >
-                      {uploading ? (
-                        <ActivityIndicator size="small" color={tokens.green} />
-                      ) : (
-                        <>
-                          <Text style={{ fontSize: 22, marginBottom: 4 }}>📷</Text>
-                          <Text style={{ fontSize: 13, color: tokens.muted, fontWeight: "500" }}>
-                            {list.length === 0 ? "Adicionar foto" : "Adicionar outra foto"}
-                          </Text>
-                        </>
-                      )}
-                    </TouchableOpacity>
+                    {/* Upload: apenas proprietário, fase/status corretos — _CheckInOut.tsx linha 55 */}
+                    {canUpload && (
+                      <TouchableOpacity
+                        style={[sChecklist.photoBtn, { borderColor: tokens.border }]}
+                        onPress={() => cioUpload(key)}
+                        disabled={uploading}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Adicionar foto ${label.toLowerCase()}`}
+                        accessibilityState={{ disabled: uploading }}
+                      >
+                        {uploading ? (
+                          <ActivityIndicator size="small" color={tokens.green} />
+                        ) : (
+                          <>
+                            <Text style={{ fontSize: 22, marginBottom: 4 }}>📷</Text>
+                            <Text style={{ fontSize: 13, color: tokens.muted, fontWeight: "500" }}>
+                              {list.length === 0 ? "Adicionar foto" : "Adicionar outra foto"}
+                            </Text>
+                          </>
+                        )}
+                      </TouchableOpacity>
+                    )}
                     {err ? <Text style={{ color: "#DC2626", fontSize: 12, marginTop: 4 }}>{err}</Text> : null}
                   </View>
                 )

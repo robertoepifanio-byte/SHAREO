@@ -639,7 +639,12 @@ describe("CheckInOut — rótulos das fases (status ACTIVE)", () => {
     )
   })
 
-  it("exibe 'Adicionar foto' (sem fotos) — verbatim linha 1421", async () => {
+  it("exibe 'Adicionar foto' para o proprietário em ACTIVE — canUpload CHECKIN (fonte: page.tsx linha 536)", async () => {
+    // Fix: somente o proprietário pode fazer upload; locatário não vê o botão.
+    // canUpload CHECKIN = isOwner && status === "ACTIVE" → testar como owner.
+    mockAuthUserId   = "user-owner"
+    mockAuthUserName = "Carlos"
+    setApiFetch({ status: "ACTIVE", endDate: FUTURE_DATE })
     wrap(<BookingDetailScreen />)
     await waitForBookingLoad("Em andamento")
     await waitFor(() => {
