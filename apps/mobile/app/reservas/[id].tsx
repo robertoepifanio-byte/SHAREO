@@ -118,6 +118,63 @@ const ACTOR_ROLE_EMOJI: Record<string, string> = {
   system:   "⚙️",
 }
 
+// ── ReturnCountdownInline ─────────────────────────────────────────────────────
+// Fonte: components/booking/ReturnCountdown.tsx linhas 44-116
+// Exibe tempo restante até endDate; atualiza a cada 60s.
+// Urgente quando dias === 0 && horas < 4; vermelho quando expirado.
+function ReturnCountdownInline({ endDateIso }: { endDateIso: string }) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000)
+    return () => clearInterval(id)
+  }, [])
+
+  const diff = new Date(endDateIso).getTime() - now
+  if (diff <= 0) {
+    return (
+      <View style={[sCountdown.box, { borderColor: "#FECACA", backgroundColor: "#FEF2F2", marginBottom: 12 }]}>
+        <Text style={{ fontSize: 18, marginRight: 8 }}>⏰</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={[sCountdown.title, { color: "#DC2626" }]}>Prazo de devolução encerrado</Text>
+          <Text style={[sCountdown.sub, { color: "#EF4444" }]}>
+            Devolva o item agora para evitar taxas de atraso adicionais.
+          </Text>
+        </View>
+      </View>
+    )
+  }
+  const totalMin = Math.floor(diff / 60_000)
+  const days     = Math.floor(totalMin / (60 * 24))
+  const hours    = Math.floor((totalMin % (60 * 24)) / 60)
+  const minutes  = totalMin % 60
+  const isUrgent = days === 0 && hours < 4
+  return (
+    <View style={[
+      sCountdown.box,
+      isUrgent
+        ? { borderColor: "#FDBA74", backgroundColor: "#FFF7ED", marginBottom: 12 }
+        : { borderColor: "#6EE7B7", backgroundColor: "#F0FDF4", marginBottom: 12 },
+    ]}>
+      <Text style={{ fontSize: 18, marginRight: 8 }}>{isUrgent ? "⚠️" : "📅"}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={[sCountdown.title, { color: isUrgent ? "#C2410C" : "#003366" }]}>
+          {isUrgent ? "Devolução urgente" : "Devolução em"}
+        </Text>
+        <Text style={[sCountdown.countdown, { color: isUrgent ? "#C2410C" : "#007B3C" }]}>
+          {days > 0 ? `${days} dia${days !== 1 ? "s" : ""}, ` : ""}
+          {hours}h e {minutes}min
+        </Text>
+      </View>
+    </View>
+  )
+}
+const sCountdown = StyleSheet.create({
+  box:       { flexDirection: "row", alignItems: "flex-start", borderRadius: 12, borderWidth: 1, padding: 14 },
+  title:     { fontSize: 13, fontWeight: "600" },
+  sub:       { fontSize: 12, marginTop: 3 },
+  countdown: { fontSize: 14, fontWeight: "700", marginTop: 2 },
+})
+
 export default function BookingDetailScreen() {
   const { id }     = useLocalSearchParams<{ id: string }>()
   const insets     = useSafeAreaInsets()
@@ -772,7 +829,17 @@ export default function BookingDetailScreen() {
           )
         )}
 
-        {/* TODO(revisão): itens pendentes após ContractBanner: */}
+        {/* ── ReturnCountdown — countdown de devolução (status ACTIVE)
+            Fonte: components/booking/ReturnCountdown.tsx linhas 44-116
+            Condição: booking.status === "ACTIVE" — page.tsx linhas 506-511
+            Lógica: calcula dias/horas/minutos restantes; atualiza a cada 60s via useEffect.
+            Urgente: dias === 0 && horas < 4 (laranja). Expirado: vermelho.
+        ── */}
+        {booking.status === "ACTIVE" && (
+          <ReturnCountdownInline endDateIso={booking.endDate} />
+        )}
+
+        {/* TODO(revisão): itens pendentes após ReturnCountdown: */}
 
       </ScrollView>
 
