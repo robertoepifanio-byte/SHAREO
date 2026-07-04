@@ -251,10 +251,11 @@ export default function PerfilScreen() {
       desc:  "CPF/CNPJ e verificação de identidade",
     },
     {
-      href:  "/perfil/recebimentos",
-      icon:  "pix",
-      label: "Conta de recebimento",
-      desc:  "Chave PIX para repasse das locações",
+      href:   "/perfil/recebimentos",
+      icon:   "pix",
+      label:  "Conta de recebimento",
+      desc:   "Chave PIX para repasse das locações",
+      native: () => router.push("/perfil/recebimentos"),
     },
     {
       href:  "/perfil/repasses",
