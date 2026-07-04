@@ -198,6 +198,11 @@ export default function BookingDetailScreen() {
   const [clPhotoLoading, setClPhotoLoading] = useState(false)
   const [clSubmitting, setClSubmitting]   = useState(false)
   const [clError, setClError]             = useState<string | null>(null)
+  // ReturnConditionForm — fonte: components/booking/ReturnConditionForm.tsx linhas 54-57
+  const [rcCondition, setRcCondition]       = useState<"PERFECT" | "NORMAL_WEAR" | "DAMAGED" | null>(null)
+  const [rcDamageDesc, setRcDamageDesc]     = useState("")
+  const [rcSubmitting, setRcSubmitting]     = useState(false)
+  const [rcError, setRcError]               = useState<string | null>(null)
 
   // Todos os hooks ANTES de qualquer return condicional (protocolo item 4)
   const { data, isLoading } = useQuery({
@@ -444,6 +449,34 @@ export default function BookingDetailScreen() {
     } finally {
       setClSubmitting(false)
       setClPhotoLoading(false)
+    }
+  }
+
+  // ReturnConditionForm — Confirma estado na devolução
+  // Fonte: components/booking/ReturnConditionForm.tsx linhas 64-103 (handleConfirm)
+  // PERFECT/NORMAL_WEAR → confirm_return; DAMAGED → open_dispute com reason
+  async function rcSubmit() {
+    if (!rcCondition) return
+    setRcError(null)
+    setRcSubmitting(true)
+    try {
+      if (rcCondition === "DAMAGED") {
+        await apiFetch(`/api/bookings/${id}`, {
+          method: "PATCH",
+          body:   JSON.stringify({ action: "open_dispute", reason: rcDamageDesc.trim() }),
+        })
+      } else {
+        await apiFetch(`/api/bookings/${id}`, {
+          method: "PATCH",
+          body:   JSON.stringify({ action: "confirm_return" }),
+        })
+      }
+      qc.invalidateQueries({ queryKey: ["booking", id] })
+      qc.invalidateQueries({ queryKey: ["bookings"] })
+    } catch (e) {
+      setRcError(e instanceof Error ? e.message : "Erro inesperado.")
+    } finally {
+      setRcSubmitting(false)
     }
   }
 
@@ -1010,7 +1043,113 @@ export default function BookingDetailScreen() {
           )
         })()}
 
-        {/* TODO(revisão): itens pendentes após ReturnChecklist: */}
+        {/* ── ReturnConditionForm — estado na devolução (locador + RETURNED)
+            Fonte: components/booking/ReturnConditionForm.tsx linhas 105-263
+            Condição: isOwner && status === "RETURNED" — page.tsx linhas 597-602
+            3 opções: Perfeito | Desgaste normal | Com danos (requer descrição ≥10 chars)
+            Substitui o botão "Confirmar recebimento" do bottomBar.
+        ── */}
+        {isOwner && booking.status === "RETURNED" && (() => {
+          const RC_OPTIONS = [
+            { value: "PERFECT"     as const, icon: "✅", label: "Perfeito estado",  desc: "O item foi devolvido exatamente como entregue.", borderSel: "#007B3C", bgSel: "#F0FDF4" },
+            { value: "NORMAL_WEAR" as const, icon: "👍", label: "Desgaste normal",  desc: "Pequenas marcas de uso esperadas para o período de locação.", borderSel: "#93C5FD", bgSel: "#EFF6FF" },
+            { value: "DAMAGED"     as const, icon: "⚠️", label: "Com danos",         desc: "Item devolvido com danos além do desgaste normal.", borderSel: "#FECACA", bgSel: "#FEF2F2" },
+          ]
+          const isDamaged  = rcCondition === "DAMAGED"
+          const rcCanConfirm = rcCondition !== null && (!isDamaged || rcDamageDesc.trim().length >= 10)
+          return (
+            <View style={[s.section, { borderColor: tokens.border, backgroundColor: tokens.surface, marginBottom: 12 }]}>
+              <Text style={[s.sectionLabel, { color: tokens.text, fontSize: 14, fontWeight: "700", letterSpacing: 0, marginBottom: 4 }]}>
+                Estado na devolução
+              </Text>
+              <Text style={[s.noteText, { color: tokens.muted, fontSize: 12, marginBottom: 14 }]}>
+                Como o item foi devolvido? Sua avaliação é importante para manter a confiança da plataforma.
+              </Text>
+              {RC_OPTIONS.map((opt) => (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={[
+                    sRC.option,
+                    {
+                      borderColor: rcCondition === opt.value ? opt.borderSel : tokens.border,
+                      backgroundColor: rcCondition === opt.value ? opt.bgSel : tokens.bg,
+                    },
+                  ]}
+                  onPress={() => setRcCondition(opt.value)}
+                  accessibilityRole="radio"
+                  accessibilityLabel={opt.label}
+                  accessibilityState={{ selected: rcCondition === opt.value }}
+                >
+                  <View style={[sRC.radio, {
+                    borderColor: rcCondition === opt.value ? "#007B3C" : tokens.border,
+                    backgroundColor: rcCondition === opt.value ? "#007B3C" : "transparent",
+                  }]}>
+                    {rcCondition === opt.value && <View style={sRC.radioDot} />}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[sRC.optLabel, { color: tokens.text }]}>{opt.icon} {opt.label}</Text>
+                    <Text style={[sRC.optDesc, { color: tokens.muted }]}>{opt.desc}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+              {isDamaged && (
+                <View style={{ marginTop: 10, marginBottom: 8 }}>
+                  <Text style={[s.noteText, { color: tokens.text, fontSize: 13, fontWeight: "600", marginBottom: 4 }]}>
+                    Descreva os danos <Text style={{ color: "#DC2626" }}>*</Text>
+                  </Text>
+                  <Text style={[s.noteText, { color: tokens.muted, fontSize: 11, marginBottom: 6 }]}>
+                    Mínimo 10 caracteres. Esta descrição será incluída na abertura da disputa.
+                  </Text>
+                  <TextInput
+                    style={[s.reasonInput, {
+                      color: tokens.text,
+                      borderColor: rcDamageDesc.length > 0 && rcDamageDesc.length < 10 ? "#DC2626" : tokens.border,
+                      backgroundColor: tokens.bg,
+                    }]}
+                    value={rcDamageDesc}
+                    onChangeText={setRcDamageDesc}
+                    placeholder="Ex: Tela arranhada na parte superior…"
+                    placeholderTextColor={tokens.muted}
+                    multiline
+                    numberOfLines={3}
+                    maxLength={1000}
+                    textAlignVertical="top"
+                  />
+                  <View style={[sRC.disputeWarning, { borderColor: "#FECACA", backgroundColor: "#FEF2F2" }]}>
+                    <Text style={{ fontSize: 11, color: "#DC2626" }}>
+                      ⚠️ Ao confirmar, uma disputa será aberta automaticamente e o time ShareO entrará em contato.
+                    </Text>
+                  </View>
+                </View>
+              )}
+              {rcError && (
+                <Text style={{ color: "#DC2626", fontSize: 12, marginBottom: 8 }}>{rcError}</Text>
+              )}
+              <TouchableOpacity
+                style={[sChecklist.confirmBtn, {
+                  backgroundColor: rcCanConfirm && !rcSubmitting
+                    ? isDamaged ? "#DC2626" : "#007B3C"
+                    : tokens.border,
+                  opacity: rcCanConfirm && !rcSubmitting ? 1 : 0.6,
+                  marginTop: 8,
+                }]}
+                onPress={rcSubmit}
+                disabled={!rcCanConfirm || rcSubmitting}
+                accessibilityRole="button"
+                accessibilityLabel={isDamaged ? "Abrir disputa" : "Confirmar estado"}
+                accessibilityState={{ disabled: !rcCanConfirm || rcSubmitting }}
+              >
+                {rcSubmitting ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={sChecklist.confirmText}>{isDamaged ? "Abrir disputa" : "Confirmar estado"}</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          )
+        })()}
+
+        {/* TODO(revisão): itens pendentes após ReturnConditionForm: */}
 
       </ScrollView>
 
@@ -1064,8 +1203,9 @@ export default function BookingDetailScreen() {
           </TouchableOpacity>
         )}
 
-        {/* Confirmar recebimento (locador + RETURNED) */}
-        {canConfirmReturn && (
+        {/* Confirmar recebimento (locador + RETURNED) — suprimido: ReturnConditionForm no scroll.
+            hideReturnActions equivalente: page.tsx linha 615 */}
+        {false && canConfirmReturn && (
           <TouchableOpacity
             style={[s.actionBtn, { backgroundColor: tokens.green }]}
             onPress={handleConfirmReturn}
@@ -1544,4 +1684,27 @@ const sChecklist = StyleSheet.create({
     marginTop: 4,
   },
   confirmText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5 },
+})
+
+// ReturnConditionForm StyleSheet — fonte: components/booking/ReturnConditionForm.tsx
+const sRC = StyleSheet.create({
+  option: {
+    flexDirection:  "row",
+    alignItems:     "flex-start",
+    gap:            10,
+    minHeight:      44,
+    borderRadius:   10,
+    borderWidth:    1,
+    paddingHorizontal: 12,
+    paddingVertical:    10,
+    marginBottom:   8,
+  },
+  radio: {
+    width: 20, height: 20, borderRadius: 10, borderWidth: 1.5,
+    alignItems: "center", justifyContent: "center", marginTop: 2,
+  },
+  radioDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#FFFFFF" },
+  optLabel:  { fontSize: 13, fontWeight: "600", lineHeight: 18 },
+  optDesc:   { fontSize: 11, marginTop: 2, lineHeight: 15 },
+  disputeWarning: { borderRadius: 8, borderWidth: 1, padding: 10, marginTop: 8 },
 })
