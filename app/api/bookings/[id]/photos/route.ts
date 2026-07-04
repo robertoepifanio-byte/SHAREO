@@ -8,7 +8,7 @@
  */
 import type { NextRequest } from "next/server"
 import { NextResponse }     from "next/server"
-import { auth }             from "@/lib/auth"
+import { resolveUserId }    from "@/lib/resolveUserId"
 import { prisma }           from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getUploadLimits }   from "@/lib/platform-config"
@@ -29,8 +29,8 @@ function isBookingParticipant(
 }
 
 export async function GET(req: NextRequest, { params }: Ctx) {
-  const session = await auth()
-  if (!session) return NextResponse.json({ error: { code: "UNAUTHORIZED" } }, { status: 401 })
+  const userId = await resolveUserId(req)
+  if (!userId) return NextResponse.json({ error: { code: "UNAUTHORIZED" } }, { status: 401 })
 
   const { id }  = await params
   const phase   = req.nextUrl.searchParams.get("phase") as Phase | null
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest, { params }: Ctx) {
   })
   if (!booking) return NextResponse.json({ error: { code: "NOT_FOUND" } }, { status: 404 })
 
-  if (!isBookingParticipant(booking, session.user.id))
+  if (!isBookingParticipant(booking, userId))
     return NextResponse.json({ error: { code: "FORBIDDEN" } }, { status: 403 })
 
   const photos = await prisma.bookingPhoto.findMany({
@@ -54,13 +54,13 @@ export async function GET(req: NextRequest, { params }: Ctx) {
 }
 
 export async function POST(req: NextRequest, { params }: Ctx) {
-  const session = await auth()
-  if (!session) return NextResponse.json({ error: { code: "UNAUTHORIZED" } }, { status: 401 })
+  const userId = await resolveUserId(req)
+  if (!userId) return NextResponse.json({ error: { code: "UNAUTHORIZED" } }, { status: 401 })
 
   // M4 (SEC-MED): rate limit por usuário — mesmo padrão de checkRateLimit/rateLimitResponse
   // já usado em POST /api/bookings e RATE_LIMITS em lib/rateLimit.ts.
   const rl = await checkRateLimit(
-    `upload:${session.user.id}`,
+    `upload:${userId}`,
     RATE_LIMITS.upload.limit,
     RATE_LIMITS.upload.windowMs,
     req,
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   })
   if (!booking) return NextResponse.json({ error: { code: "NOT_FOUND" } }, { status: 404 })
 
-  if (!isBookingParticipant(booking, session.user.id))
+  if (!isBookingParticipant(booking, userId))
     return NextResponse.json({ error: { code: "FORBIDDEN" } }, { status: 403 })
 
   const formData = await req.formData() as globalThis.FormData
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
   // A2 (SEC-ALTO): extensão derivada do MIME já validado, NUNCA do nome do cliente
   // (evita salvar .php/.exe no bucket). Paridade com app/api/upload/route.ts.
   const ext      = EXT_BY_MIME[file.type.toLowerCase()] ?? "jpg"
-  const path     = `bookings/${id}/${phase.toLowerCase()}/${Date.now()}-${session.user.id}.${ext}`
+  const path     = `bookings/${id}/${phase.toLowerCase()}/${Date.now()}-${userId}.${ext}`
   const arrayBuf = await file.arrayBuffer()
   if (!(await isMagicBytesValid(arrayBuf)))
     return NextResponse.json(
@@ -144,7 +144,7 @@ export async function POST(req: NextRequest, { params }: Ctx) {
       bookingId:  id,
       url:        publicUrl,
       phase:      phase as Phase,
-      uploadedBy: session.user.id,
+      uploadedBy: userId,
     },
   })
 
