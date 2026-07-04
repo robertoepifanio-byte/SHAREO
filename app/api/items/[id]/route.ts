@@ -11,11 +11,13 @@ import { resolveUserId } from "@/lib/resolveUserId"
 
 type RouteContext = { params: Promise<{ id: string }> }
 
-export async function GET(_req: NextRequest, { params }: RouteContext) {
+export async function GET(req: NextRequest, { params }: RouteContext) {
   try {
     const { id }     = await params
+    // resolveUserId aceita Bearer JWT (mobile) ou session cookie (web) para o
+    // isOwner abaixo; isAdmin só é checável via sessão completa (cookie).
+    const userId     = await resolveUserId(req)
     const session    = await auth().catch(() => null)
-    const userId     = session?.user.id
     const isAdmin    = session?.user.role === "ADMIN"
 
     const item = await prisma.item.findFirst({
