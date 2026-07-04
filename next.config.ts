@@ -6,6 +6,9 @@ import { withSentryConfig } from "@sentry/nextjs"
 // Aqui ficam apenas os headers estáticos que não dependem de nonce.
 const securityHeaders = [
   { key: "X-DNS-Prefetch-Control",    value: "on" },
+  // SEC-BL4: X-Frame-Options é redundante com frame-ancestors da CSP (middleware.ts),
+  // mas mantido intencionalmente para cobrir browsers antigos sem suporte a CSP Level 3.
+  // Ao alterar um, alterar o outro: frame-ancestors 'self' (middleware.ts) ↔ SAMEORIGIN (aqui).
   { key: "X-Frame-Options",           value: "SAMEORIGIN" },
   { key: "X-Content-Type-Options",    value: "nosniff" },
   { key: "Referrer-Policy",           value: "strict-origin-when-cross-origin" },

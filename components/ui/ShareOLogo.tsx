@@ -1,5 +1,4 @@
-"use client"
-
+// ARQ-Mi-01: Server Component — sem hooks/estado/eventos; "use client" removido.
 /**
  * ShareOLogo — logotipo ShareO
  * Spec: Documento de Identidade Visual v1.0
