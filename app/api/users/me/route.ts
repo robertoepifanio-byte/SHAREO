@@ -44,15 +44,13 @@ async function hasRecentFiscalRecords(userId: string): Promise<boolean> {
 // LGPD art. 18 — direito ao esquecimento
 export async function DELETE(req: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 },
       )
     }
-
-    const userId = session.user.id
 
     // Bloquear exclusão se houver locação em andamento (ACTIVE)
     const activeBooking = await prisma.booking.findFirst({
@@ -223,10 +221,11 @@ export async function GET(req: NextRequest) {
           state:        true,
           neighborhood: true,
           street:       true,
-          avatarUrl:    true,
-          userType:     true,
-          isVerified:   true,
-          createdAt:    true,
+          avatarUrl:     true,
+          userType:      true,
+          isVerified:    true,
+          emailVerified: true,
+          createdAt:     true,
           _count: {
             select: {
               items:              { where: { status: { in: ["AVAILABLE", "PAUSED", "DRAFT"] }, deletedAt: null } },

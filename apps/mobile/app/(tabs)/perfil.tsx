@@ -239,10 +239,11 @@ export default function PerfilScreen() {
       desc:  "Cidade, estado, bairro",
     },
     {
-      href:  "/perfil/seguranca",
-      icon:  "lock",
-      label: "Login e segurança",
-      desc:  "E-mail, senha, excluir conta",
+      href:   "/perfil/seguranca",
+      icon:   "lock",
+      label:  "Login e segurança",
+      desc:   "E-mail, senha, excluir conta",
+      native: () => router.push("/perfil/seguranca"),
     },
     {
       href:  "/perfil/documentos",
