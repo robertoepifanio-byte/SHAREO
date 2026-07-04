@@ -1,7 +1,6 @@
 import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
 import { randomInt } from "node:crypto"
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
 import { userMiniSelect } from "@/lib/prisma/selects"
@@ -33,11 +32,13 @@ export async function GET(req: NextRequest, { params }: Params) {
       select: {
         id:            true,
         status:        true,
+        paymentStatus: true,
         startDate:     true,
         endDate:       true,
         totalDays:     true,
         dailyPrice:    true,
         totalPrice:    true,
+        discountCents: true,
         depositAmount: true,
         borrowerNote:  true,
         ownerNote:     true,
@@ -45,6 +46,24 @@ export async function GET(req: NextRequest, { params }: Params) {
         cancelReason:  true,
         createdAt:     true,
         updatedAt:     true,
+        // Fonte: app/reservas/[id]/page.tsx linhas 84-96 — mesmos timestamps de
+        // histórico (deriveBookingHistory), status de pagamento e extensão que
+        // o site usa. Ausentes aqui antes (mobile assumia que existiam — os
+        // checks de paymentStatus/activatedAt/etc. rodavam sempre com undefined).
+        respondedAt:               true,
+        paidAt:                    true,
+        pixDeclaredAt:             true,
+        contractSignedAt:          true,
+        activatedAt:               true,
+        returnRequestedAt:         true,
+        returnedAt:                true,
+        extensionRequestedAt:      true,
+        extensionRespondedAt:      true,
+        extensionStatus:           true,
+        extensionRequestedEndDate: true,
+        lateFeeAmount:             true,
+        pickupTokenUsedAt:         true,
+        photos: { select: { id: true, url: true, phase: true, createdAt: true }, orderBy: { createdAt: "asc" } },
         item: {
           select: {
             id:     true,
@@ -54,8 +73,22 @@ export async function GET(req: NextRequest, { params }: Params) {
             images: { select: { url: true }, orderBy: { order: "asc" } },
           },
         },
-        borrower:     { select: userMiniSelect },
-        owner:        { select: userMiniSelect },
+        // Story B — itens da locação (fonte: app/reservas/[id]/page.tsx linhas 107-114)
+        bookingItems: {
+          select: {
+            itemId:     true,
+            totalPrice: true,
+            item: { select: { title: true, images: { select: { url: true }, orderBy: { order: "asc" }, take: 1 } } },
+          },
+        },
+        borrower: { select: userMiniSelect },
+        // Endereço de retirada — fonte: app/reservas/[id]/page.tsx linhas 120-125, 371-395
+        owner: {
+          select: {
+            ...userMiniSelect,
+            cep: true, street: true, neighborhood: true, city: true, state: true,
+          },
+        },
         conversation: { select: { id: true } },
         pickupToken:  true,
       reviews:      {
@@ -110,8 +143,11 @@ const TRANSITIONS: Record<
 
 export async function PATCH(req: NextRequest, { params }: Params) {
   try {
-    const session = await auth()
-    if (!session) {
+    // Bearer (app mobile) OU cookie (web) — igual ao GET acima. Antes usava
+    // apenas auth() (cookie), então TODA ação de ciclo de vida da reserva pelo
+    // app (confirm/cancel/mark_active/mark_returned/confirm_return) caía em 401.
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 },
@@ -131,7 +167,6 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const { action, reason, actualTime, pickupToken } = parsed.data
     // Horário efetivo: usa o informado pelo usuário (se válido e no passado), senão o momento atual
     const effectiveTime = actualTime ? new Date(actualTime) : new Date()
-    const userId = session.user.id
 
     const booking = await prisma.booking.findUnique({
       where:  { id },

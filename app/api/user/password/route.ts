@@ -1,8 +1,9 @@
+import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import bcrypt from "bcryptjs"
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { resolveUserId } from "@/lib/resolveUserId"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { invalidateUserSessions } from "@/lib/redis-admin-blocklist"
 
@@ -11,13 +12,13 @@ const schema = z.object({
   newPassword:     z.string().min(8, "Mínimo 8 caracteres"),
 })
 
-export async function PATCH(req: Request) {
-  const session = await auth()
-  if (!session?.user?.id) {
+export async function PATCH(req: NextRequest) {
+  const userId = await resolveUserId(req)
+  if (!userId) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
   }
 
-  const rl = await checkRateLimit(`pwd-change:${session.user.id}`, RATE_LIMITS.passwordChange.limit, RATE_LIMITS.passwordChange.windowMs)
+  const rl = await checkRateLimit(`pwd-change:${userId}`, RATE_LIMITS.passwordChange.limit, RATE_LIMITS.passwordChange.windowMs)
   if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
   const body = await req.json()
@@ -27,7 +28,7 @@ export async function PATCH(req: Request) {
   }
 
   const user = await prisma.user.findUnique({
-    where:  { id: session.user.id },
+    where:  { id: userId },
     select: { passwordHash: true },
   })
 
@@ -42,12 +43,12 @@ export async function PATCH(req: Request) {
 
   const newHash = await bcrypt.hash(parsed.data.newPassword, 12)
   await prisma.user.update({
-    where: { id: session.user.id },
+    where: { id: userId },
     data:  { passwordHash: newHash },
   })
 
   // SEC-CRIT-04: invalida sessões anteriores — um token roubado deixa de valer
-  await invalidateUserSessions(session.user.id)
+  await invalidateUserSessions(userId)
 
   return NextResponse.json({ ok: true })
 }

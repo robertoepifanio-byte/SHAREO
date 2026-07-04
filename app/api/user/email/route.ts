@@ -1,9 +1,10 @@
+import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
 import { z } from "zod"
 import bcrypt from "bcryptjs"
 import crypto from "crypto"
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { resolveUserId } from "@/lib/resolveUserId"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { sendVerificationEmail } from "@/lib/email"
 import { invalidateUserSessions } from "@/lib/redis-admin-blocklist"
@@ -14,13 +15,13 @@ const schema = z.object({
   currentPassword: z.string().min(1, "Senha obrigatória"),
 })
 
-export async function PATCH(req: Request) {
-  const session = await auth()
-  if (!session?.user?.id) {
+export async function PATCH(req: NextRequest) {
+  const userId = await resolveUserId(req)
+  if (!userId) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
   }
 
-  const rl = await checkRateLimit(`email-change:${session.user.id}`, RATE_LIMITS.emailChange.limit, RATE_LIMITS.emailChange.windowMs)
+  const rl = await checkRateLimit(`email-change:${userId}`, RATE_LIMITS.emailChange.limit, RATE_LIMITS.emailChange.windowMs)
   if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
   const body   = await req.json()
@@ -35,7 +36,7 @@ export async function PATCH(req: Request) {
   const { newEmail, currentPassword } = parsed.data
 
   const user = await prisma.user.findUnique({
-    where:  { id: session.user.id },
+    where:  { id: userId },
     select: { email: true, name: true, passwordHash: true },
   })
 
@@ -64,7 +65,7 @@ export async function PATCH(req: Request) {
   const tokenExpiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000) // 48h
 
   await prisma.user.update({
-    where: { id: session.user.id },
+    where: { id: userId },
     data:  {
       email:               newEmail.toLowerCase(),
       emailVerified:       null,
@@ -74,7 +75,7 @@ export async function PATCH(req: Request) {
   })
 
   // SEC-CRIT-04: troca de e-mail também invalida sessões anteriores
-  await invalidateUserSessions(session.user.id)
+  await invalidateUserSessions(userId)
 
   // Envia verificação para o novo endereço — após a resposta
   after(() =>

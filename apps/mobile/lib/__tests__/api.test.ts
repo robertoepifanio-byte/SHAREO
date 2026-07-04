@@ -26,12 +26,12 @@ describe("tokens (SecureStore)", () => {
 describe("apiFetch", () => {
   beforeEach(async () => {
     await clearTokens()
-    ;(global as unknown as { fetch: jest.Mock }).fetch = jest.fn()
+    ;(globalThis as unknown as { fetch: jest.Mock }).fetch = jest.fn()
   })
 
   it("envia Authorization quando há token e retorna o JSON", async () => {
     await saveTokens({ accessToken: "tok", refreshToken: "ref" })
-    const fetchMock = global.fetch as unknown as jest.Mock
+    const fetchMock = globalThis.fetch as unknown as jest.Mock
     fetchMock.mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ data: 42 }) })
 
     const result = await apiFetch<{ data: number }>("/api/users/me")
@@ -43,7 +43,7 @@ describe("apiFetch", () => {
 
   it("faz refresh e retenta quando recebe 401", async () => {
     await saveTokens({ accessToken: "old", refreshToken: "ref" })
-    const fetchMock = global.fetch as unknown as jest.Mock
+    const fetchMock = globalThis.fetch as unknown as jest.Mock
     fetchMock
       .mockResolvedValueOnce({ ok: false, status: 401, json: async () => ({}) })          // 1ª chamada → 401
       .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ data: { accessToken: "new", refreshToken: "ref2" } }) }) // refresh
@@ -62,7 +62,7 @@ describe("apiFetch", () => {
 
   it("lança SESSION_EXPIRED e limpa tokens quando o refresh falha", async () => {
     await saveTokens({ accessToken: "old", refreshToken: "ref" })
-    const fetchMock = global.fetch as unknown as jest.Mock
+    const fetchMock = globalThis.fetch as unknown as jest.Mock
     fetchMock
       .mockResolvedValueOnce({ ok: false, status: 401, json: async () => ({}) }) // 401
       .mockResolvedValueOnce({ ok: false, status: 401, json: async () => ({}) }) // refresh falha

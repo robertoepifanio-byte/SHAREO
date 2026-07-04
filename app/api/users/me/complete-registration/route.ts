@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
 import type { Prisma } from "@prisma/client"
-import { auth } from "@/lib/auth"
+import { resolveUserId } from "@/lib/resolveUserId"
 import { prisma } from "@/lib/prisma"
 import { hashDocument, encryptDocument } from "@/lib/crypto"
 import { safeServerError } from "@/lib/logger"
@@ -23,14 +23,13 @@ function clientIp(req: NextRequest): string {
 // Anunciar/Alugar. Marca profileCompletedAt, liberando os gates (lib/registration.ts).
 export async function PATCH(req: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 },
       )
     }
-    const userId = session.user.id
 
     const rl = await checkRateLimit(`complete-reg:${userId}`, RATE_LIMITS.upgradePj.limit, RATE_LIMITS.upgradePj.windowMs)
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)

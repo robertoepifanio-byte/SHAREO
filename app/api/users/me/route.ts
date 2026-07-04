@@ -1,6 +1,5 @@
 import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
 import { UpdateProfileSchema } from "@/lib/validations/users"
@@ -44,15 +43,13 @@ async function hasRecentFiscalRecords(userId: string): Promise<boolean> {
 // LGPD art. 18 — direito ao esquecimento
 export async function DELETE(req: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 },
       )
     }
-
-    const userId = session.user.id
 
     // Bloquear exclusão se houver locação em andamento (ACTIVE)
     const activeBooking = await prisma.booking.findFirst({
@@ -207,24 +204,53 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    const user = await prisma.user.findUnique({
-      where:  { id: userId },
-      select: {
-        id:           true,
-        name:         true,
-        email:        true,
-        bio:          true,
-        phone:        true,
-        city:         true,
-        state:        true,
-        neighborhood: true,
-        street:       true,
-        avatarUrl:    true,
-        userType:     true,
-        isVerified:   true,
-        createdAt:    true,
-      },
-    })
+    // Fonte: app/perfil/page.tsx linhas 40-81 — mesmos agregados do perfil
+    // web (stats + últimas 5 avaliações recebidas), pra permitir paridade
+    // no app mobile sem duplicar a query em dois shapes diferentes.
+    const [user, reviewStats] = await Promise.all([
+      prisma.user.findUnique({
+        where:  { id: userId },
+        select: {
+          id:           true,
+          name:         true,
+          email:        true,
+          bio:          true,
+          phone:        true,
+          city:         true,
+          state:        true,
+          neighborhood: true,
+          street:       true,
+          avatarUrl:     true,
+          userType:      true,
+          isVerified:    true,
+          emailVerified: true,
+          createdAt:     true,
+          _count: {
+            select: {
+              items:              { where: { status: { in: ["AVAILABLE", "PAUSED", "DRAFT"] }, deletedAt: null } },
+              bookingsAsBorrower: { where: { status: { in: ["RETURNED", "COMPLETED"] } } },
+              bookingsAsOwner:    { where: { status: { in: ["RETURNED", "COMPLETED"] } } },
+            },
+          },
+          reviewsReceived: {
+            select: {
+              rating:     true,
+              comment:    true,
+              reviewType: true,
+              reviewer:   { select: { name: true, avatarUrl: true } },
+              createdAt:  true,
+            },
+            orderBy: { createdAt: "desc" },
+            take:    5,
+          },
+        },
+      }),
+      prisma.review.aggregate({
+        where:  { revieweeId: userId },
+        _avg:   { rating: true },
+        _count: { _all: true },
+      }),
+    ])
 
     if (!user) {
       return NextResponse.json(
@@ -243,7 +269,13 @@ export async function GET(req: NextRequest) {
       requestId: req.headers.get("x-vercel-id"),
     })
 
-    return NextResponse.json({ data: user })
+    return NextResponse.json({
+      data: {
+        ...user,
+        avgRating:   reviewStats._avg.rating,
+        reviewCount: reviewStats._count._all,
+      },
+    })
   } catch (e) {
     console.error("[GET /api/users/me]", e instanceof Error ? e.message : e)
     return NextResponse.json(
@@ -255,8 +287,8 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 },
@@ -280,7 +312,7 @@ export async function PATCH(req: NextRequest) {
 
     const d       = parsed.data
     const updated = await prisma.user.update({
-      where: { id: session.user.id },
+      where: { id: userId },
       data:  {
         ...(d.name         !== undefined && { name:         d.name }),
         ...(d.bio          !== undefined && { bio:          d.bio }),
@@ -317,7 +349,7 @@ export async function PATCH(req: NextRequest) {
       const state = d.state ?? updated.state
       if (city && state) {
         after(() =>
-          geocodeUserLocation(session.user.id, {
+          geocodeUserLocation(userId, {
             street:       d.street       ?? updated.street,
             neighborhood: d.neighborhood ?? updated.neighborhood,
             city,
@@ -330,7 +362,7 @@ export async function PATCH(req: NextRequest) {
     // MCI art.15 — log de acesso (fire-and-forget; flag accessLogsEnabled default OFF)
     logAccess({
       ip:     extractClientIp(req),
-      userId: session.user.id,
+      userId,
       path:   "/api/users/me",
       method: "PATCH",
       status: 200,

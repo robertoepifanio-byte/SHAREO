@@ -8,23 +8,34 @@
 
 import { NextRequest } from "next/server"
 import { getToken } from "next-auth/jwt"
+import { jwtVerify } from "jose"
+import { isSessionStale } from "@/lib/redis-admin-blocklist"
 
 // ---------------------------------------------------------------------------
-// Mock de next-auth/jwt
+// Mock de next-auth/jwt, jose e redis-admin-blocklist
 // ---------------------------------------------------------------------------
 
 jest.mock("next-auth/jwt", () => ({
   getToken: jest.fn(),
 }))
+jest.mock("jose", () => ({
+  jwtVerify: jest.fn(),
+}))
+jest.mock("@/lib/redis-admin-blocklist", () => ({
+  isSessionStale: jest.fn(),
+}))
 
 const mockGetToken = getToken as jest.MockedFunction<typeof getToken>
+const mockJwtVerify = jwtVerify as jest.MockedFunction<typeof jwtVerify>
+const mockIsSessionStale = isSessionStale as jest.MockedFunction<typeof isSessionStale>
 
 // ---------------------------------------------------------------------------
-// Helper para criar NextRequest com pathname
+// Helper para criar NextRequest com pathname (e Bearer token opcional)
 // ---------------------------------------------------------------------------
 
-function makeReq(pathname: string): NextRequest {
-  return new NextRequest(`http://localhost:3000${pathname}`)
+function makeReq(pathname: string, bearerToken?: string): NextRequest {
+  const headers = bearerToken ? { authorization: `Bearer ${bearerToken}` } : undefined
+  return new NextRequest(`http://localhost:3000${pathname}`, { headers })
 }
 
 // ---------------------------------------------------------------------------
@@ -43,6 +54,7 @@ const { middleware } = require("@/middleware") as {
 describe("middleware", () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockIsSessionStale.mockResolvedValue(false)
   })
 
   describe("rotas públicas", () => {
@@ -124,6 +136,53 @@ describe("middleware", () => {
     })
   })
 
+  describe("Bearer token (mobile) em rota protegida não-admin", () => {
+    it("/api/bookings sem cookie mas com Bearer válido → NextResponse.next() (sem 401)", async () => {
+      mockGetToken.mockResolvedValue(null)
+      mockJwtVerify.mockResolvedValue({
+        payload: { sub: "user-1", iat: 1000 },
+      } as never)
+
+      const req = makeReq("/api/bookings", "valid-token")
+      const res = await middleware(req)
+
+      expect(res.status).not.toBe(401)
+      expect(res.headers.get("location")).toBeNull()
+    })
+
+    it("/api/bookings sem cookie e sem Bearer → 401 JSON", async () => {
+      mockGetToken.mockResolvedValue(null)
+
+      const req = makeReq("/api/bookings")
+      const res = await middleware(req)
+
+      expect(res.status).toBe(401)
+    })
+
+    it("/api/bookings sem cookie com Bearer inválido (jwtVerify lança) → 401 JSON", async () => {
+      mockGetToken.mockResolvedValue(null)
+      mockJwtVerify.mockRejectedValue(new Error("invalid signature"))
+
+      const req = makeReq("/api/bookings", "bad-token")
+      const res = await middleware(req)
+
+      expect(res.status).toBe(401)
+    })
+
+    it("/api/bookings sem cookie com Bearer de sessão stale (isSessionStale=true) → 401 JSON", async () => {
+      mockGetToken.mockResolvedValue(null)
+      mockJwtVerify.mockResolvedValue({
+        payload: { sub: "user-1", iat: 1000 },
+      } as never)
+      mockIsSessionStale.mockResolvedValue(true)
+
+      const req = makeReq("/api/bookings", "stale-token")
+      const res = await middleware(req)
+
+      expect(res.status).toBe(401)
+    })
+  })
+
   describe("rotas de admin", () => {
     it("rota admin /admin com token role=ADMIN → NextResponse.next() (sem redirect)", async () => {
       mockGetToken.mockResolvedValue({
@@ -151,6 +210,19 @@ describe("middleware", () => {
       const location = res.headers.get("location")
       expect(location).not.toBeNull()
       expect(location).toContain("/dashboard")
+    })
+
+    it("/api/admin sem cookie mas com Bearer válido → 401 (Bearer não abre painel admin)", async () => {
+      mockGetToken.mockResolvedValue(null)
+      mockJwtVerify.mockResolvedValue({
+        payload: { sub: "admin-1", iat: 1000 },
+      } as never)
+
+      const req = makeReq("/api/admin/users", "valid-admin-token")
+      const res = await middleware(req)
+
+      expect(res.status).toBe(401)
+      expect(mockJwtVerify).not.toHaveBeenCalled()
     })
   })
 })
