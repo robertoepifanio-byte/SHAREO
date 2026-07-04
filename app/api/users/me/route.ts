@@ -1,6 +1,5 @@
 import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
 import { UpdateProfileSchema } from "@/lib/validations/users"
