@@ -227,16 +227,18 @@ export default function PerfilScreen() {
     // ── Itens abaixo abrem no browser (sem equivalente nativo no MVP) ──────────
     // Verbatim de app/perfil/page.tsx linhas 22-30 (href, label e desc preservados)
     {
-      href:  "/perfil/editar",
-      icon:  "edit",
-      label: "Editar perfil",
-      desc:  "Nome, bio, telefone, avatar",
+      href:   "/perfil/editar",
+      icon:   "edit",
+      label:  "Editar perfil",
+      desc:   "Nome, bio, telefone, avatar",
+      native: () => router.push("/perfil/editar"),
     },
     {
-      href:  "/perfil/endereco",
-      icon:  "location",
-      label: "Endereço",
-      desc:  "Cidade, estado, bairro",
+      href:   "/perfil/endereco",
+      icon:   "location",
+      label:  "Endereço",
+      desc:   "Cidade, estado, bairro",
+      native: () => router.push("/perfil/endereco"),
     },
     {
       href:  "/perfil/seguranca",
@@ -304,7 +306,7 @@ export default function PerfilScreen() {
             {/* Botão Editar — verbatim link "/perfil/editar" do site */}
             <TouchableOpacity
               style={[s.editBtn, { borderColor: tokens.border }]}
-              onPress={() => Linking.openURL(`${API_URL}/perfil/editar`)}
+              onPress={() => router.push("/perfil/editar")}
               accessibilityRole="button"
               accessibilityLabel="Editar perfil"
             >
