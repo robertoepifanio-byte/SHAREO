@@ -5,8 +5,9 @@ import { prisma } from "@/lib/prisma"
 import { UpdateItemSchema } from "@/lib/validations/items"
 import { geocodeItem } from "@/lib/geocodeItem"
 import { userPublicSelect } from "@/lib/prisma/selects"
-import { assertOwnerOrAdmin } from "@/lib/auth/ownership"
 import { getOwnerResponseBadge } from "@/lib/ownerStats"
+import { assertOwnerOrAdmin } from "@/lib/auth/ownership"
+import { resolveUserId } from "@/lib/resolveUserId"
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -106,8 +107,9 @@ export async function GET(_req: NextRequest, { params }: RouteContext) {
 
 export async function PUT(req: NextRequest, { params }: RouteContext) {
   try {
-    const session = await auth()
-    if (!session) {
+    // Aceita Bearer JWT (mobile) ou session cookie (web) — mesmo padrão de POST /api/items/[id]/images
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 }
@@ -127,11 +129,19 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
       )
     }
 
-    if (!assertOwnerOrAdmin(existing.ownerId, session)) {
-      return NextResponse.json(
-        { error: { code: "FORBIDDEN", message: "Sem permissão." } },
-        { status: 403 }
-      )
+    // Dono do item: verificação direta de userId (Bearer ou cookie).
+    // Admin web: verifica role via sessão completa (só disponível via cookie —
+    // Bearer mobile não carrega role, conforme SEC-CRIT-01).
+    const isOwner = existing.ownerId === userId
+    if (!isOwner) {
+      const session = await auth().catch(() => null)
+      const isAdmin = session?.user?.role === "ADMIN"
+      if (!isAdmin) {
+        return NextResponse.json(
+          { error: { code: "FORBIDDEN", message: "Sem permissão." } },
+          { status: 403 }
+        )
+      }
     }
 
     const body = await req.json()
