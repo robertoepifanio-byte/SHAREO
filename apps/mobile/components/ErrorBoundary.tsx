@@ -3,6 +3,7 @@
 // Sem isso, um erro de render não tem NENHUM sinal visível pro usuário nem pra nós.
 import React from "react"
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from "react-native"
+import { ThemeContext } from "@/lib/theme"
 
 interface Props {
   children: React.ReactNode
@@ -13,6 +14,9 @@ interface State {
 }
 
 export class ErrorBoundary extends React.Component<Props, State> {
+  static contextType = ThemeContext
+  declare context: React.ContextType<typeof ThemeContext>
+
   state: State = { error: null }
 
   static getDerivedStateFromError(error: Error): State {
@@ -25,13 +29,17 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
   render() {
     if (this.state.error) {
+      const { tokens } = this.context
       return (
-        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-          <Text style={styles.title}>Algo deu errado</Text>
-          <Text style={styles.message}>{this.state.error.message}</Text>
-          <Text style={styles.stack}>{this.state.error.stack}</Text>
+        <ScrollView
+          style={[styles.container, { backgroundColor: tokens.bg }]}
+          contentContainerStyle={styles.content}
+        >
+          <Text style={[styles.title, { color: tokens.error }]}>Algo deu errado</Text>
+          <Text style={[styles.message, { color: tokens.text }]}>{this.state.error.message}</Text>
+          <Text style={[styles.stack, { color: tokens.muted }]}>{this.state.error.stack}</Text>
           <TouchableOpacity
-            style={styles.button}
+            style={[styles.button, { backgroundColor: tokens.green }]}
             onPress={() => this.setState({ error: null })}
           >
             <Text style={styles.buttonText}>Tentar novamente</Text>
@@ -44,11 +52,11 @@ export class ErrorBoundary extends React.Component<Props, State> {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F8FAFC" },
+  container: { flex: 1 },                     // backgroundColor removido — agora inline via tokens.bg
   content:   { padding: 24, paddingTop: 64 },
-  title:     { fontSize: 20, fontWeight: "700", color: "#C0392B", marginBottom: 12 },
-  message:   { fontSize: 14, color: "#0F172A", marginBottom: 16 },
-  stack:     { fontSize: 11, color: "#64748B", marginBottom: 24 },
-  button:    { backgroundColor: "#007B3C", borderRadius: 10, minHeight: 48, alignItems: "center", justifyContent: "center" },
-  buttonText: { color: "#FFFFFF", fontWeight: "700" },
+  title:     { fontSize: 20, fontWeight: "700", marginBottom: 12 },  // color removido — inline via tokens.error
+  message:   { fontSize: 14, marginBottom: 16 },                      // color removido — inline via tokens.text
+  stack:     { fontSize: 11, marginBottom: 24 },                      // color removido — inline via tokens.muted
+  button:    { borderRadius: 10, minHeight: 48, alignItems: "center", justifyContent: "center" },  // backgroundColor removido — inline via tokens.green
+  buttonText: { color: "#FFFFFF", fontWeight: "700" },  // branco sobre fill verde — não migrar
 })

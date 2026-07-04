@@ -3,6 +3,7 @@
 
 import React from "react"
 import { View, Text, StyleSheet } from "react-native"
+import { useTheme } from "@/lib/theme"
 
 const CASES = [
   { initial: "C", name: "Carlos Souza", role: "Proprietário · São Paulo, SP", item: "Furadeira Bosch", itemEmoji: "🔧", renda: "R$ 135", highlight: false,
@@ -14,10 +15,13 @@ const CASES = [
 ]
 
 export function CasosRenda() {
+  const { tokens, mode } = useTheme()
+  // #F1F5F9 (slate-100) — sem token exato; usa tokens.bg em dark, preserva original em light
+  const sectionBg = mode === "dark" ? tokens.bg : "#F1F5F9"
   return (
-    <View style={s.section}>
-      <Text style={s.title}>Quem já está ganhando</Text>
-      <Text style={s.subtitle}>Veja o potencial de quem transforma itens parados em renda extra.</Text>
+    <View style={[s.section, { backgroundColor: sectionBg }]}>
+      <Text style={[s.title, { color: mode === "dark" ? tokens.text : "#003366" }]}>Quem já está ganhando</Text>
+      <Text style={[s.subtitle, { color: tokens.muted }]}>Veja o potencial de quem transforma itens parados em renda extra.</Text>
 
       {CASES.map((c) => (
         <View key={c.name} style={s.card}>
@@ -42,7 +46,7 @@ export function CasosRenda() {
         </View>
       ))}
 
-      <Text style={s.disclaimer}>
+      <Text style={[s.disclaimer, { color: tokens.muted }]}>
         Personagens e valores ilustrativos, baseados em estimativas de uso típico
         (3–4 locações/mês). Resultados reais variam conforme o item, a demanda e a região.
       </Text>

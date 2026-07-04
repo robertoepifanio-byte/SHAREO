@@ -4,6 +4,7 @@
 import React from "react"
 import { View, Text, StyleSheet } from "react-native"
 import { Button } from "./Button"
+import { useTheme } from "@/lib/theme"
 
 interface EmptyStateProps {
   icon?:            string   // emoji — handoff §1.6
@@ -20,21 +21,23 @@ export function EmptyState({
   action,
   secondaryAction,
 }: EmptyStateProps) {
+  const { tokens, mode } = useTheme()
   return (
     <View style={styles.container}>
       {icon && (
-        <View style={styles.iconWrapper}>
+        <View style={[styles.iconWrapper, { backgroundColor: tokens.border }]}>
           {/* handoff §1.6: icon 52px */}
           <Text style={styles.icon}>{icon}</Text>
         </View>
       )}
 
-      {/* handoff §1.6: título Montserrat 18px bold navy */}
-      <Text style={styles.title}>{title}</Text>
+      {/* handoff §1.6: título Montserrat 18px bold navy
+          dark: navy (#003366) seria invisível sobre fundo escuro — usa tokens.text */}
+      <Text style={[styles.title, { color: mode === "dark" ? tokens.text : "#003366" }]}>{title}</Text>
 
       {description && (
         // handoff §1.6: descrição Inter 13px muted, max-width 220px
-        <Text style={styles.description}>{description}</Text>
+        <Text style={[styles.description, { color: tokens.muted }]}>{description}</Text>
       )}
 
       {action && (
@@ -73,11 +76,10 @@ const styles = StyleSheet.create({
     textAlign:      "center",
   },
   iconWrapper: {
-    // handoff §1.6: "Icon 52px" em círculo bg-muted (--muted #E2E8F0)
+    // handoff §1.6: "Icon 52px" em círculo bg-muted — backgroundColor agora inline via tokens.border
     width:          64,
     height:         64,
     borderRadius:   32,
-    backgroundColor: "#E2E8F0",
     alignItems:     "center",
     justifyContent: "center",
     marginBottom:   16,
@@ -86,18 +88,16 @@ const styles = StyleSheet.create({
     fontSize: 28,
   },
   title: {
-    // handoff §1.6: "Montserrat 18px bold navy"
+    // handoff §1.6: "Montserrat 18px bold navy" — color agora inline (mode-aware)
     fontFamily:  "Montserrat_700Bold",
     fontSize:    18,
     fontWeight:  "700",
-    color:       "#003366",
     textAlign:   "center",
     marginBottom: 8,
   },
   description: {
-    // handoff §1.6: "Inter 13px muted, max-width 220px"
+    // handoff §1.6: "Inter 13px muted, max-width 220px" — color agora inline via tokens.muted
     fontSize:   13,
-    color:      "#64748B",
     textAlign:  "center",
     maxWidth:   220,
     lineHeight: 18,

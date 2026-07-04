@@ -9,6 +9,7 @@ import {
   StyleSheet,
   type TextInputProps,
 } from "react-native"
+import { useTheme } from "@/lib/theme"
 
 interface InputProps extends TextInputProps {
   label?:     string
@@ -37,31 +38,35 @@ export function Input({
   ...props
 }: InputProps) {
   const [focused, setFocused] = useState(false)
+  const { tokens, mode } = useTheme()
 
   // `disabled` é atalho semântico; se ambos forem passados, `disabled` tem prioridade.
   const isEditable = disabled ? false : (editable ?? true)
 
   const borderColor = error
-    ? "#C0392B"   // --destructive
+    ? tokens.error                // --destructive
     : focused
-      ? "#007B3C"  // --ring (verde, igual ao site)
-      : "#E2E8F0"  // --border
+      ? tokens.green              // --ring (verde, igual ao site; fill preservado)
+      : tokens.border             // --border
 
+  // error bg: tint rosado claro — sem token direto, ternário para dark
+  // disabled bg: #F1F5F9 no site (slate-100) — ligeiramente diferente de tokens.disabledBg (#E2E8F0); ternário preserva light
+  // default bg: tokens.bg (#F8FAFC light / #0B1524 dark)
   const bgColor = error
-    ? "#FFF5F5"   // fundo erro (handoff §1.2)
+    ? (mode === "dark" ? "#2D1515" : "#FFF5F5")
     : !isEditable
-      ? "#F1F5F9"  // --disabled-bg aproximado
-      : "#F8FAFC"  // --surface-muted / default do handoff §1.2
+      ? (mode === "dark" ? tokens.disabledBg : "#F1F5F9")
+      : tokens.bg
 
   return (
     <View style={styles.wrapper}>
       {label && (
         <View style={styles.labelRow}>
-          <Text style={styles.label}>
+          <Text style={[styles.label, { color: tokens.muted }]}>
             {label.toUpperCase()}
           </Text>
           {required && (
-            <Text style={styles.required} accessibilityLabel="campo obrigatório">
+            <Text style={[styles.required, { color: tokens.error }]} accessibilityLabel="campo obrigatório">
               {" "}*
             </Text>
           )}
@@ -87,11 +92,11 @@ export function Input({
           {
             borderColor,
             backgroundColor: bgColor,
-            color: !isEditable ? "#64748B" : "#0F172A",
+            color: !isEditable ? tokens.muted : tokens.text,
             // shadow de foco — traduzido de "focus:ring-2 focus:ring-ring/20"
             ...(focused && !error
               ? {
-                  shadowColor:  "#007B3C",
+                  shadowColor:  tokens.green,
                   shadowOffset: { width: 0, height: 0 },
                   shadowOpacity: 0.12,
                   shadowRadius:  3,
@@ -101,23 +106,23 @@ export function Input({
           },
           style,
         ]}
-        placeholderTextColor="#64748B"
+        placeholderTextColor={tokens.muted}
         {...props}
       />
 
       <View style={styles.footer}>
         {error ? (
-          <Text style={styles.error} role="alert">
+          <Text style={[styles.error, { color: tokens.error }]} role="alert">
             {error}
           </Text>
         ) : hint ? (
-          <Text style={styles.hint}>{hint}</Text>
+          <Text style={[styles.hint, { color: tokens.muted }]}>{hint}</Text>
         ) : (
           <View />
         )}
 
         {charCount && maxLength != null && (
-          <Text style={styles.counter}>
+          <Text style={[styles.counter, { color: tokens.muted }]}>
             {(value as string)?.length ?? 0}/{maxLength}
           </Text>
         )}
@@ -136,16 +141,15 @@ const styles = StyleSheet.create({
     marginBottom:  2,
   },
   label: {
-    // handoff §1.2: "11px, semibold, uppercase, #64748B"
+    // handoff §1.2: "11px, semibold, uppercase, #64748B" — color agora inline via tokens.muted
     fontSize:    11,
     fontWeight:  "600",
-    color:       "#64748B",
     letterSpacing: 0.4,
   },
   required: {
+    // color agora inline via tokens.error
     fontSize:  11,
     fontWeight: "600",
-    color:     "#C0392B",  // --destructive
   },
   input: {
     minHeight:     44,    // tap target mínimo
@@ -163,19 +167,18 @@ const styles = StyleSheet.create({
     minHeight:      16,
   },
   error: {
+    // color agora inline via tokens.error
     fontSize: 11,
-    color:    "#C0392B",
     flex:     1,
   },
   hint: {
+    // color agora inline via tokens.muted
     fontSize: 11,
-    color:    "#64748B",
     flex:     1,
   },
   counter: {
-    // handoff §1.2: "10px, muted, alinhado à direita"
+    // handoff §1.2: "10px, muted, alinhado à direita" — color agora inline via tokens.muted
     fontSize: 10,
-    color:    "#64748B",
     marginLeft: 8,
   },
 })

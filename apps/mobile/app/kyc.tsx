@@ -63,7 +63,7 @@ type UploadState = "idle" | "uploading" | "success" | "error"
 export default function KycScreen() {
   const insets     = useSafeAreaInsets()
   const user       = useAuth((s) => s.user)
-  const { tokens } = useTheme()
+  const { tokens, mode } = useTheme()
 
   const [docAsset,     setDocAsset]     = useState<ImagePicker.ImagePickerAsset | null>(null)
   const [selfieAsset,  setSelfieAsset]  = useState<ImagePicker.ImagePickerAsset | null>(null)
@@ -244,35 +244,35 @@ export default function KycScreen() {
         {/* ── Status atual ── */}
         {verificationStatus === "VERIFIED" && (
           <View
-            style={[s.statusBox, { borderColor: "#A7F3D0", backgroundColor: "#ECFDF5" }]}
+            style={[s.statusBox, { borderColor: mode === "dark" ? "#5BD08B66" : "#A7F3D0", backgroundColor: mode === "dark" ? "#0A2A1A" : "#ECFDF5" }]}
             accessible
             accessibilityLiveRegion="polite"
           >
-            <Text style={[s.statusTitle, { color: "#065F46" }]}>Identidade verificada</Text>
-            <Text style={[s.statusText, { color: "#047857" }]}>
+            <Text style={[s.statusTitle, { color: mode === "dark" ? "#5BD08B" : "#065F46" }]}>Identidade verificada</Text>
+            <Text style={[s.statusText, { color: mode === "dark" ? "#86EFAC" : "#047857" }]}>
               Sua identidade foi verificada pela equipe ShareO.
             </Text>
           </View>
         )}
         {verificationStatus === "PENDING" && (
           <View
-            style={[s.statusBox, { borderColor: "#FDE68A", backgroundColor: "#FFFBEB" }]}
+            style={[s.statusBox, { borderColor: mode === "dark" ? "#FBBF7766" : "#FDE68A", backgroundColor: mode === "dark" ? "#2A1A00" : "#FFFBEB" }]}
             accessible
             accessibilityLiveRegion="polite"
           >
-            <Text style={[s.statusTitle, { color: "#92400E" }]}>Em análise</Text>
-            <Text style={[s.statusText, { color: "#B45309" }]}>
+            <Text style={[s.statusTitle, { color: mode === "dark" ? "#FBBF77" : "#92400E" }]}>Em análise</Text>
+            <Text style={[s.statusText, { color: mode === "dark" ? "#FCD34D" : "#B45309" }]}>
               Documentos enviados. Nossa equipe está analisando — você receberá um e-mail em até 2 dias úteis.
             </Text>
           </View>
         )}
         {verificationStatus === "REJECTED" && (
           <View
-            style={[s.statusBox, { borderColor: "#FECACA", backgroundColor: "#FEF2F2" }]}
+            style={[s.statusBox, { borderColor: mode === "dark" ? "#F08C8466" : "#FECACA", backgroundColor: mode === "dark" ? "#2A0A0A" : "#FEF2F2" }]}
             accessibilityRole="alert"
           >
-            <Text style={[s.statusTitle, { color: "#991B1B" }]}>Documentos rejeitados</Text>
-            <Text style={[s.statusText, { color: "#B91C1C" }]}>
+            <Text style={[s.statusTitle, { color: mode === "dark" ? "#F08C84" : "#991B1B" }]}>Documentos rejeitados</Text>
+            <Text style={[s.statusText, { color: mode === "dark" ? tokens.error : "#B91C1C" }]}>
               Por favor envie novos documentos mais legíveis.
             </Text>
           </View>
@@ -281,12 +281,12 @@ export default function KycScreen() {
         {/* ── Sucesso pós-envio ── */}
         {uploadState === "success" && verificationStatus !== "VERIFIED" && (
           <View
-            style={[s.statusBox, { borderColor: "#A7F3D0", backgroundColor: "#ECFDF5" }]}
+            style={[s.statusBox, { borderColor: mode === "dark" ? "#5BD08B66" : "#A7F3D0", backgroundColor: mode === "dark" ? "#0A2A1A" : "#ECFDF5" }]}
             accessible
             accessibilityLiveRegion="polite"
           >
-            <Text style={[s.statusTitle, { color: "#065F46" }]}>Documentos enviados!</Text>
-            <Text style={[s.statusText, { color: "#047857" }]}>
+            <Text style={[s.statusTitle, { color: mode === "dark" ? "#5BD08B" : "#065F46" }]}>Documentos enviados!</Text>
+            <Text style={[s.statusText, { color: mode === "dark" ? "#86EFAC" : "#047857" }]}>
               Nossa equipe analisará em até 2 dias úteis. Você receberá uma notificação por e-mail.
             </Text>
           </View>
@@ -306,10 +306,10 @@ export default function KycScreen() {
 
             {/* ── Consentimento biométrico (exibido apenas quando flag ON no servidor) ── */}
             {needsConsent && (
-              <View style={s.consentBox}>
-                <Text style={s.consentTitle}>{BIOMETRIC_CONSENT_TITLE}</Text>
+              <View style={[s.consentBox, { borderColor: mode === "dark" ? "#FBBF7766" : "#FDE68A", backgroundColor: mode === "dark" ? "#2A1A00" : "#FFFBEB" }]}>
+                <Text style={[s.consentTitle, { color: mode === "dark" ? "#FBBF77" : "#92400E" }]}>{BIOMETRIC_CONSENT_TITLE}</Text>
                 <ScrollView style={s.consentScroll} nestedScrollEnabled>
-                  <Text style={s.consentText}>{BIOMETRIC_CONSENT_TEXT}</Text>
+                  <Text style={[s.consentText, { color: mode === "dark" ? "#FCD34D" : "#B45309" }]}>{BIOMETRIC_CONSENT_TEXT}</Text>
                 </ScrollView>
                 <TouchableOpacity
                   onPress={() => setConsentGiven((v) => !v)}
@@ -323,14 +323,14 @@ export default function KycScreen() {
                       s.checkbox,
                       consentGiven
                         ? { borderColor: tokens.green, backgroundColor: tokens.green }
-                        : { borderColor: "#D97706", backgroundColor: "#FFFFFF" },
+                        : { borderColor: mode === "dark" ? "#FBBF77" : "#D97706", backgroundColor: tokens.surface },
                     ]}
                   >
                     {consentGiven && (
                       <Text style={{ fontSize: 11, fontWeight: "700", color: "#FFFFFF" }}>✓</Text>
                     )}
                   </View>
-                  <Text style={s.checkboxLabel}>{BIOMETRIC_CONSENT_CHECKBOX}</Text>
+                  <Text style={[s.checkboxLabel, { color: mode === "dark" ? "#FBBF77" : "#92400E" }]}>{BIOMETRIC_CONSENT_CHECKBOX}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -339,7 +339,7 @@ export default function KycScreen() {
             <View style={s.uploadGroup}>
               <Text style={[s.uploadLabel, { color: tokens.muted }]}>
                 1. Foto do documento (RG ou CNH){" "}
-                <Text style={{ color: "#EF4444" }}>*</Text>
+                <Text style={{ color: tokens.error }}>*</Text>
               </Text>
               <TouchableOpacity
                 onPress={() => pickImage("document")}
@@ -384,7 +384,7 @@ export default function KycScreen() {
             <View style={s.uploadGroup}>
               <Text style={[s.uploadLabel, { color: tokens.muted }]}>
                 2. Selfie segurando o documento{" "}
-                <Text style={{ color: "#EF4444" }}>*</Text>
+                <Text style={{ color: tokens.error }}>*</Text>
               </Text>
               <Text style={[s.uploadHint, { color: tokens.muted }]}>
                 Tire uma selfie segurando o mesmo documento ao lado do seu rosto. Boa iluminação, sem óculos escuros.
@@ -442,8 +442,8 @@ export default function KycScreen() {
 
             {/* ── Erro ── */}
             {error && (
-              <View style={s.errorBox} accessibilityRole="alert">
-                <Text style={s.errorText}>{error}</Text>
+              <View style={[s.errorBox, { borderColor: mode === "dark" ? "#F08C8466" : "#FECACA", backgroundColor: mode === "dark" ? "#2A0A0A" : "#FEF2F2" }]} accessibilityRole="alert">
+                <Text style={[s.errorText, { color: tokens.error }]}>{error}</Text>
               </View>
             )}
           </>

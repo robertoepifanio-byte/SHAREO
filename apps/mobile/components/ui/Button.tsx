@@ -10,6 +10,7 @@ import {
   View,
   type TouchableOpacityProps,
 } from "react-native"
+import { useTheme } from "@/lib/theme"
 
 type Variant = "primary" | "secondary" | "ghost" | "danger"
 type Size    = "sm" | "md" | "lg"
@@ -20,14 +21,6 @@ interface ButtonProps extends TouchableOpacityProps {
   loading?:  boolean
   fullWidth?: boolean
   children:  React.ReactNode
-}
-
-// Tokens transcritos de components/ui/Button.tsx variantClasses
-const VARIANT_STYLES: Record<Variant, { bg: string; text: string; border?: string }> = {
-  primary:   { bg: "#007B3C", text: "#FFFFFF" },                          // bg-brand text-white
-  secondary: { bg: "transparent", text: "#003366", border: "#003366" },   // border text-primary
-  ghost:     { bg: "transparent", text: "#007B3C", border: "#007B3C" },   // border-brand text-brand
-  danger:    { bg: "#C0392B", text: "#FFFFFF" },                          // bg-destructive text-white
 }
 
 // Tokens transcritos de components/ui/Button.tsx sizeClasses
@@ -47,7 +40,18 @@ export function Button({
   style,
   ...props
 }: ButtonProps) {
+  const { tokens } = useTheme()
   const isDisabled = disabled || loading
+
+  // Variant styles computados com tokens — danger usa tokens.error (difere entre modos);
+  // secondary/ghost usam tokens.navy/green (fill preservado, mesmo valor em ambos os modos).
+  const VARIANT_STYLES: Record<Variant, { bg: string; text: string; border?: string }> = {
+    primary:   { bg: "#007B3C", text: "#FFFFFF" },                             // bg-brand text-white (fill preservado)
+    secondary: { bg: "transparent", text: tokens.navy, border: tokens.navy },  // border text-primary
+    ghost:     { bg: "transparent", text: tokens.green, border: tokens.green },// border-brand text-brand
+    danger:    { bg: tokens.error,  text: "#FFFFFF" },                         // bg-destructive text-white
+  }
+
   const v = VARIANT_STYLES[variant]
   const s = SIZE_STYLES[size]
 
@@ -63,9 +67,9 @@ export function Button({
           minHeight:        s.minHeight,
           paddingHorizontal: s.paddingHorizontal,
           borderRadius:     s.borderRadius,
-          backgroundColor:  isDisabled ? "#E2E8F0" : v.bg,
+          backgroundColor:  isDisabled ? tokens.disabledBg : v.bg,
           borderWidth:      v.border ? 1.5 : 0,
-          borderColor:      isDisabled ? "#CBD5E1" : v.border ?? "transparent",
+          borderColor:      isDisabled ? tokens.disabledBorder : v.border ?? "transparent",
           width:            fullWidth ? "100%" : undefined,
           opacity:          loading ? 0.55 : 1,
         },
@@ -87,7 +91,7 @@ export function Button({
             styles.label,
             {
               fontSize:  s.fontSize,
-              color:     isDisabled ? "#94A3B8" : v.text,
+              color:     isDisabled ? tokens.disabledText : v.text,
               // primary usa uppercase + tracking-wide, como no site
               textTransform: variant === "primary" ? "uppercase" : "none",
               letterSpacing: variant === "primary" ? 0.5 : 0,

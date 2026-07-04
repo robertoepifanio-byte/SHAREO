@@ -7,6 +7,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Linking } from "react-native"
 import { Image } from "expo-image"
 import Svg, { Polyline, Path } from "react-native-svg"
 import { API_URL } from "@/lib/api"
+import { useTheme } from "@/lib/theme"
 
 const LockIcon = <Image source={require("../../assets/icons/cadeado-shareo.png")} style={{ width: 28, height: 28 }} contentFit="contain" accessibilityLabel="" />
 const CheckIcon = <Svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="#007B3C" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><Polyline points="20 6 9 17 4 12" /></Svg>
@@ -18,6 +19,10 @@ const ShieldIcon = (
 )
 
 export function Seguranca({ feeRate, checkoutMaxCents }: { feeRate: number | null; checkoutMaxCents: number | null }) {
+  const { tokens, mode } = useTheme()
+  // #D1FAE5 (green-100 tint) — sem token direto; tint decorativo para wrap de ícone
+  const iconWrapBg = mode === "dark" ? "rgba(0,123,60,0.25)" : "#D1FAE5"
+
   const feePct = feeRate != null ? (feeRate / 100).toLocaleString("pt-BR") : "…"
   const maxBRL = checkoutMaxCents != null ? (checkoutMaxCents / 100).toLocaleString("pt-BR") : "…"
 
@@ -48,18 +53,18 @@ export function Seguranca({ feeRate, checkoutMaxCents }: { feeRate: number | nul
   ]
 
   return (
-    <View style={s.section}>
-      <Text style={s.title}>Alugue e anuncie com segurança</Text>
-      <Text style={s.subtitle}>Cada transação é protegida pela plataforma do início ao fim.</Text>
+    <View style={[s.section, { backgroundColor: tokens.surface }]}>
+      <Text style={[s.title, { color: mode === "dark" ? tokens.text : "#003366" }]}>Alugue e anuncie com segurança</Text>
+      <Text style={[s.subtitle, { color: tokens.muted }]}>Cada transação é protegida pela plataforma do início ao fim.</Text>
 
       {pillars.map((p) => (
-        <View key={p.title} style={s.card}>
-          <View style={s.iconWrap}>{p.icon}</View>
-          <Text style={s.cardTitle}>{p.title}</Text>
+        <View key={p.title} style={[s.card, { borderColor: tokens.border, backgroundColor: tokens.bg }]}>
+          <View style={[s.iconWrap, { backgroundColor: iconWrapBg }]}>{p.icon}</View>
+          <Text style={[s.cardTitle, { color: mode === "dark" ? tokens.text : "#003366" }]}>{p.title}</Text>
           {p.bullets.map((b) => (
             <View key={b} style={s.bulletRow}>
               <Text style={s.bulletCheck}>✓</Text>
-              <Text style={s.bulletText}>{b}</Text>
+              <Text style={[s.bulletText, { color: tokens.muted }]}>{b}</Text>
             </View>
           ))}
         </View>
@@ -67,7 +72,7 @@ export function Seguranca({ feeRate, checkoutMaxCents }: { feeRate: number | nul
 
       {/* Sem tela nativa equivalente a /seguranca — abre a página real do site */}
       <TouchableOpacity onPress={() => Linking.openURL(`${API_URL}/seguranca`)} accessibilityRole="link">
-        <Text style={s.footer}>
+        <Text style={[s.footer, { color: tokens.muted }]}>
           Quer os detalhes técnicos? <Text style={s.footerLink}>Veja como protegemos seus dados</Text>.
         </Text>
       </TouchableOpacity>

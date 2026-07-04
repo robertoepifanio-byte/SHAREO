@@ -25,6 +25,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { apiFetch, API_URL, getTokens } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
+import { useTheme } from "@/lib/theme"
 
 // ─── maskEmail — verbatim de app/perfil/seguranca/page.tsx ───────────────────
 function maskEmail(email: string) {
@@ -62,9 +63,10 @@ type ResendState = "idle" | "loading" | "success" | "error"
 
 // ─── Componente ───────────────────────────────────────────────────────────────
 export default function SegurancaScreen() {
-  const insets      = useSafeAreaInsets()
+  const insets         = useSafeAreaInsets()
   const { user, logout } = useAuth()
-  const isAdmin     = user?.role === "ADMIN"
+  const { tokens }     = useTheme()
+  const isAdmin        = user?.role === "ADMIN"
 
   // Busca dados de segurança (email, emailVerified, createdAt)
   const { data: meData, isLoading: meLoading, refetch } = useQuery({
@@ -359,7 +361,7 @@ export default function SegurancaScreen() {
                   editable={!emailLoading}
                   accessibilityLabel="Novo e-mail"
                   className="mb-3 rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={tokens.muted}
                 />
 
                 <Text className="mb-1 text-xs font-medium text-muted">Confirme sua senha</Text>
@@ -372,7 +374,7 @@ export default function SegurancaScreen() {
                   editable={!emailLoading}
                   accessibilityLabel="Confirme sua senha"
                   className="mb-3 rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={tokens.muted}
                 />
 
                 {emailError ? (
@@ -431,7 +433,7 @@ export default function SegurancaScreen() {
                   editable={!pwdLoading}
                   accessibilityLabel="Senha atual"
                   className="mb-3 rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={tokens.muted}
                 />
 
                 <Text className="mb-1 text-xs font-medium text-muted">Nova senha</Text>
@@ -443,7 +445,7 @@ export default function SegurancaScreen() {
                   editable={!pwdLoading}
                   accessibilityLabel="Nova senha"
                   className="mb-3 rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={tokens.muted}
                 />
 
                 <Text className="mb-1 text-xs font-medium text-muted">Confirmar nova senha</Text>
@@ -455,7 +457,7 @@ export default function SegurancaScreen() {
                   editable={!pwdLoading}
                   accessibilityLabel="Confirmar nova senha"
                   className="mb-3 rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground"
-                  placeholderTextColor="#9CA3AF"
+                  placeholderTextColor={tokens.muted}
                 />
 
                 {pwdError   ? <Text className="mb-2 text-xs text-red-600">{pwdError}</Text>   : null}

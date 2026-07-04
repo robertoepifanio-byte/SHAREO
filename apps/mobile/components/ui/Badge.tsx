@@ -4,6 +4,7 @@
 
 import React from "react"
 import { View, Text, StyleSheet } from "react-native"
+import { useTheme } from "@/lib/theme"
 
 // ── Badge base ───────────────────────────────────────────────────────────────
 type BadgeVariant = "green" | "amber" | "red" | "blue" | "gray" | "navy"
@@ -13,18 +14,32 @@ interface BadgeProps {
   children: React.ReactNode
 }
 
-// Paleta transcrita de globals.css (valores de booking/item status)
-const BADGE_COLORS: Record<BadgeVariant, { bg: string; text: string; border: string }> = {
-  green: { bg: "#D1FAE5", text: "#065F46", border: "#A7F3D0" },
-  amber: { bg: "#FEF3C7", text: "#92400E", border: "#FDE68A" },
-  red:   { bg: "#FEE2E2", text: "#991B1B", border: "#FECACA" },
-  blue:  { bg: "#EFF6FF", text: "#1E40AF", border: "#BFDBFE" },
-  gray:  { bg: "#F1F5F9", text: "#64748B", border: "#E2E8F0" },
-  navy:  { bg: "#EFF6FF", text: "#003366", border: "#BFDBFE" },
+// Paleta transcrita de globals.css (booking/item status).
+// Tints: light = pastels do site; dark = equivalentes escurecidos (sem token direto — ternário).
+function getBadgeColors(mode: "light" | "dark"): Record<BadgeVariant, { bg: string; text: string; border: string }> {
+  if (mode === "dark") {
+    return {
+      green: { bg: "#064E3B", text: "#6EE7B7", border: "#065F46" },
+      amber: { bg: "#451A03", text: "#FCD34D", border: "#78350F" },
+      red:   { bg: "#450A0A", text: "#FCA5A5", border: "#7F1D1D" },
+      blue:  { bg: "#172554", text: "#93C5FD", border: "#1E3A5F" },
+      gray:  { bg: "#1E293B", text: "#94A3B8", border: "#334155" },
+      navy:  { bg: "#172554", text: "#93C5FD", border: "#1E3A5F" },
+    }
+  }
+  return {
+    green: { bg: "#D1FAE5", text: "#065F46", border: "#A7F3D0" },
+    amber: { bg: "#FEF3C7", text: "#92400E", border: "#FDE68A" },
+    red:   { bg: "#FEE2E2", text: "#991B1B", border: "#FECACA" },
+    blue:  { bg: "#EFF6FF", text: "#1E40AF", border: "#BFDBFE" },
+    gray:  { bg: "#F1F5F9", text: "#64748B", border: "#E2E8F0" },
+    navy:  { bg: "#EFF6FF", text: "#003366", border: "#BFDBFE" },
+  }
 }
 
 export function Badge({ variant, children }: BadgeProps) {
-  const c = BADGE_COLORS[variant]
+  const { mode } = useTheme()
+  const c = getBadgeColors(mode)[variant]
   return (
     <View
       style={[

@@ -178,7 +178,7 @@ export default function ForgotPasswordScreen() {
                 { borderColor: error ? tokens.error : tokens.border, backgroundColor: tokens.bg, color: tokens.text },
               ]}
               placeholder="seu@email.com"
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={tokens.muted}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}

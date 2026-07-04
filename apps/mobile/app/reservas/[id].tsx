@@ -93,7 +93,8 @@ function calcSplit(totalPrice: number, feeRateBps: number) {
 
 // Mapeamento de status — fonte: app/reservas/[id]/page.tsx + BookingStatusBadge.tsx
 // Cores mapeadas para tokens disponíveis no tailwind.config.js do mobile
-const STATUS_LABEL: Record<string, { label: string; borderColor: string; bgColor: string; textColor: string }> = {
+type StatusColors = { label: string; borderColor: string; bgColor: string; textColor: string }
+const STATUS_LABEL_LIGHT: Record<string, StatusColors> = {
   PENDING:   { label: "Aguardando aprovação",   borderColor: "#FCD34D", bgColor: "#FFFBEB", textColor: "#92400E" },
   CONFIRMED: { label: "Confirmada",             borderColor: "#6EE7B7", bgColor: "#ECFDF5", textColor: "#065F46" },
   ACTIVE:    { label: "Em andamento",           borderColor: "#93C5FD", bgColor: "#EFF6FF", textColor: "#1E40AF" },
@@ -101,6 +102,19 @@ const STATUS_LABEL: Record<string, { label: string; borderColor: string; bgColor
   COMPLETED: { label: "Concluída",              borderColor: "#6EE7B7", bgColor: "#ECFDF5", textColor: "#065F46" },
   CANCELLED: { label: "Cancelada",              borderColor: "#E2E8F0", bgColor: "#F8FAFC", textColor: "#64748B" },
   DISPUTED:  { label: "Em disputa",             borderColor: "#FECACA", bgColor: "#FEF2F2", textColor: "#991B1B" },
+}
+const STATUS_LABEL_DARK: Record<string, StatusColors> = {
+  PENDING:   { label: "Aguardando aprovação",   borderColor: "#FBBF7766", bgColor: "#2A1A00", textColor: "#FBBF77" },
+  CONFIRMED: { label: "Confirmada",             borderColor: "#5BD08B66", bgColor: "#0A2A1A", textColor: "#5BD08B" },
+  ACTIVE:    { label: "Em andamento",           borderColor: "#60A5FA66", bgColor: "#0A1A2A", textColor: "#93C5FD" },
+  RETURNED:  { label: "Devolução em andamento", borderColor: "#A78BFA66", bgColor: "#1A1A2A", textColor: "#C4B5FD" },
+  COMPLETED: { label: "Concluída",              borderColor: "#5BD08B66", bgColor: "#0A2A1A", textColor: "#5BD08B" },
+  CANCELLED: { label: "Cancelada",              borderColor: "#26395A",   bgColor: "#0B1524", textColor: "#94A3B8" },
+  DISPUTED:  { label: "Em disputa",             borderColor: "#F08C8466", bgColor: "#2A0A0A", textColor: "#F08C84" },
+}
+function getStatusLabel(status: string, mode: "light" | "dark"): StatusColors {
+  const table = mode === "dark" ? STATUS_LABEL_DARK : STATUS_LABEL_LIGHT
+  return table[status] ?? (mode === "dark" ? STATUS_LABEL_DARK["CANCELLED"] : STATUS_LABEL_LIGHT["CANCELLED"])
 }
 
 const fmt = (cents: number) =>
@@ -128,6 +142,7 @@ const ACTOR_ROLE_EMOJI: Record<string, string> = {
 // Exibe tempo restante até endDate; atualiza a cada 60s.
 // Urgente quando dias === 0 && horas < 4; vermelho quando expirado.
 function ReturnCountdownInline({ endDateIso }: { endDateIso: string }) {
+  const { tokens, mode } = useTheme()
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 60_000)
@@ -137,11 +152,11 @@ function ReturnCountdownInline({ endDateIso }: { endDateIso: string }) {
   const diff = new Date(endDateIso).getTime() - now
   if (diff <= 0) {
     return (
-      <View style={[sCountdown.box, { borderColor: "#FECACA", backgroundColor: "#FEF2F2", marginBottom: 12 }]}>
+      <View style={[sCountdown.box, { borderColor: mode === "dark" ? "#F08C8466" : "#FECACA", backgroundColor: mode === "dark" ? "#2A0A0A" : "#FEF2F2", marginBottom: 12 }]}>
         <Text style={{ fontSize: 18, marginRight: 8 }}>⏰</Text>
         <View style={{ flex: 1 }}>
-          <Text style={[sCountdown.title, { color: "#DC2626" }]}>Prazo de devolução encerrado</Text>
-          <Text style={[sCountdown.sub, { color: "#EF4444" }]}>
+          <Text style={[sCountdown.title, { color: tokens.error }]}>Prazo de devolução encerrado</Text>
+          <Text style={[sCountdown.sub, { color: tokens.error }]}>
             Devolva o item agora para evitar taxas de atraso adicionais.
           </Text>
         </View>
@@ -157,15 +172,15 @@ function ReturnCountdownInline({ endDateIso }: { endDateIso: string }) {
     <View style={[
       sCountdown.box,
       isUrgent
-        ? { borderColor: "#FDBA74", backgroundColor: "#FFF7ED", marginBottom: 12 }
-        : { borderColor: "#6EE7B7", backgroundColor: "#F0FDF4", marginBottom: 12 },
+        ? { borderColor: mode === "dark" ? "#FBBF7766" : "#FDBA74", backgroundColor: mode === "dark" ? "#2A1A00" : "#FFF7ED", marginBottom: 12 }
+        : { borderColor: mode === "dark" ? "#5BD08B66" : "#6EE7B7", backgroundColor: mode === "dark" ? "#0A2A1A" : "#F0FDF4", marginBottom: 12 },
     ]}>
       <Text style={{ fontSize: 18, marginRight: 8 }}>{isUrgent ? "⚠️" : "📅"}</Text>
       <View style={{ flex: 1 }}>
-        <Text style={[sCountdown.title, { color: isUrgent ? "#C2410C" : "#003366" }]}>
+        <Text style={[sCountdown.title, { color: isUrgent ? (mode === "dark" ? "#FBBF77" : "#C2410C") : tokens.navy }]}>
           {isUrgent ? "Devolução urgente" : "Devolução em"}
         </Text>
-        <Text style={[sCountdown.countdown, { color: isUrgent ? "#C2410C" : "#007B3C" }]}>
+        <Text style={[sCountdown.countdown, { color: isUrgent ? (mode === "dark" ? "#FBBF77" : "#C2410C") : tokens.green }]}>
           {days > 0 ? `${days} dia${days !== 1 ? "s" : ""}, ` : ""}
           {hours}h e {minutes}min
         </Text>
@@ -184,7 +199,7 @@ export default function BookingDetailScreen() {
   const { id }     = useLocalSearchParams<{ id: string }>()
   const insets     = useSafeAreaInsets()
   const user       = useAuth((s) => s.user)
-  const { tokens } = useTheme()
+  const { tokens, mode } = useTheme()
   const qc         = useQueryClient()
   const [historyExpanded, setHistoryExpanded] = useState(false)
   // Painel de cancelamento — fonte: _BookingActions.tsx linhas 43-46, 118-119, 262-283
@@ -367,7 +382,7 @@ export default function BookingDetailScreen() {
     )
   }
 
-  const st         = STATUS_LABEL[booking.status] ?? STATUS_LABEL["CANCELLED"]
+  const st         = getStatusLabel(booking.status, mode)
   const isOwner    = user.id === booking.owner.id
   const isBorrower = user.id === booking.borrower.id
   // Site: PENDING ou CONFIRMED, AMBOS os papéis — fonte: _BookingActions.tsx linha 241-242
@@ -738,7 +753,7 @@ export default function BookingDetailScreen() {
 
         {/* Item card — fonte: app/reservas/[id]/page.tsx linhas 248-268 */}
         <TouchableOpacity
-          style={[s.section, s.itemCard, { borderColor: tokens.border }]}
+          style={[s.section, s.itemCard, { borderColor: tokens.border, backgroundColor: tokens.surface }]}
           onPress={() => router.push(`/itens/${booking.item.id}`)}
           activeOpacity={0.85}
           accessibilityRole="button"
@@ -852,7 +867,7 @@ export default function BookingDetailScreen() {
           {booking.depositAmount != null && booking.depositAmount > 0 && (
             <View style={s.finRow}>
               <Text style={[s.finLabel, { color: tokens.muted }]}>Caução (devolvida)</Text>
-              <Text style={[s.finValue, { color: "#B45309" }]}>{fmt(booking.depositAmount)}</Text>
+              <Text style={[s.finValue, { color: mode === "dark" ? "#FBBF77" : "#B45309" }]}>{fmt(booking.depositAmount)}</Text>
             </View>
           )}
           {/* Repartição — taxa retida do repasse, não somada ao locatário.
@@ -862,7 +877,7 @@ export default function BookingDetailScreen() {
             <View style={[s.splitBox, { backgroundColor: tokens.bg }]}>
               <View style={s.finRow}>
                 <Text style={[s.finLabel, { color: tokens.muted }]}>Taxa Shareo ({feeRateLabel}%)</Text>
-                <Text style={[s.finValue, { color: "#DC2626" }]}>− {fmt(split.platformFee)}</Text>
+                <Text style={[s.finValue, { color: tokens.error }]}>− {fmt(split.platformFee)}</Text>
               </View>
               <View style={s.finRow}>
                 <Text style={[s.finTotalLabel, { color: tokens.text, fontSize: 13 }]}>
@@ -876,11 +891,11 @@ export default function BookingDetailScreen() {
 
         {/* Taxa de atraso — fonte: app/reservas/[id]/page.tsx linhas 549-561 */}
         {booking.lateFeeAmount != null && booking.lateFeeAmount > 0 && (
-          <View style={[s.alertBox, { borderColor: "#FCA5A5", backgroundColor: "#FEF2F2" }]}>
+          <View style={[s.alertBox, { borderColor: mode === "dark" ? "#F08C8466" : "#FCA5A5", backgroundColor: mode === "dark" ? "#2A0A0A" : "#FEF2F2" }]}>
             <Text style={{ fontSize: 16, marginRight: 8 }}>⏱</Text>
             <View style={{ flex: 1 }}>
-              <Text style={[s.alertTitle, { color: "#991B1B" }]}>Taxa de atraso aplicada</Text>
-              <Text style={[s.alertDesc, { color: "#B91C1C" }]}>
+              <Text style={[s.alertTitle, { color: mode === "dark" ? "#F08C84" : "#991B1B" }]}>Taxa de atraso aplicada</Text>
+              <Text style={[s.alertDesc, { color: tokens.error }]}>
                 Item devolvido após o prazo. Taxa adicional: <Text style={{ fontWeight: "700" }}>{fmt(booking.lateFeeAmount)}</Text>
               </Text>
             </View>
@@ -890,7 +905,7 @@ export default function BookingDetailScreen() {
         {/* Token de retirada — fonte: app/reservas/[id]/page.tsx linhas 348-397 */}
         {/* Exibido: locatário + pagamento confirmado + token presente + não usado */}
         {isBorrower && booking.paymentStatus === "PAID" && booking.pickupToken && !booking.pickupTokenUsedAt && (
-          <View style={[s.section, s.pickupCard, { borderColor: tokens.green }]}>
+          <View style={[s.section, s.pickupCard, { borderColor: tokens.green, backgroundColor: mode === "dark" ? "#0A2A1A" : "#F0FDF4" }]}>
             <Text style={[s.pickupTitle, { color: tokens.green }]}>🔑 Código de retirada</Text>
             <Text style={[s.pickupHint, { color: tokens.muted }]}>
               Apresente este código ao proprietário na retirada
@@ -905,17 +920,17 @@ export default function BookingDetailScreen() {
             </Text>
 
             {/* Endereço de retirada — fonte: app/reservas/[id]/page.tsx linhas 371-395 */}
-            <View style={[s.pickupAddressBox, { borderColor: "#FCD34D", backgroundColor: "#FFFBEB" }]}>
-              <Text style={s.pickupAddressLabel}>📍 Local de retirada (endereço cadastrado do proprietário)</Text>
+            <View style={[s.pickupAddressBox, { borderColor: mode === "dark" ? "#FBBF7766" : "#FCD34D", backgroundColor: mode === "dark" ? "#2A1A00" : "#FFFBEB" }]}>
+              <Text style={[s.pickupAddressLabel, { color: mode === "dark" ? "#FBBF77" : "#92400E" }]}>📍 Local de retirada (endereço cadastrado do proprietário)</Text>
               {pickupAddress ? (
                 <>
-                  <Text style={s.pickupAddressValue}>{pickupAddress}</Text>
-                  <Text style={s.pickupAddressWarning}>
+                  <Text style={[s.pickupAddressValue, { color: mode === "dark" ? "#FCD34D" : "#78350F" }]}>{pickupAddress}</Text>
+                  <Text style={[s.pickupAddressWarning, { color: mode === "dark" ? "#FBBF77" : "#B45309" }]}>
                     Por segurança, a retirada deve ocorrer exclusivamente neste endereço. Não aceite outro local.
                   </Text>
                 </>
               ) : (
-                <Text style={s.pickupAddressValue}>
+                <Text style={[s.pickupAddressValue, { color: mode === "dark" ? "#FCD34D" : "#78350F" }]}>
                   O proprietário ainda não cadastrou endereço. Entre em contato pelo chat para combinar o local de retirada.
                 </Text>
               )}
@@ -926,11 +941,11 @@ export default function BookingDetailScreen() {
         {/* Aviso de pagamento pago para o locatário (status CONFIRMED + PAID) */}
         {/* Fonte: app/reservas/[id]/page.tsx linhas 414-428 */}
         {isBorrower && booking.status === "CONFIRMED" && booking.paymentStatus === "PAID" && (
-          <View style={[s.alertBox, { borderColor: "#6EE7B7", backgroundColor: "#ECFDF5" }]}>
+          <View style={[s.alertBox, { borderColor: mode === "dark" ? "#5BD08B66" : "#6EE7B7", backgroundColor: mode === "dark" ? "#0A2A1A" : "#ECFDF5" }]}>
             <Text style={{ fontSize: 16, marginRight: 8 }}>✅</Text>
             <View style={{ flex: 1 }}>
-              <Text style={[s.alertTitle, { color: "#065F46" }]}>Pago com sucesso</Text>
-              <Text style={[s.alertDesc, { color: "#059669" }]}>
+              <Text style={[s.alertTitle, { color: mode === "dark" ? "#5BD08B" : "#065F46" }]}>Pago com sucesso</Text>
+              <Text style={[s.alertDesc, { color: mode === "dark" ? "#86EFAC" : "#059669" }]}>
                 O locador foi notificado. Apresente o código de retirada acima.
               </Text>
             </View>
@@ -940,11 +955,11 @@ export default function BookingDetailScreen() {
         {/* Aviso de devolução em andamento (borrower em RETURNED) */}
         {/* Fonte: app/reservas/[id]/page.tsx linhas 584-595 */}
         {isBorrower && booking.status === "RETURNED" && (
-          <View style={[s.alertBox, { borderColor: "#C4B5FD", backgroundColor: "#F5F3FF" }]}>
+          <View style={[s.alertBox, { borderColor: mode === "dark" ? "#A78BFA66" : "#C4B5FD", backgroundColor: mode === "dark" ? "#1A1A2A" : "#F5F3FF" }]}>
             <Text style={{ fontSize: 16, marginRight: 8 }}>🔄</Text>
             <View style={{ flex: 1 }}>
-              <Text style={[s.alertTitle, { color: "#6D28D9" }]}>Devolução em andamento</Text>
-              <Text style={[s.alertDesc, { color: "#7C3AED" }]}>
+              <Text style={[s.alertTitle, { color: mode === "dark" ? "#C4B5FD" : "#6D28D9" }]}>Devolução em andamento</Text>
+              <Text style={[s.alertDesc, { color: mode === "dark" ? "#A78BFA" : "#7C3AED" }]}>
                 Você iniciou a devolução. Aguardando o locador confirmar o recebimento do item para concluir a locação.
               </Text>
             </View>
@@ -954,11 +969,11 @@ export default function BookingDetailScreen() {
         {/* Aviso do locador aguardando devolução (owner em ACTIVE) */}
         {/* Fonte: app/reservas/[id]/page.tsx linhas 563-575 */}
         {isOwner && booking.status === "ACTIVE" && (
-          <View style={[s.alertBox, { borderColor: "#93C5FD", backgroundColor: "#EFF6FF" }]}>
+          <View style={[s.alertBox, { borderColor: mode === "dark" ? "#60A5FA66" : "#93C5FD", backgroundColor: mode === "dark" ? "#0A1A2A" : "#EFF6FF" }]}>
             <Text style={{ fontSize: 16, marginRight: 8 }}>⏳</Text>
             <View style={{ flex: 1 }}>
-              <Text style={[s.alertTitle, { color: "#1E40AF" }]}>Aguardando a devolução</Text>
-              <Text style={[s.alertDesc, { color: "#2563EB" }]}>
+              <Text style={[s.alertTitle, { color: mode === "dark" ? "#93C5FD" : "#1E40AF" }]}>Aguardando a devolução</Text>
+              <Text style={[s.alertDesc, { color: mode === "dark" ? "#60A5FA" : "#2563EB" }]}>
                 O locatário ainda está com o item. Quando ele iniciar a devolução, a reserva ficará como{" "}
                 <Text style={{ fontWeight: "700" }}>Devolução em andamento</Text>
                 {" "}e você poderá confirmar o recebimento aqui.
@@ -969,10 +984,10 @@ export default function BookingDetailScreen() {
 
         {/* Motivo do cancelamento — fonte: app/reservas/[id]/page.tsx linhas 324-330 */}
         {booking.cancelReason && (
-          <View style={[s.alertBox, { borderColor: "#FECACA", backgroundColor: "#FEF2F2" }]}>
+          <View style={[s.alertBox, { borderColor: mode === "dark" ? "#F08C8466" : "#FECACA", backgroundColor: mode === "dark" ? "#2A0A0A" : "#FEF2F2" }]}>
             <View style={{ flex: 1 }}>
-              <Text style={[s.alertTitle, { color: "#991B1B" }]}>Motivo do cancelamento</Text>
-              <Text style={[s.alertDesc, { color: "#B91C1C" }]}>{booking.cancelReason}</Text>
+              <Text style={[s.alertTitle, { color: mode === "dark" ? "#F08C84" : "#991B1B" }]}>Motivo do cancelamento</Text>
+              <Text style={[s.alertDesc, { color: tokens.error }]}>{booking.cancelReason}</Text>
             </View>
           </View>
         )}
@@ -993,21 +1008,21 @@ export default function BookingDetailScreen() {
         {isBorrower && (booking.status === "CONFIRMED" || booking.status === "ACTIVE") && (
           contractSigned ? (
             /* Estado: contrato assinado — _ContractBanner.tsx linhas 29-37 */
-            <View style={[s.alertBox, { borderColor: "#6EE7B7", backgroundColor: "#ECFDF5", marginBottom: 12 }]}>
+            <View style={[s.alertBox, { borderColor: mode === "dark" ? "#5BD08B66" : "#6EE7B7", backgroundColor: mode === "dark" ? "#0A2A1A" : "#ECFDF5", marginBottom: 12 }]}>
               <Text style={{ fontSize: 15, marginRight: 8 }}>✅</Text>
               <View style={{ flex: 1 }}>
-                <Text style={[s.alertTitle, { color: "#065F46" }]}>Contrato assinado digitalmente.</Text>
-                <Text style={[s.alertDesc, { color: "#059669" }]}>Ambas as partes estão protegidas.</Text>
+                <Text style={[s.alertTitle, { color: mode === "dark" ? "#5BD08B" : "#065F46" }]}>Contrato assinado digitalmente.</Text>
+                <Text style={[s.alertDesc, { color: mode === "dark" ? "#86EFAC" : "#059669" }]}>Ambas as partes estão protegidas.</Text>
               </View>
             </View>
           ) : (
             /* Estado: assinatura pendente — _ContractBanner.tsx linhas 49-68 */
-            <View style={[s.section, { borderColor: "#FCD34D", backgroundColor: "#FFFBEB", marginBottom: 12 }]}>
+            <View style={[s.section, { borderColor: mode === "dark" ? "#FBBF7766" : "#FCD34D", backgroundColor: mode === "dark" ? "#2A1A00" : "#FFFBEB", marginBottom: 12 }]}>
               <View style={{ flexDirection: "row", gap: 10 }}>
                 <Text style={{ fontSize: 18, marginTop: 2 }}>📄</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={[s.alertTitle, { color: "#92400E" }]}>Assinatura do contrato pendente</Text>
-                  <Text style={[s.alertDesc, { color: "#B45309", marginTop: 4 }]}>
+                  <Text style={[s.alertTitle, { color: mode === "dark" ? "#FBBF77" : "#92400E" }]}>Assinatura do contrato pendente</Text>
+                  <Text style={[s.alertDesc, { color: mode === "dark" ? "#FCD34D" : "#B45309", marginTop: 4 }]}>
                     Leia e assine o termo de locação para confirmar sua responsabilidade sobre o item.
                   </Text>
                   <TouchableOpacity
@@ -1056,7 +1071,7 @@ export default function BookingDetailScreen() {
                   key={label}
                   style={[
                     sChecklist.item,
-                    { borderColor: clChecked[i] ? "#007B3C" : tokens.border, backgroundColor: clChecked[i] ? "#F0FDF4" : tokens.bg },
+                    { borderColor: clChecked[i] ? "#007B3C" : tokens.border, backgroundColor: clChecked[i] ? (mode === "dark" ? "#0A2A1A" : "#F0FDF4") : tokens.bg },
                   ]}
                   onPress={() => setClChecked((prev) => { const n = [...prev]; n[i] = !n[i]; return n })}
                   accessibilityRole="checkbox"
@@ -1078,7 +1093,7 @@ export default function BookingDetailScreen() {
                   {checkedCount} de 4 itens verificados
                 </Text>
                 {canConfirm && (
-                  <Text style={[s.noteText, { color: "#007B3C", fontSize: 11, fontWeight: "600" }]}>Pronto para confirmar</Text>
+                  <Text style={[s.noteText, { color: tokens.green, fontSize: 11, fontWeight: "600" }]}>Pronto para confirmar</Text>
                 )}
               </View>
               <View style={[sChecklist.progressBar, { backgroundColor: tokens.border }]}>
@@ -1115,7 +1130,7 @@ export default function BookingDetailScreen() {
                 </TouchableOpacity>
               )}
               {clError && (
-                <Text style={{ color: "#DC2626", fontSize: 12, marginBottom: 8 }}>{clError}</Text>
+                <Text style={{ color: tokens.error, fontSize: 12, marginBottom: 8 }}>{clError}</Text>
               )}
               <TouchableOpacity
                 style={[sChecklist.confirmBtn, {
@@ -1158,9 +1173,9 @@ export default function BookingDetailScreen() {
         ── */}
         {isOwner && booking.status === "RETURNED" && (() => {
           const RC_OPTIONS = [
-            { value: "PERFECT"     as const, icon: "✅", label: "Perfeito estado",  desc: "O item foi devolvido exatamente como entregue.", borderSel: "#007B3C", bgSel: "#F0FDF4" },
-            { value: "NORMAL_WEAR" as const, icon: "👍", label: "Desgaste normal",  desc: "Pequenas marcas de uso esperadas para o período de locação.", borderSel: "#93C5FD", bgSel: "#EFF6FF" },
-            { value: "DAMAGED"     as const, icon: "⚠️", label: "Com danos",         desc: "Item devolvido com danos além do desgaste normal.", borderSel: "#FECACA", bgSel: "#FEF2F2" },
+            { value: "PERFECT"     as const, icon: "✅", label: "Perfeito estado",  desc: "O item foi devolvido exatamente como entregue.", borderSel: "#007B3C", bgSel: mode === "dark" ? "#0A2A1A" : "#F0FDF4" },
+            { value: "NORMAL_WEAR" as const, icon: "👍", label: "Desgaste normal",  desc: "Pequenas marcas de uso esperadas para o período de locação.", borderSel: mode === "dark" ? "#60A5FA66" : "#93C5FD", bgSel: mode === "dark" ? "#0A1A2A" : "#EFF6FF" },
+            { value: "DAMAGED"     as const, icon: "⚠️", label: "Com danos",         desc: "Item devolvido com danos além do desgaste normal.", borderSel: mode === "dark" ? "#F08C8466" : "#FECACA", bgSel: mode === "dark" ? "#2A0A0A" : "#FEF2F2" },
           ]
           const isDamaged  = rcCondition === "DAMAGED"
           const rcCanConfirm = rcCondition !== null && (!isDamaged || rcDamageDesc.trim().length >= 10)
@@ -1202,7 +1217,7 @@ export default function BookingDetailScreen() {
               {isDamaged && (
                 <View style={{ marginTop: 10, marginBottom: 8 }}>
                   <Text style={[s.noteText, { color: tokens.text, fontSize: 13, fontWeight: "600", marginBottom: 4 }]}>
-                    Descreva os danos <Text style={{ color: "#DC2626" }}>*</Text>
+                    Descreva os danos <Text style={{ color: tokens.error }}>*</Text>
                   </Text>
                   <Text style={[s.noteText, { color: tokens.muted, fontSize: 11, marginBottom: 6 }]}>
                     Mínimo 10 caracteres. Esta descrição será incluída na abertura da disputa.
@@ -1210,7 +1225,7 @@ export default function BookingDetailScreen() {
                   <TextInput
                     style={[s.reasonInput, {
                       color: tokens.text,
-                      borderColor: rcDamageDesc.length > 0 && rcDamageDesc.length < 10 ? "#DC2626" : tokens.border,
+                      borderColor: rcDamageDesc.length > 0 && rcDamageDesc.length < 10 ? tokens.error : tokens.border,
                       backgroundColor: tokens.bg,
                     }]}
                     value={rcDamageDesc}
@@ -1222,15 +1237,15 @@ export default function BookingDetailScreen() {
                     maxLength={1000}
                     textAlignVertical="top"
                   />
-                  <View style={[sRC.disputeWarning, { borderColor: "#FECACA", backgroundColor: "#FEF2F2" }]}>
-                    <Text style={{ fontSize: 11, color: "#DC2626" }}>
+                  <View style={[sRC.disputeWarning, { borderColor: mode === "dark" ? "#F08C8466" : "#FECACA", backgroundColor: mode === "dark" ? "#2A0A0A" : "#FEF2F2" }]}>
+                    <Text style={{ fontSize: 11, color: tokens.error }}>
                       ⚠️ Ao confirmar, uma disputa será aberta automaticamente e o time ShareO entrará em contato.
                     </Text>
                   </View>
                 </View>
               )}
               {rcError && (
-                <Text style={{ color: "#DC2626", fontSize: 12, marginBottom: 8 }}>{rcError}</Text>
+                <Text style={{ color: tokens.error, fontSize: 12, marginBottom: 8 }}>{rcError}</Text>
               )}
               <TouchableOpacity
                 style={[sChecklist.confirmBtn, {
@@ -1305,10 +1320,10 @@ export default function BookingDetailScreen() {
                     {isDone ? (
                       /* Estado "done" — fonte: _ReviewForm.tsx linhas 157-169 */
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                        <Text style={{ color: "#F59E0B", fontSize: 16 }}>
+                        <Text style={{ color: tokens.warning, fontSize: 16 }}>
                           {"★".repeat(existing?.rating ?? (rvRating[type] ?? 0))}{"☆".repeat(5 - (existing?.rating ?? (rvRating[type] ?? 0)))}
                         </Text>
-                        <Text style={{ color: "#059669", fontWeight: "600", fontSize: 13 }}>Avaliação enviada</Text>
+                        <Text style={{ color: tokens.success, fontWeight: "600", fontSize: 13 }}>Avaliação enviada</Text>
                       </View>
                     ) : (
                       <>
@@ -1325,7 +1340,7 @@ export default function BookingDetailScreen() {
                               accessibilityRole="button"
                               accessibilityLabel={`${star} estrela${star > 1 ? "s" : ""}`}
                             >
-                              <Text style={{ fontSize: 26, color: rating >= star ? "#F59E0B" : tokens.border }}>★</Text>
+                              <Text style={{ fontSize: 26, color: rating >= star ? tokens.warning : tokens.border }}>★</Text>
                             </TouchableOpacity>
                           ))}
                         </View>
@@ -1346,7 +1361,7 @@ export default function BookingDetailScreen() {
                           textAlignVertical="top"
                         />
                         {rvError[type] ? (
-                          <Text style={{ color: "#DC2626", fontSize: 12, marginTop: 6 }}>{rvError[type]}</Text>
+                          <Text style={{ color: tokens.error, fontSize: 12, marginTop: 6 }}>{rvError[type]}</Text>
                         ) : null}
                         <TouchableOpacity
                           style={[sChecklist.confirmBtn, {
@@ -1454,7 +1469,7 @@ export default function BookingDetailScreen() {
                         )}
                       </TouchableOpacity>
                     )}
-                    {err ? <Text style={{ color: "#DC2626", fontSize: 12, marginTop: 4 }}>{err}</Text> : null}
+                    {err ? <Text style={{ color: tokens.error, fontSize: 12, marginTop: 4 }}>{err}</Text> : null}
                   </View>
                 )
               })}
@@ -1550,7 +1565,7 @@ export default function BookingDetailScreen() {
         {/* Cancelar reserva (locatário + PENDING ou CONFIRMED) — fonte: _BookingActions.tsx linha 242 */}
         {canCancel && (
           <TouchableOpacity
-            style={[s.actionBtn, { backgroundColor: "#FEF2F2", borderWidth: 1, borderColor: "#FECACA" }]}
+            style={[s.actionBtn, { backgroundColor: mode === "dark" ? "#2A0A0A" : "#FEF2F2", borderWidth: 1, borderColor: mode === "dark" ? "#F08C8466" : "#FECACA" }]}
             onPress={handleCancel}
             activeOpacity={0.85}
             disabled={cancel.isPending}
@@ -1559,9 +1574,9 @@ export default function BookingDetailScreen() {
             accessibilityState={{ disabled: cancel.isPending }}
           >
             {cancel.isPending ? (
-              <ActivityIndicator size="small" color="#dc2626" />
+              <ActivityIndicator size="small" color={tokens.error} />
             ) : (
-              <Text style={[s.actionBtnText, { color: "#dc2626" }]}>Cancelar reserva</Text>
+              <Text style={[s.actionBtnText, { color: tokens.error }]}>Cancelar reserva</Text>
             )}
           </TouchableOpacity>
         )}
@@ -1596,7 +1611,7 @@ export default function BookingDetailScreen() {
               </Text>
             </ScrollView>
             {contractError ? (
-              <Text style={{ fontSize: 12, color: "#DC2626", paddingHorizontal: 4 }}>{contractError}</Text>
+              <Text style={{ fontSize: 12, color: tokens.error, paddingHorizontal: 4 }}>{contractError}</Text>
             ) : null}
             <View style={s.modalActions}>
               <TouchableOpacity
@@ -1641,7 +1656,7 @@ export default function BookingDetailScreen() {
               Cancelar reserva
             </Text>
             <Text style={[s.modalDesc, { color: tokens.muted }]}>
-              Informe o motivo do cancelamento <Text style={{ color: "#DC2626" }}>*</Text>
+              Informe o motivo do cancelamento <Text style={{ color: tokens.error }}>*</Text>
             </Text>
             <TextInput
               style={[s.reasonInput, {

@@ -170,17 +170,19 @@ function RemoveIcon({ color }: { color: string }) {
 // ─── Skeleton de loading ──────────────────────────────────────────────────────
 // Fonte: [id]/index.tsx (SkeletonBox pattern)
 function SkeletonBox({ h, w = "100%" }: { h: number; w?: number | string }) {
+  const { tokens } = useTheme()
   return (
     <View
-      style={{ height: h, width: w as number, backgroundColor: "#E2E8F0", borderRadius: 8 }}
+      style={{ height: h, width: w as number, backgroundColor: tokens.border, borderRadius: 8 }}
       accessibilityElementsHidden
     />
   )
 }
 
 function EditarSkeleton() {
+  const { tokens } = useTheme()
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: "#F8FAFC" }}
+    <ScrollView style={{ flex: 1, backgroundColor: tokens.bg }}
       contentContainerStyle={{ padding: 16, paddingBottom: 120, gap: 12 }}>
       <SkeletonBox h={24} w="60%" />
       <SkeletonBox h={44} />

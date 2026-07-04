@@ -224,7 +224,7 @@ export function FilterBottomSheet({ isOpen, onClose, categories, values, onApply
       <Pressable style={s.overlay} onPress={onClose} accessibilityLabel="Fechar filtros" />
 
       {/* Sheet */}
-      <SafeAreaView style={[s.sheet, { backgroundColor: tokens.surface }]}>
+      <SafeAreaView style={[s.sheet, { backgroundColor: tokens.surface, borderTopColor: tokens.border }]}>
         {/* Alça de drag (decorativa) */}
         <View style={[s.handle, { backgroundColor: tokens.border }]} />
 
@@ -249,7 +249,7 @@ export function FilterBottomSheet({ isOpen, onClose, categories, values, onApply
           keyboardShouldPersistTaps="handled"
         >
           {/* ── CATEGORIA ── _FilterForm.tsx linhas 66-97 ───────────────── */}
-          <View style={s.section}>
+          <View style={[s.section, { borderBottomColor: tokens.border }]}>
             <Text style={[s.sectionLabel, { color: tokens.muted }]}>CATEGORIA</Text>
             {/* "Todas" — _FilterForm.tsx linhas 72-82 */}
             <TouchableOpacity
@@ -281,7 +281,7 @@ export function FilterBottomSheet({ isOpen, onClose, categories, values, onApply
 
           {/* ── PREÇO MÁX./DIA ── _FilterForm.tsx linhas 99-120 ─────────── */}
           {/* Adaptação: slider HTML → stepper +/- (sem @react-native-community/slider) */}
-          <View style={s.section}>
+          <View style={[s.section, { borderBottomColor: tokens.border }]}>
             <Text style={[s.sectionLabel, { color: tokens.muted }]}>PREÇO MÁX./DIA</Text>
             <View style={s.stepperRow}>
               <Text style={[s.stepperBound, { color: tokens.muted }]}>R$0</Text>
@@ -322,7 +322,7 @@ export function FilterBottomSheet({ isOpen, onClose, categories, values, onApply
           </View>
 
           {/* ── DISTÂNCIA ── _DistanceFilter.tsx ──────────────────────────── */}
-          <View style={s.section}>
+          <View style={[s.section, { borderBottomColor: tokens.border }]}>
             <Text style={[s.sectionLabel, { color: tokens.muted }]}>DISTÂNCIA</Text>
             {DIST_OPTIONS.map((opt) => (
               <TouchableOpacity
@@ -376,7 +376,7 @@ export function FilterBottomSheet({ isOpen, onClose, categories, values, onApply
           </View>
 
           {/* ── AVALIAÇÃO MÍNIMA ── _FilterForm.tsx linhas 131-156 ─────── */}
-          <View style={s.section}>
+          <View style={[s.section, { borderBottomColor: tokens.border }]}>
             <Text style={[s.sectionLabel, { color: tokens.muted }]}>AVALIAÇÃO MÍNIMA</Text>
             {/* Nota: avaliação média não vem de /api/items — filtro aplicado
                 client-side quando disponível (mesmo ARQ-ALTO-10 do site) */}
@@ -422,6 +422,7 @@ const s = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.30)",
   },
   // Sheet — "fixed bottom-0 left-0 right-0 z-50 ... rounded-t-2xl border-t border-border bg-surface"
+  // borderTopColor removido — agora inline via tokens.border (já aplicado em SafeAreaView style)
   sheet: {
     position:     "absolute",
     bottom:       0,
@@ -431,7 +432,6 @@ const s = StyleSheet.create({
     borderTopLeftRadius:  20,
     borderTopRightRadius: 20,
     borderTopWidth:       1,
-    borderTopColor:       "#E2E8F0",
     shadowColor:          "#000",
     shadowOffset:         { width: 0, height: -4 },
     shadowOpacity:        0.08,
@@ -487,10 +487,10 @@ const s = StyleSheet.create({
     paddingBottom:     8,
   },
   // Seção — "space-y-5" entre seções; "mb-2 block text-[11px] font-semibold uppercase tracking-wider"
+  // borderBottomColor removido — agora inline via tokens.border
   section: {
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
   },
   sectionLabel: {
     fontSize:      11,

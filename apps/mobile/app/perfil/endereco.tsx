@@ -33,6 +33,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import * as Location from "expo-location"
 import { apiFetch } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
+import { useTheme } from "@/lib/theme"
 
 // ─── Constantes ────────────────────────────────────────────────────────────────
 
@@ -89,9 +90,10 @@ function stateAbbr(name: string): string {
 // ─── Componente ───────────────────────────────────────────────────────────────
 
 export default function EnderecoScreen() {
-  const insets = useSafeAreaInsets()
-  const user   = useAuth((s) => s.user)
-  const qc     = useQueryClient()
+  const insets     = useSafeAreaInsets()
+  const user       = useAuth((s) => s.user)
+  const qc         = useQueryClient()
+  const { tokens } = useTheme()
 
   // ── Estado do formulário ─────────────────────────────────────────────────
   const [cepVal,    setCepVal]    = useState("")
@@ -323,7 +325,7 @@ export default function EnderecoScreen() {
                 onChangeText={(v) => { setCepVal(maskCEP(v)); setCepError("") }}
                 onBlur={handleCepBlur}
                 placeholder="00000-000"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={tokens.muted}
                 keyboardType="numeric"
                 maxLength={9}
                 accessibilityLabel="CEP"

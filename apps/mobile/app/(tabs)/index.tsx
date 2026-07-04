@@ -83,9 +83,10 @@ function RentIcon() {
   )
 }
 // Ícones dos steps 1 e 3 (Search/ArrowRight) já cobertos acima; step 2 (Calendar) — page.tsx linhas 48-65
-function CalendarIcon() {
+// decorativo — #144D81 = azul médio no claro; #5B9BD5 = azul claro sobre surface dark
+function CalendarIcon({ color }: { color: string }) {
   return (
-    <Svg width={32} height={32} viewBox="0 0 24 24" fill="none" stroke="#144D81" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={32} height={32} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
       <Path d="M3 4h18v18H3z" opacity={0} />
       <Path d="M3 10h18M8 2v4M16 2v4" />
       <Path d="M3 4h18v16a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4z" />
@@ -103,7 +104,7 @@ function ArrowRightIcon() {
 
 // ── Tela Home ──────────────────────────────────────────────────────────────────
 export default function HomeScreen() {
-  const { tokens } = useTheme()
+  const { tokens, mode } = useTheme()
   const [searchQuery, setSearchQuery] = useState("")
 
   // ── Alternância de placeholder — fonte: components/home/HeroSearch.tsx ───────
@@ -219,14 +220,17 @@ export default function HomeScreen() {
       <CategoriasSection categories={categories} />
 
       {/* ── COMO FUNCIONA — fonte: app/page.tsx linhas 290-321 ── */}
-      <View style={styles.stepsSection}>
-        <Text style={styles.stepsTitle}>Como funciona</Text>
+      <View style={[styles.stepsSection, { backgroundColor: tokens.bg }]}>
+        <Text style={[styles.stepsTitle, { color: tokens.navy }]}>Como funciona</Text>
         {STEPS.map((step) => (
-          <View key={step.num} style={styles.stepCard}>
-            {step.icon ?? (step.num === "2" ? <CalendarIcon /> : <ArrowRightIcon />)}
+          <View key={step.num} style={[styles.stepCard, { backgroundColor: tokens.surface, borderColor: tokens.border }]}>
+            {step.icon ?? (step.num === "2"
+              ? <CalendarIcon color={mode === "dark" ? "#5B9BD5" : "#144D81"} />
+              : <ArrowRightIcon />
+            )}
             <View style={styles.stepBadge}><Text style={styles.stepBadgeText}>{step.num}</Text></View>
-            <Text style={styles.stepTitle}>{step.title}</Text>
-            <Text style={styles.stepDesc}>{step.desc}</Text>
+            <Text style={[styles.stepTitle, { color: tokens.navy }]}>{step.title}</Text>
+            <Text style={[styles.stepDesc, { color: tokens.muted }]}>{step.desc}</Text>
           </View>
         ))}
       </View>

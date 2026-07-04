@@ -43,15 +43,19 @@ interface BookingsResponse {
 }
 
 // Mapeamento de status — fonte: BookingStatusBadge.tsx do site
-// Verbatim das cores do handoff §1.5
-const STATUS: Record<string, { label: string; bgColor: string; textColor: string }> = {
-  PENDING:   { label: "Aguardando aprovação",    bgColor: "#FEF3C7", textColor: "#92400E" },
-  CONFIRMED: { label: "Confirmada",              bgColor: "#D1FAE5", textColor: "#065F46" },
-  ACTIVE:    { label: "Em andamento",            bgColor: "#EFF6FF", textColor: "#1E40AF" },
-  RETURNED:  { label: "Devolução em andamento",  bgColor: "#F5F3FF", textColor: "#6D28D9" },
-  COMPLETED: { label: "Concluída",               bgColor: "#D1FAE5", textColor: "#065F46" },
-  CANCELLED: { label: "Cancelada",               bgColor: "#F1F5F9", textColor: "#64748B" },
-  DISPUTED:  { label: "Em disputa",              bgColor: "#FEE2E2", textColor: "#991B1B" },
+// Verbatim das cores do handoff §1.5 para o modo claro.
+// Tints dark: backgrounds escurecidos e texto claro para contraste adequado.
+function getStatusConfig(mode: "light" | "dark"): Record<string, { label: string; bgColor: string; textColor: string }> {
+  const d = mode === "dark"
+  return {
+    PENDING:   { label: "Aguardando aprovação",    bgColor: d ? "#3B2A0E" : "#FEF3C7", textColor: d ? "#FBBF77" : "#92400E" },
+    CONFIRMED: { label: "Confirmada",              bgColor: d ? "#0D2E1E" : "#D1FAE5", textColor: d ? "#5BD08B" : "#065F46" },
+    ACTIVE:    { label: "Em andamento",            bgColor: d ? "#0D1E3B" : "#EFF6FF", textColor: d ? "#7EB5F5" : "#1E40AF" },
+    RETURNED:  { label: "Devolução em andamento",  bgColor: d ? "#1E0D3B" : "#F5F3FF", textColor: d ? "#B89CF5" : "#6D28D9" },
+    COMPLETED: { label: "Concluída",               bgColor: d ? "#0D2E1E" : "#D1FAE5", textColor: d ? "#5BD08B" : "#065F46" },
+    CANCELLED: { label: "Cancelada",               bgColor: d ? "#1A2333" : "#F1F5F9", textColor: d ? "#94A3B8" : "#64748B" },
+    DISPUTED:  { label: "Em disputa",              bgColor: d ? "#2C1515" : "#FEE2E2", textColor: d ? "#F08C84" : "#991B1B" },
+  }
 }
 
 const fmt = (cents: number) =>
@@ -61,10 +65,11 @@ const fmtDate = (d: string) =>
   new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })
 
 export default function ReservasScreen() {
-  const { tokens } = useTheme()
+  const { tokens, mode } = useTheme()
   const user = useAuth((s) => s.user)
   // Tab ativa — fonte: app/reservas/page.tsx type Tab
   const [tab, setTab] = useState<Tab>("borrower")
+  const statusConfig = getStatusConfig(mode)
 
   // Busca reservas por role — parâmetro "role" que a API aceita (ListBookingsQuerySchema)
   const { data, isLoading, isRefetching, refetch } = useQuery({
@@ -156,15 +161,19 @@ export default function ReservasScreen() {
           // Banner de pendentes — só aparece na aba "Como locador" com solicitações pendentes
           // Fonte: app/reservas/page.tsx linhas 92-107 (copy verbatim)
           tab === "owner" && pendingCount > 0 ? (
-            <View style={s.pendingBanner} accessibilityRole="alert">
+            // tint âmbar: dark usa fundos escuros e texto claro
+            <View style={[s.pendingBanner, {
+              backgroundColor: mode === "dark" ? "#2A2000" : "#FFFBEB",
+              borderColor:     mode === "dark" ? "#7C5C00" : "#FCD34D",
+            }]} accessibilityRole="alert">
               <Text style={s.pendingBannerIcon}>🔔</Text>
               <View style={{ flex: 1 }}>
-                <Text style={s.pendingBannerTitle}>
+                <Text style={[s.pendingBannerTitle, { color: mode === "dark" ? "#FBBF77" : "#92400E" }]}>
                   {pendingCount === 1
                     ? "Você tem 1 solicitação aguardando sua aprovação"
                     : `Você tem ${pendingCount} solicitações aguardando sua aprovação`}
                 </Text>
-                <Text style={s.pendingBannerDesc}>
+                <Text style={[s.pendingBannerDesc, { color: mode === "dark" ? "#D97706" : "#B45309" }]}>
                   Confirme ou recuse cada solicitação para liberar o período no calendário.
                 </Text>
               </View>
@@ -172,7 +181,11 @@ export default function ReservasScreen() {
           ) : null
         }
         renderItem={({ item: b }) => {
-          const st = STATUS[b.status] ?? { label: b.status, bgColor: "#F1F5F9", textColor: "#64748B" }
+          const st = statusConfig[b.status] ?? {
+            label: b.status,
+            bgColor:   mode === "dark" ? "#1A2333" : "#F1F5F9",
+            textColor: mode === "dark" ? "#94A3B8" : "#64748B",
+          }
           // CTA primário contextual por status + papel — fonte: app/reservas/page.tsx linhas 177-194
           const isOwner    = b.owner.id    === user.id
           const isBorrower = b.borrower.id === user.id
@@ -238,7 +251,7 @@ export default function ReservasScreen() {
               </View>
 
               {/* Ações */}
-              <View style={s.actions}>
+              <View style={[s.actions, { borderTopColor: tokens.border }]}>
                 {/* CTA primário */}
                 <TouchableOpacity
                   style={[

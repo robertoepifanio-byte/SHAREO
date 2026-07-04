@@ -5,6 +5,7 @@ import React from "react"
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native"
 import { router } from "expo-router"
 import { ProcuradoIcon, type ProcuradoIconName } from "./ProcuradoIcon"
+import { useTheme } from "@/lib/theme"
 
 const ITEMS: { name: string; icon: ProcuradoIconName; demand: "alta" | "media" }[] = [
   { name: "Furadeiras", icon: "furadeira", demand: "alta" },
@@ -20,28 +21,35 @@ const ITEMS: { name: string; icon: ProcuradoIconName; demand: "alta" | "media" }
 ]
 
 export function ItensProcurados() {
+  const { tokens, mode } = useTheme()
+  // #F1F5F9 (slate-100) — sem token exato; usa tokens.bg em dark, preserva original em light
+  const sectionBg = mode === "dark" ? tokens.bg : "#F1F5F9"
+  // Badge tints decorativos sem token direto
+  const badgeAltaBg  = mode === "dark" ? "rgba(0,123,60,0.25)"    : "#D1FAE5"
+  const badgeMediaBg = mode === "dark" ? "rgba(194,65,12,0.20)"   : "#FFEDD5"
+
   return (
-    <View style={s.section}>
+    <View style={[s.section, { backgroundColor: sectionBg }]}>
       <View style={s.headerRow}>
-        <Text style={s.title}>Itens mais procurados agora</Text>
+        <Text style={[s.title, { color: mode === "dark" ? tokens.text : "#003366" }]}>Itens mais procurados agora</Text>
         <TouchableOpacity onPress={() => router.push("/explorar")} accessibilityRole="link">
           <Text style={s.seeAll}>Ver todos →</Text>
         </TouchableOpacity>
       </View>
-      <Text style={s.subtitle}>Itens com alta demanda — ótimas oportunidades para anunciar.</Text>
+      <Text style={[s.subtitle, { color: tokens.muted }]}>Itens com alta demanda — ótimas oportunidades para anunciar.</Text>
 
       <View style={s.grid}>
         {ITEMS.map((item) => (
           <TouchableOpacity
             key={item.name}
-            style={s.card}
+            style={[s.card, { borderColor: tokens.border, backgroundColor: tokens.surface }]}
             onPress={() => router.push(`/explorar?q=${encodeURIComponent(item.name)}` as never)}
             accessibilityRole="button"
             accessibilityLabel={`Buscar ${item.name}`}
           >
             <ProcuradoIcon name={item.icon} size={40} color="#007B3C" />
-            <Text style={s.cardName} numberOfLines={2}>{item.name}</Text>
-            <View style={[s.badge, item.demand === "alta" ? s.badgeAlta : s.badgeMedia]}>
+            <Text style={[s.cardName, { color: tokens.text }]} numberOfLines={2}>{item.name}</Text>
+            <View style={[s.badge, { backgroundColor: item.demand === "alta" ? badgeAltaBg : badgeMediaBg }]}>
               <Text style={[s.badgeText, item.demand === "alta" ? s.badgeTextAlta : s.badgeTextMedia]}>
                 {item.demand === "alta" ? "Alta demanda" : "Demanda moderada"}
               </Text>
