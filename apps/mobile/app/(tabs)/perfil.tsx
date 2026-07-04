@@ -269,10 +269,11 @@ export default function PerfilScreen() {
       desc:  "Total anual recebido para declaração de IR",
     },
     {
-      href:  "/perfil/indicacoes",
-      icon:  "gift",
-      label: "Indicações",
-      desc:  "Programa de indicação e créditos",
+      href:   "/perfil/indicacoes",
+      icon:   "gift",
+      label:  "Indicações",
+      desc:   "Programa de indicação e créditos",
+      native: () => router.push("/perfil/embaixador"),
     },
     {
       href:  "/perfil/dados",
