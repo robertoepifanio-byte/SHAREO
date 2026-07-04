@@ -257,10 +257,11 @@ export default function PerfilScreen() {
       desc:  "Chave PIX para repasse das locações",
     },
     {
-      href:  "/perfil/repasses",
-      icon:  "chart",
-      label: "Meus repasses",
-      desc:  "Histórico e status dos repasses recebidos",
+      href:   "/perfil/repasses",
+      icon:   "chart",
+      label:  "Meus repasses",
+      desc:   "Histórico e status dos repasses recebidos",
+      native: () => router.push("/perfil/repasses" as never),
     },
     {
       href:  "/perfil/repasses/informe",
