@@ -275,10 +275,11 @@ export default function PerfilScreen() {
       desc:  "Programa de indicação e créditos",
     },
     {
-      href:  "/perfil/dados",
-      icon:  "database",
-      label: "Privacidade e dados",
-      desc:  "Exportar dados, política de retenção",
+      href:   "/perfil/dados",
+      icon:   "database",
+      label:  "Privacidade e dados",
+      desc:   "Exportar dados, política de retenção",
+      native: () => router.push("/perfil/dados"),
     },
   ]
 
