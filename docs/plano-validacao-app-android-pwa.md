@@ -134,7 +134,10 @@ escopo (não testar como bug).
 | Trust Box "🔒 Sua locação está protegida" | 🔧 auditado no código contra `page.tsx:618-635` — faltava por completo, adicionado (conteúdo estático, 3 linhas) |
 | Política de cancelamento (3 faixas de reembolso) | 🔧 auditado no código contra `page.tsx:637-665` — faltava por completo, adicionado (usa os mesmos valores estáticos que o próprio site usa hoje, não a config dinâmica) |
 | Stats do proprietário (locações concluídas + taxa de resposta) | ✅ **CONFIRMADO EM DEVICE 2026-07-03 à noite** — pedido explícito do usuário testando ao vivo, implementado (`GET /api/items/[id]` estendido) e agora confirmado funcionando pós-deploy |
-| ⏸️ Pendente (fora de escopo — precisa endpoint novo ou tela própria) | `AvailabilityCalendar` (calendário de disponibilidade), grids "Itens do mesmo anunciante" e "Você também pode gostar" no rodapé, carrinho multi-item `AddToRentalButton` (Story B) |
+| **Calendário de disponibilidade** (`AvailabilityCalendar`) | 🔧 **implementado, PENDE confirmação em device** — `MobileAvailabilityCalendar` + `CalendarMonth` adicionados inline em `itens/[id].tsx`. Dados via `GET /api/items/[id]/availability` (endpoint já existia). Grid manual sem lib nova; mostra mês atual + próximo. Cores verbatim: verde=disponível, vermelho=ocupado, cinza=passado. Loading skeleton + erro com retry. |
+| **Grid "Itens do mesmo anunciante"** | 🔧 **implementado, PENDE confirmação em device** — API estendida (aditivo): `GET /api/items/[id]` agora retorna `ownerItems` e `similarItems`. Mobile exibe grid 2 colunas (View+chunk) reusando `ItemCard` compartilhado. Critério idêntico ao site: mesmo ownerId, AVAILABLE+isApproved, excluindo item atual. Exibido só para !isOwner (verbatim page.tsx). |
+| **Grid "Você também pode gostar"** | 🔧 **implementado, PENDE confirmação em device** — idem acima. Critério: mesma categoria + mesma cidade, excluindo item atual e itens já exibidos em ownerItems (mesmo filtro do site, page.tsx linha 688). |
+| **Carrinho multi-item `AddToRentalButton` (Story B)** | 🔧 **implementado, PENDE confirmação em device** — `MobileAddToRentalButton` + `lib/rentalCart.ts` (Zustand+AsyncStorage, substitui localStorage do site). Separador "ou" + botão entre calculadora e Trust Box. "Ver carrinho" abre via `Linking.openURL` (sem rota nativa /carrinho). Nenhuma dep nativa nova. |
 
 ### Anunciar (`itens/novo`)
 | Elemento | Status |
@@ -174,7 +177,13 @@ escopo (não testar como bug).
 | Detalhe — endereço de retirada + aviso de segurança | 🔧 **não existia** — auditado contra `page.tsx:371-395`. Relevante pra segurança do usuário (onde retirar o item), não só cosmético |
 | Detalhe — taxa de atraso | 🔧 **não existia** — auditado contra `page.tsx:549-561` |
 | Checkout — modalidade, calendário, teto R$500, MP | 🟡 **achado — decisão do usuário necessária, não corrigido**: `apps/mobile/app/reservas/checkout.tsx` é **código morto** — grep no repo inteiro (`app`, `components`, `lib`) confirma que **nada navega pra `/reservas/checkout`**; o fluxo real de solicitar locação está 100% inline em `itens/[id].tsx` (já auditado e corrigido na 1ª rodada desta sessão: breakdown, desconto, taxa dinâmica, cupom). `checkout.tsx` é uma cópia mais antiga e mais pobre do mesmo fluxo (sem cupom, sem % de taxa dinâmica, resumo sem o breakdown por tarifa mista) — provavelmente sobrou de antes do fluxo ser inlinado no detalhe do item. Tentei remover (`git rm`) e fui **bloqueado pelo classificador de permissão** por ser escalada de escopo sem autorização explícita ("audite e corrija gaps" ≠ "delete telas"). **Decisão pendente do usuário:** (a) apagar o arquivo órfão, ou (b) manter por algum motivo não documentado — se (b), sinalizar por quê pra eu não reabrir isso |
-| ⏸️ Pendente (componentes maiores do site, cada um precisaria de tela/estado próprio) | `ReturnCountdown`, `ContractBanner` (assinatura de contrato), `ReturnChecklist`, `ReturnConditionForm`, `CheckInOut` (fotos, precisa upload de imagem), `ReviewForm` (avaliações pós-devolução) |
+| Detalhe — **bug crítico cancelar**: botão cancelar chamava `POST /api/bookings/:id/cancel` (404) | 🔧 **implementado, PENDE confirmação em device** — corrigido para `PATCH /api/bookings/:id` `{ action:"cancel", reason }`. Modal bottom-sheet com `TextInput multiline` (Alert.prompt não existe no Android). Botão desabilitado sem motivo. Fonte: `_BookingActions.tsx`. |
+| Detalhe — **ContractBanner** (banner de assinatura de contrato) | 🔧 **implementado, PENDE confirmação em device** — `isBorrower && (CONFIRMED\|ACTIVE) && !contractSigned`. Modal com texto completo do contrato (`RENTAL_CONTRACT_TEXT`) scrollável + botão "Li e concordo" → `POST /api/bookings/:id/contract`. Fonte: `_ContractBanner.tsx`. |
+| Detalhe — **ReturnCountdown** (contador de devolução) | 🔧 **implementado, PENDE confirmação em device** — `status === "ACTIVE"`. Componente `ReturnCountdownInline` com `setInterval` 60s. Cores: expirado=vermelho, urgente (0 dias e <4h)=laranja, normal=verde. Fonte: `ReturnCountdown.tsx`. |
+| Detalhe — **ReturnChecklist** (checklist devolução, locatário) | 🔧 **implementado, PENDE confirmação em device** — `isBorrower && status === "ACTIVE"`. 4 checkboxes verbatim, mínimo 3/4 para habilitar. Barra de progresso. Foto opcional via `expo-image-picker` → `POST /api/bookings/:id/photos` (FormData). Botão "Devolver" → `PATCH action:"mark_returned"`. Fonte: `components/booking/ReturnChecklist.tsx`. |
+| Detalhe — **ReturnConditionForm** (estado na devolução, locador) | 🔧 **implementado, PENDE confirmação em device** — `isOwner && status === "RETURNED"`. 3 opções radio verbatim (Perfeito/Desgaste normal/Com danos). PERFECT\|NORMAL_WEAR → `PATCH action:"confirm_return"`. DAMAGED → TextInput descrição ≥10 chars → `PATCH action:"open_dispute"`. Fonte: `components/booking/ReturnConditionForm.tsx`. |
+| Detalhe — **ReviewForm** (avaliações pós-devolução) | 🔧 **implementado, PENDE confirmação em device** — `status === "RETURNED\|COMPLETED"`. Locatário: avalia ITEM + OWNER. Locador: avalia BORROWER. 5 estrelas táteis (44×44px) + comentário. Estado "done" se já existe avaliação. `POST /api/bookings/:id/reviews`. Fonte: `app/reservas/[id]/_ReviewForm.tsx`. |
+| Detalhe — **CheckInOut** (fotos de check-in/check-out) | 🔧 **implementado, PENDE confirmação em device** — `status === "ACTIVE\|RETURNED\|COMPLETED"`. 2 fases (CHECKIN/CHECKOUT). Grade de thumbnails existentes + botão "Adicionar foto" via `expo-image-picker`. `POST /api/bookings/:id/photos` multipart FormData. `expo-image-picker` já em package.json — sem nova dep nativa EAS. Fonte: `app/reservas/[id]/_CheckInOut.tsx`. |
 
 ### Chat
 | Elemento | Status |
@@ -273,9 +282,10 @@ própria, escopo de uma sessão dedicada, não de um ciclo de auditoria-e-fix:
 - **Grids "Itens do mesmo anunciante"** e **"Você também pode gostar"** (detalhe do item)
 - **Carrinho multi-item** (`AddToRentalButton`, Story B) no detalhe do item
 - ~~**Tela nativa de editar anúncio**~~ — 🔧 **implementado, PENDE confirmação em device** (PR feat/mobile-editar-anuncio-nativo)
-- **ContractBanner** (assinatura de contrato digital), **ReturnCountdown**,
-  **ReturnChecklist**, **ReturnConditionForm**, **CheckInOut** (fotos, precisa
-  câmera/galeria + Storage), **ReviewForm** (avaliações) — todos no detalhe de reserva
+- ~~**ContractBanner**, **ReturnCountdown**, **ReturnChecklist**, **ReturnConditionForm**,
+  **CheckInOut** (fotos), **ReviewForm** e **bug do botão cancelar**~~ — 🔧 todos implementados
+  em `feat/mobile-reservas-pos-reserva` (PR #187). PENDE confirmação em device. Auth das rotas
+  contract/photos/reviews destravada no sweep (PR #188).
 - **26 páginas de Minha Conta/Ajuda** que abrem no site — decisão de escopo já
   aprovada pelo fundador (2026-07-03), não é gap
 
