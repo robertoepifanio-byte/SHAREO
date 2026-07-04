@@ -28,6 +28,7 @@ import { useAuth } from "@/lib/auth"
 import { fmtCurrency, calcBookingTotal } from "@/lib/pricing"
 import { useTheme } from "@/lib/theme"
 import { Stars } from "@/components/ui/Stars"
+import { ItemCard, type ItemCardItem } from "@/components/items/ItemCard"
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 interface ItemDetail {
@@ -64,6 +65,10 @@ interface ItemDetail {
   // of undefined").
   responseBadge?: { label: string; avgHours: number } | null
   ownerStats?:    { completedCount: number; responseRate: number | null }
+  // P1-31 / Story B — itens relacionados retornados pelo GET /api/items/[id]
+  // Fonte: app/itens/[id]/page.tsx linhas 670-699
+  ownerItems?:   ItemCardItem[]
+  similarItems?: ItemCardItem[]
 }
 
 interface FavoriteStatusResponse { data: { favorited: boolean } }
@@ -143,6 +148,16 @@ const todayDate = (() => {
   d.setHours(0, 0, 0, 0)
   return d
 })()
+
+// ── Utilitário: divide array em sublistas de `size` elementos ────────────────
+// Usado para montar o grid 2 colunas dentro do ScrollView (FlatList não pode
+// ser aninhado em ScrollView — usamos View+rows manuais igual ao padrão do
+// componente de grid do site para seções não-raiz da tela).
+function chunk<T>(arr: T[], size: number): T[][] {
+  const result: T[][] = []
+  for (let i = 0; i < arr.length; i += size) result.push(arr.slice(i, i + size))
+  return result
+}
 
 // ── Skeleton de loading — equivalente ao <Skeleton> do site ──────────────────
 function SkeletonBox({ h, w = "100%", style }: { h: number; w?: number | string; style?: object }) {
@@ -926,6 +941,58 @@ export default function ItemDetailScreen() {
             ))}
           </View>
         )}
+
+        {/* ── Story B — Itens do mesmo anunciante ────────────────────────────
+            Fonte: page.tsx linhas 670-685.
+            Exibido apenas para locatários (mesmo critério do site: !isOwner).
+            Reutiliza o ItemCard compartilhado (components/items/ItemCard.tsx). ── */}
+        {!isOwner && (item.ownerItems?.length ?? 0) > 0 && (
+          <View style={[s.relatedSection, { borderTopColor: tokens.border }]}>
+            <Text style={[s.sectionTitle, { color: tokens.navy, marginTop: 0 }]}>
+              Itens do mesmo anunciante
+            </Text>
+            <Text style={[s.relatedSubtitle, { color: tokens.muted }]}>
+              De {item.owner.name} — você pode alugar vários itens deste anunciante numa só locação.
+            </Text>
+            {chunk(item.ownerItems ?? [], 2).map((row, i) => (
+              <View key={i} style={s.gridRow}>
+                {row.map((oi) => (
+                  <View key={oi.id} style={s.gridCell}>
+                    <ItemCard item={oi} onPress={() => router.push(`/itens/${oi.id}` as never)} />
+                  </View>
+                ))}
+                {row.length < 2 && <View style={s.gridCell} />}
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* ── P1-31 — Você também pode gostar ───────────────────────────────
+            Fonte: page.tsx linhas 687-699.
+            Filtra itens do mesmo dono (já exibidos acima) — mesmo critério do site.
+            Exibido para todos (site não filtra por isOwner nesta seção). ── */}
+        {(() => {
+          const ownerIds = new Set((item.ownerItems ?? []).map((oi) => oi.id))
+          const filtered = (item.similarItems ?? []).filter((si) => !ownerIds.has(si.id))
+          if (filtered.length === 0) return null
+          return (
+            <View style={[s.relatedSection, { borderTopColor: tokens.border }]}>
+              <Text style={[s.sectionTitle, { color: tokens.navy, marginTop: 0 }]}>
+                Você também pode gostar
+              </Text>
+              {chunk(filtered, 2).map((row, i) => (
+                <View key={i} style={s.gridRow}>
+                  {row.map((si) => (
+                    <View key={si.id} style={s.gridCell}>
+                      <ItemCard item={si} onPress={() => router.push(`/itens/${si.id}` as never)} />
+                    </View>
+                  ))}
+                  {row.length < 2 && <View style={s.gridCell} />}
+                </View>
+              ))}
+            </View>
+          )
+        })()}
       </ScrollView>
 
       {/* ── CTA fixo — modo locatário ── */}
@@ -1162,4 +1229,12 @@ const s = StyleSheet.create({
   },
   ctaBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
   ctaNote:    { fontSize: 11, textAlign: "center", marginTop: 6 },
+
+  // Grids de itens relacionados — fonte: page.tsx linhas 670-699
+  relatedSection: {
+    marginTop: 28, borderTopWidth: 1, paddingTop: 20,
+  },
+  relatedSubtitle: { fontSize: 13, marginTop: 2, marginBottom: 12, lineHeight: 19 },
+  gridRow:  { flexDirection: "row", gap: 8, marginBottom: 8 },
+  gridCell: { flex: 1 },
 })
