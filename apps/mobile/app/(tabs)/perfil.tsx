@@ -258,10 +258,11 @@ export default function PerfilScreen() {
       native: () => router.push("/perfil/recebimentos"),
     },
     {
-      href:  "/perfil/repasses",
-      icon:  "chart",
-      label: "Meus repasses",
-      desc:  "Histórico e status dos repasses recebidos",
+      href:   "/perfil/repasses",
+      icon:   "chart",
+      label:  "Meus repasses",
+      desc:   "Histórico e status dos repasses recebidos",
+      native: () => router.push("/perfil/repasses" as never),
     },
     {
       href:  "/perfil/repasses/informe",
