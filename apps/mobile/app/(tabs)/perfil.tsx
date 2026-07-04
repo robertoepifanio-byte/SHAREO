@@ -263,10 +263,11 @@ export default function PerfilScreen() {
       desc:  "Histórico e status dos repasses recebidos",
     },
     {
-      href:  "/perfil/repasses/informe",
-      icon:  "file-text",
-      label: "Informe de Rendimentos",
-      desc:  "Total anual recebido para declaração de IR",
+      href:   "/perfil/repasses/informe",
+      icon:   "file-text",
+      label:  "Informe de Rendimentos",
+      desc:   "Total anual recebido para declaração de IR",
+      native: () => router.push("/perfil/repasses/informe"),
     },
     {
       href:  "/perfil/indicacoes",
