@@ -134,8 +134,10 @@ export async function middleware(req: NextRequest) {
     if (authHeader?.startsWith("Bearer ")) {
       try {
         const key = new TextEncoder().encode(process.env.AUTH_SECRET ?? "")
-        const { payload } = await jwtVerify(authHeader.slice(7), key)
-        if (typeof payload.sub === "string") {
+        // Pina HS256; rejeita refresh token (type:"refresh") — só o access token
+        // pode autenticar rota protegida (ver lib/resolveUserId.ts).
+        const { payload } = await jwtVerify(authHeader.slice(7), key, { algorithms: ["HS256"] })
+        if (typeof payload.sub === "string" && payload.type !== "refresh") {
           const iat = typeof payload.iat === "number" ? payload.iat : undefined
           bearerAuthenticated = !(await isSessionStale(payload.sub, iat))
         }
