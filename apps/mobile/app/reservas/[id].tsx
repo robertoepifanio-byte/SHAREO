@@ -5,13 +5,14 @@
 // StyleSheet + tokens (useTheme) — migrado de className NativeWind para garantir
 // compatibilidade com todos os bundles de produção.
 
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Linking, StyleSheet, Modal, TextInput } from "react-native"
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Linking, StyleSheet, Modal, TextInput, Image as RNImage } from "react-native"
 import { useState, useEffect, useRef, useCallback } from "react"
 import { router, useLocalSearchParams } from "expo-router"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Image } from "expo-image"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { apiFetch } from "@/lib/api"
+import * as ImagePicker from "expo-image-picker"
+import { apiFetch, API_URL, getTokens } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
 import { useTheme } from "@/lib/theme"
 import { deriveBookingHistory } from "@/lib/bookingHistory"
@@ -190,6 +191,13 @@ export default function BookingDetailScreen() {
   const [contractModalOpen, setContractModalOpen]   = useState(false)
   const [contractError, setContractError]           = useState("")
   const [contractSigning, setContractSigning]       = useState(false)
+  // ReturnChecklist — fonte: components/booking/ReturnChecklist.tsx linhas 30-36
+  const CHECKLIST_ITEMS_CONST = ["Item limpo e no estado recebido", "Todos os acessórios incluídos", "Caixa/embalagem original (se aplicável)", "Fotos do estado atual tiradas"] as const
+  const [clChecked, setClChecked]         = useState([false, false, false, false])
+  const [clPhotoUri, setClPhotoUri]       = useState<string | null>(null)
+  const [clPhotoLoading, setClPhotoLoading] = useState(false)
+  const [clSubmitting, setClSubmitting]   = useState(false)
+  const [clError, setClError]             = useState<string | null>(null)
 
   // Todos os hooks ANTES de qualquer return condicional (protocolo item 4)
   const { data, isLoading } = useQuery({
@@ -382,6 +390,60 @@ export default function BookingDetailScreen() {
       setContractError(e instanceof Error ? e.message : "Erro ao assinar contrato.")
     } finally {
       setContractSigning(false)
+    }
+  }
+
+  // ReturnChecklist — Seleciona foto da galeria (expo-image-picker)
+  // Fonte: components/booking/ReturnChecklist.tsx linhas 47-51 (handleFileChange)
+  async function clPickPhoto() {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync()
+    if (!perm.granted) {
+      Alert.alert("Permissão necessária", "Autorize o acesso à galeria para adicionar uma foto.")
+      return
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.8 })
+    if (!result.canceled && result.assets[0]) {
+      setClPhotoUri(result.assets[0].uri)
+    }
+  }
+
+  // ReturnChecklist — Confirma devolução: faz upload da foto (opcional) depois muda status
+  // Fonte: components/booking/ReturnChecklist.tsx linhas 55-93 (handleConfirm)
+  // Upload via FormData multipart — apiFetch sempre seta Content-Type: application/json,
+  // então usamos fetch direto com Authorization header para não sobrescrever o boundary.
+  async function clSubmit() {
+    setClError(null)
+    setClSubmitting(true)
+    try {
+      if (clPhotoUri) {
+        setClPhotoLoading(true)
+        const tokens = await getTokens()
+        const fd     = new FormData()
+        fd.append("phase", "CHECKOUT")
+        // React Native FileSystem: uri como objeto com name e type para FormData
+        fd.append("file", { uri: clPhotoUri, name: "checkout.jpg", type: "image/jpeg" } as unknown as Blob)
+        const uploadRes = await fetch(`${API_URL}/api/bookings/${id}/photos`, {
+          method:  "POST",
+          headers: tokens ? { Authorization: `Bearer ${tokens.accessToken}` } : {},
+          body:    fd,
+        })
+        setClPhotoLoading(false)
+        if (!uploadRes.ok) {
+          const j = await uploadRes.json().catch(() => ({}))
+          throw new Error((j as { error?: { message?: string } }).error?.message ?? "Erro ao enviar foto.")
+        }
+      }
+      await apiFetch(`/api/bookings/${id}`, {
+        method: "PATCH",
+        body:   JSON.stringify({ action: "mark_returned" }),
+      })
+      qc.invalidateQueries({ queryKey: ["booking", id] })
+      qc.invalidateQueries({ queryKey: ["bookings"] })
+    } catch (e) {
+      setClError(e instanceof Error ? e.message : "Erro inesperado.")
+    } finally {
+      setClSubmitting(false)
+      setClPhotoLoading(false)
     }
   }
 
@@ -839,7 +901,116 @@ export default function BookingDetailScreen() {
           <ReturnCountdownInline endDateIso={booking.endDate} />
         )}
 
-        {/* TODO(revisão): itens pendentes após ReturnCountdown: */}
+        {/* ── ReturnChecklist — checklist de devolução (locatário + ACTIVE)
+            Fonte: components/booking/ReturnChecklist.tsx linhas 96-274
+            Condição: isBorrower && status === "ACTIVE" — page.tsx linhas 577-582
+            Min. 3 de 4 itens marcados para habilitar botão. Foto opcional (incentivada).
+            Quando este componente está ativo, o botão "Devolver" do bottomBar é suprimido.
+        ── */}
+        {isBorrower && booking.status === "ACTIVE" && (() => {
+          const checkedCount = clChecked.filter(Boolean).length
+          const canConfirm   = checkedCount >= 3
+          return (
+            <View style={[s.section, { borderColor: tokens.border, backgroundColor: tokens.surface, marginBottom: 12 }]}>
+              <Text style={[s.sectionLabel, { color: tokens.text, fontSize: 14, fontWeight: "700", letterSpacing: 0, marginBottom: 4 }]}>
+                Checklist de devolução
+              </Text>
+              <Text style={[s.noteText, { color: tokens.muted, fontSize: 12, marginBottom: 14 }]}>
+                Marque pelo menos 3 de 4 itens para iniciar a devolução. Depois disso, o locador confirma o recebimento.
+              </Text>
+              {CHECKLIST_ITEMS_CONST.map((label, i) => (
+                <TouchableOpacity
+                  key={label}
+                  style={[
+                    sChecklist.item,
+                    { borderColor: clChecked[i] ? "#007B3C" : tokens.border, backgroundColor: clChecked[i] ? "#F0FDF4" : tokens.bg },
+                  ]}
+                  onPress={() => setClChecked((prev) => { const n = [...prev]; n[i] = !n[i]; return n })}
+                  accessibilityRole="checkbox"
+                  accessibilityLabel={label}
+                  accessibilityState={{ checked: clChecked[i] }}
+                >
+                  <View style={[sChecklist.checkbox, {
+                    borderColor: clChecked[i] ? "#007B3C" : tokens.border,
+                    backgroundColor: clChecked[i] ? "#007B3C" : "transparent",
+                  }]}>
+                    {clChecked[i] && <Text style={sChecklist.checkmark}>✓</Text>}
+                  </View>
+                  <Text style={[sChecklist.label, { color: clChecked[i] ? tokens.text : tokens.muted }]}>{label}</Text>
+                </TouchableOpacity>
+              ))}
+              {/* Progresso */}
+              <View style={sChecklist.progressRow}>
+                <Text style={[s.noteText, { color: tokens.muted, fontSize: 11 }]}>
+                  {checkedCount} de 4 itens verificados
+                </Text>
+                {canConfirm && (
+                  <Text style={[s.noteText, { color: "#007B3C", fontSize: 11, fontWeight: "600" }]}>Pronto para confirmar</Text>
+                )}
+              </View>
+              <View style={[sChecklist.progressBar, { backgroundColor: tokens.border }]}>
+                <View style={[sChecklist.progressFill, { width: `${(checkedCount / 4) * 100}%` as unknown as number }]} />
+              </View>
+              {/* Foto opcional */}
+              <Text style={[s.noteText, { color: tokens.text, fontSize: 12, fontWeight: "600", marginTop: 14, marginBottom: 6 }]}>
+                Foto do estado atual <Text style={{ fontWeight: "400", color: tokens.muted }}>(recomendado)</Text>
+              </Text>
+              {clPhotoUri ? (
+                <View style={{ position: "relative", marginBottom: 12 }}>
+                  <RNImage source={{ uri: clPhotoUri }} style={sChecklist.photoPreview} resizeMode="cover" />
+                  <TouchableOpacity
+                    style={sChecklist.photoRemove}
+                    onPress={() => setClPhotoUri(null)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Remover foto"
+                  >
+                    <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "700" }}>×</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={[sChecklist.photoBtn, { borderColor: tokens.border }]}
+                  onPress={clPickPhoto}
+                  disabled={clPhotoLoading}
+                  accessibilityRole="button"
+                  accessibilityLabel="Tirar foto ou escolher da galeria"
+                >
+                  <Text style={{ fontSize: 18, marginBottom: 4 }}>📷</Text>
+                  <Text style={[s.noteText, { color: tokens.muted, fontSize: 12 }]}>
+                    Tirar foto ou escolher da galeria
+                  </Text>
+                </TouchableOpacity>
+              )}
+              {clError && (
+                <Text style={{ color: "#DC2626", fontSize: 12, marginBottom: 8 }}>{clError}</Text>
+              )}
+              <TouchableOpacity
+                style={[sChecklist.confirmBtn, {
+                  backgroundColor: canConfirm && !clSubmitting ? "#007B3C" : tokens.border,
+                  opacity: canConfirm && !clSubmitting ? 1 : 0.6,
+                }]}
+                onPress={clSubmit}
+                disabled={!canConfirm || clSubmitting}
+                accessibilityRole="button"
+                accessibilityLabel="Devolver item"
+                accessibilityState={{ disabled: !canConfirm || clSubmitting }}
+              >
+                {clSubmitting ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={sChecklist.confirmText}>Devolver</Text>
+                )}
+              </TouchableOpacity>
+              {!canConfirm && (
+                <Text style={[s.noteText, { color: tokens.muted, fontSize: 11, textAlign: "center", marginTop: 6 }]}>
+                  Marque pelo menos 3 itens para habilitar a devolução.
+                </Text>
+              )}
+            </View>
+          )
+        })()}
+
+        {/* TODO(revisão): itens pendentes após ReturnChecklist: */}
 
       </ScrollView>
 
@@ -873,8 +1044,9 @@ export default function BookingDetailScreen() {
           </TouchableOpacity>
         )}
 
-        {/* Devolver item (locatário + ACTIVE) */}
-        {canReturn && (
+        {/* Devolver item (locatário + ACTIVE) — suprimido: ReturnChecklist exibe o botão no scroll.
+            hideReturnActions equivalente: page.tsx linhas 613-616 */}
+        {false && canReturn && (
           <TouchableOpacity
             style={[s.actionBtn, { backgroundColor: tokens.green }]}
             onPress={handleReturn}
@@ -1322,4 +1494,54 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   modalBtnPrimaryText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
+})
+
+// ReturnChecklist StyleSheet — fonte: components/booking/ReturnChecklist.tsx
+const sChecklist = StyleSheet.create({
+  item: {
+    flexDirection:  "row",
+    alignItems:     "center",
+    gap:            10,
+    minHeight:      44,
+    borderRadius:   10,
+    borderWidth:    1,
+    paddingHorizontal: 12,
+    paddingVertical:    8,
+    marginBottom:   8,
+  },
+  checkbox: {
+    width: 22, height: 22, borderRadius: 4, borderWidth: 1.5,
+    alignItems: "center", justifyContent: "center",
+  },
+  checkmark: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
+  label:     { flex: 1, fontSize: 13, lineHeight: 18 },
+  progressRow: {
+    flexDirection: "row", justifyContent: "space-between",
+    marginTop: 4, marginBottom: 6,
+  },
+  progressBar: {
+    height: 6, borderRadius: 3, overflow: "hidden", marginBottom: 14,
+  },
+  progressFill: {
+    height: "100%", backgroundColor: "#007B3C", borderRadius: 3,
+  },
+  photoBtn: {
+    borderWidth: 1.5, borderStyle: "dashed", borderRadius: 10,
+    paddingVertical: 20, alignItems: "center", marginBottom: 12,
+  },
+  photoPreview: {
+    width: "100%", height: 140, borderRadius: 10, marginBottom: 0,
+  },
+  photoRemove: {
+    position: "absolute", top: 8, right: 8,
+    width: 26, height: 26, borderRadius: 13,
+    backgroundColor: "#DC2626",
+    alignItems: "center", justifyContent: "center",
+  },
+  confirmBtn: {
+    minHeight: 48, borderRadius: 12,
+    alignItems: "center", justifyContent: "center",
+    marginTop: 4,
+  },
+  confirmText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5 },
 })
