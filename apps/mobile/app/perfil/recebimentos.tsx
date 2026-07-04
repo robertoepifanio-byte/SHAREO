@@ -229,7 +229,6 @@ export default function RecebimentosScreen() {
                 className={`rounded-xl border px-4 py-3 ${STATUS_INFO[formStatus].border} ${STATUS_INFO[formStatus].bg}`}
                 accessible
                 accessibilityLiveRegion="polite"
-                accessibilityRole="status"
               >
                 <Text className={`text-sm font-medium ${STATUS_INFO[formStatus].text}`}>
                   {STATUS_INFO[formStatus].label}
