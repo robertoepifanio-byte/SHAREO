@@ -66,6 +66,8 @@ interface BookingDetail {
   conversation: { id: string } | null
   // ReviewForm — fonte: app/reservas/[id]/page.tsx linhas 619-651 + _ReviewForm.tsx
   reviews: { reviewType: string; rating: number; comment: string | null }[]
+  // CheckInOut — fonte: app/reservas/[id]/page.tsx linhas 527-547 + _CheckInOut.tsx
+  photos: { id: string; url: string; phase: string; createdAt: string }[]
 }
 
 // Formata o endereço de retirada — fonte: app/reservas/[id]/page.tsx linhas 42-53 (fmtOwnerAddress)
@@ -211,6 +213,11 @@ export default function BookingDetailScreen() {
   const [rvRating, setRvRating] = useState<Record<string, number>>({})
   const [rvComment, setRvComment] = useState<Record<string, string>>({})
   const [rvError, setRvError] = useState<Record<string, string>>({})
+  // CheckInOut — fonte: app/reservas/[id]/_CheckInOut.tsx linhas 16-77
+  // Fotos indexadas por phase: "CHECKIN" | "CHECKOUT"
+  const [cioPhotos, setCioPhotos] = useState<Record<string, { id: string; url: string; createdAt: string }[]>>({})
+  const [cioUploading, setCioUploading] = useState<Record<string, boolean>>({})
+  const [cioError, setCioError] = useState<Record<string, string>>({})
 
   // Todos os hooks ANTES de qualquer return condicional (protocolo item 4)
   const { data, isLoading } = useQuery({
@@ -236,6 +243,17 @@ export default function BookingDetailScreen() {
       setContractSigned(!!data.data.contractSignedAt)
     }
   }, [data, contractSigned])
+
+  // Sincroniza fotos CheckInOut ao carregar dados — fonte: _CheckInOut.tsx linha 17 (useState(initial))
+  useEffect(() => {
+    if (!data?.data?.photos) return
+    const byPhase: Record<string, { id: string; url: string; createdAt: string }[]> = {}
+    for (const p of data.data.photos) {
+      if (!byPhase[p.phase]) byPhase[p.phase] = []
+      byPhase[p.phase].push({ id: p.id, url: p.url, createdAt: p.createdAt })
+    }
+    setCioPhotos(byPhase)
+  }, [data?.data?.photos])
 
   // BUG FIX: o mobile chamava POST /api/bookings/${id}/cancel (rota inexistente → 404)
   // e não coletava o motivo. O site usa PATCH /api/bookings/${id} com { action:"cancel", reason }
@@ -457,6 +475,45 @@ export default function BookingDetailScreen() {
     } finally {
       setClSubmitting(false)
       setClPhotoLoading(false)
+    }
+  }
+
+  // CheckInOut — Upload de foto (expo-image-picker)
+  // Fonte: app/reservas/[id]/_CheckInOut.tsx linhas 22-36 (upload)
+  // API: POST /api/bookings/:id/photos (FormData: phase + file)
+  async function cioUpload(phase: "CHECKIN" | "CHECKOUT") {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync()
+    if (!perm.granted) {
+      Alert.alert("Permissão necessária", "Autorize o acesso à galeria para adicionar uma foto.")
+      return
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.8 })
+    if (result.canceled || !result.assets[0]) return
+    const asset = result.assets[0]
+
+    setCioUploading((prev) => ({ ...prev, [phase]: true }))
+    setCioError((prev) => ({ ...prev, [phase]: "" }))
+    try {
+      const tokens = await getTokens()
+      const fd     = new FormData()
+      fd.append("phase", phase)
+      fd.append("file", { uri: asset.uri, name: `${phase.toLowerCase()}.jpg`, type: "image/jpeg" } as unknown as Blob)
+      const res = await fetch(`${API_URL}/api/bookings/${id}/photos`, {
+        method:  "POST",
+        headers: tokens ? { Authorization: `Bearer ${tokens.accessToken}` } : {},
+        body:    fd,
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error((json as { error?: { message?: string } }).error?.message ?? "Erro ao enviar foto.")
+      const photo = (json as { data: { id: string; url: string; createdAt: string } }).data
+      setCioPhotos((prev) => ({
+        ...prev,
+        [phase]: [...(prev[phase] ?? []), { id: photo.id, url: photo.url, createdAt: photo.createdAt }],
+      }))
+    } catch (e) {
+      setCioError((prev) => ({ ...prev, [phase]: e instanceof Error ? e.message : "Erro ao enviar foto." }))
+    } finally {
+      setCioUploading((prev) => ({ ...prev, [phase]: false }))
     }
   }
 
@@ -1304,7 +1361,75 @@ export default function BookingDetailScreen() {
           )
         })()}
 
-        {/* TODO(revisão): CheckInOut (fotos) — implementado no item 7 */}
+        {/* ── CheckInOut — fotos de retirada/devolução
+            Fonte: app/reservas/[id]/_CheckInOut.tsx linhas 39-276 + page.tsx linhas 527-547
+            Condição: status ACTIVE, RETURNED ou COMPLETED — ambos os papéis podem ver
+            Fases: CHECKIN (retirada) + CHECKOUT (devolução)
+            Upload via expo-image-picker (já em package.json — sem nova dep nativa EAS)
+            API: POST /api/bookings/:id/photos (FormData: phase + file)
+        ── */}
+        {(booking.status === "ACTIVE" || booking.status === "RETURNED" || booking.status === "COMPLETED") && (() => {
+          const CIO_PHASES: { key: "CHECKIN" | "CHECKOUT"; label: string; hint: string }[] = [
+            { key: "CHECKIN",  label: "Fotos na retirada",  hint: "Registre o estado do item ao retirar." },
+            { key: "CHECKOUT", label: "Fotos na devolução", hint: "Registre o estado do item ao devolver." },
+          ]
+          return (
+            <View style={{ marginBottom: 12 }}>
+              <Text style={[s.sectionLabel, { color: tokens.text, fontSize: 14, fontWeight: "700", letterSpacing: 0, marginBottom: 4 }]}>
+                Fotos de check-in/check-out
+              </Text>
+              <Text style={[s.noteText, { color: tokens.muted, fontSize: 12, marginBottom: 10 }]}>
+                Registre o estado do item em cada etapa da locação para evitar disputas.
+              </Text>
+              {CIO_PHASES.map(({ key, label, hint }) => {
+                const list      = cioPhotos[key] ?? []
+                const uploading = cioUploading[key] ?? false
+                const err       = cioError[key]
+                return (
+                  <View
+                    key={key}
+                    style={[s.section, { borderColor: tokens.border, backgroundColor: tokens.surface, marginBottom: 10 }]}
+                  >
+                    <Text style={[s.noteText, { color: tokens.text, fontWeight: "700", fontSize: 13, marginBottom: 2 }]}>{label}</Text>
+                    <Text style={[s.noteText, { color: tokens.muted, fontSize: 12, marginBottom: 10 }]}>{hint}</Text>
+                    {list.length > 0 && (
+                      <View style={sCIO.grid}>
+                        {list.map((photo) => (
+                          <RNImage
+                            key={photo.id}
+                            source={{ uri: photo.url }}
+                            style={sCIO.thumb}
+                            accessibilityLabel={`Foto ${key === "CHECKIN" ? "de retirada" : "de devolução"}`}
+                          />
+                        ))}
+                      </View>
+                    )}
+                    <TouchableOpacity
+                      style={[sChecklist.photoBtn, { borderColor: tokens.border }]}
+                      onPress={() => cioUpload(key)}
+                      disabled={uploading}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Adicionar foto ${label.toLowerCase()}`}
+                      accessibilityState={{ disabled: uploading }}
+                    >
+                      {uploading ? (
+                        <ActivityIndicator size="small" color={tokens.green} />
+                      ) : (
+                        <>
+                          <Text style={{ fontSize: 22, marginBottom: 4 }}>📷</Text>
+                          <Text style={{ fontSize: 13, color: tokens.muted, fontWeight: "500" }}>
+                            {list.length === 0 ? "Adicionar foto" : "Adicionar outra foto"}
+                          </Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+                    {err ? <Text style={{ color: "#DC2626", fontSize: 12, marginTop: 4 }}>{err}</Text> : null}
+                  </View>
+                )
+              })}
+            </View>
+          )
+        })()}
 
       </ScrollView>
 
@@ -1869,4 +1994,10 @@ const sReview = StyleSheet.create({
   starsRow: { flexDirection: "row", gap: 4, marginBottom: 2 },
   starBtn:  { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
   btnText:  { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
+})
+
+// CheckInOut StyleSheet — fonte: app/reservas/[id]/_CheckInOut.tsx
+const sCIO = StyleSheet.create({
+  grid:  { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
+  thumb: { width: 88, height: 88, borderRadius: 8 },
 })
