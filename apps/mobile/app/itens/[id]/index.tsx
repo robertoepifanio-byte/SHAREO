@@ -846,14 +846,13 @@ export default function ItemDetailScreen() {
           </View>
         )}
 
-        {/* Editar anúncio — modo proprietário. Sem tela nativa de edição ainda;
-            segue o mesmo padrão de fallback já usado em MobileMenu.tsx (Linking
-            p/ o site) até que apps/mobile/app/itens/[id]/editar.tsx exista. */}
+        {/* Editar anúncio — modo proprietário. Tela nativa implementada em
+            apps/mobile/app/itens/[id]/editar.tsx (PR feat/mobile-editar-anuncio-nativo). */}
         {isOwner && (
           <TouchableOpacity
             style={[s.editListingBtn, { borderColor: tokens.border }]}
-            onPress={() => Linking.openURL(`${API_URL}/itens/${item.id}/editar`)}
-            accessibilityRole="link"
+            onPress={() => router.push(`/itens/${item.id}/editar` as never)}
+            accessibilityRole="button"
             accessibilityLabel="Editar anúncio"
           >
             <Text style={[s.editListingBtnText, { color: tokens.text }]}>✏️ Editar anúncio</Text>
