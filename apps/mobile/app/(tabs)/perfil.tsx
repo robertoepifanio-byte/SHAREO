@@ -227,22 +227,25 @@ export default function PerfilScreen() {
     // ── Itens abaixo abrem no browser (sem equivalente nativo no MVP) ──────────
     // Verbatim de app/perfil/page.tsx linhas 22-30 (href, label e desc preservados)
     {
-      href:  "/perfil/editar",
-      icon:  "edit",
-      label: "Editar perfil",
-      desc:  "Nome, bio, telefone, avatar",
+      href:   "/perfil/editar",
+      icon:   "edit",
+      label:  "Editar perfil",
+      desc:   "Nome, bio, telefone, avatar",
+      native: () => router.push("/perfil/editar"),
     },
     {
-      href:  "/perfil/endereco",
-      icon:  "location",
-      label: "Endereço",
-      desc:  "Cidade, estado, bairro",
+      href:   "/perfil/endereco",
+      icon:   "location",
+      label:  "Endereço",
+      desc:   "Cidade, estado, bairro",
+      native: () => router.push("/perfil/endereco"),
     },
     {
-      href:  "/perfil/seguranca",
-      icon:  "lock",
-      label: "Login e segurança",
-      desc:  "E-mail, senha, excluir conta",
+      href:   "/perfil/seguranca",
+      icon:   "lock",
+      label:  "Login e segurança",
+      desc:   "E-mail, senha, excluir conta",
+      native: () => router.push("/perfil/seguranca"),
     },
     {
       href:  "/perfil/documentos",
@@ -251,28 +254,32 @@ export default function PerfilScreen() {
       desc:  "CPF/CNPJ e verificação de identidade",
     },
     {
-      href:  "/perfil/recebimentos",
-      icon:  "pix",
-      label: "Conta de recebimento",
-      desc:  "Chave PIX para repasse das locações",
+      href:   "/perfil/recebimentos",
+      icon:   "pix",
+      label:  "Conta de recebimento",
+      desc:   "Chave PIX para repasse das locações",
+      native: () => router.push("/perfil/recebimentos"),
     },
     {
-      href:  "/perfil/repasses",
-      icon:  "chart",
-      label: "Meus repasses",
-      desc:  "Histórico e status dos repasses recebidos",
+      href:   "/perfil/repasses",
+      icon:   "chart",
+      label:  "Meus repasses",
+      desc:   "Histórico e status dos repasses recebidos",
+      native: () => router.push("/perfil/repasses" as never),
     },
     {
-      href:  "/perfil/repasses/informe",
-      icon:  "file-text",
-      label: "Informe de Rendimentos",
-      desc:  "Total anual recebido para declaração de IR",
+      href:   "/perfil/repasses/informe",
+      icon:   "file-text",
+      label:  "Informe de Rendimentos",
+      desc:   "Total anual recebido para declaração de IR",
+      native: () => router.push("/perfil/repasses/informe"),
     },
     {
-      href:  "/perfil/indicacoes",
-      icon:  "gift",
-      label: "Indicações",
-      desc:  "Programa de indicação e créditos",
+      href:   "/perfil/indicacoes",
+      icon:   "gift",
+      label:  "Indicações",
+      desc:   "Programa de indicação e créditos",
+      native: () => router.push("/perfil/embaixador"),
     },
     {
       href:  "/perfil/dados",
@@ -304,7 +311,7 @@ export default function PerfilScreen() {
             {/* Botão Editar — verbatim link "/perfil/editar" do site */}
             <TouchableOpacity
               style={[s.editBtn, { borderColor: tokens.border }]}
-              onPress={() => Linking.openURL(`${API_URL}/perfil/editar`)}
+              onPress={() => router.push("/perfil/editar")}
               accessibilityRole="button"
               accessibilityLabel="Editar perfil"
             >

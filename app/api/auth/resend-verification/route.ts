@@ -1,23 +1,21 @@
 import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
 import crypto from "crypto"
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { resolveUserId } from "@/lib/resolveUserId"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { sendVerificationEmail } from "@/lib/email"
 import { hashToken } from "@/lib/crypto"
 import { EMAIL_VERIFY_TOKEN_TTL_MS } from "@/lib/auth-config"
 
 export async function POST(req: NextRequest) {
-  const session = await auth()
-  if (!session) {
+  const userId = await resolveUserId(req)
+  if (!userId) {
     return NextResponse.json(
       { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
       { status: 401 },
     )
   }
-
-  const userId = session.user.id
 
   const rl = await checkRateLimit(`resend-verify:${userId}`, RATE_LIMITS.resendVerify.limit, RATE_LIMITS.resendVerify.windowMs, req)
   if (!rl.allowed) return rateLimitResponse(rl.resetAt)

@@ -4,14 +4,14 @@
  * Usado para declaração de Imposto de Renda.
  */
 import { NextResponse, type NextRequest } from "next/server"
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { resolveUserId } from "@/lib/resolveUserId"
 
 export const runtime = "nodejs"
 
 export async function GET(req: NextRequest) {
-  const session = await auth()
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const userId = await resolveUserId(req)
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const yearParam = req.nextUrl.searchParams.get("year")
   const year = yearParam ? parseInt(yearParam, 10) : new Date().getFullYear()
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
   const end   = new Date(`${year}-12-31T23:59:59.999Z`)
 
   const account = await prisma.ownerPaymentAccount.findUnique({
-    where:  { userId: session.user.id },
+    where:  { userId },
     select: { id: true, holderName: true, pixKey: true, pixKeyType: true },
   })
 

@@ -56,8 +56,6 @@ interface ItemDetail {
   images:        { url: string }[]
   reviews:       { id: string; rating: number; comment: string | null; reviewer: { name: string } }[]
   _count:        { reviews: number; favorites: number }
-  // Solicitações pendentes — retornadas apenas quando o usuário é o proprietário
-  pendingBookings?: { id: string; borrower: { name: string }; startDate: string }[]
   // Estatísticas do proprietário — fonte: app/itens/[id]/page.tsx linhas 122-139
   // Opcionais: a API que retorna esses campos (commit 7ab2b9f) ainda não foi
   // implantada em staging quando este código foi testado ao vivo pela 1ª vez —
@@ -859,31 +857,6 @@ export default function ItemDetailScreen() {
           </TouchableOpacity>
         )}
 
-        {/* ── Solicitações pendentes (modo proprietário) ── */}
-        {isOwner && item.pendingBookings && item.pendingBookings.length > 0 && (
-          <View style={[s.pendingBox, { backgroundColor: "#FFFBEB", borderColor: "#FCD34D" }]}>
-            <Text style={[s.pendingTitle, { color: "#92400E" }]}>
-              Solicitações pendentes ({item.pendingBookings.length})
-            </Text>
-            {item.pendingBookings.map((b) => (
-              <TouchableOpacity
-                key={b.id}
-                style={s.pendingItem}
-                onPress={() => router.push(`/reservas/${b.id}` as never)}
-                accessibilityRole="button"
-                accessibilityLabel={`Ver solicitação de ${b.borrower.name}`}
-              >
-                <Text style={[s.pendingBorrower, { color: "#92400E" }]}>
-                  {b.borrower.name}
-                </Text>
-                <Text style={[s.pendingDate, { color: "#B45309" }]}>
-                  Retirada: {fmtDate(b.startDate.split("T")[0])}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
         {/* ── Descrição ── */}
         <Text style={[s.sectionTitle, { color: tokens.navy }]}>Sobre o item</Text>
         <Text style={[s.description, { color: tokens.muted }]}>{item.description}</Text>
@@ -1429,13 +1402,6 @@ const s = StyleSheet.create({
   trustBoxTitle: { fontSize: 12, fontWeight: "700", marginBottom: 8 },
   trustBoxRow: { flexDirection: "row", alignItems: "flex-start", gap: 8, marginTop: 6 },
   trustBoxText: { flex: 1, fontSize: 12, lineHeight: 17 },
-
-  // Solicitações pendentes
-  pendingBox:  { borderRadius: 10, borderWidth: 1, padding: 12, marginTop: 16 },
-  pendingTitle:{ fontSize: 13, fontWeight: "700", marginBottom: 8 },
-  pendingItem: { paddingVertical: 6, borderTopWidth: 1, borderTopColor: "rgba(0,0,0,0.08)" },
-  pendingBorrower: { fontSize: 13, fontWeight: "600" },
-  pendingDate: { fontSize: 11, marginTop: 2 },
 
   // Seções
   sectionTitle: { fontSize: 15, fontWeight: "700", marginTop: 20, marginBottom: 6 },

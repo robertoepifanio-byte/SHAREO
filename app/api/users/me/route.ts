@@ -1,6 +1,5 @@
 import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
 import { UpdateProfileSchema } from "@/lib/validations/users"
@@ -44,15 +43,13 @@ async function hasRecentFiscalRecords(userId: string): Promise<boolean> {
 // LGPD art. 18 — direito ao esquecimento
 export async function DELETE(req: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 },
       )
     }
-
-    const userId = session.user.id
 
     // Bloquear exclusão se houver locação em andamento (ACTIVE)
     const activeBooking = await prisma.booking.findFirst({
@@ -223,10 +220,11 @@ export async function GET(req: NextRequest) {
           state:        true,
           neighborhood: true,
           street:       true,
-          avatarUrl:    true,
-          userType:     true,
-          isVerified:   true,
-          createdAt:    true,
+          avatarUrl:     true,
+          userType:      true,
+          isVerified:    true,
+          emailVerified: true,
+          createdAt:     true,
           _count: {
             select: {
               items:              { where: { status: { in: ["AVAILABLE", "PAUSED", "DRAFT"] }, deletedAt: null } },
@@ -289,8 +287,8 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 },
@@ -314,7 +312,7 @@ export async function PATCH(req: NextRequest) {
 
     const d       = parsed.data
     const updated = await prisma.user.update({
-      where: { id: session.user.id },
+      where: { id: userId },
       data:  {
         ...(d.name         !== undefined && { name:         d.name }),
         ...(d.bio          !== undefined && { bio:          d.bio }),
@@ -351,7 +349,7 @@ export async function PATCH(req: NextRequest) {
       const state = d.state ?? updated.state
       if (city && state) {
         after(() =>
-          geocodeUserLocation(session.user.id, {
+          geocodeUserLocation(userId, {
             street:       d.street       ?? updated.street,
             neighborhood: d.neighborhood ?? updated.neighborhood,
             city,
@@ -364,7 +362,7 @@ export async function PATCH(req: NextRequest) {
     // MCI art.15 — log de acesso (fire-and-forget; flag accessLogsEnabled default OFF)
     logAccess({
       ip:     extractClientIp(req),
-      userId: session.user.id,
+      userId,
       path:   "/api/users/me",
       method: "PATCH",
       status: 200,

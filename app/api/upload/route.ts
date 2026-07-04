@@ -15,7 +15,7 @@
 
 import type { NextRequest } from "next/server"
 import { NextResponse }     from "next/server"
-import { auth }             from "@/lib/auth"
+import { resolveUserId }    from "@/lib/resolveUserId"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getUploadLimits } from "@/lib/platform-config"
 import { isImageType, isMagicBytesValid, EXT_BY_MIME } from "@/lib/imageUpload"
@@ -25,8 +25,8 @@ const ALLOWED_BUCKETS = new Set(["booking-photos", "item-images"])
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 },
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     // M4 (SEC-MED): rate limit por usuário — mesmo padrão de checkRateLimit/rateLimitResponse
     // já usado em POST /api/bookings e RATE_LIMITS em lib/rateLimit.ts.
     const rl = await checkRateLimit(
-      `upload:${session.user.id}`,
+      `upload:${userId}`,
       RATE_LIMITS.upload.limit,
       RATE_LIMITS.upload.windowMs,
       req,
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
     // SEC-ALTO-06 / A2: extensão derivada do EXT_BY_MIME compartilhado (lib/imageUpload.ts),
     // NUNCA do nome do arquivo do cliente (evita salvar .php/.exe no bucket público).
     const ext      = EXT_BY_MIME[file.type.toLowerCase()] ?? "jpg"
-    const path     = `uploads/${session.user.id}/${Date.now()}.${ext}`
+    const path     = `uploads/${userId}/${Date.now()}.${ext}`
     const arrayBuf = await file.arrayBuffer()
     if (!(await isMagicBytesValid(arrayBuf))) {
       return NextResponse.json(

@@ -237,18 +237,16 @@ export default function BookingDetailScreen() {
   })
   const feeRateBps = statsData?.data.feeRate ?? null
 
-  // Sincroniza contractSigned ao carregar dados — fonte: _ContractBanner.tsx linha 24 (useState(initialSigned))
-  // BUG FIX (mesmo padrão do PR #191): quando a API confirmar assinatura, forçar true
-  // incondicionalmente — nunca regredir para false. O guard `=== null` só decide o
-  // false inicial (evita sobrescrever a ação local "assinar" quando o cache ainda serve
-  // contractSignedAt:null após a chamada POST bem-sucedida).
+  // Sincroniza contractSigned ao carregar dados — fonte: _ContractBanner.tsx linha 24 (useState(initialSigned)).
+  // Bug real (2026-07-04): guard `contractSigned === null` só sincronizava na 1ª renderização;
+  // se o cache do React Query servisse contractSignedAt=null primeiro (ex.: remontar a tela após
+  // assinar em outra navegação), o estado local travava em `false` e nunca refletia a assinatura
+  // já persistida no backend. contractSignedAt não regride (contrato não é "des-assinado"), então
+  // uma vez true na API sempre reflete true aqui — só usa o guard pra inicializar o `false`.
   useEffect(() => {
-    if (!data?.data) return
-    if (data.data.contractSignedAt) {
-      // API diz que o contrato foi assinado → sempre forçar true, sem regredir
+    if (data?.data?.contractSignedAt) {
       setContractSigned(true)
-    } else if (contractSigned === null) {
-      // Ainda não assinado e estado local desconhecido → inicializar como false
+    } else if (data?.data && contractSigned === null) {
       setContractSigned(false)
     }
   }, [data, contractSigned])
