@@ -9,10 +9,12 @@ import { BottomNav } from "@/components/layout/BottomNav"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { MobileMenu } from "@/components/layout/MobileMenu"
 import { useAuth } from "@/lib/auth"
+import { useTheme } from "@/lib/theme"
 
 export default function TabsLayout() {
   const [menuOpen, setMenuOpen] = useState(false)
   const { user, logout } = useAuth()
+  const { tokens } = useTheme()
 
   async function handleLogout() {
     await logout()
@@ -20,7 +22,7 @@ export default function TabsLayout() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: tokens.bg }]}>
       {/* Header fixo no topo — transcrito de AppHeader.tsx do site */}
       <AppHeader
         menuOpen={menuOpen}
@@ -51,7 +53,7 @@ export default function TabsLayout() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",   // bg-background
+    // backgroundColor aplicado dinamicamente via tokens.bg
   },
   content: {
     flex: 1,

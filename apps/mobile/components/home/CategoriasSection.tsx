@@ -5,6 +5,7 @@ import React from "react"
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-native"
 import { router } from "expo-router"
 import { Image } from "expo-image"
+import { useTheme } from "@/lib/theme"
 
 interface Category { id: string; name: string; slug: string }
 
@@ -20,16 +21,17 @@ const ICON_SOURCES: Record<string, number> = {
 }
 
 export function CategoriasSection({ categories }: { categories: Category[] }) {
+  const { tokens, mode } = useTheme()
   if (categories.length === 0) return null
 
   return (
-    <View style={s.section}>
-      <Text style={s.title}>Explorar por categoria</Text>
+    <View style={[s.section, { backgroundColor: tokens.bg }]}>
+      <Text style={[s.title, { color: mode === "dark" ? tokens.text : "#003366" }]}>Explorar por categoria</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.row}>
         {categories.map((cat) => (
           <TouchableOpacity
             key={cat.id}
-            style={s.card}
+            style={[s.card, { borderColor: tokens.border, backgroundColor: tokens.surface }]}
             onPress={() => router.push(`/explorar?categoryId=${cat.id}` as never)}
             accessibilityRole="button"
             accessibilityLabel={cat.name}
@@ -37,7 +39,7 @@ export function CategoriasSection({ categories }: { categories: Category[] }) {
             {ICON_SOURCES[cat.slug] && (
               <Image source={ICON_SOURCES[cat.slug]} style={s.icon} contentFit="contain" accessibilityLabel="" />
             )}
-            <Text style={s.cardLabel} numberOfLines={2}>{cat.name}</Text>
+            <Text style={[s.cardLabel, { color: mode === "dark" ? tokens.text : "#003366" }]} numberOfLines={2}>{cat.name}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>

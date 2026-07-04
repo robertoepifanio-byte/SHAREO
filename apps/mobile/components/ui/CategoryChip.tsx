@@ -6,6 +6,7 @@
 import React from "react"
 import { View, Text, Pressable, StyleSheet } from "react-native"
 import { Image } from "expo-image"
+import { useTheme } from "@/lib/theme"
 
 const ICON_SOURCES: Record<string, number> = {
   "todas":       require("../../assets/icons/todas.png"),
@@ -26,6 +27,7 @@ interface CategoryChipProps {
 }
 
 export function CategoryChip({ slug, label, active = false, onPress }: CategoryChipProps) {
+  const { tokens } = useTheme()
   const icon = ICON_SOURCES[slug]
   // Label em até 2 linhas — fonte: page.tsx linhas 322-330 (split ao meio das palavras)
   const words = label.split(" ")
@@ -41,7 +43,9 @@ export function CategoryChip({ slug, label, active = false, onPress }: CategoryC
       accessibilityLabel={label}
       style={({ pressed }) => [
         styles.chip,
-        active ? styles.chipActive : styles.chipInactive,
+        active
+          ? styles.chipActive
+          : [styles.chipInactive, { borderColor: tokens.border, backgroundColor: tokens.surface }],
         pressed && styles.chipPressed,
       ]}
     >
@@ -49,11 +53,11 @@ export function CategoryChip({ slug, label, active = false, onPress }: CategoryC
         <Image source={icon} style={styles.icon} contentFit="contain" accessibilityLabel="" />
       )}
       <View style={styles.labelWrap}>
-        <Text style={[styles.label, { color: active ? "#007B3C" : "#64748B" }]} numberOfLines={1}>
+        <Text style={[styles.label, { color: active ? tokens.green : tokens.muted }]} numberOfLines={1}>
           {line1}
         </Text>
         {line2 ? (
-          <Text style={[styles.label, { color: active ? "#007B3C" : "#64748B" }]} numberOfLines={1}>
+          <Text style={[styles.label, { color: active ? tokens.green : tokens.muted }]} numberOfLines={1}>
             {line2}
           </Text>
         ) : null}

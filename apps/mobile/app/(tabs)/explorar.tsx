@@ -185,7 +185,7 @@ export default function ExplorarScreen() {
       {/* ── Busca (pré-existente) ── */}
       <View style={[s.searchWrap, { backgroundColor: tokens.surface, borderBottomColor: tokens.border }]}>
         <View style={[s.searchBar, { backgroundColor: tokens.bg, borderColor: tokens.border }]}>
-          <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth={2} strokeLinecap="round">
+          <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={tokens.muted} strokeWidth={2} strokeLinecap="round">
             <Circle cx="11" cy="11" r="8"/>
             <Path d="m21 21-4.35-4.35"/>
           </Svg>
@@ -194,14 +194,14 @@ export default function ExplorarScreen() {
             onChangeText={setQuery}
             onSubmitEditing={handleSearch}
             placeholder="Buscar itens para alugar..."
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor={tokens.muted}
             returnKeyType="search"
             style={[s.searchInput, { color: tokens.text }]}
             accessibilityLabel="Buscar itens"
           />
           {query.length > 0 && (
             <TouchableOpacity onPress={() => { setQuery(""); setSearch("") }} accessibilityLabel="Limpar busca">
-              <Text style={{ color: "#94A3B8", fontSize: 16, paddingHorizontal: 4 }}>×</Text>
+              <Text style={{ color: tokens.muted, fontSize: 16, paddingHorizontal: 4 }}>×</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -221,13 +221,13 @@ export default function ExplorarScreen() {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={s.chipsRow}
-        style={[s.chipsScroll, { backgroundColor: tokens.surface }]}
+        style={[s.chipsScroll, { backgroundColor: tokens.surface, borderBottomColor: tokens.border }]}
         accessibilityLabel="Filtrar por categoria"
         accessibilityRole="menu"
       >
         {categories.length === 0
           ? [0, 1, 2, 3].map((i) => (
-              <View key={i} style={[s.chipSkeleton, { backgroundColor: "#E2E8F0" }]} />
+              <View key={i} style={[s.chipSkeleton, { backgroundColor: tokens.border }]} />
             ))
           : (
             <>

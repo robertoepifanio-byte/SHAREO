@@ -45,7 +45,9 @@ export const LIGHT_TOKENS = {
 } as const
 
 // ── Tokens dark — transcritos de globals.css .dark ──────────────────────────
-// Dark mode gated por D4/MOB-BL3 — estrutura presente mas não ativa nas telas.
+// MOB-BL3 resolvido: toggle tri-state ativo em MobileMenu, telas consomem
+// tokens dinâmicos via useTheme(). Staging apenas — produção segue gated D4
+// como o resto do app.
 export const DARK_TOKENS = {
   bg:        "#0B1524",   // --background dark
   surface:   "#15233B",   // --surface dark

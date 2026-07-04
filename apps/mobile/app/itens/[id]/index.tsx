@@ -169,6 +169,7 @@ function calDateKey(year: number, month: number, day: number): string {
 function CalendarMonth({
   year, month, occupied, todayKey,
 }: { year: number; month: number; occupied: Set<string>; todayKey: string }) {
+  const { tokens, mode } = useTheme()
   const firstDay    = new Date(year, month, 1).getDay()
   const daysInMonth = new Date(year, month + 1, 0).getDate()
   const cells: { day: number | null; key: string | null }[] = []
@@ -179,11 +180,11 @@ function CalendarMonth({
 
   return (
     <View style={{ marginBottom: 16 }}>
-      <Text style={calS.monthTitle}>{CAL_MONTH_NAMES[month]} {year}</Text>
+      <Text style={[calS.monthTitle, { color: tokens.text }]}>{CAL_MONTH_NAMES[month]} {year}</Text>
       {/* Cabeçalho dos dias da semana */}
       <View style={calS.weekRow}>
         {CAL_DAY_NAMES.map((d) => (
-          <Text key={d} style={calS.dayHeader}>{d}</Text>
+          <Text key={d} style={[calS.dayHeader, { color: tokens.muted }]}>{d}</Text>
         ))}
       </View>
       {/* Células de dia */}
@@ -196,11 +197,12 @@ function CalendarMonth({
             const isPast  = cell.key < todayKey
             const isOcc   = occupied.has(cell.key)
             const isToday = cell.key === todayKey
-            // Cores verbatim dos tokens Tailwind do site:
+            // Cores verbatim dos tokens Tailwind do site (adaptado para dark mode):
             // bg-success/15 + text-success | bg-destructive/15 + text-destructive | bg-muted
-            let bg = "#DCFCE7"; let fg = "#16A34A"
-            if (isPast)       { bg = "#F1F5F9"; fg = "#94A3B8" }
-            else if (isOcc)   { bg = "#FEE2E2"; fg = "#DC2626" }
+            let bg = mode === "dark" ? "#0A2A1A" : "#DCFCE7"
+            let fg = mode === "dark" ? "#5BD08B" : "#16A34A"
+            if (isPast)       { bg = mode === "dark" ? "#1A2030" : "#F1F5F9"; fg = tokens.muted }
+            else if (isOcc)   { bg = mode === "dark" ? "#2A0A0A" : "#FEE2E2"; fg = tokens.error }
             return (
               <View
                 key={cell.key}
@@ -219,6 +221,7 @@ function CalendarMonth({
 
 /** Wrapper com fetch + loading/error — transcreve AvailabilityCalendar.tsx do site. */
 function MobileAvailabilityCalendar({ itemId }: { itemId: string }) {
+  const { tokens, mode } = useTheme()
   const today    = new Date()
   const todayKey = calDateKey(today.getFullYear(), today.getMonth(), today.getDate())
   const months   = [
@@ -242,11 +245,11 @@ function MobileAvailabilityCalendar({ itemId }: { itemId: string }) {
       <View style={{ marginTop: 8 }}>
         {[0, 1].map((i) => (
           <View key={i} style={{ marginBottom: 16 }}>
-            <View style={{ height: 14, width: 120, backgroundColor: "#E2E8F0", borderRadius: 6, marginBottom: 8, alignSelf: "center" }} />
+            <View style={{ height: 14, width: 120, backgroundColor: tokens.border, borderRadius: 6, marginBottom: 8, alignSelf: "center" }} />
             {Array.from({ length: 5 }).map((_, ri) => (
               <View key={ri} style={calS.weekRow}>
                 {Array.from({ length: 7 }).map((_, ci) => (
-                  <View key={ci} style={[calS.cell, { backgroundColor: "#E2E8F0" }]} />
+                  <View key={ci} style={[calS.cell, { backgroundColor: tokens.border }]} />
                 ))}
               </View>
             ))}
@@ -258,8 +261,8 @@ function MobileAvailabilityCalendar({ itemId }: { itemId: string }) {
 
   if (isError) {
     return (
-      <View style={calS.errorBox}>
-        <Text style={calS.errorText}>Não foi possível carregar o calendário.</Text>
+      <View style={[calS.errorBox, { borderColor: tokens.border }]}>
+        <Text style={[calS.errorText, { color: tokens.muted }]}>Não foi possível carregar o calendário.</Text>
         <TouchableOpacity onPress={() => void refetch()} style={calS.retryBtn} accessibilityRole="button" accessibilityLabel="Tentar novamente">
           <Text style={calS.retryText}>Tentar novamente</Text>
         </TouchableOpacity>
@@ -271,9 +274,9 @@ function MobileAvailabilityCalendar({ itemId }: { itemId: string }) {
     <View>
       {/* Legenda — verbatim do site */}
       <View style={calS.legend}>
-        <View style={calS.legendItem}><View style={[calS.legendSwatch, { backgroundColor: "#DCFCE7", borderColor: "#86EFAC" }]} /><Text style={calS.legendLabel}>Disponível</Text></View>
-        <View style={calS.legendItem}><View style={[calS.legendSwatch, { backgroundColor: "#FEE2E2", borderColor: "#FCA5A5" }]} /><Text style={calS.legendLabel}>Ocupado</Text></View>
-        <View style={calS.legendItem}><View style={[calS.legendSwatch, { backgroundColor: "#F1F5F9", borderColor: "#CBD5E1" }]} /><Text style={calS.legendLabel}>Passado</Text></View>
+        <View style={calS.legendItem}><View style={[calS.legendSwatch, { backgroundColor: mode === "dark" ? "#0A2A1A" : "#DCFCE7", borderColor: mode === "dark" ? "#5BD08B66" : "#86EFAC" }]} /><Text style={[calS.legendLabel, { color: tokens.muted }]}>Disponível</Text></View>
+        <View style={calS.legendItem}><View style={[calS.legendSwatch, { backgroundColor: mode === "dark" ? "#2A0A0A" : "#FEE2E2", borderColor: mode === "dark" ? "#F08C8466" : "#FCA5A5" }]} /><Text style={[calS.legendLabel, { color: tokens.muted }]}>Ocupado</Text></View>
+        <View style={calS.legendItem}><View style={[calS.legendSwatch, { backgroundColor: mode === "dark" ? "#1A2030" : "#F1F5F9", borderColor: mode === "dark" ? tokens.border : "#CBD5E1" }]} /><Text style={[calS.legendLabel, { color: tokens.muted }]}>Passado</Text></View>
       </View>
       {months.map((m) => (
         <CalendarMonth
@@ -320,6 +323,7 @@ const calS = StyleSheet.create({
 function MobileAddToRentalButton({
   ownerId, ownerName, item,
 }: { ownerId: string; ownerName: string; item: RentalCartItem }) {
+  const { tokens } = useTheme()
   const { cart, load, add, replace } = useRentalCart()
   const [msg, setMsg] = useState<string | null>(null)
 
@@ -370,18 +374,18 @@ function MobileAddToRentalButton({
     <View style={{ marginBottom: 10 }}>
       {/* Verbatim AddToRentalButton.tsx linha 51-56 */}
       <TouchableOpacity
-        style={addS.addBtn}
+        style={[addS.addBtn, { borderColor: tokens.border }]}
         onPress={handleAdd}
         accessibilityRole="button"
         accessibilityLabel="Adicionar a uma locação"
       >
-        <Text style={addS.addBtnText}>➕ Adicionar a uma locação</Text>
+        <Text style={[addS.addBtnText, { color: tokens.text }]}>➕ Adicionar a uma locação</Text>
       </TouchableOpacity>
 
-      {msg && <Text style={addS.msgText}>{msg}</Text>}
+      {msg && <Text style={[addS.msgText, { color: tokens.muted }]}>{msg}</Text>}
 
       {/* Sub-texto verbatim de AddToRentalButton.tsx linha 63 */}
-      <Text style={addS.hintText}>
+      <Text style={[addS.hintText, { color: tokens.muted }]}>
         Junte vários itens deste anunciante e alugue tudo numa só locação.
         {sameOwnerCount > 0 && (
           <>
@@ -430,10 +434,11 @@ function chunk<T>(arr: T[], size: number): T[][] {
 
 // ── Skeleton de loading — equivalente ao <Skeleton> do site ──────────────────
 function SkeletonBox({ h, w = "100%", style }: { h: number; w?: number | string; style?: object }) {
+  const { tokens } = useTheme()
   return (
     <View
       style={[
-        { height: h, width: w as number, backgroundColor: "#E2E8F0", borderRadius: 8 },
+        { height: h, width: w as number, backgroundColor: tokens.border, borderRadius: 8 },
         style,
       ]}
       accessibilityElementsHidden
@@ -442,8 +447,9 @@ function SkeletonBox({ h, w = "100%", style }: { h: number; w?: number | string;
 }
 
 function ItemDetailSkeleton() {
+  const { tokens } = useTheme()
   return (
-    <ScrollView style={sk.scroll} contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
+    <ScrollView style={[sk.scroll, { backgroundColor: tokens.bg }]} contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
       <SkeletonBox h={256} style={{ marginHorizontal: -16, marginTop: -16, borderRadius: 0 }} />
       <SkeletonBox h={12} w={80} style={{ marginTop: 16 }} />
       <SkeletonBox h={24} style={{ marginTop: 8 }} />
@@ -455,15 +461,15 @@ function ItemDetailSkeleton() {
     </ScrollView>
   )
 }
-const sk = StyleSheet.create({ scroll: { flex: 1, backgroundColor: "#F8FAFC" } })
+const sk = StyleSheet.create({ scroll: { flex: 1 } })
 
 // ── Tela principal ─────────────────────────────────────────────────────────────
 export default function ItemDetailScreen() {
   const { id }     = useLocalSearchParams<{ id: string }>()
   const insets     = useSafeAreaInsets()
   const user       = useAuth((s) => s.user)
-  const qc         = useQueryClient()
-  const { tokens } = useTheme()
+  const qc              = useQueryClient()
+  const { tokens, mode: themeMode } = useTheme()
   const [imgIdx, setImgIdx] = useState(0)
 
   // ── Estado de favorito (optimistic update) ─────────────────────────────────
@@ -644,7 +650,7 @@ export default function ItemDetailScreen() {
     <View style={[s.root, { backgroundColor: tokens.bg }]}>
 
       {/* ── Galeria ── */}
-      <View style={s.gallery}>
+      <View style={[s.gallery, { backgroundColor: tokens.border }]}>
         {item.images[imgIdx] ? (
           <Image
             source={{ uri: item.images[imgIdx].url }}
@@ -735,8 +741,8 @@ export default function ItemDetailScreen() {
             </Text>
           </View>
           {item.voltage && (
-            <View style={[s.tag, { borderColor: "#FCD34D", backgroundColor: "#FFFBEB" }]}>
-              <Text style={[s.tagText, { color: "#92400E", fontWeight: "500" }]}>
+            <View style={[s.tag, { borderColor: themeMode === "dark" ? "#FBBF7766" : "#FCD34D", backgroundColor: themeMode === "dark" ? "#2A1A00" : "#FFFBEB" }]}>
+              <Text style={[s.tagText, { color: themeMode === "dark" ? "#FBBF77" : "#92400E", fontWeight: "500" }]}>
                 ⚡ {item.voltage}
               </Text>
             </View>
@@ -750,9 +756,9 @@ export default function ItemDetailScreen() {
 
         {/* Regras do anunciante — fonte: page.tsx linhas 456-471 (P2-51) */}
         {item.rules && item.rules.trim().length > 0 && (
-          <View style={[s.infoBox, { borderColor: "#FCD34D", backgroundColor: "#FFFBEB" }]}>
+          <View style={[s.infoBox, { borderColor: themeMode === "dark" ? "#FBBF7766" : "#FCD34D", backgroundColor: themeMode === "dark" ? "#2A1A00" : "#FFFBEB" }]}>
             <Text style={s.infoBoxIcon}>📄</Text>
-            <Text style={[s.infoBoxText, { color: "#92400E" }]}>
+            <Text style={[s.infoBoxText, { color: themeMode === "dark" ? "#FBBF77" : "#92400E" }]}>
               <Text style={{ fontWeight: "700" }}>Regras do anunciante: </Text>
               {item.rules}
             </Text>
@@ -761,7 +767,7 @@ export default function ItemDetailScreen() {
 
         {/* Calculadora alugar vs comprar — fonte: page.tsx linhas 473-488 */}
         {item.estimatedRetailPrice != null && item.estimatedRetailPrice > 0 && (
-          <View style={[s.infoBox, { borderColor: tokens.green, backgroundColor: "#F0FDF4" }]}>
+          <View style={[s.infoBox, { borderColor: tokens.green, backgroundColor: themeMode === "dark" ? "#0A2A1A" : "#F0FDF4" }]}>
             <Text style={s.infoBoxIcon}>💡</Text>
             <Text style={[s.infoBoxText, { color: tokens.muted }]}>
               Comprar este item custa{" "}
@@ -875,14 +881,14 @@ export default function ItemDetailScreen() {
           <>
             {/* Requisitos do proprietário — fonte: page.tsx linhas 490-511 */}
             {(item.requireIdVerification || item.requirePhone) && (
-              <View style={[s.infoBox, { borderColor: "#FCD34D", backgroundColor: "#FFFBEB", marginTop: 20 }]}>
+              <View style={[s.infoBox, { borderColor: themeMode === "dark" ? "#FBBF7766" : "#FCD34D", backgroundColor: themeMode === "dark" ? "#2A1A00" : "#FFFBEB", marginTop: 20 }]}>
                 <View style={{ flex: 1 }}>
-                  <Text style={[s.reqTitle, { color: "#92400E" }]}>📋 Requisitos do proprietário</Text>
+                  <Text style={[s.reqTitle, { color: themeMode === "dark" ? "#FBBF77" : "#92400E" }]}>📋 Requisitos do proprietário</Text>
                   {item.requireIdVerification && (
-                    <Text style={[s.reqItem, { color: "#B45309" }]}>✓ Identidade verificada</Text>
+                    <Text style={[s.reqItem, { color: themeMode === "dark" ? "#FCD34D" : "#B45309" }]}>✓ Identidade verificada</Text>
                   )}
                   {item.requirePhone && (
-                    <Text style={[s.reqItem, { color: "#B45309" }]}>✓ Telefone cadastrado</Text>
+                    <Text style={[s.reqItem, { color: themeMode === "dark" ? "#FCD34D" : "#B45309" }]}>✓ Telefone cadastrado</Text>
                   )}
                 </View>
               </View>
@@ -912,7 +918,7 @@ export default function ItemDetailScreen() {
                       style={[
                         s.modeTab,
                         { borderColor: active ? tokens.green : tokens.border },
-                        active && { backgroundColor: "#F0FDF4" },
+                        active && { backgroundColor: themeMode === "dark" ? "#0A2A1A" : "#F0FDF4" },
                       ]}
                       accessibilityRole="button"
                       accessibilityState={{ selected: active }}
@@ -1001,7 +1007,7 @@ export default function ItemDetailScreen() {
                 DEVOLUÇÃO{" "}
                 <Text style={[s.fieldLabelBadge, { color: tokens.muted }]}>calculado automaticamente</Text>
               </Text>
-              <View style={[s.dateReadOnly, { borderColor: tokens.border, backgroundColor: "#F1F5F9" }]}>
+              <View style={[s.dateReadOnly, { borderColor: tokens.border, backgroundColor: themeMode === "dark" ? "#1A2030" : "#F1F5F9" }]}>
                 <Text style={{ color: endDate ? tokens.text : tokens.muted, fontSize: 14 }}>
                   {endDate ? fmtDate(endDate) : "—"}
                 </Text>
@@ -1064,10 +1070,10 @@ export default function ItemDetailScreen() {
             {/* Aviso de teto R$500 — copy VERBATIM de _PriceCalc.tsx linha 434 */}
             {overLimit && (
               <View
-                style={s.limitWarn}
+                style={[s.limitWarn, { borderColor: themeMode === "dark" ? "#FBBF7766" : "#FCD34D", backgroundColor: themeMode === "dark" ? "#2A1A00" : "#FFFBEB" }]}
                 accessibilityRole="alert"
               >
-                <Text style={s.limitWarnText}>
+                <Text style={[s.limitWarnText, { color: themeMode === "dark" ? "#FBBF77" : "#92400E" }]}>
                   ⚠️ O total excede o limite de{" "}
                   <Text style={{ fontWeight: "700" }}>R$500,00</Text>
                   {" "}por locação.{"\n"}
@@ -1144,7 +1150,7 @@ export default function ItemDetailScreen() {
             />
 
             {/* Trust Box — fonte: page.tsx linhas 618-635 (conteúdo estático) */}
-            <View style={[s.trustBox, { borderColor: tokens.green, backgroundColor: "#F0FDF4" }]}>
+            <View style={[s.trustBox, { borderColor: tokens.green, backgroundColor: themeMode === "dark" ? "#0A2A1A" : "#F0FDF4" }]}>
               <Text style={[s.trustBoxTitle, { color: tokens.green }]}>🔒 Sua locação está protegida</Text>
               {[
                 "Cancelamento gratuito até 24h antes",
@@ -1180,15 +1186,15 @@ export default function ItemDetailScreen() {
 
             {/* Erro de booking */}
             {bookingError ? (
-              <View style={s.errorBox} accessibilityRole="alert">
-                <Text style={s.errorText}>{bookingError}</Text>
+              <View style={[s.errorBox, { backgroundColor: themeMode === "dark" ? "#2A0A0A" : "#FEF2F2" }]} accessibilityRole="alert">
+                <Text style={[s.errorText, { color: tokens.error }]}>{bookingError}</Text>
               </View>
             ) : null}
 
             {/* Estado de sucesso */}
             {success && (
-              <View style={[s.successBox, { backgroundColor: "#F0FDF4", borderColor: "#86EFAC" }]}>
-                <Text style={{ color: "#166534", fontSize: 14, fontWeight: "600" }}>
+              <View style={[s.successBox, { backgroundColor: themeMode === "dark" ? "#0A2A1A" : "#F0FDF4", borderColor: themeMode === "dark" ? "#5BD08B66" : "#86EFAC" }]}>
+                <Text style={{ color: themeMode === "dark" ? "#5BD08B" : "#166534", fontSize: 14, fontWeight: "600" }}>
                   Solicitação enviada!
                 </Text>
               </View>
@@ -1286,7 +1292,7 @@ export default function ItemDetailScreen() {
             style={[
               s.ctaBtn,
               {
-                backgroundColor: isReady && !pending ? tokens.green : "#94A3B8",
+                backgroundColor: isReady && !pending ? tokens.green : tokens.disabledText,
               },
             ]}
             onPress={handleSolicitar}

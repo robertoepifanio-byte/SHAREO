@@ -14,6 +14,8 @@ import {
 import { usePathname, router } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import Svg, { Path, Circle, Line, Polyline } from "react-native-svg"
+import { useTheme } from "@/lib/theme"
+import type { Tokens } from "@/lib/theme"
 
 // ── Lógica de rota ativa — transcrita de BottomNav.tsx do site ───────────────
 function useActiveTab() {
@@ -35,10 +37,10 @@ function useActiveTab() {
 
 // ── Indicador de aba ativa — transcrito de BottomNav.tsx do site ─────────────
 // "barra 2.5px no topo do item" (handoff §1.16)
-function ActiveIndicator() {
+function ActiveIndicator({ tokens }: { tokens: Tokens }) {
   return (
     <View
-      style={styles.indicator}
+      style={[styles.indicator, { backgroundColor: tokens.navy }]}
       accessibilityElementsHidden
       importantForAccessibility="no"
     />
@@ -52,9 +54,10 @@ interface TabItemProps {
   onPress:          () => void
   accessibilityCurrent?: boolean
   children:         React.ReactNode
+  tokens:           Tokens
 }
 
-function TabItem({ active, label, onPress, accessibilityCurrent, children }: TabItemProps) {
+function TabItem({ active, label, onPress, accessibilityCurrent, children, tokens }: TabItemProps) {
   return (
     <Pressable
       onPress={onPress}
@@ -64,12 +67,12 @@ function TabItem({ active, label, onPress, accessibilityCurrent, children }: Tab
       aria-current={accessibilityCurrent ? "page" : undefined}
       style={styles.tabItem}
     >
-      {active && <ActiveIndicator />}
+      {active && <ActiveIndicator tokens={tokens} />}
       {children}
       <Text
         style={[
           styles.tabLabel,
-          { color: active ? "#003366" : "#64748B" },
+          { color: active ? tokens.navy : tokens.muted },
         ]}
       >
         {label}
@@ -79,8 +82,8 @@ function TabItem({ active, label, onPress, accessibilityCurrent, children }: Tab
 }
 
 // ── SVGs — viewBox 0 0 24 24, transcritos VERBATIM de BottomNav.tsx ──────────
-function HomeIcon({ active }: { active: boolean }) {
-  const c = active ? "#003366" : "#64748B"
+function HomeIcon({ active, tokens }: { active: boolean; tokens: Tokens }) {
+  const c = active ? tokens.navy : tokens.muted
   const w = active ? 2.5 : 2
   return (
     <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round">
@@ -90,8 +93,8 @@ function HomeIcon({ active }: { active: boolean }) {
   )
 }
 
-function ExploreIcon({ active }: { active: boolean }) {
-  const c = active ? "#003366" : "#64748B"
+function ExploreIcon({ active, tokens }: { active: boolean; tokens: Tokens }) {
+  const c = active ? tokens.navy : tokens.muted
   const w = active ? 2.5 : 2
   return (
     <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={w} strokeLinecap="round">
@@ -101,6 +104,7 @@ function ExploreIcon({ active }: { active: boolean }) {
   )
 }
 
+// PlusIcon: ícone branco sobre fundo verde (brand fill) — inalterado nos dois modos.
 function PlusIcon() {
   return (
     <Svg width={26} height={26} viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" strokeWidth={2.5} strokeLinecap="round">
@@ -110,8 +114,8 @@ function PlusIcon() {
   )
 }
 
-function ChatIcon({ active }: { active: boolean }) {
-  const c = active ? "#003366" : "#64748B"
+function ChatIcon({ active, tokens }: { active: boolean; tokens: Tokens }) {
+  const c = active ? tokens.navy : tokens.muted
   const w = active ? 2.5 : 2
   return (
     <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={w} strokeLinecap="round">
@@ -120,8 +124,8 @@ function ChatIcon({ active }: { active: boolean }) {
   )
 }
 
-function ProfileIcon({ active }: { active: boolean }) {
-  const c = active ? "#003366" : "#64748B"
+function ProfileIcon({ active, tokens }: { active: boolean; tokens: Tokens }) {
+  const c = active ? tokens.navy : tokens.muted
   const w = active ? 2.5 : 2
   return (
     <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={w} strokeLinecap="round">
@@ -135,27 +139,33 @@ function ProfileIcon({ active }: { active: boolean }) {
 export function BottomNav() {
   const { isHome, isExplore, isAnunciar, isChat, isDash } = useActiveTab()
   const insets = useSafeAreaInsets()
+  const { tokens } = useTheme()
 
   return (
     <View
       style={[
         styles.nav,
-        { paddingBottom: Math.max(insets.bottom, 8) },
+        {
+          paddingBottom:   Math.max(insets.bottom, 8),
+          backgroundColor: tokens.surface,   // #FFFFFF (light) → #15233B (dark)
+          borderTopColor:  tokens.border,    // #E2E8F0 (light) → #26395A (dark)
+        },
       ]}
       accessibilityRole="tablist"
       accessibilityLabel="Navegação mobile"
     >
       {/* 1. Início — tab index "/" */}
-      <TabItem active={isHome} label="Início" onPress={() => router.push("/")} accessibilityCurrent={isHome}>
-        <HomeIcon active={isHome} />
+      <TabItem active={isHome} label="Início" onPress={() => router.push("/")} accessibilityCurrent={isHome} tokens={tokens}>
+        <HomeIcon active={isHome} tokens={tokens} />
       </TabItem>
 
       {/* 2. Explorar — tab "/explorar" */}
-      <TabItem active={isExplore} label="Explorar" onPress={() => router.push("/explorar")} accessibilityCurrent={isExplore}>
-        <ExploreIcon active={isExplore} />
+      <TabItem active={isExplore} label="Explorar" onPress={() => router.push("/explorar")} accessibilityCurrent={isExplore} tokens={tokens}>
+        <ExploreIcon active={isExplore} tokens={tokens} />
       </TabItem>
 
       {/* 3. Anunciar — FAB elevado (círculo 52×52px bg #007B3C, marginTop -10) */}
+      {/* FAB: fundo verde #007B3C = tokens.green (fill preservado nos dois modos) */}
       <Pressable
         onPress={() => router.push("/itens/novo")}
         accessibilityRole="button"
@@ -174,13 +184,13 @@ export function BottomNav() {
       </Pressable>
 
       {/* 4. Chat — tab "/chat" (wrapper de mensagens) */}
-      <TabItem active={isChat} label="Chat" onPress={() => router.push("/chat")} accessibilityCurrent={isChat}>
-        <ChatIcon active={isChat} />
+      <TabItem active={isChat} label="Chat" onPress={() => router.push("/chat")} accessibilityCurrent={isChat} tokens={tokens}>
+        <ChatIcon active={isChat} tokens={tokens} />
       </TabItem>
 
       {/* 5. Perfil — tab "/perfil" */}
-      <TabItem active={isDash} label="Perfil" onPress={() => router.push("/perfil")} accessibilityCurrent={isDash}>
-        <ProfileIcon active={isDash} />
+      <TabItem active={isDash} label="Perfil" onPress={() => router.push("/perfil")} accessibilityCurrent={isDash} tokens={tokens}>
+        <ProfileIcon active={isDash} tokens={tokens} />
       </TabItem>
     </View>
   )

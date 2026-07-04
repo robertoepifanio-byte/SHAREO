@@ -10,6 +10,7 @@ import { Image } from "expo-image"
 import Svg, { Path, Circle, Line, Rect, Polyline } from "react-native-svg"
 import { apiFetch } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
+import { useTheme } from "@/lib/theme"
 
 export interface ItemCardItem {
   id:           string
@@ -27,15 +28,29 @@ const fmt = (cents: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
 
 // ── Paleta de ícones de categoria — transcrita de CategoryIcon.tsx do site ────
-const CAT_COLORS: Record<string, { bg: string; stroke: string }> = {
-  ferramentas: { bg: "#DBEAFE", stroke: "#1D4ED8" },
-  eletronicos: { bg: "#EDE9FE", stroke: "#7C3AED" },
+// Tints light = pastels originais; dark = equivalentes escurecidos (sem token direto — ternário).
+const CAT_COLORS_LIGHT: Record<string, { bg: string; stroke: string }> = {
+  ferramentas:   { bg: "#DBEAFE", stroke: "#1D4ED8" },
+  eletronicos:   { bg: "#EDE9FE", stroke: "#7C3AED" },
   "casa-jardim": { bg: "#DCFCE7", stroke: "#16A34A" },
-  construcao:  { bg: "#FEF9C3", stroke: "#CA8A04" },
-  esporte:     { bg: "#FEE2E2", stroke: "#DC2626" },
-  moda:        { bg: "#FDF4FF", stroke: "#9333EA" },
-  festas:      { bg: "#FFF7ED", stroke: "#EA580C" },
+  construcao:    { bg: "#FEF9C3", stroke: "#CA8A04" },
+  esporte:       { bg: "#FEE2E2", stroke: "#DC2626" },
+  moda:          { bg: "#FDF4FF", stroke: "#9333EA" },
+  festas:        { bg: "#FFF7ED", stroke: "#EA580C" },
 }
+
+const CAT_COLORS_DARK: Record<string, { bg: string; stroke: string }> = {
+  ferramentas:   { bg: "#1E3A5F", stroke: "#60A5FA" },
+  eletronicos:   { bg: "#2D1B69", stroke: "#A78BFA" },
+  "casa-jardim": { bg: "#064E3B", stroke: "#4ADE80" },
+  construcao:    { bg: "#422006", stroke: "#FBBF24" },
+  esporte:       { bg: "#450A0A", stroke: "#F87171" },
+  moda:          { bg: "#3B0764", stroke: "#D946EF" },
+  festas:        { bg: "#431407", stroke: "#FB923C" },
+}
+
+const CAT_COLORS_FALLBACK_LIGHT = { bg: "#F1F5F9", stroke: "#64748B" }
+const CAT_COLORS_FALLBACK_DARK  = { bg: "#1E293B", stroke: "#94A3B8" }
 
 // ── SVG por slug de categoria — transcrito de CategoryIcon.tsx do site ────────
 function CategorySvg({ slug, stroke }: { slug: string; stroke: string }) {
@@ -100,18 +115,24 @@ function FavoriteHeart({ itemId }: { itemId: string }) {
 }
 
 export function ItemCard({ item, onPress }: { item: ItemCardItem; onPress: () => void }) {
+  const { tokens, mode } = useTheme()
   const thumb = item.images[0]?.url
-  const catColors = CAT_COLORS[item.category.slug] ?? { bg: "#F1F5F9", stroke: "#64748B" }
+  const catMap = mode === "dark" ? CAT_COLORS_DARK : CAT_COLORS_LIGHT
+  const catColors = catMap[item.category.slug] ?? (mode === "dark" ? CAT_COLORS_FALLBACK_DARK : CAT_COLORS_FALLBACK_LIGHT)
+
+  // cardImg placeholder bg: #F1F5F9 no site (slate-100); dark: tokens.disabledBg preserva proporção
+  const cardImgBg = mode === "dark" ? tokens.disabledBg : "#F1F5F9"
+
   return (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.85}
       accessibilityRole="button"
       accessibilityLabel={`${item.title}, ${fmt(item.pricePerDay)} por dia`}
-      style={s.card}
+      style={[s.card, { backgroundColor: tokens.surface, borderColor: tokens.border }]}
     >
       {/* Imagem 4:3 */}
-      <View style={s.cardImg}>
+      <View style={[s.cardImg, { backgroundColor: cardImgBg }]}>
         {thumb ? (
           <Image source={{ uri: thumb }} style={{ flex: 1 }} contentFit="cover" />
         ) : (
@@ -129,17 +150,18 @@ export function ItemCard({ item, onPress }: { item: ItemCardItem; onPress: () =>
 
       {/* Corpo */}
       <View style={s.cardBody}>
-        <Text style={s.cardCat} numberOfLines={1}>{item.category.name}</Text>
-        <Text style={s.cardTitle} numberOfLines={2}>{item.title}</Text>
+        <Text style={[s.cardCat, { color: tokens.green }]} numberOfLines={1}>{item.category.name}</Text>
+        {/* dark: navy (#003366) seria invisível sobre fundo escuro — usa tokens.text */}
+        <Text style={[s.cardTitle, { color: mode === "dark" ? tokens.text : "#003366" }]} numberOfLines={2}>{item.title}</Text>
         {/* TODO(revisão): estrelas de avaliação e distanceKm não vêm das APIs
             de listagem hoje (/api/items, /api/favorites) — ver TODO original
             em app/(tabs)/explorar.tsx. */}
         <View style={s.cardFooter}>
           <View>
-            <Text style={s.cardPrice}>{fmt(item.pricePerDay)}</Text>
-            <Text style={s.cardUnit}>/dia</Text>
+            <Text style={[s.cardPrice, { color: tokens.text }]}>{fmt(item.pricePerDay)}</Text>
+            <Text style={[s.cardUnit, { color: tokens.muted }]}>/dia</Text>
           </View>
-          <Text style={s.cardLoc} numberOfLines={1}>
+          <Text style={[s.cardLoc, { color: tokens.muted }]} numberOfLines={1}>
             {item.neighborhood ?? item.city}
           </Text>
         </View>
@@ -149,39 +171,38 @@ export function ItemCard({ item, onPress }: { item: ItemCardItem; onPress: () =>
 }
 
 export function ItemCardSkeleton() {
+  const { tokens } = useTheme()
   return (
-    <View style={s.cardSkeleton}>
-      <View style={{ height: 140, borderRadius: 12, marginBottom: 8, backgroundColor: "#E2E8F0" }} />
-      <View style={{ width: "60%", height: 10, marginBottom: 6, backgroundColor: "#E2E8F0", borderRadius: 8 }} />
-      <View style={{ width: "90%", height: 14, marginBottom: 6, backgroundColor: "#E2E8F0", borderRadius: 8 }} />
-      <View style={{ width: "40%", height: 18, backgroundColor: "#E2E8F0", borderRadius: 8 }} />
+    <View style={[s.cardSkeleton, { backgroundColor: tokens.surface, borderColor: tokens.border }]}>
+      <View style={{ height: 140, borderRadius: 12, marginBottom: 8, backgroundColor: tokens.border }} />
+      <View style={{ width: "60%", height: 10, marginBottom: 6, backgroundColor: tokens.border, borderRadius: 8 }} />
+      <View style={{ width: "90%", height: 14, marginBottom: 6, backgroundColor: tokens.border, borderRadius: 8 }} />
+      <View style={{ width: "40%", height: 18, backgroundColor: tokens.border, borderRadius: 8 }} />
     </View>
   )
 }
 
 const s = StyleSheet.create({
   card: {
-    flex:           1,
-    backgroundColor: "#FFFFFF",
-    borderRadius:   16,
-    borderWidth:    1,
-    borderColor:    "#E2E8F0",
-    overflow:       "hidden",
+    flex:         1,
+    // backgroundColor e borderColor removidos — agora inline via tokens
+    borderRadius: 16,
+    borderWidth:  1,
+    overflow:     "hidden",
   },
   cardSkeleton: {
-    flex:            1,
-    backgroundColor: "#FFFFFF",
-    borderRadius:    16,
-    borderWidth:     1,
-    borderColor:     "#E2E8F0",
-    overflow:        "hidden",
-    padding:         8,
-    maxWidth:        "48%",
+    flex:         1,
+    // backgroundColor e borderColor removidos — agora inline via tokens
+    borderRadius: 16,
+    borderWidth:  1,
+    overflow:     "hidden",
+    padding:      8,
+    maxWidth:     "48%",
   },
   cardImg: {
-    height:          140,
-    backgroundColor: "#F1F5F9",
-    position:        "relative",
+    height:   140,
+    // backgroundColor removido — agora inline (mode-aware)
+    position: "relative",
   },
   cardImgFallback: {
     flex:           1,
@@ -195,7 +216,7 @@ const s = StyleSheet.create({
     width:           28,
     height:          28,
     borderRadius:    14,
-    backgroundColor: "rgba(255,255,255,0.9)",
+    backgroundColor: "rgba(255,255,255,0.9)",  // overlay sobre foto — independente do tema
     alignItems:      "center",
     justifyContent:  "center",
   },
@@ -206,7 +227,7 @@ const s = StyleSheet.create({
     width:           18,
     height:          18,
     borderRadius:    9,
-    backgroundColor: "rgba(0,123,60,0.9)",
+    backgroundColor: "rgba(0,123,60,0.9)",  // fill verde sobre foto — independente do tema
     alignItems:      "center",
     justifyContent:  "center",
   },
@@ -214,17 +235,17 @@ const s = StyleSheet.create({
     padding: 10,
   },
   cardCat: {
+    // color removido — agora inline via tokens.green
     fontSize:      10,
     fontWeight:    "600",
-    color:         "#007B3C",
     textTransform: "uppercase",
     letterSpacing: 1,
     marginBottom:  2,
   },
   cardTitle: {
+    // color removido — agora inline (mode-aware: navy no light, tokens.text no dark)
     fontSize:    13,
     fontWeight:  "700",
-    color:       "#003366",
     marginBottom: 6,
     lineHeight:  18,
   },
@@ -234,18 +255,18 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
   },
   cardPrice: {
+    // color removido — agora inline via tokens.text
     fontSize:   17,
     fontFamily: "Montserrat_700Bold",
-    color:      "#0F172A",
     lineHeight: 20,
   },
   cardUnit: {
+    // color removido — agora inline via tokens.muted
     fontSize: 10,
-    color:    "#64748B",
   },
   cardLoc: {
+    // color removido — agora inline via tokens.muted
     fontSize: 10,
-    color:    "#64748B",
     maxWidth: "48%",
     textAlign: "right",
   },

@@ -90,7 +90,7 @@ function buildYears(): number[] {
 
 // ── Componente principal ───────────────────────────────────────────────────────
 export default function InformeRendimentosScreen() {
-  const { tokens }      = useTheme()
+  const { tokens, mode } = useTheme()
   const insets          = useSafeAreaInsets()
   const user            = useAuth((s) => s.user)
   const years           = buildYears()
@@ -249,11 +249,15 @@ export default function InformeRendimentosScreen() {
             </View>
 
             {/* ── Aviso IR — verbatim de page.tsx linhas 131-137 ── */}
-            <View style={[s.warningCard, { borderColor: "#fef08a", backgroundColor: "#fefce8" }]}>
-              <Text style={[s.warningTitle, { color: "#854d0e" }]}>
+            {/* tint: amarelo claro → ternário para dark (instrução dark-mode-activation) */}
+            <View style={[s.warningCard, {
+              borderColor:     mode === "dark" ? "#78550A" : "#fef08a",
+              backgroundColor: mode === "dark" ? "#1F1A0A" : "#fefce8",
+            }]}>
+              <Text style={[s.warningTitle, { color: mode === "dark" ? "#FDE68A" : "#854d0e" }]}>
                 Declaracao de Imposto de Renda
               </Text>
-              <Text style={[s.warningText, { color: "#854d0e" }]}>
+              <Text style={[s.warningText, { color: mode === "dark" ? "#FDE68A" : "#854d0e" }]}>
                 Rendimentos de locacao devem ser declarados na ficha{" "}
                 <Text style={s.warningBold}>
                   Rendimentos Tributaveis Recebidos de Pessoa Juridica

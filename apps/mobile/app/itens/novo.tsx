@@ -150,7 +150,7 @@ export default function AnunciarScreen() {
   const insets = useSafeAreaInsets()
   const user   = useAuth((s) => s.user)
   const qc     = useQueryClient()
-  const { tokens } = useTheme()
+  const { tokens, mode } = useTheme()
 
   // ── Campos do formulário (espelham ItemForm.tsx linhas 161-184) ──────────
   const [title,         setTitle]         = useState("")
@@ -762,12 +762,12 @@ export default function AnunciarScreen() {
               </Text>
             </View>
           ) : (
-            <View style={[s.warnBanner, { borderColor: "#F59E0B33", backgroundColor: "#FFFBEB" }]}>
-              <Text style={[s.warnBannerText, { color: "#92400E" }]}>
+            <View style={[s.warnBanner, { borderColor: mode === "dark" ? "#92400E66" : "#F59E0B33", backgroundColor: mode === "dark" ? "#2A1A00" : "#FFFBEB" }]}>
+              <Text style={[s.warnBannerText, { color: mode === "dark" ? "#FBBF77" : "#92400E" }]}>
                 Você ainda não tem um endereço cadastrado.{" "}
                 <Text
                   onPress={() => router.push("/(tabs)/perfil" as never)}
-                  style={[s.warnBannerLink, { color: "#92400E" }]}
+                  style={[s.warnBannerLink, { color: mode === "dark" ? "#FBBF77" : "#92400E" }]}
                 >
                   Cadastre seu endereço no perfil
                 </Text>

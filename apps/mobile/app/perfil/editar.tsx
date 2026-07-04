@@ -29,6 +29,7 @@ import * as ImagePicker from "expo-image-picker"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { apiFetch, API_URL, getTokens } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
+import { useTheme } from "@/lib/theme"
 
 // ─── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -66,9 +67,10 @@ function displayPhone(raw: string | null): string {
 // ─── Componente ───────────────────────────────────────────────────────────────
 
 export default function EditarPerfilScreen() {
-  const insets = useSafeAreaInsets()
-  const user   = useAuth((s) => s.user)
-  const qc     = useQueryClient()
+  const insets        = useSafeAreaInsets()
+  const user          = useAuth((s) => s.user)
+  const qc            = useQueryClient()
+  const { tokens }    = useTheme()
 
   // ── Estado do formulário ─────────────────────────────────────────────────
   const [name,        setName]        = useState("")
@@ -275,7 +277,7 @@ export default function EditarPerfilScreen() {
               value={name}
               onChangeText={(v) => { setName(v); setError("") }}
               placeholder="Seu nome completo"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={tokens.muted}
               maxLength={100}
               accessibilityLabel="Nome"
               className="min-h-[44px] rounded-xl border border-border bg-surface px-4 py-3 text-sm text-foreground"
@@ -291,7 +293,7 @@ export default function EditarPerfilScreen() {
               value={bio}
               onChangeText={(v) => { setBio(v); setError("") }}
               placeholder="Conte um pouco sobre você…"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={tokens.muted}
               multiline
               maxLength={500}
               accessibilityLabel="Bio"
@@ -310,7 +312,7 @@ export default function EditarPerfilScreen() {
               value={phone}
               onChangeText={(v) => { setPhone(maskPhone(v)); setError("") }}
               placeholder="(84) 99999-0000"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={tokens.muted}
               keyboardType="phone-pad"
               maxLength={16}
               accessibilityLabel="Telefone"

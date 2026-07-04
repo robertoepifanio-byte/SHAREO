@@ -6,6 +6,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-nativ
 import { router } from "expo-router"
 import Svg, { Circle, Path } from "react-native-svg"
 import { ProcuradoIcon, type ProcuradoIconName } from "./ProcuradoIcon"
+import { useTheme } from "@/lib/theme"
 
 interface SimuladorItem {
   keywords: string[]
@@ -46,40 +47,54 @@ function simularRenda(query: string, data: SimuladorItem[]): SimuladorItem | nul
 }
 
 export function SimuladorRenda() {
+  const { tokens, mode } = useTheme()
+  // Tints decorativos sem token direto — preserva exato em light, usa rgba semi-transparente em dark
+  const headingColor    = mode === "dark" ? tokens.text : "#003366"
+  const tintGreenBg80   = mode === "dark" ? "rgba(0,123,60,0.12)" : "#D1FAE580"   // tableRowHighlight, chipActive
+  const tintGreenBorder = mode === "dark" ? "#2A7A4A"              : "#86EFAC"    // outputResult border
+  const tintGreenBg60   = mode === "dark" ? "rgba(0,123,60,0.10)" : "#D1FAE560"  // outputResult bg
+
   const [query, setQuery] = useState("")
   const [activeChip, setActiveChip] = useState<string | null>(null)
   const result = useMemo(() => simularRenda(query, DEFAULT_DATA), [query])
 
   return (
-    <View style={s.section}>
+    <View style={[s.section, { backgroundColor: tokens.surface }]}>
       <View style={s.header}>
-        <Text style={s.title}>Quanto seus itens podem render?</Text>
-        <Text style={s.subtitle}>Descubra o potencial de renda de itens que você já tem em casa.</Text>
+        <Text style={[s.title, { color: headingColor }]}>Quanto seus itens podem render?</Text>
+        <Text style={[s.subtitle, { color: tokens.muted }]}>Descubra o potencial de renda de itens que você já tem em casa.</Text>
       </View>
 
       {/* Tabela */}
-      <Text style={s.h3}>Estimativa por item</Text>
+      <Text style={[s.h3, { color: headingColor }]}>Estimativa por item</Text>
       <View style={s.table}>
-        <View style={s.tableHeadRow}>
-          <Text style={s.tableHeadCell}>ITEM</Text>
-          <Text style={[s.tableHeadCell, { textAlign: "right" }]}>RENDA MENSAL ESTIMADA</Text>
+        <View style={[s.tableHeadRow, { borderBottomColor: tokens.border }]}>
+          <Text style={[s.tableHeadCell, { color: tokens.muted }]}>ITEM</Text>
+          <Text style={[s.tableHeadCell, { color: tokens.muted, textAlign: "right" }]}>RENDA MENSAL ESTIMADA</Text>
         </View>
         {TABLE_ROWS.map((row) => (
-          <View key={row.name} style={[s.tableRow, row.highlight && s.tableRowHighlight]}>
+          <View
+            key={row.name}
+            style={[
+              s.tableRow,
+              { borderBottomColor: tokens.border },
+              row.highlight && { backgroundColor: tintGreenBg80 },
+            ]}
+          >
             <View style={s.tableRowLeft}>
               <ProcuradoIcon name={row.icon} size={18} color="#007B3C" />
-              <Text style={s.tableRowName}>{row.name}</Text>
+              <Text style={[s.tableRowName, { color: tokens.text }]}>{row.name}</Text>
             </View>
             <Text style={s.tableRowValue}>{row.range}</Text>
           </View>
         ))}
       </View>
-      <Text style={s.note}>* Estimativa baseada em média de 3–4 locações/mês. Resultados variam conforme demanda local.</Text>
+      <Text style={[s.note, { color: tokens.muted }]}>* Estimativa baseada em média de 3–4 locações/mês. Resultados variam conforme demanda local.</Text>
 
       {/* Simulador interativo */}
-      <Text style={[s.h3, { marginTop: 24 }]}>Descubra quanto você pode ganhar</Text>
-      <View style={s.searchWrap}>
-        <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#64748B" strokeWidth={2} strokeLinecap="round" style={s.searchIcon}>
+      <Text style={[s.h3, { color: headingColor, marginTop: 24 }]}>Descubra quanto você pode ganhar</Text>
+      <View style={[s.searchWrap, { borderColor: tokens.border }]}>
+        <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={tokens.muted} strokeWidth={2} strokeLinecap="round" style={s.searchIcon}>
           <Circle cx="11" cy="11" r="8" />
           <Path d="m21 21-4.35-4.35" />
         </Svg>
@@ -88,7 +103,7 @@ export function SimuladorRenda() {
           onChangeText={(v) => { setQuery(v); setActiveChip(null) }}
           placeholder="Ex: Furadeira, Projetor, Caixa de Som..."
           placeholderTextColor="#94A3B8"
-          style={s.searchInput}
+          style={[s.searchInput, { color: tokens.text }]}
           accessibilityLabel="Digite o nome do item que você quer anunciar"
         />
       </View>
@@ -100,10 +115,14 @@ export function SimuladorRenda() {
             <TouchableOpacity
               key={chip}
               onPress={() => { setActiveChip(chip); setQuery(CHIP_KEYWORD_MAP[chip] ?? chip.toLowerCase()) }}
-              style={[s.chip, active && s.chipActive]}
+              style={[
+                s.chip,
+                { borderColor: tokens.border },
+                active && { borderColor: "#007B3C", backgroundColor: tintGreenBg80 },
+              ]}
               accessibilityRole="button"
             >
-              <Text style={[s.chipText, active && s.chipTextActive]}>{chip}</Text>
+              <Text style={[s.chipText, { color: tokens.text }, active && s.chipTextActive]}>{chip}</Text>
             </TouchableOpacity>
           )
         })}
@@ -111,29 +130,30 @@ export function SimuladorRenda() {
 
       <View style={s.outputWrap} accessibilityRole="none">
         {result ? (
-          <View style={s.outputResult}>
-            <Text style={s.outputLabel}>Potencial de renda:</Text>
+          <View style={[s.outputResult, { borderColor: tintGreenBorder, backgroundColor: tintGreenBg60 }]}>
+            <Text style={[s.outputLabel, { color: tokens.muted }]}>Potencial de renda:</Text>
             <Text style={s.outputValue}>
               R$ {result.rangeMin} a R$ {result.rangeMax}<Text style={s.outputUnit}>/mês</Text>
             </Text>
-            <Text style={s.outputSub}>
+            <Text style={[s.outputSub, { color: tokens.muted }]}>
               {result.label} · Demanda{" "}
+              {/* #007B3C (brand, preserved) e #C2410C (sem token dark — contraste aceitável em dark) */}
               <Text style={{ fontWeight: "700", color: result.demand === "alta" ? "#007B3C" : "#C2410C" }}>
                 {result.demand === "alta" ? "alta" : "moderada"}
               </Text>{" "}na região
             </Text>
           </View>
         ) : query.trim() ? (
-          <View style={s.outputEmpty}>
-            <Text style={s.outputEmptyText}>Não temos dados para esse item ainda — mas você pode anunciá-lo!</Text>
+          <View style={[s.outputEmpty, { borderColor: tokens.border, backgroundColor: tokens.bg }]}>
+            <Text style={[s.outputEmptyText, { color: tokens.muted }]}>Não temos dados para esse item ainda — mas você pode anunciá-lo!</Text>
           </View>
         ) : (
           <View style={s.outputIdle}>
-            <Svg width={40} height={40} viewBox="0 0 24 24" fill="none" stroke="#E2E8F0" strokeWidth={1.5} strokeLinecap="round" style={{ marginBottom: 10 }}>
+            <Svg width={40} height={40} viewBox="0 0 24 24" fill="none" stroke={tokens.border} strokeWidth={1.5} strokeLinecap="round" style={{ marginBottom: 10 }}>
               <Circle cx="12" cy="12" r="10" />
               <Path d="M12 6v2m0 8v2M9.5 9.5a2.5 2.5 0 0 1 5 0c0 1.5-2.5 3-2.5 3" />
             </Svg>
-            <Text style={s.outputEmptyText}>Selecione um item acima ou digite o nome</Text>
+            <Text style={[s.outputEmptyText, { color: tokens.muted }]}>Selecione um item acima ou digite o nome</Text>
           </View>
         )}
       </View>

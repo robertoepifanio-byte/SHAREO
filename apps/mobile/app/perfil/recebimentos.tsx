@@ -13,6 +13,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { apiFetch } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
+import { useTheme } from "@/lib/theme"
 
 // ─── Tipos (verbatim de _PixAccountForm.tsx) ──────────────────────────────────
 
@@ -82,9 +83,10 @@ const STATUS_INFO: Record<PixAccountStatus, { label: string; border: string; bg:
 // ─── Componente ───────────────────────────────────────────────────────────────
 
 export default function RecebimentosScreen() {
-  const insets = useSafeAreaInsets()
-  const user   = useAuth((s) => s.user)
-  const qc     = useQueryClient()
+  const insets     = useSafeAreaInsets()
+  const user       = useAuth((s) => s.user)
+  const qc         = useQueryClient()
+  const { tokens } = useTheme()
 
   // ── Estado do formulário ───────────────────────────────────────────────────
   const [formInitialized, setFormInitialized] = useState(false)
@@ -285,7 +287,7 @@ export default function RecebimentosScreen() {
                 value={pixKey}
                 onChangeText={setPixKey}
                 placeholder={KEY_INFO[keyType].placeholder}
-                placeholderTextColor="#94a3b8"
+                placeholderTextColor={tokens.muted}
                 autoCapitalize="none"
                 autoCorrect={false}
                 className="min-h-[44px] rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground"
@@ -302,7 +304,7 @@ export default function RecebimentosScreen() {
                 value={holderName}
                 onChangeText={setHolderName}
                 placeholder="Nome exatamente como na conta bancária"
-                placeholderTextColor="#94a3b8"
+                placeholderTextColor={tokens.muted}
                 autoCapitalize="words"
                 autoCorrect={false}
                 className="min-h-[44px] rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground"
@@ -319,7 +321,7 @@ export default function RecebimentosScreen() {
                 value={bankName}
                 onChangeText={setBankName}
                 placeholder="Ex: Nubank, Itaú, Bradesco..."
-                placeholderTextColor="#94a3b8"
+                placeholderTextColor={tokens.muted}
                 autoCapitalize="words"
                 autoCorrect={false}
                 className="min-h-[44px] rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground"

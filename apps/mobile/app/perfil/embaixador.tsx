@@ -93,23 +93,9 @@ function tierProgress(activeCount: number): { nextTier: AmbassadorTier | null; n
 const fmt = (cents: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
 
-// ── Cores dos tiers — transcrição de TIER_COLORS de _AmbassadorSection.tsx ────
-// Adaptadas para React Native (sem classes Tailwind, usando tokens de tema).
-const TIER_BORDER_COLORS: Record<AmbassadorTier, string> = {
-  BRONZE: "#92400E",
-  SILVER: "#64748B",
-  GOLD:   "#92400E",
-}
-const TIER_TEXT_COLORS: Record<AmbassadorTier, string> = {
-  BRONZE: "#92400E",
-  SILVER: "#64748B",
-  GOLD:   "#B45309",
-}
-const TIER_BG_COLORS: Record<AmbassadorTier, string> = {
-  BRONZE: "#FFFBEB",
-  SILVER: "#F8FAFC",
-  GOLD:   "#FEFCE8",
-}
+// ── Cores dos tiers — definidas dentro do componente (ver tierBorderColors / tierTextColors /
+// tierBgColors) pois dependem do mode (dark/light) resolvido em runtime via useTheme().
+// Migradas de constantes de módulo para ternário light/dark — dark-mode-activation.
 
 // TIER_ICONS — verbatim de _AmbassadorSection.tsx linha 18
 const TIER_ICONS: Record<AmbassadorTier, string> = {
@@ -121,8 +107,8 @@ const TIER_ICONS: Record<AmbassadorTier, string> = {
 // ── Tela ──────────────────────────────────────────────────────────────────────
 
 export default function EmbaixadorScreen() {
-  const { tokens } = useTheme()
-  const insets     = useSafeAreaInsets()
+  const { tokens, mode } = useTheme()
+  const insets           = useSafeAreaInsets()
   const { user }   = useAuth()
   const qc         = useQueryClient()
 
@@ -189,6 +175,25 @@ export default function EmbaixadorScreen() {
   }
 
   const s = makeStyles(tokens)
+
+  // Tier colors — ternário dark/light (dark-mode-activation)
+  // SILVER usa tokens semânticos pois é cinza neutro idêntico em ambos os temas.
+  // BRONZE e GOLD usam âmbar: tom escuro sobre fundo claro → invertido no dark.
+  const tierBorderColors: Record<AmbassadorTier, string> = {
+    BRONZE: mode === "dark" ? "#78550A" : "#92400E",
+    SILVER: tokens.muted,
+    GOLD:   mode === "dark" ? "#78550A" : "#92400E",
+  }
+  const tierTextColors: Record<AmbassadorTier, string> = {
+    BRONZE: mode === "dark" ? "#FCD34D" : "#92400E",
+    SILVER: tokens.muted,
+    GOLD:   mode === "dark" ? "#FCD34D" : "#B45309",
+  }
+  const tierBgColors: Record<AmbassadorTier, string> = {
+    BRONZE: mode === "dark" ? "#2A1F0A" : "#FFFBEB",
+    SILVER: tokens.bg,
+    GOLD:   mode === "dark" ? "#1F1A0A" : "#FEFCE8",
+  }
 
   // ── Guard: não logado ────────────────────────────────────────────────────────
   if (!user) {
@@ -283,7 +288,7 @@ export default function EmbaixadorScreen() {
                   style={[
                     s.tierBadge,
                     active
-                      ? { backgroundColor: TIER_BG_COLORS[t], borderColor: TIER_BORDER_COLORS[t] }
+                      ? { backgroundColor: tierBgColors[t], borderColor: tierBorderColors[t] }
                       : { backgroundColor: tokens.bg, borderColor: tokens.border },
                   ]}
                   accessibilityLabel={active ? `${getTierLabel(t)} — seu nível atual` : getTierLabel(t)}
@@ -292,7 +297,7 @@ export default function EmbaixadorScreen() {
                   <Text
                     style={[
                       s.tierLabel,
-                      { color: active ? TIER_TEXT_COLORS[t] : tokens.muted },
+                      { color: active ? tierTextColors[t] : tokens.muted },
                     ]}
                   >
                     {getTierLabel(t)}
@@ -300,7 +305,7 @@ export default function EmbaixadorScreen() {
                   <Text
                     style={[
                       s.tierRate,
-                      { color: active ? TIER_TEXT_COLORS[t] : tokens.muted, opacity: 0.7 },
+                      { color: active ? tierTextColors[t] : tokens.muted, opacity: 0.7 },
                     ]}
                   >
                     · {TIER_RATES[t]}%
@@ -311,8 +316,12 @@ export default function EmbaixadorScreen() {
           </View>
 
           {/* Banner pré-lançamento — verbatim de _AmbassadorSection.tsx linhas 122-127 */}
-          <View style={s.prelaunchBanner}>
-            <Text style={s.prelaunchText}>
+          {/* tint âmbar: claro → ternário para dark (dark-mode-activation) */}
+          <View style={[s.prelaunchBanner, {
+            borderColor:     mode === "dark" ? "#78550A" : "#FDE68A",
+            backgroundColor: mode === "dark" ? "#1F1A0A" : "#FFFBEB",
+          }]}>
+            <Text style={[s.prelaunchText, { color: mode === "dark" ? "#FCD34D" : "#92400E" }]}>
               <Text style={s.prelaunchBold}>Programa em pré-lançamento.</Text>
               {" "}Você já pode indicar amigos e acompanhar suas indicações.
             </Text>
@@ -320,8 +329,12 @@ export default function EmbaixadorScreen() {
         </View>
 
         {/* ── Consentimento LGPD — verbatim de _AmbassadorSection.tsx linhas 129-148 ── */}
+        {/* tint verde: claro → ternário para dark (dark-mode-activation) */}
         {showConsent && (
-          <View style={[s.consentCard, { borderColor: `${tokens.green}4D` }]}>
+          <View style={[s.consentCard, {
+            borderColor:     `${tokens.green}4D`,
+            backgroundColor: mode === "dark" ? "#0D1F17" : "#F0FDF4",
+          }]}>
             <Text style={[s.consentTitle, { color: tokens.text }]}>Antes de começar</Text>
             <Text style={[s.consentBody, { color: tokens.muted }]}>
               Ao compartilhar seu link de indicação, você aceita que o ShareO registre a origem do
@@ -499,7 +512,7 @@ export default function EmbaixadorScreen() {
                     >
                       +{fmt(c.amountCents)}
                       {c.status === "PENDING" && (
-                        <Text style={[s.commissionPending, { color: "#D97706" }]}> · pendente</Text>
+                        <Text style={[s.commissionPending, { color: tokens.warning }]}> · pendente</Text>
                       )}
                     </Text>
                   </View>
@@ -649,30 +662,28 @@ function makeStyles(tokens: Tokens) {
     tierRate:  { fontSize: 13 },
 
     // Banner pré-lançamento — verbatim de _AmbassadorSection.tsx linhas 122-127
+    // borderColor / backgroundColor / color aplicados via inline style no JSX (dark-mode-activation)
     prelaunchBanner: {
       borderRadius:      8,
       borderWidth:       1,
-      borderColor:       "#FDE68A",
-      backgroundColor:   "#FFFBEB",
       paddingHorizontal: 16,
       paddingVertical:   12,
       marginTop:         4,
     },
     prelaunchText: {
       fontSize:  13,
-      color:     "#92400E",
       lineHeight: 18,
     },
     prelaunchBold: { fontWeight: "700" },
 
     // Consentimento LGPD — verbatim de _AmbassadorSection.tsx linhas 129-148
+    // backgroundColor aplicado via inline style no JSX (dark-mode-activation)
     consentCard: {
       borderRadius:  16,
       borderWidth:   1,
       padding:       20,
       marginBottom:  12,
       gap:           12,
-      backgroundColor: "#F0FDF4",
     },
     consentTitle: {
       fontSize:   15,

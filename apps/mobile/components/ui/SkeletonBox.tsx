@@ -11,6 +11,7 @@ import Animated, {
   interpolateColor,
   Easing,
 } from "react-native-reanimated"
+import { useTheme } from "@/lib/theme"
 
 interface SkeletonBoxProps {
   width?:        number | `${number}%`
@@ -19,12 +20,20 @@ interface SkeletonBoxProps {
   style?:        ViewStyle
 }
 
-// Cores transcritas do handoff §1.8: de #E2E8F0 para #F1F5F9 (--muted e --surface-muted)
-const COLOR_START = "#E2E8F0"
-const COLOR_END   = "#F8FAFC"
-
 export function SkeletonBox({ width, height, borderRadius = 8, style }: SkeletonBoxProps) {
-  const progress = useSharedValue(0)
+  const { tokens } = useTheme()
+  const progress  = useSharedValue(0)
+  // Shared values para os extremos da animação — atualizados quando o tema muda.
+  // tokens.border: #E2E8F0 light / #26395A dark (cor inicial, mais escura)
+  // tokens.bg:     #F8FAFC light / #0B1524 dark (cor final, mais clara no light / mais escura no dark)
+  const colorFrom = useSharedValue(tokens.border)
+  const colorTo   = useSharedValue(tokens.bg)
+
+  // Sincroniza as cores dos shared values quando o tema troca
+  useEffect(() => {
+    colorFrom.value = tokens.border
+    colorTo.value   = tokens.bg
+  }, [tokens.border, tokens.bg, colorFrom, colorTo])
 
   useEffect(() => {
     progress.value = withRepeat(
@@ -38,7 +47,7 @@ export function SkeletonBox({ width, height, borderRadius = 8, style }: Skeleton
     backgroundColor: interpolateColor(
       progress.value,
       [0, 1],
-      [COLOR_START, COLOR_END],
+      [colorFrom.value, colorTo.value],
     ),
   }))
 
@@ -57,8 +66,9 @@ export function SkeletonBox({ width, height, borderRadius = 8, style }: Skeleton
 
 // ── ItemCardSkeleton — handoff §1.8 ─────────────────────────────────────────
 export function ItemCardSkeleton() {
+  const { tokens } = useTheme()
   return (
-    <View style={skeletonStyles.card}>
+    <View style={[skeletonStyles.card, { backgroundColor: tokens.surface }]}>
       {/* imagem 4:3 */}
       <SkeletonBox height={140} borderRadius={12} style={{ width: "100%" }} />
       <View style={skeletonStyles.body}>
@@ -88,7 +98,7 @@ const skeletonStyles = StyleSheet.create({
   card: {
     borderRadius: 12,
     overflow:     "hidden",
-    backgroundColor: "#FFFFFF",
+    // backgroundColor removido — agora inline via tokens.surface
   },
   body: {
     padding: 12,

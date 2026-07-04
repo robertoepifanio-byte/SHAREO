@@ -119,8 +119,8 @@ interface MenuItem {
 }
 
 export default function PerfilScreen() {
-  const { tokens } = useTheme()
-  const insets     = useSafeAreaInsets()
+  const { tokens, mode } = useTheme()
+  const insets            = useSafeAreaInsets()
   const { user, logout } = useAuth()
 
   // Busca perfil completo (avatarUrl, bio, city, userType etc.) da API
@@ -477,7 +477,8 @@ export default function PerfilScreen() {
           accessibilityLabel="Sair da conta"
           style={s.menuItem}
         >
-          <View style={[s.menuIconBox, { backgroundColor: "#FEE2E2" }]}>
+          {/* tint vermelho claro; dark: #2C1515 = vermelho muito escuro sobre surface dark */}
+        <View style={[s.menuIconBox, { backgroundColor: mode === "dark" ? "#2C1515" : "#FEE2E2" }]}>
             <MenuIcon name="logout" color={tokens.error} />
           </View>
           <View style={s.menuTextCol}>
