@@ -13,9 +13,10 @@ interface State {
   error: Error | null
 }
 
+type ThemeContextValue = React.ContextType<typeof ThemeContext>
+
 export class ErrorBoundary extends React.Component<Props, State> {
   static contextType = ThemeContext
-  declare context: React.ContextType<typeof ThemeContext>
 
   state: State = { error: null }
 
@@ -29,7 +30,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
   render() {
     if (this.state.error) {
-      const { tokens } = this.context
+      const { tokens } = this.context as ThemeContextValue
       return (
         <ScrollView
           style={[styles.container, { backgroundColor: tokens.bg }]}
