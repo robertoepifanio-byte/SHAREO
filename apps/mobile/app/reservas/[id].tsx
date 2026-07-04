@@ -6,7 +6,7 @@
 // compatibilidade com todos os bundles de produção.
 
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Linking, StyleSheet, Modal, TextInput } from "react-native"
-import { useState } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { router, useLocalSearchParams } from "expo-router"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Image } from "expo-image"
@@ -128,6 +128,11 @@ export default function BookingDetailScreen() {
   // Painel de cancelamento — fonte: _BookingActions.tsx linhas 43-46, 118-119, 262-283
   const [cancelModalVisible, setCancelModalVisible] = useState(false)
   const [cancelReason, setCancelReason]             = useState("")
+  // ContractBanner — fonte: app/reservas/[id]/_ContractBanner.tsx linhas 24-26
+  const [contractSigned, setContractSigned]         = useState<boolean | null>(null)
+  const [contractModalOpen, setContractModalOpen]   = useState(false)
+  const [contractError, setContractError]           = useState("")
+  const [contractSigning, setContractSigning]       = useState(false)
 
   // Todos os hooks ANTES de qualquer return condicional (protocolo item 4)
   const { data, isLoading } = useQuery({
@@ -146,6 +151,13 @@ export default function BookingDetailScreen() {
     staleTime: 5 * 60_000,
   })
   const feeRateBps = statsData?.data.feeRate ?? null
+
+  // Sincroniza contractSigned ao carregar dados — fonte: _ContractBanner.tsx linha 24 (useState(initialSigned))
+  useEffect(() => {
+    if (data?.data && contractSigned === null) {
+      setContractSigned(!!data.data.contractSignedAt)
+    }
+  }, [data, contractSigned])
 
   // BUG FIX: o mobile chamava POST /api/bookings/${id}/cancel (rota inexistente → 404)
   // e não coletava o motivo. O site usa PATCH /api/bookings/${id} com { action:"cancel", reason }
@@ -297,6 +309,24 @@ export default function BookingDetailScreen() {
   })
   const sorted = [...historyEvents].reverse() // mais recente primeiro
   const latest  = sorted[0]
+
+  // Assinar contrato — fonte: app/reservas/[id]/_ContractBanner.tsx linhas 40-47
+  // POST /api/bookings/${id}/contract (contract/route.ts): registra contractSignedAt + ContractAcceptance.
+  async function signContract() {
+    setContractSigning(true)
+    setContractError("")
+    try {
+      const res = await apiFetch(`/api/bookings/${id}/contract`, { method: "POST" })
+      if ((res as { data?: { signed?: boolean; alreadySigned?: boolean } }).data?.signed || (res as { data?: { alreadySigned?: boolean } }).data?.alreadySigned) {
+        setContractSigned(true)
+        setContractModalOpen(false)
+      }
+    } catch (e) {
+      setContractError(e instanceof Error ? e.message : "Erro ao assinar contrato.")
+    } finally {
+      setContractSigning(false)
+    }
+  }
 
   // Abre o painel de cancelamento com campo de motivo obrigatório.
   // Antes: Alert.alert com confirm direto (sem motivo) → 400 do servidor.
@@ -703,18 +733,46 @@ export default function BookingDetailScreen() {
           </View>
         )}
 
-        {/* TODO(revisão): componentes maiores do site ainda não portados — cada um
-            precisaria de tela/estado próprio, não são "faltando 1 elemento":
-            - ReturnCountdown (status ACTIVE) — page.tsx linhas 506-511
-            - ContractBanner (assinatura de contrato digital) — linhas 513-525
-            - ReturnChecklist (locatário em ACTIVE) — linhas 577-582
-            - ReturnConditionForm (locador em RETURNED, substitui o botão simples
-              "Confirmar recebimento" por um formulário de estado do item) — linhas 597-602
-            - CheckInOut ×2 (fotos retirada/devolução) — linhas 527-547, requer
-              câmera/galeria + Supabase Storage
-            - ReviewForm ×1-2 (avaliações pós-devolução) — linhas 619-651, requer
-              componente de estrelas + textarea
-            Documentados como MOB-BL (follow-up), fora do escopo desta rodada. */}
+        {/* ── ContractBanner — assinatura de contrato digital
+            Fonte: app/reservas/[id]/_ContractBanner.tsx linhas 19-126
+            Condição: isBorrower + (CONFIRMED ou ACTIVE) — page.tsx linhas 513-525
+            API: POST /api/bookings/${id}/contract (contract/route.ts)
+        ── */}
+        {isBorrower && (booking.status === "CONFIRMED" || booking.status === "ACTIVE") && (
+          contractSigned ? (
+            /* Estado: contrato assinado — _ContractBanner.tsx linhas 29-37 */
+            <View style={[s.alertBox, { borderColor: "#6EE7B7", backgroundColor: "#ECFDF5", marginBottom: 12 }]}>
+              <Text style={{ fontSize: 15, marginRight: 8 }}>✅</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[s.alertTitle, { color: "#065F46" }]}>Contrato assinado digitalmente.</Text>
+                <Text style={[s.alertDesc, { color: "#059669" }]}>Ambas as partes estão protegidas.</Text>
+              </View>
+            </View>
+          ) : (
+            /* Estado: assinatura pendente — _ContractBanner.tsx linhas 49-68 */
+            <View style={[s.section, { borderColor: "#FCD34D", backgroundColor: "#FFFBEB", marginBottom: 12 }]}>
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <Text style={{ fontSize: 18, marginTop: 2 }}>📄</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[s.alertTitle, { color: "#92400E" }]}>Assinatura do contrato pendente</Text>
+                  <Text style={[s.alertDesc, { color: "#B45309", marginTop: 4 }]}>
+                    Leia e assine o termo de locação para confirmar sua responsabilidade sobre o item.
+                  </Text>
+                  <TouchableOpacity
+                    style={[s.contractBtn]}
+                    onPress={() => setContractModalOpen(true)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Ler e assinar contrato"
+                  >
+                    <Text style={s.contractBtnText}>📝 Ler e assinar contrato</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          )
+        )}
+
+        {/* TODO(revisão): itens pendentes após ContractBanner: */}
 
       </ScrollView>
 
@@ -818,6 +876,65 @@ export default function BookingDetailScreen() {
           </TouchableOpacity>
         )}
       </View>
+
+      {/* ── Modal do contrato digital — fonte: app/reservas/[id]/_ContractBanner.tsx linhas 70-126
+          Exibe texto resumido do contrato + botão "Aceito e assino".
+          POST /api/bookings/${id}/contract → contractSignedAt gravado.
+      ── */}
+      <Modal
+        visible={contractModalOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setContractModalOpen(false)}
+      >
+        <View style={s.modalOverlay}>
+          <View style={[s.contractModalSheet, { backgroundColor: tokens.surface }]}>
+            <Text style={[s.modalTitle, { color: tokens.navy }]}>Termo de Locação</Text>
+            <Text style={[s.modalDesc, { color: tokens.muted }]}>ShareO · Contrato digital</Text>
+            <ScrollView style={s.contractScroll} showsVerticalScrollIndicator>
+              <Text style={[s.contractText, { color: tokens.text }]}>
+                Este termo formaliza o acordo de locação entre as partes.{"\n\n"}
+                O locatário se compromete a:{"\n"}
+                1. Utilizar o item exclusivamente para o fim acordado.{"\n"}
+                2. Devolver o item na data e condição combinadas.{"\n"}
+                3. Arcar com taxas de atraso em caso de devolução fora do prazo.{"\n"}
+                4. Responsabilizar-se por danos causados ao item durante o período de locação.{"\n"}
+                5. Não sublocar ou transferir o item a terceiros.{"\n\n"}
+                A ShareO atua como plataforma intermediária e não se responsabiliza por danos
+                resultantes da utilização do item. Este contrato tem validade legal nos termos do
+                Art. 565 do Código Civil Brasileiro.
+              </Text>
+            </ScrollView>
+            {contractError ? (
+              <Text style={{ fontSize: 12, color: "#DC2626", paddingHorizontal: 4 }}>{contractError}</Text>
+            ) : null}
+            <View style={s.modalActions}>
+              <TouchableOpacity
+                style={[s.modalBtnSecondary, { borderColor: tokens.border }]}
+                onPress={() => setContractModalOpen(false)}
+                disabled={contractSigning}
+                accessibilityRole="button"
+                accessibilityLabel="Fechar contrato"
+              >
+                <Text style={[s.modalBtnSecondaryText, { color: tokens.text }]}>Fechar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.modalBtnPrimary, { opacity: contractSigning ? 0.6 : 1 }]}
+                onPress={signContract}
+                disabled={contractSigning}
+                accessibilityRole="button"
+                accessibilityLabel="Aceitar e assinar contrato"
+              >
+                {contractSigning ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={s.modalBtnPrimaryText}>✅ Aceito e assino</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* ── Modal de cancelamento — fonte: _BookingActions.tsx linhas 262-283
           Alert.prompt não existe no Android, portanto Modal + TextInput.
@@ -1106,4 +1223,36 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   modalBtnDangerText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
+
+  // ContractBanner styles — fonte: _ContractBanner.tsx
+  contractBtn: {
+    marginTop:       10,
+    backgroundColor: "#D97706",
+    borderRadius:    8,
+    paddingVertical:   8,
+    paddingHorizontal: 14,
+    alignSelf:       "flex-start",
+    minHeight:       44,
+    alignItems:      "center",
+    justifyContent:  "center",
+  },
+  contractBtnText:  { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
+  contractModalSheet: {
+    borderTopLeftRadius:  16,
+    borderTopRightRadius: 16,
+    padding:              20,
+    gap:                  10,
+    maxHeight:            "80%",
+  },
+  contractScroll: { maxHeight: 260, marginVertical: 4 },
+  contractText: { fontSize: 13, lineHeight: 20 },
+  modalBtnPrimary: {
+    flex:           1,
+    minHeight:      48,
+    borderRadius:   12,
+    backgroundColor: "#007B3C",
+    alignItems:     "center",
+    justifyContent: "center",
+  },
+  modalBtnPrimaryText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
 })
