@@ -4,7 +4,7 @@
 // Telas cobertas:
 //   - FavoritosScreen   → app/favoritos.tsx      (fonte: app/favoritos/page.tsx)
 //   - PerfilScreen      → app/(tabs)/perfil.tsx   (fonte: app/perfil/page.tsx)
-//   - RegisterScreen    → app/(auth)/register.tsx  (fonte: app/(auth)/cadastro/RegisterForm.tsx)
+//   - RegisterScreen    → app/(auth)/register.tsx  (fonte: app/(auth)/cadastro/RegisterForm.tsx — cadastro nativo, resolve D1)
 //   - ForgotPasswordScreen → app/(auth)/forgot-password.tsx (fonte: app/(auth)/esqueci-senha/_ForgotPasswordForm.tsx)
 //
 // KYC: já coberto em screens-lote3.test.tsx — não duplicar.
@@ -28,7 +28,7 @@ jest.mock("@/lib/api", () => ({
 
 jest.mock("@/lib/auth", () => ({
   useAuth: jest.fn((selector) =>
-    selector({ user: null, logout: jest.fn(), loading: false })
+    selector({ user: null, logout: jest.fn(), login: jest.fn().mockResolvedValue(undefined), loading: false })
   ),
 }))
 
@@ -57,7 +57,7 @@ jest.mock("expo-image", () => ({
 jest.mock("expo-router", () => ({
   router: { push: jest.fn(), back: jest.fn(), replace: jest.fn() },
   Link:   ({ children }: { children: React.ReactNode }) => children,
-  useLocalSearchParams: () => ({}),
+  useLocalSearchParams: jest.fn(() => ({})),
   usePathname: () => "/",
   useSegments: () => [],
 }))
@@ -106,7 +106,7 @@ const mockUser = {
 
 function withUser() {
   const { useAuth } = require("@/lib/auth") as { useAuth: jest.Mock }
-  const state = { user: mockUser, logout: jest.fn(), loading: false }
+  const state = { user: mockUser, logout: jest.fn(), login: jest.fn().mockResolvedValue(undefined), loading: false }
   // useAuth() é chamado tanto com seletor (useAuth(s => s.x)) quanto sem
   // (useAuth() retorna o estado inteiro, padrão Zustand) — o mock precisa
   // dos dois caminhos, senão "sel is not a function" quando não há seletor.
@@ -115,7 +115,7 @@ function withUser() {
 
 function withoutUser() {
   const { useAuth } = require("@/lib/auth") as { useAuth: jest.Mock }
-  const state = { user: null, logout: jest.fn(), loading: false }
+  const state = { user: null, logout: jest.fn(), login: jest.fn().mockResolvedValue(undefined), loading: false }
   useAuth.mockImplementation((sel?: (s: object) => unknown) => (sel ? sel(state) : state))
 }
 
@@ -309,33 +309,74 @@ describe("PerfilScreen (re-auditoria Frente B)", () => {
 })
 
 // ── RegisterScreen ────────────────────────────────────────────────────────────
-describe("RegisterScreen (re-auditoria Frente B)", () => {
-  beforeEach(() => jest.clearAllMocks())
-
-  it("exibe 'Criar conta' como título (verbatim RegisterForm.tsx linha 189)", () => {
-    wrap(<RegisterScreen />)
-    expect(screen.getByText("Criar conta")).toBeTruthy()
+// Cadastro nativo (resolve decisão D1 do handoff) — verbatim de
+// app/(auth)/cadastro/RegisterForm.tsx.
+describe("RegisterScreen (cadastro nativo — resolve D1)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    withoutUser()
   })
 
-  it("exibe 'Criar conta no site →' como CTA principal (verbatim)", () => {
+  it("exibe 'Criar conta' como título e como botão (verbatim RegisterForm.tsx linhas 189 e 374)", () => {
     wrap(<RegisterScreen />)
-    expect(screen.getByText("Criar conta no site →")).toBeTruthy()
+    // Aparece 2x: título da tela + label do botão de submit — ambos verbatim do site.
+    expect(screen.getAllByText("Criar conta")).toHaveLength(2)
   })
 
-  it("exibe 'Já tenho conta — Entrar' como CTA secundário (verbatim)", () => {
+  it("exibe o subtítulo (verbatim RegisterForm.tsx linha 190-192)", () => {
     wrap(<RegisterScreen />)
-    expect(screen.getByText("Já tenho conta — Entrar")).toBeTruthy()
-  })
-
-  it("CTA principal tem accessibilityRole='link' (semântica correta)", () => {
-    wrap(<RegisterScreen />)
-    const cta = screen.getByLabelText("Criar conta no site ShareO")
-    expect(cta.props.accessibilityRole).toBe("link")
+    expect(screen.getByText("É grátis e leva menos de 1 minuto — só o essencial para começar a explorar.")).toBeTruthy()
   })
 
   it("exibe slogan 'Use Mais. Possua Menos.' (verbatim)", () => {
     wrap(<RegisterScreen />)
     expect(screen.getByText("Use Mais. Possua Menos.")).toBeTruthy()
+  })
+
+  it("exibe os campos do formulário (verbatim RegisterForm.tsx)", () => {
+    wrap(<RegisterScreen />)
+    expect(screen.getByLabelText("Nome completo")).toBeTruthy()
+    expect(screen.getByLabelText("E-mail")).toBeTruthy()
+    expect(screen.getByLabelText("Senha")).toBeTruthy()
+    expect(screen.getByLabelText("Cidade")).toBeTruthy()
+    expect(screen.getByLabelText("Estado")).toBeTruthy()
+  })
+
+  it("exibe os dois checkboxes obrigatórios (consentimento + idade)", () => {
+    wrap(<RegisterScreen />)
+    expect(screen.getByLabelText("Li e aceito os Termos de Uso e a Política de Privacidade")).toBeTruthy()
+    expect(screen.getByLabelText("Declaro que tenho 18 anos ou mais")).toBeTruthy()
+  })
+
+  it("exibe botão 'Criar conta' (verbatim RegisterForm.tsx linha 374)", () => {
+    wrap(<RegisterScreen />)
+    expect(screen.getByLabelText("Criar conta").props.accessibilityRole).toBe("button")
+  })
+
+  it("exibe 'Já tem conta? Entrar' (verbatim RegisterForm.tsx linhas 384-392)", () => {
+    wrap(<RegisterScreen />)
+    expect(screen.getByText("Já tem conta?")).toBeTruthy()
+    expect(screen.getByText("Entrar")).toBeTruthy()
+  })
+
+  it("exibe o e-mail do DPO (verbatim RegisterForm.tsx linhas 377-381)", () => {
+    wrap(<RegisterScreen />)
+    expect(screen.getByText("privacidade@shareo.com.br")).toBeTruthy()
+  })
+
+  it("submit vazio: mostra erros de validação e não chama a API (verbatim validate())", async () => {
+    wrap(<RegisterScreen />)
+    fireEvent.press(screen.getByLabelText("Criar conta"))
+    expect(await screen.findByText("Nome obrigatório")).toBeTruthy()
+    expect(screen.getByText("Aceite os termos para continuar")).toBeTruthy()
+    expect(screen.getByText("Confirme que você tem 18 anos ou mais")).toBeTruthy()
+  })
+
+  it("com ?ref=CODIGO: exibe banner de indicação (verbatim RegisterForm.tsx linhas 194-206)", () => {
+    const { useLocalSearchParams } = require("expo-router") as { useLocalSearchParams: jest.Mock }
+    useLocalSearchParams.mockReturnValueOnce({ ref: "ana2026" })
+    wrap(<RegisterScreen />)
+    expect(screen.getByText("ANA2026")).toBeTruthy()
   })
 })
 
