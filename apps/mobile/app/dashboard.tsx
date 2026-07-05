@@ -275,7 +275,18 @@ export default function DashboardScreen() {
     >
       {/* ── HEADER GRADIENTE — verbatim de dashboard/page.tsx linhas 159-174 ── */}
       {/* solid navy no mobile (gradient não disponível sem biblioteca extra) */}
-      <View style={[s.headerBand, { backgroundColor: tokens.navy, paddingTop: insets.top + 16 }]}>
+      <View style={[s.headerBand, { backgroundColor: tokens.navy, paddingTop: insets.top + 8 }]}>
+        {/* Botão voltar — headerShown:false globalmente (app/_layout.tsx), toda tela
+            precisa do próprio afordance de navegação. Faltava aqui (achado testando
+            no device: sem essa tela, "Dashboard"/"Reservas" no menu prendia o usuário). */}
+        <TouchableOpacity
+          onPress={() => router.back()}
+          accessibilityLabel="Voltar"
+          accessibilityRole="button"
+          style={s.backBtn}
+        >
+          <Text style={s.backArrow}>‹</Text>
+        </TouchableOpacity>
         <View style={s.headerRow}>
           <View style={s.headerText}>
             <Text style={s.headerGreeting}>Olá, {firstName}! 👋</Text>
@@ -732,6 +743,15 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom:     20,
   },
+  backBtn: {
+    minHeight:      44,
+    minWidth:       44,
+    alignItems:     "center",
+    justifyContent: "center",
+    alignSelf:      "flex-start",
+    marginLeft:     -12,
+  },
+  backArrow: { fontSize: 28, lineHeight: 32, color: "#FFFFFF" },
   headerRow: {
     flexDirection:  "row",
     alignItems:     "center",

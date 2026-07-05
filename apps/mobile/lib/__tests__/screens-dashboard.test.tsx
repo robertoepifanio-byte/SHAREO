@@ -10,6 +10,7 @@ import React from "react"
 import { render, screen, fireEvent, waitFor } from "@testing-library/react-native"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { SafeAreaProvider } from "react-native-safe-area-context"
+import { router } from "expo-router"
 
 import DashboardScreen from "@/app/dashboard"
 
@@ -206,6 +207,18 @@ describe("DashboardScreen", () => {
   })
 
   // ── Stat cards ───────────────────────────────────────────────────────────
+  describe("navegação", () => {
+    it("botão voltar chama router.back() (achado testando no device: tela prendia o usuário sem headerShown)", async () => {
+      withUser()
+      const { apiFetch } = require("@/lib/api") as { apiFetch: jest.Mock }
+      apiFetch.mockResolvedValueOnce(MOCK_DASHBOARD_DATA)
+      wrap(<DashboardScreen />)
+      await screen.findByText("RESERVAS ATIVAS")
+      fireEvent.press(screen.getByLabelText("Voltar"))
+      expect(router.back).toHaveBeenCalledTimes(1)
+    })
+  })
+
   describe("stat cards (verbatim de dashboard/page.tsx linhas 207-225)", () => {
     it("exibe rótulo 'RESERVAS ATIVAS' (verbatim)", async () => {
       withUser()
