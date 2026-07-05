@@ -83,8 +83,9 @@ const styles = StyleSheet.create({
   // "border-border bg-surface text-muted-foreground" — page.tsx:301
   chipInactive: { borderColor: "#E2E8F0", backgroundColor: "#FFFFFF" },
   chipPressed:  { opacity: 0.8 },
-  // size={52} no site — page.tsx:304,321
-  icon: { width: 40, height: 40 },
+  // size={52} no site — page.tsx:304,321 (achado testando no device: estava
+  // implementado com 40, menor do que o site — corrigido pra bater exato)
+  icon: { width: 52, height: 52 },
   labelWrap: {
     // "flex flex-col items-center leading-tight text-center max-w-[72px]" —
     // page.tsx:305,322. maxWidth ausente era a causa real da distribuição
