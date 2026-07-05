@@ -52,10 +52,16 @@ jest.mock("@react-native-community/datetimepicker", () => {
 })
 
 // Mock de react-native Linking para testes que envolvem abertura de URLs.
-jest.mock("react-native/Libraries/Linking/Linking", () => ({
-  canOpenURL: jest.fn(async () => true),
-  openURL:    jest.fn(async () => undefined),
-}))
+// react-native/index.js acessa via `require(...).default` (getter Linking) —
+// sem o `default` aqui, `import { Linking } from "react-native"` resolve
+// undefined e qualquer chamada a Linking.openURL quebra em runtime de teste.
+jest.mock("react-native/Libraries/Linking/Linking", () => {
+  const mock = {
+    canOpenURL: jest.fn(async () => true),
+    openURL:    jest.fn(async () => undefined),
+  }
+  return { ...mock, default: mock }
+})
 
 // Mock de @react-native-async-storage/async-storage — usado pelo ThemeProvider.
 jest.mock("@react-native-async-storage/async-storage", () => {
