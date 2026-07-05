@@ -301,7 +301,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
                   : "border-border bg-surface text-muted-foreground hover:border-brand/40 hover:text-foreground"
               }`}
             >
-              <CategoryIcon name="Todos" slug="todas" size={52} />
+              <CategoryIcon name="Todos" slug="todas" size={96} />
               <span className="flex flex-col items-center leading-tight">
                 <span>Todas</span>
                 <span>Categorias</span>
@@ -318,7 +318,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
                     : "border-border bg-surface text-muted-foreground hover:border-brand/40 hover:text-foreground"
                 }`}
               >
-                <CategoryIcon name={cat.name} slug={cat.slug} size={52} />
+                <CategoryIcon name={cat.name} slug={cat.slug} size={96} />
                 <span className="flex flex-col items-center leading-tight text-center max-w-[72px]">
                   {cat.name.split(" ").length > 1
                     ? (() => {
