@@ -11,7 +11,7 @@
 //     app/api/users/me/route.ts pra espelhar app/perfil/page.tsx linhas 40-81)
 //     — seções implementadas verbatim das linhas 186-248 do site.
 //   - Telas nativas existentes: Favoritos (/favoritos), KYC (/kyc),
-//     Anunciar (/itens/novo), Meus Anúncios (TODO: rota não existe ainda — MOB-BL-meus-anuncios).
+//     Anunciar (/itens/novo), Meus Anúncios (/meus-anuncios, MOB-BL-meus-anuncios resolvido).
 //
 // Elemento-por-elemento (seções implementadas):
 //   site perfil/page.tsx linha 106: gradient header + Avatar        → profileCard com Avatar
@@ -215,7 +215,8 @@ export default function PerfilScreen() {
       icon:  "package",
       label: "Meus anúncios",
       desc:  "Gerencie seus itens anunciados",
-      // TODO(MOB-BL-meus-anuncios): tela nativa não existe ainda — abre no browser
+      // MOB-BL-meus-anuncios resolvido 2026-07-05 — tela nativa criada
+      native: () => router.push("/meus-anuncios"),
     },
     {
       href:  "/kyc",

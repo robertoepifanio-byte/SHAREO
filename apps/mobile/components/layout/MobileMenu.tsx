@@ -28,10 +28,11 @@ import { API_URL } from "@/lib/api"
 // no device. Trocado por lista exata das rotas que REALMENTE não têm tela
 // nativa ainda, espelhando o mesmo mapeamento já usado em
 // app/(tabs)/perfil.tsx (CONFIG_LINKS: item sem `native()` = sem tela ainda).
+// Atualização 2026-07-05 (mesmo dia): Sobre, Meus Anúncios, Dashboard,
+// Estimativa de ganhos e Dicas para anfitriões ganharam tela nativa — saíram
+// desta lista.
 const EXTERNAL_ONLY_PREFIXES = ["/ajuda"]
 const EXTERNAL_ONLY_ROUTES = new Set([
-  "/sobre", "/meus-anuncios", "/dashboard",
-  "/anunciar/estimativa", "/anunciar/dicas",
   "/perfil/documentos", // sem tela dedicada — mesmo tratamento de perfil.tsx
 ])
 // Hrefs do site cujo caminho de arquivo nativo é diferente (não confundir com
