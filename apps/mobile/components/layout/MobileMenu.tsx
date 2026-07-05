@@ -22,15 +22,23 @@ import { API_URL } from "@/lib/api"
 
 // Rotas que existem no site mas ainda não têm tela nativa — abrem no navegador
 // em vez de dar "Unmatched Route". Remover daqui quando a tela nativa existir.
-// Achado 2026-07-03 testando ao vivo no device: quase todo submenu do drawer
-// (Minha Conta, Ajuda, parte de Anunciar/Atividade) apontava pra rota
-// inexistente — mesmo tratamento já validado em app/(tabs)/perfil.tsx (Frente B).
-// Prefixos (não precisa listar cada variante de query/hash) + exatas.
-const EXTERNAL_ONLY_PREFIXES = ["/perfil/", "/ajuda"]
+// Fix 2026-07-05: o prefixo "/perfil/" (achado 2026-07-03) era largo demais e
+// sequestrava telas nativas JÁ construídas (editar/endereco/seguranca/
+// recebimentos/repasses/dados) para o navegador — regressão achada testando
+// no device. Trocado por lista exata das rotas que REALMENTE não têm tela
+// nativa ainda, espelhando o mesmo mapeamento já usado em
+// app/(tabs)/perfil.tsx (CONFIG_LINKS: item sem `native()` = sem tela ainda).
+const EXTERNAL_ONLY_PREFIXES = ["/ajuda"]
 const EXTERNAL_ONLY_ROUTES = new Set([
   "/sobre", "/meus-anuncios", "/dashboard",
   "/anunciar/estimativa", "/anunciar/dicas",
+  "/perfil/documentos", // sem tela dedicada — mesmo tratamento de perfil.tsx
 ])
+// Hrefs do site cujo caminho de arquivo nativo é diferente (não confundir com
+// "sem tela nativa" — aqui a tela existe, só o nome da rota diverge).
+const ROUTE_ALIASES: Record<string, string> = {
+  "/perfil/indicacoes": "/perfil/embaixador", // arquivo real: perfil/embaixador.tsx
+}
 function isExternalOnly(href: string): boolean {
   return EXTERNAL_ONLY_ROUTES.has(href) || EXTERNAL_ONLY_PREFIXES.some((p) => href.startsWith(p))
 }
@@ -169,8 +177,9 @@ export function MobileMenu({ visible, onClose, isLoggedIn, role, onLogout }: Mob
       return
     }
     // Converte href do site para rota do expo-router
+    const resolved = ROUTE_ALIASES[href] ?? href
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    router.push(href as Parameters<typeof router.push>[0])
+    router.push(resolved as Parameters<typeof router.push>[0])
   }
 
   // ── Classes de estilo reutilizáveis (equivalentes CSS do site) ─────────────

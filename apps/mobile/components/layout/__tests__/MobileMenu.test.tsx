@@ -3,6 +3,8 @@
 
 import React from "react"
 import { render, screen, fireEvent } from "@testing-library/react-native"
+import { Linking } from "react-native"
+import { router } from "expo-router"
 import { MobileMenu } from "@/components/layout/MobileMenu"
 
 // ThemeProvider necessário pois MobileMenu usa useTheme()
@@ -130,6 +132,49 @@ describe("MobileMenu — não logado", () => {
   it('NÃO exibe "Sair" quando deslogado', () => {
     renderMenu({ isLoggedIn: false })
     expect(screen.queryByText("Sair")).toBeNull()
+  })
+})
+
+describe("MobileMenu — navegação Minha Conta (fix regressão /perfil/*)", () => {
+  beforeEach(() => jest.clearAllMocks())
+
+  it('"Editar dados" (/perfil/editar) navega nativamente — NÃO abre navegador', () => {
+    renderMenu({ isLoggedIn: true })
+    fireEvent.press(screen.getByText("Minha Conta"))
+    fireEvent.press(screen.getByText("Editar dados"))
+    expect(router.push).toHaveBeenCalledWith("/perfil/editar")
+    expect(Linking.openURL).not.toHaveBeenCalled()
+  })
+
+  it('"Privacidade e dados" (/perfil/dados) navega nativamente — NÃO abre navegador', () => {
+    renderMenu({ isLoggedIn: true })
+    fireEvent.press(screen.getByText("Minha Conta"))
+    fireEvent.press(screen.getByText("Privacidade e dados"))
+    expect(router.push).toHaveBeenCalledWith("/perfil/dados")
+    expect(Linking.openURL).not.toHaveBeenCalled()
+  })
+
+  it('"Indicações e Embaixador" navega para /perfil/embaixador (alias — arquivo real diverge do href do site)', () => {
+    renderMenu({ isLoggedIn: true })
+    fireEvent.press(screen.getByText("Minha Conta"))
+    fireEvent.press(screen.getByText("Indicações e Embaixador"))
+    expect(router.push).toHaveBeenCalledWith("/perfil/embaixador")
+    expect(Linking.openURL).not.toHaveBeenCalled()
+  })
+
+  it('"Documentos" (/perfil/documentos, sem tela nativa dedicada) abre no navegador', () => {
+    renderMenu({ isLoggedIn: true })
+    fireEvent.press(screen.getByText("Minha Conta"))
+    fireEvent.press(screen.getByText("Documentos"))
+    expect(Linking.openURL).toHaveBeenCalledWith(expect.stringContaining("/perfil/documentos"))
+    expect(router.push).not.toHaveBeenCalled()
+  })
+
+  it('"Sobre" (sem tela nativa) abre no navegador', () => {
+    renderMenu()
+    fireEvent.press(screen.getByText("Sobre"))
+    expect(Linking.openURL).toHaveBeenCalledWith(expect.stringContaining("/sobre"))
+    expect(router.push).not.toHaveBeenCalled()
   })
 })
 
