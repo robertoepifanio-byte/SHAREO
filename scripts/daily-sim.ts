@@ -118,11 +118,6 @@ const ITEM_TEMPLATES: Record<string, { titles: string[]; desc: string; diaria: [
     desc: "Equipamento esportivo bem cuidado, perfeito para o fim de semana. Acompanha acessórios.",
     diaria: [45, 110], retail: 250000,
   },
-  moda: {
-    titles: ["Vestido de festa longo", "Terno slim completo", "Fantasia temática", "Smoking clássico", "Bolsa de grife"],
-    desc: "Peça impecável, higienizada e pronta para ocasiões especiais. Tamanho M, ajuste sob consulta.",
-    diaria: [40, 90], retail: 150000,
-  },
   festas: {
     titles: ["Kit som + microfone", "Tenda 3x3m", "Conjunto de mesas e cadeiras", "Máquina de fumaça", "Painel de LED"],
     desc: "Estrutura completa para festas e eventos. Itens limpos, testados e prontos para montagem.",
@@ -202,7 +197,6 @@ function placeholderImage(slug: string, n: number): string {
     "casa-jardim": ["photo-1558618666-fcd25c85cd64", "photo-1585659722983-3a675dabf23d"],
     construcao:    ["photo-1504307651254-35680f356dfd", "photo-1581094794329-c8112a89af12"],
     esporte:       ["photo-1485965120184-e220f721d03e", "photo-1571068316344-75bc76f77890"],
-    moda:          ["photo-1490481651871-ab68de25d43d", "photo-1539109136881-3be0616acf4b"],
     festas:        ["photo-1530103862676-de8c9debad1d", "photo-1464366400600-7168b8af9bc3"],
   }
   const pool = ids[slug] ?? ids.ferramentas

@@ -9,7 +9,6 @@ const categories = [
   { slug: "casa-jardim", name: "Eletrodomésticos", icon: "casa-jardim.jpeg" },
   { slug: "construcao",  name: "Construção",   icon: "Construção.png"  },
   { slug: "esporte",     name: "Esporte",      icon: "Esporte.png"     },
-  { slug: "moda",        name: "Moda",         icon: "Moda.png"        },
   { slug: "festas",      name: "Festas",       icon: "Festas.png"      },
 ]
 

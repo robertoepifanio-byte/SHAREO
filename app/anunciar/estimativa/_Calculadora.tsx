@@ -9,7 +9,6 @@ const CATEGORIAS = [
   { slug: "esporte",     label: "Esporte",         icon: "🚴", diaria: 60,  exemplos: "bicicleta, barraca, SUP" },
   { slug: "festas",      label: "Festas",          icon: "🎉", diaria: 80,  exemplos: "som, tendas, mesas" },
   { slug: "construcao",  label: "Construção",      icon: "🏗️", diaria: 45,  exemplos: "escada, betoneira, andaime" },
-  { slug: "moda",        label: "Moda",            icon: "👗", diaria: 50,  exemplos: "roupa de festa, fantasia" },
   { slug: "casa-jardim", label: "Eletrodomésticos", icon: "🔌", diaria: 30,  exemplos: "geladeira, micro-ondas, lavadora" },
 ]
 

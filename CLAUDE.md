@@ -136,7 +136,6 @@ Multiplicadores configuráveis pelo SuperAdmin em `/admin/financeiro` (chaves `p
 | casa-jardim | R$30 |
 | construcao | R$45 |
 | esporte | R$60 |
-| moda | R$50 |
 | festas | R$80 |
 
 ## Arquivos de referência
@@ -160,7 +159,7 @@ URL de cópia para usuários: `https://docs.google.com/spreadsheets/d/{ID}/copy`
 
 1. **Linhas de exemplo** — 2 linhas já inseridas (Furadeira/Ferramentas + Projetor/Eletrônicos)
 2. **Dropdown `categoria`** (C2:C1000) → Dados → Validação → Lista:
-   `Ferramentas,Eletrônicos,Construção,Esporte,Moda,Festas,Eletrodomésticos`
+   `Ferramentas,Eletrônicos,Construção,Esporte,Festas,Eletrodomésticos`
 3. **Dropdown `condicao`** (G2:G1000) → Dados → Validação → Lista:
    `NOVO,EXCELENTE,BOM,REGULAR`
 4. **Moeda R$** (D2:F1000) → Formatar → Número → Personalizado: `R$ #.##0,00`
