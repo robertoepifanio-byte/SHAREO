@@ -10,9 +10,13 @@ import {
   ScrollView,
   StyleSheet,
   Modal,
-  SafeAreaView,
   Linking,
 } from "react-native"
+// SafeAreaView de "react-native" é iOS-only (no-op no Android — insets ficam
+// a zero). Achado testando no device: "Início" nascia colado na status bar,
+// quase impossível de tocar. react-native-safe-area-context funciona nas
+// duas plataformas (já usado em todo o resto do app via useSafeAreaInsets()).
+import { SafeAreaView } from "react-native-safe-area-context"
 import { router } from "expo-router"
 import Svg, { Path, Line, Circle, Rect, Polyline, Polygon } from "react-native-svg"
 import { ThemeToggle } from "@/components/ui/ThemeToggle"
