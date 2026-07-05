@@ -170,11 +170,41 @@ describe("MobileMenu — navegação Minha Conta (fix regressão /perfil/*)", ()
     expect(router.push).not.toHaveBeenCalled()
   })
 
-  it('"Sobre" (sem tela nativa) abre no navegador', () => {
+  it('"Sobre" navega nativamente (tela criada 2026-07-05) — NÃO abre navegador', () => {
     renderMenu()
     fireEvent.press(screen.getByText("Sobre"))
-    expect(Linking.openURL).toHaveBeenCalledWith(expect.stringContaining("/sobre"))
-    expect(router.push).not.toHaveBeenCalled()
+    expect(router.push).toHaveBeenCalledWith("/sobre")
+    expect(Linking.openURL).not.toHaveBeenCalled()
+  })
+
+  it('"Meus Anúncios" navega nativamente (tela criada 2026-07-05) — NÃO abre navegador', () => {
+    renderMenu({ isLoggedIn: true })
+    fireEvent.press(screen.getByText("Meus Anúncios"))
+    expect(router.push).toHaveBeenCalledWith("/meus-anuncios")
+    expect(Linking.openURL).not.toHaveBeenCalled()
+  })
+
+  it('"Dashboard" navega nativamente (tela criada 2026-07-05) — NÃO abre navegador', () => {
+    renderMenu({ isLoggedIn: true })
+    fireEvent.press(screen.getByText("Dashboard"))
+    expect(router.push).toHaveBeenCalledWith("/dashboard")
+    expect(Linking.openURL).not.toHaveBeenCalled()
+  })
+
+  it('"Estimativa de ganhos" navega nativamente (tela criada 2026-07-05) — NÃO abre navegador', () => {
+    renderMenu({ isLoggedIn: true })
+    fireEvent.press(screen.getByText("Anunciar"))
+    fireEvent.press(screen.getByText("Estimativa de ganhos"))
+    expect(router.push).toHaveBeenCalledWith("/anunciar/estimativa")
+    expect(Linking.openURL).not.toHaveBeenCalled()
+  })
+
+  it('"Dicas para anfitriões" navega nativamente (tela criada 2026-07-05) — NÃO abre navegador', () => {
+    renderMenu({ isLoggedIn: true })
+    fireEvent.press(screen.getByText("Anunciar"))
+    fireEvent.press(screen.getByText("Dicas para anfitriões"))
+    expect(router.push).toHaveBeenCalledWith("/anunciar/dicas")
+    expect(Linking.openURL).not.toHaveBeenCalled()
   })
 })
 
