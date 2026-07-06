@@ -35,7 +35,6 @@ const CAT_COLORS_LIGHT: Record<string, { bg: string; stroke: string }> = {
   "casa-jardim": { bg: "#DCFCE7", stroke: "#16A34A" },
   construcao:    { bg: "#FEF9C3", stroke: "#CA8A04" },
   esporte:       { bg: "#FEE2E2", stroke: "#DC2626" },
-  moda:          { bg: "#FDF4FF", stroke: "#9333EA" },
   festas:        { bg: "#FFF7ED", stroke: "#EA580C" },
 }
 
@@ -45,7 +44,6 @@ const CAT_COLORS_DARK: Record<string, { bg: string; stroke: string }> = {
   "casa-jardim": { bg: "#064E3B", stroke: "#4ADE80" },
   construcao:    { bg: "#422006", stroke: "#FBBF24" },
   esporte:       { bg: "#450A0A", stroke: "#F87171" },
-  moda:          { bg: "#3B0764", stroke: "#D946EF" },
   festas:        { bg: "#431407", stroke: "#FB923C" },
 }
 
@@ -66,8 +64,6 @@ function CategorySvg({ slug, stroke }: { slug: string; stroke: string }) {
       return <Svg {...p}><Rect x="2" y="6" width="20" height="8" rx="1"/><Path d="M17 14v7"/><Path d="M7 14v7"/><Path d="M17 3v3"/><Path d="M7 3v3"/><Path d="M10 14 2.3 6.3"/><Path d="m14 6 7.7 7.7"/><Path d="m8 6 8 8"/></Svg>
     case "esporte":
       return <Svg {...p}><Circle cx="12" cy="12" r="10"/><Path d="m4.9 4.9 14.2 14.2"/></Svg>
-    case "moda":
-      return <Svg {...p}><Path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/></Svg>
     case "festas":
       return <Svg {...p}><Path d="m5.8 11.3-2 5.8a2 2 0 0 0 2.5 2.5l5.8-2 5.8-2a2 2 0 0 0 0-3.8l-5.8-2-5.8-2a2 2 0 0 0-2.5 2.5l2 5.8"/><Circle cx="12" cy="12" r="2"/></Svg>
     default:
@@ -106,6 +102,7 @@ function FavoriteHeart({ itemId }: { itemId: string }) {
       onPress={handlePress}
       disabled={toggle.isPending}
       style={s.favBtn}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}  // área tocável 44×44 (visual 28×28) — WCAG 2.5.5
       accessibilityRole="button"
       accessibilityLabel={favorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
     >
@@ -150,7 +147,7 @@ export function ItemCard({ item, onPress }: { item: ItemCardItem; onPress: () =>
 
       {/* Corpo */}
       <View style={s.cardBody}>
-        <Text style={[s.cardCat, { color: tokens.green }]} numberOfLines={1}>{item.category.name}</Text>
+        <Text style={[s.cardCat, { color: tokens.success }]} numberOfLines={1}>{item.category.name}</Text>
         {/* dark: navy (#003366) seria invisível sobre fundo escuro — usa tokens.text */}
         <Text style={[s.cardTitle, { color: mode === "dark" ? tokens.text : "#003366" }]} numberOfLines={2}>{item.title}</Text>
         {/* TODO(revisão): estrelas de avaliação e distanceKm não vêm das APIs

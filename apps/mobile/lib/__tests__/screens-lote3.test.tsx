@@ -278,6 +278,47 @@ describe("KycScreen", () => {
     // CTA de envio não aparece quando está PENDING
     expect(screen.queryByText("Enviar para verificação")).toBeNull()
   })
+
+  // Card de documento mascarado (kyc.tsx:257-277) — endpoint novo
+  // /api/users/me/id-verification. Shape completo (achado QA revisão s41: os
+  // mocks acima usam shape antigo e nunca exercitam este caminho PII).
+  it("card de documento: exibe CPF mascarado + badge 'Protegido'", async () => {
+    withUser()
+    const { apiFetch } = require("@/lib/api") as { apiFetch: jest.Mock }
+    apiFetch.mockResolvedValueOnce({ data: {
+      idVerificationStatus: "UNVERIFIED", idRejectionReason: null,
+      maskedDocument: "•••.•••.123-45", docLabel: "CPF",
+      biometricConsentRequired: false, hasBiometricConsent: false,
+    } })
+    wrap(<KycScreen />)
+    expect(await screen.findByText("•••.•••.123-45")).toBeTruthy()
+    expect(screen.getByText("🔒 Protegido")).toBeTruthy()
+  })
+
+  it("card de documento: sem documento → fallback 'Nenhum CPF cadastrado'", async () => {
+    withUser()
+    const { apiFetch } = require("@/lib/api") as { apiFetch: jest.Mock }
+    apiFetch.mockResolvedValueOnce({ data: {
+      idVerificationStatus: "UNVERIFIED", idRejectionReason: null,
+      maskedDocument: null, docLabel: "CPF",
+      biometricConsentRequired: false, hasBiometricConsent: false,
+    } })
+    wrap(<KycScreen />)
+    expect(await screen.findByText("Nenhum CPF cadastrado. Acesse seu perfil para adicionar.")).toBeTruthy()
+  })
+
+  it("REJECTED: exibe o motivo real do admin quando presente (paridade site)", async () => {
+    withUser()
+    const { apiFetch } = require("@/lib/api") as { apiFetch: jest.Mock }
+    apiFetch.mockResolvedValueOnce({ data: {
+      idVerificationStatus: "REJECTED",
+      idRejectionReason: "Foto do documento ilegível — reenvie com boa iluminação.",
+      maskedDocument: null, docLabel: "CPF",
+      biometricConsentRequired: false, hasBiometricConsent: false,
+    } })
+    wrap(<KycScreen />)
+    expect(await screen.findByText("Foto do documento ilegível — reenvie com boa iluminação.")).toBeTruthy()
+  })
 })
 
 // ── Chat Thread — testes ──────────────────────────────────────────────────────

@@ -23,7 +23,19 @@ Marketplace de economia circular para aluguel local de itens. Lançamento nacion
 | E-mail | Resend (`RESEND_API_KEY`) |
 | Storage | Supabase Storage — `item-images` (público), `booking-photos` (público), `id-docs` (privado) |
 | Hosting | Vercel (main → staging automático) |
-| Mobile | Expo + React Native (`apps/mobile/`) — scaffold completo, não testado |
+| Mobile | Expo + React Native (`apps/mobile/`) + NativeWind — redesign por transcrição do site (PRs #171–#173) |
+
+## 📱 App mobile — REGRA DE TRANSCRIÇÃO LITERAL (fundador, 2026-07-02)
+
+**Qualquer trabalho de UI/funcionalidade em `apps/mobile/` TRANSCREVE o site responsivo em 375px — nunca "adapta", "melhora" ou inventa.** O resultado final deve ser IGUAL ao site mobile. Regra criada após 2 rejeições do fundador a protótipos que reinterpretaram o design.
+
+1. Rótulos, textos, ordem, ícones (SVG exato), cores e espaçamentos vêm **verbatim** dos componentes do site (`components/layout/AppHeader.tsx`, `BottomNav.tsx`, `MobileMenu.tsx`, `app/itens/page.tsx`, `app/(auth)/login`, `_PriceCalc.tsx`...). Ler o JSX-fonte ANTES de escrever qualquer tela.
+2. Todo arquivo novo/alterado em `apps/mobile/` começa com `// Fonte: <arquivo(s) do site transcrito(s)>`.
+3. PR mobile inclui tabela de auditoria componente/tela → arquivo-fonte na descrição.
+4. Testes RNTL fixam os rótulos exatos (rótulo inventado = CI quebra).
+5. Na dúvida entre "padrão nativo" e "copiar o site mobile": **copiar o site**.
+
+Spec visual aprovada: `docs/design/mobile-app-prototipo-v1.html` + `docs/design/mobile-app-handoff.md` (rastreabilidade frame→fonte). Fundação do design system do app: `apps/mobile/lib/theme.tsx` (tokens light/dark transcritos de `app/globals.css`) + `apps/mobile/components/ui|layout/`.
 
 ## Design System (v2)
 
@@ -159,7 +171,8 @@ URL de cópia para usuários: `https://docs.google.com/spreadsheets/d/{ID}/copy`
 
 1. **Linhas de exemplo** — 2 linhas já inseridas (Furadeira/Ferramentas + Projetor/Eletrônicos)
 2. **Dropdown `categoria`** (C2:C1000) → Dados → Validação → Lista:
-   `Ferramentas,Eletrônicos,Construção,Esporte,Festas,Eletrodomésticos`
+   `Ferramentas,Eletrônicos,Construção,Esporte/Lazer,Festas,Eletrodomésticos`
+   (⚠️ requer edição manual no Google Sheets — nome renomeado 2026-07-06, "Esporte"→"Esporte/Lazer")
 3. **Dropdown `condicao`** (G2:G1000) → Dados → Validação → Lista:
    `NOVO,EXCELENTE,BOM,REGULAR`
 4. **Moeda R$** (D2:F1000) → Formatar → Número → Personalizado: `R$ #.##0,00`

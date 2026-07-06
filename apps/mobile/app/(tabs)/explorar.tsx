@@ -7,7 +7,7 @@
 //   2. Ordenação ("Mais próximos" ▾) — 5 opções verbatim de _SortSelect.tsx
 //   3. "Ver no mapa" — abre /itens?view=map no site via Linking (mapa nativo adiado)
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useRef, useEffect } from "react"
 import {
   View,
   Text,
@@ -20,9 +20,13 @@ import {
   StyleSheet,
   Platform,
   Linking,
+  Modal,
+  Pressable,
+  Dimensions,
 } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
 import { useQuery } from "@tanstack/react-query"
+import AsyncStorage from "@react-native-async-storage/async-storage"
 import Svg, { Path, Circle, Polygon } from "react-native-svg"
 import { apiFetch, API_URL } from "@/lib/api"
 import { useTheme } from "@/lib/theme"
@@ -72,6 +76,75 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
+// ── Banner "Como alugar no ShareO" ── Fonte: app/itens/_RentBanner.tsx ───────
+// Site: só aparece com ?intent=rent na URL (mesmo href que "Quero alugar algo"
+// do MobileMenu manda). Dismiss persistido — site usa localStorage, aqui
+// AsyncStorage (armazenamentos isolados por plataforma, mesma chave por
+// consistência de nome, não por necessidade de sincronizar).
+const RENT_BANNER_DISMISS_KEY = "shareo-rent-banner-dismissed"
+
+function RentBanner({ onDismiss }: { onDismiss: () => void }) {
+  const { tokens } = useTheme()
+  return (
+    <View style={[s.rentBanner, { borderColor: tokens.green + "4D", backgroundColor: tokens.green + "0D" }]}>
+      <View style={[s.rentBannerIcon, { backgroundColor: tokens.green + "1A" }]}>
+        <Text style={{ fontSize: 18 }}>🛒</Text>
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={[s.rentBannerTitle, { color: tokens.text }]}>Como alugar no ShareO</Text>
+        <View style={s.rentBannerSteps}>
+          <View style={s.rentBannerStepRow}>
+            <View style={[s.rentBannerStepBadge, { backgroundColor: tokens.green }]}>
+              <Text style={s.rentBannerStepBadgeText}>1</Text>
+            </View>
+            <Text style={[s.rentBannerStepText, { color: tokens.muted }]}>
+              Escolha um item e clique em <Text style={{ fontWeight: "700", color: tokens.text }}>&ldquo;Reservar&rdquo;</Text>
+            </Text>
+          </View>
+          <View style={s.rentBannerStepRow}>
+            <View style={[s.rentBannerStepBadge, { backgroundColor: tokens.green }]}>
+              <Text style={s.rentBannerStepBadgeText}>2</Text>
+            </View>
+            <Text style={[s.rentBannerStepText, { color: tokens.muted }]}>
+              Informe as datas e aguarde a aprovação do dono
+            </Text>
+          </View>
+          <View style={s.rentBannerStepRow}>
+            <View style={[s.rentBannerStepBadge, { backgroundColor: tokens.green }]}>
+              <Text style={s.rentBannerStepBadgeText}>3</Text>
+            </View>
+            <Text style={[s.rentBannerStepText, { color: tokens.muted }]}>
+              Combine a retirada e aproveite!
+            </Text>
+          </View>
+        </View>
+        {/* Central de Ajuda não tem tela nativa dedicada — abre no navegador */}
+        <TouchableOpacity
+          onPress={() => Linking.openURL(`${API_URL}/ajuda#como-alugar`)}
+          accessibilityRole="link"
+          accessibilityLabel="Saiba mais na Central de Ajuda"
+        >
+          <Text style={[s.rentBannerLink, { color: tokens.success }]}>Saiba mais na Central de Ajuda →</Text>
+        </TouchableOpacity>
+      </View>
+      {/* hitSlop compensa o alvo de 32×32 → área tocável ≥44×44 (WCAG 2.5.5),
+          mesmo padrão do "Fechar" do MarkerPopupCard. Achado revisão s41. */}
+      <TouchableOpacity
+        onPress={onDismiss}
+        accessibilityRole="button"
+        accessibilityLabel="Fechar dica"
+        style={s.rentBannerClose}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={tokens.muted} strokeWidth={2} strokeLinecap="round">
+          <Path d="M18 6 6 18"/>
+          <Path d="M6 6l12 12"/>
+        </Svg>
+      </TouchableOpacity>
+    </View>
+  )
+}
+
 // ── Tela ──────────────────────────────────────────────────────────────────────
 export default function ExplorarScreen() {
   const { tokens } = useTheme()
@@ -82,6 +155,20 @@ export default function ExplorarScreen() {
   const [search,     setSearch]     = useState(params.q ?? "")
   const [activeSlug, setActiveSlug] = useState<string | null>(null)
 
+  // ── Banner "Como alugar" — só quando vem de ?intent=rent (mesmo gatilho do
+  // site) e o usuário ainda não dispensou ──────────────────────────────────
+  const [rentBannerVisible, setRentBannerVisible] = useState(false)
+  useEffect(() => {
+    if (params.intent !== "rent") return
+    AsyncStorage.getItem(RENT_BANNER_DISMISS_KEY).then((dismissed) => {
+      if (dismissed !== "1") setRentBannerVisible(true)
+    })
+  }, [params.intent])
+  function dismissRentBanner() {
+    setRentBannerVisible(false)
+    AsyncStorage.setItem(RENT_BANNER_DISMISS_KEY, "1")
+  }
+
   // ── Estado de filtros — novos ─────────────────────────────────────────────
   const [filterOpen, setFilterOpen] = useState(false)
   const [filterVals, setFilterVals] = useState<FilterValues>({
@@ -90,12 +177,28 @@ export default function ExplorarScreen() {
     dist:       "",
     userLat:    "",
     userLng:    "",
-    minRating:  "",
   })
 
   // ── Estado de ordenação — novo ────────────────────────────────────────────
-  const [sortValue, setSortValue] = useState("recent")
+  // sort pré-aplicado quando vem de ?sort= (link "Mais alugados" do
+  // MobileMenu — mesmo parâmetro/valor do site, inclusive o href do site
+  // usando "views" e não "rented" pra esse rótulo — ver EXPLORAR_LINKS).
+  const initialSort = SORT_OPTIONS.some((o) => o.value === params.sort) ? params.sort! : "recent"
+  const [sortValue, setSortValue] = useState(initialSort)
   const [sortOpen,  setSortOpen]  = useState(false)
+  // Posição medida do botão (tela toda) — o menu abre num Modal (acima de
+  // tudo, inclusive do grid da FlatList) em vez de View absoluta dentro do
+  // header da lista, que ficava pintada atrás dos itens seguintes no Android
+  // (zIndex só reordena entre irmãos do MESMO pai — não alcança o grid).
+  const sortBtnRef = useRef<View>(null)
+  const [sortMenuPos, setSortMenuPos] = useState({ top: 0, right: 0 })
+
+  function openSortMenu() {
+    sortBtnRef.current?.measureInWindow((x, y, width, height) => {
+      setSortMenuPos({ top: y + height + 4, right: Dimensions.get("window").width - (x + width) })
+      setSortOpen(true)
+    })
+  }
 
   // ── Busca de categorias (pré-existente) ──────────────────────────────────
   const { data: catData } = useQuery<CatResponse>({
@@ -120,8 +223,7 @@ export default function ExplorarScreen() {
     activeSlug ||
     filterVals.categoryId ||
     filterVals.priceMax < 500 ||
-    filterVals.dist ||
-    filterVals.minRating
+    filterVals.dist
   )
 
   // ── Busca de itens — inclui sort e maxPrice (novos parâmetros) ────────────
@@ -256,6 +358,7 @@ export default function ExplorarScreen() {
 
       {/* ── Conteúdo com scroll ── */}
       <FlatList
+        style={s.list}
         data={items}
         keyExtractor={(i) => i.id}
         numColumns={2}
@@ -266,6 +369,9 @@ export default function ExplorarScreen() {
         }
         ListHeaderComponent={
           <>
+            {/* ── Banner "Como alugar no ShareO" ── só com ?intent=rent ── */}
+            {rentBannerVisible && <RentBanner onDismiss={dismissRentBanner} />}
+
             {/* ── Botão "Filtros" ── _FilterTrigger.tsx, posição: após chips, antes do grid */}
             <FilterTriggerButton
               hasFilters={hasFilters}
@@ -284,9 +390,9 @@ export default function ExplorarScreen() {
                 </Text>
 
                 {/* ── Dropdown de ordenação ── _SortSelect.tsx verbatim ── */}
-                <View style={s.sortWrap}>
+                <View ref={sortBtnRef} style={s.sortWrap} collapsable={false}>
                   <TouchableOpacity
-                    onPress={() => setSortOpen((v) => !v)}
+                    onPress={openSortMenu}
                     style={[s.sortBtn, { borderColor: tokens.border, backgroundColor: tokens.surface }]}
                     accessibilityRole="button"
                     accessibilityLabel={`Ordenar: ${sortLabel}`}
@@ -300,46 +406,21 @@ export default function ExplorarScreen() {
                       <Path d="m6 9 6 6 6-6"/>
                     </Svg>
                   </TouchableOpacity>
-                  {sortOpen && (
-                    <View style={[s.sortMenu, { backgroundColor: tokens.surface, borderColor: tokens.border, shadowColor: "#000" }]}>
-                      {SORT_OPTIONS.map((opt) => (
-                        <TouchableOpacity
-                          key={opt.value}
-                          onPress={() => { setSortValue(opt.value); setSortOpen(false) }}
-                          style={[
-                            s.sortMenuItem,
-                            opt.value === sortValue && { backgroundColor: tokens.green + "12" },
-                          ]}
-                          accessibilityRole="menuitem"
-                          accessibilityState={{ selected: opt.value === sortValue }}
-                        >
-                          <Text style={[
-                            s.sortMenuItemText,
-                            { color: opt.value === sortValue ? tokens.green : tokens.text },
-                          ]}>
-                            {opt.label}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  )}
                 </View>
               </View>
             )}
 
             {/* ── "Ver no mapa" ── _MapToggle.tsx (lista → mapa) ── */}
-            {/* Mapa nativo adiado; abre /itens?view=map no site via Linking.
-                Mesmo padrão do MobileMenu.tsx para funcionalidades não portadas.
-                Decisão documentada: não implementar Mapbox nativo (fora de escopo desta PR). */}
+            {/* Mapa nativo (docs/plano-mapa-nativo-mobile.md, executado 2026-07-06):
+                navega pra tela dedicada /itens/mapa, levando a busca atual. */}
             {items.length > 0 && (
               <View style={s.mapToggleRow}>
                 <TouchableOpacity
-                  onPress={() => Linking.openURL(`${API_URL}/itens?view=map`)}
+                  onPress={() => router.push({ pathname: "/itens/mapa", params: search ? { q: search } : {} })}
                   style={[s.mapToggleBtn, { borderColor: tokens.border, backgroundColor: tokens.surface }]}
                   activeOpacity={0.8}
                   accessibilityRole="button"
                   accessibilityLabel="Ver itens no mapa"
-                  accessibilityHint="Abre a visualização de mapa no navegador"
                 >
                   {/* Ícone do mapa — _MapToggle.tsx linha 47 (polygon/navigation) */}
                   <Svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke={tokens.text} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
@@ -384,15 +465,52 @@ export default function ExplorarScreen() {
         onApply={handleFilterApply}
       />
 
-      {/* Fecha o sort dropdown ao tocar fora */}
-      {sortOpen && (
-        <TouchableOpacity
+      {/* ── Menu de ordenação — Modal (acima de tudo, inclusive do grid) ── */}
+      <Modal
+        visible={sortOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSortOpen(false)}
+        accessibilityViewIsModal
+      >
+        <Pressable
           style={StyleSheet.absoluteFill}
           onPress={() => setSortOpen(false)}
-          activeOpacity={0}
           accessibilityLabel="Fechar ordenação"
         />
-      )}
+        <View
+          style={[
+            s.sortMenu,
+            {
+              top:             sortMenuPos.top,
+              right:           sortMenuPos.right,
+              backgroundColor: tokens.surface,
+              borderColor:     tokens.border,
+              shadowColor:     "#000",
+            },
+          ]}
+        >
+          {SORT_OPTIONS.map((opt) => (
+            <TouchableOpacity
+              key={opt.value}
+              onPress={() => { setSortValue(opt.value); setSortOpen(false) }}
+              style={[
+                s.sortMenuItem,
+                opt.value === sortValue && { backgroundColor: tokens.green + "12" },
+              ]}
+              accessibilityRole="menuitem"
+              accessibilityState={{ selected: opt.value === sortValue }}
+            >
+              <Text style={[
+                s.sortMenuItemText,
+                { color: opt.value === sortValue ? tokens.success : tokens.text },
+              ]}>
+                {opt.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </Modal>
     </View>
   )
 }
@@ -401,6 +519,64 @@ export default function ExplorarScreen() {
 const s = StyleSheet.create({
   screen: {
     flex: 1,
+  },
+  // "rounded-xl border px-5 py-4 flex gap-4 items-start" — _RentBanner.tsx
+  rentBanner: {
+    flexDirection:     "row",
+    alignItems:        "flex-start",
+    gap:               12,
+    borderRadius:      12,
+    borderWidth:        1,
+    padding:           14,
+    margin:            12,
+    marginBottom:       0,
+  },
+  rentBannerIcon: {
+    width:          40,
+    height:         40,
+    borderRadius:   20,
+    alignItems:     "center",
+    justifyContent: "center",
+  },
+  rentBannerTitle: {
+    fontSize:   13,
+    fontWeight: "600",
+  },
+  rentBannerSteps: {
+    marginTop: 8,
+    gap:       6,
+  },
+  rentBannerStepRow: {
+    flexDirection: "row",
+    alignItems:    "center",
+    gap:           8,
+  },
+  rentBannerStepBadge: {
+    width:          18,
+    height:         18,
+    borderRadius:   9,
+    alignItems:     "center",
+    justifyContent: "center",
+  },
+  rentBannerStepBadgeText: {
+    fontSize:   9,
+    fontWeight: "700",
+    color:      "#FFFFFF",
+  },
+  rentBannerStepText: {
+    flex:     1,
+    fontSize: 12,
+  },
+  rentBannerLink: {
+    marginTop:  8,
+    fontSize:   11,
+    fontWeight: "600",
+  },
+  rentBannerClose: {
+    width:          32,
+    height:         32,
+    alignItems:     "center",
+    justifyContent: "center",
   },
   searchWrap: {
     flexDirection:    "row",
@@ -438,9 +614,19 @@ const s = StyleSheet.create({
     fontWeight: "600",
     color:      "#FFFFFF",
   },
+  // Altura explícita + flexShrink/Grow 0: sem isso, num pai flex:1 sem o
+  // FlatList tendo flex:1 próprio (era o caso — corrigido junto), o Yoga
+  // podia comprimir esta linha (icone 96px + rótulo) abaixo do necessário,
+  // cortando o rótulo — achado testando no device real.
   chipsScroll: {
+    height:            128,
+    flexGrow:          0,
+    flexShrink:        0,
     borderBottomWidth: 1,
     borderBottomColor: "#E2E8F0",
+  },
+  list: {
+    flex: 1,
   },
   chipsRow: {
     flexDirection:    "row",
@@ -489,10 +675,11 @@ const s = StyleSheet.create({
     fontSize:  13,
     maxWidth:  100,
   },
+  // top/right vêm de sortMenuPos (medidos via measureInWindow — o menu abre
+  // num Modal, fora da árvore normal, então a posição não é mais relativa
+  // ao sortWrap).
   sortMenu: {
     position:      "absolute",
-    top:            44,
-    right:          0,
     minWidth:       160,
     borderRadius:   10,
     borderWidth:    1,
@@ -506,7 +693,7 @@ const s = StyleSheet.create({
   sortMenuItem: {
     paddingHorizontal: 14,
     paddingVertical:   10,
-    minHeight:         40,
+    minHeight:         44,   // WCAG 2.5.5 (era 40)
   },
   sortMenuItemText: {
     fontSize:   13,

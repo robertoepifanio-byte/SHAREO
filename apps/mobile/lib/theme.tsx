@@ -34,6 +34,7 @@ export const LIGHT_TOKENS = {
   error:     "#C0392B",   // --destructive (WCAG AA 5.44:1 sobre branco)
   warning:   "#F59E0B",   // --booking-pending
   success:   "#007B3C",   // --success
+  accent:    "#59C686",   // --accent (verde claro): texto SOBRE fundo navy/primary — não sobre branco (2.07:1)
   bookingPending:   "#F59E0B",
   bookingActive:    "#007B3C",
   bookingCompleted: "#64748B",
@@ -54,11 +55,12 @@ export const DARK_TOKENS = {
   text:      "#E8EEF6",   // --foreground dark
   muted:     "#94A3B8",   // --muted-foreground dark
   border:    "#26395A",   // --border dark
-  navy:      "#003366",   // fill preservado
-  green:     "#007B3C",   // fill preservado
+  navy:      "#1E4D80",   // --primary dark #1E4D80 (chips/badges + texto primary). Antes #003366 fixo (não flipava) → navy-as-text sumia no dark (~1.24:1). Achado revisão s41.
+  green:     "#007B3C",   // fill preservado (--brand dark; branco 5.39:1)
   error:     "#D14438",   // --destructive dark
   warning:   "#FBBF77",   // --booking-pending dark
   success:   "#5BD08B",   // --success dark
+  accent:    "#59C686",   // --accent (mesmo valor; ok como texto no dark sobre navy)
   bookingPending:   "#FBBF77",
   bookingActive:    "#5BD08B",
   bookingCompleted: "#94A3B8",
@@ -82,6 +84,7 @@ export type Tokens = {
   error:            string
   warning:          string
   success:          string
+  accent:           string
   bookingPending:   string
   bookingActive:    string
   bookingCompleted: string

@@ -16,9 +16,13 @@ import {
   Alert,
   ActivityIndicator,
   StyleSheet,
-  SafeAreaView,
   Pressable,
 } from "react-native"
+// SafeAreaView de "react-native" é iOS-only (no-op no Android → o rodapé do
+// sheet, botão "Ver resultados", pode nascer atrás da barra de navegação).
+// react-native-safe-area-context funciona nas duas plataformas — mesmo fix já
+// aplicado em MobileMenu.tsx. Achado revisão s41.
+import { SafeAreaView } from "react-native-safe-area-context"
 import Svg, { Line, Path } from "react-native-svg"
 import * as Location from "expo-location"
 import { useTheme } from "@/lib/theme"
@@ -31,7 +35,8 @@ export interface FilterValues {
   dist:       string         // "" | "2" | "5" | "10"
   userLat:    string         // "" quando sem GPS
   userLng:    string         // "" quando sem GPS
-  minRating:  string         // "" | "3" | "4" | "5"
+  // minRating removido na revisão s41 (filtro nunca aplicado — a média não vem
+  // de /api/items). Reintroduzir quando a API expuser a média de avaliações.
 }
 
 interface Props {
@@ -50,14 +55,6 @@ const DIST_OPTIONS = [
   { label: "Até 5 km",  value: "5"  },
   { label: "Até 10 km", value: "10" },
   { label: "Qualquer",  value: ""   },
-]
-
-// _FilterForm.tsx linhas 137-142
-const RATING_OPTIONS = [
-  { label: "Qualquer avaliação", value: "" },
-  { label: "★★★★★ 5 estrelas",  value: "5" },
-  { label: "★★★★+ 4+",          value: "4" },
-  { label: "★★★+  3+",          value: "3" },
 ]
 
 const PRICE_STEP = 10   // R$10, fonte: _FilterForm.tsx min="0" max="500" step="10"
@@ -160,7 +157,6 @@ export function FilterBottomSheet({ isOpen, onClose, categories, values, onApply
       dist:       "",
       userLat:    "",
       userLng:    "",
-      minRating:  "",
     })
     setLocationActive(false)
   }
@@ -375,26 +371,11 @@ export function FilterBottomSheet({ isOpen, onClose, categories, values, onApply
             )}
           </View>
 
-          {/* ── AVALIAÇÃO MÍNIMA ── _FilterForm.tsx linhas 131-156 ─────── */}
-          <View style={[s.section, { borderBottomColor: tokens.border }]}>
-            <Text style={[s.sectionLabel, { color: tokens.muted }]}>AVALIAÇÃO MÍNIMA</Text>
-            {/* Nota: avaliação média não vem de /api/items — filtro aplicado
-                client-side quando disponível (mesmo ARQ-ALTO-10 do site) */}
-            {RATING_OPTIONS.map((opt) => (
-              <TouchableOpacity
-                key={opt.value}
-                style={s.radioRow}
-                onPress={() => setLocal((v) => ({ ...v, minRating: opt.value }))}
-                accessibilityRole="radio"
-                accessibilityState={{ checked: local.minRating === opt.value }}
-              >
-                <View style={[s.radioCircle, { borderColor: tokens.border }]}>
-                  {local.minRating === opt.value && <View style={s.radioFill} />}
-                </View>
-                <Text style={[s.radioLabel, { color: tokens.text }]}>{opt.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          {/* AVALIAÇÃO MÍNIMA removida (revisão s41): a média não vem de
+              /api/items e o filtro nunca era aplicado — o controle "mentia"
+              (acendia o badge "Filtros ativos" sem efeito nos resultados).
+              Reintroduzir quando a API expuser a média. Ver
+              docs/meta-revisao-app-site-s41.md. */}
         </ScrollView>
 
         {/* Footer — "Ver resultados" — _FilterTrigger.tsx linhas 46-56 */}
@@ -504,7 +485,7 @@ const s = StyleSheet.create({
     alignItems:    "center",
     gap:           8,
     paddingVertical: 6,
-    minHeight:     36,
+    minHeight:     44,
   },
   radioCircle: {
     width:        18,
@@ -542,8 +523,8 @@ const s = StyleSheet.create({
     gap:           12,
   },
   stepperBtn: {
-    width:          36,
-    height:         36,
+    width:          44,   // WCAG 2.5.5 (era 36 — achado revisão s41)
+    height:         44,
     borderRadius:   8,
     borderWidth:    1,
     alignItems:     "center",
@@ -590,7 +571,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius:      8,
     borderWidth:       1,
-    minHeight:         36,
+    minHeight:         44,
   },
   gpsBtnText: {
     fontSize:   12,

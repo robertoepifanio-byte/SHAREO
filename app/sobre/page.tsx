@@ -2,6 +2,9 @@ import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
 import { AppHeader } from "@/components/layout/AppHeader"
+import { prisma } from "@/lib/prisma"
+
+export const revalidate = 60
 
 export const metadata: Metadata = {
   title: "Sobre o ShareO",
@@ -54,8 +57,10 @@ const VALORES = [
   },
 ]
 
-const STATS = [
-  { value: "2.400+", label: "itens cadastrados" },
+// "itens cadastrados" era fixo ("2.400+") enquanto Início (app/page.tsx:115)
+// já mostra a contagem real via prisma.item.count — corrigido 2026-07-06 pra
+// não divergir do número real da plataforma.
+const STATS_STATIC = [
   { value: "R$2.000", label: "renda média/mês por proprietário" },
   { value: "2026", label: "ano de fundação" },
 ]
@@ -83,7 +88,14 @@ const EQUIPE = [
   },
 ]
 
-export default function SobrePage() {
+export default async function SobrePage() {
+  const itemCount = await prisma.item.count({ where: { deletedAt: null } }).catch(() => 0)
+
+  const STATS = [
+    { value: itemCount.toLocaleString("pt-BR"), label: "itens cadastrados" },
+    ...STATS_STATIC,
+  ]
+
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
@@ -255,7 +267,7 @@ export default function SobrePage() {
                   src="/logos/pratika-ia-sobre.png"
                   alt="Pratika-IA"
                   width={480}
-                  height={145}
+                  height={166}
                   className="h-auto w-full max-w-sm"
                 />
                 <p className="max-w-sm text-sm text-muted-foreground leading-relaxed">

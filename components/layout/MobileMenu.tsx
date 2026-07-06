@@ -215,22 +215,17 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
           >
             <ul className="container py-3 flex flex-col gap-1">
 
-              {/* Início */}
-              <li>
-                <NavLink href="/" className={topItem}>Início</NavLink>
-              </li>
-
-              {/* Sobre */}
-              <li>
-                <NavLink href="/sobre" className={topItem}>Sobre</NavLink>
-              </li>
-
-              {/* Tema */}
+              {/* Tema — movido para o topo, acima de Início (decisão fundador, 2026-07-06) */}
               <li className="px-0 py-1">
                 <p className="px-4 pb-1 pt-2 text-xs font-semibold text-white/80 uppercase tracking-wider">
                   Tema
                 </p>
                 <ThemeToggle variant="menu" />
+              </li>
+
+              {/* Início */}
+              <li>
+                <NavLink href="/" className={topItem}>Início</NavLink>
               </li>
 
               <li><div className="my-1 h-px bg-white/10" /></li>
@@ -455,6 +450,12 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
                   </li>
                 </>
               )}
+
+              {/* Sobre — movido para o final (decisão fundador, 2026-07-06) */}
+              <li><div className="my-1 h-px bg-white/10" /></li>
+              <li>
+                <NavLink href="/sobre" className={topItem}>Sobre</NavLink>
+              </li>
             </ul>
           </nav>
         </>

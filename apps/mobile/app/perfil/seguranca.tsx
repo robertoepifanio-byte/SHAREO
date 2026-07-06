@@ -7,6 +7,13 @@
 // Rótulos, textos, fluxos e mensagens verbatim dos arquivos-fonte.
 // Admins veem form de senha (ChangePasswordForm); não-admins veem link forgot-password.
 // Zona de perigo (delete 2-passos) oculta para admins — idêntico ao site.
+//
+// Revisão s41 (dark mode): reescrita de NativeWind `className` (cores hex fixas
+// de light no tailwind.config, não reagem ao ThemeContext → dark mode quebrado)
+// para StyleSheet + useTheme(), como as ~35 outras telas. Superfícies/textos/
+// bordas usam tokens; badges e callouts de status (verde/amarelo/vermelho/âmbar)
+// ficam em hex fixo, igual ao site (que não tem variantes dark nesses elementos).
+// Lógica, handlers e rótulos preservados verbatim.
 
 import {
   View,
@@ -15,9 +22,9 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  Linking,
   KeyboardAvoidingView,
   Platform,
+  StyleSheet,
 } from "react-native"
 import { useState } from "react"
 import { router } from "expo-router"
@@ -60,6 +67,24 @@ interface MeSecurityData {
 }
 
 type ResendState = "idle" | "loading" | "success" | "error"
+
+// Paleta fixa (light-only, paridade com o site — badges/callouts sem variante dark)
+const C = {
+  greenText:   "#15803D",
+  greenBadgeBg:"#DCFCE7",
+  greenCardBg: "#F0FDF4",
+  yellowText:  "#854D0E",
+  yellowBadgeBg:"#FEF9C3",
+  yellowBtnBorder:"#FACC15",
+  yellowBtnBg: "#FEFCE8",
+  redText:     "#DC2626",
+  redBorder:   "#FECACA",
+  redCardBg:   "#FEF2F2",
+  redErrBg:    "#FEE2E2",
+  amberBorder: "#FDE68A",
+  amberBg:     "#FFFBEB",
+  amberText:   "#92400E",
+}
 
 // ─── Componente ───────────────────────────────────────────────────────────────
 export default function SegurancaScreen() {
@@ -205,19 +230,22 @@ export default function SegurancaScreen() {
     }
   }
 
+  // Estilo de input reutilizável (bg-background + border-border + text-foreground)
+  const inputStyle = [s.input, { borderColor: tokens.border, backgroundColor: tokens.bg, color: tokens.text }]
+
   // ── Guard: não autenticado ─────────────────────────────────────────────────
   if (!user) {
     return (
-      <View className="flex-1 items-center justify-center bg-background px-6" style={{ paddingTop: insets.top }}>
-        <Text className="text-5xl">🔒</Text>
-        <Text className="mt-3 text-base font-semibold text-primary">Faça login para acessar</Text>
+      <View style={[s.gate, { backgroundColor: tokens.bg, paddingTop: insets.top }]}>
+        <Text style={s.gateEmoji}>🔒</Text>
+        <Text style={[s.gateTitle, { color: tokens.navy }]}>Faça login para acessar</Text>
         <TouchableOpacity
-          className="mt-6 min-h-[44px] items-center justify-center rounded-xl bg-brand px-8"
+          style={[s.gateBtn, { backgroundColor: tokens.green }]}
           onPress={() => router.push("/(auth)/login")}
           accessibilityRole="button"
           accessibilityLabel="Entrar"
         >
-          <Text className="font-bold text-white">Entrar</Text>
+          <Text style={s.whiteBold}>Entrar</Text>
         </TouchableOpacity>
       </View>
     )
@@ -225,49 +253,51 @@ export default function SegurancaScreen() {
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-background"
+      style={[s.root, { backgroundColor: tokens.bg }]}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       {/* ── Header — verbatim de kyc.tsx ── */}
       <View
-        className="flex-row items-center gap-3 border-b border-border bg-surface px-4 pb-3"
-        style={{ paddingTop: insets.top + 8 }}
+        style={[
+          s.header,
+          { backgroundColor: tokens.surface, borderBottomColor: tokens.border, paddingTop: insets.top + 8 },
+        ]}
       >
         <TouchableOpacity
           onPress={() => router.back()}
           accessibilityLabel="Voltar"
           accessibilityRole="button"
-          className="min-h-[44px] min-w-[44px] items-center justify-center"
+          style={s.backBtn}
         >
-          <Text className="text-2xl text-muted">‹</Text>
+          <Text style={[s.backIcon, { color: tokens.muted }]}>‹</Text>
         </TouchableOpacity>
-        <Text className="flex-1 text-lg font-bold text-primary">Login e Segurança</Text>
+        <Text style={[s.headerTitle, { color: tokens.navy }]}>Login e Segurança</Text>
       </View>
 
       {meLoading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#007B3C" />
+        <View style={s.loading}>
+          <ActivityIndicator size="large" color={tokens.green} />
         </View>
       ) : (
         <ScrollView
-          className="flex-1"
+          style={s.flex1}
           contentContainerStyle={{ padding: 16, paddingBottom: 48 }}
           keyboardShouldPersistTaps="handled"
         >
 
           {/* ── Seção E-mail ─────────────────────────────────────────────── */}
           {/* Fonte: app/perfil/seguranca/page.tsx + _ChangeEmailForm.tsx + _ResendVerificationButton.tsx */}
-          <View className="mb-4 rounded-xl border border-border bg-surface p-5">
-            <Text className="mb-4 font-semibold text-foreground">E-mail</Text>
+          <View style={[s.card, { borderColor: tokens.border, backgroundColor: tokens.surface }]}>
+            <Text style={[s.cardTitle, { color: tokens.text }]}>E-mail</Text>
 
             {/* E-mail mascarado + badge Verificado/Pendente */}
-            <View className="flex-row items-center justify-between">
-              <View className="mr-3 flex-1">
-                <Text className="text-sm font-medium text-foreground">
+            <View style={s.rowBetween}>
+              <View style={s.emailInfo}>
+                <Text style={[s.emailText, { color: tokens.text }]}>
                   {meData?.email ? maskEmail(meData.email) : maskEmail(user.email)}
                 </Text>
                 {meData?.createdAt ? (
-                  <Text className="text-xs text-muted">
+                  <Text style={[s.metaText, { color: tokens.muted }]}>
                     Conta criada em{" "}
                     {new Date(meData.createdAt).toLocaleDateString("pt-BR", {
                       day:   "numeric",
@@ -278,38 +308,37 @@ export default function SegurancaScreen() {
                 ) : null}
               </View>
               {meData?.emailVerified ? (
-                <View className="rounded-full bg-green-100 px-2.5 py-1">
-                  <Text className="text-xs font-semibold text-green-700">Verificado</Text>
+                <View style={[s.badge, { backgroundColor: C.greenBadgeBg }]}>
+                  <Text style={[s.badgeText, { color: C.greenText }]}>Verificado</Text>
                 </View>
               ) : (
-                <View className="rounded-full bg-yellow-100 px-2.5 py-1">
-                  <Text className="text-xs font-semibold text-yellow-800">Pendente</Text>
+                <View style={[s.badge, { backgroundColor: C.yellowBadgeBg }]}>
+                  <Text style={[s.badgeText, { color: C.yellowText }]}>Pendente</Text>
                 </View>
               )}
             </View>
 
             {/* ResendVerificationButton — só se e-mail não verificado */}
             {!meData?.emailVerified && (
-              <View className="mt-4 border-t border-border pt-4">
-                <Text className="mb-2 text-xs text-muted">
+              <View style={[s.divTop, { borderTopColor: tokens.border }]}>
+                <Text style={[s.smallMuted, { color: tokens.muted }]}>
                   Confirme seu e-mail para poder realizar reservas na plataforma.
                 </Text>
                 {resendState === "success" ? (
-                  <Text className="text-sm text-green-700">
+                  <Text style={[s.sm, { color: C.greenText }]}>
                     E-mail de verificação enviado. Verifique sua caixa de entrada e a pasta de spam.
                   </Text>
                 ) : resendState === "error" ? (
-                  <Text className="text-sm text-red-600">{resendError}</Text>
+                  <Text style={[s.sm, { color: C.redText }]}>{resendError}</Text>
                 ) : (
                   <TouchableOpacity
                     onPress={handleResend}
                     disabled={resendState === "loading"}
                     accessibilityRole="button"
                     accessibilityLabel="Reenviar e-mail de verificação"
-                    className="min-h-[44px] items-center justify-center self-start rounded-xl border border-yellow-400 bg-yellow-50 px-4"
-                    style={{ opacity: resendState === "loading" ? 0.6 : 1 }}
+                    style={[s.resendBtn, { borderColor: C.yellowBtnBorder, backgroundColor: C.yellowBtnBg, opacity: resendState === "loading" ? 0.6 : 1 }]}
                   >
-                    <Text className="text-xs font-semibold text-yellow-800">
+                    <Text style={[s.badgeText, { color: C.yellowText }]}>
                       {resendState === "loading" ? "Enviando..." : "Reenviar e-mail de verificação"}
                     </Text>
                   </TouchableOpacity>
@@ -319,38 +348,38 @@ export default function SegurancaScreen() {
 
             {/* ChangeEmailForm */}
             {emailSuccess ? (
-              <View className="mt-4 border-t border-border pt-4">
-                <View className="rounded-xl bg-green-50 px-4 py-3">
-                  <Text className="text-sm text-green-700">
+              <View style={[s.divTop, { borderTopColor: tokens.border }]}>
+                <View style={[s.successCard, { backgroundColor: C.greenCardBg }]}>
+                  <Text style={[s.sm, { color: C.greenText }]}>
                     E-mail alterado! Enviamos um link de verificação para o novo endereço.{"\n"}
                     Você será desconectado em instantes para fazer login novamente.
                   </Text>
                 </View>
               </View>
             ) : !emailOpen ? (
-              <View className="mt-4 border-t border-border pt-4">
+              <View style={[s.divTop, { borderTopColor: tokens.border }]}>
                 <TouchableOpacity
                   onPress={() => setEmailOpen(true)}
                   accessibilityRole="button"
                   accessibilityLabel="Alterar e-mail"
-                  className="min-h-[44px] justify-center"
+                  style={s.linkBtn}
                 >
-                  <Text className="text-sm font-medium text-brand">Alterar e-mail</Text>
+                  <Text style={[s.linkAction, { color: tokens.success }]}>Alterar e-mail</Text>
                 </TouchableOpacity>
               </View>
             ) : (
-              <View className="mt-4 border-t border-border pt-4">
+              <View style={[s.divTop, { borderTopColor: tokens.border }]}>
                 {/* Aviso de verificação — verbatim _ChangeEmailForm.tsx */}
-                <View className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-                  <Text className="text-sm text-amber-800">
+                <View style={[s.warnCard, { borderColor: C.amberBorder, backgroundColor: C.amberBg }]}>
+                  <Text style={[s.sm, { color: C.amberText }]}>
                     ⚠️ O novo e-mail precisará ser{" "}
-                    <Text className="font-bold">verificado</Text>{" "}
+                    <Text style={s.bold}>verificado</Text>{" "}
                     antes de ser ativado. Você receberá um link de confirmação no novo endereço
                     e será desconectado para fazer login novamente.
                   </Text>
                 </View>
 
-                <Text className="mb-1 text-xs font-medium text-muted">Novo e-mail</Text>
+                <Text style={[s.fieldLabel, { color: tokens.muted }]}>Novo e-mail</Text>
                 <TextInput
                   value={newEmail}
                   onChangeText={(v) => { setNewEmail(v); setEmailError("") }}
@@ -360,11 +389,11 @@ export default function SegurancaScreen() {
                   autoComplete="email"
                   editable={!emailLoading}
                   accessibilityLabel="Novo e-mail"
-                  className="mb-3 rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground"
+                  style={inputStyle}
                   placeholderTextColor={tokens.muted}
                 />
 
-                <Text className="mb-1 text-xs font-medium text-muted">Confirme sua senha</Text>
+                <Text style={[s.fieldLabel, { color: tokens.muted }]}>Confirme sua senha</Text>
                 <TextInput
                   value={emailPwd}
                   onChangeText={(v) => { setEmailPwd(v); setEmailError("") }}
@@ -373,28 +402,27 @@ export default function SegurancaScreen() {
                   autoComplete="current-password"
                   editable={!emailLoading}
                   accessibilityLabel="Confirme sua senha"
-                  className="mb-3 rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground"
+                  style={inputStyle}
                   placeholderTextColor={tokens.muted}
                 />
 
                 {emailError ? (
-                  <Text className="mb-2 text-xs text-red-600" accessibilityRole="alert">
+                  <Text style={[s.errText, { color: C.redText }]} accessibilityRole="alert">
                     {emailError}
                   </Text>
                 ) : null}
 
-                <View className="flex-row gap-2">
+                <View style={s.btnRow}>
                   <TouchableOpacity
                     onPress={handleChangeEmail}
                     disabled={emailLoading || !newEmail || !emailPwd}
                     accessibilityRole="button"
                     accessibilityLabel="Confirmar alteração"
-                    className="min-h-[44px] flex-1 items-center justify-center rounded-xl bg-primary"
-                    style={{ opacity: emailLoading || !newEmail || !emailPwd ? 0.5 : 1 }}
+                    style={[s.primaryBtn, { backgroundColor: tokens.navy, opacity: emailLoading || !newEmail || !emailPwd ? 0.5 : 1 }]}
                   >
                     {emailLoading
                       ? <ActivityIndicator size="small" color="#ffffff" />
-                      : <Text className="text-sm font-semibold text-white">Confirmar alteração</Text>
+                      : <Text style={s.primaryBtnText}>Confirmar alteração</Text>
                     }
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -402,10 +430,9 @@ export default function SegurancaScreen() {
                     disabled={emailLoading}
                     accessibilityRole="button"
                     accessibilityLabel="Cancelar"
-                    className="min-h-[44px] items-center justify-center rounded-xl border border-border px-4"
-                    style={{ opacity: emailLoading ? 0.5 : 1 }}
+                    style={[s.cancelBtn, { borderColor: tokens.border, opacity: emailLoading ? 0.5 : 1 }]}
                   >
-                    <Text className="text-sm text-muted">Cancelar</Text>
+                    <Text style={[s.sm, { color: tokens.muted }]}>Cancelar</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -414,17 +441,17 @@ export default function SegurancaScreen() {
 
           {/* ── Seção Senha ──────────────────────────────────────────────── */}
           {/* Fonte: app/perfil/seguranca/page.tsx + _ChangePasswordForm.tsx */}
-          <View className="mb-4 rounded-xl border border-border bg-surface p-5">
-            <Text className="mb-1 font-semibold text-foreground">Senha</Text>
+          <View style={[s.card, { borderColor: tokens.border, backgroundColor: tokens.surface }]}>
+            <Text style={[s.cardTitleTight, { color: tokens.text }]}>Senha</Text>
 
             {isAdmin ? (
               // Admins: form de troca de senha (verbatim _ChangePasswordForm.tsx)
               <>
-                <Text className="mb-4 text-sm text-muted">
+                <Text style={[s.sectionDesc, { color: tokens.muted }]}>
                   Altere sua senha de acesso ao painel admin.
                 </Text>
 
-                <Text className="mb-1 text-xs font-medium text-muted">Senha atual</Text>
+                <Text style={[s.fieldLabel, { color: tokens.muted }]}>Senha atual</Text>
                 <TextInput
                   value={pwdCurrent}
                   onChangeText={setPwdCurrent}
@@ -432,11 +459,11 @@ export default function SegurancaScreen() {
                   autoComplete="current-password"
                   editable={!pwdLoading}
                   accessibilityLabel="Senha atual"
-                  className="mb-3 rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground"
+                  style={inputStyle}
                   placeholderTextColor={tokens.muted}
                 />
 
-                <Text className="mb-1 text-xs font-medium text-muted">Nova senha</Text>
+                <Text style={[s.fieldLabel, { color: tokens.muted }]}>Nova senha</Text>
                 <TextInput
                   value={pwdNew}
                   onChangeText={setPwdNew}
@@ -444,11 +471,11 @@ export default function SegurancaScreen() {
                   autoComplete="new-password"
                   editable={!pwdLoading}
                   accessibilityLabel="Nova senha"
-                  className="mb-3 rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground"
+                  style={inputStyle}
                   placeholderTextColor={tokens.muted}
                 />
 
-                <Text className="mb-1 text-xs font-medium text-muted">Confirmar nova senha</Text>
+                <Text style={[s.fieldLabel, { color: tokens.muted }]}>Confirmar nova senha</Text>
                 <TextInput
                   value={pwdConfirm}
                   onChangeText={setPwdConfirm}
@@ -456,42 +483,39 @@ export default function SegurancaScreen() {
                   autoComplete="new-password"
                   editable={!pwdLoading}
                   accessibilityLabel="Confirmar nova senha"
-                  className="mb-3 rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground"
+                  style={inputStyle}
                   placeholderTextColor={tokens.muted}
                 />
 
-                {pwdError   ? <Text className="mb-2 text-xs text-red-600">{pwdError}</Text>   : null}
-                {pwdSuccess ? <Text className="mb-2 text-xs text-green-700">Senha alterada. Redirecionando para o login…</Text> : null}
+                {pwdError   ? <Text style={[s.errText, { color: C.redText }]}>{pwdError}</Text> : null}
+                {pwdSuccess ? <Text style={[s.errText, { color: C.greenText }]}>Senha alterada. Redirecionando para o login…</Text> : null}
 
                 <TouchableOpacity
                   onPress={handleChangePassword}
                   disabled={pwdLoading}
                   accessibilityRole="button"
                   accessibilityLabel="Salvar nova senha"
-                  className="min-h-[52px] items-center justify-center rounded-xl bg-primary"
-                  style={{ opacity: pwdLoading ? 0.5 : 1 }}
+                  style={[s.primaryBtnLg, { backgroundColor: tokens.navy, opacity: pwdLoading ? 0.5 : 1 }]}
                 >
                   {pwdLoading
                     ? <ActivityIndicator size="small" color="#ffffff" />
-                    : <Text className="text-sm font-semibold text-white">
-                        {pwdLoading ? "Salvando…" : "Salvar nova senha"}
-                      </Text>
+                    : <Text style={s.primaryBtnText}>Salvar nova senha</Text>
                   }
                 </TouchableOpacity>
               </>
             ) : (
               // Não-admins: link para recuperação de senha (verbatim page.tsx)
               <>
-                <Text className="mb-4 text-sm text-muted">
+                <Text style={[s.sectionDesc, { color: tokens.muted }]}>
                   Para alterar sua senha, use o fluxo de recuperação de senha.
                 </Text>
                 <TouchableOpacity
-                  onPress={() => Linking.openURL(`${API_URL}/forgot-password`)}
+                  onPress={() => router.push("/(auth)/forgot-password")}
                   accessibilityRole="button"
                   accessibilityLabel="Alterar senha"
-                  className="min-h-[44px] items-center justify-center self-start rounded-xl border border-border px-4"
+                  style={[s.outlineBtn, { borderColor: tokens.border }]}
                 >
-                  <Text className="text-sm font-semibold text-foreground">Alterar senha</Text>
+                  <Text style={[s.smSemibold, { color: tokens.text }]}>Alterar senha</Text>
                 </TouchableOpacity>
               </>
             )}
@@ -500,9 +524,9 @@ export default function SegurancaScreen() {
           {/* ── Zona de perigo — oculta para admins (verbatim page.tsx) ── */}
           {/* Fonte: app/perfil/_DeleteAccountButton.tsx */}
           {!isAdmin && (
-            <View className="rounded-xl border border-red-200 bg-surface p-5">
-              <Text className="mb-1 font-semibold text-red-600">Zona de perigo</Text>
-              <Text className="mb-4 text-sm text-muted">
+            <View style={[s.card, { borderColor: C.redBorder, backgroundColor: tokens.surface }]}>
+              <Text style={[s.cardTitleTight, { color: C.redText }]}>Zona de perigo</Text>
+              <Text style={[s.sectionDesc, { color: tokens.muted }]}>
                 Ações irreversíveis que afetam permanentemente sua conta.
               </Text>
 
@@ -511,37 +535,36 @@ export default function SegurancaScreen() {
                   onPress={() => setDeleteStep("confirm")}
                   accessibilityRole="button"
                   accessibilityLabel="Excluir minha conta"
-                  className="min-h-[44px] justify-center"
+                  style={s.linkBtn}
                 >
-                  <Text className="text-sm text-red-600">Excluir minha conta</Text>
+                  <Text style={[s.sm, { color: C.redText }]}>Excluir minha conta</Text>
                 </TouchableOpacity>
               ) : (
                 // Card de confirmação — 2 passos verbatim _DeleteAccountButton.tsx
-                <View className="rounded-xl border border-red-200 bg-red-50 p-4">
-                  <Text className="mb-1 font-semibold text-red-600">Excluir conta permanentemente</Text>
-                  <Text className="mb-4 text-sm text-muted">
+                <View style={[s.dangerConfirm, { borderColor: C.redBorder, backgroundColor: C.redCardBg }]}>
+                  <Text style={[s.dangerTitle, { color: C.redText }]}>Excluir conta permanentemente</Text>
+                  <Text style={[s.sectionDesc, { color: tokens.muted }]}>
                     Seus dados pessoais serão removidos. Histórico de locações concluídas é mantido
                     por obrigação fiscal. Esta ação não pode ser desfeita.
                   </Text>
 
                   {deleteError ? (
-                    <View className="mb-3 rounded-xl bg-red-100 px-3 py-2">
-                      <Text className="text-sm text-red-600">{deleteError}</Text>
+                    <View style={[s.dangerErrBox, { backgroundColor: C.redErrBg }]}>
+                      <Text style={[s.sm, { color: C.redText }]}>{deleteError}</Text>
                     </View>
                   ) : null}
 
-                  <View className="flex-row gap-3">
+                  <View style={s.btnRow3}>
                     <TouchableOpacity
                       onPress={handleDelete}
                       disabled={deleteStep === "loading"}
                       accessibilityRole="button"
                       accessibilityLabel="Confirmar exclusão"
-                      className="min-h-[44px] flex-1 items-center justify-center rounded-xl bg-red-600"
-                      style={{ opacity: deleteStep === "loading" ? 0.5 : 1 }}
+                      style={[s.dangerBtn, { opacity: deleteStep === "loading" ? 0.5 : 1 }]}
                     >
                       {deleteStep === "loading"
                         ? <ActivityIndicator size="small" color="#ffffff" />
-                        : <Text className="text-sm font-semibold text-white">Confirmar exclusão</Text>
+                        : <Text style={s.primaryBtnText}>Confirmar exclusão</Text>
                       }
                     </TouchableOpacity>
                     <TouchableOpacity
@@ -549,10 +572,9 @@ export default function SegurancaScreen() {
                       disabled={deleteStep === "loading"}
                       accessibilityRole="button"
                       accessibilityLabel="Cancelar"
-                      className="min-h-[44px] items-center justify-center rounded-xl border border-border px-4"
-                      style={{ opacity: deleteStep === "loading" ? 0.5 : 1 }}
+                      style={[s.cancelBtn, { borderColor: tokens.border, opacity: deleteStep === "loading" ? 0.5 : 1 }]}
                     >
-                      <Text className="text-sm font-semibold text-foreground">Cancelar</Text>
+                      <Text style={[s.smSemibold, { color: tokens.text }]}>Cancelar</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -564,3 +586,71 @@ export default function SegurancaScreen() {
     </KeyboardAvoidingView>
   )
 }
+
+const s = StyleSheet.create({
+  root:  { flex: 1 },
+  flex1: { flex: 1 },
+
+  // Gate
+  gate:      { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 },
+  gateEmoji: { fontSize: 48 },
+  gateTitle: { marginTop: 12, fontSize: 16, fontWeight: "600" },
+  gateBtn:   { marginTop: 24, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: 12, paddingHorizontal: 32 },
+  whiteBold: { fontWeight: "700", color: "#FFFFFF" },
+
+  // Header
+  header:      { flexDirection: "row", alignItems: "center", gap: 12, borderBottomWidth: 1, paddingHorizontal: 16, paddingBottom: 12 },
+  backBtn:     { minHeight: 44, minWidth: 44, alignItems: "center", justifyContent: "center" },
+  backIcon:    { fontSize: 28, fontWeight: "700", lineHeight: 30 },
+  headerTitle: { flex: 1, fontSize: 18, fontWeight: "700" },
+
+  loading: { flex: 1, alignItems: "center", justifyContent: "center" },
+
+  // Cards de seção
+  card:          { marginBottom: 16, borderRadius: 12, borderWidth: 1, padding: 20 },
+  cardTitle:     { marginBottom: 16, fontWeight: "600" },
+  cardTitleTight:{ marginBottom: 4, fontWeight: "600" },
+  sectionDesc:   { marginBottom: 16, fontSize: 14 },
+
+  // E-mail row
+  rowBetween: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  emailInfo:  { marginRight: 12, flex: 1 },
+  emailText:  { fontSize: 14, fontWeight: "500" },
+  metaText:   { fontSize: 12 },
+
+  badge:     { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  badgeText: { fontSize: 12, fontWeight: "600" },
+
+  divTop:     { marginTop: 16, borderTopWidth: 1, paddingTop: 16 },
+  smallMuted: { marginBottom: 8, fontSize: 12 },
+  sm:         { fontSize: 14 },
+  smSemibold: { fontSize: 14, fontWeight: "600" },
+  bold:       { fontWeight: "700" },
+
+  resendBtn:  { minHeight: 44, alignItems: "center", justifyContent: "center", alignSelf: "flex-start", borderRadius: 12, borderWidth: 1, paddingHorizontal: 16 },
+
+  successCard: { borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12 },
+  warnCard:    { marginBottom: 16, borderRadius: 12, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 12 },
+
+  linkBtn:    { minHeight: 44, justifyContent: "center" },
+  linkAction: { fontSize: 14, fontWeight: "500" },
+
+  fieldLabel: { marginBottom: 4, fontSize: 12, fontWeight: "500" },
+  input:      { marginBottom: 12, borderRadius: 12, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 12, fontSize: 14 },
+  errText:    { marginBottom: 8, fontSize: 12 },
+
+  btnRow:  { flexDirection: "row", gap: 8 },
+  btnRow3: { flexDirection: "row", gap: 12 },
+
+  primaryBtn:     { minHeight: 44, flex: 1, alignItems: "center", justifyContent: "center", borderRadius: 12 },
+  primaryBtnLg:   { minHeight: 52, alignItems: "center", justifyContent: "center", borderRadius: 12 },
+  primaryBtnText: { fontSize: 14, fontWeight: "600", color: "#FFFFFF" },
+  cancelBtn:      { minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: 12, borderWidth: 1, paddingHorizontal: 16 },
+  outlineBtn:     { minHeight: 44, alignItems: "center", justifyContent: "center", alignSelf: "flex-start", borderRadius: 12, borderWidth: 1, paddingHorizontal: 16 },
+
+  // Zona de perigo
+  dangerConfirm: { borderRadius: 12, borderWidth: 1, padding: 16 },
+  dangerTitle:   { marginBottom: 4, fontWeight: "600" },
+  dangerErrBox:  { marginBottom: 12, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 },
+  dangerBtn:     { minHeight: 44, flex: 1, alignItems: "center", justifyContent: "center", borderRadius: 12, backgroundColor: "#DC2626" },
+})

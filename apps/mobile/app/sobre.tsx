@@ -11,16 +11,22 @@ import {
 import { router } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Image } from "expo-image"
+import { useQuery } from "@tanstack/react-query"
 import Svg, { Path, Circle, Rect } from "react-native-svg"
 import { useTheme } from "@/lib/theme"
+import { apiFetch } from "@/lib/api"
 
 // ── Dados verbatim de app/sobre/page.tsx ─────────────────────────────────────
 
-const STATS = [
-  { value: "2.400+", label: "itens cadastrados" },
+// "itens cadastrados" era fixo ("2.400+") — corrigido 2026-07-06 pra usar a
+// mesma contagem dinâmica de GET /api/stats/public que o site (page.tsx)
+// passou a usar (prisma.item.count, direto no server component lá).
+const STATS_STATIC = [
   { value: "R$2.000", label: "renda média/mês por proprietário" },
   { value: "2026", label: "ano de fundação" },
 ] as const
+
+interface StatsResponse { data: { itemCount: number } }
 
 const VALORES = [
   {
@@ -117,6 +123,18 @@ export default function SobreScreen() {
   const { tokens } = useTheme()
   const insets     = useSafeAreaInsets()
 
+  const { data: statsData } = useQuery({
+    queryKey: ["stats-public"],
+    queryFn:  () => apiFetch<StatsResponse>("/api/stats/public"),
+    select:   (d) => d.data,
+    staleTime: 60_000,
+  })
+
+  const STATS = [
+    { value: statsData ? statsData.itemCount.toLocaleString("pt-BR") : "…", label: "itens cadastrados" },
+    ...STATS_STATIC,
+  ]
+
   return (
     <View style={[s.root, { backgroundColor: tokens.bg }]}>
 
@@ -151,7 +169,7 @@ export default function SobreScreen() {
         {/* ── Hero — verbatim de page.tsx linhas 93-108 ── */}
         <View style={[s.hero, { backgroundColor: tokens.navy }]}>
           <Text
-            style={[s.heroLabel, { color: tokens.green }]}
+            style={[s.heroLabel, { color: tokens.accent }]}
             accessibilityRole="header"
           >
             Sobre o ShareO
@@ -178,7 +196,7 @@ export default function SobreScreen() {
           <View style={s.statsRow}>
             {STATS.map((stat) => (
               <View key={stat.label} style={s.statItem}>
-                <Text style={[s.statValue, { color: tokens.green }]}>{stat.value}</Text>
+                <Text style={[s.statValue, { color: tokens.success }]}>{stat.value}</Text>
                 <Text style={[s.statLabel, { color: tokens.muted }]}>{stat.label}</Text>
               </View>
             ))}
@@ -347,7 +365,10 @@ export default function SobreScreen() {
             ]}
           >
             <Image
-              source={{ uri: "https://staging.shareo.com.br/logos/pratika-ia-sobre.png" }}
+              // Asset local (não URL de staging) — o APK preview vai a testers
+              // externos e a URL hardcoded de staging não carregaria em prod/
+              // offline. Achado revisão s41.
+              source={require("../assets/logos/pratika-ia-sobre.png")}
               style={s.devLogo}
               contentFit="contain"
               accessibilityLabel="Pratika-IA"
@@ -452,11 +473,12 @@ const s = StyleSheet.create({
   },
   statsRow: {
     flexDirection:  "row",
-    justifyContent: "space-around",
+    flexWrap:       "wrap",   // 2 por linha (grid-cols-2 do site) — 3 col a 375px espremia o rótulo
+    rowGap:         16,
   },
   statItem: {
     alignItems:        "center",
-    flex:              1,
+    width:             "50%",  // grid-cols-2 do site (mobile)
     paddingHorizontal: 4,
   },
   statValue: {
@@ -542,7 +564,7 @@ const s = StyleSheet.create({
       android: { elevation: 1 },
     }),
   },
-  devLogo:     { width: 240, height: 72, alignSelf: "center" },
+  devLogo:     { width: 240, height: 83, alignSelf: "center" },
   devCardDesc: { fontSize: 13, lineHeight: 18, textAlign: "center" },
 
   // ── CTA ──────────────────────────────────────────────────────────────────────

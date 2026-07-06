@@ -16,7 +16,8 @@ const ICON_SOURCES: Record<string, number> = {
   "esporte":     require("../../assets/icons/esporte.png"),
   "ferramentas": require("../../assets/icons/ferramentas.png"),
   "festas":      require("../../assets/icons/festas.png"),
-  "moda":        require("../../assets/icons/moda.png"),
+  // "moda" removida — categoria excluída da plataforma (commit 815808d). O
+  // require estático quebraria o bundle se o PNG fosse deletado. Revisão s41.
 }
 
 interface CategoryChipProps {
@@ -49,15 +50,23 @@ export function CategoryChip({ slug, label, active = false, onPress }: CategoryC
         pressed && styles.chipPressed,
       ]}
     >
+      {/* Fundo branco fixo (não themed) atrás do ícone — achado 2026-07-06: os
+          PNGs "todas.png" e "casa-jardim.png" não têm círculo branco opaco
+          embutido (ao contrário de construcao/eletronicos/esporte/festas, que
+          têm), então no modo escuro o fundo do chip (escuro) aparecia atrás
+          deles. Os PNGs com círculo próprio ficam com essa View coberta —
+          sem efeito visual nesses casos. */}
       {icon && (
-        <Image source={icon} style={styles.icon} contentFit="contain" accessibilityLabel="" />
+        <View style={styles.iconBg}>
+          <Image source={icon} style={styles.icon} contentFit="contain" accessibilityLabel="" />
+        </View>
       )}
       <View style={styles.labelWrap}>
-        <Text style={[styles.label, { color: active ? tokens.green : tokens.muted }]} numberOfLines={1}>
+        <Text style={[styles.label, { color: active ? tokens.success : tokens.muted }]} numberOfLines={1}>
           {line1}
         </Text>
         {line2 ? (
-          <Text style={[styles.label, { color: active ? tokens.green : tokens.muted }]} numberOfLines={1}>
+          <Text style={[styles.label, { color: active ? tokens.success : tokens.muted }]} numberOfLines={1}>
             {line2}
           </Text>
         ) : null}
@@ -88,6 +97,15 @@ const styles = StyleSheet.create({
   // (que já usam 96 — app/page.tsx:280) — mudança feita nos dois lados
   // (site + mobile), não é mais uma divergência mobile-only.
   icon: { width: 96, height: 96 },
+  // Ver comentário no JSX — cobre PNGs sem círculo branco opaco embutido.
+  iconBg: {
+    width:           96,
+    height:          96,
+    borderRadius:    48,
+    backgroundColor: "#FFFFFF",
+    alignItems:      "center",
+    justifyContent:  "center",
+  },
   labelWrap: {
     // "flex flex-col items-center leading-tight text-center max-w-[72px]" —
     // page.tsx:305,322. maxWidth ausente era a causa real da distribuição

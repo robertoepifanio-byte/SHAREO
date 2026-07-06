@@ -17,7 +17,7 @@ import Svg, { Path, Line, Rect, Circle, Polyline } from "react-native-svg"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useAuth } from "@/lib/auth"
 import { useTheme } from "@/lib/theme"
-import { apiFetch, API_URL } from "@/lib/api"
+import { apiFetch } from "@/lib/api"
 import { Avatar } from "@/components/ui/Avatar"
 
 // ── Tipos — espelham exatamente os campos retornados por GET /api/dashboard ──
@@ -194,11 +194,10 @@ export default function DashboardScreen() {
 
   const reminderMutation = useMutation({
     mutationFn: async (bookingId: string) => {
-      const res = await fetch(`${API_URL}/api/bookings/${bookingId}/reminder`, {
-        method: "POST",
-      })
-      const json = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(json?.error?.message ?? "Erro ao enviar lembrete.")
+      // apiFetch injeta o Bearer automaticamente. Antes usava fetch() cru SEM
+      // Authorization → 401 mesmo logado (achado revisão s41; backend também
+      // migrado de auth() p/ resolveUserId no mesmo lote).
+      await apiFetch(`/api/bookings/${bookingId}/reminder`, { method: "POST" })
       return bookingId
     },
     onSuccess: (bookingId) => {

@@ -35,14 +35,17 @@ import { API_URL } from "@/lib/api"
 // Atualização 2026-07-05 (mesmo dia): Sobre, Meus Anúncios, Dashboard,
 // Estimativa de ganhos e Dicas para anfitriões ganharam tela nativa — saíram
 // desta lista.
-const EXTERNAL_ONLY_PREFIXES = ["/ajuda"]
-const EXTERNAL_ONLY_ROUTES = new Set([
-  "/perfil/documentos", // sem tela dedicada — mesmo tratamento de perfil.tsx
-])
+// "/admin" → painel de moderação é web-only (auth cookie; "admin fica cookie-only"
+// no CLAUDE.md). Não há tela nativa; os atalhos ADMIN do menu abrem o painel no
+// navegador. Achado revisão s41 (paridade com o site).
+const EXTERNAL_ONLY_PREFIXES = ["/ajuda", "/admin"]
+const EXTERNAL_ONLY_ROUTES = new Set<string>([])
 // Hrefs do site cujo caminho de arquivo nativo é diferente (não confundir com
 // "sem tela nativa" — aqui a tela existe, só o nome da rota diverge).
 const ROUTE_ALIASES: Record<string, string> = {
   "/perfil/indicacoes": "/perfil/embaixador", // arquivo real: perfil/embaixador.tsx
+  "/itens?view=map":    "/itens/mapa",        // mapa nativo (docs/plano-mapa-nativo-mobile.md, 2026-07-06)
+  "/perfil/documentos": "/kyc",               // completado 2026-07-06 — kyc.tsx agora cobre a tela inteira (verificação + doc mascarado)
 }
 function isExternalOnly(href: string): boolean {
   return EXTERNAL_ONLY_ROUTES.has(href) || EXTERNAL_ONLY_PREFIXES.some((p) => href.startsWith(p))
@@ -51,16 +54,21 @@ function isExternalOnly(href: string): boolean {
 // ── Constantes — transcritas VERBATIM de MobileMenu.tsx do site ──────────────
 
 // EXPLORAR_LINKS: no site aponta pra /itens?<filtro>; no app o equivalente
-// nativo é /explorar. TODO(revisão): explorar.tsx só suporta ?q= hoje — os
-// filtros view=map/sort=views/minRating=4 não estão wireados nativamente
-// ainda, então por ora todos abrem a tela sem o filtro pré-aplicado (melhor
-// que Unmatched Route; não inventamos suporte a filtro que não existe).
+// nativo é /explorar. Resolvido 2026-07-06: intent=rent (banner "Como
+// alugar") e sort pré-aplicam em explorar.tsx (mesmos
+// parâmetros/valores do site — inclusive "Mais alugados" usando sort=views,
+// igual ao MobileMenu.tsx do site, mesmo divergindo do valor "rented" do
+// _SortSelect.tsx próprio; não é regressão desta mudança). "Buscar no mapa"
+// agora abre o mapa nativo (/itens/mapa, via ROUTE_ALIASES) — mapa Mapbox
+// executado 2026-07-06, docs/plano-mapa-nativo-mobile.md.
 const EXPLORAR_LINKS = [
-  { href: "/explorar", icon: "cart",     label: "Quero alugar algo" },
-  { href: "/explorar", icon: "list",     label: "Ver todos os itens" },
-  { href: "/explorar", icon: "map",      label: "Buscar no mapa" },
-  { href: "/explorar", icon: "trending", label: "Mais alugados" },
-  { href: "/explorar", icon: "star",     label: "Mais bem avaliados" },
+  { href: "/explorar?intent=rent",  icon: "cart",     label: "Quero alugar algo" },
+  { href: "/explorar",              icon: "list",     label: "Ver todos os itens" },
+  { href: "/itens?view=map",        icon: "map",      label: "Buscar no mapa" },
+  { href: "/explorar?sort=views",   icon: "trending", label: "Mais alugados" },
+  // "Mais bem avaliados" (minRating) removido na revisão s41: a média de
+  // avaliação não vem de /api/items e o filtro nunca era aplicado (acendia o
+  // badge sem efeito). Reintroduzir quando a API expuser a média de avaliações.
 ]
 
 const ANUNCIAR_LINKS = [
@@ -75,6 +83,15 @@ const ATIVIDADE_LINKS = [
   { href: "/reservas",      label: "Reservas",       icon: "calendar" },
   { href: "/mensagens",     label: "Mensagens",      icon: "message" },
   { href: "/dashboard",     label: "Dashboard",      icon: "grid" },
+]
+
+// ADMIN_ATALHOS_LINKS: verbatim de components/layout/MobileMenu.tsx (site).
+// Exibido no lugar de ATIVIDADE_LINKS quando o usuário é admin (mesmo ternário
+// do site). Rotas /admin/* abrem no navegador (painel web-only). Achado s41.
+const ADMIN_ATALHOS_LINKS = [
+  { href: "/admin",          label: "Visão Geral", icon: "home" },
+  { href: "/admin/usuarios", label: "Usuários",    icon: "users" },
+  { href: "/admin/disputas", label: "Disputas",    icon: "shield" },
 ]
 
 const ACCOUNT_LINKS = [
@@ -126,6 +143,8 @@ function MenuIcon({ name }: { name: string }) {
     case "gift":       return <Svg {...p}><Polyline points="20 12 20 22 4 22 4 12"/><Rect x="2" y="7" width="20" height="5"/><Line x1="12" y1="22" x2="12" y2="7"/><Path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><Path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></Svg>
     case "folder":     return <Svg {...p}><Path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></Svg>
     case "shield":     return <Svg {...p}><Path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></Svg>
+    case "home":       return <Svg {...p}><Path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><Polyline points="9 22 9 12 15 12 15 22"/></Svg>
+    case "users":      return <Svg {...p}><Path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><Circle cx="9" cy="7" r="4"/><Path d="M23 21v-2a4 4 0 0 0-3-3.87"/><Path d="M16 3.13a4 4 0 0 1 0 7.75"/></Svg>
     case "rocket":     return <Svg {...p}><Path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><Path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><Path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><Path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></Svg>
     case "headphones": return <Svg {...p}><Path d="M3 18v-6a9 9 0 0 1 18 0v6"/><Path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></Svg>
     case "file":       return <Svg {...p}><Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><Polyline points="14 2 14 8 20 8"/><Line x1="16" y1="13" x2="8" y2="13"/><Line x1="16" y1="17" x2="8" y2="17"/></Svg>
@@ -236,18 +255,15 @@ export function MobileMenu({ visible, onClose, isLoggedIn, role, onLogout }: Mob
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* ── Início ── */}
-          <TopLink href="/" label="Início" />
-
-          {/* ── Sobre ── */}
-          <TopLink href="/sobre" label="Sobre" />
-
-          {/* ── TEMA no topo — handoff §0 (correção "MobileMenu — logado") ── */}
+          {/* ── TEMA — movido para o topo, acima de Início (decisão fundador, 2026-07-06) ── */}
           <SectionLabel text="TEMA" />
           <ThemeToggle
             value={preference}
             onChange={(pref: ThemePreference) => setPreference(pref)}
           />
+
+          {/* ── Início ── */}
+          <TopLink href="/" label="Início" />
 
           <Divider />
 
@@ -285,9 +301,11 @@ export function MobileMenu({ visible, onClose, isLoggedIn, role, onLogout }: Mob
             <>
               <Divider />
 
-              {/* ATIVIDADE — rótulo verbatim + 4 links na ordem exata (handoff §0) */}
+              {/* ATIVIDADE (ou ADMIN p/ admins) — rótulo + links verbatim do site.
+                  Admin vê os atalhos de moderação (ADMIN_ATALHOS_LINKS), não os
+                  links de atividade. Achado revisão s41. */}
               <SectionLabel text={isAdmin ? "ADMIN" : "ATIVIDADE"} />
-              {ATIVIDADE_LINKS.map(link => (
+              {(isAdmin ? ADMIN_ATALHOS_LINKS : ATIVIDADE_LINKS).map(link => (
                 <Pressable key={link.href} onPress={() => navigate(link.href)} style={[s.subItem, { paddingLeft: 16 }]} accessibilityRole="link">
                   <MenuIcon name={link.icon} />
                   <Text style={s.subItemText}>{link.label}</Text>
@@ -350,6 +368,10 @@ export function MobileMenu({ visible, onClose, isLoggedIn, role, onLogout }: Mob
               )}
             </>
           )}
+
+          {/* ── Sobre — movido para o final (decisão fundador, 2026-07-06) ── */}
+          <Divider />
+          <TopLink href="/sobre" label="Sobre" />
         </ScrollView>
       </SafeAreaView>
     </Modal>

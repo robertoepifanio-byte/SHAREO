@@ -65,7 +65,13 @@
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-font"
+      "expo-font",
+      [
+        "@rnmapbox/maps",
+        {
+          "RNMapboxMapsImpl": "mapbox"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

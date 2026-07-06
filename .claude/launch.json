@@ -7,6 +7,18 @@
       "runtimeArgs": ["dev"],
       "port": 3000,
       "autoPort": true
+    },
+    {
+      "name": "dark-mode-prototype",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "docs", "-l", "3001", "--no-clipboard"],
+      "port": 3001
+    },
+    {
+      "name": "mobile-web-preview",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "cd /d C:\\Users\\Roberto\\Documents\\2026\\ShareO-main-test\\apps\\mobile && npx expo start --web --port 8083"],
+      "port": 8083
     }
   ]
 }

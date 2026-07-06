@@ -1,4 +1,11 @@
 /**
+ * GET /api/users/me/id-verification
+ * Status de verificação + documento cadastrado (mascarado). Fonte:
+ * app/perfil/documentos/page.tsx linhas 17-46 (mesma lógica de decrypt/mask,
+ * escopada nesta rota — não em /api/users/me — pra não pagar o custo de
+ * decriptografia em toda chamada do endpoint de perfil, que é usado por
+ * várias telas que não precisam desse dado).
+ *
  * POST /api/users/me/id-verification
  * Envia documentos para verificação de identidade.
  * Body: FormData com "document" (foto do doc) e "selfie" (selfie do usuário)
@@ -13,9 +20,63 @@ import { getUploadLimits, getBiometricConsentConfig } from "@/lib/platform-confi
 import { isImageType, isMagicBytesValid, EXT_BY_MIME } from "@/lib/imageUpload"
 import { BIOMETRIC_CONSENT_VERSION } from "@/lib/legal-config"
 import { BIOMETRIC_CONSENT_TEXT } from "@/lib/legal/biometric-consent-text"
-import { hashToken } from "@/lib/crypto"
+import { hashToken, decryptDocument, maskCPF, maskCNPJ } from "@/lib/crypto"
 import { extractClientIp } from "@/lib/access-log"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
+
+export async function GET(req: NextRequest) {
+  const userId = await resolveUserId(req)
+  if (!userId) return NextResponse.json({ error: { code: "UNAUTHORIZED" } }, { status: 401 })
+
+  // Rate limit de leitura — este GET faz decrypt AES por chamada (custo de CPU/KMS).
+  // O React Query do app pode refazer o fetch a cada focus; sem limite, um loop de
+  // refetch dispara milhares de decrypts/min. Achado revisão s41 (segurança).
+  const rl = await checkRateLimit(`id-verification-read:${userId}`, 30, 60_000, req)
+  if (!rl.allowed) return rateLimitResponse(rl.resetAt)
+
+  const user = await prisma.user.findUnique({
+    where:  { id: userId },
+    select: {
+      userType:             true,
+      cpfEncrypted:         true,
+      cnpjEncrypted:        true,
+      idVerificationStatus: true,
+      idRejectionReason:    true,
+      idSelfieConsentAt:    true,
+    },
+  })
+
+  if (!user) return NextResponse.json({ error: { code: "NOT_FOUND" } }, { status: 404 })
+
+  const { required: biometricConsentRequired } = await getBiometricConsentConfig()
+
+  // Decriptografar e mascarar — nunca expor o valor completo ao cliente
+  // (verbatim de app/perfil/documentos/page.tsx linhas 33-46).
+  let maskedDocument: string | null = null
+  let docLabel = "CPF"
+  try {
+    if (user.userType === "PJ" && user.cnpjEncrypted) {
+      maskedDocument = maskCNPJ(decryptDocument(user.cnpjEncrypted))
+      docLabel       = "CNPJ"
+    } else if (user.cpfEncrypted) {
+      maskedDocument = maskCPF(decryptDocument(user.cpfEncrypted))
+      docLabel       = "CPF"
+    }
+  } catch {
+    // Erro de decriptografia — não expor nada
+  }
+
+  return NextResponse.json({
+    data: {
+      idVerificationStatus:    user.idVerificationStatus,
+      idRejectionReason:       user.idRejectionReason,
+      maskedDocument,
+      docLabel,
+      biometricConsentRequired,
+      hasBiometricConsent:     user.idSelfieConsentAt !== null,
+    },
+  })
+}
 
 export async function POST(req: NextRequest) {
   const supabase = createAdminClient()

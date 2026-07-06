@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse, after } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { auth } from "@/lib/auth"
+import { resolveUserId } from "@/lib/resolveUserId"
 import { checkRateLimit } from "@/lib/rateLimit"
 import { sendReminderReturnTomorrow, bookingItemsLabel } from "@/lib/email"
 import type { NotificationType } from "@prisma/client"
@@ -21,8 +21,10 @@ interface RouteParams {
 }
 
 export async function POST(req: NextRequest, { params }: RouteParams) {
-  const session = await auth()
-  if (!session) {
+  // Aceita Bearer JWT (mobile) ou cookie (web). Antes usava auth() cookie-only
+  // → botão "Enviar lembrete" do Dashboard mobile dava 401 (achado revisão s41).
+  const uid = await resolveUserId(req)
+  if (!uid) {
     return NextResponse.json(
       { error: { code: "UNAUTHORIZED", message: "Não autenticado." } },
       { status: 401 },
@@ -30,26 +32,6 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
   }
 
   const { id: bookingId } = await params
-  const uid = session.user.id
-
-  // Rate limit por booking (1 req / 24h por processo)
-  const rlKey = `reminder:${bookingId}`
-  const rl = await checkRateLimit(rlKey, 1, REMINDER_COOLDOWN_MS)
-  if (!rl.allowed) {
-    const resetIn = Math.ceil((rl.resetAt - Date.now()) / 60_000)
-    return NextResponse.json(
-      {
-        error: {
-          code: "RATE_LIMITED",
-          message: `Lembrete já enviado. Aguarde ${resetIn} minuto${resetIn !== 1 ? "s" : ""} para reenviar.`,
-        },
-      },
-      {
-        status: 429,
-        headers: { "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)) },
-      },
-    )
-  }
 
   // Buscar reserva e validar propriedade
   const booking = await prisma.booking.findUnique({
@@ -76,6 +58,29 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
     return NextResponse.json(
       { error: { code: "FORBIDDEN", message: "Acesso negado." } },
       { status: 403 },
+    )
+  }
+
+  // Rate limit por booking (1 req / 24h) — SÓ depois de confirmar que o
+  // solicitante é o dono. Antes ficava acima do carregamento da reserva, então
+  // qualquer usuário autenticado com um bookingId conseguia "queimar" a janela
+  // de 24h do lembrete do dono legítimo (recebia 403, mas o token já era
+  // consumido). Achado revisão s41 (segurança).
+  const rlKey = `reminder:${bookingId}`
+  const rl = await checkRateLimit(rlKey, 1, REMINDER_COOLDOWN_MS)
+  if (!rl.allowed) {
+    const resetIn = Math.ceil((rl.resetAt - Date.now()) / 60_000)
+    return NextResponse.json(
+      {
+        error: {
+          code: "RATE_LIMITED",
+          message: `Lembrete já enviado. Aguarde ${resetIn} minuto${resetIn !== 1 ? "s" : ""} para reenviar.`,
+        },
+      },
+      {
+        status: 429,
+        headers: { "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)) },
+      },
     )
   }
 

@@ -10,6 +10,11 @@
 // Deve vir antes de qualquer import do módulo nos testes.
 require("react-native-reanimated/mock")
 
+// Token público Mapbox de teste — ItemsMapNative lê EXPO_PUBLIC_MAPBOX_TOKEN no
+// load do módulo; sem valor, cai sempre no fallback. Valor fake só p/ os testes
+// exercitarem o caminho do mapa renderizado (o SDK está mockado, não faz rede).
+process.env.EXPO_PUBLIC_MAPBOX_TOKEN = process.env.EXPO_PUBLIC_MAPBOX_TOKEN || "pk.test-jest"
+
 // Mock de expo-secure-store: no ambiente de testes não existe keychain/keystore.
 // Simulamos um armazenamento em memória simples.
 jest.mock("expo-secure-store", () => {
@@ -135,6 +140,36 @@ jest.mock("expo-image", () => {
       React.createElement(View, { accessibilityLabel, style }),
   }
 })
+
+// Mock de @rnmapbox/maps — SDK nativo indisponível no Jest. Sem este mock,
+// qualquer teste que importe o mapa nativo (ItemsMapNative/mapa.tsx) quebra
+// ao resolver o módulo. Componentes viram Views vazias; setAccessToken é no-op.
+jest.mock("@rnmapbox/maps", () => {
+  const React = require("react")
+  const { View } = require("react-native")
+  const Passthrough = ({ children, ...props }) =>
+    React.createElement(View, { accessibilityLabel: props.accessibilityLabel }, children)
+  const Ref = React.forwardRef(({ children }, _ref) =>
+    React.createElement(View, null, children))
+  return {
+    __esModule:  true,
+    default:     { setAccessToken: jest.fn(), StyleURL: { Dark: "dark", Street: "street" } },
+    MapView:     Passthrough,
+    Camera:      Ref,
+    ShapeSource: Ref,
+    SymbolLayer: Passthrough,
+    CircleLayer: Passthrough,
+    Images:      Passthrough,
+  }
+})
+
+// Mock de expo-location — GPS indisponível no Jest. Default: permissão negada
+// (cai no fallback numérico do mapa, sem tentar geolocalizar).
+jest.mock("expo-location", () => ({
+  requestForegroundPermissionsAsync: jest.fn().mockResolvedValue({ status: "denied" }),
+  getCurrentPositionAsync:           jest.fn(),
+  Accuracy: { Balanced: 3 },
+}))
 
 // Silenciar warnings de console durante os testes para manter a saída limpa.
 // Remova ou comente se precisar depurar avisos de um pacote específico.

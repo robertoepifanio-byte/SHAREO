@@ -6,7 +6,6 @@ import { UpdateItemSchema } from "@/lib/validations/items"
 import { geocodeItem } from "@/lib/geocodeItem"
 import { userPublicSelect } from "@/lib/prisma/selects"
 import { getOwnerResponseBadge } from "@/lib/ownerStats"
-import { assertOwnerOrAdmin } from "@/lib/auth/ownership"
 import { resolveUserId } from "@/lib/resolveUserId"
 
 type RouteContext = { params: Promise<{ id: string }> }
@@ -257,10 +256,14 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
   }
 }
 
-export async function DELETE(_req: NextRequest, { params }: RouteContext) {
+export async function DELETE(req: NextRequest, { params }: RouteContext) {
   try {
-    const session = await auth()
-    if (!session) {
+    // Aceita Bearer JWT (mobile) ou session cookie (web) — mesmo padrão de PUT
+    // acima. Antes usava auth() cookie-only → app mobile recebia 401 ao deletar
+    // anúncio (achado da revisão s41, mesmo padrão sistêmico já corrigido em
+    // GET/PUT/images desta rota; o DELETE tinha ficado pra trás).
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 }
@@ -280,11 +283,18 @@ export async function DELETE(_req: NextRequest, { params }: RouteContext) {
       )
     }
 
-    if (!assertOwnerOrAdmin(existing.ownerId, session)) {
-      return NextResponse.json(
-        { error: { code: "FORBIDDEN", message: "Sem permissão." } },
-        { status: 403 }
-      )
+    // Dono: verificação direta de userId (Bearer ou cookie). Admin web: role via
+    // sessão completa (Bearer mobile não carrega role — SEC-CRIT-01). Idêntico ao PUT.
+    const isOwner = existing.ownerId === userId
+    if (!isOwner) {
+      const session = await auth().catch(() => null)
+      const isAdmin = session?.user?.role === "ADMIN"
+      if (!isAdmin) {
+        return NextResponse.json(
+          { error: { code: "FORBIDDEN", message: "Sem permissão." } },
+          { status: 403 }
+        )
+      }
     }
 
     await prisma.item.update({
