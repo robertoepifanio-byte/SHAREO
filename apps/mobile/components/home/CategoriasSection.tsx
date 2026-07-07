@@ -17,7 +17,8 @@ const ICON_SOURCES: Record<string, number> = {
   "esporte":     require("../../assets/icons/esporte.png"),
   "ferramentas": require("../../assets/icons/ferramentas.png"),
   "festas":      require("../../assets/icons/festas.png"),
-  "moda":        require("../../assets/icons/moda.png"),
+  // "moda" removida — categoria excluída (commit 815808d). Alinhado com o
+  // CategoryChip (que já tinha removido). Revisão s41.
 }
 
 export function CategoriasSection({ categories }: { categories: Category[] }) {

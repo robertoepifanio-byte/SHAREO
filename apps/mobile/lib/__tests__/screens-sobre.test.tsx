@@ -113,15 +113,8 @@ describe("SobreScreen — stats verbatim", () => {
     expect(screen.getByText("itens cadastrados")).toBeTruthy()
   })
 
-  it("exibe stat 'R$2.000'", () => {
-    wrap(<SobreScreen />)
-    expect(screen.getByText("R$2.000")).toBeTruthy()
-  })
-
-  it("exibe label 'renda média/mês por proprietário'", () => {
-    wrap(<SobreScreen />)
-    expect(screen.getByText("renda média/mês por proprietário")).toBeTruthy()
-  })
+  // "R$2.000 / renda média/mês por proprietário" removido (revisão s41 —
+  // stat fabricado, risco CDC). Testes correspondentes removidos junto.
 
   it("exibe stat '2026'", () => {
     wrap(<SobreScreen />)
@@ -230,9 +223,9 @@ describe("SobreScreen — seção Equipe verbatim (4 cards)", () => {
     expect(screen.getByText(/chat integrado/i)).toBeTruthy()
   })
 
-  it("exibe card 'Suporte 7 dias por semana'", () => {
+  it("exibe card 'Suporte seg–sex, 09h–17h' (SLA real — revisão s41)", () => {
     wrap(<SobreScreen />)
-    expect(screen.getByText("Suporte 7 dias por semana")).toBeTruthy()
+    expect(screen.getByText("Suporte seg–sex, 09h–17h")).toBeTruthy()
   })
 
   it("exibe card 'Rede de Proprietários Fundadores'", () => {

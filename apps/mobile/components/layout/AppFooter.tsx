@@ -21,11 +21,20 @@ import { API_URL } from "@/lib/api"
 const APP_VERSION = "1.0.0"
 
 // Rotas nativas do app — para essas usa router.push(); demais abrem no browser.
-// /itens → mapeado para /explorar (tela nativa equivalente).
-const NATIVE_ROUTES = new Set(["/explorar", "/itens/novo", "/reservas", "/mensagens", "/login"])
+// Revisão s41: incluídas /perfil, /sobre (tinham tela nativa mas abriam o
+// navegador) e o alias /cadastro→/register (cadastro nativo).
+const NATIVE_ROUTES = new Set([
+  "/explorar", "/itens/novo", "/reservas", "/mensagens",
+  "/login", "/perfil", "/sobre", "/register",
+])
+// Aliases: href do site → rota nativa equivalente (nome diverge).
+const ROUTE_ALIASES: Record<string, string> = {
+  "/itens":    "/explorar", // Explorar itens
+  "/cadastro": "/register", // Criar conta → tela nativa (auth)/register
+}
 
 function openLink(href: string) {
-  const native = href === "/itens" ? "/explorar" : href
+  const native = ROUTE_ALIASES[href] ?? href
   if (NATIVE_ROUTES.has(native)) {
     router.push(native as Parameters<typeof router.push>[0])
   } else {

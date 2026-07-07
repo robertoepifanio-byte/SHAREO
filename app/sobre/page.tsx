@@ -61,7 +61,9 @@ const VALORES = [
 // já mostra a contagem real via prisma.item.count — corrigido 2026-07-06 pra
 // não divergir do número real da plataforma.
 const STATS_STATIC = [
-  { value: "R$2.000", label: "renda média/mês por proprietário" },
+  // "renda média/mês por proprietário" (R$2.000) removido — número fabricado sem
+  // dado real (risco CDC art. 30/37). Reintroduzir só com média real de repasses.
+  // Revisão s41 (decisão do fundador).
   { value: "2026", label: "ano de fundação" },
 ]
 
@@ -77,7 +79,7 @@ const EQUIPE = [
       "Responsável por garantir uma experiência fluida e segura, com funcionalidades como chat integrado, verificação de usuários e pagamentos protegidos.",
   },
   {
-    title: "Suporte 7 dias por semana",
+    title: "Suporte seg–sex, 09h–17h",
     description:
       "Profissionais dedicados a ajudar usuários em todas as etapas, reforçando a confiança na plataforma.",
   },
