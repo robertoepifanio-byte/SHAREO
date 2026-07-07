@@ -28,8 +28,11 @@ appId: com.shareo.app
 
 # ── Explorar (lista de itens) ─────────────────────────────────────────────────
 - tapOn: "Explorar"
+# accessibilityLabel do botão é "Ver itens no mapa" (explorar.tsx:423) — o texto
+# visível "Ver no mapa" (linha 429) não é o nó lido pela árvore de acessibilidade
+# do iOS, que é o que o Maestro consulta (não OCR).
 - extendedWaitUntil:
-    visible: "Ver no mapa"
+    visible: "Ver itens no mapa"
     timeout: 15000
 - takeScreenshot: 04-explorar
 - scroll
@@ -37,9 +40,9 @@ appId: com.shareo.app
 
 # ── Mapa nativo (Mapbox) ──────────────────────────────────────────────────────
 - scrollUntilVisible:
-    element: "Ver no mapa"
+    element: "Ver itens no mapa"
     direction: UP
-- tapOn: "Ver no mapa"
+- tapOn: "Ver itens no mapa"
 # Prompt de localização do iOS, se aparecer
 - tapOn:
     text: "Allow While Using App"
@@ -49,6 +52,6 @@ appId: com.shareo.app
     optional: true
 # Tempo para o Mapbox baixar os tiles
 - extendedWaitUntil:
-    notVisible: "Ver no mapa"
+    notVisible: "Ver itens no mapa"
     timeout: 10000
 - takeScreenshot: 06-mapa-mapbox
