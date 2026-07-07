@@ -9,11 +9,23 @@ appId: com.shareo.app
 # ── Login (app deslogado abre direto em /login — app/index.tsx) ──────────────
 - assertVisible: "Entrar na sua conta"
 - takeScreenshot: 01-login
+# Emulador Android (cold start, CPU sem GPU real) é mais lento que o simulador
+# iOS pra terminar de hidratar o bridge JS — dar folga antes de interagir.
+- waitForAnimationToEnd:
+    timeout: 2000
 - tapOn: "seu@email.com"
+- waitForAnimationToEnd:
+    timeout: 1000
 - inputText: ${EMAIL}
+# Confirma que o texto realmente chegou no campo antes de seguir — se essa
+# assertion falhar, o problema é no input do e-mail, não no login em si.
+- assertVisible: ${EMAIL}
+- takeScreenshot: 01b-email-preenchido
 # Mesma colisão de rótulo do smoke iOS: o accessibilityLabel "Senha" do campo
 # colide com o rótulo visual "SENHA" acima — usar o placeholder em vez do label.
 - tapOn: "••••••••"
+- waitForAnimationToEnd:
+    timeout: 1000
 - inputText: ${PASSWORD}
 - hideKeyboard
 - tapOn: "Entrar"
