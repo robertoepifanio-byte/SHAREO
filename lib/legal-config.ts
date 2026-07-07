@@ -18,7 +18,7 @@ export const CONSENT_VERSION = "v1.1"
  * Evolui em ciclo próprio, INDEPENDENTE de CONSENT_VERSION: alterar o texto do
  * consentimento da selfie (lib/legal/biometric-consent-text.ts) exige bump aqui,
  * mas não força reaceite dos Termos. Rascunho gated D4 — só usado com a flag
- * `biometricConsentRequired` ligada (default OFF). Ver docs/spec-consentimento-biometria-c1.md.
+ * `biometricConsentRequired` ligada (default OFF). Ver docs/juridico/spec-consentimento-biometria-c1.md.
  */
 export const BIOMETRIC_CONSENT_VERSION = "biometric-v1.0"
 

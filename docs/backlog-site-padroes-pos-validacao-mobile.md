@@ -1,6 +1,6 @@
 # Backlog — Site: padrões de bug achados na validação do app mobile (2026-07-04)
 
-**Contexto:** durante a validação em device do app Android (ver `docs/validacao-manha-2026-07-04.md` e memória `project-mobile-validacao-features-2026-07`), um bug real foi encontrado e corrigido em `apps/mobile/app/reservas/[id].tsx` — a assinatura do contrato ficava presa em "pendente" mesmo já assinada no backend. Ao investigar a causa, o mesmo padrão de código (não o mesmo bug, mas o mesmo *anti-padrão*) apareceu em outros componentes do site. Este documento lista o que vale auditar/corrigir no site numa sessão dedicada.
+**Contexto:** durante a validação em device do app Android (ver `docs/auditorias/validacao-manha-2026-07-04.md` e memória `project-mobile-validacao-features-2026-07`), um bug real foi encontrado e corrigido em `apps/mobile/app/reservas/[id].tsx` — a assinatura do contrato ficava presa em "pendente" mesmo já assinada no backend. Ao investigar a causa, o mesmo padrão de código (não o mesmo bug, mas o mesmo *anti-padrão*) apareceu em outros componentes do site. Este documento lista o que vale auditar/corrigir no site numa sessão dedicada.
 
 ## 🔴 Item 1 — Estado local "trava" no valor inicial e nunca resincroniza com a prop/API
 

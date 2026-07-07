@@ -48,7 +48,7 @@ export default async function ContasPixPage() {
         </div>
       </div>
 
-      {/* Checklist do processo manual — docs/processo-verificacao-pix.md */}
+      {/* Checklist do processo manual — docs/juridico/processo-verificacao-pix.md */}
       <details className="rounded-xl border border-border bg-surface px-5 py-4">
         <summary className="cursor-pointer text-sm font-semibold text-foreground">
           ✓ Checklist de verificação manual (abrir antes de aprovar)
@@ -61,7 +61,7 @@ export default async function ContasPixPage() {
           <li><strong className="text-foreground">SLA:</strong> verificar em até 2 dias úteis — repasses só saem para contas verificadas.</li>
         </ol>
         <p className="mt-2 text-xs text-muted-foreground">
-          Processo completo e sinais de fraude: <code>docs/processo-verificacao-pix.md</code>. Toda ação é registrada no AdminLog.
+          Processo completo e sinais de fraude: <code>docs/juridico/processo-verificacao-pix.md</code>. Toda ação é registrada no AdminLog.
         </p>
       </details>
 

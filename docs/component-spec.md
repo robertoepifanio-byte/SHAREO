@@ -2,7 +2,7 @@
 
 **Data**: 25/05/2026
 **Autor**: Subagente Designer (designer-shareo)
-**Baseado em**: `shareo-prototipo.html` (revisão completa), `tailwind.config.ts`, `ADR-005`, `revisao-pre-sprint1.md`
+**Baseado em**: `shareo-prototipo.html` (revisão completa), `tailwind.config.ts`, `ADR-005`, `auditorias/revisao-pre-sprint1.md`
 **Metodologia**: Mobile-first — análise iniciada em 375px, depois 768px, depois 1280px
 
 ---
@@ -155,7 +155,7 @@ brand: {
 | `borderRadius.r-card-lg` | `12px` | Auth card, hero search box | Presente como `borderRadius.xl: 12px` — mapear explicitamente |
 | `spacing.tap` | `44px` | Alias explícito de tap target | Presente como `spacing["11"]: 44px` mas falta alias `tap` |
 
-### 3.3 Plugins Tailwind ausentes (gap D2 do revisao-pre-sprint1.md)
+### 3.3 Plugins Tailwind ausentes (gap D2 do auditorias/revisao-pre-sprint1.md)
 
 ```typescript
 // tailwind.config.ts — adicionar em plugins:
@@ -231,7 +231,7 @@ plugins: [
 | H1 único | APROVADO | `<h1 class="auth-title">Bem-vindo de volta</h1>` |
 | Labels associados a inputs | APROVADO | `<label for="login-email">`, `<label for="login-pass">` presentes |
 | Autocomplete nos campos | APROVADO | `autocomplete="email"` e `autocomplete="current-password"` |
-| Botão "Esqueci senha" | BUG | `<button class="link-orange">Esqueci minha senha</button>` — sem ação, sem tela destino no protótipo. Falta feature (ver P2 em revisao-pre-sprint1.md). |
+| Botão "Esqueci senha" | BUG | `<button class="link-orange">Esqueci minha senha</button>` — sem ação, sem tela destino no protótipo. Falta feature (ver P2 em auditorias/revisao-pre-sprint1.md). |
 | Social login button | ATENÇÃO | `aria-label="Continuar com Google"` presente, mas o ícone é emoji `🇬` — não é o logo Google oficial. Em implementação usar SVG do Google com `aria-hidden`. |
 | Contraste link-orange | APROVADO | `#9A4700` sobre branco = 6,5:1 |
 | auth-card tem `role="main"` | BUG | `<div role="main">` dentro de `<main>` — landmark duplicado. Remover `role="main"` do `auth-card`; o `<main>` pai já serve. |

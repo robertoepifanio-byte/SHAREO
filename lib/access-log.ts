@@ -4,7 +4,7 @@
  * DECISOES (2026-06-30):
  *   A2 — Escopo: rotas autenticadas + acoes sensiveis (login/logout, alteracoes cadastrais,
  *        consentimentos, movimentacoes financeiras, acesso a dados de terceiros).
- *        Navegacao anonima NAO e logada. Ver docs/retencao-logs-art15.md para o escopo completo.
+ *        Navegacao anonima NAO e logada. Ver docs/juridico/retencao-logs-art15.md para o escopo completo.
  *   A3 — Opcao II escolhida: tabela `access_logs` no PostgreSQL Supabase (sa-east-1/Brasil).
  *        Opcao I (Vercel Log Drain → EUA) descartada por implicar transferencia internacional (art.33 LGPD).
  *   A4 — Retencao legal: flag `legalHold` por registro impede o expurgo automatico (purge-access-logs)
