@@ -17,6 +17,8 @@
 
 **D4 — parecer jurídico FORMAL RECEBIDO (2026-06-30, revisado com o Mercado Pago como PSP).** ShareO deixa de ser *merchant of record* → risco da Lei 12.865 reduzido. **Condição 1 de 4 de go-live cumprida (parecer ✅).** Restam: **(2) contrato Mercado Pago assinado + conta PJ ativa — EM ANDAMENTO (fundador; único bloqueador totalmente em aberto)**; (3) Termos/Política revisados e **publicados** (conteúdo aprovado — resposta D1; publica só no go-live); (4) checklist 100% (destravado; pendem B3 tributarista, C2 DPAs, C3 RIPD/DPO). **Respostas dos fundadores à pauta jurídica registradas** (16/17) — ver [`docs/checklist-conformidade-juridica.md`](checklist-conformidade-juridica.md) e a pauta [`docs/pauta-revisao-fundadores-s41.md`](pauta-revisao-fundadores-s41.md). **Nenhuma atividade de produção** (Supabase prod, deploy, DNS, go-live) antes do cumprimento das 4 condições. Regra absoluta.
 
+**App iOS Fase 2 (testers em aparelho real) — bloqueada por conta Apple Developer paga (US$99/ano).** Diferente do Android (APK auto-assinado instala em qualquer aparelho sem conta/custo/loja), o iOS exige assinatura por conta Developer válida pra **qualquer** instalação em hardware real — TestFlight e ad-hoc os dois exigem a conta paga, não tem meio-termo nem "sideload". O build de simulador da Fase 1 (✅ verde, ver acima) só roda no simulador, nunca em iPhone físico. Assim que o fundador criar a conta: `eas credentials` + ajustar `eas.json` (hoje só tem profile de simulador) + escolher TestFlight (recomendado) ou ad-hoc.
+
 ---
 
 ## ⚠️ Configuração TEMPORÁRIA de validação (staging)
