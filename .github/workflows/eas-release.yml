@@ -1,0 +1,74 @@
+name: EAS Release - App Mobile
+
+# Build EAS disparado por tag de release do app mobile (convenção: mobile-v*).
+# Independente do release web (v* → deploy.yml production). Ex.:
+#   git tag mobile-v1.1.0 && git push origin mobile-v1.1.0
+#
+# ⚠️ Requer o secret EXPO_TOKEN (robot/access token da conta "shareo"):
+#   1. expo.dev → conta shareo → Settings → Access tokens → Create token
+#   2. gh secret set EXPO_TOKEN
+# O token pessoal anterior foi ROTACIONADO em 2026-07-07 — não reutilizar.
+
+on:
+  push:
+    tags:
+      - "mobile-v*"
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "Profile do eas.json"
+        type: choice
+        options: [preview, production, development]
+        default: preview
+      platform:
+        description: "Plataforma"
+        type: choice
+        options: [android, ios, all]
+        default: android
+
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "11"
+
+jobs:
+  build:
+    name: EAS Build (${{ inputs.profile || 'preview' }})
+    runs-on: ubuntu-latest
+    steps:
+      # (secrets não pode aparecer em `if:` — o guard é via shell)
+      - name: Verificar EXPO_TOKEN
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::Secret EXPO_TOKEN ausente. Crie um access token em expo.dev (conta shareo) e rode: gh secret set EXPO_TOKEN"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup EAS CLI
+        run: npm install -g eas-cli
+
+      # --no-wait: o runner não fica pendurado ~20min; o link do build sai no log.
+      # Smokes (android-smoke/ios-smoke) rodam depois via workflow_dispatch com a
+      # artifact_url do build pronto.
+      - name: EAS build
+        working-directory: apps/mobile
+        run: |
+          eas build \
+            --profile ${{ inputs.profile || 'preview' }} \
+            --platform ${{ inputs.platform || 'android' }} \
+            --non-interactive \
+            --no-wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}

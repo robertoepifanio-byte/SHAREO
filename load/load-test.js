@@ -3,7 +3,7 @@
  *
  * Meta: P95 < 1s com 50 VUs simultâneos.
  *
- * Executar: k6 run k6/load-test.js --env BASE_URL=https://staging.shareo.com.br
+ * Executar: k6 run load/load-test.js --env BASE_URL=https://staging.shareo.com.br
  * Instalar: https://grafana.com/docs/k6/latest/set-up/install-k6/
  */
 

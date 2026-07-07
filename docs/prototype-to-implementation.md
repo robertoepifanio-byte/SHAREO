@@ -180,7 +180,7 @@ page.tsx [S][fetch: verificar autorização server-side]
 
 ---
 
-## Seção 3 — Uso dos Assets `icones/`
+## Seção 3 — Uso dos Assets `assets-fonte/icones/`
 
 ### 3.1 Logos
 
@@ -222,10 +222,10 @@ Motivo: JPEG tem compressão inferior ao WebP para ícones pequenos (52×52px). 
 
 ```bash
 # Usando sharp via npx ou script Node
-npx sharp-cli -i icones/*.jpeg -o public/images/categorias/ -f webp -q 85
+npx sharp-cli -i assets-fonte/icones/*.jpeg -o public/images/categorias/ -f webp -q 85
 
 # Ou com ImageMagick (se disponível no ambiente)
-for f in icones/*.jpeg; do
+for f in assets-fonte/icones/*.jpeg; do
   name=$(basename "$f" .jpeg)
   convert "$f" -resize 104x104 "public/images/categorias/${name}.webp"
 done
