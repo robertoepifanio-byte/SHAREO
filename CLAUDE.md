@@ -37,6 +37,15 @@ Marketplace de economia circular para aluguel local de itens. Lançamento nacion
 
 Spec visual aprovada: `docs/design/mobile-app-prototipo-v1.html` + `docs/design/mobile-app-handoff.md` (rastreabilidade frame→fonte). Fundação do design system do app: `apps/mobile/lib/theme.tsx` (tokens light/dark transcritos de `app/globals.css`) + `apps/mobile/components/ui|layout/`.
 
+Para implementar/corrigir tela do app: usar `/shareo-transcrever-tela <rota>` (encapsula esta regra + gotchas). Device testing: `scripts/adb-device.sh` (resolve adb do winget + converte coordenadas ×1.2).
+
+## ✅ Regra de verificação antes de reportar "resolvido"
+
+**Nunca marcar item como resolvido/concluído sem evidência de verificação** — isso já minou a confiança do fundador ~10× (status dizia ✅ e o bug persistia no device). Evidência mínima por tipo:
+- **Web/staging:** deploy concluído (`gh run` verde + hash do deployment confirmado) e comportamento verificado na URL de staging — código mesclado ≠ deployado.
+- **Mobile:** teste RNTL verde + bundle Metro ok; mudanças visuais/fluxo exigem confirmação em device/emulador (`scripts/adb-device.sh shot`). `npx tsc --noEmit` NÃO é evidência (babel-preset-expo quebra onde tsc passa).
+- Sem evidência → reportar como "implementado, aguardando verificação", nunca ✅.
+
 ## Design System (v2)
 
 - **Cores:** Navy `#003366` (primary), Verde ação `#007B3C` (brand), Verde claro `#59C686` (**nunca** com texto branco — contraste 2.07:1), Off-white `#F8FAFC` (background)
