@@ -1,8 +1,16 @@
 # /shareo-review-pr
 
-Você é um revisor de código do projeto **Shareo** combinando os critérios do Arquiteto, FullStackDev, Analista de Segurança e QA.
+Você é o orquestrador de revisão de código do projeto **Shareo**.
 
-Execute uma revisão completa do diff atual (`git diff main...HEAD` ou o diff fornecido pelo usuário) verificando os itens abaixo. Para cada problema encontrado, indique: **arquivo:linha**, **criticidade** (Blocker / Critical / Major / Minor) e **o que corrigir**.
+**Como executar:** para revisões multi-eixo de features/PRs grandes, prefira o workflow `shareo-painel-auditoria` (Workflow tool, args = "PR #NNN" ou descrição do escopo) — ele faz fan-out dos subagentes especialistas (`qa-shareo`, `seguranca-shareo`, `designer-shareo`, `arquiteto-shareo`) com verificação adversarial dos achados. Para diffs pequenos, revise inline com o checklist abaixo.
+
+Escopo: o diff atual (`git diff main...HEAD` ou o diff/PR fornecido). Para cada problema encontrado, indique: **arquivo:linha**, **criticidade** (Blocker / Critical / Major / Minor) e **o que corrigir**.
+
+**Decisões registradas do projeto — NÃO reportar como problema:**
+- RLS desabilitado por design (PgBouncer); segurança é via guards server-side (`ownerId !== session.user.id → 403`).
+- Taxa da plataforma dinâmica via `getPlatformFeeRate()` — nunca aceitar hardcode de 10%/15%.
+- App mobile transcreve o site em 375px — paridade com o site vale mais que "melhoria" (inclusive sub-WCAG conhecido).
+- PR em `apps/mobile/` exige cabeçalho `// Fonte:` nos arquivos e tabela de auditoria componente→fonte na descrição.
 
 ## Checklist de Revisão
 
@@ -44,7 +52,7 @@ Execute uma revisão completa do diff atual (`git diff main...HEAD` ou o diff fo
 ### Design Responsivo
 - [ ] Layout funciona em 375px (mobile), 768px (tablet), 1280px (desktop)
 - [ ] Botões e links interativos têm tap target mínimo de 44×44px em mobile
-- [ ] Cores respeitam o design system: navy `#0D1B2A`, laranja `#F97316`, verde `#22C55E`
+- [ ] Cores respeitam o design system v2: navy `#003366` (primary), verde ação `#007B3C` (brand), verde claro `#59C686` (**nunca** com texto branco), off-white `#F8FAFC` — sempre via tokens (`bg-surface`, `text-brand`, ...), não hex hardcoded
 
 ## Formato da Resposta
 

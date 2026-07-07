@@ -1,0 +1,4 @@
+# Scripts shell precisam de LF no checkout — CRLF quebra o bash no Windows
+# ("\r: command not found"). Escopo mínimo: só *.sh; o resto do repo segue
+# a config local (core.autocrlf) como sempre seguiu.
+*.sh text eol=lf
