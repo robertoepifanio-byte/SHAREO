@@ -11,7 +11,9 @@ appId: com.shareo.app
 - takeScreenshot: 01-login
 - tapOn: "seu@email.com"
 - inputText: ${EMAIL}
-- tapOn: "Senha"
+# Placeholder do campo de senha — "Senha" (accessibilityLabel) colide com o
+# rótulo "SENHA" acima do campo: o tap cai no rótulo e o input perde o foco
+- tapOn: "••••••••"
 - inputText: ${PASSWORD}
 - hideKeyboard
 - tapOn: "Entrar"

@@ -78,4 +78,5 @@ jobs:
           name: ios-smoke-resultado
           path: out/
           if-no-files-found: warn
+          include-hidden-files: true
           retention-days: 14
