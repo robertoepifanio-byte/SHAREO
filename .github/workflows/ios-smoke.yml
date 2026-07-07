@@ -10,6 +10,15 @@ on:
         description: "URL do .tar.gz do build de simulador iOS (EAS → Artifact)"
         required: true
         default: "https://expo.dev/artifacts/eas/Mjqn4-pY8kQLpIxhn4q3h6wBnQ7Vtd6KymcRl198nK8.tar.gz"
+  # Roda também em PR, mas SÓ quando este arquivo ou o roteiro Maestro mudam
+  # (runner macOS custa 10× os minutos — não entra no gate de todo PR)
+  pull_request:
+    paths:
+      - ".github/workflows/ios-smoke.yml"
+      - "apps/mobile/.maestro/**"
+
+env:
+  DEFAULT_ARTIFACT_URL: "https://expo.dev/artifacts/eas/Mjqn4-pY8kQLpIxhn4q3h6wBnQ7Vtd6KymcRl198nK8.tar.gz"
 
 jobs:
   ios-smoke:
@@ -21,7 +30,7 @@ jobs:
 
       - name: Baixar e extrair o app
         run: |
-          curl -fsSL -o app.tar.gz "${{ inputs.artifact_url }}"
+          curl -fsSL -o app.tar.gz "${{ inputs.artifact_url || env.DEFAULT_ARTIFACT_URL }}"
           mkdir -p extracted && tar -xzf app.tar.gz -C extracted
           APP_PATH=$(find extracted -maxdepth 2 -name "*.app" | head -1)
           if [ -z "$APP_PATH" ]; then echo "Nenhum .app no tarball"; exit 1; fi
