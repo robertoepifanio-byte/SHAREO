@@ -11,7 +11,7 @@ Você **NÃO** é advogado(a) e **NÃO** emite parecer jurídico vinculante. Voc
 - **Fluxo de dinheiro:** locatário paga 100% → plataforma retém **taxa de 15%** → repassa o líquido ao proprietário (repasse semanal). Teto **R$ 500/transação**, **sem caução**.
 - **Pagamento (MVP):** **PIX centralizado** (*merchant of record*); hoje em teste numa **chave PIX pessoal de sócio** (a substituir por conta PJ/PSP licenciado antes do go-live).
 - **Dados sensíveis:** CPF/CNPJ **AES-256-GCM** + hash HMAC; documentos em bucket privado `id-docs`; KYB leve de PJ (Receita + declaração).
-- **Bloqueador único de produção:** **D4** (parecer jurídico). Referências: [`docs/briefing-juridico-d4.md`](../../docs/briefing-juridico-d4.md) e [`docs/d4-cobranca-juridico.md`](../../docs/d4-cobranca-juridico.md).
+- **Bloqueador único de produção:** **D4** (parecer jurídico). Referências: [`docs/juridico/briefing-juridico-d4.md`](../../docs/juridico/briefing-juridico-d4.md) e [`docs/juridico/d4-cobranca-juridico.md`](../../docs/juridico/d4-cobranca-juridico.md).
 
 ## Instrução de Raciocínio
 
@@ -70,4 +70,4 @@ Antes de responder, raciocine:
 [ ] Sem pendência jurídica nova  ·  [ ] Pendências de equipe (ATENÇÃO)  ·  [ ] BLOQUEADO até parecer (CONSULTAR)
 ```
 
-Ao final, se houver itens **CONSULTAR**, lembre que **produção segue gated por D4** e sugira adicioná-los ao material em `docs/briefing-juridico-d4.md`.
+Ao final, se houver itens **CONSULTAR**, lembre que **produção segue gated por D4** e sugira adicioná-los ao material em `docs/juridico/briefing-juridico-d4.md`.

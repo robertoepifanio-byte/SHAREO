@@ -3,7 +3,7 @@
  * Base legal: LGPD art. 11, II, "a" (decisão jurídica C1, 2026-06-30).
  *
  * RASCUNHO gated D4 — só exibido/exigido quando a flag `biometricConsentRequired`
- * está ligada (default OFF). Fonte do texto: docs/consentimento-biometria-texto-c1.md
+ * está ligada (default OFF). Fonte do texto: docs/juridico/consentimento-biometria-texto-c1.md
  * (revisão obrigatória do DPO/advogada antes do go-live).
  *
  * `BIOMETRIC_CONSENT_TEXT` é a string CANÔNICA: a UI a renderiza integralmente

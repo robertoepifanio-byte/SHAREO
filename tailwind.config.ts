@@ -329,7 +329,7 @@ const config: Config = {
   plugins: [
     require('tailwindcss-animate'),
     // Fase 2: strategy 'class' após auditoria completa de inputs (todos os controles crus
-    // receberam classes de bg/cor/borda explícitas — ver relatório Fase 2 no dark-mode-plan.md)
+    // receberam classes de bg/cor/borda explícitas — ver relatório Fase 2 no docs/planos/dark-mode-plan.md)
     require('@tailwindcss/forms')({ strategy: 'class' }),
   ],
 }

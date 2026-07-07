@@ -56,7 +56,7 @@
 
 ## 5. Pagamentos
 
-- 🔵 ⬜ **Decisão:** Stripe live (+ KYC) **×** Mercado Pago (modelo A gateway × B marketplace) — ver `docs/mercadopago-procedimentos-fundadores.md`.
+- 🔵 ⬜ **Decisão:** Stripe live (+ KYC) **×** Mercado Pago (modelo A gateway × B marketplace) — ver `docs/juridico/mercadopago-procedimentos-fundadores.md`.
 - ⚠️ ⬜ **Trocar o PIX pessoal do Raimundo pela conta PJ oficial** da ShareO (hoje é chave temporária no staging).
 - ⬜ Configurar credenciais de **produção** do provedor escolhido + webhook + assinatura.
 

@@ -292,7 +292,7 @@ export async function getRentalContractConfig(): Promise<RentalContractConfig> {
 // Flag de feature: PlatformConfig.mercadoPagoEnabled
 // Default OFF — com a flag desligada o fluxo de pagamento atual (PIX manual /
 // Stripe oculto) NÃO muda. Ativar só após: parecer FORMAL do D4 + contrato PSP +
-// credenciais configuradas (ver lib/mercadopago.ts e docs/mercadopago-procedimentos-fundadores.md).
+// credenciais configuradas (ver lib/mercadopago.ts e docs/juridico/mercadopago-procedimentos-fundadores.md).
 // ADR-026 supersede ADR-012.
 
 export interface MercadoPagoConfig {
@@ -321,7 +321,7 @@ export async function getMercadoPagoConfig(): Promise<MercadoPagoConfig> {
 // Flag de feature: PlatformConfig.biometricConsentRequired
 // Default OFF — com a flag desligada o fluxo de KYC atual NÃO muda (nenhum passo
 // de consentimento na UI, nenhum bloqueio na API). Ativar só após parecer D4 +
-// aprovação do texto pelo DPO. Ver docs/spec-consentimento-biometria-c1.md.
+// aprovação do texto pelo DPO. Ver docs/juridico/spec-consentimento-biometria-c1.md.
 
 export interface BiometricConsentConfig {
   required: boolean // chave biometricConsentRequired ("true"/"false")

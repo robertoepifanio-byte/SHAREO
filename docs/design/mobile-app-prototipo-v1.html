@@ -1,0 +1,3193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShareO — Protótipo Mobile App v1</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════
+   DESIGN TOKENS — espelha shareo-prototipo-v3b.html + dark mode
+   Estrutura: canais RGB separados para que rgba() funcione em ambos os temas.
+   Dark mode: trocar valores em .dark{} ou [data-theme="dark"]{}.
+   Implementação app: next-themes / ThemeToggle já presentes no site (v1.9.0).
+   ═══════════════════════════════════════════════════════ */
+:root {
+  /* Cores fixas de marca — não mudam com tema */
+  --navy:        #003366;
+  --green:       #007B3C;
+  --green-light: #59C686; /* NUNCA com texto branco — contraste 2.07:1 */
+  --blue-mid:    #144D81;
+
+  /* Superfícies — mudam em dark */
+  --white:       #FFFFFF;
+  --bg:          #F8FAFC;   /* bg-background  → dark: #0F172A */
+  --surface:     #FFFFFF;   /* bg-surface     → dark: #1E293B */
+
+  /* Texto — muda em dark */
+  --text:        #0F172A;   /* text-foreground           → dark: #F1F5F9 */
+  --muted:       #64748B;   /* text-muted-foreground     → dark: #94A3B8 */
+
+  /* Bordas — muda em dark */
+  --border:      #E2E8F0;   /* border-border → dark: #334155 */
+
+  /* Semânticos */
+  --red:         #E74C3C;
+  --amber:       #F59E0B;
+  --success:     #007B3C;   /* = --green */
+  --warning-bg:  #FEF3C7;
+  --warning-text:#92400E;
+  --error-bg:    #FEE2E2;
+  --error-text:  #991B1B;
+  --success-bg:  #D1FAE5;
+  --success-text:#065F46;
+
+  /* Tipografia */
+  --font-heading: 'Montserrat', sans-serif;
+  --font-body:    'Inter', sans-serif;
+
+  /* Raios */
+  --radius-sm:   6px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-2xl:  20px;
+  --radius-full: 999px;
+
+  /* Sombras */
+  --shadow-sm:   0 1px 3px rgba(0,0,0,.08);
+  --shadow-md:   0 4px 12px rgba(0,0,0,.10);
+  --shadow-lg:   0 8px 24px rgba(0,0,0,.14);
+
+  /* Frame do celular */
+  --frame-w:     375px;
+  --frame-h:     812px;
+  --safe-top:    44px;   /* status bar simulada */
+  --safe-bottom: 34px;   /* home indicator */
+  --tab-h:       72px;
+}
+
+/* ── Dark mode tokens (estrutura para MOB-BL3 — adicionar sem reescrever)
+   Para ativar: <html data-theme="dark"> ou .dark na raiz.
+   Espelha o ThemeToggle do site (next-themes, nonce CSP, v1.9.0). ── */
+[data-theme="dark"], .dark {
+  --bg:      #0F172A;
+  --surface: #1E293B;
+  --text:    #F1F5F9;
+  --muted:   #94A3B8;
+  --border:  #334155;
+  --success-bg:  #064E3B;
+  --success-text:#6EE7B7;
+  --error-bg:    #450A0A;
+  --error-text:  #FCA5A5;
+  --warning-bg:  #451A03;
+  --warning-text:#FCD34D;
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESET & BASE
+   ═══════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; }
+body {
+  font-family: var(--font-body);
+  background: #1a1a2e;
+  color: var(--text);
+  min-height: 100vh;
+  padding: 40px 24px 60px;
+}
+h1,h2,h3,h4,h5,h6 { font-family: var(--font-heading); }
+a { text-decoration: none; color: inherit; }
+button { cursor: pointer; font-family: var(--font-body); border: none; }
+img { max-width: 100%; display: block; }
+input, textarea { font-family: var(--font-body); }
+
+/* ═══════════════════════════════════════════════════════
+   LAYOUT CANVAS — grade de frames lado a lado
+   ═══════════════════════════════════════════════════════ */
+.canvas-title {
+  font-family: var(--font-heading);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  opacity: 0.5;
+  margin-bottom: 32px;
+  text-align: center;
+}
+.section-label {
+  font-family: var(--font-heading);
+  color: rgba(255,255,255,.7);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin: 48px 0 16px;
+}
+.frames-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 32px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+.frame-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.frame-label {
+  color: rgba(255,255,255,.55);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .5px;
+  text-align: center;
+}
+
+/* ═══════════════════════════════════════════════════════
+   FRAME DO CELULAR
+   ═══════════════════════════════════════════════════════ */
+.phone {
+  width: var(--frame-w);
+  height: var(--frame-h);
+  background: var(--white);
+  border-radius: 44px;
+  overflow: hidden;
+  position: relative;
+  box-shadow:
+    0 0 0 10px #1c1c28,
+    0 0 0 12px #2a2a3d,
+    0 32px 64px rgba(0,0,0,.6);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Notch / Dynamic Island simulado */
+.phone::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 34px;
+  background: #1c1c28;
+  border-radius: 20px;
+  z-index: 1000;
+}
+
+/* Barra de status simulada */
+.status-bar {
+  height: var(--safe-top);
+  background: var(--surface);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 24px 6px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 100;
+}
+.status-bar.dark {
+  background: var(--navy);
+  color: #fff;
+}
+.status-bar.transparent {
+  background: transparent;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+}
+.status-time {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -.2px;
+}
+.status-bar.dark .status-time { color: #fff; }
+.status-icons {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text);
+}
+.status-bar.dark .status-icons { color: #fff; }
+
+/* Área de conteúdo scrollável */
+.screen-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg);
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  position: relative;
+}
+.screen-content::-webkit-scrollbar { display: none; }
+
+/* Home indicator simulado */
+.home-indicator {
+  height: var(--safe-bottom);
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.home-indicator::after {
+  content: '';
+  width: 134px;
+  height: 5px;
+  background: var(--text);
+  border-radius: var(--radius-full);
+  opacity: .18;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SITE MOBILE HEADER — navy, logo img, bell, hamburger
+   Espelha AppHeader.tsx (bg-primary h-16) em mobile
+   ═══════════════════════════════════════════════════════ */
+.app-header {
+  background: var(--navy);
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+/* Logo: card branco arredondado com imagem — igual ao site */
+.header-logo {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-radius: 8px;
+  padding: 4px 10px;
+  overflow: hidden;
+  height: 40px;
+  flex-shrink: 0;
+}
+.header-logo img {
+  height: 28px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+}
+/* Ações do lado direito */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+/* Botão ícone no header (bell, hamburger) — tap target 44×44 */
+.header-icon-btn {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(255,255,255,.1);
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  position: relative;
+  transition: background .15s;
+}
+.header-icon-btn:hover { background: rgba(255,255,255,.18); }
+.header-icon-btn svg { color: #fff; }
+/* Badge de notificação (ponto laranja) — igual ao site */
+.notif-badge {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #F97316;
+  border: 1.5px solid var(--navy);
+}
+/* Badge com número */
+.notif-count {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  background: #F97316;
+  border: 1.5px solid var(--navy);
+  font-size: 9px;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   BOTTOM NAV — 5 ITENS COM FAB CENTRAL ELEVADO
+   Espelha BottomNav.tsx exatamente (h-[72px], FAB verde 52px)
+   ═══════════════════════════════════════════════════════ */
+.tab-bar {
+  height: var(--tab-h);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: stretch;
+  flex-shrink: 0;
+  box-shadow: 0 -4px 20px rgba(0,0,0,.08);
+}
+/* Item genérico — tap target ≥44px garantido pelo tab-h=72 */
+.tab-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  flex: 1;
+  position: relative;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .2px;
+  transition: color .15s;
+}
+/* Indicador de ativo — barra topo (igual ao site: left-[18%] right-[18%] h-[2.5px]) */
+.tab-item.active {
+  color: var(--navy);
+  font-weight: 700;
+}
+.tab-item.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 18%;
+  right: 18%;
+  height: 2.5px;
+  background: var(--navy);
+  border-radius: 0 0 3px 3px;
+}
+.tab-item svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* FAB central — Anunciar (igual ao site: -10px top, círculo 52px verde) */
+.tab-item.tab-fab {
+  position: relative;
+  top: -10px;
+  color: var(--green);
+  font-weight: 700;
+}
+.tab-item.tab-fab::before { display: none; } /* sem indicador de ativo no FAB */
+.tab-fab-circle {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0,123,60,.45);
+  margin-bottom: 2px;
+}
+.tab-fab-circle svg {
+  width: 26px;
+  height: 26px;
+  stroke: #fff;
+  stroke-width: 2.5;
+}
+
+/* ═══════════════════════════════════════════════════════
+   COMPONENTES UI BASE
+   ═══════════════════════════════════════════════════════ */
+
+/* Botão — tap target mínimo 44px de altura */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: var(--radius-xl);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: .3px;
+  transition: opacity .15s;
+  border: none;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+.btn:active { opacity: .85; }
+.btn-primary   { background: var(--green); color: #fff; }
+.btn-secondary { background: transparent; color: var(--navy); border: 2px solid var(--navy); }
+.btn-ghost     { background: transparent; color: var(--green); border: 1.5px solid var(--green); }
+.btn-danger    { background: var(--red);  color: #fff; }
+.btn-disabled  { background: #CBD5E1; color: #94A3B8; cursor: not-allowed; }
+.btn-loading   { background: var(--green); color: #fff; opacity: .55; cursor: wait; }
+.btn-full      { width: 100%; }
+.btn-lg        { min-height: 52px; font-size: 16px; }
+.btn-sm        { min-height: 44px; padding: 0 16px; font-size: 13px; }
+
+/* Input */
+.input-group { display: flex; flex-direction: column; gap: 6px; }
+.input-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .8px;
+}
+.input-required { color: var(--red); }
+.input {
+  min-height: 44px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  padding: 0 16px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  width: 100%;
+}
+.input::placeholder { color: #94A3B8; }
+.input.focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(0,123,60,.12); }
+.input.error { border-color: var(--red); background: #FFF5F5; }
+.input.disabled { background: #F1F5F9; color: var(--muted); cursor: not-allowed; }
+.input-hint { font-size: 11px; color: var(--muted); }
+.input-error-msg { font-size: 11px; color: var(--red); }
+.input-count { font-size: 10px; color: var(--muted); text-align: right; }
+.textarea {
+  min-height: 100px;
+  resize: none;
+  padding: 12px 16px;
+  line-height: 1.5;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  width: 100%;
+}
+
+/* Badge/Status chip */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .3px;
+}
+.badge-green   { background: #D1FAE5; color: #065F46; }
+.badge-amber   { background: var(--warning-bg); color: var(--warning-text); }
+.badge-red     { background: var(--error-bg); color: var(--error-text); }
+.badge-blue    { background: #DBEAFE; color: #1E40AF; }
+.badge-gray    { background: #F1F5F9; color: var(--muted); }
+.badge-navy    { background: var(--navy); color: #fff; }
+
+/* Avatar */
+.avatar {
+  border-radius: var(--radius-full);
+  background: var(--navy);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.avatar-sm  { width: 32px; height: 32px; font-size: 13px; }
+.avatar-md  { width: 44px; height: 44px; font-size: 16px; }
+.avatar-lg  { width: 72px; height: 72px; font-size: 26px; }
+.avatar-xl  { width: 88px; height: 88px; font-size: 32px; }
+
+/* Card base */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+}
+
+/* Separador */
+.divider { height: 1px; background: var(--border); margin: 0; }
+
+/* Stars */
+.stars { color: #F59E0B; font-size: 13px; letter-spacing: 1px; }
+.stars-sm { font-size: 11px; }
+
+/* Skeleton (loading placeholder) */
+.skeleton {
+  background: linear-gradient(90deg, #E2E8F0 25%, #F1F5F9 50%, #E2E8F0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-md);
+}
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Alert / Toast */
+.alert {
+  border-radius: var(--radius-lg);
+  padding: 12px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.alert-error   { background: var(--error-bg);   border: 1px solid #FECACA; color: var(--error-text); }
+.alert-warning { background: var(--warning-bg); border: 1px solid #FDE68A; color: var(--warning-text); }
+.alert-success { background: var(--success-bg); border: 1px solid #A7F3D0; color: var(--success-text); }
+.alert-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+/* Chip selecionável (categoria / condição) */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: var(--radius-xl);
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  transition: all .15s;
+}
+.chip.active {
+  border-color: var(--green);
+  background: #D1FAE5;
+  color: var(--green);
+}
+
+/* Photo slot */
+.photo-slot {
+  width: 88px;
+  height: 88px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+.photo-slot-add {
+  width: 88px;
+  height: 88px;
+  border-radius: var(--radius-lg);
+  border: 2px dashed var(--border);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.photo-slot-add span { font-size: 22px; color: var(--muted); }
+.photo-slot-add small { font-size: 10px; color: var(--muted); font-weight: 500; }
+
+/* Price row */
+.price-big {
+  font-family: var(--font-heading);
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+}
+.price-unit {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-left: 2px;
+}
+
+/* Header de tela interna (com botão voltar) */
+.screen-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  min-height: 56px;
+}
+.back-btn {
+  /* tap target 44×44 */
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  color: var(--text);
+  font-size: 22px;
+  font-weight: 300;
+  line-height: 1;
+}
+.screen-header-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--navy);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Spinner inline */
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  display: inline-block;
+}
+.spinner-green {
+  border-color: rgba(0,123,60,.2);
+  border-top-color: var(--green);
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Row de preço no checkout */
+.price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+}
+.price-row-label { font-size: 13px; color: var(--muted); }
+.price-row-value { font-size: 13px; font-weight: 600; color: var(--text); }
+.price-row-savings { color: var(--green); }
+.price-row-total .price-row-label { font-size: 15px; font-weight: 700; color: var(--text); }
+.price-row-total .price-row-value { font-size: 15px; font-weight: 800; color: var(--text); }
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  gap: 12px;
+}
+.empty-icon { font-size: 52px; line-height: 1; }
+.empty-title {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--navy);
+}
+.empty-desc { font-size: 13px; color: var(--muted); line-height: 1.5; max-width: 220px; }
+
+/* Sticky CTA bar (bottom) */
+.sticky-cta {
+  position: absolute;
+  bottom: var(--safe-bottom);
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 12px 16px;
+  box-shadow: 0 -4px 16px rgba(0,0,0,.08);
+}
+
+/* Faixa de item (booking list row) */
+.booking-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+}
+.booking-thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-lg);
+  background: #E2E8F0;
+  flex-shrink: 0;
+  overflow: hidden;
+  object-fit: cover;
+}
+.booking-info { flex: 1; min-width: 0; }
+.booking-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.booking-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.booking-price { font-size: 14px; font-weight: 700; color: var(--text); margin-top: 4px; }
+
+/* Menu item (perfil) */
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 16px;
+  min-height: 56px; /* ≥44px tap target */
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  background: var(--surface);
+}
+.menu-item:last-child { border-bottom: none; }
+.menu-icon { font-size: 20px; width: 28px; text-align: center; flex-shrink: 0; }
+.menu-label { flex: 1; font-size: 14px; font-weight: 500; color: var(--text); }
+.menu-chevron { color: var(--muted); font-size: 18px; }
+.menu-item.danger .menu-label { color: var(--red); }
+
+/* Category chip horizontal scroll */
+.cat-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 12px 16px;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.cat-scroll::-webkit-scrollbar { display: none; }
+.cat-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: var(--radius-xl);
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  flex-shrink: 0;
+  min-width: 68px;
+  min-height: 68px; /* tap target composto com label */
+  transition: all .15s;
+}
+.cat-chip.active {
+  border-color: var(--green);
+  background: #D1FAE5;
+}
+.cat-emoji { font-size: 22px; line-height: 1; }
+.cat-name {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: center;
+  letter-spacing: .2px;
+}
+.cat-chip.active .cat-name { color: var(--green); }
+
+/* Item card (feed) */
+.item-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+.item-card-img {
+  aspect-ratio: 4/3;
+  background: #E2E8F0;
+  position: relative;
+  overflow: hidden;
+}
+.item-card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.item-card-eco {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0,123,60,.88);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+}
+.item-card-fav {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.item-card-body { padding: 12px 14px 14px; }
+.item-card-cat {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--green);
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  margin-bottom: 4px;
+}
+.item-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--navy);
+  line-height: 1.3;
+  margin-bottom: 8px;
+}
+.item-card-footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.item-card-price {
+  font-family: var(--font-heading);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+}
+.item-card-price small {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-left: 2px;
+}
+.item-card-loc {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: right;
+}
+
+/* 2-column grid — igual ao site /itens em mobile */
+.items-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 12px 12px;
+}
+.items-grid .item-card {
+  margin-bottom: 0;
+}
+.items-grid .item-card-title {
+  font-size: 12px;
+}
+.items-grid .item-card-price {
+  font-size: 16px;
+}
+.items-grid .item-card-loc {
+  font-size: 10px;
+}
+.items-grid .item-card-body {
+  padding: 8px 10px 10px;
+}
+
+/* Filtros + sort row */
+.filter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px 8px;
+  gap: 8px;
+}
+.filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sort-select {
+  height: 36px;
+  padding: 0 10px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+  outline: none;
+}
+
+/* Category icon SVG illustrations (stub circles) */
+.cat-icon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #EEF2FF;
+  color: var(--navy);
+  flex-shrink: 0;
+}
+
+/* Imagem de placeholder colorida */
+.img-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+}
+.img-placeholder.blue  { background: #DBEAFE; }
+.img-placeholder.green { background: #D1FAE5; }
+.img-placeholder.amber { background: #FEF3C7; }
+.img-placeholder.slate { background: #F1F5F9; }
+
+/* Rating row */
+.rating-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ═══════════════════════════════════════════════════════
+   UTILITÁRIOS
+   ═══════════════════════════════════════════════════════ */
+.flex   { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.items-start  { align-items: flex-start; }
+.justify-between { justify-content: space-between; }
+.justify-center  { justify-content: center; }
+.gap-2  { gap: 8px; }
+.gap-3  { gap: 12px; }
+.gap-4  { gap: 16px; }
+.flex-1 { flex: 1; }
+.w-full { width: 100%; }
+.text-center { text-align: center; }
+.font-bold   { font-weight: 700; }
+.font-black  { font-weight: 900; }
+.text-navy   { color: var(--navy); }
+.text-green  { color: var(--green); }
+.text-muted  { color: var(--muted); }
+.text-white  { color: #fff; }
+.text-red    { color: var(--red); }
+.text-xs  { font-size: 11px; }
+.text-sm  { font-size: 13px; }
+.text-base{ font-size: 15px; }
+.text-lg  { font-size: 17px; }
+.text-xl  { font-size: 20px; }
+.text-2xl { font-size: 24px; }
+.mt-1 { margin-top: 4px; }
+.mt-2 { margin-top: 8px; }
+.mt-3 { margin-top: 12px; }
+.mt-4 { margin-top: 16px; }
+.mt-6 { margin-top: 24px; }
+.mb-2 { margin-bottom: 8px; }
+.mb-4 { margin-bottom: 16px; }
+.p-4  { padding: 16px; }
+.px-4 { padding-left: 16px; padding-right: 16px; }
+.py-3 { padding-top: 12px; padding-bottom: 12px; }
+.uppercase { text-transform: uppercase; }
+.tracking-wide { letter-spacing: .8px; }
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.relative { position: relative; }
+.absolute { position: absolute; }
+.overflow-hidden { overflow: hidden; }
+.rounded-full { border-radius: var(--radius-full); }
+.bg-navy    { background: var(--navy); }
+.bg-green   { background: var(--green); }
+.bg-surface { background: var(--surface); }
+.border-b   { border-bottom: 1px solid var(--border); }
+.shadow-sm  { box-shadow: var(--shadow-sm); }
+.shadow-md  { box-shadow: var(--shadow-md); }
+</style>
+</head>
+<body>
+
+<p class="canvas-title">ShareO — Protótipo Mobile App v1 &nbsp;·&nbsp; 375px &nbsp;·&nbsp; Design System v2</p>
+
+<!-- ═══════════════════════════════════════════════════════
+     GRUPO 1: AUTENTICAÇÃO
+     ═══════════════════════════════════════════════════════ -->
+
+<div class="section-label">Autenticação</div>
+<div class="frames-row">
+
+  <!-- LOGIN -->
+  <div class="frame-wrap">
+    <div class="frame-label">Login</div>
+    <div class="phone" data-active="">
+      <div class="screen-content" style="background:#F8FAFC; overflow-y:auto;">
+        <div style="padding:24px; display:flex; flex-direction:column; min-height:100%;">
+
+          <!-- Voltar para o início -->
+          <a href="#" style="display:inline-flex; align-items:center; gap:4px; font-size:13px; font-weight:500; color:var(--navy); text-decoration:none; margin-bottom:32px; min-height:44px; align-self:flex-start;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+            Voltar para o início
+          </a>
+
+          <!-- Logo — solta sobre fundo claro, sem caixa, igual ao AuthLayout do site (app/(auth)/layout.tsx: logo link + max-w-md card abaixo) -->
+          <div style="display:flex; justify-content:center; margin-bottom:24px;">
+            <img src="../../public/logos/shareo-logo.png" alt="ShareO" style="height:48px; width:auto; display:block; object-fit:contain;">
+          </div>
+
+          <!-- Títulos -->
+          <h1 style="font-family:var(--font-heading); font-size:24px; font-weight:800; color:var(--navy); text-align:center; margin-bottom:4px;">Entrar na sua conta</h1>
+          <p style="font-size:13px; color:var(--muted); text-align:center; margin-bottom:28px;">Bem-vindo de volta ao ShareO</p>
+
+          <!-- Formulário -->
+          <div style="display:flex; flex-direction:column; gap:0;">
+
+            <!-- Campo E-mail -->
+            <div class="input-group" style="margin-bottom:16px;">
+              <label class="input-label">E-mail <span style="color:var(--error);">*</span></label>
+              <input class="input focus" type="email" value="ana@email.com" readonly>
+            </div>
+
+            <!-- Campo Senha com label + "Esqueci" na mesma linha -->
+            <div class="input-group" style="margin-bottom:24px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                <label class="input-label" style="margin-bottom:0;">Senha <span style="color:var(--error);">*</span></label>
+                <a href="#" style="font-size:12px; font-weight:500; color:var(--navy); text-decoration:none;">Esqueci minha senha</a>
+              </div>
+              <div style="position:relative;">
+                <input class="input" type="password" value="••••••••" readonly style="padding-right:44px;">
+                <!-- Eye toggle -->
+                <button aria-label="Mostrar senha" style="position:absolute; right:0; top:0; width:44px; height:44px; background:none; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--muted);">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Botão Entrar -->
+            <button class="btn btn-primary btn-full btn-lg">ENTRAR</button>
+          </div>
+
+          <!-- Link para cadastro -->
+          <div style="margin-top:24px; display:flex; align-items:center; justify-content:center; gap:4px; flex-wrap:wrap;">
+            <span style="font-size:13px; color:var(--muted);">Não tem conta?</span>
+            <a href="#" style="font-size:13px; font-weight:700; color:var(--green); text-decoration:none;">Criar conta grátis</a>
+          </div>
+
+        </div>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+
+  <!-- LOGIN — ESTADO DE ERRO -->
+  <div class="frame-wrap">
+    <div class="frame-label">Login — erro de credenciais</div>
+    <div class="phone" data-active="">
+      <div class="screen-content" style="background:#F8FAFC; overflow-y:auto;">
+        <div style="padding:24px;">
+
+          <!-- Voltar para o início -->
+          <a href="#" style="display:inline-flex; align-items:center; gap:4px; font-size:13px; font-weight:500; color:var(--navy); text-decoration:none; margin-bottom:32px; min-height:44px; align-self:flex-start;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+            Voltar para o início
+          </a>
+
+          <!-- Logo — solta sobre fundo claro, sem caixa, igual ao AuthLayout (app/(auth)/layout.tsx) -->
+          <div style="display:flex; justify-content:center; margin-bottom:24px;">
+            <img src="../../public/logos/shareo-logo.png" alt="ShareO" style="height:48px; width:auto; display:block; object-fit:contain;">
+          </div>
+
+          <h1 style="font-family:var(--font-heading); font-size:24px; font-weight:800; color:var(--navy); text-align:center; margin-bottom:4px;">Entrar na sua conta</h1>
+          <p style="font-size:13px; color:var(--muted); text-align:center; margin-bottom:20px;">Bem-vindo de volta ao ShareO</p>
+
+          <!-- Alerta de erro -->
+          <div class="alert alert-error" style="margin-bottom:16px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span>E-mail ou senha incorretos. Tente novamente.</span>
+          </div>
+
+          <div class="input-group" style="margin-bottom:16px;">
+            <label class="input-label">E-mail <span style="color:var(--error);">*</span></label>
+            <input class="input error" type="email" value="ana@email.com" readonly>
+          </div>
+
+          <div class="input-group" style="margin-bottom:24px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+              <label class="input-label" style="margin-bottom:0;">Senha <span style="color:var(--error);">*</span></label>
+              <a href="#" style="font-size:12px; font-weight:500; color:var(--navy); text-decoration:none;">Esqueci minha senha</a>
+            </div>
+            <div style="position:relative;">
+              <input class="input error" type="password" value="••••••••" readonly style="padding-right:44px;">
+              <button aria-label="Mostrar senha" style="position:absolute; right:0; top:0; width:44px; height:44px; background:none; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--muted);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+            <span class="input-error-msg">E-mail ou senha incorretos</span>
+          </div>
+
+          <button class="btn btn-primary btn-full btn-lg">ENTRAR</button>
+
+          <div style="margin-top:24px; display:flex; align-items:center; justify-content:center; gap:4px;">
+            <span style="font-size:13px; color:var(--muted);">Não tem conta?</span>
+            <a href="#" style="font-size:13px; font-weight:700; color:var(--green); text-decoration:none;">Criar conta grátis</a>
+          </div>
+        </div>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+
+  <!-- LOGIN — LOADING -->
+  <div class="frame-wrap">
+    <div class="frame-label">Login — carregando</div>
+    <div class="phone" data-active="">
+      <div class="screen-content" style="background:#F8FAFC; overflow-y:auto;">
+        <div style="padding:24px;">
+
+          <!-- Voltar para o início -->
+          <a href="#" style="display:inline-flex; align-items:center; gap:4px; font-size:13px; font-weight:500; color:var(--navy); text-decoration:none; margin-bottom:32px; min-height:44px; align-self:flex-start; opacity:.5; pointer-events:none;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+            Voltar para o início
+          </a>
+
+          <!-- Logo — solta sobre fundo claro, sem caixa, igual ao AuthLayout (app/(auth)/layout.tsx) -->
+          <div style="display:flex; justify-content:center; margin-bottom:24px;">
+            <img src="../../public/logos/shareo-logo.png" alt="ShareO" style="height:48px; width:auto; display:block; object-fit:contain;">
+          </div>
+
+          <h1 style="font-family:var(--font-heading); font-size:24px; font-weight:800; color:var(--navy); text-align:center; margin-bottom:4px;">Entrar na sua conta</h1>
+          <p style="font-size:13px; color:var(--muted); text-align:center; margin-bottom:28px;">Bem-vindo de volta ao ShareO</p>
+
+          <div class="input-group" style="margin-bottom:16px;">
+            <label class="input-label">E-mail <span style="color:var(--error);">*</span></label>
+            <input class="input disabled" type="email" value="ana@email.com" readonly>
+          </div>
+
+          <div class="input-group" style="margin-bottom:24px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+              <label class="input-label" style="margin-bottom:0;">Senha <span style="color:var(--error);">*</span></label>
+              <span style="font-size:12px; font-weight:500; color:var(--muted);">Esqueci minha senha</span>
+            </div>
+            <div style="position:relative;">
+              <input class="input disabled" type="password" value="••••••••" readonly style="padding-right:44px;">
+              <button disabled style="position:absolute; right:0; top:0; width:44px; height:44px; background:none; border:none; cursor:not-allowed; display:flex; align-items:center; justify-content:center; color:var(--muted); opacity:.5;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <button class="btn btn-loading btn-full btn-lg" disabled style="display:flex;align-items:center;justify-content:center;gap:10px;">
+            <span class="spinner"></span>
+            <span>Entrando…</span>
+          </button>
+        </div>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+
+  <!-- CADASTRO (redirect para site) -->
+  <div class="frame-wrap">
+    <div class="frame-label">Criar conta</div>
+    <div class="phone" data-active="">
+      <div class="screen-content" style="background:#F8FAFC;">
+        <div style="padding:24px;">
+
+          <!-- Botão Voltar -->
+          <button class="back-btn" style="margin-bottom:16px; margin-left:-12px;">‹</button>
+
+          <h1 style="font-size:24px; font-weight:800; color:var(--navy); margin-bottom:8px;">Criar conta</h1>
+          <p style="font-size:13px; color:var(--muted); line-height:1.6; margin-bottom:32px;">
+            O cadastro completo está disponível no site. Acesse
+            <strong style="color:var(--green);">shareo.com.br</strong>
+            pelo navegador para criar sua conta.
+          </p>
+
+          <div class="card" style="padding:20px;">
+
+            <!-- Ícone decorativo -->
+            <div style="text-align:center; margin-bottom:20px;">
+              <div style="font-size:48px; line-height:1;">🌐</div>
+              <div style="font-size:13px; color:var(--muted); margin-top:8px; line-height:1.5;">
+                Cadastre-se em <strong style="color:var(--navy);">shareo.com.br</strong><br>
+                e entre aqui com o mesmo e-mail e senha.
+              </div>
+            </div>
+
+            <div class="divider" style="margin-bottom:16px;"></div>
+
+            <p style="font-size:13px; color:var(--text); line-height:1.6; margin-bottom:16px;">
+              Após criar sua conta no site, use o mesmo e-mail e senha para entrar aqui.
+            </p>
+
+            <button class="btn btn-primary btn-full">Já tenho conta — Entrar</button>
+          </div>
+
+        </div>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+
+</div><!-- /frames-row auth -->
+
+<!-- ═══════════════════════════════════════════════════════
+     MOBILE MENU (drawer overlay)
+     ═══════════════════════════════════════════════════════ -->
+
+<div class="section-label">Menu Mobile</div>
+<div class="frames-row">
+
+  <!-- MOBILE MENU — logado, aberto -->
+  <div class="frame-wrap">
+    <div class="frame-label">MobileMenu — logado</div>
+    <div class="phone" data-active="">
+      <div class="app-header-placeholder" data-notif="2" data-loggedin="true"></div>
+      <!-- Overlay escurecido (drawer aberto) -->
+      <div style="position:absolute; inset:64px 0 0 0; z-index:300; display:flex; flex-direction:column;">
+
+        <!-- Drawer nav — fundo navy, ordem e rótulos VERBATIM de MobileMenu.tsx -->
+        <nav style="background:#003366; flex:1; overflow-y:auto; padding:0 0 24px;" aria-label="Navegação mobile">
+
+          <ul style="list-style:none; padding:12px 16px 0; display:flex; flex-direction:column; gap:4px;">
+
+            <!-- Início -->
+            <li>
+              <a href="#" style="display:flex; height:48px; align-items:center; border-radius:8px; padding:0 16px; font-size:16px; font-weight:500; color:rgba(255,255,255,.75); text-decoration:none;">Início</a>
+            </li>
+
+            <!-- Sobre -->
+            <li>
+              <a href="#" style="display:flex; height:48px; align-items:center; border-radius:8px; padding:0 16px; font-size:16px; font-weight:500; color:rgba(255,255,255,.75); text-decoration:none;">Sobre</a>
+            </li>
+
+            <!-- TEMA — controle tri-estado no TOPO, logo após Início/Sobre (MobileMenu.tsx linhas 229-234) -->
+            <li style="padding:0; padding-top:4px;">
+              <p style="padding:8px 16px 4px; font-size:10px; font-weight:600; color:rgba(255,255,255,.8); text-transform:uppercase; letter-spacing:1.5px; margin:0;">Tema</p>
+              <!-- ThemeToggle variant="menu": flex-row, overflow-hidden, border rgba(255,255,255,.2) -->
+              <div style="display:flex; width:100%; overflow:hidden; border:1px solid rgba(255,255,255,.2); border-radius:8px;">
+                <!-- Claro -->
+                <button aria-label="Tema claro" aria-pressed="false" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px 0; min-height:44px; background:transparent; border:none; color:rgba(255,255,255,.6); cursor:pointer;">
+                  <!-- Sun icon (Lucide) -->
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                  <span style="font-size:10px; font-weight:500; line-height:1;">Claro</span>
+                </button>
+                <!-- Sistema (ativo — bg/15 text-white) -->
+                <button aria-label="Tema do sistema" aria-pressed="true" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px 0; min-height:44px; background:rgba(255,255,255,.15); border:none; color:#fff; cursor:pointer;">
+                  <!-- Monitor icon (Lucide) -->
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                  <span style="font-size:10px; font-weight:500; line-height:1;">Sistema</span>
+                </button>
+                <!-- Escuro -->
+                <button aria-label="Tema escuro" aria-pressed="false" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px 0; min-height:44px; background:transparent; border:none; color:rgba(255,255,255,.6); cursor:pointer;">
+                  <!-- Moon icon (Lucide) -->
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>
+                  <span style="font-size:10px; font-weight:500; line-height:1;">Escuro</span>
+                </button>
+              </div>
+            </li>
+
+            <!-- Divisor -->
+            <li><div style="height:1px; background:rgba(255,255,255,.1); margin:4px 0;"></div></li>
+
+            <!-- Explorar — expansível (MobileMenu.tsx linhas 239-258) -->
+            <li>
+              <button aria-expanded="true" style="display:flex; height:48px; width:100%; align-items:center; justify-content:space-between; border-radius:8px; padding:0 16px; font-size:16px; font-weight:600; color:rgba(255,255,255,.75); background:none; border:none; cursor:pointer;">
+                <span>Explorar</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true" style="transform:rotate(180deg);"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <!-- Sub-items — VERBATIM de EXPLORAR_LINKS (MobileMenu.tsx linhas 14-20) -->
+              <a href="#" style="display:flex; height:44px; align-items:center; gap:12px; border-radius:8px; padding:0 16px 0 32px; font-size:14px; font-weight:500; color:rgba(255,255,255,.75); text-decoration:none;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                Quero alugar algo
+              </a>
+              <a href="#" style="display:flex; height:44px; align-items:center; gap:12px; border-radius:8px; padding:0 16px 0 32px; font-size:14px; font-weight:500; color:rgba(255,255,255,.75); text-decoration:none;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                Ver todos os itens
+              </a>
+              <a href="#" style="display:flex; height:44px; align-items:center; gap:12px; border-radius:8px; padding:0 16px 0 32px; font-size:14px; font-weight:500; color:rgba(255,255,255,.75); text-decoration:none;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+                Buscar no mapa
+              </a>
+              <a href="#" style="display:flex; height:44px; align-items:center; gap:12px; border-radius:8px; padding:0 16px 0 32px; font-size:14px; font-weight:500; color:rgba(255,255,255,.75); text-decoration:none;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                Mais alugados
+              </a>
+              <a href="#" style="display:flex; height:44px; align-items:center; gap:12px; border-radius:8px; padding:0 16px 0 32px; font-size:14px; font-weight:500; color:rgba(255,255,255,.75); text-decoration:none;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                Mais bem avaliados
+              </a>
+            </li>
+
+            <!-- Anunciar — pill verde, expansível (MobileMenu.tsx linhas 261-284) -->
+            <li>
+              <button aria-expanded="false" style="display:flex; height:48px; width:100%; align-items:center; justify-content:space-between; border-radius:8px; padding:0 16px; font-size:16px; font-weight:700; color:#fff; background:#007B3C; border:none; cursor:pointer;">
+                <span>Anunciar</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+            </li>
+
+            <!-- Divisor -->
+            <li><div style="height:1px; background:rgba(255,255,255,.1); margin:4px 0;"></div></li>
+
+            <!-- ATIVIDADE — label + 4 links VERBATIM de ATIVIDADE_LINKS (MobileMenu.tsx linhas 28-33) -->
+            <li>
+              <p style="padding:8px 16px 4px; font-size:10px; font-weight:600; color:rgba(255,255,255,.8); text-transform:uppercase; letter-spacing:1.5px; margin:0;">Atividade</p>
+            </li>
+            <!-- Meus Anúncios -->
+            <li>
+              <a href="#" style="display:flex; height:44px; align-items:center; gap:12px; border-radius:8px; padding:0 16px; font-size:14px; font-weight:500; color:rgba(255,255,255,.75); text-decoration:none;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                Meus Anúncios
+              </a>
+            </li>
+            <!-- Reservas -->
+            <li>
+              <a href="#" style="display:flex; height:44px; align-items:center; gap:12px; border-radius:8px; padding:0 16px; font-size:14px; font-weight:500; color:rgba(255,255,255,.75); text-decoration:none;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                Reservas
+              </a>
+            </li>
+            <!-- Mensagens -->
+            <li>
+              <a href="#" style="display:flex; height:44px; align-items:center; gap:12px; border-radius:8px; padding:0 16px; font-size:14px; font-weight:500; color:rgba(255,255,255,.75); text-decoration:none;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Mensagens
+              </a>
+            </li>
+            <!-- Dashboard -->
+            <li>
+              <a href="#" style="display:flex; height:44px; align-items:center; gap:12px; border-radius:8px; padding:0 16px; font-size:14px; font-weight:500; color:rgba(255,255,255,.75); text-decoration:none;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                Dashboard
+              </a>
+            </li>
+
+            <!-- Divisor -->
+            <li><div style="height:1px; background:rgba(255,255,255,.1); margin:4px 0;"></div></li>
+
+            <!-- Minha Conta — expansível (MobileMenu.tsx linhas 308-327) -->
+            <li>
+              <button aria-expanded="false" style="display:flex; height:48px; width:100%; align-items:center; justify-content:space-between; border-radius:8px; padding:0 16px; font-size:16px; font-weight:600; color:rgba(255,255,255,.75); background:none; border:none; cursor:pointer;">
+                <span>Minha Conta</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+            </li>
+
+            <!-- Divisor -->
+            <li><div style="height:1px; background:rgba(255,255,255,.1); margin:4px 0;"></div></li>
+
+            <!-- Sair (MobileMenu.tsx linhas 346-360) -->
+            <li>
+              <button style="display:flex; height:48px; width:100%; align-items:center; border-radius:8px; padding:0 16px; font-size:16px; font-weight:500; color:#fca5a5; background:none; border:none; cursor:pointer;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px; flex-shrink:0;" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Sair
+              </button>
+            </li>
+
+            <!-- Divisor -->
+            <li><div style="height:1px; background:rgba(255,255,255,.1); margin:4px 0;"></div></li>
+
+            <!-- Central de Ajuda — após o Sair (MobileMenu.tsx linhas 363-393) -->
+            <li>
+              <button aria-expanded="false" style="display:flex; height:48px; width:100%; align-items:center; justify-content:space-between; border-radius:8px; padding:0 16px; font-size:16px; font-weight:600; color:rgba(255,255,255,.75); background:none; border:none; cursor:pointer;">
+                <span>Central de Ajuda</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+            </li>
+
+          </ul>
+        </nav>
+      </div>
+      <div class="home-indicator" style="background:#003366;"></div>
+    </div>
+  </div>
+
+  <!-- MOBILE MENU — não logado -->
+  <div class="frame-wrap">
+    <div class="frame-label">MobileMenu — não logado</div>
+    <div class="phone" data-active="">
+      <div class="app-header-placeholder" data-notif="0" data-loggedin="false"></div>
+      <div style="position:absolute; inset:64px 0 0 0; z-index:300; display:flex; flex-direction:column;">
+        <!-- Drawer — não logado — VERBATIM de MobileMenu.tsx (!isLoggedIn branch, linhas 396-435) -->
+        <nav style="background:#003366; flex:1; overflow-y:auto; padding:0 0 24px;" aria-label="Navegação mobile">
+
+          <ul style="list-style:none; padding:12px 16px 0; display:flex; flex-direction:column; gap:4px;">
+
+            <!-- Início -->
+            <li>
+              <a href="#" style="display:flex; height:48px; align-items:center; border-radius:8px; padding:0 16px; font-size:16px; font-weight:500; color:rgba(255,255,255,.75); text-decoration:none;">Início</a>
+            </li>
+
+            <!-- Sobre -->
+            <li>
+              <a href="#" style="display:flex; height:48px; align-items:center; border-radius:8px; padding:0 16px; font-size:16px; font-weight:500; color:rgba(255,255,255,.75); text-decoration:none;">Sobre</a>
+            </li>
+
+            <!-- TEMA — no topo (mesma posição que no drawer logado, MobileMenu.tsx linhas 229-234) -->
+            <li style="padding:0; padding-top:4px;">
+              <p style="padding:8px 16px 4px; font-size:10px; font-weight:600; color:rgba(255,255,255,.8); text-transform:uppercase; letter-spacing:1.5px; margin:0;">Tema</p>
+              <div style="display:flex; width:100%; overflow:hidden; border:1px solid rgba(255,255,255,.2); border-radius:8px;">
+                <button aria-label="Tema claro" aria-pressed="false" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px 0; min-height:44px; background:transparent; border:none; color:rgba(255,255,255,.6); cursor:pointer;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                  <span style="font-size:10px; font-weight:500; line-height:1;">Claro</span>
+                </button>
+                <button aria-label="Tema do sistema" aria-pressed="true" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px 0; min-height:44px; background:rgba(255,255,255,.15); border:none; color:#fff; cursor:pointer;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+                  <span style="font-size:10px; font-weight:500; line-height:1;">Sistema</span>
+                </button>
+                <button aria-label="Tema escuro" aria-pressed="false" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:10px 0; min-height:44px; background:transparent; border:none; color:rgba(255,255,255,.6); cursor:pointer;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>
+                  <span style="font-size:10px; font-weight:500; line-height:1;">Escuro</span>
+                </button>
+              </div>
+            </li>
+
+            <!-- Divisor -->
+            <li><div style="height:1px; background:rgba(255,255,255,.1); margin:4px 0;"></div></li>
+
+            <!-- Explorar — expansível (rótulo "Explorar", não "Explorar itens") -->
+            <li>
+              <button aria-expanded="false" style="display:flex; height:48px; width:100%; align-items:center; justify-content:space-between; border-radius:8px; padding:0 16px; font-size:16px; font-weight:600; color:rgba(255,255,255,.75); background:none; border:none; cursor:pointer;">
+                <span>Explorar</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+            </li>
+
+            <!-- Anunciar — pill verde, expansível -->
+            <li>
+              <button aria-expanded="false" style="display:flex; height:48px; width:100%; align-items:center; justify-content:space-between; border-radius:8px; padding:0 16px; font-size:16px; font-weight:700; color:#fff; background:#007B3C; border:none; cursor:pointer;">
+                <span>Anunciar</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+            </li>
+
+            <!-- Divisor -->
+            <li><div style="height:1px; background:rgba(255,255,255,.1); margin:4px 0;"></div></li>
+
+            <!-- Entrar (MobileMenu.tsx linha 400) -->
+            <li>
+              <a href="#" style="display:flex; height:48px; align-items:center; border-radius:8px; padding:0 16px; font-size:16px; font-weight:500; color:rgba(255,255,255,.75); text-decoration:none;">Entrar</a>
+            </li>
+
+            <!-- Divisor -->
+            <li><div style="height:1px; background:rgba(255,255,255,.1); margin:4px 0;"></div></li>
+
+            <!-- Central de Ajuda — expansível (MobileMenu.tsx linhas 403-434) -->
+            <li>
+              <button aria-expanded="false" style="display:flex; height:48px; width:100%; align-items:center; justify-content:space-between; border-radius:8px; padding:0 16px; font-size:16px; font-weight:600; color:rgba(255,255,255,.75); background:none; border:none; cursor:pointer;">
+                <span>Central de Ajuda</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+            </li>
+
+          </ul>
+        </nav>
+      </div>
+      <div class="home-indicator" style="background:#003366;"></div>
+    </div>
+  </div>
+
+</div><!-- /frames-row mobile menu -->
+
+<!-- ═══════════════════════════════════════════════════════
+     GRUPO 2: HOME / EXPLORAR
+     ═══════════════════════════════════════════════════════ -->
+
+<div class="section-label">Home</div>
+<div class="frames-row">
+
+  <!-- HOME — hero principal -->
+  <div class="frame-wrap">
+    <div class="frame-label">Home — hero</div>
+    <div class="phone" data-active="home">
+      <div class="app-header-placeholder" data-notif="0" data-loggedin="false"></div>
+      <div class="screen-content" style="overflow-y:auto;">
+
+        <!-- Hero — navy gradient (igual ao site: bg-gradient-to-br from-primary to-blue-medium) -->
+        <div style="background:linear-gradient(135deg, #003366 0%, #144D81 100%); padding:24px 16px 20px; position:relative; overflow:hidden;">
+          <!-- Orbe decorativo -->
+          <div style="position:absolute; right:-40px; top:-40px; width:160px; height:160px; border-radius:50%; background:rgba(0,123,60,.15); pointer-events:none;" aria-hidden="true"></div>
+
+          <!-- H1 -->
+          <h1 style="font-family:var(--font-heading); font-size:22px; font-weight:800; color:#fff; line-height:1.2; margin-bottom:12px; position:relative; z-index:1; text-align:center;">
+            Ganhe dinheiro com o que<br>
+            <span style="color:#59C686;">está parado na sua casa.</span>
+          </h1>
+
+          <!-- Imagem dos itens -->
+          <div style="display:flex; justify-content:center; margin-bottom:12px; position:relative; z-index:1;">
+            <img src="../../public/logos/hero-items.webp"
+                 alt="Itens disponíveis para alugar no ShareO: furadeira, câmera, caixa de som, bicicleta, escada e projetor."
+                 style="width:200px; height:auto; display:block;"
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <!-- Fallback se imagem não carregar no HTML estático -->
+            <div style="display:none; width:200px; height:128px; border-radius:12px; background:rgba(255,255,255,.1); align-items:center; justify-content:center; font-size:48px;">🔧📱🚲</div>
+          </div>
+
+          <!-- Tagline -->
+          <p style="font-size:13px; font-weight:500; color:rgba(255,255,255,.8); text-align:center; margin-bottom:16px; position:relative; z-index:1;">Tudo perto de você.</p>
+
+          <!-- Dual CTA — VERBATIM de app/page.tsx linhas 179-221 -->
+          <div style="display:flex; flex-direction:column; gap:8px; position:relative; z-index:1; margin-bottom:20px;">
+            <a href="#" style="display:flex; align-items:center; justify-content:center; gap:6px; height:44px; background:#007B3C; border-radius:8px; color:#fff; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; text-decoration:none;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2M9.5 9.5a2.5 2.5 0 0 1 5 0c0 1.5-2.5 3-2.5 3"/></svg>
+              Quero Ganhar Dinheiro
+            </a>
+            <a href="#" style="display:flex; align-items:center; justify-content:center; gap:6px; height:44px; border:2px solid rgba(255,255,255,.6); border-radius:8px; color:#fff; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; text-decoration:none;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              Quero Alugar
+            </a>
+          </div>
+
+          <!-- Barra de busca — HeroSearch (app/page.tsx linha 224, componente components/home/HeroSearch.tsx)
+               Placeholder rotativo: "O que você precisa alugar?" / "O que você tem para alugar?" -->
+          <div role="search" style="display:flex; align-items:center; gap:8px; overflow:hidden; border-radius:12px; background:#fff; padding:6px 6px 6px 12px; box-shadow:0 4px 20px rgba(0,0,0,.2); position:relative; z-index:1; margin-bottom:20px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; color:#64748B;" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <span style="flex:1; font-size:15px; color:#94A3B8;">O que você precisa alugar?</span>
+            <button style="flex-shrink:0; min-height:44px; min-width:44px; padding:0 12px; background:#007B3C; border:none; border-radius:8px; font-size:13px; font-weight:700; text-transform:uppercase; color:#fff; cursor:pointer;">Buscar</button>
+          </div>
+
+          <!-- Stats — 4 itens VERBATIM de app/page.tsx linhas 232-249 (valores staging: 97 itens, 48 proprietários, 0% custo, 7 categorias) -->
+          <div role="list" aria-label="Números da plataforma" style="display:flex; flex-wrap:wrap; justify-content:center; gap:16px; position:relative; z-index:1;">
+            <div role="listitem" style="text-align:center; color:#fff;">
+              <div style="font-size:22px; font-weight:800; color:#59C686; line-height:1;">97</div>
+              <div style="font-size:12px; color:rgba(255,255,255,.6); margin-top:2px;">Itens disponíveis</div>
+            </div>
+            <div role="listitem" style="text-align:center; color:#fff;">
+              <div style="font-size:22px; font-weight:800; color:#59C686; line-height:1;">48</div>
+              <div style="font-size:12px; color:rgba(255,255,255,.6); margin-top:2px;">Proprietários ativos</div>
+            </div>
+            <div role="listitem" style="text-align:center; color:#fff;">
+              <div style="font-size:22px; font-weight:800; color:#59C686; line-height:1;">0%</div>
+              <div style="font-size:12px; color:rgba(255,255,255,.6); margin-top:2px;">Custo para anunciar</div>
+            </div>
+            <div role="listitem" style="text-align:center; color:#fff;">
+              <div style="font-size:22px; font-weight:800; color:#59C686; line-height:1;">7</div>
+              <div style="font-size:12px; color:rgba(255,255,255,.6); margin-top:2px;">Categorias</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- "Como funciona" resumido -->
+        <div style="padding:16px;">
+          <h2 style="font-family:var(--font-heading); font-size:16px; font-weight:700; color:var(--navy); margin-bottom:12px;">Como funciona</h2>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; align-items:flex-start; gap:12px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-xl); padding:12px;">
+              <div style="width:32px; height:32px; border-radius:50%; background:#007B3C; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <span style="font-size:14px; font-weight:800; color:#fff;">1</span>
+              </div>
+              <div>
+                <div style="font-size:13px; font-weight:700; color:var(--navy); margin-bottom:2px;">Busque o que precisa</div>
+                <div style="font-size:11px; color:var(--muted); line-height:1.4;">Pesquise por categoria ou localização.</div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:flex-start; gap:12px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-xl); padding:12px;">
+              <div style="width:32px; height:32px; border-radius:50%; background:#144D81; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <span style="font-size:14px; font-weight:800; color:#fff;">2</span>
+              </div>
+              <div>
+                <div style="font-size:13px; font-weight:700; color:var(--navy); margin-bottom:2px;">Combine pelo chat</div>
+                <div style="font-size:11px; color:var(--muted); line-height:1.4;">Acerte datas e retirada com segurança.</div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:flex-start; gap:12px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-xl); padding:12px;">
+              <div style="width:32px; height:32px; border-radius:50%; background:#007B3C; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                <span style="font-size:14px; font-weight:800; color:#fff;">3</span>
+              </div>
+              <div>
+                <div style="font-size:13px; font-weight:700; color:var(--navy); margin-bottom:2px;">Use e devolva</div>
+                <div style="font-size:11px; color:var(--muted); line-height:1.4;">Avalie e construa sua reputação.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="tab-bar"></div>
+      <div class="home-indicator" style="background:var(--surface);"></div>
+    </div>
+  </div>
+
+</div><!-- /frames-row home hero -->
+
+<div class="section-label">Explorar</div>
+<div class="frames-row">
+
+  <!-- FEED PRINCIPAL (com dados) -->
+  <div class="frame-wrap">
+    <div class="frame-label">Explorar — feed com itens</div>
+    <div class="phone" data-active="explorar">
+      <div class="app-header-placeholder" data-notif="3" data-loggedin="true"></div>
+      <div class="screen-content">
+
+        <!-- Barra de busca (abaixo do header — igual ao site /itens) -->
+        <div style="background:var(--surface); border-bottom:1px solid var(--border); padding:10px 16px;">
+          <div style="display:flex; gap:8px; align-items:center;">
+            <div style="flex:1; position:relative; display:flex; align-items:center; background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius-lg); min-height:44px; padding:0 12px 0 36px;">
+              <svg style="position:absolute;left:12px;color:var(--muted);" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <span style="font-size:13px; color:#94A3B8;">Buscar itens…</span>
+            </div>
+            <button style="height:44px; padding:0 16px; background:var(--green); color:#fff; border:none; border-radius:var(--radius-lg); font-size:13px; font-weight:600; white-space:nowrap; cursor:pointer;">Buscar</button>
+          </div>
+        </div>
+
+        <!-- Chips de categoria (scroll horizontal — ícones ilustrados igual ao site) -->
+        <div class="cat-scroll">
+          <div class="cat-chip active">
+            <div class="cat-icon-wrap" style="background:#DBEAFE;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            </div>
+            <span class="cat-name" style="color:var(--green);">Ferramentas</span>
+          </div>
+          <div class="cat-chip">
+            <div class="cat-icon-wrap" style="background:#EDE9FE;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+            </div>
+            <span class="cat-name">Eletrônicos</span>
+          </div>
+          <div class="cat-chip">
+            <div class="cat-icon-wrap" style="background:#DCFCE7;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <span class="cat-name">Casa &amp; Jardim</span>
+          </div>
+          <div class="cat-chip">
+            <div class="cat-icon-wrap" style="background:#FEF9C3;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#CA8A04" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12h.01"/><path d="M17 12h.01"/><path d="M7 12h.01"/></svg>
+            </div>
+            <span class="cat-name">Construção</span>
+          </div>
+          <div class="cat-chip">
+            <div class="cat-icon-wrap" style="background:#FEE2E2;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#DC2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+            </div>
+            <span class="cat-name">Esporte</span>
+          </div>
+          <div class="cat-chip">
+            <div class="cat-icon-wrap" style="background:#FDF4FF;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9333EA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg>
+            </div>
+            <span class="cat-name">Moda</span>
+          </div>
+        </div>
+
+        <!-- Filtros row + count + sort (igual ao site /itens) -->
+        <div class="filter-row">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <button class="filter-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+              Filtros
+            </button>
+            <span style="font-size:11px; color:var(--muted);">84 itens</span>
+          </div>
+          <select class="sort-select" aria-label="Ordenar por">
+            <option>Mais relevantes</option>
+            <option>Menor preço</option>
+            <option>Mais próximos</option>
+          </select>
+        </div>
+
+        <!-- Grade 2 colunas de itens (igual ao site /itens em mobile) -->
+        <div class="items-grid">
+
+          <!-- Card 1 -->
+          <div class="item-card">
+            <div class="item-card-img">
+              <div class="img-placeholder blue" style="font-size:28px;">🔧</div>
+              <div class="item-card-fav" style="left:auto; right:0;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </div>
+            </div>
+            <div class="item-card-body">
+              <div class="item-card-cat">Ferramentas</div>
+              <div class="item-card-title" style="-webkit-line-clamp:2; display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden;">Furadeira Bosch GSB 13 RE</div>
+              <div style="margin-top:6px;">
+                <div class="item-card-price">R$&nbsp;35<small>/dia</small></div>
+                <div style="display:flex; align-items:center; gap:3px; margin-top:2px;">
+                  <span style="color:#F59E0B; font-size:10px;">★</span>
+                  <span style="font-size:10px; color:var(--muted);">4.9 · Pinheiros</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="item-card">
+            <div class="item-card-img">
+              <div class="img-placeholder amber" style="font-size:28px;">📽️</div>
+              <div class="item-card-fav" style="left:auto; right:0;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#ef4444" stroke="#ef4444" stroke-width="2" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </div>
+            </div>
+            <div class="item-card-body">
+              <div class="item-card-cat">Eletrônicos</div>
+              <div class="item-card-title" style="-webkit-line-clamp:2; display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden;">Projetor Epson 1080p</div>
+              <div style="margin-top:6px;">
+                <div class="item-card-price">R$&nbsp;100<small>/dia</small></div>
+                <div style="display:flex; align-items:center; gap:3px; margin-top:2px;">
+                  <span style="color:#F59E0B; font-size:10px;">★</span>
+                  <span style="font-size:10px; color:var(--muted);">4.6 · V. Madalena</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="item-card">
+            <div class="item-card-img">
+              <div class="img-placeholder green" style="font-size:28px;">🌿</div>
+              <div class="item-card-fav" style="left:auto; right:0;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </div>
+            </div>
+            <div class="item-card-body">
+              <div class="item-card-cat">Casa &amp; Jardim</div>
+              <div class="item-card-title" style="-webkit-line-clamp:2; display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden;">Cortador de grama Tramontina</div>
+              <div style="margin-top:6px;">
+                <div class="item-card-price">R$&nbsp;30<small>/dia</small></div>
+                <div style="display:flex; align-items:center; gap:3px; margin-top:2px;">
+                  <span style="color:#F59E0B; font-size:10px;">★</span>
+                  <span style="font-size:10px; color:var(--muted);">5.0 · Moema</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 4 -->
+          <div class="item-card">
+            <div class="item-card-img">
+              <div class="img-placeholder" style="background:#FDE8D8; font-size:28px;">🎸</div>
+              <div class="item-card-fav" style="left:auto; right:0;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" aria-hidden="true"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </div>
+            </div>
+            <div class="item-card-body">
+              <div class="item-card-cat">Esporte</div>
+              <div class="item-card-title" style="-webkit-line-clamp:2; display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden;">Bicicleta de montanha alumínio</div>
+              <div style="margin-top:6px;">
+                <div class="item-card-price">R$&nbsp;60<small>/dia</small></div>
+                <div style="display:flex; align-items:center; gap:3px; margin-top:2px;">
+                  <span style="color:#F59E0B; font-size:10px;">★</span>
+                  <span style="font-size:10px; color:var(--muted);">4.8 · Itaim Bibi</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Bottom Tab Bar -->
+      <!-- BottomNav — 5 itens VERBATIM de BottomNav.tsx. Ativo: Explorar -->
+      <div class="tab-bar">
+        <!-- Início -->
+        <a href="#" class="tab-item" aria-label="Início">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span>Início</span>
+        </a>
+        <!-- Explorar — ATIVO -->
+        <a href="#" class="tab-item active" aria-current="page" aria-label="Explorar">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <span>Explorar</span>
+        </a>
+        <!-- Anunciar FAB -->
+        <a href="#" class="tab-item tab-fab" aria-label="Anunciar item">
+          <div class="tab-fab-circle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </div>
+          <span>Anunciar</span>
+        </a>
+        <!-- Chat -->
+        <a href="#" class="tab-item" aria-label="Chat">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span>Chat</span>
+        </a>
+        <!-- Perfil -->
+        <a href="#" class="tab-item" aria-label="Perfil">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>Perfil</span>
+        </a>
+      </div>
+      <div class="home-indicator" style="background:var(--surface);"></div>
+    </div>
+  </div>
+
+  <!-- FEED — LOADING SKELETON -->
+  <div class="frame-wrap">
+    <div class="frame-label">Explorar — skeleton loading</div>
+    <div class="phone" data-active="explorar">
+      <div class="app-header-placeholder" data-notif="0" data-loggedin="true"></div>
+      <div class="screen-content">
+
+        <div style="background:var(--surface); border-bottom:1px solid var(--border); padding:10px 16px;">
+          <div style="display:flex; gap:8px; align-items:center;">
+            <div style="flex:1; position:relative; display:flex; align-items:center; background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius-lg); min-height:44px; padding:0 12px 0 36px;">
+              <svg style="position:absolute;left:12px;color:var(--muted);" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <span style="font-size:13px; color:#94A3B8;">Buscar itens…</span>
+            </div>
+            <button style="height:44px; padding:0 16px; background:var(--green); color:#fff; border:none; border-radius:var(--radius-lg); font-size:13px; font-weight:600; white-space:nowrap; cursor:pointer;">Buscar</button>
+          </div>
+        </div>
+
+        <!-- Chips skeleton -->
+        <div style="display:flex; gap:8px; padding:12px 16px; overflow:hidden;">
+          <div class="skeleton" style="width:80px; height:68px; border-radius:var(--radius-xl);"></div>
+          <div class="skeleton" style="width:80px; height:68px; border-radius:var(--radius-xl);"></div>
+          <div class="skeleton" style="width:80px; height:68px; border-radius:var(--radius-xl);"></div>
+          <div class="skeleton" style="width:80px; height:68px; border-radius:var(--radius-xl);"></div>
+        </div>
+
+        <div style="padding:0 16px 16px;">
+
+          <!-- Card skeleton 1 -->
+          <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-2xl); overflow:hidden; margin-bottom:12px;">
+            <div class="skeleton" style="aspect-ratio:4/3; width:100%;"></div>
+            <div style="padding:12px 14px 14px;">
+              <div class="skeleton" style="height:10px; width:60px; margin-bottom:8px;"></div>
+              <div class="skeleton" style="height:14px; width:100%; margin-bottom:6px;"></div>
+              <div class="skeleton" style="height:14px; width:70%; margin-bottom:12px;"></div>
+              <div style="display:flex; justify-content:space-between;">
+                <div class="skeleton" style="height:20px; width:80px;"></div>
+                <div class="skeleton" style="height:12px; width:90px;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card skeleton 2 -->
+          <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-2xl); overflow:hidden; margin-bottom:12px;">
+            <div class="skeleton" style="aspect-ratio:4/3; width:100%;"></div>
+            <div style="padding:12px 14px 14px;">
+              <div class="skeleton" style="height:10px; width:80px; margin-bottom:8px;"></div>
+              <div class="skeleton" style="height:14px; width:100%; margin-bottom:6px;"></div>
+              <div class="skeleton" style="height:14px; width:55%; margin-bottom:12px;"></div>
+              <div style="display:flex; justify-content:space-between;">
+                <div class="skeleton" style="height:20px; width:90px;"></div>
+                <div class="skeleton" style="height:12px; width:80px;"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- BottomNav — 5 itens VERBATIM de BottomNav.tsx. Ativo: Explorar -->
+      <div class="tab-bar">
+        <a href="#" class="tab-item" aria-label="Início"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Início</span></a>
+        <a href="#" class="tab-item active" aria-current="page" aria-label="Explorar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><span>Explorar</span></a>
+        <a href="#" class="tab-item tab-fab" aria-label="Anunciar item"><div class="tab-fab-circle"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><span>Anunciar</span></a>
+        <a href="#" class="tab-item" aria-label="Chat"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Chat</span></a>
+        <a href="#" class="tab-item" aria-label="Perfil"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Perfil</span></a>
+      </div>
+      <div class="home-indicator" style="background:var(--surface);"></div>
+    </div>
+  </div>
+
+  <!-- FEED — EMPTY STATE (busca sem resultados) -->
+  <div class="frame-wrap">
+    <div class="frame-label">Explorar — sem resultados</div>
+    <div class="phone" data-active="explorar">
+      <div class="app-header-placeholder" data-notif="0" data-loggedin="true"></div>
+      <div class="screen-content">
+
+        <!-- Busca com valor digitado + estado de foco (borda verde, igual ao site) -->
+        <div style="background:var(--surface); border-bottom:1px solid var(--border); padding:10px 16px;">
+          <div style="display:flex; gap:8px; align-items:center;">
+            <div style="flex:1; position:relative; display:flex; align-items:center; justify-content:space-between; background:var(--surface); border:1.5px solid var(--green); border-radius:var(--radius-lg); min-height:44px; padding:0 12px 0 36px; box-shadow:0 0 0 3px rgba(0,123,60,.1);">
+              <svg style="position:absolute;left:12px;color:var(--green);" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <span style="font-size:13px; color:var(--text);">patins de gelo</span>
+              <span style="font-size:16px; color:var(--muted); cursor:pointer;">✕</span>
+            </div>
+            <button style="height:44px; padding:0 16px; background:var(--green); color:#fff; border:none; border-radius:var(--radius-lg); font-size:13px; font-weight:600; white-space:nowrap; cursor:pointer;">Buscar</button>
+          </div>
+        </div>
+
+        <div class="empty-state" style="margin-top:24px;">
+          <div class="empty-icon">🔍</div>
+          <div class="empty-title">Nenhum item encontrado</div>
+          <div class="empty-desc">Não encontramos "patins de gelo" na sua região. Tente outro termo ou explore categorias.</div>
+          <button class="btn btn-ghost" style="margin-top:8px; text-transform:none; font-size:14px;">Ver todos os itens</button>
+        </div>
+
+      </div>
+
+      <!-- BottomNav — 5 itens VERBATIM de BottomNav.tsx. Ativo: Explorar -->
+      <div class="tab-bar">
+        <a href="#" class="tab-item" aria-label="Início"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Início</span></a>
+        <a href="#" class="tab-item active" aria-current="page" aria-label="Explorar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><span>Explorar</span></a>
+        <a href="#" class="tab-item tab-fab" aria-label="Anunciar item"><div class="tab-fab-circle"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><span>Anunciar</span></a>
+        <a href="#" class="tab-item" aria-label="Chat"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Chat</span></a>
+        <a href="#" class="tab-item" aria-label="Perfil"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Perfil</span></a>
+      </div>
+      <div class="home-indicator" style="background:var(--surface);"></div>
+    </div>
+  </div>
+
+</div><!-- /frames-row home -->
+
+<!-- ═══════════════════════════════════════════════════════
+     GRUPO 3: DETALHE DO ITEM
+     ═══════════════════════════════════════════════════════ -->
+
+<div class="section-label">Detalhe do Item</div>
+<div class="frames-row">
+
+  <!-- DETALHE DO ITEM — estado principal -->
+  <div class="frame-wrap">
+    <div class="frame-label">Detalhe — locatário</div>
+    <div class="phone" data-active="">
+      <div class="screen-content" style="padding-bottom:90px;">
+
+        <!-- Galeria (ocupa topo, sem status bar visível) -->
+        <div style="position:relative; background:#1a1a2e; aspect-ratio:4/3; overflow:hidden;">
+          <div class="img-placeholder blue" style="aspect-ratio:4/3; font-size:64px;">🔧</div>
+
+          <!-- Status bar transparente sobre a imagem -->
+          <div style="position:absolute; top:0; left:0; right:0; height:44px; display:flex; align-items:flex-end; justify-content:space-between; padding:0 20px 6px; z-index:10;">
+            <span style="font-size:12px; font-weight:700; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.5);">9:41</span>
+            <span style="font-size:11px; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.5);">●●● 5G 🔋</span>
+          </div>
+
+          <!-- Botão voltar (44×44) -->
+          <div style="position:absolute; top:48px; left:12px; width:44px; height:44px; background:rgba(0,0,0,.45); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; color:#fff; z-index:10; cursor:pointer;">‹</div>
+
+          <!-- Botão favoritar (44×44) -->
+          <div style="position:absolute; top:48px; right:12px; width:44px; height:44px; background:rgba(0,0,0,.45); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; z-index:10; cursor:pointer;">🤍</div>
+
+          <!-- Dots de galeria -->
+          <div style="position:absolute; bottom:10px; left:0; right:0; display:flex; justify-content:center; gap:5px;">
+            <div style="width:20px; height:5px; background:#fff; border-radius:3px;"></div>
+            <div style="width:6px; height:5px; background:rgba(255,255,255,.45); border-radius:3px;"></div>
+            <div style="width:6px; height:5px; background:rgba(255,255,255,.45); border-radius:3px;"></div>
+          </div>
+
+          <!-- Eco badge -->
+          <div style="position:absolute; bottom:10px; right:12px; background:rgba(0,123,60,.88); color:#fff; font-size:10px; font-weight:700; padding:3px 8px; border-radius:var(--radius-full);">🌿 Eco</div>
+        </div>
+
+        <!-- Corpo do detalhe -->
+        <div style="padding:16px;">
+
+          <!-- Categoria + Título -->
+          <div style="font-size:10px; font-weight:700; color:var(--green); text-transform:uppercase; letter-spacing:.8px; margin-bottom:4px;">Ferramentas</div>
+          <h1 style="font-size:20px; font-weight:800; color:var(--navy); line-height:1.25; margin-bottom:8px;">Furadeira Bosch GSB 13 RE com maleta e brocas</h1>
+
+          <!-- Rating -->
+          <div class="rating-row" style="margin-bottom:12px;">
+            <span style="color:#F59E0B; font-size:14px;">★★★★★</span>
+            <span style="font-size:12px; color:var(--muted);">4.9 (18 avaliações)</span>
+          </div>
+
+          <!-- Tags de condição / voltagem / localização -->
+          <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px;">
+            <span style="display:inline-flex; align-items:center; padding:4px 12px; border-radius:var(--radius-full); border:1px solid var(--border); font-size:11px; color:var(--muted);">Seminovo</span>
+            <span style="display:inline-flex; align-items:center; padding:4px 12px; border-radius:var(--radius-full); border:1px solid #FDE68A; background:#FEF3C7; font-size:11px; color:#92400E;">⚡ 127V</span>
+            <span style="display:inline-flex; align-items:center; padding:4px 12px; border-radius:var(--radius-full); border:1px solid var(--border); font-size:11px; color:var(--muted);">📍 Pinheiros</span>
+          </div>
+
+          <!-- Preço -->
+          <div class="card" style="padding:16px; margin-bottom:16px;">
+            <div style="display:flex; align-items:baseline; gap:4px; margin-bottom:8px;">
+              <span class="price-big">R$&nbsp;35</span>
+              <span class="price-unit">/dia</span>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <span style="display:inline-flex; padding:4px 10px; border-radius:var(--radius-md); border:1px solid var(--border); font-size:11px; color:var(--muted);">R$&nbsp;90/sem</span>
+              <span style="display:inline-flex; padding:4px 10px; border-radius:var(--radius-md); border:1px solid var(--border); font-size:11px; color:var(--muted);">R$&nbsp;350/mês</span>
+            </div>
+          </div>
+
+          <!-- Descrição -->
+          <div style="font-size:13px; font-weight:700; color:var(--navy); margin-bottom:6px;">Sobre o item</div>
+          <p style="font-size:13px; color:var(--muted); line-height:1.6; margin-bottom:16px;">Furadeira de impacto Bosch GSB 13 RE, 650W, com maleta completa e kit de 12 brocas para madeira, concreto e metal. Ideal para reformas e pequenos serviços. Acompanha manual de uso.</p>
+
+          <!-- Proprietário -->
+          <div class="card" style="padding:14px; display:flex; align-items:center; gap:12px; margin-bottom:16px; cursor:pointer;">
+            <div class="avatar avatar-md">C</div>
+            <div style="flex:1; min-width:0;">
+              <div style="font-size:14px; font-weight:600; color:var(--text);">Carlos Mendes <span style="color:var(--green);">✓</span></div>
+              <div style="font-size:11px; color:var(--muted);">📍 Pinheiros, SP</div>
+            </div>
+            <span style="font-size:20px; color:var(--muted);">›</span>
+          </div>
+
+          <!-- Avaliações -->
+          <div style="font-size:13px; font-weight:700; color:var(--navy); margin-bottom:10px;">Avaliações (18)</div>
+          <div class="card" style="padding:12px; margin-bottom:10px;">
+            <div style="font-size:12px; font-weight:600; color:var(--text); margin-bottom:2px;">Fernanda Lima</div>
+            <div style="color:#F59E0B; font-size:12px; margin-bottom:4px;">★★★★★</div>
+            <div style="font-size:12px; color:var(--muted); line-height:1.5;">Excelente! Item em ótimo estado, entrega rápida. Recomendo!</div>
+          </div>
+          <div class="card" style="padding:12px;">
+            <div style="font-size:12px; font-weight:600; color:var(--text); margin-bottom:2px;">João Silva</div>
+            <div style="color:#F59E0B; font-size:12px; margin-bottom:4px;">★★★★☆</div>
+            <div style="font-size:12px; color:var(--muted); line-height:1.5;">Muito boa, fez o serviço certinho. Devolvi sem problemas.</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- CTA fixo -->
+      <div style="background:var(--surface); border-top:1px solid var(--border); padding:12px 16px; box-shadow:0 -4px 16px rgba(0,0,0,.08);">
+        <button class="btn btn-primary btn-full btn-lg">Reservar item</button>
+        <div style="text-align:center; font-size:11px; color:var(--muted); margin-top:6px;">Pagamento processado com segurança</div>
+      </div>
+      <div class="home-indicator" style="background:var(--surface);"></div>
+    </div>
+  </div>
+
+  <!-- DETALHE DO ITEM — proprietário vendo seu próprio item -->
+  <div class="frame-wrap">
+    <div class="frame-label">Detalhe — proprietário</div>
+    <div class="phone" data-active="">
+      <div class="screen-content" style="padding-bottom:16px;">
+
+        <div style="position:relative; aspect-ratio:4/3; overflow:hidden;">
+          <div class="img-placeholder blue" style="aspect-ratio:4/3; font-size:64px;">🔧</div>
+          <div style="position:absolute; top:0; left:0; right:0; height:44px; display:flex; align-items:flex-end; justify-content:space-between; padding:0 20px 6px; z-index:10;">
+            <span style="font-size:12px; font-weight:700; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.5);">9:41</span>
+            <span style="font-size:11px; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.5);">●●● 5G 🔋</span>
+          </div>
+          <div style="position:absolute; top:48px; left:12px; width:44px; height:44px; background:rgba(0,0,0,.45); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:22px; color:#fff; cursor:pointer;">‹</div>
+          <!-- Badge "Seu anúncio" -->
+          <div style="position:absolute; top:52px; right:12px; background:var(--navy); color:#fff; font-size:10px; font-weight:700; padding:4px 10px; border-radius:var(--radius-full);">Seu anúncio</div>
+        </div>
+
+        <div style="padding:16px;">
+          <div style="font-size:10px; font-weight:700; color:var(--green); text-transform:uppercase; letter-spacing:.8px; margin-bottom:4px;">Ferramentas</div>
+          <h1 style="font-size:20px; font-weight:800; color:var(--navy); margin-bottom:8px;">Furadeira Bosch GSB 13 RE com maleta e brocas</h1>
+
+          <!-- Badge de status do anúncio -->
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+            <span class="badge badge-green">● Disponível</span>
+            <span style="font-size:12px; color:var(--muted);">18 avaliações · 5 locações</span>
+          </div>
+
+          <!-- Info do proprietário (leitura) -->
+          <div class="card" style="padding:16px; margin-bottom:16px;">
+            <div style="display:flex; align-items:baseline; gap:4px; margin-bottom:4px;">
+              <span class="price-big">R$&nbsp;35</span>
+              <span class="price-unit">/dia</span>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <span style="display:inline-flex; padding:4px 10px; border-radius:var(--radius-md); border:1px solid var(--border); font-size:11px; color:var(--muted);">R$&nbsp;90/sem</span>
+              <span style="display:inline-flex; padding:4px 10px; border-radius:var(--radius-md); border:1px solid var(--border); font-size:11px; color:var(--muted);">R$&nbsp;350/mês</span>
+            </div>
+          </div>
+
+          <!-- Ações do proprietário -->
+          <div style="display:flex; gap:10px;">
+            <button class="btn btn-secondary" style="flex:1; text-transform:none; font-size:14px;">Editar anúncio</button>
+            <button class="btn btn-ghost" style="flex:1; text-transform:none; font-size:14px; color:var(--red); border-color:var(--red);">Pausar</button>
+          </div>
+
+          <!-- Reservas pendentes -->
+          <div style="margin-top:20px; font-size:13px; font-weight:700; color:var(--navy); margin-bottom:10px;">Solicitações pendentes (1)</div>
+          <div class="card" style="padding:14px;">
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px;">
+              <div>
+                <div style="font-size:13px; font-weight:600; color:var(--text);">Fernanda Lima</div>
+                <div style="font-size:11px; color:var(--muted); margin-top:2px;">03 ago → 06 ago · 3 dias</div>
+                <div style="font-size:13px; font-weight:700; color:var(--text); margin-top:4px;">R$&nbsp;105,00</div>
+              </div>
+              <span class="badge badge-amber">Pendente</span>
+            </div>
+            <div style="display:flex; gap:8px; margin-top:12px;">
+              <button class="btn btn-primary btn-sm" style="flex:1; text-transform:none; font-size:13px;">Aprovar</button>
+              <button class="btn btn-ghost btn-sm" style="flex:1; text-transform:none; font-size:13px; color:var(--muted); border-color:var(--border);">Recusar</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+
+  <!-- DETALHE DO ITEM — loading state -->
+  <div class="frame-wrap">
+    <div class="frame-label">Detalhe — carregando</div>
+    <div class="phone" data-active="">
+      <div class="app-header-placeholder" data-notif="0" data-loggedin="true"></div>
+      <div class="screen-content">
+        <!-- Imagem skeleton -->
+        <div class="skeleton" style="aspect-ratio:4/3; width:100%;"></div>
+        <div style="padding:16px;">
+          <div class="skeleton" style="height:10px; width:80px; margin-bottom:10px;"></div>
+          <div class="skeleton" style="height:22px; width:100%; margin-bottom:6px;"></div>
+          <div class="skeleton" style="height:22px; width:75%; margin-bottom:16px;"></div>
+          <div style="display:flex; gap:8px; margin-bottom:16px;">
+            <div class="skeleton" style="height:26px; width:70px; border-radius:var(--radius-full);"></div>
+            <div class="skeleton" style="height:26px; width:60px; border-radius:var(--radius-full);"></div>
+          </div>
+          <div class="skeleton" style="height:80px; border-radius:var(--radius-xl); margin-bottom:16px;"></div>
+          <div class="skeleton" style="height:12px; width:90px; margin-bottom:8px;"></div>
+          <div class="skeleton" style="height:12px; width:100%; margin-bottom:6px;"></div>
+          <div class="skeleton" style="height:12px; width:80%; margin-bottom:6px;"></div>
+          <div class="skeleton" style="height:12px; width:65%; margin-bottom:20px;"></div>
+          <div class="skeleton" style="height:64px; border-radius:var(--radius-xl);"></div>
+        </div>
+      </div>
+      <div style="background:var(--surface); border-top:1px solid var(--border); padding:12px 16px;">
+        <div class="skeleton" style="height:52px; border-radius:var(--radius-xl);"></div>
+      </div>
+      <div class="home-indicator" style="background:var(--surface);"></div>
+    </div>
+  </div>
+
+</div><!-- /frames-row item detail -->
+
+<!-- ═══════════════════════════════════════════════════════
+     GRUPO 4: ANUNCIAR ITEM
+     ═══════════════════════════════════════════════════════ -->
+
+<div class="section-label">Anunciar Item</div>
+<div class="frames-row">
+
+  <!-- ANUNCIAR — formulário preenchido -->
+  <div class="frame-wrap">
+    <div class="frame-label">Anunciar — formulário</div>
+    <div class="phone" data-active="fab">
+      <div class="screen-header" style="padding-top:48px;">
+        <button class="back-btn">‹</button>
+        <span class="screen-header-title">Anunciar item</span>
+      </div>
+      <div class="screen-content" style="padding-bottom:90px;">
+        <div style="padding:16px; display:flex; flex-direction:column; gap:16px;">
+
+          <!-- Título -->
+          <div class="input-group">
+            <label class="input-label">Título <span class="input-required">*</span></label>
+            <input class="input focus" type="text" value="Furadeira Bosch GSB 13 RE com maleta" readonly>
+            <span class="input-count">37/120</span>
+          </div>
+
+          <!-- Descrição -->
+          <div class="input-group">
+            <label class="input-label">Descrição <span class="input-required">*</span></label>
+            <textarea class="textarea" readonly>Furadeira de impacto 650W com maleta e kit de 12 brocas. Ideal para reformas e pequenos serviços domésticos. Acompanha manual.</textarea>
+            <span class="input-count">143/2000</span>
+          </div>
+
+          <!-- Categoria -->
+          <div class="input-group">
+            <label class="input-label">Categoria <span class="input-required">*</span></label>
+            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+              <div class="chip active">Ferramentas</div>
+              <div class="chip">Eletrônicos</div>
+              <div class="chip">Casa &amp; Jardim</div>
+              <div class="chip">Construção</div>
+              <div class="chip">Esporte</div>
+              <div class="chip">Moda</div>
+              <div class="chip">Festas</div>
+            </div>
+          </div>
+
+          <!-- Estado de conservação -->
+          <div class="input-group">
+            <label class="input-label">Estado de conservação <span class="input-required">*</span></label>
+            <div style="display:flex; gap:8px;">
+              <div class="chip" style="flex:1; font-size:12px;">Novo</div>
+              <div class="chip active" style="flex:1; font-size:12px;">Seminovo</div>
+              <div class="chip" style="flex:1; font-size:12px;">Bom estado</div>
+              <div class="chip" style="flex:1; font-size:12px;">Regular</div>
+            </div>
+          </div>
+
+          <!-- Preços -->
+          <div class="input-group">
+            <label class="input-label">Preços</label>
+            <div class="card" style="padding:16px; display:flex; flex-direction:column; gap:12px;">
+
+              <!-- Diária -->
+              <div style="display:flex; align-items:center; gap:12px;">
+                <span style="font-size:13px; font-weight:600; color:var(--text); width:72px;">Diária <span class="input-required">*</span></span>
+                <div style="flex:1; display:flex; align-items:center; gap:6px; background:var(--bg); border:1.5px solid var(--border); border-radius:var(--radius-md); padding:0 12px; min-height:44px;">
+                  <span style="font-size:13px; color:var(--muted);">R$</span>
+                  <span style="font-size:14px; color:var(--text);">35,00</span>
+                </div>
+              </div>
+
+              <!-- Semanal -->
+              <div style="display:flex; align-items:center; gap:12px;">
+                <span style="font-size:13px; color:var(--muted); width:72px;">Semanal</span>
+                <div style="flex:1; display:flex; align-items:center; gap:6px; background:var(--bg); border:1.5px solid var(--border); border-radius:var(--radius-md); padding:0 12px; min-height:44px;">
+                  <span style="font-size:13px; color:var(--muted);">R$</span>
+                  <span style="font-size:14px; color:#94A3B8;">Opcional</span>
+                </div>
+              </div>
+
+              <!-- Mensal -->
+              <div style="display:flex; align-items:center; gap:12px;">
+                <span style="font-size:13px; color:var(--muted); width:72px;">Mensal</span>
+                <div style="flex:1; display:flex; align-items:center; gap:6px; background:var(--bg); border:1.5px solid var(--border); border-radius:var(--radius-md); padding:0 12px; min-height:44px;">
+                  <span style="font-size:13px; color:var(--muted);">R$</span>
+                  <span style="font-size:14px; color:#94A3B8;">Opcional</span>
+                </div>
+              </div>
+
+            </div>
+            <span class="input-hint">Sugestão: diária ≈ 3–5% do valor do produto. Semana ≈ 3× diária.</span>
+          </div>
+
+          <!-- Localização read-only -->
+          <div class="input-group">
+            <label class="input-label">Localização (do seu perfil)</label>
+            <div class="input disabled" style="display:flex; align-items:center;">
+              <span style="font-size:13px; color:var(--muted);">📍</span>
+              <span style="font-size:13px; color:var(--text); margin-left:8px;">Pinheiros, São Paulo, SP</span>
+            </div>
+          </div>
+
+          <!-- Fotos -->
+          <div class="input-group">
+            <label class="input-label">Fotos <span style="font-size:10px; font-weight:400; text-transform:none; letter-spacing:0;">(2/8 — 1ª foto publica o anúncio)</span></label>
+            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+              <!-- Foto 1 com imagem -->
+              <div class="photo-slot">
+                <div class="img-placeholder blue" style="font-size:28px; width:88px; height:88px;">🔧</div>
+                <div style="position:absolute; top:4px; right:4px; width:22px; height:22px; background:rgba(0,0,0,.6); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; color:#fff; font-weight:700; cursor:pointer;">×</div>
+              </div>
+              <!-- Foto 2 -->
+              <div class="photo-slot">
+                <div class="img-placeholder slate" style="font-size:28px; width:88px; height:88px;">🔩</div>
+                <div style="position:absolute; top:4px; right:4px; width:22px; height:22px; background:rgba(0,0,0,.6); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; color:#fff; font-weight:700; cursor:pointer;">×</div>
+              </div>
+              <!-- Botão adicionar -->
+              <div class="photo-slot-add">
+                <span>+</span>
+                <small>Foto</small>
+              </div>
+            </div>
+            <span class="input-hint">Anúncio sem foto fica como rascunho até a primeira foto ser enviada.</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- CTA fixo -->
+      <div style="background:var(--surface); border-top:1px solid var(--border); padding:12px 16px;">
+        <button class="btn btn-primary btn-full btn-lg">Publicar anúncio</button>
+        <div style="text-align:center; font-size:11px; color:var(--muted); margin-top:6px;">Anúncio revisado pela equipe ShareO antes de ir ao ar</div>
+      </div>
+      <div class="home-indicator" style="background:var(--surface);"></div>
+    </div>
+  </div>
+
+  <!-- ANUNCIAR — estado de submissão (loading) -->
+  <div class="frame-wrap">
+    <div class="frame-label">Anunciar — enviando</div>
+    <div class="phone" data-active="fab">
+      <div class="screen-header" style="padding-top:48px;">
+        <button class="back-btn">‹</button>
+        <span class="screen-header-title">Anunciar item</span>
+      </div>
+      <div class="screen-content" style="padding-bottom:90px;">
+        <div style="padding:16px; display:flex; flex-direction:column; gap:16px;">
+
+          <!-- Campos desabilitados durante o envio -->
+          <div class="input-group">
+            <label class="input-label">Título <span class="input-required">*</span></label>
+            <input class="input disabled" type="text" value="Furadeira Bosch GSB 13 RE com maleta" readonly>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Categoria <span class="input-required">*</span></label>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; opacity:.5; pointer-events:none;">
+              <div class="chip active">Ferramentas</div>
+              <div class="chip">Eletrônicos</div>
+              <div class="chip">Casa &amp; Jardim</div>
+            </div>
+          </div>
+
+          <!-- Progress de upload -->
+          <div class="card" style="padding:20px; text-align:center;">
+            <div style="font-size:32px; margin-bottom:12px;">📸</div>
+            <div style="font-size:14px; font-weight:600; color:var(--navy); margin-bottom:4px;">Enviando fotos…</div>
+            <div style="font-size:12px; color:var(--muted); margin-bottom:16px;">Foto 1 de 2</div>
+            <!-- Barra de progresso -->
+            <div style="height:6px; background:var(--border); border-radius:3px; overflow:hidden;">
+              <div style="height:100%; width:55%; background:var(--green); border-radius:3px;"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div style="background:var(--surface); border-top:1px solid var(--border); padding:12px 16px;">
+        <button class="btn btn-loading btn-full btn-lg" style="display:flex; align-items:center; justify-content:center; gap:10px;">
+          <span class="spinner"></span>
+          <span>Enviando fotos...</span>
+        </button>
+      </div>
+      <div class="home-indicator" style="background:var(--surface);"></div>
+    </div>
+  </div>
+
+  <!-- ANUNCIAR — guard (não logado) -->
+  <div class="frame-wrap">
+    <div class="frame-label">Anunciar — sem login</div>
+    <div class="phone" data-active="fab">
+      <div class="app-header-placeholder" data-notif="0" data-loggedin="false"></div>
+      <div class="screen-content" style="display:flex; align-items:center; justify-content:center;">
+        <div class="empty-state">
+          <div class="empty-icon">🔒</div>
+          <div class="empty-title">Faça login para anunciar</div>
+          <div class="empty-desc">Entre na sua conta para criar anúncios e começar a alugar seus itens.</div>
+          <button class="btn btn-primary" style="margin-top:8px;">Entrar</button>
+          <div style="margin-top:8px; font-size:13px; color:var(--muted);">Não tem conta? <span style="color:var(--green); font-weight:600;">Criar conta</span></div>
+        </div>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+
+  <!-- ANUNCIAR — erro de validação -->
+  <div class="frame-wrap">
+    <div class="frame-label">Anunciar — erro de validação</div>
+    <div class="phone" data-active="fab">
+      <div class="screen-header" style="padding-top:48px;">
+        <button class="back-btn">‹</button>
+        <span class="screen-header-title">Anunciar item</span>
+      </div>
+      <div class="screen-content" style="padding-bottom:90px;">
+        <div style="padding:16px; display:flex; flex-direction:column; gap:16px;">
+
+          <div class="input-group">
+            <label class="input-label">Título <span class="input-required">*</span></label>
+            <input class="input" type="text" value="Fur" readonly>
+            <span class="input-error-msg">Título deve ter pelo menos 5 caracteres.</span>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label">Descrição <span class="input-required">*</span></label>
+            <textarea class="textarea error" readonly>Boa furadeira.</textarea>
+            <span class="input-error-msg">Descrição deve ter pelo menos 20 caracteres.</span>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label">Categoria <span class="input-required">*</span></label>
+            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+              <div class="chip">Ferramentas</div>
+              <div class="chip">Eletrônicos</div>
+              <div class="chip">Casa &amp; Jardim</div>
+            </div>
+            <span class="input-error-msg">Selecione uma categoria.</span>
+          </div>
+
+          <!-- Alerta geral -->
+          <div class="alert alert-error">
+            <span class="alert-icon">⚠️</span>
+            <span>Corrija os campos acima antes de publicar.</span>
+          </div>
+
+          <div class="input-group">
+            <label class="input-label">Diária <span class="input-required">*</span></label>
+            <div style="display:flex; align-items:center; gap:6px; background:#FFF5F5; border:1.5px solid var(--red); border-radius:var(--radius-md); padding:0 12px; min-height:44px;">
+              <span style="font-size:13px; color:var(--muted);">R$</span>
+              <span style="font-size:14px; color:#94A3B8;">0,00</span>
+            </div>
+            <span class="input-error-msg">Preço mínimo por dia: R$&nbsp;1,00.</span>
+          </div>
+
+        </div>
+      </div>
+
+      <div style="background:var(--surface); border-top:1px solid var(--border); padding:12px 16px;">
+        <button class="btn btn-primary btn-full btn-lg" style="opacity:.55; cursor:not-allowed;">Publicar anúncio</button>
+      </div>
+      <div class="home-indicator" style="background:var(--surface);"></div>
+    </div>
+  </div>
+
+</div><!-- /frames-row anunciar -->
+
+<!-- ═══════════════════════════════════════════════════════
+     GRUPO 5: PERFIL
+     ═══════════════════════════════════════════════════════ -->
+
+<div class="section-label">Perfil</div>
+<div class="frames-row">
+
+  <!-- PERFIL — logado, usuário verificado -->
+  <div class="frame-wrap">
+    <div class="frame-label">Perfil — logado e verificado</div>
+    <div class="phone" data-active="perfil">
+      <div class="app-header-placeholder" data-notif="2" data-loggedin="true"></div>
+      <div class="screen-content">
+
+        <!-- Avatar + dados -->
+        <div style="background:var(--surface); border-bottom:1px solid var(--border); padding:32px 16px 24px; display:flex; flex-direction:column; align-items:center; gap:8px;">
+          <div class="avatar avatar-xl">A</div>
+          <div style="font-size:20px; font-weight:700; color:var(--navy); font-family:var(--font-heading); margin-top:4px;">Ana Ferreira</div>
+          <div style="font-size:13px; color:var(--muted);">ana@email.com</div>
+          <!-- Badge verificado -->
+          <div style="display:inline-flex; align-items:center; gap:5px; background:#D1FAE5; border-radius:var(--radius-full); padding:4px 12px; margin-top:4px;">
+            <span style="font-size:11px; font-weight:700; color:#065F46;">✓ Verificada</span>
+          </div>
+        </div>
+
+        <!-- Stats rápidos -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; background:var(--surface); border-bottom:1px solid var(--border);">
+          <div style="padding:16px 8px; text-align:center; border-right:1px solid var(--border);">
+            <div style="font-size:20px; font-weight:800; color:var(--navy); font-family:var(--font-heading);">5</div>
+            <div style="font-size:10px; color:var(--muted); margin-top:2px; text-transform:uppercase; letter-spacing:.5px;">Anúncios</div>
+          </div>
+          <div style="padding:16px 8px; text-align:center; border-right:1px solid var(--border);">
+            <div style="font-size:20px; font-weight:800; color:var(--navy); font-family:var(--font-heading);">12</div>
+            <div style="font-size:10px; color:var(--muted); margin-top:2px; text-transform:uppercase; letter-spacing:.5px;">Locações</div>
+          </div>
+          <div style="padding:16px 8px; text-align:center;">
+            <div style="font-size:20px; font-weight:800; color:var(--green); font-family:var(--font-heading);">4.9</div>
+            <div style="font-size:10px; color:var(--muted); margin-top:2px; text-transform:uppercase; letter-spacing:.5px;">Avaliação</div>
+          </div>
+        </div>
+
+        <!-- Menu de itens -->
+        <div style="margin:12px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-2xl); overflow:hidden;">
+          <div class="menu-item">
+            <span class="menu-icon">➕</span>
+            <span class="menu-label">Anunciar item</span>
+            <span class="menu-chevron">›</span>
+          </div>
+          <div class="menu-item">
+            <span class="menu-icon">📋</span>
+            <span class="menu-label">Meus anúncios</span>
+            <span class="menu-chevron">›</span>
+          </div>
+          <div class="menu-item">
+            <span class="menu-icon">❤️</span>
+            <span class="menu-label">Favoritos</span>
+            <span class="menu-chevron">›</span>
+          </div>
+          <div class="menu-item">
+            <span class="menu-icon">🪪</span>
+            <span class="menu-label">Verificação de identidade</span>
+            <span class="menu-chevron">›</span>
+          </div>
+          <div class="menu-item danger">
+            <span class="menu-icon">🚪</span>
+            <span class="menu-label">Sair</span>
+          </div>
+        </div>
+
+        <div style="text-align:center; font-size:11px; color:var(--muted); padding:8px 16px 24px;">ShareO v1.0 · Use Mais. Possua Menos.</div>
+
+      </div>
+
+      <!-- Bottom Tab Bar -->
+      <div class="tab-bar">
+        <!-- BottomNav — Ativo: Perfil -->
+        <a href="#" class="tab-item" aria-label="Início"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Início</span></a>
+        <a href="#" class="tab-item" aria-label="Explorar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><span>Explorar</span></a>
+        <a href="#" class="tab-item tab-fab" aria-label="Anunciar item"><div class="tab-fab-circle"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><span>Anunciar</span></a>
+        <a href="#" class="tab-item" aria-label="Chat"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Chat</span></a>
+        <a href="#" class="tab-item active" aria-current="page" aria-label="Perfil"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Perfil</span></a>
+      </div>
+      <div class="home-indicator" style="background:var(--surface);"></div>
+    </div>
+  </div>
+
+  <!-- PERFIL — não logado -->
+  <div class="frame-wrap">
+    <div class="frame-label">Perfil — não logado</div>
+    <div class="phone" data-active="perfil">
+      <div class="app-header-placeholder" data-notif="0" data-loggedin="false"></div>
+      <div class="screen-content" style="display:flex; align-items:center; justify-content:center;">
+        <div class="empty-state">
+          <div class="empty-icon">👤</div>
+          <div class="empty-title">Faça login para acessar seu perfil</div>
+          <div class="empty-desc">Entre na sua conta para gerenciar anúncios, reservas e favoritos.</div>
+          <button class="btn btn-primary" style="margin-top:8px; min-width:160px;">Entrar</button>
+          <div style="margin-top:10px; font-size:13px; color:var(--muted);">
+            Não tem conta?&nbsp;<span style="color:var(--green); font-weight:600;">Criar conta</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-bar">
+        <!-- BottomNav — Ativo: Perfil -->
+        <a href="#" class="tab-item" aria-label="Início"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Início</span></a>
+        <a href="#" class="tab-item" aria-label="Explorar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><span>Explorar</span></a>
+        <a href="#" class="tab-item tab-fab" aria-label="Anunciar item"><div class="tab-fab-circle"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><span>Anunciar</span></a>
+        <a href="#" class="tab-item" aria-label="Chat"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Chat</span></a>
+        <a href="#" class="tab-item active" aria-current="page" aria-label="Perfil"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Perfil</span></a>
+      </div>
+      <div class="home-indicator" style="background:var(--surface);"></div>
+    </div>
+  </div>
+
+  <!-- RESERVAS — lista (aba do tab bar) -->
+  <div class="frame-wrap">
+    <div class="frame-label">Reservas — lista</div>
+    <div class="phone" data-active="home">
+      <div class="app-header-placeholder" data-notif="1" data-loggedin="true"></div>
+      <div class="screen-content">
+
+        <!-- Reserva 1 — Em andamento -->
+        <div class="card" style="margin:12px 12px 0; cursor:pointer;">
+          <div style="padding:14px;">
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:8px;">
+              <div style="font-size:14px; font-weight:700; color:var(--navy); flex:1; line-height:1.3;">Furadeira Bosch GSB 13 RE</div>
+              <span class="badge badge-blue">Em andamento</span>
+            </div>
+            <div style="font-size:11px; color:var(--muted); margin-bottom:6px;">01 ago → 04 ago · 3 dias</div>
+            <div style="font-size:16px; font-weight:800; color:var(--text);">R$&nbsp;105,00</div>
+          </div>
+        </div>
+
+        <!-- Reserva 2 — Pendente -->
+        <div class="card" style="margin:8px 12px 0; cursor:pointer;">
+          <div style="padding:14px;">
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:8px;">
+              <div style="font-size:14px; font-weight:700; color:var(--navy); flex:1; line-height:1.3;">Projetor Epson Home Cinema</div>
+              <span class="badge badge-amber">Aguardando</span>
+            </div>
+            <div style="font-size:11px; color:var(--muted); margin-bottom:6px;">10 ago → 11 ago · 1 dia</div>
+            <div style="font-size:16px; font-weight:800; color:var(--text);">R$&nbsp;100,00</div>
+          </div>
+        </div>
+
+        <!-- Reserva 3 — Concluída -->
+        <div class="card" style="margin:8px 12px 0; cursor:pointer;">
+          <div style="padding:14px;">
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:8px;">
+              <div style="font-size:14px; font-weight:700; color:var(--navy); flex:1; line-height:1.3;">Cortador de grama Tramontina</div>
+              <span class="badge badge-green">Concluída</span>
+            </div>
+            <div style="font-size:11px; color:var(--muted); margin-bottom:6px;">20 jul → 21 jul · 1 dia</div>
+            <div style="font-size:16px; font-weight:800; color:var(--text);">R$&nbsp;30,00</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="tab-bar">
+        <!-- BottomNav — Ativo: Perfil (reservas → dashboard → Perfil tab) -->
+        <a href="#" class="tab-item" aria-label="Início"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Início</span></a>
+        <a href="#" class="tab-item" aria-label="Explorar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><span>Explorar</span></a>
+        <a href="#" class="tab-item tab-fab" aria-label="Anunciar item"><div class="tab-fab-circle"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><span>Anunciar</span></a>
+        <a href="#" class="tab-item" aria-label="Chat"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Chat</span></a>
+        <a href="#" class="tab-item active" aria-current="page" aria-label="Perfil"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Perfil</span></a>
+      </div>
+      <div class="home-indicator" style="background:var(--surface);"></div>
+    </div>
+  </div>
+
+</div><!-- /frames-row perfil -->
+
+<!-- ═══════════════════════════════════════════════════════
+     GRUPO 6: CHECKOUT / RESERVA
+     ═══════════════════════════════════════════════════════ -->
+
+<div class="section-label">Checkout / Reserva</div>
+<div class="frames-row">
+
+  <!-- CHECKOUT — seleção diária -->
+  <div class="frame-wrap">
+    <div class="frame-label">Checkout — modo diário</div>
+    <div class="phone" data-active="">
+      <div class="screen-header" style="padding-top:48px;">
+        <button class="back-btn">‹</button>
+        <span class="screen-header-title" style="font-size:15px;">Furadeira Bosch GSB 13 RE</span>
+      </div>
+      <div class="screen-content" style="padding-bottom:90px;">
+        <div style="padding:16px; display:flex; flex-direction:column; gap:16px;">
+
+          <!-- Tabs de modalidade -->
+          <div>
+            <div style="font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.8px; margin-bottom:8px;">Modalidade</div>
+            <div style="display:flex; gap:8px;">
+              <!-- Diário (ativo) -->
+              <div style="flex:1; display:flex; flex-direction:column; align-items:center; padding:12px 8px; border-radius:var(--radius-xl); border:2px solid var(--green); background:#D1FAE5; cursor:pointer;">
+                <span style="font-size:10px; font-weight:700; color:var(--green); text-transform:uppercase; letter-spacing:.5px;">Diário</span>
+                <span style="font-size:18px; font-weight:800; color:var(--text); margin-top:2px; line-height:1;">R$&nbsp;35</span>
+                <span style="font-size:10px; color:var(--green);">/dia</span>
+              </div>
+              <!-- Semanal -->
+              <div style="flex:1; display:flex; flex-direction:column; align-items:center; padding:12px 8px; border-radius:var(--radius-xl); border:1.5px solid var(--border); background:var(--surface); cursor:pointer;">
+                <span style="font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px;">Semanal</span>
+                <span style="font-size:18px; font-weight:800; color:var(--muted); margin-top:2px; line-height:1;">R$&nbsp;90</span>
+                <span style="font-size:10px; color:var(--muted);">/sem</span>
+              </div>
+              <!-- Mensal -->
+              <div style="flex:1; display:flex; flex-direction:column; align-items:center; padding:12px 8px; border-radius:var(--radius-xl); border:1.5px solid var(--border); background:var(--surface); cursor:pointer;">
+                <span style="font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px;">Mensal</span>
+                <span style="font-size:18px; font-weight:800; color:var(--muted); margin-top:2px; line-height:1;">R$&nbsp;350</span>
+                <span style="font-size:10px; color:var(--muted);">/mês</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Data de retirada -->
+          <div>
+            <div style="font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.8px; margin-bottom:8px;">Data de retirada</div>
+            <div style="min-height:44px; display:flex; align-items:center; justify-content:space-between; border:1.5px solid var(--border); border-radius:var(--radius-lg); background:var(--surface); padding:0 16px; cursor:pointer;">
+              <span style="font-size:13px; color:var(--text);">qui., 07 ago. 2026</span>
+              <span style="font-size:13px; color:var(--green); font-weight:600;">Alterar</span>
+            </div>
+          </div>
+
+          <!-- Quantidade de dias -->
+          <div>
+            <div style="font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.8px; margin-bottom:8px;">Quantidade de dias</div>
+            <div style="display:flex; align-items:center; gap:12px;">
+              <!-- Botão − (44×44) -->
+              <div style="width:44px; height:44px; border:1.5px solid var(--border); border-radius:var(--radius-lg); background:var(--surface); display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:700; color:var(--muted); cursor:pointer; flex-shrink:0;">−</div>
+              <div style="flex:1; min-height:44px; border:1.5px solid var(--green); border-radius:var(--radius-lg); background:var(--surface); display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; color:var(--text); box-shadow:0 0 0 3px rgba(0,123,60,.1);">3</div>
+              <!-- Botão + (44×44) -->
+              <div style="width:44px; height:44px; border:1.5px solid var(--border); border-radius:var(--radius-lg); background:var(--surface); display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:700; color:var(--muted); cursor:pointer; flex-shrink:0;">+</div>
+            </div>
+          </div>
+
+          <!-- Data de devolução (read-only) -->
+          <div>
+            <div style="font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.8px; margin-bottom:8px;">
+              Devolução <span style="font-weight:400; text-transform:none; font-size:10px;">(calculado automaticamente)</span>
+            </div>
+            <div style="min-height:44px; display:flex; align-items:center; border:1.5px solid var(--border); border-radius:var(--radius-lg); background:#F1F5F9; padding:0 16px;">
+              <span style="font-size:13px; color:var(--text);">dom., 10 ago. 2026</span>
+            </div>
+            <div style="font-size:11px; color:var(--muted); margin-top:4px;">Retirada + 3 dias — devolução no mesmo horário</div>
+          </div>
+
+          <!-- Resumo de preço -->
+          <div class="card" style="padding:16px;">
+            <div style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">Resumo</div>
+
+            <div class="price-row">
+              <span class="price-row-label">3 dias × R$&nbsp;35,00</span>
+              <span class="price-row-value">R$&nbsp;105,00</span>
+            </div>
+
+            <div style="height:1px; background:var(--border); margin:10px 0;"></div>
+
+            <div class="price-row price-row-total">
+              <span class="price-row-label">Total do aluguel</span>
+              <span class="price-row-value">R$&nbsp;105,00</span>
+            </div>
+
+            <div style="font-size:11px; color:var(--muted); margin-top:10px; line-height:1.5;">Você paga apenas o valor da locação. A ShareO retém um percentual do repasse ao proprietário.</div>
+          </div>
+
+          <!-- Mensagem ao proprietário -->
+          <div>
+            <div style="font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.8px; margin-bottom:8px;">
+              Mensagem ao proprietário <span style="font-weight:400; text-transform:none;">(opcional)</span>
+            </div>
+            <textarea class="textarea" style="min-height:80px;" placeholder="Ex.: Preciso para um evento no fim de semana…" readonly></textarea>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- CTA fixo -->
+      <div style="background:var(--surface); border-top:1px solid var(--border); padding:12px 16px;">
+        <button class="btn btn-primary btn-full btn-lg">Solicitar locação</button>
+        <div style="text-align:center; font-size:11px; color:var(--muted); margin-top:6px;">O proprietário precisa confirmar antes do pagamento</div>
+      </div>
+      <div class="home-indicator" style="background:var(--surface);"></div>
+    </div>
+  </div>
+
+  <!-- CHECKOUT — aviso de teto (D2: R$500) -->
+  <div class="frame-wrap">
+    <div class="frame-label">Checkout — teto excedido</div>
+    <div class="phone" data-active="">
+      <div class="screen-header" style="padding-top:48px;">
+        <button class="back-btn">‹</button>
+        <span class="screen-header-title" style="font-size:15px;">Furadeira Bosch GSB 13 RE</span>
+      </div>
+      <div class="screen-content" style="padding-bottom:90px;">
+        <div style="padding:16px; display:flex; flex-direction:column; gap:16px;">
+
+          <!-- Tabs (diário ativo) -->
+          <div style="display:flex; gap:8px;">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; padding:12px 8px; border-radius:var(--radius-xl); border:2px solid var(--green); background:#D1FAE5;">
+              <span style="font-size:10px; font-weight:700; color:var(--green); text-transform:uppercase;">Diário</span>
+              <span style="font-size:18px; font-weight:800; color:var(--text);">R$&nbsp;35</span>
+              <span style="font-size:10px; color:var(--green);">/dia</span>
+            </div>
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; padding:12px 8px; border-radius:var(--radius-xl); border:1.5px solid var(--border); background:var(--surface);">
+              <span style="font-size:10px; font-weight:700; color:var(--muted); text-transform:uppercase;">Semanal</span>
+              <span style="font-size:18px; font-weight:800; color:var(--muted);">R$&nbsp;90</span>
+              <span style="font-size:10px; color:var(--muted);">/sem</span>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.8px; margin-bottom:8px;">Data de retirada</div>
+            <div style="min-height:44px; display:flex; align-items:center; justify-content:space-between; border:1.5px solid var(--border); border-radius:var(--radius-lg); background:var(--surface); padding:0 16px;">
+              <span style="font-size:13px; color:var(--text);">qui., 07 ago. 2026</span>
+              <span style="font-size:13px; color:var(--green); font-weight:600;">Alterar</span>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.8px; margin-bottom:8px;">Quantidade de dias</div>
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="width:44px; height:44px; border:1.5px solid var(--border); border-radius:var(--radius-lg); background:var(--surface); display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:700; color:var(--muted); cursor:pointer; flex-shrink:0;">−</div>
+              <div style="flex:1; min-height:44px; border:1.5px solid var(--red); border-radius:var(--radius-lg); background:#FFF5F5; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:700; color:var(--text);">20</div>
+              <div style="width:44px; height:44px; border:1.5px solid var(--border); border-radius:var(--radius-lg); background:var(--surface); display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:700; color:var(--muted); cursor:pointer; flex-shrink:0;">+</div>
+            </div>
+          </div>
+
+          <!-- Resumo com valor alto -->
+          <div class="card" style="padding:16px;">
+            <div style="font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">Resumo</div>
+            <div class="price-row">
+              <span class="price-row-label">20 dias × R$&nbsp;35,00</span>
+              <span class="price-row-value">R$&nbsp;700,00</span>
+            </div>
+            <div style="height:1px; background:var(--border); margin:10px 0;"></div>
+            <div class="price-row price-row-total">
+              <span class="price-row-label">Total do aluguel</span>
+              <span class="price-row-value" style="color:var(--red);">R$&nbsp;700,00</span>
+            </div>
+          </div>
+
+          <!-- Aviso de teto -->
+          <div class="alert alert-warning">
+            <span class="alert-icon">⚠️</span>
+            <div>
+              <div style="font-weight:700; margin-bottom:2px;">Total acima do limite desta versão</div>
+              <div>Locações acima de R$&nbsp;500,00 não estão disponíveis agora. Reduza a quantidade de dias ou escolha outra modalidade.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div style="background:var(--surface); border-top:1px solid var(--border); padding:12px 16px;">
+        <button class="btn btn-disabled btn-full btn-lg" style="cursor:not-allowed;">Solicitar locação</button>
+        <div style="text-align:center; font-size:11px; color:var(--muted); margin-top:6px;">O proprietário precisa confirmar antes do pagamento</div>
+      </div>
+      <div class="home-indicator" style="background:var(--surface);"></div>
+    </div>
+  </div>
+
+  <!-- CHECKOUT — loading / enviando solicitação -->
+  <div class="frame-wrap">
+    <div class="frame-label">Checkout — enviando solicitação</div>
+    <div class="phone" data-active="">
+      <div class="screen-header" style="padding-top:48px;">
+        <button class="back-btn">‹</button>
+        <span class="screen-header-title" style="font-size:15px;">Furadeira Bosch GSB 13 RE</span>
+      </div>
+      <div class="screen-content" style="display:flex; align-items:center; justify-content:center;">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:16px; padding:32px;">
+          <div style="width:64px; height:64px; border:4px solid rgba(0,123,60,.15); border-top-color:var(--green); border-radius:50%; animation:spin .8s linear infinite;"></div>
+          <div style="font-family:var(--font-heading); font-size:18px; font-weight:700; color:var(--navy); text-align:center;">Enviando solicitação…</div>
+          <div style="font-size:13px; color:var(--muted); text-align:center; line-height:1.5;">Aguarde enquanto enviamos seu pedido ao proprietário.</div>
+        </div>
+      </div>
+      <div style="background:var(--surface); border-top:1px solid var(--border); padding:12px 16px;">
+        <button class="btn btn-loading btn-full btn-lg" style="display:flex; align-items:center; justify-content:center; gap:10px;">
+          <span class="spinner"></span>
+          <span>Solicitando…</span>
+        </button>
+      </div>
+      <div class="home-indicator" style="background:var(--surface);"></div>
+    </div>
+  </div>
+
+  <!-- CHECKOUT — sucesso -->
+  <div class="frame-wrap">
+    <div class="frame-label">Checkout — solicitação enviada</div>
+    <div class="phone" data-active="">
+      <div class="screen-header" style="padding-top:48px;">
+        <button class="back-btn">‹</button>
+        <span class="screen-header-title">Solicitação enviada</span>
+      </div>
+      <div class="screen-content" style="display:flex; align-items:center; justify-content:center;">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:12px; padding:32px; text-align:center;">
+          <!-- Ícone de sucesso -->
+          <div style="width:80px; height:80px; background:#D1FAE5; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:40px; margin-bottom:8px;">✓</div>
+          <div style="font-family:var(--font-heading); font-size:22px; font-weight:800; color:var(--navy);">Solicitação enviada!</div>
+          <div style="font-size:13px; color:var(--muted); line-height:1.6; max-width:260px;">O proprietário foi notificado e tem 24h para confirmar. Você receberá uma notificação.</div>
+
+          <!-- Resumo da reserva -->
+          <div class="card" style="width:100%; padding:16px; margin-top:8px; text-align:left;">
+            <div style="font-size:12px; font-weight:700; color:var(--navy); margin-bottom:10px;">Resumo da reserva</div>
+            <div class="price-row">
+              <span class="price-row-label">Item</span>
+              <span class="price-row-value" style="font-size:12px; max-width:160px; text-align:right;">Furadeira Bosch GSB 13 RE</span>
+            </div>
+            <div class="price-row">
+              <span class="price-row-label">Período</span>
+              <span class="price-row-value">07 ago → 10 ago</span>
+            </div>
+            <div class="price-row">
+              <span class="price-row-label">Total</span>
+              <span class="price-row-value" style="color:var(--green); font-size:15px; font-weight:800;">R$&nbsp;105,00</span>
+            </div>
+            <div style="margin-top:8px;">
+              <span class="badge badge-amber">Aguardando aprovação</span>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" style="width:100%; margin-top:8px;">Ver minhas reservas</button>
+          <button class="btn btn-ghost" style="width:100%; text-transform:none; font-size:14px;">Explorar outros itens</button>
+        </div>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+
+</div><!-- /frames-row checkout -->
+
+<!-- ═══════════════════════════════════════════════════════
+     GRUPO 7: ESTADOS GENÉRICOS
+     ═══════════════════════════════════════════════════════ -->
+
+<div class="section-label">Estados Genéricos Reutilizáveis</div>
+<div class="frames-row">
+
+  <!-- EMPTY STATE — reservas vazias -->
+  <div class="frame-wrap">
+    <div class="frame-label">Empty — sem reservas</div>
+    <div class="phone" data-active="home">
+      <div class="app-header-placeholder" data-notif="0" data-loggedin="true"></div>
+      <div class="screen-content">
+        <div class="empty-state" style="margin-top:32px;">
+          <div class="empty-icon">📦</div>
+          <div class="empty-title">Nenhuma reserva ainda</div>
+          <div class="empty-desc">Explore itens disponíveis e faça sua primeira reserva.</div>
+          <!-- Fonte: app/reservas/page.tsx (EmptyState action = link de texto, não botão) -->
+          <a href="#" style="margin-top:8px; font-size:14px; font-weight:500; color:var(--brand); text-decoration:none;">Explorar anúncios →</a>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <!-- BottomNav — Ativo: Perfil (reservas → dashboard → Perfil tab) -->
+        <a href="#" class="tab-item" aria-label="Início"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Início</span></a>
+        <a href="#" class="tab-item" aria-label="Explorar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><span>Explorar</span></a>
+        <a href="#" class="tab-item tab-fab" aria-label="Anunciar item"><div class="tab-fab-circle"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><span>Anunciar</span></a>
+        <a href="#" class="tab-item" aria-label="Chat"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Chat</span></a>
+        <a href="#" class="tab-item active" aria-current="page" aria-label="Perfil"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Perfil</span></a>
+      </div>
+      <div class="home-indicator" style="background:var(--surface);"></div>
+    </div>
+  </div>
+
+  <!-- EMPTY STATE — mensagens vazias -->
+  <div class="frame-wrap">
+    <div class="frame-label">Empty — sem mensagens</div>
+    <div class="phone" data-active="chat">
+      <div class="app-header-placeholder" data-notif="0" data-loggedin="true"></div>
+      <div class="screen-content">
+        <div class="empty-state" style="margin-top:32px;">
+          <div class="empty-icon">💬</div>
+          <div class="empty-title">Nenhuma conversa ainda</div>
+          <!-- Fonte: app/mensagens/page.tsx (EmptyState sem action) -->
+          <div class="empty-desc">Quando você solicitar ou receber uma reserva, a conversa aparecerá aqui.</div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <!-- BottomNav — Ativo: Chat -->
+        <a href="#" class="tab-item" aria-label="Início"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Início</span></a>
+        <a href="#" class="tab-item" aria-label="Explorar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><span>Explorar</span></a>
+        <a href="#" class="tab-item tab-fab" aria-label="Anunciar item"><div class="tab-fab-circle"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><span>Anunciar</span></a>
+        <a href="#" class="tab-item active" aria-current="page" aria-label="Chat"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Chat</span></a>
+        <a href="#" class="tab-item" aria-label="Perfil"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Perfil</span></a>
+      </div>
+      <div class="home-indicator" style="background:var(--surface);"></div>
+    </div>
+  </div>
+
+  <!-- ERRO — item não encontrado (404) -->
+  <div class="frame-wrap">
+    <div class="frame-label">Erro — item não encontrado</div>
+    <div class="phone" data-active="">
+      <div class="screen-header" style="padding-top:48px;">
+        <button class="back-btn">‹</button>
+        <span class="screen-header-title">Detalhe do item</span>
+      </div>
+      <div class="screen-content" style="display:flex; align-items:center; justify-content:center;">
+        <div class="empty-state">
+          <div class="empty-icon">😕</div>
+          <div class="empty-title">Item não encontrado</div>
+          <div class="empty-desc">Este item pode ter sido removido ou não está mais disponível.</div>
+          <button class="btn btn-primary" style="margin-top:8px; min-width:160px;">Explorar outros itens</button>
+        </div>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+
+  <!-- ERRO — falha de rede / servidor -->
+  <div class="frame-wrap">
+    <div class="frame-label">Erro — falha de conexão</div>
+    <div class="phone" data-active="explorar"><!-- ativo: Explorar -->
+      <div class="app-header-placeholder" data-notif="0" data-loggedin="true"></div>
+      <div class="screen-content">
+        <div class="empty-state" style="margin-top:32px;">
+          <div class="empty-icon">📡</div>
+          <div class="empty-title">Erro de conexão</div>
+          <div class="empty-desc">Não conseguimos carregar os itens. Verifique sua conexão e tente novamente.</div>
+          <!-- Alerta técnico (colapsado) -->
+          <div class="alert alert-error" style="width:100%; margin-top:4px; text-align:left;">
+            <span class="alert-icon">⚠️</span>
+            <span>Não foi possível conectar ao servidor. Código: NETWORK_ERROR</span>
+          </div>
+          <button class="btn btn-primary" style="margin-top:4px; min-width:160px;">Tentar novamente</button>
+        </div>
+      </div>
+      <!-- BottomNav — 5 itens VERBATIM de BottomNav.tsx. Ativo: Explorar -->
+      <div class="tab-bar">
+        <a href="#" class="tab-item" aria-label="Início"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Início</span></a>
+        <a href="#" class="tab-item active" aria-current="page" aria-label="Explorar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><span>Explorar</span></a>
+        <a href="#" class="tab-item tab-fab" aria-label="Anunciar item"><div class="tab-fab-circle"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><span>Anunciar</span></a>
+        <a href="#" class="tab-item" aria-label="Chat"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Chat</span></a>
+        <a href="#" class="tab-item" aria-label="Perfil"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Perfil</span></a>
+      </div>
+      <div class="home-indicator" style="background:var(--surface);"></div>
+    </div>
+  </div>
+
+  <!-- LOADING — tela inteira (full-page spinner) -->
+  <div class="frame-wrap">
+    <div class="frame-label">Loading — tela inteira</div>
+    <div class="phone" data-active="">
+      <div class="app-header-placeholder" data-notif="0" data-loggedin="true"></div>
+      <div class="screen-content" style="display:flex; align-items:center; justify-content:center; background:var(--bg);">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:16px;">
+          <!-- Spinner grande -->
+          <div style="width:48px; height:48px; border:4px solid rgba(0,123,60,.15); border-top-color:var(--green); border-radius:50%; animation:spin .8s linear infinite;"></div>
+          <div style="font-size:13px; color:var(--muted);">Carregando…</div>
+        </div>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+
+  <!-- TOAST / NOTIFICAÇÃO inline — catálogo de variantes -->
+  <div class="frame-wrap">
+    <div class="frame-label">Toasts — variantes</div>
+    <div class="phone" data-active="explorar">
+      <div class="app-header-placeholder" data-notif="3" data-loggedin="true"></div>
+      <div class="screen-content">
+        <div style="padding:16px; display:flex; flex-direction:column; gap:12px;">
+
+          <div style="font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.8px; margin-bottom:4px;">Alertas &amp; Toasts</div>
+
+          <!-- Sucesso -->
+          <div class="alert alert-success">
+            <span class="alert-icon">✅</span>
+            <div>
+              <div style="font-weight:700; margin-bottom:2px;">Anúncio publicado!</div>
+              <div>Seu item está no ar e já pode ser alugado.</div>
+            </div>
+          </div>
+
+          <!-- Erro -->
+          <div class="alert alert-error">
+            <span class="alert-icon">⚠️</span>
+            <div>
+              <div style="font-weight:700; margin-bottom:2px;">Erro ao processar</div>
+              <div>Não foi possível criar o anúncio. Tente novamente.</div>
+            </div>
+          </div>
+
+          <!-- Aviso -->
+          <div class="alert alert-warning">
+            <span class="alert-icon">⚠️</span>
+            <div>
+              <div style="font-weight:700; margin-bottom:2px;">Perfil incompleto</div>
+              <div>Complete seu endereço para poder anunciar itens.</div>
+              <div style="margin-top:6px; font-weight:600; color:var(--green); font-size:12px; cursor:pointer;">Completar perfil →</div>
+            </div>
+          </div>
+
+          <!-- Info / Neutro -->
+          <div style="background:#EFF6FF; border:1px solid #BFDBFE; border-radius:var(--radius-lg); padding:12px 16px; display:flex; align-items:flex-start; gap:10px; font-size:13px; color:#1E40AF;">
+            <span style="font-size:16px; flex-shrink:0; margin-top:1px;">ℹ️</span>
+            <div>
+              <div style="font-weight:700; margin-bottom:2px;">Cadastro necessário</div>
+              <div>Para reservar, complete seu cadastro no site <strong>shareo.com.br</strong>.</div>
+            </div>
+          </div>
+
+          <div style="font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.8px; margin-top:8px; margin-bottom:4px;">Badges de Status</div>
+
+          <!-- Badges de status de reserva -->
+          <div style="display:flex; flex-wrap:wrap; gap:8px;">
+            <span class="badge badge-amber">Aguardando aprovação</span>
+            <span class="badge badge-blue">Em andamento</span>
+            <span class="badge badge-green">Concluída</span>
+            <span class="badge badge-gray">Cancelada</span>
+            <span class="badge badge-red">Em disputa</span>
+          </div>
+
+          <!-- Badges de status de item -->
+          <div style="font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.8px; margin-top:4px; margin-bottom:4px;">Status de Anúncio</div>
+          <div style="display:flex; flex-wrap:wrap; gap:8px;">
+            <span class="badge badge-green">● Disponível</span>
+            <span class="badge badge-amber">● Alugado</span>
+            <span class="badge badge-gray">● Rascunho</span>
+            <span class="badge badge-blue">● Em análise</span>
+          </div>
+
+        </div>
+      </div>
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+
+</div><!-- /frames-row estados genéricos -->
+
+<script>
+/* ─── Substitui todos os .tab-bar por BottomNav.tsx real do site ─────────
+   5 itens: Início · Explorar · Anunciar (FAB) · Chat · Perfil
+   Detecta qual aba está ativa pelo data-active do .phone pai.
+   Sem data-active → nenhuma ativa (telas de detalhe sem tab bar própria).
+───────────────────────────────────────────────────────────────────────── */
+function makeNavSVG(tag, d, active) {
+  return `<svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" stroke-width="${active ? 2.5 : 2}"
+    stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+}
+
+const NAV_ITEMS = [
+  {
+    key: 'home',
+    label: 'Início',
+    svg: `<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>`,
+  },
+  {
+    key: 'explorar',
+    label: 'Explorar',
+    svg: `<circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>`,
+  },
+  {
+    key: 'fab',
+    label: 'Anunciar',
+    fab: true,
+    svg: `<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>`,
+  },
+  {
+    key: 'chat',
+    label: 'Chat',
+    svg: `<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>`,
+  },
+  {
+    key: 'perfil',
+    label: 'Perfil',
+    svg: `<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>`,
+  },
+];
+
+document.querySelectorAll('.tab-bar').forEach((bar) => {
+  // Descobre qual aba está ativa lendo data-active do .phone mais próximo
+  const phone = bar.closest('.phone');
+  const active = phone ? (phone.dataset.active || '') : '';
+
+  const html = NAV_ITEMS.map((item) => {
+    const isActive = (active === item.key);
+
+    if (item.fab) {
+      return `<div class="tab-item tab-fab" aria-label="Anunciar item">
+        <div class="tab-fab-circle">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
+            stroke="white" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+            ${item.svg}
+          </svg>
+        </div>
+        <span>${item.label}</span>
+      </div>`;
+    }
+
+    return `<div class="tab-item${isActive ? ' active' : ''}">
+      ${isActive ? '<span class="tab-indicator" aria-hidden="true"></span>' : ''}
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="${isActive ? 2.5 : 2}"
+        stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        ${item.svg}
+      </svg>
+      <span>${item.label}</span>
+    </div>`;
+  }).join('');
+
+  bar.innerHTML = html;
+});
+
+/* ─── Substitui todos os .app-header-placeholder por header real ─────── */
+document.querySelectorAll('.app-header-placeholder').forEach((el) => {
+  const notif   = el.dataset.notif   ?? '0';
+  const loggedIn = el.dataset.loggedin !== 'false';
+  const logoPath = '../../public/logos/shareo-logo.png';
+
+  const bellBadge = parseInt(notif) > 0
+    ? `<span class="notif-count">${notif}</span>`
+    : '';
+
+  el.outerHTML = `
+  <div class="app-header">
+    <a class="header-logo" href="#" aria-label="ShareO — página inicial">
+      <img src="${logoPath}" alt="ShareO" style="height:28px;width:auto;">
+    </a>
+    <div class="header-actions">
+      ${loggedIn ? `
+      <button class="header-icon-btn" aria-label="Notificações">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+        ${bellBadge}
+      </button>` : ''}
+      <button class="header-icon-btn" aria-label="Abrir menu" aria-expanded="false">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true">
+          <line x1="3" y1="7" x2="21" y2="7"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="17" x2="21" y2="17"/>
+        </svg>
+      </button>
+    </div>
+  </div>`;
+});
+</script>
+</body>
+</html>

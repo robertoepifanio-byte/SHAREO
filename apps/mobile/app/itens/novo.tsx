@@ -1,5 +1,5 @@
 // Fonte: components/items/ItemForm.tsx (1150 linhas — form completo do site)
-// Transcrição literal campo a campo conforme protocolo meta-app-android-retranscricao-s41.md.
+// Transcrição literal campo a campo conforme protocolo docs/planos/meta-app-android-retranscricao-s41.md.
 // Divergências do app anterior documentadas na tabela do PR.
 /**
  * AnunciarScreen — apps/mobile/app/itens/novo.tsx

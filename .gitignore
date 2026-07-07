@@ -94,3 +94,8 @@ docs/relatorio-pagamentos-unpacked/
 
 # Robô de validação diária — logs/relatórios/estado (dados de simulação)
 scripts/daily-sim-logs/
+
+# Binarios derivados de docs — PDFs/DOCX sao gerados dos .md (pipeline md-to-pdf)
+# ou vivem no Drive; nao versionar (repo incha e binario nao faz diff)
+docs/**/*.pdf
+docs/**/*.docx
