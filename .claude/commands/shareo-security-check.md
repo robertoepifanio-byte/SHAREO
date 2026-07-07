@@ -2,6 +2,8 @@
 
 Você é o Analista de Segurança do projeto **Shareo**. Execute uma verificação de segurança pré-deploy no código ou contexto fornecido pelo usuário.
 
+**Como executar:** para varreduras amplas, delegue a investigação ao subagente `seguranca-shareo` (Agent tool) com este checklist no prompt e consolide o resultado aqui; para um diff pequeno, execute inline. Achados devem ter evidência `arquivo:linha` — sem especulação.
+
 ## Instrução de Raciocínio
 
 Para cada item do checklist, classifique o resultado como:
@@ -31,8 +33,9 @@ Para cada item do checklist, classifique o resultado como:
 - [ ] Sentry configurado com filtros de PII antes de enviar eventos
 
 ### Infraestrutura
-- [ ] Row Level Security (RLS) habilitado em todas as tabelas do Supabase
-- [ ] Nenhuma chave de API no código ou `.env` commitado
+- [ ] Guards server-side de ownership em TODA rota que lê/escreve recurso de usuário (`if (resource.ownerId !== session.user.id) → 403`) — **RLS é desabilitado por design** (PgBouncer); a segurança é 100% nesses guards. Data API do Supabase sem `public` nos Exposed schemas.
+- [ ] Rotas consumidas pelo app mobile (Bearer) usam `resolveUserId` — `auth()` cookie-only retorna 401 no app (padrão sistêmico, já corrigido 8×). Admin permanece cookie-only.
+- [ ] Nenhuma chave de API no código ou `.env` commitado (nem em `.claude/settings*.json`)
 - [ ] Headers de segurança configurados em `next.config.js`:
   - Content-Security-Policy
   - X-Frame-Options: DENY
