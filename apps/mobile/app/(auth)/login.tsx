@@ -88,12 +88,17 @@ export default function LoginScreen() {
 
         {/* Card branco */}
         <View style={[s.card, { backgroundColor: tokens.surface, borderColor: tokens.border }]}>
-          {/* "← Voltar para o início" — fonte: LoginForm.tsx linhas 53-63 (ausente até então) */}
-          <Link href="/" asChild>
-            <TouchableOpacity style={s.backHomeLink} accessibilityRole="link">
-              <Text style={[s.backHomeLinkText, { color: tokens.muted }]}>← Voltar para o início</Text>
-            </TouchableOpacity>
-          </Link>
+          {/* "← Voltar para o início" — fonte: LoginForm.tsx linhas 53-63 (ausente até então).
+              Aponta direto pra "/(tabs)" (Home, pública, sem guard de auth) em vez de "/" —
+              "/" é só o gate de redirect do app/index.tsx, que manda usuário deslogado de
+              volta pro login (achado: o link parecia não fazer nada). */}
+          <TouchableOpacity
+            style={s.backHomeLink}
+            accessibilityRole="link"
+            onPress={() => router.replace("/(tabs)")}
+          >
+            <Text style={[s.backHomeLinkText, { color: tokens.muted }]}>← Voltar para o início</Text>
+          </TouchableOpacity>
 
           {/* Título + subtítulo — verbatim de LoginForm.tsx linhas 65-68
               (mobile tinha só "Entrar", faltava "na sua conta" + o subtítulo inteiro) */}
