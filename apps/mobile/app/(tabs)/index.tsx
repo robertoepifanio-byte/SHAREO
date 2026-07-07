@@ -15,7 +15,6 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  StatusBar,
   Image,
 } from "react-native"
 import { router } from "expo-router"

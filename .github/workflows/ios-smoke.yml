@@ -1,0 +1,72 @@
+name: iOS Simulator Smoke (Maestro)
+
+# Roda o build de simulador iOS (gerado no EAS) num Mac da nuvem e executa o
+# roteiro Maestro (apps/mobile/.maestro/ios-smoke.yaml), gravando vídeo e
+# screenshots como artifacts. Disparo manual: Actions → esta workflow → Run.
+on:
+  workflow_dispatch:
+    inputs:
+      artifact_url:
+        description: "URL do .tar.gz do build de simulador iOS (EAS → Artifact)"
+        required: true
+        default: "https://expo.dev/artifacts/eas/Mjqn4-pY8kQLpIxhn4q3h6wBnQ7Vtd6KymcRl198nK8.tar.gz"
+
+jobs:
+  ios-smoke:
+    name: Simulador iOS + Maestro
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Baixar e extrair o app
+        run: |
+          curl -fsSL -o app.tar.gz "${{ inputs.artifact_url }}"
+          mkdir -p extracted && tar -xzf app.tar.gz -C extracted
+          APP_PATH=$(find extracted -maxdepth 2 -name "*.app" | head -1)
+          if [ -z "$APP_PATH" ]; then echo "Nenhum .app no tarball"; exit 1; fi
+          echo "APP_PATH=$APP_PATH" >> "$GITHUB_ENV"
+
+      - name: Subir simulador iPhone
+        run: |
+          UDID=$(xcrun simctl list devices available -j \
+            | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | test("iPhone"))] | .[0].udid')
+          if [ -z "$UDID" ] || [ "$UDID" = "null" ]; then echo "Nenhum simulador iPhone disponível"; xcrun simctl list devices; exit 1; fi
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+
+      - name: Instalar app no simulador
+        run: xcrun simctl install "$UDID" "$APP_PATH"
+
+      - name: Instalar Maestro
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Rodar smoke com gravação de vídeo
+        run: |
+          mkdir -p out
+          xcrun simctl io "$UDID" recordVideo --codec h264 out/ios-smoke.mp4 &
+          echo $! > rec.pid
+          set +e
+          maestro test apps/mobile/.maestro/ios-smoke.yaml \
+            -e EMAIL="teste_pf_01@demo.shareo.com.br" \
+            -e PASSWORD="${{ secrets.MAESTRO_TEST_PASSWORD }}" \
+            --debug-output out/maestro-debug
+          STATUS=$?
+          set -e
+          kill -INT "$(cat rec.pid)" || true
+          sleep 5
+          # Screenshots do takeScreenshot caem no cwd
+          mv ./*.png out/ 2>/dev/null || true
+          exit $STATUS
+
+      - name: Publicar vídeo e screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-smoke-resultado
+          path: out/
+          if-no-files-found: warn
+          retention-days: 14
