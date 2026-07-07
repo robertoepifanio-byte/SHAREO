@@ -43,6 +43,8 @@ jobs:
           echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
 
       - name: Rodar smoke no emulador
+        env:
+          MAESTRO_TEST_PASSWORD: ${{ secrets.MAESTRO_TEST_PASSWORD }}
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
@@ -51,24 +53,7 @@ jobs:
           profile: pixel_6
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: |
-            mkdir -p out
-            adb install -r app.apk
-            export PATH="$HOME/.maestro/bin:$PATH"
-            adb shell screenrecord /sdcard/android-smoke.mp4 &
-            REC_PID=$!
-            set +e
-            maestro test apps/mobile/.maestro/android-smoke.yaml \
-              -e EMAIL="teste_pf_01@demo.shareo.com.br" \
-              -e PASSWORD="${{ secrets.MAESTRO_TEST_PASSWORD }}" \
-              --debug-output out/maestro-debug
-            STATUS=$?
-            set -e
-            kill -INT "$REC_PID" || true
-            sleep 3
-            adb pull /sdcard/android-smoke.mp4 out/ || true
-            mv ./*.png out/ 2>/dev/null || true
-            exit $STATUS
+          script: bash apps/mobile/.maestro/run-android-smoke.sh
 
       - name: Publicar vídeo e screenshots
         if: always()
