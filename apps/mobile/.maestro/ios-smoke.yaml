@@ -42,6 +42,11 @@ appId: com.shareo.app
 - scrollUntilVisible:
     element: "Ver itens no mapa"
     direction: UP
+# Sem isso, o tap seguinte usa coordenadas da árvore de acessibilidade capturadas
+# antes do scroll assentar (momentum do FlatList) e cai no CategoryIcon errado
+# (reproduzido: aplicou o filtro "Eletrodomésticos" em vez de abrir o mapa).
+- waitForAnimationToEnd:
+    timeout: 3000
 - tapOn: "Ver itens no mapa"
 # Prompt de localização do iOS, se aparecer
 - tapOn:
