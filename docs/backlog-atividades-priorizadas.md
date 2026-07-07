@@ -36,12 +36,12 @@
 
 | Item | Status | Ação |
 |---|---|---|
-| **📅 REVER AMANHÃ (01/07) — Copy de pagamento p/ validação jurídica** | 🟣 **para a advogada** | Documento consolidado pronto: [`copy-pagamento-validacao-juridica.md`](copy-pagamento-validacao-juridica.md) (+`.pdf`) — Termos §6/§6.1, Política §4/§4.1 e Central de Ajuda + 6 pontos a confirmar (custódia MP, "não retém nem custodia", licença/nome BACEN, solidária, PCI-DSS, MP=operador). É o **item 4.1** da pauta. Enviar à advogada; sem o aval, a Ajuda/Termos não vão a público em produção. Gated D4. |
+| **📅 REVER AMANHÃ (01/07) — Copy de pagamento p/ validação jurídica** | 🟣 **para a advogada** | Documento consolidado pronto: [`juridico/copy-pagamento-validacao-juridica.md`](juridico/copy-pagamento-validacao-juridica.md) (+`.pdf`) — Termos §6/§6.1, Política §4/§4.1 e Central de Ajuda + 6 pontos a confirmar (custódia MP, "não retém nem custodia", licença/nome BACEN, solidária, PCI-DSS, MP=operador). É o **item 4.1** da pauta. Enviar à advogada; sem o aval, a Ajuda/Termos não vão a público em produção. Gated D4. |
 | **~~🔴 N1 — CTA de reserva mobile aponta p/ rota inexistente (404)~~** | ✅ **RESOLVIDO (#142)** | Revisão de navegabilidade s41 (CONFIRMADO): `_StickyBookingCTA.tsx` mandava usuário logado p/ `/reservas/nova` (inexistente) → 404. **Fix:** logado rola até `#price-calc`; não logado segue `/login`. |
 | **~~a11y do modal de KYC~~** | ✅ **RESOLVIDO (#143)** | `role="dialog"` + `aria-modal` + `aria-labelledby`, foco no diálogo, Escape, focus trap, scroll-lock; tap targets ≥44px (botão Verificar/Reenviar h-11, 4 uploads +min-h-11, CTAs rodapé py-3). |
 | **~~Dark mode da Central de Ajuda~~** | ✅ **RESOLVIDO (#144)** | Overrides `dark:` nas 5 seções de FAQ + 3 callouts; status PENDING → token `text-booking-pending`. Verificado no preview (/ajuda escuro). |
-| **Prep pró-flag de biometria** | 🟡 **parcial (#145)** | ✅ FEITO: (1) botão "Revogar consentimento biométrico" na UI (só com flag ON + consentimento) + (2) export art.20 inclui `idSelfieConsentAt/Version/TextHash` (não `...Ip`). ⏳ RESTA (pós-D4, precisa DPO): (3) log `kyc.selfie.view` no admin; (4) adendo à Política citando art.11 II "a". Ver `docs/spec-consentimento-biometria-c1.md` (DoD). |
-| **Mercado Pago — validação humana (testers)** | 🟢 **EM ANDAMENTO** | Ciclo E2E já validado tecnicamente (reserva PAID + split + webhook real). Roteiro para testers entregue (`docs/roteiro-teste-mercadopago.md`/`.pdf`, regra única = pagar como convidado). Aguardando retorno dos testers (canal WhatsApp 84 99662-2346). |
+| **Prep pró-flag de biometria** | 🟡 **parcial (#145)** | ✅ FEITO: (1) botão "Revogar consentimento biométrico" na UI (só com flag ON + consentimento) + (2) export art.20 inclui `idSelfieConsentAt/Version/TextHash` (não `...Ip`). ⏳ RESTA (pós-D4, precisa DPO): (3) log `kyc.selfie.view` no admin; (4) adendo à Política citando art.11 II "a". Ver `docs/juridico/spec-consentimento-biometria-c1.md` (DoD). |
+| **Mercado Pago — validação humana (testers)** | 🟢 **EM ANDAMENTO** | Ciclo E2E já validado tecnicamente (reserva PAID + split + webhook real). Roteiro para testers entregue (`docs/guias/roteiro-teste-mercadopago.md`/`.pdf`, regra única = pagar como convidado). Aguardando retorno dos testers (canal WhatsApp 84 99662-2346). |
 | **Mercado Pago — `MP_WEBHOOK_SECRET`** | 🟡 **bloqueado em ação humana** | Código já valida `x-signature` quando o secret existe. Falta **obter o valor no painel do MP (Webhooks)** e adicioná-lo no Vercel (Production). Sem isso, o webhook funciona mas pula a validação de assinatura (aceitável no sandbox). |
 | **Mercado Pago — remover override de sandbox (#122)** | 🔴 **antes do go-live** | Remover env `MP_SANDBOX_SELLER_TOKEN` + helper `sandboxSellerTokenOverride()` + 2 call sites (checkout/webhook). É bypass de teste. Fazer quando a validação humana fechar. |
 | **Mercado Pago — desacoplar PIX NOT NULL** | 🔵 **adiado p/ remoção do legado** | Callback OAuth é *update-only* (locador precisa ter PIX antes de conectar MP). Tornar `pixKey`/`holderName`/`pixKeyType` nullable toca ~25 call sites do modelo financeiro; sem benefício hoje (ninguém conecta MP sem PIX). PR dedicado quando removermos o PIX-manual/Stripe. |
@@ -56,7 +56,7 @@
 
 ## 🧹 Sprint de Endurecimento Zero-Dependência (s41, 2026-07-01) — backlog dos achados
 
-> Origem: META `meta-hardening-zero-dependencia-s41.md`. 5 especialistas auditaram/desenvolveram o que **não tem dependência externa** e **não é feature nova**. **Já aplicado + mesclado:** PR #152 (mobile/hardening), #153 (+309 testes + a11y `RatingStars`), #154 (segurança A1/A2/M1–M5), e o PR de a11y do designer. **Abaixo: tudo que os agentes marcaram para ANÁLISE** (exige feature nova, decisão de negócio/design, migração de dados, ou mudança de comportamento com risco). Nada aqui foi executado.
+> Origem: META `planos/meta-hardening-zero-dependencia-s41.md`. 5 especialistas auditaram/desenvolveram o que **não tem dependência externa** e **não é feature nova**. **Já aplicado + mesclado:** PR #152 (mobile/hardening), #153 (+309 testes + a11y `RatingStars`), #154 (segurança A1/A2/M1–M5), e o PR de a11y do designer. **Abaixo: tudo que os agentes marcaram para ANÁLISE** (exige feature nova, decisão de negócio/design, migração de dados, ou mudança de comportamento com risco). Nada aqui foi executado.
 
 ### 🔐 Segurança — backlog (auditoria `seguranca-shareo`)
 
@@ -115,14 +115,14 @@
 | ID | Item | Por que é backlog |
 |---|---|---|
 | MOB-BL1 | Remover dead-code do bloco de **caução** em `apps/mobile/app/itens/[id].tsx` (`depositAmount > 0` nunca ocorre no MVP — D2) | Limpeza optativa, não bug; revisar quando D2 for reavaliado. |
-| MOB-BL2 | Fluxo **reservar+pagar / anunciar / KYC / mapa** no app | **Feature nova** — ver `plano-mobile-lojas.md` (Fases 2 e 5). |
+| MOB-BL2 | Fluxo **reservar+pagar / anunciar / KYC / mapa** no app | **Feature nova** — ver `planos/plano-mobile-lojas.md` (Fases 2 e 5). |
 | ~~MOB-BL3~~ | ✅ **RESOLVIDO.** Dark mode ativo: `ThemeProvider`+toggle tri-state (Claro/Sistema/Escuro) em `MobileMenu`, tokens dinâmicos via `useTheme()` em toda a árvore. Migração de ~500 cores hardcoded → tokens dinâmicos em ~33 arquivos (espelhando a Fase 3 do site). | Falta apenas confirmação visual em device real (build EAS supervisionado) — não bloqueia merge, mesmo padrão de outras features mobile recentes. |
 
 ---
 
 ## 💳 Avaliação: migração de pagamentos Stripe → Mercado Pago (s34, 2026-06-22)
 
-**Status:** ✅ **DECIDIDO (2026-06-28, s39): Mercado Pago — Modelo B (split/marketplace).** Escolhido pelos fundadores e **recomendado pelo parecer D4** (split/escrow afasta o enquadramento da Lei 12.865). **Nenhum código alterado ainda** — a implementação **começa quando os fundadores fornecerem as credenciais de teste do app MP** (marketplace: `Client ID`/`Client Secret`/`Access Token`/webhook). **Nada vai a produção antes do parecer FORMAL (D4).** Ver `docs/checklist-conformidade-juridica.md` e memória [[project-mercadopago-migration]].
+**Status:** ✅ **DECIDIDO (2026-06-28, s39): Mercado Pago — Modelo B (split/marketplace).** Escolhido pelos fundadores e **recomendado pelo parecer D4** (split/escrow afasta o enquadramento da Lei 12.865). **Nenhum código alterado ainda** — a implementação **começa quando os fundadores fornecerem as credenciais de teste do app MP** (marketplace: `Client ID`/`Client Secret`/`Access Token`/webhook). **Nada vai a produção antes do parecer FORMAL (D4).** Ver `docs/juridico/checklist-conformidade-juridica.md` e memória [[project-mercadopago-migration]].
 
 **Por quê:** o Mercado Pago é nativo do Brasil (PIX/cartão/boleto), faz **PIX nativo com confirmação automática** (aposenta o checkout PIX manual temporário) e é **instituição de pagamento licenciada** — pode **amenizar** as questões #1/#5 do D4 (Lei 12.865 / PLD).
 
@@ -144,7 +144,7 @@
 
 **Gotchas:** webhook do MP é em 2 tempos (recebe id → consulta status `approved`); PIX pode ficar `pending` segundos (UI de "aguardando" — já temos o padrão); validação de assinatura diferente do Stripe; sandbox usa *test users* (não cartões de teste do Stripe).
 
-**Ação dos fundadores (em andamento):** ✅ Modelo decidido (**B**); 🔜 **fornecer as credenciais de teste do app MP (marketplace)** — é o **bloqueador da Fase 1**; conta **PJ** da ShareO como titular. **Procedimentos operacionais detalhados:** `docs/mercadopago-procedimentos-fundadores.md`. Análise completa: memória [[project-mercadopago-migration]].
+**Ação dos fundadores (em andamento):** ✅ Modelo decidido (**B**); 🔜 **fornecer as credenciais de teste do app MP (marketplace)** — é o **bloqueador da Fase 1**; conta **PJ** da ShareO como titular. **Procedimentos operacionais detalhados:** `docs/juridico/mercadopago-procedimentos-fundadores.md`. Análise completa: memória [[project-mercadopago-migration]].
 
 ---
 
@@ -169,7 +169,7 @@
 
 ## 🔬 Auditoria Crítica s14 (2026-06-14) — PARA DELIBERAÇÃO COM O FUNDADOR
 
-> 2ª auditoria multi-aspecto (`qa-shareo`, `seguranca-shareo`, `arquiteto-shareo`) sobre o commit `21ecc69`. **READ-ONLY — nenhum código alterado.** Evidência QA: `docs/auditoria-s14-qa.txt`.
+> 2ª auditoria multi-aspecto (`qa-shareo`, `seguranca-shareo`, `arquiteto-shareo`) sobre o commit `21ecc69`. **READ-ONLY — nenhum código alterado.** Evidência QA: `docs/auditorias/auditoria-s14-qa.txt`.
 > **✅ Resultado-chave:** os 6 fixes do s13 estão tecnicamente corretos e **NENHUMA regressão funcional** foi introduzida (QA validou todos no staging: XSS escape, MIME/magic-bytes, invalidação de sessão, headers, truncamento coord, groupBy). Suíte real ~255/290 — as "65 falhas" do run foram **artefato** (propagação de `BASE_URL` no PowerShell + spec-bugs já conhecidos), não bugs do app.
 > **PORÉM:** 2 fixes do s13 têm cobertura **incompleta**, e há **3 Critical novos**. Quase todos os achados foram **reverificados e CONFIRMADOS** pelo orquestrador lendo o código (a precisão do s14 foi alta — bem melhor que o s13). IDs cruzados deduplicados (⊕).
 > ⚠️ NÃO corrigir sem deliberação. Novas **funcionalidades** exigem aprovação prévia do fundador.
@@ -239,7 +239,7 @@
 
 > Auditoria multi-aspecto delegada a 3 subagentes em paralelo (`qa-shareo`, `seguranca-shareo`, `arquiteto-shareo`) sobre o commit `14c51f2`.
 > **READ-ONLY — nenhum código/spec/config foi alterado.** Todos os itens aguardam deliberação antes de qualquer ação. NÃO re-reporta QA-01/QA-14 (resolvidos na s12).
-> **Run E2E:** 248✅ / 9❌ / 19skip (7m30s, chromium serial). Evidência bruta: `docs/auditoria-critica-2026-06-13-qa.txt`.
+> **Run E2E:** 248✅ / 9❌ / 19skip (7m30s, chromium serial). Evidência bruta: `docs/auditorias/auditoria-critica-2026-06-13-qa.txt`.
 > **Postura de segurança:** base SÓLIDA — guards `ownerId === session.user.id → 403` consistentes em 30+ rotas (tese do ADR-009 validada; nenhum IDOR explorável em GET/PATCH de bookings/items/users). **Arquitetura:** nota **A−** (disciplina de `after()`, `PlatformConfig` e CSP-com-nonce confirmadas).
 > IDs: `SEC-*` segurança · `ARQ-*` arquitetura · `QA-*` qa/e2e. ⊕ = item deduplicado (mesmo achado por +1 eixo).
 > ⚠️ Achados são reportados como os subagentes os classificaram. O orquestrador NÃO os reverificou linha-a-linha — ver "Notas do orquestrador" ao final para confiança e ordem sugerida de verificação.

@@ -1,9 +1,9 @@
 # RASCUNHO — Reescrita da Central de Ajuda: Stripe → Mercado Pago
 
-> **RASCUNHO GATED — nao publicar.** Este documento mapeia, trecho a trecho, as alteracoes necessarias em `app/ajuda/page.tsx` para refletir o modelo de pagamentos via Mercado Pago (PSP licenciado, Modelo B/split). Aplicar ao codigo somente apos: parecer FORMAL recebido e validado + contrato MP assinado + conta PJ ativa + Termos/Politica publicados + checklist 100%. Ver [`checklist-conformidade-juridica.md`](checklist-conformidade-juridica.md), itens 1 e 9.
+> **RASCUNHO GATED — nao publicar.** Este documento mapeia, trecho a trecho, as alteracoes necessarias em `app/ajuda/page.tsx` para refletir o modelo de pagamentos via Mercado Pago (PSP licenciado, Modelo B/split). Aplicar ao codigo somente apos: parecer FORMAL recebido e validado + contrato MP assinado + conta PJ ativa + Termos/Politica publicados + checklist 100%. Ver [`juridico/checklist-conformidade-juridica.md`](juridico/checklist-conformidade-juridica.md), itens 1 e 9.
 
 **Data:** 2026-06-30 (s41)
-**Base:** [`parecer-juridico-revisado-mp.md`](parecer-juridico-revisado-mp.md) + auditoria da Central de Ajuda (item 9 do checklist) + pagina atual `app/ajuda/page.tsx`.
+**Base:** [`juridico/parecer-juridico-revisado-mp.md`](juridico/parecer-juridico-revisado-mp.md) + auditoria da Central de Ajuda (item 9 do checklist) + pagina atual `app/ajuda/page.tsx`.
 
 ---
 
@@ -219,7 +219,7 @@ O art. 18, paragrafo 3o, da LGPD nao fixa prazo de 15 dias para a exclusao efeti
 
 **Justificativa:** (a) distinguir prazo de resposta (15 dias — SLA interno alinhado ao art. 19) de prazo de exclusao efetiva (imediata no processamento tecnico); (b) manter a transparencia sobre retencao fiscal; (c) alinhar com o RIPD.
 
-**Status:** CONSULTAR ADVOGADA — confirmar a redacao exata e o SLA de 15 dias como prazo de resposta/processamento. Verificar alinhamento com [`rascunho-ripd.md`](rascunho-ripd.md) Secao D.4 e G.
+**Status:** CONSULTAR ADVOGADA — confirmar a redacao exata e o SLA de 15 dias como prazo de resposta/processamento. Verificar alinhamento com [`juridico/rascunho-ripd.md`](juridico/rascunho-ripd.md) Secao D.4 e G.
 
 ---
 
@@ -236,7 +236,7 @@ A afirmacao e factualmente incorreta. O ShareO transmite dados para: Mercado Pag
 **Texto proposto:**
 > "Seguimos integralmente a Lei Geral de Protecao de Dados (LGPD — Lei 13.709/2018) e coletamos apenas os dados necessarios para o funcionamento da plataforma. Voce pode solicitar acesso, correcao, portabilidade ou exclusao dos seus dados a qualquer momento em 'Meu Perfil > Privacidade e dados'. Os dados necesarios para processar pagamentos sao compartilhados com o **Mercado Pago** (nosso parceiro de pagamentos, que atua como operador de dados financeiros). Dados minimos sao transmitidos a outros prestadores de infraestrutura (hospedagem, e-mail transacional e monitoramento de erros), sempre sob acordo de confidencialidade. Nao vendemos seus dados pessoais. Consulte nossa **Politica de Privacidade** para a lista completa."
 
-**Justificativa:** transparencia LGPD (art. 6 VI + art. 18 VII); eliminar afirmacao falsa. A Politica de Privacidade revisada (ver [`draft-clausulas-mp-termos-privacidade.md`](draft-clausulas-mp-termos-privacidade.md) Secao B.1 e B.2) deve listar os subprocessadores nominalmente.
+**Justificativa:** transparencia LGPD (art. 6 VI + art. 18 VII); eliminar afirmacao falsa. A Politica de Privacidade revisada (ver [`juridico/draft-clausulas-mp-termos-privacidade.md`](juridico/draft-clausulas-mp-termos-privacidade.md) Secao B.1 e B.2) deve listar os subprocessadores nominalmente.
 
 **Status:** CORRECAO OBRIGATORIA — submeter a advogada para validar a lista de subprocessadores declarada e a redacao da ressalva.
 
@@ -315,7 +315,7 @@ Ao aplicar as correcoes em `app/ajuda/page.tsx`:
 2. Todos os textos estao em constantes no inicio do arquivo (`LOCATARIO_STEPS`, `LOCADOR_STEPS`, `SECTIONS`, `buildFeeTable`). A substituicao e cirurgica por constante.
 3. Se a linha de "seguro" for removida (Opcao B do Item 6), deletar apenas a entrada correspondente no array de `buildFeeTable()`.
 4. A taxa de servico e sempre lida de `getPlatformFeeRate()` — nunca hardcodar 15%.
-5. Ao publicar: bumpar `CONSENT_VERSION` em `lib/legal-config.ts` para disparar reaceite dos usuarios (ver [`draft-clausulas-mp-termos-privacidade.md`](draft-clausulas-mp-termos-privacidade.md), Secao C).
+5. Ao publicar: bumpar `CONSENT_VERSION` em `lib/legal-config.ts` para disparar reaceite dos usuarios (ver [`juridico/draft-clausulas-mp-termos-privacidade.md`](juridico/draft-clausulas-mp-termos-privacidade.md), Secao C).
 6. O valor {feePct} nos textos propostos deve ser interpolado dinamicamente (ja e o padrao atual do arquivo).
 
-> Rastreado em [`checklist-conformidade-juridica.md`](checklist-conformidade-juridica.md) item 9. Relacionado: [`draft-clausulas-mp-termos-privacidade.md`](draft-clausulas-mp-termos-privacidade.md), [`spec-arrependimento-art49.md`](spec-arrependimento-art49.md), [`docs-redline-ripd.md`](docs-redline-ripd.md).
+> Rastreado em [`juridico/checklist-conformidade-juridica.md`](juridico/checklist-conformidade-juridica.md) item 9. Relacionado: [`juridico/draft-clausulas-mp-termos-privacidade.md`](juridico/draft-clausulas-mp-termos-privacidade.md), [`juridico/spec-arrependimento-art49.md`](juridico/spec-arrependimento-art49.md), [`docs-redline-ripd.md`](docs-redline-ripd.md).

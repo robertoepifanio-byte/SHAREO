@@ -1,6 +1,6 @@
 // Fonte: components/items/ItemForm.tsx (modo "edit") + app/itens/[id]/editar/page.tsx
 // Transcrição literal campo a campo do formulário de edição do site (protocolo
-// meta-app-android-retranscricao-s41.md). Estrutura idêntica a apps/mobile/app/itens/novo.tsx,
+// docs/planos/meta-app-android-retranscricao-s41.md). Estrutura idêntica a apps/mobile/app/itens/novo.tsx,
 // com as diferenças do modo "edit" documentadas abaixo.
 //
 // Diferenças intencionais vs. modo create (novo.tsx):

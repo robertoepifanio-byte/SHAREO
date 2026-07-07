@@ -721,7 +721,7 @@ test.describe("F09 — Chat in-app", () => {
 **Critério de prioridade**: implementar as rotas que permitem completar o fluxo `home → busca → detalhe → cadastro → login → solicitar aluguel → chat`.
 
 #### Sprint 0.5 — Setup técnico (pré-feature)
-Itens do checklist `revisao-pre-sprint1.md` que desbloqueiam o desenvolvimento:
+Itens do checklist `auditorias/revisao-pre-sprint1.md` que desbloqueiam o desenvolvimento:
 - Estrutura de pastas (`app/`, `components/`, etc.)
 - `tailwind.config.ts` com tokens corrigidos (contraste CTA)
 - `components/ui/` com shadcn/ui instalado

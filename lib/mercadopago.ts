@@ -10,7 +10,7 @@
  * `assertMercadoPagoActive()` passar.
  *
  * Decisão: ADR-026 (supersede ADR-012). Nada vai a produção antes do D4 (parecer FORMAL).
- * Como obter as credenciais: docs/mercadopago-procedimentos-fundadores.md
+ * Como obter as credenciais: docs/juridico/mercadopago-procedimentos-fundadores.md
  */
 import { MercadoPagoConfig, OAuth, Preference, Payment } from "mercadopago"
 import { APP_URL } from "@/lib/app-url"
@@ -88,7 +88,7 @@ export async function isMercadoPagoActive(): Promise<boolean> {
  * está ausente (produção), retorna null → comportamento normal (decrypt do banco).
  * Duplamente protegido: só atua com a flag `mercadoPagoEnabled` ON E este env setado.
  *
- * TODO(go-live): remover bypass MP_SANDBOX_SELLER_TOKEN — ver docs/mp-pendencias-go-live.md
+ * TODO(go-live): remover bypass MP_SANDBOX_SELLER_TOKEN — ver docs/juridico/mp-pendencias-go-live.md
  * Cheklist: (1) remover env `MP_SANDBOX_SELLER_TOKEN` do Vercel/GitHub Secrets,
  * (2) remover este helper, (3) remover call sites em /api/mp/webhook e /api/payments/mp/checkout,
  * (4) resetar campos mp* das contas teste_pj_01..10 criadas com a chave local de sandbox.
