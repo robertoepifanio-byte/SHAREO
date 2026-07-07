@@ -438,7 +438,7 @@ Usar `festas v2.jpeg` e `modas v2.jpeg` (versões revisadas). Converter todos os
 **Conversão WebP** (rodar uma vez antes do primeiro commit):
 ```bash
 # Requer cwebp instalado (libwebp)
-for f in icones/*.jpeg; do cwebp "$f" -o "public/images/categorias/$(basename "${f%.jpeg}" | tr ' ' '-' | tr '[:upper:]' '[:lower:]').webp"; done
+for f in assets-fonte/icones/*.jpeg; do cwebp "$f" -o "public/images/categorias/$(basename "${f%.jpeg}" | tr ' ' '-' | tr '[:upper:]' '[:lower:]').webp"; done
 ```
 
 **Uso no `CategoryGrid`**:

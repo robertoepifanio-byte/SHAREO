@@ -4,8 +4,8 @@
  * Meta: 50 usuários simultâneos, P95 < 1s, taxa de erro < 1%.
  *
  * Rodar (k6 instalado: https://k6.io/docs/get-started/installation/):
- *   k6 run k6/load-items.js                                  # contra staging
- *   k6 run -e BASE_URL=http://localhost:3000 k6/load-items.js # contra dev local
+ *   k6 run load/load-items.js                                  # contra staging
+ *   k6 run -e BASE_URL=http://localhost:3000 load/load-items.js # contra dev local
  *
  * ⚠️ SKIP_RATE_LIMIT precisa estar ativo no alvo, senão o rate limit
  *    do Upstash derruba o teste com 429 (20 req/10s por IP).
