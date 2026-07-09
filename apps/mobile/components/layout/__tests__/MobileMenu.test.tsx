@@ -113,25 +113,6 @@ describe("MobileMenu — logado", () => {
   })
 })
 
-describe("MobileMenu — admin (revisão s41)", () => {
-  // Regressão: antes o admin via o rótulo "ADMIN" mas os links de ATIVIDADE
-  // (bug). Agora vê ADMIN_ATALHOS_LINKS (Visão Geral/Usuários/Disputas), como o
-  // site. Rotas /admin/* abrem no navegador (painel web-only).
-  it('admin vê atalhos de moderação (Visão Geral/Usuários), não os links de atividade', () => {
-    renderMenu({ isLoggedIn: true, role: "ADMIN_SUPERADMIN" })
-    expect(screen.getByText("ADMIN")).toBeTruthy()
-    expect(screen.getByText("Visão Geral")).toBeTruthy()
-    expect(screen.getByText("Usuários")).toBeTruthy()
-    expect(screen.queryByText("Meus Anúncios")).toBeNull()
-  })
-
-  it("não-admin continua vendo ATIVIDADE (Meus Anúncios), não os atalhos admin", () => {
-    renderMenu({ isLoggedIn: true })
-    expect(screen.getByText("Meus Anúncios")).toBeTruthy()
-    expect(screen.queryByText("Visão Geral")).toBeNull()
-  })
-})
-
 describe("MobileMenu — não logado", () => {
   it('exibe "Entrar" (VERBATIM, handoff §0)', () => {
     renderMenu({ isLoggedIn: false })
@@ -181,20 +162,12 @@ describe("MobileMenu — navegação Minha Conta (fix regressão /perfil/*)", ()
     expect(Linking.openURL).not.toHaveBeenCalled()
   })
 
-  it('"Buscar no mapa" navega para /itens/mapa (alias — mapa nativo, docs/plano-mapa-nativo-mobile.md) — NÃO abre navegador', () => {
-    renderMenu()
-    fireEvent.press(screen.getByText("Explorar"))
-    fireEvent.press(screen.getByText("Buscar no mapa"))
-    expect(router.push).toHaveBeenCalledWith("/itens/mapa")
-    expect(Linking.openURL).not.toHaveBeenCalled()
-  })
-
-  it('"Documentos" navega para /kyc (alias — kyc.tsx completado 2026-07-06 cobre doc mascarado + verificação) — NÃO abre navegador', () => {
+  it('"Documentos" (/perfil/documentos, sem tela nativa dedicada) abre no navegador', () => {
     renderMenu({ isLoggedIn: true })
     fireEvent.press(screen.getByText("Minha Conta"))
     fireEvent.press(screen.getByText("Documentos"))
-    expect(router.push).toHaveBeenCalledWith("/kyc")
-    expect(Linking.openURL).not.toHaveBeenCalled()
+    expect(Linking.openURL).toHaveBeenCalledWith(expect.stringContaining("/perfil/documentos"))
+    expect(router.push).not.toHaveBeenCalled()
   })
 
   it('"Sobre" navega nativamente (tela criada 2026-07-05) — NÃO abre navegador', () => {

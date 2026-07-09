@@ -114,7 +114,7 @@ O deploy em produção requer aprovação manual de um reviewer antes de ser exe
 3. Na environment `production`, ative:
    - **Required reviewers**: adicione os aprovadores autorizados (Gestor de Projeto + Tech Lead)
    - **Wait timer**: opcional — 0 minutos para o MVP
-   - **Deployment branches**: restrinja para `main` e padrão `v*` (tags de release)
+   - **Deployment branches**: restrinja para `main` e padrão `web-v*` (tags de release web — ver ADR-027; **atenção:** `v*` NÃO casa `web-v*`, então o padrão precisa ser `web-v*` senão a proteção rejeita a tag de produção)
 
 ---
 

@@ -93,7 +93,7 @@ Nenhuma ação de código pendente; destravam no sign-off. Preparação paralela
 | # | Item | Status |
 |---|---|---|
 | P-1 | Verificação de contas PIX (1.6) | `docs/juridico/processo-verificacao-pix.md` + accordion checklist em `/admin/financeiro/contas-pix` |
-| P-2 | k6 load test (9.5) — 50 VUs, P95 < 1s | `k6/load-items.js` + `vercel.json` `regions:["gru1"]` |
+| P-2 | k6 load test (9.5) — 50 VUs, P95 < 1s | `load/load-items.js` + `vercel.json` `regions:["gru1"]` |
 | P-3 | KPIs GA4 (11.1) | `TrackEvent.tsx` + 6 eventos customizados |
 | P-4 | Cupom 10% off por avaliar (7.4) | `Coupon` model + migration + `lib/coupons.ts` + checkout com absorção na taxa |
 | P-5 | Dicas para anfitriões (5.6) | Accordion em `/ajuda#dicas-anfitrioes` + link no HelpButton |

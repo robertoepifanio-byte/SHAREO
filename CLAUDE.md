@@ -181,7 +181,6 @@ URL de cópia para usuários: `https://docs.google.com/spreadsheets/d/{ID}/copy`
 1. **Linhas de exemplo** — 2 linhas já inseridas (Furadeira/Ferramentas + Projetor/Eletrônicos)
 2. **Dropdown `categoria`** (C2:C1000) → Dados → Validação → Lista:
    `Ferramentas,Eletrônicos,Construção,Esporte/Lazer,Festas,Eletrodomésticos`
-   (⚠️ requer edição manual no Google Sheets — nome renomeado 2026-07-06, "Esporte"→"Esporte/Lazer")
 3. **Dropdown `condicao`** (G2:G1000) → Dados → Validação → Lista:
    `NOVO,EXCELENTE,BOM,REGULAR`
 4. **Moeda R$** (D2:F1000) → Formatar → Número → Personalizado: `R$ #.##0,00`
@@ -199,4 +198,4 @@ Commit `0fc0480`. Staging validado (smokes #1–#32 passando). Aguardando **D4**
 
 Scripts temporários deletados ✅ (2026-06-12). Hardcoded P0 movidos para PlatformConfig ✅.
 
-Próximos passos: aguardar D4 → criar Supabase production → tag v1.1.0.
+Próximos passos: aguardar D4 → criar Supabase production → tag `web-v1.12.0` (convenção de release por plataforma — `web-v*` produção web, `mobile-v*` build EAS; ver ADR-027).

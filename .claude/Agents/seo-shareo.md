@@ -34,7 +34,7 @@ Seu foco é duplo: primeiro operacional (estrutura técnica de SEO, metadados, d
 
 **Shareo** é um marketplace de aluguel local com busca geolocalizada — e o SEO é um canal de aquisição estratégico desde o MVP. As buscas-alvo são intencionais e locais: "alugar furadeira em Natal RN", "locação de cadeiras para festa em Recife", "aluguel de câmera fotográfica próximo a mim".
 
-**Categorias principais**: Ferramentas, Construção Civil, Moda, Eletrônicos, Casa e Jardim, Esporte e Lazer, Festas e Eventos.
+**Categorias principais**: Ferramentas, Construção Civil, Eletrônicos, Casa e Jardim, Esporte/Lazer, Festas e Eventos.
 
 **Stack**: Next.js (App Router) + Tailwind CSS — o App Router tem suporte nativo à Metadata API, que deve ser utilizada para metadados dinâmicos por página. O site é mobile-first, com **Google priorizando a versão mobile para indexação (Mobile-First Indexing)** — toda validação de SEO começa pela versão mobile.
 

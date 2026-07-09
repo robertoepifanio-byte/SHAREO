@@ -160,15 +160,15 @@ export default function HomeScreen() {
         </Text>
 
         {/* Hero image — fonte: app/page.tsx linha ~159
-            <Image src="/logos/hero-items.webp" width={1100} height={702}
+            <Image src="/logos/hero-carro-moto.webp" width={1346} height={820}
                    className="h-auto w-[230px]" priority />
-            Dimensões mobile: w=230px, h≈147px (proporção 1100/702 ≈ 1.567) */}
+            Dimensões mobile: w=230px, h≈140px (proporção 1346/820 ≈ 1.641) */}
         <Image
           // eslint-disable-next-line @typescript-eslint/no-require-imports
-          source={require("../../assets/hero-items.webp")}
+          source={require("../../assets/hero-carro-moto.webp")}
           style={styles.heroImage}
           resizeMode="contain"
-          accessibilityLabel="Itens disponíveis para alugar no ShareO: furadeira, câmera, caixa de som, bicicleta, escada e projetor."
+          accessibilityLabel="Itens disponíveis para alugar no ShareO: carro, moto, furadeira, câmera, caixa de som, projetor, bicicleta e escada."
         />
 
         <Text style={styles.subtitle}>Tudo perto de você.</Text>
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
   // Dimensões: 230px × 147px (proporção 1100/702 ≈ 1.567)
   heroImage: {
     width: 230,
-    height: 147,
+    height: 140,
     alignSelf: "center",
     marginTop: 16,
     marginBottom: 4,

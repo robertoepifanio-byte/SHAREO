@@ -121,7 +121,7 @@ As **5 questões-núcleo** (formato pronto de envio) estão em [`docs/juridico/d
 - **Ativação real de pagamentos** e troca do PIX de teste pela **conta PJ oficial**.
 - **DNS/domínio** de produção (`shareo.com.br`).
 - Captação de usuários reais / início da operação comercial.
-- **Tag de release `v1.x`** (go-live).
+- **Tag de release `web-v1.x`** (go-live).
 
 ---
 

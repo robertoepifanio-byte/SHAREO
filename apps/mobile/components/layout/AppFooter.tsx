@@ -20,26 +20,33 @@ import { API_URL } from "@/lib/api"
 // Atualizar junto com o bump de versão do app.
 const APP_VERSION = "1.0.0"
 
-// Rotas nativas do app — para essas usa router.push(); demais abrem no browser.
-// Revisão s41: incluídas /perfil, /sobre (tinham tela nativa mas abriam o
-// navegador) e o alias /cadastro→/register (cadastro nativo).
-const NATIVE_ROUTES = new Set([
-  "/explorar", "/itens/novo", "/reservas", "/mensagens",
-  "/login", "/perfil", "/sobre", "/register",
-])
-// Aliases: href do site → rota nativa equivalente (nome diverge).
+// Roteamento espelhando MobileMenu.tsx: por padrão navega NATIVO (router.push);
+// só os hrefs que realmente não têm tela nativa caem no navegador.
+// Fix 2026-07-09 (device): a lista invertida NATIVE_ROUTES estava defasada e
+// mandava Sobre / Meu perfil / Criar conta — que JÁ têm tela nativa — pro
+// navegador. Só é externo o que o app ainda não transcreveu.
+// 2026-07-09 (2ª leva): Sobre já era nativo; agora Comunidade, Como ganhar,
+// Termos, Privacidade, Segurança e Central de ajuda ganharam tela nativa —
+// saíram do EXTERNAL_ONLY. Todos os links do rodapé navegam nativamente.
+const EXTERNAL_ONLY_PREFIXES: string[] = []
+const EXTERNAL_ONLY_ROUTES = new Set<string>([])
+// Hrefs do site cujo caminho nativo tem outro nome (a tela EXISTE, só o path diverge).
 const ROUTE_ALIASES: Record<string, string> = {
-  "/itens":    "/explorar", // Explorar itens
-  "/cadastro": "/register", // Criar conta → tela nativa (auth)/register
+  "/itens":    "/explorar", // tela nativa equivalente ao /itens do site
+  "/cadastro": "/register", // arquivo real: app/(auth)/register.tsx (transcrito no PR #208)
+}
+
+function isExternalOnly(href: string): boolean {
+  return EXTERNAL_ONLY_ROUTES.has(href) || EXTERNAL_ONLY_PREFIXES.some((p) => href.startsWith(p))
 }
 
 function openLink(href: string) {
-  const native = ROUTE_ALIASES[href] ?? href
-  if (NATIVE_ROUTES.has(native)) {
-    router.push(native as Parameters<typeof router.push>[0])
-  } else {
+  if (isExternalOnly(href)) {
     Linking.openURL(`${API_URL}${href}`)
+    return
   }
+  const resolved = ROUTE_ALIASES[href] ?? href
+  router.push(resolved as Parameters<typeof router.push>[0])
 }
 
 // ── Ícones dos selos de confiança — transcritos verbatim de AppFooter.tsx do site ──

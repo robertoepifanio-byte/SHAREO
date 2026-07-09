@@ -215,7 +215,7 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
           >
             <ul className="container py-3 flex flex-col gap-1">
 
-              {/* Tema — movido para o topo, acima de Início (decisão fundador, 2026-07-06) */}
+              {/* Tema — acima do Início (posição definida pelo fundador 2026-07-09) */}
               <li className="px-0 py-1">
                 <p className="px-4 pb-1 pt-2 text-xs font-semibold text-white/80 uppercase tracking-wider">
                   Tema
@@ -227,6 +227,8 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
               <li>
                 <NavLink href="/" className={topItem}>Início</NavLink>
               </li>
+
+              {/* Sobre foi movido para logo acima do Sair/Entrar (fundador 2026-07-09) */}
 
               <li><div className="my-1 h-px bg-white/10" /></li>
 
@@ -355,8 +357,13 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
                     </>
                   )}
 
-                  {/* Sair */}
+                  {/* Sobre — acima do Sair (fundador 2026-07-09) */}
                   <li><div className="my-1 h-px bg-white/10" /></li>
+                  <li>
+                    <NavLink href="/sobre" className={topItem}>Sobre</NavLink>
+                  </li>
+
+                  {/* Sair */}
                   <li>
                     <button
                       type="button"
@@ -410,7 +417,13 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
 
               {!isLoggedIn && (
                 <>
+                  {/* Sobre — acima do Entrar (fundador 2026-07-09) */}
                   <li><div className="my-1 h-px bg-white/10" /></li>
+                  <li>
+                    <NavLink href="/sobre" className={topItem}>Sobre</NavLink>
+                  </li>
+
+                  {/* Entrar */}
                   <li>
                     <NavLink href="/login" className={topItem}>Entrar</NavLink>
                   </li>
@@ -450,12 +463,6 @@ export function MobileMenu({ isLoggedIn, role }: Props) {
                   </li>
                 </>
               )}
-
-              {/* Sobre — movido para o final (decisão fundador, 2026-07-06) */}
-              <li><div className="my-1 h-px bg-white/10" /></li>
-              <li>
-                <NavLink href="/sobre" className={topItem}>Sobre</NavLink>
-              </li>
             </ul>
           </nav>
         </>

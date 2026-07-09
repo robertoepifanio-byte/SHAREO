@@ -1,7 +1,12 @@
-// Fonte: app/itens/page.tsx linhas 288-330 + components/ui/CategoryIcon.tsx
-// Transcrição literal — pill horizontal com PNG real (não SVG recriado) + label
-// de 2 linhas empilhado ao lado. Corrige transcrição anterior que inventou um
-// card vertical com fundo colorido/SVG de linha (achado em teste de device real).
+// Fonte: app/itens/page.tsx linhas 288-330 (chips de categoria do Explorar) + CategoriasSection.tsx (Início)
+// Card vertical: PNG real em cima + rótulo (até 2 linhas) embaixo, centralizado.
+// Correção 2026-07-09: a variante "pill horizontal" (rótulo AO LADO) com ícone 96px
+// cortava o rótulo no Android — o ícone ocupava toda a largura/altura do chip e o
+// rótulo era empurrado pra fora da ScrollView (confirmado em device via build EAS limpo).
+// Ajuste 2026-07-09 (2): chip com largura do CONTEÚDO (não fixa) → o ícone centraliza
+// sobre o rótulo. Antes, com largura fixa 96px, rótulos longos ("Eletrodomésticos")
+// transbordavam pra direita e o ícone parecia encostado à esquerda. Rótulo multi-palavra
+// quebra em 2 linhas (split ao meio) pra manter o chip compacto.
 
 import React from "react"
 import { View, Text, Pressable, StyleSheet } from "react-native"
@@ -16,8 +21,6 @@ const ICON_SOURCES: Record<string, number> = {
   "esporte":     require("../../assets/icons/esporte.png"),
   "ferramentas": require("../../assets/icons/ferramentas.png"),
   "festas":      require("../../assets/icons/festas.png"),
-  // "moda" removida — categoria excluída da plataforma (commit 815808d). O
-  // require estático quebraria o bundle se o PNG fosse deletado. Revisão s41.
 }
 
 interface CategoryChipProps {
@@ -30,7 +33,8 @@ interface CategoryChipProps {
 export function CategoryChip({ slug, label, active = false, onPress }: CategoryChipProps) {
   const { tokens } = useTheme()
   const icon = ICON_SOURCES[slug]
-  // Label em até 2 linhas — fonte: page.tsx linhas 322-330 (split ao meio das palavras)
+  // Rótulo multi-palavra quebra ao meio em 2 linhas (mantém o chip compacto).
+  // Fonte: page.tsx linhas 322-330.
   const words = label.split(" ")
   const mid = Math.ceil(words.length / 2)
   const line1 = words.length > 1 ? words.slice(0, mid).join(" ") : label
@@ -44,29 +48,18 @@ export function CategoryChip({ slug, label, active = false, onPress }: CategoryC
       accessibilityLabel={label}
       style={({ pressed }) => [
         styles.chip,
-        active
-          ? styles.chipActive
-          : [styles.chipInactive, { borderColor: tokens.border, backgroundColor: tokens.surface }],
         pressed && styles.chipPressed,
       ]}
     >
-      {/* Fundo branco fixo (não themed) atrás do ícone — achado 2026-07-06: os
-          PNGs "todas.png" e "casa-jardim.png" não têm círculo branco opaco
-          embutido (ao contrário de construcao/eletronicos/esporte/festas, que
-          têm), então no modo escuro o fundo do chip (escuro) aparecia atrás
-          deles. Os PNGs com círculo próprio ficam com essa View coberta —
-          sem efeito visual nesses casos. */}
       {icon && (
-        <View style={styles.iconBg}>
-          <Image source={icon} style={styles.icon} contentFit="contain" accessibilityLabel="" />
-        </View>
+        <Image source={icon} style={styles.icon} contentFit="contain" accessibilityLabel="" />
       )}
       <View style={styles.labelWrap}>
-        <Text style={[styles.label, { color: active ? tokens.success : tokens.muted }]} numberOfLines={1}>
+        <Text style={[styles.label, { color: active ? tokens.green : tokens.muted }]} numberOfLines={1}>
           {line1}
         </Text>
         {line2 ? (
-          <Text style={[styles.label, { color: active ? tokens.success : tokens.muted }]} numberOfLines={1}>
+          <Text style={[styles.label, { color: active ? tokens.green : tokens.muted }]} numberOfLines={1}>
             {line2}
           </Text>
         ) : null}
@@ -76,48 +69,23 @@ export function CategoryChip({ slug, label, active = false, onPress }: CategoryC
 }
 
 const styles = StyleSheet.create({
-  // "inline-flex flex-shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5" — page.tsx:298
+  // Sem largura fixa: o chip encolhe/cresce com o conteúdo (rótulo) e o ícone
+  // centraliza sobre ele (alignItems center). paddingHorizontal separa os chips.
   chip: {
-    flexDirection:     "row",
+    flexShrink:        0,
     alignItems:        "center",
     gap:               6,
-    borderRadius:      999,
-    borderWidth:       1,
-    paddingHorizontal: 12,
-    paddingVertical:   6,
-    minHeight:         44,
+    paddingVertical:   4,
+    paddingHorizontal: 8,
   },
-  // "border-brand bg-brand/10 text-brand" — page.tsx:300
-  chipActive:   { borderColor: "#007B3C", backgroundColor: "rgba(0,123,60,0.10)" },
-  // "border-border bg-surface text-muted-foreground" — page.tsx:301
-  chipInactive: { borderColor: "#E2E8F0", backgroundColor: "#FFFFFF" },
-  chipPressed:  { opacity: 0.8 },
-  // size={96} no site — page.tsx:304,321. Decisão do fundador 2026-07-05:
-  // ícones de Explorar aumentados pra ficarem parecidos com os de Início
-  // (que já usam 96 — app/page.tsx:280) — mudança feita nos dois lados
-  // (site + mobile), não é mais uma divergência mobile-only.
-  icon: { width: 96, height: 96 },
-  // Ver comentário no JSX — cobre PNGs sem círculo branco opaco embutido.
-  iconBg: {
-    width:           96,
-    height:          96,
-    borderRadius:    48,
-    backgroundColor: "#FFFFFF",
-    alignItems:      "center",
-    justifyContent:  "center",
-  },
-  labelWrap: {
-    // "flex flex-col items-center leading-tight text-center max-w-[72px]" —
-    // page.tsx:305,322. maxWidth ausente era a causa real da distribuição
-    // "desproporcional" reportada testando ao vivo: sem o teto de 72px, o
-    // rótulo mais longo (ex. "Casa e Jardim") deixava aquele chip bem mais
-    // largo que os outros, quebrando o ritmo visual da fila inteira.
-    alignItems: "center",
-    maxWidth:   84,
-  },
+  chipPressed: { opacity: 0.7 },
+  // 80px — decisão do fundador (2026-07-09): ícones maiores que o Início (64px).
+  icon: { width: 80, height: 80 },
+  labelWrap: { alignItems: "center" },
   label: {
-    fontSize:   11,
+    fontSize:   12,
     fontWeight: "600",
-    lineHeight: 13,
+    lineHeight: 15,
+    textAlign:  "center",
   },
 })

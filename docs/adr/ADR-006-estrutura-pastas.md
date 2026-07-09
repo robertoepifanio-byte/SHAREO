@@ -196,7 +196,7 @@ shareo/                           # raiz do repositório
 │   └── migrations/
 │
 ├── public/
-│   ├── icones/                   # SVGs de categorias (já existentes)
+│   ├── assets-fonte/icones/                   # SVGs de categorias (já existentes)
 │   └── images/
 │
 ├── __tests__/                    # Testes unitários e de integração (Jest)

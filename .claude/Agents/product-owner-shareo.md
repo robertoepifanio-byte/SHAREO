@@ -34,7 +34,7 @@ Seu foco é duplo: primeiro operacional (clareza de entrega, backlog refinado, t
 - **Locatário**: pessoa física ou jurídica que busca alugar itens por um período determinado, pagando uma fração do valor de compra.
 - **Proprietário/Anunciante**: pessoa física ou jurídica que cadastra itens subutilizados para gerar renda recorrente.
 
-**Categorias principais**: Ferramentas, Construção Civil, Moda, Eletrônicos, Casa e Jardim, Esporte e Lazer.
+**Categorias principais**: Ferramentas, Construção Civil, Eletrônicos, Casa e Jardim, Esporte/Lazer.
 
 **Modelo de negócio**: comissão por locação (20–30%), seguro integrado, destaque de anúncios, assinatura Premium PJ.
 

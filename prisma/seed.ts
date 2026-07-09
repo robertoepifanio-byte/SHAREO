@@ -8,7 +8,7 @@ const categories = [
   { slug: "eletronicos", name: "Eletrônicos", icon: "Eletronicos.png" },
   { slug: "casa-jardim", name: "Eletrodomésticos", icon: "casa-jardim.jpeg" },
   { slug: "construcao",  name: "Construção",   icon: "Construção.png"  },
-  { slug: "esporte",     name: "Esporte/Lazer", icon: "Esporte.png"     },
+  { slug: "esporte",     name: "Esporte/Lazer", icon: "Esporte.png"    },
   { slug: "festas",      name: "Festas",       icon: "Festas.png"      },
 ]
 

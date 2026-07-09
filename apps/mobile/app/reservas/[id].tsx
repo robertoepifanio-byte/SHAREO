@@ -5,7 +5,7 @@
 // StyleSheet + tokens (useTheme) — migrado de className NativeWind para garantir
 // compatibilidade com todos os bundles de produção.
 
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Linking, StyleSheet, Modal, TextInput, Image as RNImage } from "react-native"
+import { View, Text, ScrollView, RefreshControl, TouchableOpacity, ActivityIndicator, Alert, Linking, StyleSheet, Modal, TextInput, Image as RNImage } from "react-native"
 import { useState, useEffect, useRef, useCallback } from "react"
 import { router, useLocalSearchParams } from "expo-router"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -235,7 +235,7 @@ export default function BookingDetailScreen() {
   const [cioError, setCioError] = useState<Record<string, string>>({})
 
   // Todos os hooks ANTES de qualquer return condicional (protocolo item 4)
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isRefetching, refetch } = useQuery({
     queryKey: ["booking", id],
     queryFn:  () => apiFetch<{ data: BookingDetail }>(`/api/bookings/${id}`),
     enabled:  !!id && !!user,
@@ -446,18 +446,45 @@ export default function BookingDetailScreen() {
     }
   }
 
-  // ReturnChecklist — Seleciona foto da galeria (expo-image-picker)
+  // Seletor de foto: oferece CÂMERA ou GALERIA (o site usa <input type=file>, que no
+  // mobile abre os dois; o rótulo do botão promete "Tirar foto ou escolher da galeria").
+  function pickImageAsset(): Promise<ImagePicker.ImagePickerAsset | null> {
+    return new Promise((resolve) => {
+      Alert.alert("Adicionar foto", "Como você quer adicionar a foto?", [
+        {
+          text: "Tirar foto",
+          onPress: async () => {
+            const perm = await ImagePicker.requestCameraPermissionsAsync()
+            if (!perm.granted) {
+              Alert.alert("Permissão necessária", "Autorize o acesso à câmera para tirar uma foto.")
+              return resolve(null)
+            }
+            const r = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.8 })
+            resolve(!r.canceled && r.assets[0] ? r.assets[0] : null)
+          },
+        },
+        {
+          text: "Escolher da galeria",
+          onPress: async () => {
+            const perm = await ImagePicker.requestMediaLibraryPermissionsAsync()
+            if (!perm.granted) {
+              Alert.alert("Permissão necessária", "Autorize o acesso à galeria para adicionar uma foto.")
+              return resolve(null)
+            }
+            const r = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.8 })
+            resolve(!r.canceled && r.assets[0] ? r.assets[0] : null)
+          },
+        },
+        { text: "Cancelar", style: "cancel", onPress: () => resolve(null) },
+      ], { cancelable: true, onDismiss: () => resolve(null) })
+    })
+  }
+
+  // ReturnChecklist — seleciona foto (câmera ou galeria)
   // Fonte: components/booking/ReturnChecklist.tsx linhas 47-51 (handleFileChange)
   async function clPickPhoto() {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync()
-    if (!perm.granted) {
-      Alert.alert("Permissão necessária", "Autorize o acesso à galeria para adicionar uma foto.")
-      return
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.8 })
-    if (!result.canceled && result.assets[0]) {
-      setClPhotoUri(result.assets[0].uri)
-    }
+    const asset = await pickImageAsset()
+    if (asset) setClPhotoUri(asset.uri)
   }
 
   // ReturnChecklist — Confirma devolução: faz upload da foto (opcional) depois muda status
@@ -504,14 +531,8 @@ export default function BookingDetailScreen() {
   // Fonte: app/reservas/[id]/_CheckInOut.tsx linhas 22-36 (upload)
   // API: POST /api/bookings/:id/photos (FormData: phase + file)
   async function cioUpload(phase: "CHECKIN" | "CHECKOUT") {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync()
-    if (!perm.granted) {
-      Alert.alert("Permissão necessária", "Autorize o acesso à galeria para adicionar uma foto.")
-      return
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.8 })
-    if (result.canceled || !result.assets[0]) return
-    const asset = result.assets[0]
+    const asset = await pickImageAsset()
+    if (!asset) return
 
     setCioUploading((prev) => ({ ...prev, [phase]: true }))
     setCioError((prev) => ({ ...prev, [phase]: "" }))
@@ -650,7 +671,11 @@ export default function BookingDetailScreen() {
         </Text>
       </View>
 
-      <ScrollView style={s.scroll} contentContainerStyle={{ padding: 16, paddingBottom: 120 }}>
+      <ScrollView
+        style={s.scroll}
+        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} tintColor="#007B3C" />}
+      >
 
         {/* Badge de status — fonte: app/reservas/[id]/page.tsx linhas 210-224 */}
         <View

@@ -17,8 +17,6 @@ const ICON_SOURCES: Record<string, number> = {
   "esporte":     require("../../assets/icons/esporte.png"),
   "ferramentas": require("../../assets/icons/ferramentas.png"),
   "festas":      require("../../assets/icons/festas.png"),
-  // "moda" removida — categoria excluída (commit 815808d). Alinhado com o
-  // CategoryChip (que já tinha removido). Revisão s41.
 }
 
 export function CategoriasSection({ categories }: { categories: Category[] }) {
@@ -37,15 +35,8 @@ export function CategoriasSection({ categories }: { categories: Category[] }) {
             accessibilityRole="button"
             accessibilityLabel={cat.name}
           >
-            {/* Fundo branco atrás do ícone — MESMO tratamento do CategoryChip
-                (Explorar). Os PNGs "todas"/"casa-jardim" não têm círculo opaco
-                embutido; sem esse fundo o ícone de Eletrodomésticos (slug
-                casa-jardim) renderizava inconsistente na Home. Revisão s41
-                (fundador: "usar o mesmo da Explorar"). */}
             {ICON_SOURCES[cat.slug] && (
-              <View style={s.iconBg}>
-                <Image source={ICON_SOURCES[cat.slug]} style={s.icon} contentFit="contain" accessibilityLabel="" />
-              </View>
+              <Image source={ICON_SOURCES[cat.slug]} style={s.icon} contentFit="contain" accessibilityLabel="" />
             )}
             <Text style={[s.cardLabel, { color: mode === "dark" ? tokens.text : "#003366" }]} numberOfLines={2}>{cat.name}</Text>
           </TouchableOpacity>
@@ -63,17 +54,6 @@ const s = StyleSheet.create({
     minWidth: 110, flexShrink: 0, alignItems: "center", gap: 8,
     borderWidth: 2, borderColor: "#E2E8F0", borderRadius: 8,
     backgroundColor: "#FFFFFF", paddingHorizontal: 12, paddingVertical: 12,
-  },
-  // Círculo branco atrás do ícone — igual ao CategoryChip (Explorar). Cobre
-  // PNGs sem círculo opaco embutido (todas/casa-jardim); os que têm círculo
-  // próprio ficam com esta View coberta (sem efeito visual).
-  iconBg: {
-    width:           64,
-    height:          64,
-    borderRadius:    32,
-    backgroundColor: "#FFFFFF",
-    alignItems:      "center",
-    justifyContent:  "center",
   },
   icon: { width: 64, height: 64 },
   cardLabel: { fontSize: 12, fontWeight: "600", color: "#003366", textAlign: "center" },

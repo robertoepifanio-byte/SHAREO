@@ -73,6 +73,40 @@ auditado no código, sem gaps encontrados (ainda assim requer confirmação em d
 nunca ✅ sem teste ao vivo) | ❌ não testado ainda | ➡️ abre no site por decisão de
 escopo (não testar como bug).
 
+> ### ✅ Rodada de validação em device — 2026-07-09 (2ª sessão, pós-reboot)
+>
+> Além do fluxo de reserva (fim a fim) e dos 2 fixes do PR #221 (pull-to-refresh + câmera
+> CheckInOut), esta sessão varreu as **telas standalone que nunca tinham sido vistas ao
+> vivo**. Todas renderizaram corretamente, com dados reais e comportamento certo:
+>
+> - **Sobre o ShareO** ✅ — hero "Use Mais. Possua Menos.", 3 stats, Missão, Valores
+>   (Comunidade/Segurança/Acessibilidade), Equipe.
+> - **Dashboard** ✅ — 4 cards (Reservas ativas/Meus itens/Ganhos/Visualizações), Meta
+>   mensal (barra), Minhas Reservas, Sugestões. `GET /api/dashboard`. Abre sem crash
+>   (o crash `<ellipse>` de antes não reaparece).
+> - **Meus Anúncios** ✅ — abas Anúncios/Desempenho/Integrações, badges de status
+>   (Rascunho/Disponível), ações contextuais, "+ Novo anúncio".
+> - **Ver Perfil** ✅ — avatar, "Pessoa Física", bio, localização, 3 stats, Configurações.
+> - **Verificação de identidade (KYC)** ✅ — doc + selfie, aviso LGPD (AES-256-GCM),
+>   "Análise em até 2 dias úteis". Pickers usam o mesmo `expo-image-picker` já validado.
+> - **Recebimentos (Conta PIX)** ✅ — status Verificada, tipos de chave, titular, "Como
+>   funciona o repasse". **Taxa 15% é DINÂMICA** (`feeRateBps` da API, não hardcode).
+> - **Privacidade e Dados (LGPD)** ✅ — Exportar JSON (art. 20), explicações de retenção
+>   (CPF cripto, histórico fiscal, mensagens, localização), Excluir conta.
+> - **Estimativa de ganhos** ✅ — calculadora interativa (7 categorias, preço sugerido,
+>   dias/mês), resultado correto (R$210/mês → R$179 líquido → R$2.520/ano). **Taxa
+>   dinâmica** confirmada (`/api/platform-config/public`).
+> - **Dicas para Anfitriões** ✅ — guia numerado (Fotos, Descrição...), bullets + callouts.
+> - **Toggle de tema** ✅ — "Sistema" ativo com o realce translúcido correto (bg-white/15),
+>   como o `ThemeToggle.tsx` do site.
+>
+> **Único ruído (não é bug de código):** erro `Unsupported top level event type
+> "topSvgLayout"` no LogBox — mismatch entre o `react-native-svg` nativo do build EAS
+> `455bab6d` (06/07) e o JS atual. **Não-fatal** (o app funciona 100%; some com um build
+> EAS novo). **Lição pro "Como retomar":** se o dev-client tiver sumido do celular,
+> rebaixar o último build development via `npx eas-cli build:list --json` + `adb install`
+> (o eas-cli já fica logado) — o JS carrega ao vivo do Metro por cima do nativo.
+
 ### Autenticação
 | Tela | Elemento a comparar | Status |
 |---|---|---|
@@ -85,7 +119,7 @@ escopo (não testar como bug).
 |---|---|
 | BottomNav (5 abas + FAB) | 🔧 corrigido (crash `tabbar`) — re-testar cada aba abre a tela certa |
 | Menu lateral (drawer) — TODOS os 34 links | 🔧 corrigido (27 redirecionavam errado) — re-testar cada seção expansível (Explorar/Anunciar/Atividade/Minha Conta/Ajuda) |
-| Toggle de tema (Claro/Sistema/Escuro) no menu | 🔧 **bug de cor achado**: item ativo usava verde sólido `#007B3C` (citava "handoff §1.17"); o `ThemeToggle.tsx` real do site usa branco translúcido (`bg-white/15`) em ambas as variantes — corrigido a favor do código-fonte real |
+| Toggle de tema (Claro/Sistema/Escuro) no menu | ✅ **CONFIRMADO EM DEVICE 2026-07-09** — "Sistema" ativo com o realce translúcido correto (`bg-white/15`), como o `ThemeToggle.tsx` do site. (Bug anterior: item ativo usava verde sólido `#007B3C`; corrigido a favor do código-fonte real.) |
 
 ### Início (Home)
 | Seção | Status |
@@ -101,6 +135,8 @@ escopo (não testar como bug).
 | Segurança (3 pilares + taxa dinâmica) | 🔧 seção nova — conferir que a % da taxa bate com `/admin/financeiro` |
 | **TODO — Lista VIP / captação de fundadores (`ListaVIP.tsx`)** | ✅ **CONFIRMADO EM DEVICE 2026-07-03 à noite** — seção aparece corretamente. `ListaVIP.tsx` e `FounderCaptureForm.tsx`: badge "Pré-lançamento · Primeiros no Brasil", título, 4 cards, formulário com 6 estados, contador via `GET /api/founders/stats`, submit via `POST /api/founders/leads`. 2 ocorrências (seção completa + colapsado antes do rodapé). |
 | **TODO — Rodapé global (`AppFooter.tsx`)** | ✅ **CONFIRMADO EM DEVICE 2026-07-03 à noite** — rodapé aparece corretamente. Logo + tagline "Por que comprar se você pode alugar?" + "Desenvolvido por Pratika IA", 3 colunas (14 links), barra inferior com copyright + versão + 3 selos. Transcrito de `components/layout/AppFooter.tsx`. |
+| Rodapé — **navegação dos links** (achado 2026-07-09) | ✅ **CORRIGIDO + CONFIRMADO EM DEVICE 2026-07-09** — **bug real reportado pelo fundador:** links do rodapé com tela nativa (Sobre o Shareo, Meu perfil, Criar conta) abriam no **navegador** em vez de navegar nativamente. Causa: o footer usava uma allowlist invertida `NATIVE_ROUTES` (5 rotas) defasada — o oposto da lógica correta do `MobileMenu`. Fix: espelhar o `MobileMenu` (nativo por padrão + allowlist de externos + aliases `/itens→/explorar`, `/cadastro→/register`). Verificado ao vivo: **Sobre → tela nativa** ✅; **Comunidade → site no browser** (comportamento da 1ª etapa, antes das telas nativas). |
+| Rodapé — **6 telas nativas novas** (Comunidade, Como ganhar, Termos, Privacidade, Segurança, Central de ajuda) | ✅ **CRIADAS + CONFIRMADAS EM DEVICE 2026-07-09** — decisão do fundador: transcrever as 6 páginas que só abriam no site. 6 agentes em paralelo, transcrição 1:1, fiação central (os 6 saíram do `EXTERNAL_ONLY` do footer/menu; `/ajuda` ganhou âncoras via `?anchor=`). Gate: tsc 0, jest 593, `expo export android` OK. **Todas verificadas ao vivo abrindo NATIVAMENTE** (não no browser): Comunidade (+ CTA "Criar conta"→tela nativa `/register`), Como ganhar (calculadora + `Intl` pt-BR), Termos (legal verbatim), Privacidade (LGPD), Segurança (HTTPS/hash/CSP), Central de ajuda (13 seções + acordeões interativos + scroll-to-âncora). Cross-links entre as telas legais convertidos p/ `router.push`. Taxa da plataforma DINÂMICA em Como ganhar e Ajuda (`/api/platform-config/public`). 📝 Cosmético menor: em Como ganhar o valor anual quebra em 2 linhas (coluna apertada). |
 
 ### Explorar
 | Elemento | Status |
@@ -122,7 +158,7 @@ escopo (não testar como bug).
 | Modo locatário: tabs diária/semanal/mensal | ❌ não testado |
 | **Campo de data de retirada (calendário nativo)** | ✅ **CONFIRMADO EM DEVICE 2026-07-03 à noite** — calendário nativo funciona, sem crash "Date value out of bounds". Prioridade #1 resolvida |
 | Resumo de preço + aviso de teto R$500 | 🔧 auditado no código contra `_PriceCalc.tsx` (473 linhas, lido por inteiro) — breakdown corrigido (mostrava "N dias × diária" mesmo quando a tarifa semanal/mensal era aplicada internamente, divergindo do total), desconto por período estava sendo calculado mas nunca exibido, texto de transparência da taxa ausente (adicionado, taxa via `/api/stats`, nunca hardcode), campo de cupom (P3-20) ausente (adicionado, `couponCode` confirmado no schema real) |
-| Botão "Solicitar locação" | 🔧 **bug crítico achado e corrigido 2026-07-03 à noite**: `middleware.ts` só reconhecia sessão via cookie NextAuth (`getToken()`) — o app mobile autentica via header `Authorization: Bearer`, então TODA chamada mobile a `/api/bookings`, `/api/conversations`, `/api/users`, `/api/user` caía em 401 antes mesmo da rota rodar (reproduzido com curl: token recém-emitido pós-deploy já falhava). Corrigido em `middleware.ts` p/ aceitar Bearer válido em rotas protegidas não-admin (admin continua cookie-only, de propósito). **401 confirmado resolvido em device** — segue ❌ o teste fim a fim do payload/`couponCode` em si (só o bloqueio de auth foi confirmado) |
+| Botão "Solicitar locação" | ✅ **CONFIRMADO EM DEVICE 2026-07-09 (fim a fim)** — reserva criada com sucesso (Conjunto de Halteres), payload aceito, foi aprovada→paga→retirada→devolvida→concluída. O fix do 401 (middleware Bearer, 2026-07-03) segue validado. |
 | Modo proprietário: badge "Seu item" + solicitações pendentes | ❌ não testado |
 | Rules of Hooks (não deve mais dar "Rendered more hooks") | 🔧 corrigido — re-confirmar ao abrir qualquer item |
 | Badge "🌿 Eco" ao lado do rating | 🔧 auditado no código contra `page.tsx:436-438` — faltava por completo, adicionado |
@@ -137,7 +173,7 @@ escopo (não testar como bug).
 | **Calendário de disponibilidade** (`AvailabilityCalendar`) | 🔧 **implementado, PENDE confirmação em device** — `MobileAvailabilityCalendar` + `CalendarMonth` adicionados inline em `itens/[id].tsx`. Dados via `GET /api/items/[id]/availability` (endpoint já existia). Grid manual sem lib nova; mostra mês atual + próximo. Cores verbatim: verde=disponível, vermelho=ocupado, cinza=passado. Loading skeleton + erro com retry. |
 | **Grid "Itens do mesmo anunciante"** | 🔧 **implementado, PENDE confirmação em device** — API estendida (aditivo): `GET /api/items/[id]` agora retorna `ownerItems` e `similarItems`. Mobile exibe grid 2 colunas (View+chunk) reusando `ItemCard` compartilhado. Critério idêntico ao site: mesmo ownerId, AVAILABLE+isApproved, excluindo item atual. Exibido só para !isOwner (verbatim page.tsx). |
 | **Grid "Você também pode gostar"** | 🔧 **implementado, PENDE confirmação em device** — idem acima. Critério: mesma categoria + mesma cidade, excluindo item atual e itens já exibidos em ownerItems (mesmo filtro do site, page.tsx linha 688). |
-| **Carrinho multi-item `AddToRentalButton` (Story B)** | 🔧 **implementado, PENDE confirmação em device** — `MobileAddToRentalButton` + `lib/rentalCart.ts` (Zustand+AsyncStorage, substitui localStorage do site). Separador "ou" + botão entre calculadora e Trust Box. "Ver carrinho" abre via `Linking.openURL` (sem rota nativa /carrinho). Nenhuma dep nativa nova. |
+| **Carrinho multi-item `AddToRentalButton` (Story B)** | ✅ **CONFIRMADO EM DEVICE 2026-07-09** — o separador "ou" + botão "Adicionar à locação" aparecem **após escolher a data** (gated por `isReady`, como projetado; o fundador estranhou não ver antes — é o comportamento correto). `MobileAddToRentalButton` + `lib/rentalCart.ts`. |
 
 ### Anunciar (`itens/novo`)
 | Elemento | Status |
@@ -155,11 +191,11 @@ escopo (não testar como bug).
 | Card do usuário (avatar, badges, bio, localização) | 🔧 reescrito pela Frente B — nunca testado em device |
 | Estatísticas (itens/aluguéis/nota) | 🔧 **não existia** — auditado contra `perfil/page.tsx:186-203`; a Frente B tinha corretamente adiado isso (TODO próprio, não inventou), pois `/api/users/me` não retornava `_count`/reviews. Fechado nesta rodada: API estendida (`_count` + `reviewsReceived` + `avgRating`/`reviewCount`, aditivo) + 3 stat cards implementados verbatim |
 | Avaliações recebidas (últimas 5) | 🔧 **não existia** — mesmo motivo/fix acima, verbatim de `perfil/page.tsx:205-248` (`REVIEW_TYPE_LABEL`, paginação "últimas 5 de N") |
-| "Dashboard" (ícone `database`) | 🔧 corrigido (crash `<ellipse>`) — re-testar que abre sem crash |
+| "Dashboard" (ícone `database`) | ✅ **CONFIRMADO EM DEVICE 2026-07-09** — abre sem crash (o crash `<ellipse>` não reaparece); 4 cards + Meta mensal + Minhas Reservas + Sugestões, dados reais via `GET /api/dashboard`. |
 | "Meus Anúncios" | 🔧 corrigido (abre no navegador agora) |
 | "Minha Conta" — 9 submenus | 🔧 corrigido (8 de 9 abrem no navegador) — re-testar cada um. Fix adicional nesta rodada: URL hardcoded (`BASE_URL` duplicando `API_URL` de `lib/api.ts`) trocada pelo import real — eliminava risco de divergência silenciosa se o ambiente mudasse |
 | Favoritos | 🔧 **layout errado** — auditado a fundo nesta rodada (a Frente B tinha marcado "sem alterações", mas não comparou against o site de verdade): mobile usava lista de 1 coluna com card próprio; site usa grid 2 colunas com o mesmo `ItemCard` do Explorar. Corrigido + texto do empty state errado ("...para salvar" → "...para salvá-lo aqui.") + botão "Explorar itens" inventado (removido, site não tem) |
-| KYC | 🔧 auditado a fundo nesta rodada contra `_IdVerification.tsx` — box explicativo tinha título e texto inventados (paráfrase), corrigido pro texto real; citação de fonte errada corrigida ("app/kyc/page.tsx" não existe no site). Diferença arquitetural documentada (não corrigida): consentimento biométrico é descoberto reativamente no mobile vs. proativamente no site — invisível hoje pois a flag está OFF |
+| KYC | ✅ **CONFIRMADO EM DEVICE 2026-07-09** — tela renderiza correta: foto do documento + selfie com documento, box explicativo (texto real), aviso LGPD (AES-256-GCM), "Análise em até 2 dias úteis". Pickers usam o mesmo `expo-image-picker` já validado. (Auditoria anterior: box explicativo com texto inventado + fonte errada, corrigidos. Diferença arquitetural do consentimento biométrico segue invisível — flag OFF.) |
 | Sair (logout) | 🔧 auditado — mobile tem diálogo de confirmação que o site não tem (`UserDropdown.tsx` desloga direto, sem confirmar); mantido de propósito como adaptação de plataforma (proteção contra toque acidental em touchscreen), não é bug |
 
 ### Reservas
@@ -169,8 +205,9 @@ escopo (não testar como bug).
 | Lista — thumbnail do item no card | 🔧 **não existia** — auditado nesta rodada contra `reservas/page.tsx:134-145`; a API já retornava `item.images`, só faltava usar no mobile |
 | Lista — badge "+N itens" (Story B, multi-item) | 🔧 **não existia** — precisava de `_count.bookingItems`, ausente da API (`GET /api/bookings` estendido, aditivo) |
 | Lista — botão "⭐ Avaliar" | 🔧 **não existia** — mesma causa raiz (`_count.reviews` ausente da API, agora incluído). Sem isso não havia como chegar ao fluxo de avaliação pela lista |
-| Detalhe — token de retirada, avisos de status, ações (Pagar/Devolver/Confirmar/Cancelar) | 🔧 reescrita completa (hooks quebrados + cores não mapeadas) — nunca testada em device |
-| Detalhe — **bug crítico**: `paymentStatus`/timestamps de histórico ausentes da API | 🔧 **achado desta rodada**: `GET /api/bookings/[id]` nunca selecionava `paymentStatus`/`activatedAt`/`paidAt`/etc. — `canPay` sempre avaliava `true` (botão de pagar aparecia mesmo em reserva já paga) e o box de código de retirada nunca aparecia. API estendida (aditivo); **prioridade alta de re-teste** ao voltar |
+| Detalhe — token de retirada, avisos de status, ações (Pagar/Devolver/Confirmar/Cancelar) | ✅ **CONFIRMADO EM DEVICE 2026-07-09** — token de retirada, "Pago com sucesso", Devolver e a confirmação do dono (mark_active/confirm_return) todos funcionando no ciclo completo. |
+| Detalhe — **pull-to-refresh** (achado 2026-07-09) | ✅ **CONFIRMADO EM DEVICE 2026-07-09** (PR #221) — puxar para baixo mostra o **spinner verde** (`RefreshControl` ligado a `isRefetching`/`refetch`) e recarrega a reserva (verificado ao ver o status mudar Concluída→Em andamento sem sair da tela). Antes a tela de detalhe não tinha pull-to-refresh. |
+| Detalhe — **bug crítico**: `paymentStatus`/timestamps de histórico ausentes da API | ✅ **CONFIRMADO EM DEVICE 2026-07-09** — em reserva paga, o botão "Pagar" **SUMIU** (era o bug: aparecia mesmo pago) e o **código de retirada (792052) apareceu**. Os dois sintomas do bug resolvidos, confirmados ao vivo. |
 | Detalhe — "+N itens" + lista "Itens desta locação" (Story B) | 🔧 **não existia** — auditado contra `page.tsx:214-246` |
 | Detalhe — split "Taxa Shareo (X%) / Você recebe" | 🔧 **não existia** — auditado contra `page.tsx:303-313`; replica a fórmula exata do site (`calcSplit` sobre total+desconto), taxa via `/api/stats` (nunca hardcode) |
 | Detalhe — desconto (cupom) na quebra de valores | 🔧 **não existia** — auditado contra `page.tsx:285-290` |
@@ -178,12 +215,12 @@ escopo (não testar como bug).
 | Detalhe — taxa de atraso | 🔧 **não existia** — auditado contra `page.tsx:549-561` |
 | Checkout — modalidade, calendário, teto R$500, MP | 🟡 **achado — decisão do usuário necessária, não corrigido**: `apps/mobile/app/reservas/checkout.tsx` é **código morto** — grep no repo inteiro (`app`, `components`, `lib`) confirma que **nada navega pra `/reservas/checkout`**; o fluxo real de solicitar locação está 100% inline em `itens/[id].tsx` (já auditado e corrigido na 1ª rodada desta sessão: breakdown, desconto, taxa dinâmica, cupom). `checkout.tsx` é uma cópia mais antiga e mais pobre do mesmo fluxo (sem cupom, sem % de taxa dinâmica, resumo sem o breakdown por tarifa mista) — provavelmente sobrou de antes do fluxo ser inlinado no detalhe do item. Tentei remover (`git rm`) e fui **bloqueado pelo classificador de permissão** por ser escalada de escopo sem autorização explícita ("audite e corrija gaps" ≠ "delete telas"). **Decisão pendente do usuário:** (a) apagar o arquivo órfão, ou (b) manter por algum motivo não documentado — se (b), sinalizar por quê pra eu não reabrir isso |
 | Detalhe — **bug crítico cancelar**: botão cancelar chamava `POST /api/bookings/:id/cancel` (404) | 🔧 **implementado, PENDE confirmação em device** — corrigido para `PATCH /api/bookings/:id` `{ action:"cancel", reason }`. Modal bottom-sheet com `TextInput multiline` (Alert.prompt não existe no Android). Botão desabilitado sem motivo. Fonte: `_BookingActions.tsx`. |
-| Detalhe — **ContractBanner** (banner de assinatura de contrato) | 🔧 **implementado, PENDE confirmação em device** — `isBorrower && (CONFIRMED\|ACTIVE) && !contractSigned`. Modal com texto completo do contrato (`RENTAL_CONTRACT_TEXT`) scrollável + botão "Li e concordo" → `POST /api/bookings/:id/contract`. Fonte: `_ContractBanner.tsx`. |
-| Detalhe — **ReturnCountdown** (contador de devolução) | 🔧 **implementado, PENDE confirmação em device** — `status === "ACTIVE"`. Componente `ReturnCountdownInline` com `setInterval` 60s. Cores: expirado=vermelho, urgente (0 dias e <4h)=laranja, normal=verde. Fonte: `ReturnCountdown.tsx`. |
-| Detalhe — **ReturnChecklist** (checklist devolução, locatário) | 🔧 **implementado, PENDE confirmação em device** — `isBorrower && status === "ACTIVE"`. 4 checkboxes verbatim, mínimo 3/4 para habilitar. Barra de progresso. Foto opcional via `expo-image-picker` → `POST /api/bookings/:id/photos` (FormData). Botão "Devolver" → `PATCH action:"mark_returned"`. Fonte: `components/booking/ReturnChecklist.tsx`. |
+| Detalhe — **ContractBanner** (banner de assinatura de contrato) | ✅ **CONFIRMADO EM DEVICE 2026-07-09** — contrato assinado com sucesso (`POST /api/bookings/:id/contract` sem 401 → valida também o sweep de auth #188). Modal + "Li e concordo". |
+| Detalhe — **ReturnCountdown** (contador de devolução) | ✅ **CONFIRMADO EM DEVICE 2026-07-09** — contagem regressiva aparece no status ACTIVE. |
+| Detalhe — **ReturnChecklist** (checklist devolução, locatário) | ✅ **CONFIRMADO EM DEVICE 2026-07-09** — 4 checkboxes + "Devolver" funcionam (reserva foi de ACTIVE → RETURNED). |
 | Detalhe — **ReturnConditionForm** (estado na devolução, locador) | 🔧 **implementado, PENDE confirmação em device** — `isOwner && status === "RETURNED"`. 3 opções radio verbatim (Perfeito/Desgaste normal/Com danos). PERFECT\|NORMAL_WEAR → `PATCH action:"confirm_return"`. DAMAGED → TextInput descrição ≥10 chars → `PATCH action:"open_dispute"`. Fonte: `components/booking/ReturnConditionForm.tsx`. |
-| Detalhe — **ReviewForm** (avaliações pós-devolução) | 🔧 **implementado, PENDE confirmação em device** — `status === "RETURNED\|COMPLETED"`. Locatário: avalia ITEM + OWNER. Locador: avalia BORROWER. 5 estrelas táteis (44×44px) + comentário. Estado "done" se já existe avaliação. `POST /api/bookings/:id/reviews`. Fonte: `app/reservas/[id]/_ReviewForm.tsx`. |
-| Detalhe — **CheckInOut** (fotos de check-in/check-out) | 🔧 **implementado, PENDE confirmação em device** — `status === "ACTIVE\|RETURNED\|COMPLETED"`. 2 fases (CHECKIN/CHECKOUT). Grade de thumbnails existentes + botão "Adicionar foto" via `expo-image-picker`. `POST /api/bookings/:id/photos` multipart FormData. `expo-image-picker` já em package.json — sem nova dep nativa EAS. Fonte: `app/reservas/[id]/_CheckInOut.tsx`. |
+| Detalhe — **ReviewForm** (avaliações pós-devolução) | ✅ **CONFIRMADO EM DEVICE 2026-07-09** — avaliação enviada (OWNER, 5★) via `POST /api/bookings/:id/reviews` sem 401 → valida também o sweep de auth #188. |
+| Detalhe — **CheckInOut** (fotos de check-in/check-out) | ✅ **CONFIRMADO EM DEVICE 2026-07-09** (PR #221) — fluxo completo verificado ao vivo: o botão abre o Alert **"Adicionar foto"** com **CANCELAR / ESCOLHER DA GALERIA / TIRAR FOTO** (helper `pickImageAsset()`); "TIRAR FOTO" dispara o diálogo de permissão de câmera → **câmera nativa abriu e capturou a foto** (`launchCameraAsync`, permissão CAMERA presente no build). Antes o botão dizia "Tirar foto ou escolher da galeria" mas só abria a galeria. Mesmo `pickImageAsset()` cobre CheckInOut (locador) e ReturnChecklist (locatário). |
 
 ### Chat
 | Elemento | Status |

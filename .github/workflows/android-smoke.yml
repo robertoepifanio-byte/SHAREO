@@ -1,0 +1,66 @@
+name: Android Emulator Smoke (Maestro)
+
+# Roda o APK de preview Android (gerado no EAS) num emulador do runner e executa
+# o roteiro Maestro (apps/mobile/.maestro/android-smoke.yaml), gravando vídeo e
+# screenshots como artifacts. Disparo manual: Actions → esta workflow → Run.
+on:
+  workflow_dispatch:
+    inputs:
+      artifact_url:
+        description: "URL do .apk do build EAS Android (EAS → Artifact)"
+        required: true
+        default: "https://expo.dev/artifacts/eas/WuSOQU5dZjawWp_L_d8Qm43XKNT2itvzcVNxTDxIpg4.apk"
+  # Roda também em PR, mas SÓ quando este arquivo ou o roteiro Maestro mudam
+  # (emulador custa bem mais que o gate normal de PR)
+  pull_request:
+    paths:
+      - ".github/workflows/android-smoke.yml"
+      - "apps/mobile/.maestro/**"
+
+env:
+  DEFAULT_ARTIFACT_URL: "https://expo.dev/artifacts/eas/WuSOQU5dZjawWp_L_d8Qm43XKNT2itvzcVNxTDxIpg4.apk"
+
+jobs:
+  android-smoke:
+    name: Emulador Android + Maestro
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Baixar APK
+        run: curl -fsSL -o app.apk "${{ inputs.artifact_url || env.DEFAULT_ARTIFACT_URL }}"
+
+      - name: Habilitar KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Instalar Maestro
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Rodar smoke no emulador
+        env:
+          MAESTRO_TEST_PASSWORD: ${{ secrets.MAESTRO_TEST_PASSWORD }}
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: bash apps/mobile/.maestro/run-android-smoke.sh
+
+      - name: Publicar vídeo e screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-smoke-resultado
+          path: out/
+          if-no-files-found: warn
+          include-hidden-files: true
+          retention-days: 14
