@@ -35,7 +35,9 @@ import { API_URL } from "@/lib/api"
 // Atualização 2026-07-05 (mesmo dia): Sobre, Meus Anúncios, Dashboard,
 // Estimativa de ganhos e Dicas para anfitriões ganharam tela nativa — saíram
 // desta lista.
-const EXTERNAL_ONLY_PREFIXES = ["/ajuda"]
+// 2026-07-09: /ajuda ganhou tela nativa (com âncoras via ?anchor=) — saiu do
+// EXTERNAL_ONLY. Resta só /perfil/documentos sem tela dedicada.
+const EXTERNAL_ONLY_PREFIXES: string[] = []
 const EXTERNAL_ONLY_ROUTES = new Set([
   "/perfil/documentos", // sem tela dedicada — mesmo tratamento de perfil.tsx
 ])
@@ -179,6 +181,18 @@ export function MobileMenu({ visible, onClose, isLoggedIn, role, onLogout }: Mob
     onClose()
     if (isExternalOnly(href)) {
       Linking.openURL(`${API_URL}${href}`)
+      return
+    }
+    // Âncora do site (ex: "/ajuda#primeiros-passos") → query param que a tela
+    // nativa lê via useLocalSearchParams({ anchor }) para rolar até a seção.
+    // A tela nativa /ajuda foi transcrita em 2026-07-09.
+    const hashIdx = href.indexOf("#")
+    if (hashIdx !== -1) {
+      const path   = href.slice(0, hashIdx)
+      const anchor = href.slice(hashIdx + 1)
+      const base   = ROUTE_ALIASES[path] ?? path
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      router.push({ pathname: base, params: { anchor } } as any)
       return
     }
     // Converte href do site para rota do expo-router
