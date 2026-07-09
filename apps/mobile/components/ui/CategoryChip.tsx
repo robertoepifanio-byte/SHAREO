@@ -3,10 +3,13 @@
 // Correção 2026-07-09: a variante "pill horizontal" (rótulo AO LADO) com ícone 96px
 // cortava o rótulo no Android — o ícone ocupava toda a largura/altura do chip e o
 // rótulo era empurrado pra fora da ScrollView (confirmado em device via build EAS limpo).
-// Padrão vertical espelha o CategoriasSection do Início (mesma família de assets, ícone 64px).
+// Ajuste 2026-07-09 (2): chip com largura do CONTEÚDO (não fixa) → o ícone centraliza
+// sobre o rótulo. Antes, com largura fixa 96px, rótulos longos ("Eletrodomésticos")
+// transbordavam pra direita e o ícone parecia encostado à esquerda. Rótulo multi-palavra
+// quebra em 2 linhas (split ao meio) pra manter o chip compacto.
 
 import React from "react"
-import { Text, Pressable, StyleSheet } from "react-native"
+import { View, Text, Pressable, StyleSheet } from "react-native"
 import { Image } from "expo-image"
 import { useTheme } from "@/lib/theme"
 
@@ -30,6 +33,12 @@ interface CategoryChipProps {
 export function CategoryChip({ slug, label, active = false, onPress }: CategoryChipProps) {
   const { tokens } = useTheme()
   const icon = ICON_SOURCES[slug]
+  // Rótulo multi-palavra quebra ao meio em 2 linhas (mantém o chip compacto).
+  // Fonte: page.tsx linhas 322-330.
+  const words = label.split(" ")
+  const mid = Math.ceil(words.length / 2)
+  const line1 = words.length > 1 ? words.slice(0, mid).join(" ") : label
+  const line2 = words.length > 1 ? words.slice(mid).join(" ") : ""
 
   return (
     <Pressable
@@ -45,29 +54,34 @@ export function CategoryChip({ slug, label, active = false, onPress }: CategoryC
       {icon && (
         <Image source={icon} style={styles.icon} contentFit="contain" accessibilityLabel="" />
       )}
-      <Text
-        style={[styles.label, { color: active ? tokens.green : tokens.muted }]}
-        numberOfLines={2}
-      >
-        {label}
-      </Text>
+      <View style={styles.labelWrap}>
+        <Text style={[styles.label, { color: active ? tokens.green : tokens.muted }]} numberOfLines={1}>
+          {line1}
+        </Text>
+        {line2 ? (
+          <Text style={[styles.label, { color: active ? tokens.green : tokens.muted }]} numberOfLines={1}>
+            {line2}
+          </Text>
+        ) : null}
+      </View>
     </Pressable>
   )
 }
 
 const styles = StyleSheet.create({
+  // Sem largura fixa: o chip encolhe/cresce com o conteúdo (rótulo) e o ícone
+  // centraliza sobre ele (alignItems center). paddingHorizontal separa os chips.
   chip: {
-    width:        96,
-    flexShrink:   0,
-    alignItems:   "center",
-    gap:          6,
+    flexShrink:        0,
+    alignItems:        "center",
+    gap:               6,
     paddingVertical:   4,
-    paddingHorizontal: 2,
+    paddingHorizontal: 8,
   },
   chipPressed: { opacity: 0.7 },
-  // 80px — decisão do fundador (2026-07-09): ícones maiores que o Início (64px),
-  // mas em card vertical o rótulo continua visível abaixo (sem o corte do layout antigo de 96px).
+  // 80px — decisão do fundador (2026-07-09): ícones maiores que o Início (64px).
   icon: { width: 80, height: 80 },
+  labelWrap: { alignItems: "center" },
   label: {
     fontSize:   12,
     fontWeight: "600",
