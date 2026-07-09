@@ -13,7 +13,6 @@
  *   public/icons/casa-jardim.png  | public/icons/construcao.png
  *   public/icons/eletronicos.png  | public/icons/esporte.png
  *   public/icons/ferramentas.png  | public/icons/festas.png
- *   public/icons/moda.png
  *
  * Tamanho recomendado: 256×256px, fundo transparente.
  * Tamanhos de exibição: 32 (lista) | 48 (menu) | 64 (card) | 96 (hero)
@@ -27,7 +26,6 @@ import {
   Dumbbell,
   Wrench,
   Gift,
-  ShoppingBag,
   Refrigerator,
   type LucideIcon,
 } from "lucide-react"
@@ -44,7 +42,6 @@ const HAS_PNG = new Set<string>([
   "esporte",
   "ferramentas",
   "festas",
-  "moda",
 ])
 
 /* ── Mapeamentos ────────────────────────────────────────────────── */
@@ -58,7 +55,6 @@ const LUCIDE_BY_SLUG: Record<string, LucideIcon> = {
   "esporte":     Dumbbell,
   "ferramentas": Wrench,
   "festas":      Gift,
-  "moda":        ShoppingBag,
 }
 
 /**
@@ -74,7 +70,6 @@ const SLUG_BY_NAME: Record<string, string> = {
   "Esporte":          "esporte",
   "Ferramentas":      "ferramentas",
   "Festas":           "festas",
-  "Moda":             "moda",
 }
 
 interface CategoryIconProps {

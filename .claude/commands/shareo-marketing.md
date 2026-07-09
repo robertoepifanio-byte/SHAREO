@@ -32,7 +32,7 @@ Objetivo: captar Locadores (oferta) e Locatários (demanda) na praça certa, no 
 **Briefing antes de qualquer campanha** — colete e registre (idealmente em uma nota reutilizável no chat/projeto):
 - Objetivo de negócio (nº de itens anunciados, nº de cadastros, nº de reservas) e prazo.
 - Praça(s)-alvo (cidade/UF — nunca fixar uma só como padrão do produto).
-- Categoria(s) prioritária(s) (ferramentas, eletrônicos, casa-jardim, construção, esporte, moda, festas) e ticket médio de referência.
+- Categoria(s) prioritária(s) (ferramentas, eletrônicos, casa-jardim, construção, esporte, festas) e ticket médio de referência.
 - Orçamento disponível e janela de veiculação.
 - Lado do funil prioritário (oferta vs. demanda) — em praça nova, regra prática: **60–70% do orçamento inicial em captação de Locadores** (sem itens anunciados não há o que vender ao Locatário); inverter a proporção conforme o catálogo local amadurece (meta de referência: 15–20 itens ativos por bairro/categoria antes de acelerar demanda).
 

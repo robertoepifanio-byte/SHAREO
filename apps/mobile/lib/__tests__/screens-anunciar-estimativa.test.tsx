@@ -148,12 +148,12 @@ describe("EstimativaScreen — textos verbatim", () => {
   })
 })
 
-describe("EstimativaScreen — categorias (7 chips, verbatim de _Calculadora.tsx)", () => {
+describe("EstimativaScreen — categorias (6 chips, verbatim de _Calculadora.tsx)", () => {
   beforeEach(() => jest.clearAllMocks())
 
   const labels = [
-    "Ferramentas", "Eletrônicos", "Esporte", "Festas",
-    "Construção", "Moda", "Eletrodomésticos",
+    "Ferramentas", "Eletrônicos", "Esporte/Lazer", "Festas",
+    "Construção", "Eletrodomésticos",
   ]
 
   // Usa getAllByText porque "Ferramentas" (categoria selecionada por default) aparece

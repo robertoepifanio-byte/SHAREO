@@ -357,64 +357,6 @@ export const CATALOG: CatalogItem[] = [
     ],
   },
 
-  // ── moda (4 itens, diária R$40–90) ─────────────────────────────────────────
-  {
-    categorySlug: "moda",
-    title: "Vestido de Festa Longo Sereia — Tam. M",
-    description:
-      "Vestido longo sereia em crepe, decote V costas, fecho invisível. Cor: preto. Tamanho M (busto 88cm, cintura 68cm, quadril 96cm). Higienizado a seco.",
-    condition: "EXCELLENT",
-    estimatedRetailReais: 800,
-    pricePerDayReais: 60,
-    images: [
-      "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1200&q=80&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=1200&q=80&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=1200&q=80&auto=format&fit=crop",
-    ],
-  },
-  {
-    categorySlug: "moda",
-    title: "Terno Slim Completo — Tam. 48",
-    description:
-      "Terno slim fit, 3 peças (paletó, calça, colete), cor azul marinho. Tecido misto poliéster/viscose. Tamanho 48. Higienizado a seco. Para eventos formais.",
-    condition: "EXCELLENT",
-    estimatedRetailReais: 1200,
-    pricePerDayReais: 80,
-    images: [
-      "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=1200&q=80&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1200&q=80&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1533577116850-9cc66cad8a9b?w=1200&q=80&auto=format&fit=crop",
-    ],
-  },
-  {
-    categorySlug: "moda",
-    title: "Smoking Clássico Preto — Tam. 50",
-    description:
-      "Smoking clássico preto, lapela acetinada, calça com galão. Tamanho 50. Inclui gravata borboleta e lenço de bolso. Ideal para casamentos e galas.",
-    condition: "EXCELLENT",
-    estimatedRetailReais: 1800,
-    pricePerDayReais: 90,
-    images: [
-      "https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=1200&q=80&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1593030761757-71fae45fa0e7?w=1200&q=80&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1533577116850-9cc66cad8a9b?w=1200&q=80&auto=format&fit=crop",
-    ],
-  },
-  {
-    categorySlug: "moda",
-    title: "Fantasia Temática Carnaval — Medieval",
-    description:
-      "Fantasia medieval cavaleiro, tunica, capuz, espada de plástico e escudo decorativo. Tam. único (cabe M–G). Perfeita para festas temáticas e eventos.",
-    condition: "GOOD",
-    estimatedRetailReais: 350,
-    pricePerDayReais: 45,
-    images: [
-      "https://images.unsplash.com/photo-1533107862482-0e6974b06ec4?w=1200&q=80&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=1200&q=80&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1511405946472-a37e3b5ccd47?w=1200&q=80&auto=format&fit=crop",
-    ],
-  },
-
   // ── festas (4 itens, diária R$60–130) ──────────────────────────────────────
   {
     categorySlug: "festas",

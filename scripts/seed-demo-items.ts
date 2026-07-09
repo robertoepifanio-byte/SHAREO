@@ -170,29 +170,6 @@ const DEMO_ITEMS: DemoItem[] = [
     imageUrls: [u('photo-1504851149312-7a075b496cc7')],
   },
 
-  // ── Moda (diária ref. R$50) ──
-  {
-    category: 'moda',
-    title: 'Vestido de Festa Longo Verde Esmeralda — Tam. M',
-    description: 'Vestido longo de festa em crepe verde esmeralda, tamanho M (38–40), usado uma única vez. Perfeito para casamentos e formaturas. Entrego lavado, passado e em capa protetora.',
-    condition: 'EXCELLENT', pricePerDay: 5000,
-    imageUrls: [u('photo-1566174053879-31528523f8ae')],
-  },
-  {
-    category: 'moda',
-    title: 'Terno Slim Azul Marinho Completo — Tam. 48',
-    description: 'Terno slim fit azul marinho (paletó + calça), tamanho 48, com camisa branca e gravata inclusas. Ideal para entrevistas, casamentos e eventos corporativos. Higienizado a seco após cada locação.',
-    condition: 'EXCELLENT', pricePerDay: 6000,
-    imageUrls: [u('photo-1594938298603-c8148c4dae35')],
-  },
-  {
-    category: 'moda',
-    title: 'Bolsa de Festa Clutch Dourada + Acessórios',
-    description: 'Clutch dourada de festa com corrente removível, acompanha brincos e pulseira combinando. Complemento perfeito para look de madrinha ou formanda sem precisar comprar peças que serão usadas uma vez.',
-    condition: 'EXCELLENT', pricePerDay: 3000,
-    imageUrls: [u('photo-1584917865442-de89df76afd3')],
-  },
-
   // ── Festas (diária ref. R$80) ──
   {
     category: 'festas',
