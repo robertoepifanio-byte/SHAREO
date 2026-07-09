@@ -73,6 +73,40 @@ auditado no código, sem gaps encontrados (ainda assim requer confirmação em d
 nunca ✅ sem teste ao vivo) | ❌ não testado ainda | ➡️ abre no site por decisão de
 escopo (não testar como bug).
 
+> ### ✅ Rodada de validação em device — 2026-07-09 (2ª sessão, pós-reboot)
+>
+> Além do fluxo de reserva (fim a fim) e dos 2 fixes do PR #221 (pull-to-refresh + câmera
+> CheckInOut), esta sessão varreu as **telas standalone que nunca tinham sido vistas ao
+> vivo**. Todas renderizaram corretamente, com dados reais e comportamento certo:
+>
+> - **Sobre o ShareO** ✅ — hero "Use Mais. Possua Menos.", 3 stats, Missão, Valores
+>   (Comunidade/Segurança/Acessibilidade), Equipe.
+> - **Dashboard** ✅ — 4 cards (Reservas ativas/Meus itens/Ganhos/Visualizações), Meta
+>   mensal (barra), Minhas Reservas, Sugestões. `GET /api/dashboard`. Abre sem crash
+>   (o crash `<ellipse>` de antes não reaparece).
+> - **Meus Anúncios** ✅ — abas Anúncios/Desempenho/Integrações, badges de status
+>   (Rascunho/Disponível), ações contextuais, "+ Novo anúncio".
+> - **Ver Perfil** ✅ — avatar, "Pessoa Física", bio, localização, 3 stats, Configurações.
+> - **Verificação de identidade (KYC)** ✅ — doc + selfie, aviso LGPD (AES-256-GCM),
+>   "Análise em até 2 dias úteis". Pickers usam o mesmo `expo-image-picker` já validado.
+> - **Recebimentos (Conta PIX)** ✅ — status Verificada, tipos de chave, titular, "Como
+>   funciona o repasse". **Taxa 15% é DINÂMICA** (`feeRateBps` da API, não hardcode).
+> - **Privacidade e Dados (LGPD)** ✅ — Exportar JSON (art. 20), explicações de retenção
+>   (CPF cripto, histórico fiscal, mensagens, localização), Excluir conta.
+> - **Estimativa de ganhos** ✅ — calculadora interativa (7 categorias, preço sugerido,
+>   dias/mês), resultado correto (R$210/mês → R$179 líquido → R$2.520/ano). **Taxa
+>   dinâmica** confirmada (`/api/platform-config/public`).
+> - **Dicas para Anfitriões** ✅ — guia numerado (Fotos, Descrição...), bullets + callouts.
+> - **Toggle de tema** ✅ — "Sistema" ativo com o realce translúcido correto (bg-white/15),
+>   como o `ThemeToggle.tsx` do site.
+>
+> **Único ruído (não é bug de código):** erro `Unsupported top level event type
+> "topSvgLayout"` no LogBox — mismatch entre o `react-native-svg` nativo do build EAS
+> `455bab6d` (06/07) e o JS atual. **Não-fatal** (o app funciona 100%; some com um build
+> EAS novo). **Lição pro "Como retomar":** se o dev-client tiver sumido do celular,
+> rebaixar o último build development via `npx eas-cli build:list --json` + `adb install`
+> (o eas-cli já fica logado) — o JS carrega ao vivo do Metro por cima do nativo.
+
 ### Autenticação
 | Tela | Elemento a comparar | Status |
 |---|---|---|
@@ -85,7 +119,7 @@ escopo (não testar como bug).
 |---|---|
 | BottomNav (5 abas + FAB) | 🔧 corrigido (crash `tabbar`) — re-testar cada aba abre a tela certa |
 | Menu lateral (drawer) — TODOS os 34 links | 🔧 corrigido (27 redirecionavam errado) — re-testar cada seção expansível (Explorar/Anunciar/Atividade/Minha Conta/Ajuda) |
-| Toggle de tema (Claro/Sistema/Escuro) no menu | 🔧 **bug de cor achado**: item ativo usava verde sólido `#007B3C` (citava "handoff §1.17"); o `ThemeToggle.tsx` real do site usa branco translúcido (`bg-white/15`) em ambas as variantes — corrigido a favor do código-fonte real |
+| Toggle de tema (Claro/Sistema/Escuro) no menu | ✅ **CONFIRMADO EM DEVICE 2026-07-09** — "Sistema" ativo com o realce translúcido correto (`bg-white/15`), como o `ThemeToggle.tsx` do site. (Bug anterior: item ativo usava verde sólido `#007B3C`; corrigido a favor do código-fonte real.) |
 
 ### Início (Home)
 | Seção | Status |
@@ -155,11 +189,11 @@ escopo (não testar como bug).
 | Card do usuário (avatar, badges, bio, localização) | 🔧 reescrito pela Frente B — nunca testado em device |
 | Estatísticas (itens/aluguéis/nota) | 🔧 **não existia** — auditado contra `perfil/page.tsx:186-203`; a Frente B tinha corretamente adiado isso (TODO próprio, não inventou), pois `/api/users/me` não retornava `_count`/reviews. Fechado nesta rodada: API estendida (`_count` + `reviewsReceived` + `avgRating`/`reviewCount`, aditivo) + 3 stat cards implementados verbatim |
 | Avaliações recebidas (últimas 5) | 🔧 **não existia** — mesmo motivo/fix acima, verbatim de `perfil/page.tsx:205-248` (`REVIEW_TYPE_LABEL`, paginação "últimas 5 de N") |
-| "Dashboard" (ícone `database`) | 🔧 corrigido (crash `<ellipse>`) — re-testar que abre sem crash |
+| "Dashboard" (ícone `database`) | ✅ **CONFIRMADO EM DEVICE 2026-07-09** — abre sem crash (o crash `<ellipse>` não reaparece); 4 cards + Meta mensal + Minhas Reservas + Sugestões, dados reais via `GET /api/dashboard`. |
 | "Meus Anúncios" | 🔧 corrigido (abre no navegador agora) |
 | "Minha Conta" — 9 submenus | 🔧 corrigido (8 de 9 abrem no navegador) — re-testar cada um. Fix adicional nesta rodada: URL hardcoded (`BASE_URL` duplicando `API_URL` de `lib/api.ts`) trocada pelo import real — eliminava risco de divergência silenciosa se o ambiente mudasse |
 | Favoritos | 🔧 **layout errado** — auditado a fundo nesta rodada (a Frente B tinha marcado "sem alterações", mas não comparou against o site de verdade): mobile usava lista de 1 coluna com card próprio; site usa grid 2 colunas com o mesmo `ItemCard` do Explorar. Corrigido + texto do empty state errado ("...para salvar" → "...para salvá-lo aqui.") + botão "Explorar itens" inventado (removido, site não tem) |
-| KYC | 🔧 auditado a fundo nesta rodada contra `_IdVerification.tsx` — box explicativo tinha título e texto inventados (paráfrase), corrigido pro texto real; citação de fonte errada corrigida ("app/kyc/page.tsx" não existe no site). Diferença arquitetural documentada (não corrigida): consentimento biométrico é descoberto reativamente no mobile vs. proativamente no site — invisível hoje pois a flag está OFF |
+| KYC | ✅ **CONFIRMADO EM DEVICE 2026-07-09** — tela renderiza correta: foto do documento + selfie com documento, box explicativo (texto real), aviso LGPD (AES-256-GCM), "Análise em até 2 dias úteis". Pickers usam o mesmo `expo-image-picker` já validado. (Auditoria anterior: box explicativo com texto inventado + fonte errada, corrigidos. Diferença arquitetural do consentimento biométrico segue invisível — flag OFF.) |
 | Sair (logout) | 🔧 auditado — mobile tem diálogo de confirmação que o site não tem (`UserDropdown.tsx` desloga direto, sem confirmar); mantido de propósito como adaptação de plataforma (proteção contra toque acidental em touchscreen), não é bug |
 
 ### Reservas
