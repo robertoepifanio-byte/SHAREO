@@ -157,7 +157,7 @@ export default async function HomePage() {
                 Imagem reduzida no mobile p/ não empurrar CTA + busca pra baixo da dobra. */}
             <div className="mb-8 flex flex-col items-center gap-3">
               <Image
-                src="/logos/hero-items.webp"
+                src="/logos/hero-carro-moto.webp"
                 alt="Itens disponíveis para alugar no ShareO: carro, moto, furadeira, câmera, caixa de som, projetor, bicicleta e escada."
                 width={1346}
                 height={820}
