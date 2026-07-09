@@ -254,7 +254,14 @@ export default function GanharScreen() {
           <View style={s.resultRow}>
             {/* Semanal */}
             <View style={s.resultCol}>
-              <Text style={[s.resultValue, { color: tokens.text }]}>{fmt(weekly)}</Text>
+              <Text
+                style={[s.resultValue, { color: tokens.text }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+              >
+                {fmt(weekly)}
+              </Text>
               <Text style={[s.resultPeriod, { color: tokens.muted }]}>por semana</Text>
             </View>
             {/* Mensal — destacado */}
@@ -264,12 +271,26 @@ export default function GanharScreen() {
                 { borderColor: tokens.green + "33", backgroundColor: tokens.green + "1A" },
               ]}
             >
-              <Text style={[s.resultValueHighlight, { color: tokens.green }]}>{fmt(monthly)}</Text>
+              <Text
+                style={[s.resultValueHighlight, { color: tokens.green }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+              >
+                {fmt(monthly)}
+              </Text>
               <Text style={[s.resultPeriodHighlight, { color: tokens.green }]}>por mês</Text>
             </View>
             {/* Anual */}
             <View style={s.resultCol}>
-              <Text style={[s.resultValue, { color: tokens.text }]}>{fmt(yearly)}</Text>
+              <Text
+                style={[s.resultValue, { color: tokens.text }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+              >
+                {fmt(yearly)}
+              </Text>
               <Text style={[s.resultPeriod, { color: tokens.muted }]}>por ano</Text>
             </View>
           </View>
