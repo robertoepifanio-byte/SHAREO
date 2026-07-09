@@ -42,6 +42,13 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      # O bundler do Gradle (createBundleReleaseJsAndAssets) resolve babel-preset-expo
+      # a partir de um contexto onde o layout padrão do pnpm o esconde → "Cannot find
+      # module 'babel-preset-expo'". shamefully-hoist achata tudo em node_modules/ na
+      # raiz. Efêmero (só neste runner; NÃO commitado no .npmrc do repo).
+      - name: Hoist total das deps p/ o bundler do Gradle (pnpm, efêmero)
+        run: echo "shamefully-hoist=true" >> .npmrc
+
       - name: Instalar dependências (root workspace)
         run: pnpm install --frozen-lockfile
 
