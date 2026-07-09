@@ -250,18 +250,17 @@ export function MobileMenu({ visible, onClose, isLoggedIn, role, onLogout }: Mob
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* ── Início ── */}
-          <TopLink href="/" label="Início" />
-
-          {/* ── Sobre ── */}
-          <TopLink href="/sobre" label="Sobre" />
-
-          {/* ── TEMA no topo — handoff §0 (correção "MobileMenu — logado") ── */}
+          {/* ── TEMA — acima do Início (posição definida pelo fundador 2026-07-09) ── */}
           <SectionLabel text="TEMA" />
           <ThemeToggle
             value={preference}
             onChange={(pref: ThemePreference) => setPreference(pref)}
           />
+
+          {/* ── Início ── */}
+          <TopLink href="/" label="Início" />
+
+          {/* Sobre foi movido para logo acima do Sair/Entrar (fundador 2026-07-09) */}
 
           <Divider />
 
@@ -318,6 +317,9 @@ export function MobileMenu({ visible, onClose, isLoggedIn, role, onLogout }: Mob
 
               <Divider />
 
+              {/* Sobre — acima do Sair (fundador 2026-07-09) */}
+              <TopLink href="/sobre" label="Sobre" />
+
               {/* Sair */}
               <Pressable
                 onPress={() => { onClose(); onLogout?.() }}
@@ -348,7 +350,9 @@ export function MobileMenu({ visible, onClose, isLoggedIn, role, onLogout }: Mob
           {/* ── Não logado ── */}
           {!isLoggedIn && (
             <>
+              {/* Sobre — acima do Entrar (fundador 2026-07-09) */}
               <Divider />
+              <TopLink href="/sobre" label="Sobre" />
               <TopLink href="/login" label="Entrar" />
               <Divider />
               <SectionBtn label="Central de Ajuda" open={helpOpen} onToggle={() => setHelpOpen(v => !v)} />
