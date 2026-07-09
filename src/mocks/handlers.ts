@@ -97,7 +97,7 @@ export const handlers = [
 
   // Categories
   http.get("/api/categories", () =>
-    HttpResponse.json({ data: ["ferramentas", "eletronicos", "esportes", "casa", "moda", "festas", "construcao"] }),
+    HttpResponse.json({ data: ["ferramentas", "eletronicos", "esportes", "casa", "festas", "construcao"] }),
   ),
 
   // Auth

@@ -6,10 +6,9 @@ import Link from "next/link"
 const CATEGORIAS = [
   { slug: "ferramentas", label: "Ferramentas",     icon: "🔧", diaria: 35,  exemplos: "furadeira, serra, esmeril" },
   { slug: "eletronicos", label: "Eletrônicos",     icon: "📷", diaria: 100, exemplos: "câmera, projetor, drone" },
-  { slug: "esporte",     label: "Esporte",         icon: "🚴", diaria: 60,  exemplos: "bicicleta, barraca, SUP" },
+  { slug: "esporte",     label: "Esporte/Lazer",   icon: "🚴", diaria: 60,  exemplos: "bicicleta, barraca, SUP" },
   { slug: "festas",      label: "Festas",          icon: "🎉", diaria: 80,  exemplos: "som, tendas, mesas" },
   { slug: "construcao",  label: "Construção",      icon: "🏗️", diaria: 45,  exemplos: "escada, betoneira, andaime" },
-  { slug: "moda",        label: "Moda",            icon: "👗", diaria: 50,  exemplos: "roupa de festa, fantasia" },
   { slug: "casa-jardim", label: "Eletrodomésticos", icon: "🔌", diaria: 30,  exemplos: "geladeira, micro-ondas, lavadora" },
 ]
 
