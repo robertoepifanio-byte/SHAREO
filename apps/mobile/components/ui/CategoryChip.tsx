@@ -57,7 +57,7 @@ export function CategoryChip({ slug, label, active = false, onPress }: CategoryC
 
 const styles = StyleSheet.create({
   chip: {
-    width:        88,
+    width:        96,
     flexShrink:   0,
     alignItems:   "center",
     gap:          6,
@@ -65,8 +65,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   chipPressed: { opacity: 0.7 },
-  // 64px espelha o CategoriasSection do Início (mesma família de assets)
-  icon: { width: 64, height: 64 },
+  // 80px — decisão do fundador (2026-07-09): ícones maiores que o Início (64px),
+  // mas em card vertical o rótulo continua visível abaixo (sem o corte do layout antigo de 96px).
+  icon: { width: 80, height: 80 },
   label: {
     fontSize:   12,
     fontWeight: "600",
