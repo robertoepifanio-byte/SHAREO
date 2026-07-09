@@ -448,11 +448,11 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical:   10,
   },
-  // Dimensão ajustada junto com o ícone do chip real (96px, page.tsx:304,321)
+  // Casa com o card vertical do CategoryChip (ícone 64 + rótulo 2 linhas)
   // pra não saltar de tamanho quando o loading termina.
   chipSkeleton: {
-    width:        108,
-    height:       110,
+    width:        88,
+    height:       100,
     borderRadius: 10,
   },
   // Linha count + sort — "mb-4 flex items-center justify-between gap-3" (page.tsx:398)
