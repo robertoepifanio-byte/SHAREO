@@ -25,14 +25,11 @@ const APP_VERSION = "1.0.0"
 // Fix 2026-07-09 (device): a lista invertida NATIVE_ROUTES estava defasada e
 // mandava Sobre / Meu perfil / Criar conta — que JÁ têm tela nativa — pro
 // navegador. Só é externo o que o app ainda não transcreveu.
-const EXTERNAL_ONLY_PREFIXES = ["/ajuda"] // Central de ajuda (sem tela nativa; usa âncoras)
-const EXTERNAL_ONLY_ROUTES = new Set([
-  "/comunidade",  // página institucional do site — sem tela nativa
-  "/ganhar",      // landing "Como ganhar" do site — sem tela nativa
-  "/termos",      // Termos de uso (legal) — sem tela nativa
-  "/privacidade", // Política de Privacidade do site ≠ tela nativa "Privacidade e dados" (/perfil/dados)
-  "/seguranca",   // página pública de Segurança do site ≠ /perfil/seguranca (troca de senha)
-])
+// 2026-07-09 (2ª leva): Sobre já era nativo; agora Comunidade, Como ganhar,
+// Termos, Privacidade, Segurança e Central de ajuda ganharam tela nativa —
+// saíram do EXTERNAL_ONLY. Todos os links do rodapé navegam nativamente.
+const EXTERNAL_ONLY_PREFIXES: string[] = []
+const EXTERNAL_ONLY_ROUTES = new Set<string>([])
 // Hrefs do site cujo caminho nativo tem outro nome (a tela EXISTE, só o path diverge).
 const ROUTE_ALIASES: Record<string, string> = {
   "/itens":    "/explorar", // tela nativa equivalente ao /itens do site
