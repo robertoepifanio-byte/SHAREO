@@ -1,0 +1,106 @@
+name: APK Build (grátis via GitHub Actions)
+
+# Build do APK Android do app mobile SEM EAS — roda no runner do GitHub (grátis,
+# ilimitado em repo público) via `expo prebuild` + Gradle `assembleRelease`.
+# Alternativa à cota Free do EAS (esgotada). Disparo manual.
+#
+# Variante padrão: SEM o mapa nativo (@rnmapbox/maps). O plugin/módulo exige um
+# token de download do Mapbox (secret sk.) que aqui não temos; como o mapa está
+# adiado ("Ver no mapa" abre o mapa web), desligamos o autolinking dele no Android
+# só neste build (não altera o main). Para incluir o mapa nativo, defina o input
+# include_mapbox=true e o secret MAPBOX_DOWNLOADS_TOKEN.
+
+on:
+  workflow_dispatch:
+    inputs:
+      include_mapbox:
+        description: "Incluir mapa nativo (Mapbox)? Requer secret MAPBOX_DOWNLOADS_TOKEN"
+        type: boolean
+        default: false
+
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "11"
+
+jobs:
+  build-apk:
+    name: Build APK (${{ inputs.include_mapbox == true && 'com Mapbox' || 'sem Mapbox' }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # publicar o APK como asset de Release
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - run: npm install -g pnpm@${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Instalar dependências (root workspace)
+        run: pnpm install --frozen-lockfile
+
+      - name: Excluir Mapbox nativo do build (variante padrão)
+        if: ${{ inputs.include_mapbox != true }}
+        working-directory: apps/mobile
+        run: |
+          # 1) remove o config plugin @rnmapbox/maps do app.json (só neste runner)
+          node -e "const fs=require('fs');const p='app.json';const j=JSON.parse(fs.readFileSync(p,'utf8'));j.expo.plugins=(j.expo.plugins||[]).filter(pl=>!(Array.isArray(pl)&&pl[0]==='@rnmapbox/maps'));fs.writeFileSync(p,JSON.stringify(j,null,2));console.log('plugin @rnmapbox/maps removido do app.json');"
+          # 2) desliga o autolinking do @rnmapbox no Android (senão o Gradle tenta
+          #    baixar o SDK nativo do Mapbox e exige o token de download)
+          printf "module.exports = { dependencies: { '@rnmapbox/maps': { platforms: { android: null } } } };\n" > react-native.config.js
+          echo "autolinking @rnmapbox/maps desligado no Android"
+
+      - name: expo prebuild (gera android/)
+        working-directory: apps/mobile
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Garantir APK de release instalável (assinatura debug)
+        working-directory: apps/mobile
+        run: |
+          # O template do Expo já usa a keystore debug no release; reforçamos por
+          # regex pra o assembleRelease produzir sempre um APK assinado/instalável.
+          BG=android/app/build.gradle
+          sed -i 's/signingConfig signingConfigs.release/signingConfig signingConfigs.debug/g' "$BG" || true
+          grep -n "signingConfig signingConfigs" "$BG" || true
+
+      - name: Gradle assembleRelease
+        working-directory: apps/mobile/android
+        env:
+          EXPO_PUBLIC_API_URL: https://staging.shareo.com.br
+          EXPO_PUBLIC_MAPBOX_TOKEN: pk.eyJ1Ijoic2hhcmVvIiwiYSI6ImNtcHB1bWI5bDBpb2YycXB6dG5tcHlkbmsifQ.WXzD1_LtMj41GiziLvMzxw
+          MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
+        run: ./gradlew assembleRelease --no-daemon -x lint
+
+      - name: Localizar APK
+        id: apk
+        working-directory: apps/mobile
+        run: |
+          APK=$(find android/app/build/outputs/apk/release -name "*.apk" | head -1)
+          if [ -z "$APK" ]; then echo "::error::APK não encontrado"; exit 1; fi
+          cp "$APK" shareo-preview.apk
+          echo "path=apps/mobile/shareo-preview.apk" >> "$GITHUB_OUTPUT"
+          ls -lh shareo-preview.apk
+
+      - name: Upload como artifact (backup)
+        uses: actions/upload-artifact@v4
+        with:
+          name: shareo-preview-apk
+          path: ${{ steps.apk.outputs.path }}
+          if-no-files-found: error
+
+      - name: Publicar APK em Release público (link p/ testers)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete apk-preview --yes --cleanup-tag 2>/dev/null || true
+          gh release create apk-preview "${{ steps.apk.outputs.path }}" \
+            --title "APK preview do app (testers)" \
+            --notes "Build automático do \`main\` via GitHub Actions (grátis, sem EAS). Aponta para o staging. ${{ inputs.include_mapbox == true && 'Com mapa nativo.' || 'Mapa nativo desabilitado (adiado) — o botão Ver no mapa abre o mapa web.' }} Assinado com keystore debug (para atualizar, desinstale a versão anterior antes)." \
+            --prerelease
+          echo "APK publicado: https://github.com/${{ github.repository }}/releases/tag/apk-preview"
