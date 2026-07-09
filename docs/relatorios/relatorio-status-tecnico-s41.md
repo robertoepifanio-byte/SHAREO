@@ -77,7 +77,7 @@
 - Criação do Supabase de produção (3º projeto).
 - Ativação de pagamento real (flag MP ON em produção).
 - DNS / domínio `shareo.com.br` apontando para produção.
-- Tag `v1.1.0` / go-live.
+- Tag `web-v1.12.0` / go-live.
 
 **Regra absoluta:** nenhuma atividade de produção antes das 4 condições de go-live (parecer ✅ · contrato MP ⏳ · Termos/Política publicados · checklist 100%).
 

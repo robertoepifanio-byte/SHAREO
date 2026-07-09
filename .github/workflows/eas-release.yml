@@ -1,7 +1,7 @@
 name: EAS Release - App Mobile
 
 # Build EAS disparado por tag de release do app mobile (convenção: mobile-v*).
-# Independente do release web (v* → deploy.yml production). Ex.:
+# Independente do release web (web-v* → deploy.yml production). Ex.:
 #   git tag mobile-v1.1.0 && git push origin mobile-v1.1.0
 #
 # ⚠️ Requer o secret EXPO_TOKEN (robot/access token da conta "shareo"):
