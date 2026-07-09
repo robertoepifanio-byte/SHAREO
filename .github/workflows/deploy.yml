@@ -15,14 +15,16 @@ on:
       - ".gitattributes"
 
   # Staging deploy (automático) e Production deploy (com aprovação):
-  # ambos disparam em push na main OU em tags de release.
+  # ambos disparam em push na main OU em tags de release web (web-v*).
   # ⚠️ NÃO adicionar paths-ignore aqui: filtro de path não funciona de forma
   # confiável em push de TAG (quebraria o deploy de produção). O gate por
   # mudança-de-web do staging é feito pelo job "changes" abaixo.
   push:
     branches: [main]
     tags:
-      - "v*"
+      # Convenção de release por plataforma (ADR-027): web-v* → produção web (este
+      # workflow); mobile-v* → build EAS (eas-release.yml). Os prefixos não colidem.
+      - "web-v*"
 
 env:
   NODE_VERSION: "22"
@@ -317,16 +319,16 @@ jobs:
           retention-days: 30
 
   # ─────────────────────────────────────────────────────────────────
-  # JOB 4: Production Deploy — somente via tag de release (v*)
+  # JOB 4: Production Deploy — somente via tag de release web (web-v*)
   # Staging deve ser validado antes de promover para produção.
-  # Para fazer deploy: git tag v1.0.0 && git push origin v1.0.0
+  # Para fazer deploy: git tag web-v1.12.0 && git push origin web-v1.12.0
   # Requer aprovação no ambiente "production" do GitHub (Required reviewers)
   # ─────────────────────────────────────────────────────────────────
   production:
     name: Deploy Production
     runs-on: ubuntu-latest
-    # Dispara APENAS em tags de release (v*) — nunca em push direto na main
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    # Dispara APENAS em tags de release web (web-v*) — nunca em push direto na main
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/web-v')
     environment:
       name: production
       url: https://www.shareo.com.br

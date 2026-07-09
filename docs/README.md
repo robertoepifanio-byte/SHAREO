@@ -34,6 +34,6 @@ Matéria-prima de design (fotos de seed, ícones .jpeg originais) vive em **`ass
 
 ## Versionamento por plataforma (convenção, 2026-07-07)
 
-- **Site (web):** tags `v*` (ex.: `v1.11.0`) — disparam o Deploy Production (com aprovação) via `deploy.yml`. Ritual inalterado.
-- **App mobile:** tags `mobile-v*` (ex.: `mobile-v1.1.0`) — disparam build EAS via `.github/workflows/eas-release.yml` (requer secret `EXPO_TOKEN`). Os prefixos não colidem: `v*` não casa com `mobile-v*` e vice-versa.
+- **Site (web):** tags `web-v*` (ex.: `web-v1.12.0`) — disparam o Deploy Production (com aprovação) via `deploy.yml`. Prefixo `web-` adotado em 2026-07-09 (antes era `v*`; ver ADR-027).
+- **App mobile:** tags `mobile-v*` (ex.: `mobile-v1.1.0`) — disparam build EAS via `.github/workflows/eas-release.yml` (requer secret `EXPO_TOKEN`). Os prefixos não colidem: `web-v*` não casa com `mobile-v*` e vice-versa.
 - `apps/mobile/app.json` tem `runtimeVersion: { policy: "appVersion" }` — pré-requisito de OTA updates (expo-updates) e das lojas; sem efeito até OTA ser adotado.

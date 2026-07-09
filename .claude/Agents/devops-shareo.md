@@ -68,7 +68,7 @@ Configurar e manter o pipeline GitHub Actions com os seguintes estágios em sequ
 3. **Build**: `next build` — falha bloqueante se houver erros de TypeScript ou de compilação.
 4. **Preview deploy** (para cada PR): Vercel preview URL gerada automaticamente para revisão visual antes do merge.
 5. **Deploy em staging**: automático após merge na branch `main` — para validação pelo QA e ProductOwner.
-6. **Deploy em produção**: manual com aprovação explícita — ou automático após tag de release com aprovação no GitHub.
+6. **Deploy em produção**: manual com aprovação explícita — ou automático após tag de release **web** `web-v*` (ex.: `web-v1.12.0`), com aprovação no GitHub Environment `production`. O app **mobile** é liberado por tag `mobile-v*` (build EAS, `eas-release.yml`), independente do web. Convenção em ADR-027.
 
 - Configurar **rollback automático** em caso de falha no deploy de produção — o Vercel suporta rollback com um clique.
 - Manter o tempo médio de pipeline abaixo de **10 minutos** — pipelines lentos reduzem a frequência de merge e criam gargalos.

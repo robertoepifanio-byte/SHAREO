@@ -80,7 +80,7 @@ Para o advogado entender que a parte técnica não é o gargalo:
 - **Ativação real de pagamentos** via Mercado Pago (após contrato com o PSP + conta PJ ativa).
 - **DNS/domínio** de produção (`shareo.com.br`).
 - **Captação de usuários reais** e início da operação comercial.
-- **Tag de release `v1.x`** (go-live).
+- **Tag de release `web-v1.x`** (go-live).
 
 > Condições do próprio parecer para go-live: **parecer FORMAL + contrato PSP assinado + conta PJ ativa + Termos/Política revisados publicados + checklist 100%**. Cada semana de atraso adia o início da operação, com o MVP já 100% pronto em staging.
 

@@ -368,7 +368,7 @@ Próximo passo: resolver P0 sem bloqueador externo (hardcoded + scripts) → agu
 7. Adicionar todas as variáveis de produção (NUNCA marcar NEXT_PUBLIC_* como Sensitive)
 8. Smoke test manual nos fluxos críticos antes de abrir para usuários
 9. Ativar Stripe live mode + webhook live endpoint
-10. Tag v1.1.0
+10. Tag web-v1.12.0
 ```
 
 ### Limites operacionais do MVP (produção)

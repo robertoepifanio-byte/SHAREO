@@ -140,7 +140,7 @@ Estrutura completa com convenções: [`docs/estrutura-projeto.md`](docs/estrutur
 |---|---|---|---|
 | Development | qualquer | local (`pnpm dev`) | Supabase `shareo-dev` |
 | Staging | `main` | Vercel automático | Supabase `shareo-staging` |
-| Production | tag `v*` + aprovação | Vercel manual | Supabase `shareo-prod` |
+| Production | tag `web-v*` + aprovação | Vercel manual | Supabase `shareo-prod` |
 
 ---
 

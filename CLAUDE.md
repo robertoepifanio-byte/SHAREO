@@ -178,4 +178,4 @@ Commit `0fc0480`. Staging validado (smokes #1–#32 passando). Aguardando **D4**
 
 Scripts temporários deletados ✅ (2026-06-12). Hardcoded P0 movidos para PlatformConfig ✅.
 
-Próximos passos: aguardar D4 → criar Supabase production → tag v1.1.0.
+Próximos passos: aguardar D4 → criar Supabase production → tag `web-v1.12.0` (convenção de release por plataforma — `web-v*` produção web, `mobile-v*` build EAS; ver ADR-027).

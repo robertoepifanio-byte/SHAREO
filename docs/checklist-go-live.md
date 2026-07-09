@@ -24,7 +24,7 @@
 ## 2. Infraestrutura — provisionar ambiente de produção isolado
 
 - ✅ **Vercel Pro** — pago/ativo (Team `shareo-marketplace`). Deploy por GitHub Actions (token).
-- ⚠️ ⬜ **Criar projeto Vercel separado `shareo-prod`** (espelhando o modelo de 2 projetos do Supabase). Hoje só existe **um** projeto (`shareo`), cujo slot **Production** está reaproveitado como **staging** (`shareo-rouge` / `staging.shareo.com.br`); "dev" não fica no Vercel (é local — `next dev`). 🚨 **Bug latente a corrigir ANTES do 1º deploy de prod:** os jobs `staging` e `production` do `deploy.yml` usam o **mesmo** `VERCEL_PROJECT_ID` e ambos fazem `vercel deploy --prod` → uma tag `v*` jogaria o build de prod no **mesmo slot do staging** (colisão). Fix: novo projeto + secret `VERCEL_PROJECT_ID_PROD` no job `production` (mudança pequena, **não toca o staging rodando**). Custo zero (Pro é por assento, não por projeto). Topologia-alvo: dev=local · staging=`shareo` · prod=`shareo-prod`.
+- ⚠️ ⬜ **Criar projeto Vercel separado `shareo-prod`** (espelhando o modelo de 2 projetos do Supabase). Hoje só existe **um** projeto (`shareo`), cujo slot **Production** está reaproveitado como **staging** (`shareo-rouge` / `staging.shareo.com.br`); "dev" não fica no Vercel (é local — `next dev`). 🚨 **Bug latente a corrigir ANTES do 1º deploy de prod:** os jobs `staging` e `production` do `deploy.yml` usam o **mesmo** `VERCEL_PROJECT_ID` e ambos fazem `vercel deploy --prod` → uma tag `web-v*` jogaria o build de prod no **mesmo slot do staging** (colisão). Fix: novo projeto + secret `VERCEL_PROJECT_ID_PROD` no job `production` (mudança pequena, **não toca o staging rodando**). Custo zero (Pro é por assento, não por projeto). Topologia-alvo: dev=local · staging=`shareo` · prod=`shareo-prod`.
 - 🗓️ **Supabase produção** — **AGENDADO p/ 1ª semana de julho/2026** (migração para licença **Pro**, decisão dos fundadores). Criar **3º projeto** `shareo-prd` (sa-east-1, org corporativa) via `migrate deploy` em banco **VAZIO** (validado em ARQ-ALTO-15). 🚨 **NUNCA clonar o staging** (carrega drift). Pro = sem auto-pause, mais conexões, PITR. **Os secrets `DATABASE_URL_PROD` / `NEXT_PUBLIC_SUPABASE_*_PROD` só serão setados quando esse projeto existir.**
 - ⬜ **Upstash Redis de produção** — instância própria (rate limit + epoch de sessão; fail-open se ausente).
 - ⬜ **Resend Pro** — domínio `shareo.com.br` já verificado; subir de Free→Pro (~US$20) quando escalar (~20-30 reservas/dia).
@@ -91,7 +91,7 @@
 
 - ⬜ Smokes E2E contra produção (com cuidado para **não poluir dados reais**).
 - ⬜ Lighthouse (LCP<2,5s / CLS<0,1 / INP<200ms).
-- ⬜ **Tag `v1.x` + GitHub Release**.
+- ⬜ **Tag `web-v1.12.0` + GitHub Release** (convenção web-v*, ver ADR-027).
 
 ---
 
