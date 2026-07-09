@@ -439,6 +439,9 @@ const s = StyleSheet.create({
     color:      "#FFFFFF",
   },
   chipsScroll: {
+    // Altura explícita: a ScrollView horizontal não cresce sozinha com o conteúdo
+    // do chip (ícone 80 + rótulo 2 linhas) → sem isso o rótulo era cortado no Android.
+    height:            150,
     borderBottomWidth: 1,
     borderBottomColor: "#E2E8F0",
   },
@@ -451,8 +454,8 @@ const s = StyleSheet.create({
   // Casa com o card vertical do CategoryChip (ícone 64 + rótulo 2 linhas)
   // pra não saltar de tamanho quando o loading termina.
   chipSkeleton: {
-    width:        88,
-    height:       100,
+    width:        96,
+    height:       116,
     borderRadius: 10,
   },
   // Linha count + sort — "mb-4 flex items-center justify-between gap-3" (page.tsx:398)
