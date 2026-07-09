@@ -23,7 +23,28 @@ Marketplace de economia circular para aluguel local de itens. Lançamento nacion
 | E-mail | Resend (`RESEND_API_KEY`) |
 | Storage | Supabase Storage — `item-images` (público), `booking-photos` (público), `id-docs` (privado) |
 | Hosting | Vercel (main → staging automático) |
-| Mobile | Expo + React Native (`apps/mobile/`) — scaffold completo, não testado |
+| Mobile | Expo + React Native (`apps/mobile/`) + NativeWind — redesign por transcrição do site (PRs #171–#173) |
+
+## 📱 App mobile — REGRA DE TRANSCRIÇÃO LITERAL (fundador, 2026-07-02)
+
+**Qualquer trabalho de UI/funcionalidade em `apps/mobile/` TRANSCREVE o site responsivo em 375px — nunca "adapta", "melhora" ou inventa.** O resultado final deve ser IGUAL ao site mobile. Regra criada após 2 rejeições do fundador a protótipos que reinterpretaram o design.
+
+1. Rótulos, textos, ordem, ícones (SVG exato), cores e espaçamentos vêm **verbatim** dos componentes do site (`components/layout/AppHeader.tsx`, `BottomNav.tsx`, `MobileMenu.tsx`, `app/itens/page.tsx`, `app/(auth)/login`, `_PriceCalc.tsx`...). Ler o JSX-fonte ANTES de escrever qualquer tela.
+2. Todo arquivo novo/alterado em `apps/mobile/` começa com `// Fonte: <arquivo(s) do site transcrito(s)>`.
+3. PR mobile inclui tabela de auditoria componente/tela → arquivo-fonte na descrição.
+4. Testes RNTL fixam os rótulos exatos (rótulo inventado = CI quebra).
+5. Na dúvida entre "padrão nativo" e "copiar o site mobile": **copiar o site**.
+
+Spec visual aprovada: `docs/design/mobile-app-prototipo-v1.html` + `docs/design/mobile-app-handoff.md` (rastreabilidade frame→fonte). Fundação do design system do app: `apps/mobile/lib/theme.tsx` (tokens light/dark transcritos de `app/globals.css`) + `apps/mobile/components/ui|layout/`.
+
+Para implementar/corrigir tela do app: usar `/shareo-transcrever-tela <rota>` (encapsula esta regra + gotchas). Device testing: `scripts/adb-device.sh` (resolve adb do winget + converte coordenadas ×1.2).
+
+## ✅ Regra de verificação antes de reportar "resolvido"
+
+**Nunca marcar item como resolvido/concluído sem evidência de verificação** — isso já minou a confiança do fundador ~10× (status dizia ✅ e o bug persistia no device). Evidência mínima por tipo:
+- **Web/staging:** deploy concluído (`gh run` verde + hash do deployment confirmado) e comportamento verificado na URL de staging — código mesclado ≠ deployado.
+- **Mobile:** teste RNTL verde + bundle Metro ok; mudanças visuais/fluxo exigem confirmação em device/emulador (`scripts/adb-device.sh shot`). `npx tsc --noEmit` NÃO é evidência (babel-preset-expo quebra onde tsc passa).
+- Sem evidência → reportar como "implementado, aguardando verificação", nunca ✅.
 
 ## Design System (v2)
 

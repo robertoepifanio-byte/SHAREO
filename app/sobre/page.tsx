@@ -2,6 +2,9 @@ import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
 import { AppHeader } from "@/components/layout/AppHeader"
+import { prisma } from "@/lib/prisma"
+
+export const revalidate = 60
 
 export const metadata: Metadata = {
   title: "Sobre o ShareO",
@@ -54,9 +57,13 @@ const VALORES = [
   },
 ]
 
-const STATS = [
-  { value: "2.400+", label: "itens cadastrados" },
-  { value: "R$2.000", label: "renda média/mês por proprietário" },
+// "itens cadastrados" era fixo ("2.400+") enquanto Início (app/page.tsx:115)
+// já mostra a contagem real via prisma.item.count — corrigido 2026-07-06 pra
+// não divergir do número real da plataforma.
+const STATS_STATIC = [
+  // "renda média/mês por proprietário" (R$2.000) removido — número fabricado sem
+  // dado real (risco CDC art. 30/37). Reintroduzir só com média real de repasses.
+  // Revisão s41 (decisão do fundador).
   { value: "2026", label: "ano de fundação" },
 ]
 
@@ -72,7 +79,7 @@ const EQUIPE = [
       "Responsável por garantir uma experiência fluida e segura, com funcionalidades como chat integrado, verificação de usuários e pagamentos protegidos.",
   },
   {
-    title: "Suporte 7 dias por semana",
+    title: "Suporte seg–sex, 09h–17h",
     description:
       "Profissionais dedicados a ajudar usuários em todas as etapas, reforçando a confiança na plataforma.",
   },
@@ -83,7 +90,14 @@ const EQUIPE = [
   },
 ]
 
-export default function SobrePage() {
+export default async function SobrePage() {
+  const itemCount = await prisma.item.count({ where: { deletedAt: null } }).catch(() => 0)
+
+  const STATS = [
+    { value: itemCount.toLocaleString("pt-BR"), label: "itens cadastrados" },
+    ...STATS_STATIC,
+  ]
+
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
@@ -255,7 +269,7 @@ export default function SobrePage() {
                   src="/logos/pratika-ia-sobre.png"
                   alt="Pratika-IA"
                   width={480}
-                  height={145}
+                  height={166}
                   className="h-auto w-full max-w-sm"
                 />
                 <p className="max-w-sm text-sm text-muted-foreground leading-relaxed">

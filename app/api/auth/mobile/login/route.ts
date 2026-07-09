@@ -79,7 +79,9 @@ export async function POST(req: NextRequest) {
     const refreshToken = await new SignJWT({ sub: user.id, type: "refresh" })
       .setProtectedHeader({ alg: "HS256" })
       .setIssuedAt()
-      .setExpirationTime("30d")
+      // 7d (era 30d) — reduz a janela de exposição de um refresh roubado (~4×)
+      // enquanto a prevenção de reuso (jti/blocklist) fica no backlog. Revisão s41.
+      .setExpirationTime("7d")
       .sign(secret())
 
     const { passwordHash: _, ...safeUser } = user

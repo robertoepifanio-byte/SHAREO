@@ -12,8 +12,16 @@
 //   - navegação dos botões CTA
 
 import React from "react"
-import { render, screen, fireEvent } from "@testing-library/react-native"
+import { render, screen, fireEvent, waitFor } from "@testing-library/react-native"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { router } from "expo-router"
+
+// ── Mock: @/lib/api — GET /api/stats/public (itemCount dinâmico, achado
+// 2026-07-06: "2.400+" era fixo enquanto a Home já usava contagem real) ──────
+jest.mock("@/lib/api", () => ({
+  apiFetch: jest.fn().mockResolvedValue({ data: { itemCount: 3142 } }),
+  API_URL:  "https://staging.shareo.com.br",
+}))
 
 // ── Mock: react-native-safe-area-context (TypeScript-typed) ──────────────────
 // jest.setup.js já inclui este mock em JS puro; re-mockamos aqui com types
@@ -66,7 +74,8 @@ import SobreScreen from "@/app/sobre"
 
 // ── Utilitário de render ───────────────────────────────────────────────────────
 function wrap(ui: React.ReactElement) {
-  return render(ui)
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>)
 }
 
 // ── Testes ─────────────────────────────────────────────────────────────────────
@@ -94,9 +103,9 @@ describe("SobreScreen — estrutura geral", () => {
 
 describe("SobreScreen — stats verbatim", () => {
 
-  it("exibe stat '2.400+'", () => {
+  it("exibe stat dinâmico de itens cadastrados (GET /api/stats/public — não mais fixo '2.400+')", async () => {
     wrap(<SobreScreen />)
-    expect(screen.getByText("2.400+")).toBeTruthy()
+    expect(await screen.findByText("3.142")).toBeTruthy()
   })
 
   it("exibe label 'itens cadastrados'", () => {
@@ -104,15 +113,8 @@ describe("SobreScreen — stats verbatim", () => {
     expect(screen.getByText("itens cadastrados")).toBeTruthy()
   })
 
-  it("exibe stat 'R$2.000'", () => {
-    wrap(<SobreScreen />)
-    expect(screen.getByText("R$2.000")).toBeTruthy()
-  })
-
-  it("exibe label 'renda média/mês por proprietário'", () => {
-    wrap(<SobreScreen />)
-    expect(screen.getByText("renda média/mês por proprietário")).toBeTruthy()
-  })
+  // "R$2.000 / renda média/mês por proprietário" removido (revisão s41 —
+  // stat fabricado, risco CDC). Testes correspondentes removidos junto.
 
   it("exibe stat '2026'", () => {
     wrap(<SobreScreen />)
@@ -221,9 +223,9 @@ describe("SobreScreen — seção Equipe verbatim (4 cards)", () => {
     expect(screen.getByText(/chat integrado/i)).toBeTruthy()
   })
 
-  it("exibe card 'Suporte 7 dias por semana'", () => {
+  it("exibe card 'Suporte seg–sex, 09h–17h' (SLA real — revisão s41)", () => {
     wrap(<SobreScreen />)
-    expect(screen.getByText("Suporte 7 dias por semana")).toBeTruthy()
+    expect(screen.getByText("Suporte seg–sex, 09h–17h")).toBeTruthy()
   })
 
   it("exibe card 'Rede de Proprietários Fundadores'", () => {

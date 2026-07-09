@@ -3,6 +3,9 @@
 // (app/kyc/page.tsx NÃO existe no site — citação anterior estava errada; a
 // verificação de identidade real vive dentro de /perfil/documentos)
 // Tela de verificação de identidade (KYC) — StyleSheet + tokens, funcionalidade preservada.
+// 2026-07-06: completada a transcrição — faltava o card "Documento cadastrado"
+// (CPF/CNPJ mascarado, page.tsx linhas 64-85); era por isso que "Documentos"
+// no menu abria o navegador (a tela só cobria a metade da verificação).
 // LGPD: texto canônico de consentimento replicado de lib/legal/biometric-consent-text.ts. Manter IDÊNTICO.
 //
 // Fluxo:
@@ -53,7 +56,11 @@ const BIOMETRIC_CONSENT_CHECKBOX =
 interface MeResponse {
   data: {
     idVerificationStatus: string | null
-    isVerified: boolean
+    idRejectionReason:    string | null
+    maskedDocument:       string | null
+    docLabel:             string
+    biometricConsentRequired: boolean
+    hasBiometricConsent: boolean
   }
 }
 
@@ -78,10 +85,11 @@ export default function KycScreen() {
   const [needsConsent, setNeedsConsent] = useState(false)
   const [consentGiven, setConsentGiven] = useState(false)
 
-  // Busca status atual de verificação
+  // Busca status atual de verificação + documento mascarado (CPF/CNPJ) —
+  // rota dedicada (não /api/users/me) pra escopar o decrypt só nesta tela.
   const { data: meData, isLoading: meLoading } = useQuery({
     queryKey: ["me-kyc"],
-    queryFn:  () => apiFetch<MeResponse>("/api/users/me"),
+    queryFn:  () => apiFetch<MeResponse>("/api/users/me/id-verification"),
     enabled:  !!user,
     select:   (d) => d.data,
   })
@@ -241,6 +249,34 @@ export default function KycScreen() {
 
       <ScrollView style={s.scroll} contentContainerStyle={{ padding: 16, paddingBottom: 120 }}>
 
+        {/* ── Documento cadastrado ── verbatim de app/perfil/documentos/page.tsx
+             linhas 64-85 (card que faltava — "Documentos" do menu abria o
+             navegador porque essa tela só cobria a verificação, achado
+             2026-07-06) ── */}
+        {!meLoading && (
+          <View style={[s.docBox, { backgroundColor: tokens.surface, borderColor: tokens.border }]}>
+            <Text style={[s.docTitle, { color: tokens.text }]}>{meData?.docLabel ?? "CPF"} cadastrado</Text>
+            {meData?.maskedDocument ? (
+              <View style={[s.docRow, { backgroundColor: tokens.bg }]}>
+                <View>
+                  <Text style={[s.docLabel, { color: tokens.muted }]}>{meData.docLabel}</Text>
+                  <Text style={[s.docValue, { color: tokens.text }]}>{meData.maskedDocument}</Text>
+                </View>
+                <View style={[s.docBadge, { backgroundColor: tokens.green + "1A" }]}>
+                  <Text style={[s.docBadgeText, { color: tokens.green }]}>🔒 Protegido</Text>
+                </View>
+              </View>
+            ) : (
+              <Text style={[s.docEmptyText, { color: tokens.muted }]}>
+                Nenhum {meData?.docLabel ?? "CPF"} cadastrado. Acesse seu perfil para adicionar.
+              </Text>
+            )}
+            <Text style={[s.docFooter, { color: tokens.muted }]}>
+              🔒 Seu {meData?.docLabel ?? "CPF"} é criptografado com AES-256-GCM e nunca é compartilhado com terceiros (LGPD art. 46).
+            </Text>
+          </View>
+        )}
+
         {/* ── Status atual ── */}
         {verificationStatus === "VERIFIED" && (
           <View
@@ -272,8 +308,11 @@ export default function KycScreen() {
             accessibilityRole="alert"
           >
             <Text style={[s.statusTitle, { color: mode === "dark" ? "#F08C84" : "#991B1B" }]}>Documentos rejeitados</Text>
+            {/* Exibe o motivo REAL do admin quando houver (paridade com o site,
+                _IdVerification.tsx:173-174; achado revisão s41 — antes só a
+                mensagem genérica, deixando o usuário sem saber o que corrigir). */}
             <Text style={[s.statusText, { color: mode === "dark" ? tokens.error : "#B91C1C" }]}>
-              Por favor envie novos documentos mais legíveis.
+              {meData?.idRejectionReason ?? "Por favor envie novos documentos mais legíveis."}
             </Text>
           </View>
         )}
@@ -518,6 +557,17 @@ const s = StyleSheet.create({
   // CTA guard
   ctaBtn:     { borderRadius: 12, paddingHorizontal: 32, paddingVertical: 12, marginTop: 20, minHeight: 44 },
   ctaBtnText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
+
+  // Documento cadastrado — verbatim de app/perfil/documentos/page.tsx
+  docBox:       { borderRadius: 12, borderWidth: 1, padding: 16, marginBottom: 16 },
+  docTitle:     { fontSize: 13, fontWeight: "700", marginBottom: 12 },
+  docRow:       { flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderRadius: 8, paddingHorizontal: 14, paddingVertical: 12 },
+  docLabel:     { fontSize: 10, fontWeight: "700", letterSpacing: 0.5, textTransform: "uppercase" },
+  docValue:     { fontSize: 15, fontWeight: "700", marginTop: 2, fontVariant: ["tabular-nums"] },
+  docBadge:     { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  docBadgeText: { fontSize: 11, fontWeight: "700" },
+  docEmptyText: { fontSize: 13 },
+  docFooter:    { fontSize: 11, marginTop: 10, lineHeight: 16 },
 
   // Status banners
   statusBox:   { borderRadius: 12, borderWidth: 1, padding: 16, marginBottom: 16 },

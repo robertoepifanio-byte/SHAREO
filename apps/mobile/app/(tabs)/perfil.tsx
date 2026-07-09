@@ -218,13 +218,9 @@ export default function PerfilScreen() {
       // MOB-BL-meus-anuncios resolvido 2026-07-05 — tela nativa criada
       native: () => router.push("/meus-anuncios"),
     },
-    {
-      href:  "/kyc",
-      icon:  "idcard",
-      label: "Verificação de identidade",
-      desc:  "Documentos e verificação",
-      native: () => router.push("/kyc"),
-    },
+    // "Verificação de identidade" (mesmo destino /kyc) removida — era entrada
+    // duplicada de "Documentos" abaixo; o site tem só /perfil/documentos.
+    // Achado revisão s41 (paridade).
     // ── Itens abaixo abrem no browser (sem equivalente nativo no MVP) ──────────
     // Verbatim de app/perfil/page.tsx linhas 22-30 (href, label e desc preservados)
     {
@@ -253,6 +249,11 @@ export default function PerfilScreen() {
       icon:  "idcard",
       label: "Documentos",
       desc:  "CPF/CNPJ e verificação de identidade",
+      // Completado 2026-07-06 — kyc.tsx ganhou o card de doc mascarado que
+      // faltava (era por isso que abria o navegador). Mesmo destino de
+      // "Verificação de identidade" acima (kyc.tsx cobre as duas seções que
+      // o site junta numa página só, /perfil/documentos).
+      native: () => router.push("/kyc"),
     },
     {
       href:   "/perfil/recebimentos",

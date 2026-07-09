@@ -1,7 +1,7 @@
 /**
  * seed-demo-items.ts
  *
- * Cria ~21 itens de demonstração (3 por categoria) com fotos reais do Unsplash
+ * Cria ~18 itens de demonstração (3 por categoria) com fotos reais do Unsplash
  * no banco de staging, para que listagem, busca, mapa e cards tenham conteúdo
  * visual real em demos e validações de design.
  *

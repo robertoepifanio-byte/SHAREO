@@ -36,7 +36,9 @@ export async function POST(req: NextRequest) {
 
     let payload: { sub?: string; type?: string }
     try {
-      const { payload: p } = await jwtVerify(refreshToken, secret())
+      // Pina HS256 (defesa em profundidade — secret simétrico), consistente com
+      // lib/resolveUserId.ts. Achado B-01 da revisão s41.
+      const { payload: p } = await jwtVerify(refreshToken, secret(), { algorithms: ["HS256"] })
       payload = p as typeof payload
     } catch {
       return NextResponse.json(
@@ -93,14 +95,27 @@ export async function POST(req: NextRequest) {
     const newRefreshToken = await new SignJWT({ sub: user.id, type: "refresh" })
       .setProtectedHeader({ alg: "HS256" })
       .setIssuedAt()
-      .setExpirationTime("30d")
+      // 7d (era 30d) — ver login/route.ts. Reduz a janela de um refresh roubado.
+      .setExpirationTime("7d")
       .sign(secret())
 
     return NextResponse.json({
       data: {
         accessToken:  newAccessToken,
         refreshToken: newRefreshToken,
-        user,
+        // Não devolver isActive/deletedAt (campos internos usados só no guard
+        // acima) no payload do cliente. Achado revisão s41 (segurança).
+        user: {
+          id:         user.id,
+          email:      user.email,
+          name:       user.name,
+          role:       user.role,
+          userType:   user.userType,
+          isVerified: user.isVerified,
+          avatarUrl:  user.avatarUrl,
+          city:       user.city,
+          state:      user.state,
+        },
       },
     })
   } catch (e: unknown) {

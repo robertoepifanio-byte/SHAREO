@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc --noEmit)",
+      "Bash(npx tsc --noEmit *)",
+      "Bash(npx jest)",
+      "Bash(npx jest *)",
+      "Bash(gh run watch *)",
+      "Bash(npx vercel ls)",
+      "Bash(npx vercel ls *)",
+      "Bash(npx vercel inspect *)",
+      "Bash(npx eas-cli build:view *)",
+      "Bash(npx eas-cli build:list *)",
+      "Bash(eas build:view *)",
+      "Bash(eas build:list *)",
+      "mcp__Claude_Preview__preview_screenshot",
+      "mcp__Claude_Preview__preview_console_logs",
+      "mcp__Claude_Preview__preview_logs",
+      "mcp__Claude_Preview__preview_snapshot",
+      "mcp__Claude_Preview__preview_network",
+      "mcp__Claude_Preview__preview_list",
+      "mcp__Claude_Preview__preview_inspect"
+    ]
+  }
+}

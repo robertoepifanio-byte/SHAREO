@@ -151,6 +151,8 @@ describe("EstimativaScreen — textos verbatim", () => {
 describe("EstimativaScreen — categorias (6 chips, verbatim de _Calculadora.tsx)", () => {
   beforeEach(() => jest.clearAllMocks())
 
+  // "Moda" removida — categoria excluída da plataforma (commit 815808d); o site
+  // (_Calculadora.tsx) também não a lista. Paridade restaurada na revisão s41.
   const labels = [
     "Ferramentas", "Eletrônicos", "Esporte/Lazer", "Festas",
     "Construção", "Eletrodomésticos",

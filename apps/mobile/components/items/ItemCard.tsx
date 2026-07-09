@@ -102,6 +102,7 @@ function FavoriteHeart({ itemId }: { itemId: string }) {
       onPress={handlePress}
       disabled={toggle.isPending}
       style={s.favBtn}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}  // área tocável 44×44 (visual 28×28) — WCAG 2.5.5
       accessibilityRole="button"
       accessibilityLabel={favorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
     >
@@ -146,7 +147,7 @@ export function ItemCard({ item, onPress }: { item: ItemCardItem; onPress: () =>
 
       {/* Corpo */}
       <View style={s.cardBody}>
-        <Text style={[s.cardCat, { color: tokens.green }]} numberOfLines={1}>{item.category.name}</Text>
+        <Text style={[s.cardCat, { color: tokens.success }]} numberOfLines={1}>{item.category.name}</Text>
         {/* dark: navy (#003366) seria invisível sobre fundo escuro — usa tokens.text */}
         <Text style={[s.cardTitle, { color: mode === "dark" ? tokens.text : "#003366" }]} numberOfLines={2}>{item.title}</Text>
         {/* TODO(revisão): estrelas de avaliação e distanceKm não vêm das APIs

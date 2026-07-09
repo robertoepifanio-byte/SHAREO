@@ -178,7 +178,7 @@ export async function GET(req: NextRequest) {
       },
     })
   } catch (err) {
-    console.error("[GET /api/dashboard]", err)
+    console.error("[GET /api/dashboard]", err instanceof Error ? err.message : err)
     return NextResponse.json(
       { error: { code: "INTERNAL_ERROR", message: "Erro interno." } },
       { status: 500 },

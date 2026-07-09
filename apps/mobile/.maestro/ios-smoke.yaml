@@ -1,0 +1,62 @@
+# Smoke E2E iOS (simulador) — roda no CI via .github/workflows/ios-smoke.yml
+# Valida os fluxos centrais do app no iOS: login → Home → Explorar → mapa Mapbox.
+# Credenciais: conta demo de staging (scripts/_provision-test-owners.ts), via -e EMAIL/-e PASSWORD.
+appId: com.shareo.app
+---
+- launchApp:
+    clearState: true
+
+# ── Login (app deslogado abre direto em /login — app/index.tsx) ──────────────
+- assertVisible: "Entrar na sua conta"
+- takeScreenshot: 01-login
+- tapOn: "seu@email.com"
+- inputText: ${EMAIL}
+# Placeholder do campo de senha — "Senha" (accessibilityLabel) colide com o
+# rótulo "SENHA" acima do campo: o tap cai no rótulo e o input perde o foco
+- tapOn: "••••••••"
+- inputText: ${PASSWORD}
+- hideKeyboard
+- tapOn: "Entrar"
+
+# ── Home (tabs) ───────────────────────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Explorar"
+    timeout: 30000
+- takeScreenshot: 02-home
+- scroll
+- takeScreenshot: 03-home-scroll
+
+# ── Explorar (lista de itens) ─────────────────────────────────────────────────
+- tapOn: "Explorar"
+# accessibilityLabel do botão é "Ver itens no mapa" (explorar.tsx:423) — o texto
+# visível "Ver no mapa" (linha 429) não é o nó lido pela árvore de acessibilidade
+# do iOS, que é o que o Maestro consulta (não OCR).
+- extendedWaitUntil:
+    visible: "Ver itens no mapa"
+    timeout: 15000
+- takeScreenshot: 04-explorar
+- scroll
+- takeScreenshot: 05-explorar-itens
+
+# ── Mapa nativo (Mapbox) ──────────────────────────────────────────────────────
+- scrollUntilVisible:
+    element: "Ver itens no mapa"
+    direction: UP
+# Sem isso, o tap seguinte usa coordenadas da árvore de acessibilidade capturadas
+# antes do scroll assentar (momentum do FlatList) e cai no CategoryIcon errado
+# (reproduzido: aplicou o filtro "Eletrodomésticos" em vez de abrir o mapa).
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn: "Ver itens no mapa"
+# Prompt de localização do iOS, se aparecer
+- tapOn:
+    text: "Allow While Using App"
+    optional: true
+- tapOn:
+    text: "Allow Once"
+    optional: true
+# Tempo para o Mapbox baixar os tiles
+- extendedWaitUntil:
+    notVisible: "Ver itens no mapa"
+    timeout: 10000
+- takeScreenshot: 06-mapa-mapbox
