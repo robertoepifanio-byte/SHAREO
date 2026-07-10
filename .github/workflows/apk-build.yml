@@ -75,7 +75,10 @@ jobs:
           EXPO_PUBLIC_API_URL: https://staging.shareo.com.br
           EXPO_PUBLIC_MAPBOX_TOKEN: pk.eyJ1Ijoic2hhcmVvIiwiYSI6ImNtcHB1bWI5bDBpb2YycXB6dG5tcHlkbmsifQ.WXzD1_LtMj41GiziLvMzxw
           MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
-        run: ./gradlew assembleRelease --no-daemon -x lint
+        # Só arm64-v8a: cobre todos os celulares Android modernos (incl. Moto G56).
+        # Compilar as 4 ABIs (x86/x86_64/armeabi) quadruplica o tempo do build nativo
+        # (reanimated/worklets/CMake) — sem necessidade p/ distribuição a testers reais.
+        run: ./gradlew assembleRelease --no-daemon -x lint -PreactNativeArchitectures=arm64-v8a
 
       - name: Localizar APK
         id: apk
