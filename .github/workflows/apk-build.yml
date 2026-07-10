@@ -42,13 +42,6 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      # O bundler do Gradle (createBundleReleaseJsAndAssets) resolve babel-preset-expo
-      # a partir de um contexto onde o layout padrão do pnpm o esconde → "Cannot find
-      # module 'babel-preset-expo'". shamefully-hoist achata tudo em node_modules/ na
-      # raiz. Efêmero (só neste runner; NÃO commitado no .npmrc do repo).
-      - name: Hoist total das deps p/ o bundler do Gradle (pnpm, efêmero)
-        run: echo "shamefully-hoist=true" >> .npmrc
-
       - name: Instalar dependências (root workspace)
         run: pnpm install --frozen-lockfile
 
@@ -62,17 +55,6 @@ jobs:
           #    baixar o SDK nativo do Mapbox e exige o token de download)
           printf "module.exports = { dependencies: { '@rnmapbox/maps': { platforms: { android: null } } } };\n" > react-native.config.js
           echo "autolinking @rnmapbox/maps desligado no Android"
-
-      # O bundler do Gradle resolve o preset do babel a partir de um caminho profundo
-      # do .pnpm e não acha a string "babel-preset-expo". require.resolve() no
-      # babel.config.js resolve a partir de apps/mobile (caminho absoluto) → sempre acha.
-      # Efêmero (só neste runner; o babel.config.js do repo continua com a string,
-      # que funciona no EAS/local).
-      - name: babel-preset-expo via require.resolve (efêmero)
-        working-directory: apps/mobile
-        run: |
-          sed -i 's|"babel-preset-expo"|require.resolve("babel-preset-expo")|' babel.config.js
-          echo "--- babel.config.js (patched) ---"; cat babel.config.js
 
       - name: expo prebuild (gera android/)
         working-directory: apps/mobile
