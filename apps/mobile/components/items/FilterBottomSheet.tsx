@@ -522,11 +522,13 @@ const s = StyleSheet.create({
   },
   radioLabel: {
     fontSize:  14,
-    // flexShrink: sem isso, o Text não quebra linha (nem encolhe) dentro da row —
-    // com fonte do sistema aumentada (acessibilidade Android), o rótulo extrapola
-    // a largura e é cortado pelo raio da borda do bottom sheet (ex.: "Ferramentas"
-    // virava "Ferramenta"). Achado real do fundador em device de outro usuário.
-    flexShrink: 1,
+    // flex:1 (não só flexShrink) — com flexShrink isolado o Yoga mantém o
+    // flexBasis "auto" (tamanho de conteúdo) e o Text não recebe uma largura
+    // definida pra quebrar linha, só encolhe e cai no clip do raio da borda do
+    // bottom sheet. flex:1 zera o flexBasis e dá ao Text a largura restante da
+    // row, permitindo quebra real (confirmado em device com fonte do sistema
+    // 1.3× — reprodução do relato do outro usuário).
+    flex: 1,
   },
   // Stepper de preço (adaptação do slider HTML)
   stepperRow: {
