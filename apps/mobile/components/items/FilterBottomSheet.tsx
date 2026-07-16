@@ -522,6 +522,11 @@ const s = StyleSheet.create({
   },
   radioLabel: {
     fontSize:  14,
+    // flexShrink: sem isso, o Text não quebra linha (nem encolhe) dentro da row —
+    // com fonte do sistema aumentada (acessibilidade Android), o rótulo extrapola
+    // a largura e é cortado pelo raio da borda do bottom sheet (ex.: "Ferramentas"
+    // virava "Ferramenta"). Achado real do fundador em device de outro usuário.
+    flexShrink: 1,
   },
   // Stepper de preço (adaptação do slider HTML)
   stepperRow: {
