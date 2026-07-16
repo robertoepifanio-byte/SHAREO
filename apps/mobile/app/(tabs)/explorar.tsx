@@ -1,5 +1,5 @@
-// Fonte: app/itens/page.tsx + components/ui/CategoryIcon.tsx + components/items/ItemCard.tsx
-// Tela Explorar — busca + chips de categoria com ícones + grid 2 colunas + skeleton + empty state.
+// Fonte: app/itens/page.tsx + components/ui/CategoryIcon.tsx + components/items/ItemCard.tsx + app/itens/_RentBanner.tsx
+// Tela Explorar — busca + RentBanner ("Como alugar") + chips de categoria com ícones + grid 2 colunas + skeleton + empty state.
 // Transcrição literal da versão mobile 375px do site.
 //
 // Adições desta PR (feat/mobile-explorar-todos):
@@ -28,6 +28,7 @@ import { apiFetch, API_URL } from "@/lib/api"
 import { useTheme } from "@/lib/theme"
 import { CategoryChip } from "@/components/ui/CategoryChip"
 import { ItemCard, ItemCardSkeleton, type ItemCardItem } from "@/components/items/ItemCard"
+import { RentBanner } from "@/components/items/RentBanner"
 import {
   FilterBottomSheet,
   FilterTriggerButton,
@@ -215,6 +216,14 @@ export default function ExplorarScreen() {
           <Text style={s.searchBtnText}>Buscar</Text>
         </TouchableOpacity>
       </View>
+
+      {/* ── RentBanner ("Como alugar no ShareO") ── */}
+      <ScrollView
+        scrollEnabled={false}
+        style={{ paddingHorizontal: 12, paddingVertical: 12 }}
+      >
+        <RentBanner />
+      </ScrollView>
 
       {/* ── Chips de categoria (pré-existente) ── */}
       <ScrollView
