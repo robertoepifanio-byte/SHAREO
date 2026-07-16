@@ -221,13 +221,15 @@ export default function ExplorarScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* ── RentBanner ("Como alugar no ShareO") ── */}
-      <ScrollView
-        scrollEnabled={false}
-        style={{ paddingHorizontal: 12, paddingVertical: 12 }}
-      >
+      {/* ── RentBanner ("Como alugar no ShareO") ──
+          Correção 2026-07-16: estava dentro de um ScrollView (scrollEnabled=false)
+          como wrapper — ScrollView não dimensiona ao conteúdo como uma View comum
+          (precisa de altura definida do pai), então o banner ficava com altura
+          errada e era cortado pelos chips de categoria logo abaixo. Trocado por
+          View simples, que hug-to-content funciona como esperado. */}
+      <View style={{ paddingHorizontal: 12, paddingVertical: 12 }}>
         <RentBanner />
-      </ScrollView>
+      </View>
 
       {/* ── Chips de categoria (pré-existente) ── */}
       <ScrollView
