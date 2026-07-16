@@ -1,11 +1,10 @@
 // Fonte: app/page.tsx (Home completa) + components/home/HeroSearch.tsx
-//   + components/home/ListaVIP.tsx + components/home/FounderCaptureForm.tsx
+//   + components/home/ListaVIP.tsx (já embute o FounderCaptureForm)
 //   + components/layout/AppFooter.tsx
 // Transcrição literal de TODAS as seções da Home do site, na mesma ordem:
 // Hero (imagem + placeholder rotativo) → Simulador de Renda → Categorias →
 // Como Funciona → Casos de Renda → Itens Procurados → Segurança →
-// Lista VIP (1ª ocorrência, completa) → FounderCaptureForm colapsado (2ª ocorrência) →
-// AppFooter.
+// Lista VIP → AppFooter.
 
 import { useState, useCallback, useEffect, useRef } from "react"
 import {
@@ -28,7 +27,6 @@ import { CasosRenda } from "@/components/home/CasosRenda"
 import { ItensProcurados } from "@/components/home/ItensProcurados"
 import { Seguranca } from "@/components/home/Seguranca"
 import { ListaVIP } from "@/components/home/ListaVIP"
-import { FounderCaptureForm } from "@/components/home/FounderCaptureForm"
 import { AppFooter } from "@/components/layout/AppFooter"
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
@@ -243,18 +241,15 @@ export default function HomeScreen() {
       {/* ── SEGURANÇA ── */}
       <Seguranca feeRate={stats?.feeRate ?? null} checkoutMaxCents={stats?.checkoutMaxCents ?? null} />
 
-      {/* ── LISTA VIP — 1ª ocorrência (seção completa) ──
-          Fonte: components/home/ListaVIP.tsx + FounderCaptureForm.tsx
-          Badge "Pré-lançamento", 4 cards de benefícios, formulário, contador dinâmico. */}
+      {/* ── LISTA VIP ──
+          Fonte: components/home/ListaVIP.tsx (que já embute o FounderCaptureForm internamente, linha 128).
+          Badge "Pré-lançamento", 4 cards de benefícios, formulário, contador dinâmico.
+          Correção 2026-07-16: havia uma 2ª ocorrência duplicada do CTA "Quer ser avisado
+          no lançamento?" logo abaixo — o comentário anterior alegava que o site repetia o
+          FounderCaptureForm perto do rodapé, mas app/page.tsx chama <ListaVIP /> uma ÚNICA
+          vez e o form não aparece de novo em nenhum outro lugar da home. Duplicação
+          removida (achado real do fundador em device). */}
       <ListaVIP />
-
-      {/* ── LISTA VIP — 2ª ocorrência (FounderCaptureForm colapsado perto do rodapé) ──
-          O mesmo FounderCaptureForm colapsado reaparece perto do rodapé no site.
-          Fonte: components/home/ListaVIP.tsx do site (nota do plano de validação 2026-07-03). */}
-      <View style={styles.founderCtaSection}>
-        <Text style={styles.founderCtaTitle}>Quer ser avisado no lançamento?</Text>
-        <FounderCaptureForm />
-      </View>
 
       {/* ── RODAPÉ GLOBAL ──
           Fonte: components/layout/AppFooter.tsx
@@ -310,22 +305,6 @@ const styles = StyleSheet.create({
     height: 140,
     alignSelf: "center",
     marginTop: 16,
-    marginBottom: 4,
-  },
-
-  // FounderCaptureForm colapsado (2ª ocorrência) perto do rodapé
-  founderCtaSection: {
-    backgroundColor: "#003366",
-    paddingHorizontal: 24,
-    paddingVertical: 32,
-    gap: 12,
-    alignItems: "center",
-  },
-  founderCtaTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    textAlign: "center",
     marginBottom: 4,
   },
 
