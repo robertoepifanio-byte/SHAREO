@@ -88,7 +88,11 @@ export default function ExplorarScreen() {
   const [filterVals, setFilterVals] = useState<FilterValues>({
     categoryId: null,
     priceMax:   500,   // R$ — 500 = sem filtro (mesmo default do site)
-    dist:       "",
+    // Decisão do fundador (2026-07-16): default "Até 2 km" no app (site usa
+    // "Qualquer" — divergência intencional mobile-only). Sem GPS concedido,
+    // o filtro fica inerte (useDistFilter exige userLat/userLng também) até
+    // o usuário tocar "Usar minha localização" no bottom sheet.
+    dist:       "2",
     userLat:    "",
     userLng:    "",
     minRating:  "",
