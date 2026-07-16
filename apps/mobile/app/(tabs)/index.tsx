@@ -13,6 +13,7 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  RefreshControl,
   StyleSheet,
   Image,
 } from "react-native"
@@ -123,19 +124,35 @@ export default function HomeScreen() {
     if (intervalRef.current) clearInterval(intervalRef.current)
   }
 
-  const { data: statsData } = useQuery<{ data: PlatformStats }>({
+  const {
+    data: statsData,
+    isRefetching: isRefetchingStats,
+    refetch: refetchStats,
+  } = useQuery<{ data: PlatformStats }>({
     queryKey: ["platform-stats"],
     queryFn:  () => apiFetch<{ data: PlatformStats }>("/api/stats"),
     staleTime: 5 * 60_000,
   })
   const stats = statsData?.data
 
-  const { data: catData } = useQuery<{ data: Category[] }>({
+  const {
+    data: catData,
+    isRefetching: isRefetchingCats,
+    refetch: refetchCats,
+  } = useQuery<{ data: Category[] }>({
     queryKey: ["categories"],
     queryFn:  () => apiFetch<{ data: Category[] }>("/api/categories"),
     staleTime: 5 * 60_000,
   })
   const categories = catData?.data ?? []
+
+  // Pull-to-refresh (P2-53 no site, via components/items/PullToRefresh) — refaz
+  // ambas as queries da Home.
+  const isRefetching = isRefetchingStats || isRefetchingCats
+  const handleRefresh = useCallback(() => {
+    refetchStats()
+    refetchCats()
+  }, [refetchStats, refetchCats])
 
   function handleSearch() {
     const q = searchQuery.trim()
@@ -148,6 +165,9 @@ export default function HomeScreen() {
       contentContainerStyle={styles.scrollContent}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl refreshing={isRefetching} onRefresh={handleRefresh} tintColor="#007B3C" />
+      }
     >
       {/* ── HERO — fonte: app/page.tsx linhas 138-252 ── */}
       <View style={styles.hero}>
