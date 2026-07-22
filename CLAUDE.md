@@ -23,7 +23,7 @@ Marketplace de economia circular para aluguel local de itens. Lançamento nacion
 | E-mail | Resend (`RESEND_API_KEY`) |
 | Storage | Supabase Storage — `item-images` (público), `booking-photos` (público), `id-docs` (privado) |
 | Hosting | Vercel (main → staging automático) |
-| Mobile | Expo + React Native (`apps/mobile/`) + NativeWind — redesign por transcrição do site (PRs #171–#173) |
+| Mobile | Expo + React Native (`apps/mobile/`) — estilo via `StyleSheet` + tokens do `lib/theme.tsx` (**não** NativeWind, ver abaixo); redesign por transcrição do site (PRs #171–#173) |
 
 ## 📱 App mobile — REGRA DE TRANSCRIÇÃO LITERAL (fundador, 2026-07-02)
 
@@ -36,6 +36,19 @@ Marketplace de economia circular para aluguel local de itens. Lançamento nacion
 5. Na dúvida entre "padrão nativo" e "copiar o site mobile": **copiar o site**.
 
 Spec visual aprovada: `docs/design/mobile-app-prototipo-v1.html` + `docs/design/mobile-app-handoff.md` (rastreabilidade frame→fonte). Fundação do design system do app: `apps/mobile/lib/theme.tsx` (tokens light/dark transcritos de `app/globals.css`) + `apps/mobile/components/ui|layout/`.
+
+### Padrão de estilo: `StyleSheet` + `useTheme()`, não `className`
+
+As classes Tailwind do site **não** se transcrevem para `className` no app. O padrão é ler o token equivalente do `lib/theme.tsx` e aplicá-lo via `StyleSheet`:
+
+```tsx
+const { tokens, mode } = useTheme()
+<Text style={[s.sectionTitle, { color: tokens.navy }]}>Sobre o item</Text>
+```
+
+Medido em 2026-07-22: **58 arquivos** usam `StyleSheet.create` e **57** usam `useTheme()`, contra **5** com `className` — e 3 desses concentram 144 das 147 ocorrências (`app/perfil/editar|endereco|recebimentos.tsx`), que são a exceção divergente, não o modelo a copiar.
+
+O NativeWind segue instalado e ligado (`babel.config.js` com `jsxImportSource: "nativewind"`, `metro.config.js` com `withNativeWind`) — não é config morta, mas escrever tela nova em `className` destoa de ~58 arquivos.
 
 Para implementar/corrigir tela do app: usar `/shareo-transcrever-tela <rota>` (encapsula esta regra + gotchas). Device testing: `scripts/adb-device.sh` (resolve adb do winget + converte coordenadas ×1.2).
 
