@@ -19,7 +19,7 @@
 import { PrismaClient } from '@prisma/client'
 import { FIXTURE_PROPRIETARIO } from '../e2e/fixtures/test-credentials'
 
-const STAGING_PROJECT_ID = 'fflpuoluiqmhpvcxubqi'
+const STAGING_PROJECT_ID = 'zythygwvmrwrqmnrdufq'
 const prisma = new PrismaClient()
 
 function assertStagingDb() {

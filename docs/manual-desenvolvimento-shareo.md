@@ -69,11 +69,16 @@ continua dinâmica; a exceção é a fixture de teste E2E, que mantém Natal de 
 
 ### 🟠 1.5 Dois projetos Supabase — não misturar
 **Regra:** `shareo-dev` (`.env`, ref `kehbrjlllfkooauaswtp`) é **só** dev local.
-`shareo-staging` (`.env.local`/`.env.staging-migrate`, ref `zythygwvmrwrqmnrdufq`) é o **banco
+`shareo-staging` (`.env.staging-migrate`, ref `zythygwvmrwrqmnrdufq`) é o **banco
 REAL** do staging. SQL de manutenção/migration do staging **sempre** no `zythygwvmrwrqmnrdufq`.
 **Por quê:** confundir faz o comando cair no banco errado. **Produção (`shareo-prd`) ainda não
 existe.**
-**Atenção:** `.env.staging-check` está **stale** (vazio, ref antigo) — use `.env.staging-migrate`.
+**Atenção:** o `.env.local` **não** aponta mais para o staging (overrides removidos em 22/06) — ele
+guarda só credenciais locais (MP, `AUTH_SECRET`, `E2E_SECRET`, fixtures). Para mirar o staging use
+`.env.staging-migrate`. Os arquivos `.env.staging-check` / `.env.staging` / `.env.staging.local`
+foram **removidos** em 22/07 (eram artefatos de `vercel env pull` com secrets vazios, e o
+`-check` ainda apontava para o ref antigo `fflpuoluiqmhpvcxubqi`). Se precisar deles de novo:
+`npx vercel env pull <arquivo>`.
 
 ### 🟠 1.6 Segurança é sempre no servidor (RLS está desligado)
 **Regra:** RLS do Supabase está **desabilitado** (incompatível com o PgBouncer). Toda proteção

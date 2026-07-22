@@ -6,7 +6,7 @@
  *   - _prisma_migrations (histórico de migrations — nunca apagar)
  *
  * Segurança: só executa se DATABASE_URL aponta para o Supabase de staging
- * (fflpuoluiqmhpvcxubqi.supabase.co). Recusa qualquer outra URL.
+ * (zythygwvmrwrqmnrdufq.supabase.co). Recusa qualquer outra URL.
  *
  * Uso:
  *   1. Fazer pull das vars de staging:
@@ -23,7 +23,7 @@
 import { PrismaClient } from '@prisma/client'
 
 // Project ID do Supabase de staging — aparece na URL direta e no username do pooler
-const STAGING_PROJECT_ID = 'fflpuoluiqmhpvcxubqi'
+const STAGING_PROJECT_ID = 'zythygwvmrwrqmnrdufq'
 
 const prisma = new PrismaClient()
 

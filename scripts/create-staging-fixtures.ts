@@ -24,7 +24,7 @@ const STAGING_URL =
   process.env.STAGING_URL ??
   'https://shareo-git-main-robertoepifanio-bytes-projects.vercel.app'
 
-const SUPABASE_URL = process.env.SUPABASE_URL_STAGING ?? 'https://fflpuoluiqmhpvcxubqi.supabase.co'
+const SUPABASE_URL = process.env.SUPABASE_URL_STAGING ?? 'https://zythygwvmrwrqmnrdufq.supabase.co'
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY_STAGING ?? ''
 
 // ---------------------------------------------------------------------------
@@ -130,7 +130,7 @@ async function promoteToAdmin(email: string): Promise<void> {
   // PostgREST não expõe as tabelas da aplicação (sem grants para anon/authenticated).
   // Alternativa: usar o Supabase SQL Editor ou o Prisma CLI com DATABASE_URL_STAGING.
   console.log(`  ℹ️  Promoção de admin requer acesso direto ao DB.`)
-  console.log(`     Execute no Supabase SQL Editor (https://app.supabase.com/project/fflpuoluiqmhpvcxubqi/sql):`)
+  console.log(`     Execute no Supabase SQL Editor (https://app.supabase.com/project/zythygwvmrwrqmnrdufq/sql):`)
   console.log(``)
   console.log(`     UPDATE users SET role = 'ADMIN' WHERE email = '${email}';`)
   console.log(``)
