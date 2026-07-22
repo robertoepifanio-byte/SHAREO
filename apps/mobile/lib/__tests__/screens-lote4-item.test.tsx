@@ -247,11 +247,29 @@ describe("MobileAvailabilityCalendar — estado de erro", () => {
 
 // ── AvailabilityCalendar — dias ocupados ──────────────────────────────────────
 
+/**
+ * Chave "YYYY-MM-DD" de N dias no futuro, em hora LOCAL.
+ *
+ * Espelha `calDateKey` do componente (index.tsx linha 164). Não usar
+ * `toISOString()`: ele converte para UTC e, em fusos negativos como o BRT,
+ * devolve o dia seguinte — a chave não casaria com a célula renderizada.
+ *
+ * O calendário mostra mês atual + próximo, então qualquer N pequeno cai
+ * dentro do intervalo renderizado.
+ */
+function futureDateKey(daysAhead: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() + daysAhead)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+}
+
 describe("MobileAvailabilityCalendar — dias ocupados (accessibilityLabel)", () => {
   it("dia com data ocupada tem accessibilityLabel contendo 'ocupado'", async () => {
-    // 2026-07-10 = data futura (ano de testes) — marcada como ocupada na query
+    // A data DEVE ser futura: no componente `isPast` tem precedência sobre `isOcc`
+    // (index.tsx linha 210), então um dia passado rotula "passado", nunca "ocupado".
+    // Era "2026-07-10" fixo — virou passado em 10/07/2026 e quebrou o CI sozinho.
     setApiFetch(async (url: string) => {
-      if (url.includes("/availability")) return { data: ["2026-07-10"] }
+      if (url.includes("/availability")) return { data: [futureDateKey(3)] }
       if (url.includes("/api/stats"))    return { data: { feeRate: 1500 } }
       return { data: ITEM_BASE }
     })
