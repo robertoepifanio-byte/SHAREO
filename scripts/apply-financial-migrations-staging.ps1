@@ -1,5 +1,5 @@
 # apply-financial-migrations-staging.ps1
-# Aplica as migrations financeiras no banco de STAGING (fflpuoluiqmhpvcxubqi)
+# Aplica as migrations financeiras no banco de STAGING (zythygwvmrwrqmnrdufq)
 #
 # Pré-requisitos:
 #   - .env.staging-migrate com DIRECT_URL preenchida
@@ -15,7 +15,7 @@ $ROOT = Split-Path -Parent $PSScriptRoot
 # Carrega DIRECT_URL do arquivo de env do staging
 $envFile = Join-Path $ROOT ".env.staging-migrate"
 if (-not (Test-Path $envFile)) {
-    Write-Error "Arquivo $envFile não encontrado. Crie-o com DIRECT_URL apontando para fflpuoluiqmhpvcxubqi."
+    Write-Error "Arquivo $envFile não encontrado. Crie-o com DIRECT_URL apontando para zythygwvmrwrqmnrdufq."
     exit 1
 }
 
@@ -27,9 +27,18 @@ if (-not $directUrl) {
     exit 1
 }
 
+# Ref do projeto extraído da URL REAL, não fixo no código: um rótulo fixo mente
+# quando o banco muda (era "fflpuoluiqmhpvcxubqi" e seguiu impresso mesmo depois
+# da migração de 27/06, enquanto o script já conectava no projeto novo).
+if ($directUrl -match 'postgres\.([a-z0-9]{20})') {
+    $projectRef = $Matches[1]
+} else {
+    $projectRef = "ref não identificado na DIRECT_URL"
+}
+
 Write-Host ""
 Write-Host "=== ShareO — Migrations Financeiras (Staging) ===" -ForegroundColor Cyan
-Write-Host "Banco: fflpuoluiqmhpvcxubqi (staging)" -ForegroundColor Yellow
+Write-Host "Banco: $projectRef" -ForegroundColor Yellow
 Write-Host ""
 
 # ─── PASSO 1: Gerar Prisma Client com schema atualizado ───────────────────────
