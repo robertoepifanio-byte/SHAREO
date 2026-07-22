@@ -23,7 +23,7 @@ import * as path from 'path'
 import { FIXTURE_LOCATARIO, FIXTURE_PROPRIETARIO, FIXTURE_ADMIN, SESSION_PATHS } from '../e2e/fixtures/test-credentials'
 
 const STAGING_URL = process.env.STAGING_URL ?? 'https://shareo-rouge.vercel.app'
-const STAGING_PROJECT_ID = 'fflpuoluiqmhpvcxubqi'
+const STAGING_PROJECT_ID = 'zythygwvmrwrqmnrdufq'
 
 const prisma = new PrismaClient()
 

@@ -157,7 +157,15 @@ test.describe('smoke #20 — id-docs: documentos de identidade não acessíveis 
   test('URL pública de id-docs retorna erro sem autenticação', async () => {
     // Testa que o bucket id-docs é privado: URL pública sem auth deve retornar erro
     // Supabase bucket privado: /storage/v1/object/public/id-docs/* → 400
-    const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'https://fflpuoluiqmhpvcxubqi.supabase.co'
+    // Sem fallback de propósito: um default desatualizado faria o teste bater num host
+    // que não é o staging real — resultado sem valor de segurança.
+    const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
+    if (!SUPABASE_URL) {
+      throw new Error(
+        'NEXT_PUBLIC_SUPABASE_URL não definida — necessária para validar que o bucket id-docs é privado. ' +
+        'Rode com --env-file=.env.staging-migrate ou exporte a var do projeto shareo-staging.',
+      )
+    }
     const testUrl = `${SUPABASE_URL}/storage/v1/object/public/id-docs/id-verification/fake-user-id/document-fake.jpg`
 
     const res = await fetch(testUrl)
