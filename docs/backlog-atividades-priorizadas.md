@@ -106,10 +106,10 @@
 
 | ID | Item | Por que é backlog |
 |---|---|---|
-| TEST-BL1 | `lib/booking-availability.ts` (`findOverlappingItem`) sem teste | Usa `Prisma.TransactionClient` → pede teste de integração/E2E de double-booking. |
-| TEST-BL2 | `lib/coupons.ts` / `lib/referral.ts` sem teste | Lógica pura acoplada a `prisma`; testar exige extração (refator). |
-| TEST-BL3 | `calcBookingTotal` aceita `days` não-inteiro sem validar | Adicionar guard muda comportamento observável — decisão. |
-| TEST-BL4 | E2E de cancelamento/reembolso e axe dos forms de anúncio/reserva | Exige staging com dados controlados / mocks pesados (router/Mapbox/Supabase). |
+| **~~TEST-BL1~~** | ✅ **RESOLVIDO (#168, 04/07)** — `__tests__/unit/lib/booking-availability.test.ts`, 21 casos (sem sobreposição, status bloqueante/não-bloqueante, datas adjacentes, `excludeBookingId`, múltiplos itemIds, soft-delete). A ressalva original ("pede teste de integração") não se confirmou: bastou mockar `Prisma.TransactionClient`. |
+| **~~TEST-BL2~~** | ✅ **RESOLVIDO (#168, 04/07)** — `coupons.test.ts` (21 casos) + `referral.test.ts` (22 casos). A ressalva original ("testar exige extração/refator") **não se confirmou**: mockar `@/lib/prisma` no nível do Jest resolveu, zero linha de produção alterada. |
+| TEST-BL3 | `calcBookingTotal` aceita `days` não-inteiro sem validar | **Aberto** (confirmado 22/07: nenhum guard em `lib/pricing.ts`; os testes só asseguram que a *saída* é inteira). Adicionar guard muda comportamento observável — **decisão dos fundadores**, não trabalho técnico. |
+| TEST-BL4 | ~~E2E de cancelamento~~ · **resta:** E2E de **reembolso** + axe dos forms de anúncio/reserva | 🟡 **Parcial** (confirmado 22/07). ✅ Cancelamento coberto: `e2e/booking-cancel-ui.spec.ts`, 6 testes (401 sem auth, `reason` obrigatório, locatário e proprietário cancelam PENDING). ⏳ Reembolso: 0 ocorrências no spec. ⏳ Axe: cobre componentes isolados (Button/Input/Select/Textarea/RatingStars/Avatar/StatCard/Skeleton/EmptyState), **não** os forms de `/itens/novo` nem de reserva. |
 
 ### 📱 Mobile — backlog
 
