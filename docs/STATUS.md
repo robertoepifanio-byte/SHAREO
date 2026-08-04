@@ -381,7 +381,7 @@ Próximo passo: resolver P0 sem bloqueador externo (hardcoded + scripts) → agu
 | **Resend (e-mail)** | Free (100/dia) | Starter US$20/mês — 50.000 e-mails/mês | ~US$20/mês *(não verificado)* |
 | **Sentry** | Free (5k eventos/mês) | Team US$26/mês se ultrapassar | ~US$0–26/mês *(não verificado)* |
 | **Mapbox** | Free (50k tile requests) | Pay-as-you-go — US$0.50/1.000 requests acima do free | ~US$0–10/mês *(não verificado)* |
-| **Stripe/Mercado Pago** | Test/sandbox mode | Live mode — % sobre transação | % sobre GMV |
+| **Mercado Pago** | Test/sandbox mode | Live mode — % sobre transação | % sobre GMV |
 | **UptimeRobot** | Free (5 min interval) | Free suficiente para MVP | US$0 |
 
 **Estimativa infra mês 1 produção:** ~US$65–95/mês (Supabase = ~$25 base + ~$10 do `shareo-prd` adicional pós-D4 = ~$35; resto não verificado nesta sessão).
