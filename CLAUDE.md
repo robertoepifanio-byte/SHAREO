@@ -71,10 +71,9 @@ Para implementar/corrigir tela do app: usar `/shareo-transcrever-tela <rota>` (e
 
 | Projeto Supabase | Ref | Arquivos `.env` | Uso |
 |---|---|---|---|
-| **shareo-dev** | `kehbrjlllfkooauaswtp` | `.env` | Desenvolvimento local |
 | **shareo-staging** | `zythygwvmrwrqmnrdufq` | `.env.local`, `.env.staging-migrate`, `.env.staging-check` | **Banco real do staging no Vercel** |
 
-Ambos na **org corporativa** `Shareo Marketplace de aluguel` (slug `ohrwffrbcnccuflhmbpr`), FREE, NANO, sa-east-1 (migrados em 2026-06-27 — refs antigos eram dev `jtianehxosfdrhjzqvqj` / staging `fflpuoluiqmhpvcxubqi`, na org pessoal). Pooler host = **`aws-1-sa-east-1.pooler.supabase.com`**. **`shareo-prd`/produção ainda NÃO existe** — criar só pós-D4, em Pro (org FREE só cabe 2 projetos → upgrade necessário), via `migrate deploy` em banco VAZIO (nunca clonar dev/staging).
+**`shareo-dev` (`kehbrjlllfkooauaswtp`) foi EXCLUÍDO em 2026-08-04** (uso real mínimo — 1 usuário, 8 itens, 0 reservas, parado desde 16/07; ~$10/mês economizados enquanto D4 não fecha). `next dev` local **não tem banco funcional até um projeto novo ser criado** — `.env` local ainda tem as credenciais antigas, mas apontam para um projeto que não existe mais. Staging na **org corporativa** `Shareo Marketplace de aluguel` (slug `ohrwffrbcnccuflhmbpr`), **PRO** (upgrade em 2026-08-04, remove o limite de 2 projetos/org), NANO, sa-east-1 (migrado em 2026-06-27 — ref antigo era `fflpuoluiqmhpvcxubqi`, na org pessoal, deletado em 22/07). Pooler host = **`aws-1-sa-east-1.pooler.supabase.com`**. **`shareo-prd`/produção ainda NÃO existe** — criar só pós-D4 (regra absoluta), via `migrate deploy` em banco VAZIO (nunca clonar staging). **Custo real confirmado:** projeto novo na org Pro tem ~$10/mês adicional (não é grátis — a org Pro só remove o limite de contagem, cada projeto tem seu próprio custo de compute).
 
 ### 🔑 Trocar banco do staging exige DOIS lados (Vercel + GitHub Secrets)
 
