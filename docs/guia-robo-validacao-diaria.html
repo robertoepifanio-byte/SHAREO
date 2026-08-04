@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Guia — Robô de Validação Diária · ShareO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --navy: #003366;
+    --green: #007B3C;
+    --green-light: #59C686;
+    --bg: #F8FAFC;
+    --surface: #ffffff;
+    --text: #1f2933;
+    --muted: #5b6b7b;
+    --border: #e2e8f0;
+    --code-bg: #0f2942;
+    --code-text: #e6edf3;
+    --warn-bg: #fff7ed;
+    --warn-border: #fdba74;
+    --warn-text: #9a3412;
+    --tip-bg: #ecfdf5;
+    --tip-border: #6ee7b7;
+    --tip-text: #065f46;
+    --info-bg: #eff6ff;
+    --info-border: #93c5fd;
+    --info-text: #1e40af;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 15px;
+    line-height: 1.65;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* Header */
+  header.hero {
+    background: linear-gradient(135deg, var(--navy) 0%, #00478f 100%);
+    color: #fff;
+    padding: 48px 0 40px;
+    margin-bottom: 32px;
+  }
+  header.hero .wrap { padding-bottom: 0; }
+  .brand {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-weight: 800; letter-spacing: 0.5px; font-size: 20px;
+    background: #fff; color: var(--navy);
+    padding: 6px 14px; border-radius: 10px; margin-bottom: 22px;
+  }
+  .brand .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--green-light); display:inline-block; }
+  header.hero h1 { font-size: 32px; line-height: 1.2; margin: 0 0 10px; font-weight: 800; }
+  header.hero p.sub { font-size: 16px; margin: 0; color: rgba(255,255,255,.85); max-width: 640px; }
+  .pill-row { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .pill { font-size: 12px; font-weight: 600; background: rgba(255,255,255,.14); color:#fff; border:1px solid rgba(255,255,255,.25); padding: 5px 12px; border-radius: 999px; }
+
+  /* TOC */
+  nav.toc {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 20px 24px; margin-bottom: 36px; box-shadow: 0 1px 3px rgba(0,0,0,.04);
+  }
+  nav.toc h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 0 0 12px; }
+  nav.toc ol { margin: 0; padding-left: 20px; columns: 2; column-gap: 32px; }
+  nav.toc li { margin: 4px 0; }
+  nav.toc a { color: var(--navy); text-decoration: none; font-weight: 500; }
+  nav.toc a:hover { color: var(--green); text-decoration: underline; }
+
+  section { margin-bottom: 40px; }
+  h2.sec { font-size: 22px; color: var(--navy); font-weight: 700; margin: 0 0 16px; padding-bottom: 10px; border-bottom: 2px solid var(--border); }
+  h2.sec .num { color: var(--green); font-weight: 800; margin-right: 8px; }
+  h3 { font-size: 17px; color: var(--navy); font-weight: 700; margin: 26px 0 10px; }
+  p { margin: 0 0 14px; }
+  ul, ol { margin: 0 0 14px; padding-left: 22px; }
+  li { margin: 5px 0; }
+  a { color: var(--green); }
+  strong { font-weight: 700; }
+  code.inline { font-family: "JetBrains Mono", monospace; font-size: .86em; background: #eef2f7; color: #0b3a66; padding: 2px 6px; border-radius: 5px; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin: 4px 0 18px; font-size: 14px; background: var(--surface); border-radius: 10px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+  thead th { background: var(--navy); color: #fff; text-align: left; padding: 10px 14px; font-weight: 600; font-size: 13px; }
+  tbody td { padding: 10px 14px; border-top: 1px solid var(--border); vertical-align: top; }
+  tbody tr:nth-child(even) { background: #fafcff; }
+  td code, th code { font-family: "JetBrains Mono", monospace; font-size: .85em; background: #eef2f7; color: #0b3a66; padding: 1px 5px; border-radius: 4px; }
+
+  /* Code blocks */
+  pre {
+    background: var(--code-bg); color: var(--code-text);
+    padding: 16px 18px; border-radius: 10px; overflow-x: auto;
+    font-family: "JetBrains Mono", monospace; font-size: 13px; line-height: 1.6;
+    margin: 6px 0 18px; border: 1px solid #163b5c;
+  }
+  pre .cmt { color: #7da7c9; }
+  pre .var { color: #7ee787; }
+
+  /* Callouts */
+  .callout { border-radius: 10px; padding: 14px 18px; margin: 6px 0 20px; border: 1px solid; font-size: 14px; }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout .tag { font-weight: 700; display:block; margin-bottom: 4px; font-size: 13px; letter-spacing: .3px; }
+  .callout.warn { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn-text); }
+  .callout.tip  { background: var(--tip-bg);  border-color: var(--tip-border);  color: var(--tip-text); }
+  .callout.info { background: var(--info-bg); border-color: var(--info-border); color: var(--info-text); }
+
+  /* Checklist */
+  ul.check { list-style: none; padding-left: 0; }
+  ul.check li { padding-left: 30px; position: relative; margin: 8px 0; }
+  ul.check li::before {
+    content: "✓"; position: absolute; left: 0; top: 0;
+    width: 20px; height: 20px; border-radius: 5px; background: var(--green); color: #fff;
+    font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+
+  footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--muted); font-size: 13px; text-align: center; }
+
+  @media (max-width: 640px) {
+    nav.toc ol { columns: 1; }
+    header.hero h1 { font-size: 26px; }
+  }
+  @media print {
+    body { background: #fff; font-size: 12px; }
+    header.hero { background: var(--navy) !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    pre, thead th, .brand, ul.check li::before, .callout { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    nav.toc { break-inside: avoid; }
+    section { break-inside: avoid-page; }
+    a { color: var(--navy); text-decoration: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="brand">SHARE<span class="dot"></span>O</span>
+    <h1>Guia — Robô de Validação Diária</h1>
+    <p class="sub">Como executar o robô <code class="inline" style="background:rgba(255,255,255,.18);color:#fff">daily-sim</code> e acompanhar/interpretar os dados gerados para a validação dos fundadores.</p>
+    <div class="pill-row">
+      <span class="pill">Execução manual · 1×/dia</span>
+      <span class="pill">Híbrido: API real + Prisma</span>
+      <span class="pill">Default local · staging sob demanda</span>
+      <span class="pill">Produção bloqueada (D4)</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="callout info">
+    <span class="tag">O QUE O ROBÔ FAZ</span>
+    <p>Simula um “dia” de operação do ShareO — <strong>cadastros → anúncios → locações → pagamentos (Pix fictício) → retirada/devolução → chat → repasse</strong> — para validar o fluxo completo ao longo de ~7 dias de testes manuais. Detalhes técnicos em <code class="inline">scripts/daily-sim.README.md</code>.</p>
+  </div>
+
+  <div class="callout tip">
+    <span class="tag">✅ STATUS (17/06/2026)</span>
+    <p>Staging <strong>já configurado e validado</strong> — Dias 1 e 2 rodados (10 usuários / 10 anúncios). O <code class="inline">E2E_SECRET</code> já está no <code class="inline">.env.staging-migrate</code>. A partir daqui os dados <strong>permanecem</strong> (ver §6).</p>
+  </div>
+
+  <nav class="toc">
+    <h2>Conteúdo</h2>
+    <ol>
+      <li><a href="#s1">Antes de começar (pré-requisitos)</a></li>
+      <li><a href="#s2">Como executar</a></li>
+      <li><a href="#s3">Acompanhando ao vivo</a></li>
+      <li><a href="#s4">Os arquivos gerados</a></li>
+      <li><a href="#s5">Interpretando os resultados</a></li>
+      <li><a href="#s6">Retenção e limpeza</a></li>
+      <li><a href="#s7">Problemas comuns</a></li>
+      <li><a href="#s8">Ajustes finos</a></li>
+    </ol>
+  </nav>
+
+  <!-- 1 -->
+  <section id="s1">
+    <h2 class="sec"><span class="num">1</span>Antes de começar (pré-requisitos)</h2>
+    <table>
+      <thead><tr><th>Item</th><th>Local</th><th>Staging</th></tr></thead>
+      <tbody>
+        <tr><td>Node.js 20+</td><td>✅ (<code>node -v</code>)</td><td>✅</td></tr>
+        <tr><td>Dev server rodando</td><td>✅ <code>npm run dev</code> (porta 3000)</td><td>— (usa o staging publicado)</td></tr>
+        <tr><td>Arquivo de ambiente</td><td><code>.env.local</code> / <code>.env</code></td><td><code>.env.staging-migrate</code></td></tr>
+        <tr><td><code>E2E_SECRET</code></td><td>opcional</td><td><strong>já no <code>.env.staging-migrate</code></strong> — não precisa setar</td></tr>
+      </tbody>
+    </table>
+    <div class="callout info">
+      <span class="tag">SOBRE O E2E_SECRET</span>
+      <p>Libera a “rajada” de requisições do robô (sem ele, execuções maiores podem tomar <code class="inline">429</code>). <strong>Nesta máquina ele já está no <code class="inline">.env.staging-migrate</code></strong> e o robô o lê automaticamente — não precisa setar nada no terminal. (Mesmo valor do segredo do staging: GitHub Secrets → <code class="inline">E2E_SECRET</code> e env do Vercel staging.)</p>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section id="s2">
+    <h2 class="sec"><span class="num">2</span>Como executar</h2>
+    <div class="callout info">
+      <span class="tag">WINDOWS — QUAL TERMINAL?</span>
+      <p>Se ao rodar <code class="inline">npm</code>/<code class="inline">npx</code> aparecer <em>“a execução de scripts foi desabilitada neste sistema”</em>, use o <strong>Prompt de Comando (cmd)</strong> — ele não tem essa trava. Alternativa (1×): <code class="inline">Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned</code>. Os comandos abaixo funcionam em <strong>cmd</strong> e <strong>PowerShell</strong>.</p>
+    </div>
+
+    <h3>Local <span style="font-weight:400;color:var(--muted);font-size:14px">(isolado — não visível aos fundadores)</span></h3>
+<pre><span class="cmt"># 1) Em um terminal, deixe o app rodando:</span>
+npm run dev
+
+<span class="cmt"># 2) Em outro terminal, rode o robô:</span>
+npx tsx scripts/daily-sim.ts --env local</pre>
+
+    <h3>Staging <span style="font-weight:400;color:var(--muted);font-size:14px">(visível aos fundadores no app)</span></h3>
+<pre><span class="cmt">:: Um "dia" padrão (5 cadastros, 5 anúncios, 5 locações):</span>
+npx tsx scripts\daily-sim.ts --env staging
+
+<span class="cmt">:: Dia de repasse (consolida os pagamentos em repasses):</span>
+npx tsx scripts\daily-sim.ts --env staging --repasse</pre>
+    <p>Não precisa setar <code class="inline">E2E_SECRET</code> — já vem do <code class="inline">.env.staging-migrate</code>. O robô <strong>avisa</strong> quando o alvo é staging antes de inserir qualquer coisa.</p>
+
+    <h3>Flags disponíveis</h3>
+    <table>
+      <thead><tr><th>Flag</th><th>Default</th><th>O que faz</th></tr></thead>
+      <tbody>
+        <tr><td><code>--env local|staging</code></td><td><code>local</code></td><td>Ambiente alvo (produção é bloqueada)</td></tr>
+        <tr><td><code>--users &lt;n&gt;</code></td><td>5</td><td>Novos cadastros na execução</td></tr>
+        <tr><td><code>--items &lt;n&gt;</code></td><td>5</td><td>Novos anúncios na execução</td></tr>
+        <tr><td><code>--bookings &lt;n&gt;</code></td><td>5</td><td>Locações a simular</td></tr>
+        <tr><td><code>--repasse</code></td><td>off</td><td>Processa os repasses (payouts) pendentes</td></tr>
+        <tr><td><code>--seed &lt;n&gt;</code></td><td>aleatório</td><td>Semente do RNG (resultados reprodutíveis)</td></tr>
+        <tr><td><code>--day &lt;n&gt;</code></td><td>auto</td><td>Força o número do “dia”</td></tr>
+        <tr><td><code>--reset</code></td><td>—</td><td><strong>Apaga</strong> os dados da simulação (só sob demanda — ver §6)</td></tr>
+        <tr><td><code>--help</code></td><td>—</td><td>Ajuda</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Roteiro sugerido de 7 dias</h3>
+    <table>
+      <thead><tr><th>Dia</th><th>Comando</th></tr></thead>
+      <tbody>
+        <tr><td>1–6</td><td><code>npx tsx scripts/daily-sim.ts --env staging</code></td></tr>
+        <tr><td>7</td><td><code>npx tsx scripts/daily-sim.ts --env staging --repasse</code></td></tr>
+      </tbody>
+    </table>
+    <p>Cada execução incrementa o contador de “dia” e <strong>acumula</strong> usuários e itens. Rode quando quiser — não precisa ser exatamente 1×/dia.</p>
+  </section>
+
+  <!-- 3 -->
+  <section id="s3">
+    <h2 class="sec"><span class="num">3</span>Acompanhando ao vivo (saída no terminal)</h2>
+    <p>Enquanto roda, o robô imprime cada ação. Legenda das linhas de <strong>locação</strong>:</p>
+    <table>
+      <thead><tr><th>Linha</th><th>Significado</th></tr></thead>
+      <tbody>
+        <tr><td><code>✓ reserva CONCLUÍDA — repasse R$X (taxa R$Y)</code></td><td>ciclo completo: confirmou → pagou → retirou → devolveu → concluiu. Gera repasse.</td></tr>
+        <tr><td><code>⏰ reserva CONCLUÍDA com ATRASO …</code></td><td>concluída, mas devolução após o prazo (com taxa de atraso)</td></tr>
+        <tr><td><code>↩ reserva CANCELADA (R$X)</code></td><td>desistência (cancelada antes de concluir)</td></tr>
+        <tr><td><code>⚠ reserva em DISPUTA (R$X)</code></td><td>item danificado / divergência → disputa aberta</td></tr>
+        <tr><td><code>⏳ reserva CONFIRMADA, pagamento PENDENTE (R$X)</code></td><td>locatário não concluiu o pagamento</td></tr>
+        <tr><td><code>✗ …</code></td><td>falha técnica numa etapa (ver §7)</td></tr>
+      </tbody>
+    </table>
+    <p>No fim, um <strong>resumo do dia</strong>:</p>
+<pre>📊 Resumo do dia
+  Usuários novos:  4  (acumulado 7)
+  Anúncios novos:  5  (acumulado 8)
+  Locações:        12 → SUCCESS:9 · CANCELLED:1 · LATE_RETURN:1 · PAYMENT_PENDING:1
+  Repasses:        14 (R$ 1.637,95)</pre>
+  </section>
+
+  <!-- 4 -->
+  <section id="s4">
+    <h2 class="sec"><span class="num">4</span>Os arquivos gerados (<code style="font-size:16px">scripts/daily-sim-logs/</code>)</h2>
+    <p>Cada execução grava três tipos de arquivo (essa pasta é ignorada pelo Git):</p>
+
+    <h3><code>day-NN-&lt;env&gt;-&lt;timestamp&gt;.json</code> — relatório estruturado</h3>
+<pre>{
+  "env": "staging",
+  "day": 2,
+  "summary": {
+    "newUsers": 4, "newItems": 5, "bookings": 12,
+    "byOutcome": { "SUCCESS": 9, "CANCELLED": 1, "LATE_RETURN": 1, "PAYMENT_PENDING": 1 },
+    "repasse": { "count": 14, "total": 163795 },
+    "seed": 3
+  },
+  "events": [
+    { "type": "user.created",      "id": "...", "name": "...", "email": "..." },
+    { "type": "item.created",      "id": "...", "title": "...", "pricePerDay": 12700 },
+    { "type": "booking.created",   "id": "...", "outcome": "SUCCESS", "totalPrice": 14400 },
+    { "type": "payment.paid",      "id": "...", "platformFeeAmount": 2160, "ownerNetAmount": 12240 },
+    { "type": "booking.completed", "id": "...", "outcome": "SUCCESS" },
+    { "type": "chat.message",      "from": "borrower" }
+  ]
+}</pre>
+    <div class="callout tip">
+      <span class="tag">ATENÇÃO AOS VALORES</span>
+      <p>Todos os valores monetários estão em <strong>centavos</strong>: <code class="inline">14400</code> = R$ 144,00; <code class="inline">"total": 163795</code> = R$ 1.637,95.</p>
+    </div>
+
+    <h3><code>day-NN-&lt;env&gt;-&lt;timestamp&gt;.log</code> — log legível</h3>
+    <p>A mesma saída que apareceu no terminal, salva em texto.</p>
+
+    <h3><code>state-&lt;env&gt;.json</code> — estado acumulado (entre dias)</h3>
+<pre>{ "env": "staging", "dayCounter": 2, "seed": 3,
+  "userIds": ["..."], "itemIds": ["..."],
+  "bookings": [{ "id": "...", "outcome": "SUCCESS" }],
+  "payoutsCreated": 0, "payoutsPaid": 14 }</pre>
+    <p>Use-o para saber em que “dia” você está e quantas entidades já existem.</p>
+  </section>
+
+  <!-- 5 -->
+  <section id="s5">
+    <h2 class="sec"><span class="num">5</span>Interpretando os resultados</h2>
+
+    <h3>5.1 No app de staging (o que os fundadores veem)</h3>
+    <table>
+      <thead><tr><th>O que validar</th><th>Onde</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Anúncios publicados</strong> (com foto, em São Paulo)</td><td><code>staging.shareo.com.br/itens</code></td></tr>
+        <tr><td><strong>Reservas</strong> em vários estados</td><td>abrir um item, ou via a conta de um usuário</td></tr>
+        <tr><td><strong>Financeiro: repasses, taxas, transações</strong></td><td><code>/admin/financeiro</code> (login admin)</td></tr>
+        <tr><td><strong>Usuários / itens / disputas</strong></td><td><code>/admin</code> (login admin)</td></tr>
+      </tbody>
+    </table>
+    <div class="callout info">
+      <span class="tag">LOGIN ADMIN DO STAGING (seed)</span>
+      <p><code class="inline">admin@shareo.com.br</code> · <code class="inline">financeiro@shareo.com.br</code> · <code class="inline">operacional@shareo.com.br</code> — senha <code class="inline">ShareO@2026</code>. Os usuários da simulação têm e-mail terminando em <strong><code class="inline">@daily-sim.shareo.test</code></strong> (filtro fácil para identificá-los).</p>
+    </div>
+
+    <h3>5.2 Checklist de validação (o que “tem que bater”)</h3>
+    <ul class="check">
+      <li><strong>Cadastros</strong> criados e com cadastro <strong>completo</strong> (CPF + endereço) — habilita anunciar/alugar.</li>
+      <li><strong>Anúncios</strong> publicados (status disponível, com foto).</li>
+      <li><strong>Reservas</strong> distribuídas em desfechos variados (a maioria concluída).</li>
+      <li><strong>Split de comissão correto</strong>: em toda reserva paga, <code class="inline">taxa (15%) + repasse = total</code>. Ex.: total R$ 144,00 → taxa R$ 21,60 + repasse R$ 122,40.</li>
+      <li><strong>Repasses</strong> gerados nas reservas concluídas e marcados como concluídos no dia de <code class="inline">--repasse</code>.</li>
+      <li><strong>Chat</strong> com mensagens trocadas entre locador e locatário.</li>
+      <li><strong>Distribuição</strong> de desfechos ~ proporcional aos pesos (SUCCESS ~64%, etc.).</li>
+    </ul>
+
+    <h3>5.3 Conferência direta no banco (opcional, técnico)</h3>
+    <p>Para somar/contar rápido sem abrir o app (usa a tag de segurança):</p>
+<pre>node -e "const {PrismaClient}=require('@prisma/client');const p=new PrismaClient();(async()=>{
+  const dom='@daily-sim.shareo.test';
+  const u=await p.user.findMany({where:{email:{endsWith:dom}},select:{id:true}});
+  const ids=u.map(x=&gt;x.id);
+  console.log('usuarios:',ids.length);
+  console.log('itens:',await p.item.count({where:{ownerId:{in:ids}}}));
+  console.log('reservas:',JSON.stringify(await p.booking.groupBy({by:['status'],where:{ownerId:{in:ids}},_count:true})));
+  console.log('payouts:',JSON.stringify(await p.payout.groupBy({by:['status'],where:{booking:{ownerId:{in:ids}}},_count:true,_sum:{amount:true}})));
+  await p.\$disconnect();})()"</pre>
+    <div class="callout info">
+      <p>No staging, esse comando precisa do <code class="inline">.env.staging-migrate</code> carregado no ambiente. Se preferir, me passe o arquivo de <code class="inline">scripts/daily-sim-logs/</code> que eu rodo/interpreto os números.</p>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section id="s6">
+    <h2 class="sec"><span class="num">6</span>Retenção e limpeza dos dados</h2>
+    <div class="callout warn">
+      <span class="tag">⚠ OS DADOS PERMANECEM NA BASE</span>
+      <p>Para a validação dos fundadores, os dados gerados <strong>permanecem</strong>. O robô <strong>só insere</strong> — nunca apaga sozinho. A limpeza acontece <strong>exclusivamente sob demanda</strong>, quando a exclusão for solicitada:</p>
+    </div>
+<pre>npx tsx scripts/daily-sim.ts --env staging --reset</pre>
+    <p><code class="inline">--reset</code> remove <strong>apenas</strong> as entidades da simulação (tag <code class="inline">@daily-sim.shareo.test</code>) no ambiente escolhido — nenhum dado real é tocado.</p>
+  </section>
+
+  <!-- 7 -->
+  <section id="s7">
+    <h2 class="sec"><span class="num">7</span>Problemas comuns (troubleshooting)</h2>
+    <table>
+      <thead><tr><th>Sintoma</th><th>Causa provável</th><th>Solução</th></tr></thead>
+      <tbody>
+        <tr><td><code>npm.ps1 … execução de scripts desabilitada</code></td><td>política do PowerShell</td><td>usar o <strong>cmd</strong>, ou <code>Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned</code></td></tr>
+        <tr><td><code>✗ cadastro … → 429</code> (muitos 429)</td><td>rate-limit do staging</td><td>confirmar o <code>E2E_SECRET</code> no <code>.env.staging-migrate</code></td></tr>
+        <tr><td><code>registro não encontrado</code> / <code>markEmailVerified</code></td><td>banco errado (corrigido em #29)</td><td>atualizar p/ a <code>main</code> mais recente</td></tr>
+        <tr><td><code>✗ login …</code></td><td>credencial/sessão</td><td>conferir se o <code>register</code> retornou 201; reexecutar</td></tr>
+        <tr><td><code>ECONNREFUSED</code> (local)</td><td>dev server parado</td><td><code>npm run dev</code> em outro terminal</td></tr>
+        <tr><td><code>.env.staging-migrate não encontrado</code></td><td>arquivo ausente</td><td>confirmar que existe na raiz</td></tr>
+        <tr><td><code>Nenhuma categoria no banco</code></td><td>banco sem seed</td><td>rodar o seed do ambiente antes</td></tr>
+        <tr><td>Tudo deu <code>SUCCESS</code> (ou muitos <code>DISPUTED</code>)</td><td>variância com poucas reservas</td><td>normal; ao longo de 7 dias se aproxima dos pesos</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 8 -->
+  <section id="s8">
+    <h2 class="sec"><span class="num">8</span>Ajustes finos</h2>
+    <ul>
+      <li><strong>Pesos dos desfechos:</strong> edite <code class="inline">OUTCOME_WEIGHTS</code> no topo de <code class="inline">scripts/daily-sim.ts</code>.</li>
+      <li><strong>Volumes:</strong> flags <code class="inline">--users</code> / <code class="inline">--items</code> / <code class="inline">--bookings</code>.</li>
+      <li><strong>Reprodutibilidade:</strong> <code class="inline">--seed &lt;n&gt;</code> (mesma semente = mesmos dados).</li>
+      <li><strong>Cidade / itens / mensagens:</strong> pools no topo do script (<code class="inline">SP_BAIRROS</code>, <code class="inline">ITEM_TEMPLATES</code>, <code class="inline">CHAT</code>).</li>
+    </ul>
+    <div class="callout tip">
+      <p>Precisa de ajuda para ler um relatório específico ou conferir um número? É só me passar o arquivo de <code class="inline">scripts/daily-sim-logs/</code> que eu interpreto.</p>
+    </div>
+  </section>
+
+  <footer>
+    ShareO · Guia do Robô de Validação Diária (<code>daily-sim</code>) · Uso interno de validação — staging/homologação · Produção bloqueada até D4 (jurídico).
+  </footer>
+
+</div>
+</body>
+</html>
