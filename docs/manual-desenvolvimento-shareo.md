@@ -67,12 +67,15 @@ default. Use "em todo o Brasil" ou texto neutro. O mapa sem cidade = centro do B
 **Por quê:** decisão dos fundadores — o lançamento é nacional. (A cidade real do usuário logado
 continua dinâmica; a exceção é a fixture de teste E2E, que mantém Natal de propósito.)
 
-### 🟠 1.5 Dois projetos Supabase — não misturar
-**Regra:** `shareo-dev` (`.env`, ref `kehbrjlllfkooauaswtp`) é **só** dev local.
-`shareo-staging` (`.env.staging-migrate`, ref `zythygwvmrwrqmnrdufq`) é o **banco
-REAL** do staging. SQL de manutenção/migration do staging **sempre** no `zythygwvmrwrqmnrdufq`.
-**Por quê:** confundir faz o comando cair no banco errado. **Produção (`shareo-prd`) ainda não
-existe.**
+### 🟠 1.5 Um projeto Supabase ativo (dev local foi excluído)
+**Regra:** `shareo-staging` (`.env.staging-migrate`, ref `zythygwvmrwrqmnrdufq`) é o **único
+banco real** hoje. SQL de manutenção/migration do staging **sempre** no `zythygwvmrwrqmnrdufq`.
+**`shareo-dev` (ref `kehbrjlllfkooauaswtp`) foi excluído em 2026-08-04** — tinha uso real mínimo
+(1 usuário, 8 itens, 0 reservas, parado há semanas) e custava ~$10/mês. `next dev` local **não
+tem banco funcional** até alguém criar um projeto novo (script/passos documentados no histórico
+da migração de 2026-06-27 — recriar é rápido: projeto novo + `migrate deploy` + reseed + buckets).
+**Por quê:** confundir bancos faz o comando cair no lugar errado. **Produção (`shareo-prd`) ainda não
+existe** — criar só pós-D4.
 **Atenção:** o `.env.local` **não** aponta mais para o staging (overrides removidos em 22/06) — ele
 guarda só credenciais locais (MP, `AUTH_SECRET`, `E2E_SECRET`, fixtures). Para mirar o staging use
 `.env.staging-migrate`. Os arquivos `.env.staging-check` / `.env.staging` / `.env.staging.local`
@@ -126,7 +129,7 @@ publicação — merecendo CI verde e, quando faz sentido, sua aprovação.
 
 | Ambiente | Dispara em | Onde | Banco |
 |---|---|---|---|
-| **Development** | qualquer | local (`pnpm dev`) | Supabase `shareo-dev` |
+| **Development** | qualquer | local (`pnpm dev`) | Supabase `shareo-dev` — **excluído em 2026-08-04, recriar se precisar** |
 | **Staging** | push na `main` | Vercel automático | Supabase `shareo-staging` |
 | **Production** | tag `web-v*` + aprovação | Vercel manual | Supabase `shareo-prd` (**ainda não existe**) |
 

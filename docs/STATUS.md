@@ -260,8 +260,8 @@ Próximo passo: resolver P0 sem bloqueador externo (hardcoded + scripts) → agu
 | Item | Status |
 |---|---|
 | Staging Vercel (`shareo-rouge.vercel.app`) | ✅ Deployado |
-| Supabase staging (`zythygwvmrwrqmnrdufq`, sa-east-1) | ✅ Ativo — org corporativa (migrado 2026-06-27) |
-| Supabase local dev (`kehbrjlllfkooauaswtp`, sa-east-1) | ✅ Ativo — org corporativa (migrado 2026-06-27) |
+| Supabase staging (`zythygwvmrwrqmnrdufq`, sa-east-1) | ✅ Ativo — org corporativa, PRO (migrado 2026-06-27, org upgrade 2026-08-04) |
+| Supabase local dev (`kehbrjlllfkooauaswtp`, sa-east-1) | 🗑️ **Deletado em 2026-08-04** — uso real mínimo (1 usuário, 8 itens, 0 reservas), ~$10/mês economizados |
 | Supabase antigos (`fflpuoluiqmhpvcxubqi` staging / `jtianehxosfdrhjzqvqj` dev) | 🗑️ **Deletados em 2026-07-22** — org pessoal, DNS não resolve mais |
 | CI/CD GitHub Actions (lint → test → build → deploy) | ✅ Ativo |
 | UptimeRobot em `/api/health` (5min) | ✅ Ativo |
@@ -388,9 +388,9 @@ Próximo passo: resolver P0 sem bloqueador externo (hardcoded + scripts) → agu
 
 | Ambiente | Project ID | Uso |
 |---|---|---|
-| Local dev | `kehbrjlllfkooauaswtp` | Desenvolvimento local — dados fictícios |
+| Local dev | 🗑️ excluído 2026-08-04 (era `kehbrjlllfkooauaswtp`) | Recriar quando precisar de `next dev` com banco local |
 | Staging | `zythygwvmrwrqmnrdufq` | Validação CI/CD — dados de fixture |
-| **Produção** | ⏳ Criar após D4 | Dados reais de usuários — **nunca misturar** |
+| **Produção** | ⏳ Criar após D4 (~$10/mês adicional confirmado) | Dados reais de usuários — **nunca misturar** |
 
 Ambos na org corporativa `Shareo Marketplace de aluguel` (FREE, NANO, sa-east-1), migrados em 2026-06-27. Os refs antigos da org pessoal (`jtianehxosfdrhjzqvqj` dev / `fflpuoluiqmhpvcxubqi` staging) foram **deletados em 2026-07-22** — se aparecerem em doc ou script, é resíduo. Org FREE só comporta 2 projetos → criar produção exige upgrade para Pro.
 
