@@ -370,19 +370,21 @@ Próximo passo: resolver P0 sem bloqueador externo (hardcoded + scripts) → agu
 
 ### Infraestrutura de serviços
 
-| Serviço | Plano atual (staging) | Plano produção | Custo estimado/mês |
+**Atualizado em 2026-08-04** — org Supabase confirmada em **Pro** (screenshot real do painel; corrige a versão anterior desta tabela, que dizia "Free tier"/"org FREE só comporta 2 projetos" — não é mais verdade). Custo por projeto Supabase novo confirmado **ao vivo na tela de criação: ~US$10/mês**, não os ~US$25/mês estimados antes. Vercel Pro e Supabase Pro já são licenças **ativas**, não mais projeção futura — mas os valores exatos cobrados hoje **não foram verificados nesta sessão** (sem acesso a token/API de billing); marcados como "checar no painel" onde não há confirmação direta.
+
+| Serviço | Plano atual (staging) | Plano produção | Custo/mês |
 |---|---|---|---|
-| **Vercel** | Pro (atual) | Pro — necessário para Cron Jobs e Edge Middleware | ~US$20/mês |
-| **Supabase (staging)** | Free tier — `zythygwvmrwrqmnrdufq` | **3º projeto isolado** (sa-east-1) | Free → Pro (~US$25) |
-| **Supabase (produção)** | ⏳ Não criado | Pro tier — 8 GB DB, 100 GB Storage, 5M row reads/mês | ~US$25/mês |
-| **Upstash Redis** | Pay-as-you-go | Pay-as-you-go (rate limit + blocklist) | ~US$0–5/mês |
-| **Resend (e-mail)** | Free (100/dia) | Starter US$20/mês — 50.000 e-mails/mês | ~US$20/mês |
-| **Sentry** | Free (5k eventos/mês) | Team US$26/mês se ultrapassar | ~US$0–26/mês |
-| **Mapbox** | Free (50k tile requests) | Pay-as-you-go — US$0.50/1.000 requests acima do free | ~US$0–10/mês |
-| **Stripe** | Test mode | Live mode — 2.99% + R$0.39 por transação (BR) | % sobre GMV |
+| **Vercel** | **Pro (ativo)** — Team `shareo-marketplace` | Mesmo plano | ~US$20/mês *(preço de tabela público — checar valor real no painel de cobrança)* |
+| **Supabase (staging)** | **Pro (ativo)** — org `Shareo Marketplace de aluguel`, projeto `zythygwvmrwrqmnrdufq` | Mesmo projeto | **~US$10/mês confirmado** (tela de criação de projeto, 04/08) |
+| **Supabase (produção)** | ⏳ Não criado — org Pro já comporta o 3º projeto sem limite de contagem | Criar só pós-D4, via `migrate deploy` em banco vazio | **~US$10/mês confirmado** — adicional, não é grátis |
+| **Upstash Redis** | Pay-as-you-go | Pay-as-you-go (rate limit + blocklist) | ~US$0–5/mês *(não verificado)* |
+| **Resend (e-mail)** | Free (100/dia) | Starter US$20/mês — 50.000 e-mails/mês | ~US$20/mês *(não verificado)* |
+| **Sentry** | Free (5k eventos/mês) | Team US$26/mês se ultrapassar | ~US$0–26/mês *(não verificado)* |
+| **Mapbox** | Free (50k tile requests) | Pay-as-you-go — US$0.50/1.000 requests acima do free | ~US$0–10/mês *(não verificado)* |
+| **Stripe/Mercado Pago** | Test/sandbox mode | Live mode — % sobre transação | % sobre GMV |
 | **UptimeRobot** | Free (5 min interval) | Free suficiente para MVP | US$0 |
 
-**Estimativa infra mês 1 produção:** ~US$70–100/mês (≈R$370–530)
+**Estimativa infra mês 1 produção:** ~US$60–90/mês (2 projetos Supabase confirmados ~$10 cada, resto não verificado nesta sessão) — faixa anterior de US$70–100/mês vinha do custo Supabase superestimado (~$25 em vez de ~$10 por projeto).
 
 ### Projetos Supabase — 3 ambientes isolados
 
@@ -392,7 +394,7 @@ Próximo passo: resolver P0 sem bloqueador externo (hardcoded + scripts) → agu
 | Staging | `zythygwvmrwrqmnrdufq` | Validação CI/CD — dados de fixture |
 | **Produção** | ⏳ Criar após D4 (~$10/mês adicional confirmado) | Dados reais de usuários — **nunca misturar** |
 
-Ambos na org corporativa `Shareo Marketplace de aluguel` (FREE, NANO, sa-east-1), migrados em 2026-06-27. Os refs antigos da org pessoal (`jtianehxosfdrhjzqvqj` dev / `fflpuoluiqmhpvcxubqi` staging) foram **deletados em 2026-07-22** — se aparecerem em doc ou script, é resíduo. Org FREE só comporta 2 projetos → criar produção exige upgrade para Pro.
+Staging na org corporativa `Shareo Marketplace de aluguel` (**PRO** desde 04/08, NANO, sa-east-1), migrada em 2026-06-27. Os refs antigos da org pessoal (`jtianehxosfdrhjzqvqj` dev / `fflpuoluiqmhpvcxubqi` staging) foram **deletados em 2026-07-22** — se aparecerem em doc ou script, é resíduo. Org já em Pro → sem limite de contagem de projetos, mas cada projeto novo custa ~US$10/mês adicional (confirmado 04/08).
 
 **Regra absoluta:** variáveis de env de produção (`DATABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXTAUTH_SECRET` etc.) **nunca** no `.env`, apenas em GitHub Secrets + Vercel env `production`.
 
