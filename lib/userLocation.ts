@@ -8,6 +8,7 @@
  */
 
 import { prisma } from "@/lib/prisma"
+import { BRAZIL_DEFAULT } from "@/lib/geo-constants"
 
 /** Coords de capitais e cidades relevantes como fallback */
 const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
@@ -41,8 +42,7 @@ const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
   "natal/rn":          { lat: -5.7945,  lng: -35.2110 },
 }
 
-// Centro geográfico do Brasil — zoom de país para usuários sem localização
-export const BRAZIL_DEFAULT = { lat: -14.235, lng: -51.9253, zoom: 4 }
+export { BRAZIL_DEFAULT }
 const DEFAULT = BRAZIL_DEFAULT
 
 /** Remove acentos e normaliza string para lookup */

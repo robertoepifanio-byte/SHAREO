@@ -13,6 +13,7 @@ import Map, { Marker, Popup, NavigationControl } from "react-map-gl"
 import type { MapRef } from "react-map-gl"
 import Link from "next/link"
 import Image from "next/image"
+import { BRAZIL_DEFAULT } from "@/lib/geo-constants"
 import "mapbox-gl/dist/mapbox-gl.css"
 
 export type ItemPin = {
@@ -38,8 +39,8 @@ const IS_PLACEHOLDER = !TOKEN || TOKEN === "pk.eyJ..." || TOKEN.endsWith("...")
 export function ItemsMap({
   items,
   height      = 192,
-  defaultLat  = Number(process.env.NEXT_PUBLIC_DEFAULT_LAT  ?? -5.7945),
-  defaultLng  = Number(process.env.NEXT_PUBLIC_DEFAULT_LNG  ?? -35.211),
+  defaultLat  = Number(process.env.NEXT_PUBLIC_DEFAULT_LAT  ?? BRAZIL_DEFAULT.lat),
+  defaultLng  = Number(process.env.NEXT_PUBLIC_DEFAULT_LNG  ?? BRAZIL_DEFAULT.lng),
   defaultZoom = 11,
   mapZoom,
 }: Props) {

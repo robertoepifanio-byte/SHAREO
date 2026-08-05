@@ -65,6 +65,14 @@ export async function invalidateUserSessions(userId: string): Promise<void> {
   }
 }
 
+// Cache em memória por instância (edge isolate reaproveitado entre requests
+// warm) para não bater no Upstash a cada request de uma mesma sessão em
+// rajada — ex.: várias chamadas paralelas do detalhe de item. TTL curto: não
+// introduz janela relevante de sessão invalidada ainda passando (pior caso
+// 5s de atraso pra revogação surtir efeito, vs. maxAge de 30 dias do token).
+const STALE_CACHE_TTL_MS = 5_000
+const staleCache = new Map<string, { stale: boolean; expiresAt: number }>()
+
 /**
  * true se o token (pelo claim `loginAt`, fixado no login e preservado nos
  * refreshes) foi emitido antes da última invalidação de sessão do usuário.
@@ -72,11 +80,20 @@ export async function invalidateUserSessions(userId: string): Promise<void> {
  */
 export async function isSessionStale(userId: string, loginAt: number | undefined): Promise<boolean> {
   if (!upstashUrl() || !loginAt) return false
+
+  const now = Date.now()
+  const cached = staleCache.get(userId)
+  if (cached) {
+    if (cached.expiresAt > now) return cached.stale
+    staleCache.delete(userId)
+  }
+
   try {
     const result = await upstashFetch(["GET", epochKey(userId)])
-    if (result == null) return false
-    const epoch = Number(result)
-    return Number.isFinite(epoch) && loginAt < epoch
+    const epoch = result == null ? null : Number(result)
+    const stale = epoch != null && Number.isFinite(epoch) && loginAt < epoch
+    staleCache.set(userId, { stale, expiresAt: now + STALE_CACHE_TTL_MS })
+    return stale
   } catch (e) {
     console.warn("[blocklist] isSessionStale falhou:", e instanceof Error ? e.message : e)
     return false
