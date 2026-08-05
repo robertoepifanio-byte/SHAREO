@@ -7,7 +7,7 @@ import { scrubEvent } from "@/lib/sentry-scrub"
 // compartilham lib/sentry-scrub.ts.
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-  environment: process.env.NODE_ENV,
+  environment: process.env.NEXT_PUBLIC_SENTRY_ENV ?? process.env.NODE_ENV,
   enabled: process.env.NODE_ENV !== "test",
   tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
   beforeSend(event) {

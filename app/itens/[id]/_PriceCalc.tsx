@@ -248,7 +248,7 @@ export function PriceCalc({
           min={today}
           value={startDate}
           onChange={(e) => handleStartChange(e.target.value)}
-          className="h-10 w-full rounded-lg border border-input bg-surface px-2.5 text-sm text-foreground outline-none focus:border-brand transition-colors"
+          className="h-11 w-full rounded-lg border border-input bg-surface px-2.5 text-sm text-foreground outline-none focus:border-brand transition-colors"
         />
       </div>
 
@@ -265,7 +265,7 @@ export function PriceCalc({
             <button
               type="button"
               onClick={() => setNumDays((n) => Math.max(1, n - 1))}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-input text-lg text-muted-foreground hover:bg-background transition-colors"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-input text-lg text-muted-foreground hover:bg-background transition-colors"
               aria-label="Diminuir"
             >
               −
@@ -277,12 +277,12 @@ export function PriceCalc({
               max={365}
               value={numDays}
               onChange={(e) => setNumDays(Math.max(1, parseInt(e.target.value) || 1))}
-              className="h-10 w-full rounded-lg border border-input bg-surface px-2.5 text-center text-sm font-semibold text-foreground outline-none focus:border-brand transition-colors"
+              className="h-11 w-full rounded-lg border border-input bg-surface px-2.5 text-center text-sm font-semibold text-foreground outline-none focus:border-brand transition-colors"
             />
             <button
               type="button"
               onClick={() => setNumDays((n) => Math.min(365, n + 1))}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-input text-lg text-muted-foreground hover:bg-background transition-colors"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-input text-lg text-muted-foreground hover:bg-background transition-colors"
               aria-label="Aumentar"
             >
               +
@@ -425,7 +425,7 @@ export function PriceCalc({
 
       {/* Aviso de teto por transação (D2) */}
       {overLimit && (
-        <div role="alert" className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
+        <div role="alert" className="mb-3 flex items-start gap-2 rounded-lg border border-booking-disputed/30 bg-booking-disputed/10 px-3 py-2.5 text-xs text-booking-disputed">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 shrink-0" aria-hidden="true">
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
             <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
@@ -438,7 +438,7 @@ export function PriceCalc({
       )}
 
       {error && (
-        <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">
+        <div className="mb-3 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
           <p>{error}</p>
           {needsComplete && (
             <Link

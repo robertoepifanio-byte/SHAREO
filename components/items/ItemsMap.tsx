@@ -131,7 +131,11 @@ export function ItemsMap({
             }}
           >
             <div
-              className="cursor-pointer drop-shadow-md transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:rounded-full"
+              // items-end (não items-center): a área de toque cresce pra 44px, mas o
+              // pin fica ancorado embaixo — anchor="bottom" do Marker alinha o pino ao
+              // ponto real do mapa; centralizar verticalmente deslocaria a ponta do pin
+              // pra cima do coord real.
+              className="flex min-h-[44px] min-w-[44px] cursor-pointer items-end justify-center drop-shadow-md transition-transform hover:scale-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:rounded-full"
               tabIndex={0}
               role="button"
               aria-label={item.title}

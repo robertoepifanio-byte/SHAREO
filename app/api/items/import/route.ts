@@ -5,6 +5,9 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import type { ItemCondition } from "@prisma/client"
 
+export const runtime = "nodejs"
+export const maxDuration = 60
+
 const MAX_ROWS    = 100
 const MAX_BYTES   = 512 * 1024  // 512 KB
 

@@ -187,6 +187,7 @@ jobs:
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
           NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          NEXT_PUBLIC_SENTRY_ENV: staging
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SKIP_RATE_LIMIT: "true"
 
@@ -372,6 +373,14 @@ jobs:
           ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY_PROD }}
           HMAC_KEY: ${{ secrets.HMAC_KEY_PROD }}
           CRON_SECRET: ${{ secrets.CRON_SECRET_PROD }}
+          NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          NEXT_PUBLIC_SENTRY_ENV: production
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          NEXT_PUBLIC_MAPBOX_TOKEN: ${{ secrets.NEXT_PUBLIC_MAPBOX_TOKEN }}
+          NEXT_PUBLIC_APP_URL: https://shareo-prod.vercel.app
+          # SEC-CRIT-02/03 kill-switch: garante que o bypass de rate limit (SKIP_RATE_LIMIT/
+          # E2E_SECRET) fica inerte em produção mesmo que um valor vaze por cópia de env.
+          E2E_BYPASS_DISABLED: "true"
 
       - name: Deploy to production
         id: deploy
@@ -393,14 +402,20 @@ jobs:
       # Protection do Vercel responde 302 (redirect pro login) pra requests
       # não-autenticadas — CONFIRMADO em teste real (run 31012928956, 2026-08-05)
       # — isso é ESPERADO (confirma que o acesso está restrito), não é falha.
+      #
+      # Enquanto shareo-prd for só uso interno, EXIGE 302/401 (proteção ativa) —
+      # um 200 aqui significa que a Deployment Protection caiu (acidente, ou
+      # alguém trocou pra "Standard Protection" errado) e o app ficou público
+      # sem querer, o que deve quebrar o deploy, não passar silencioso. Sem
+      # continue-on-error: o guard precisa valer de verdade.
+      # QUANDO O D4 FECHAR E O GO-LIVE PÚBLICO FOR ATIVADO: trocar pra exigir 200.
       - name: Post-deploy health check
-        continue-on-error: true
         run: |
           echo "Aguardando 30s para o deploy propagar..."
           sleep 30
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.deploy.outputs.deploy-url }}/api/health")
-          echo "Status: $STATUS (200 = OK sem proteção; 302/401 = OK COM Deployment Protection ativa)"
-          if [ "$STATUS" != "200" ] && [ "$STATUS" != "302" ] && [ "$STATUS" != "401" ]; then
-            echo "Health check falhou com status $STATUS — verifique o Vercel Dashboard para rollback"
+          echo "Status: $STATUS (esperado: 302 ou 401 — Deployment Protection ativa, uso interno)"
+          if [ "$STATUS" != "302" ] && [ "$STATUS" != "401" ]; then
+            echo "Health check falhou com status $STATUS — se for 200, a Deployment Protection pode ter caído. Verifique o Vercel Dashboard."
             exit 1
           fi

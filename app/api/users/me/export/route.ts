@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { resolveUserId } from "@/lib/resolveUserId"
 import { prisma } from "@/lib/prisma"
+import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 
 // LGPD art. 20 — portabilidade de dados
 // Auditoria s40 / ressalva #3: export estava incompleto — omitia mensagens/conversas,
@@ -16,6 +17,12 @@ export async function GET(req: NextRequest) {
         { status: 401 },
       )
     }
+
+    // 11 findMany em paralelo sem paginação (achado do painel de nao-funcionais,
+    // eixo estresse) — rate limit contra loop/abuso enquanto o export não migra
+    // pro padrão assíncrono (ExportJob) usado em /api/admin/export.
+    const rl = await checkRateLimit(`data-export:${userId}`, RATE_LIMITS.dataExport.limit, RATE_LIMITS.dataExport.windowMs, req)
+    if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const [
       user,
