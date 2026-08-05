@@ -380,12 +380,15 @@ Próximo passo: resolver P0 sem bloqueador externo (hardcoded + scripts) → agu
 | **Upstash Redis** | Pay-as-you-go | Pay-as-you-go (rate limit + blocklist) | ~US$0–5/mês *(não verificado)* |
 | **Resend (e-mail)** | Free (100/dia) | Starter US$20/mês — 50.000 e-mails/mês | ~US$20/mês *(não verificado)* |
 | **Sentry** | Free (5k eventos/mês) | Team US$26/mês se ultrapassar | ~US$0–26/mês *(não verificado)* |
-| **Mapbox** | Free (50k tile requests) | Pay-as-you-go — US$0.50/1.000 requests acima do free | ~US$0–10/mês *(não verificado)* |
+| **Mapbox — mapa (GL JS)** | Free — **50.000 map loads/mês** (`mapbox-gl` v3.3.0 + `react-map-gl`, token `NEXT_PUBLIC_MAPBOX_TOKEN`) | Pay-as-you-go acima do free: $5,00/1k (50-100k) → $4,00/1k (100-200k) → $3,00/1k (200k-1M) | US$0/mês hoje *(confirmado em mapbox.com/pricing, 04/08)* |
+| **Mapbox — Geocoding API** | Free — **100.000 requests/mês** (`lib/geocodeItem.ts`, fire-and-forget no anúncio) | Pay-as-you-go acima do free: $0,75/1k (100-500k) → $0,60/1k (500k-1M) | US$0/mês hoje *(confirmado em mapbox.com/pricing, 04/08)* |
 | **Mercado Pago** | Test/sandbox mode | Live mode — % sobre transação | % sobre GMV |
 | **UptimeRobot** | Free (5 min interval) | Free suficiente para MVP | US$0 |
 | **Apple Developer Program** | ⏳ Sem conta ainda — iOS Fase 1 é só scaffolding/CI (ver [[project-app-ios-fase1]]) | Necessário p/ teste em device real, TestFlight e publicação na App Store (Fase 2, deferida) | ~US$99/**ano** (~US$8,25/mês) *(preço de tabela público Apple — não verificado, é individual, não a org)* |
 
 **Estimativa infra mês 1 produção:** ~US$73–103/mês (Supabase = ~$25 base + ~$10 do `shareo-prd` adicional pós-D4 = ~$35; + Apple Developer ~$8/mês quando a Fase 2 iOS começar; resto não verificado nesta sessão).
+
+**Pré-requisitos Mapbox (confirmado 04/08):** modelo puramente pay-as-you-go, **sem assinatura fixa obrigatória** — só o token de acesso já configurado (`NEXT_PUBLIC_MAPBOX_TOKEN`). Mapa e Geocoding são produtos/cotas **separados**, cada um com seu free tier próprio (não compartilham). Obrigação contratual do ToS: atribuição de marca visível ("© Mapbox © OpenStreetMap") no rodapé/mapa — já rastreado na tabela de licenças (linha `mapbox-gl`, item 6 abaixo).
 
 ### Projetos Supabase — 3 ambientes isolados
 
