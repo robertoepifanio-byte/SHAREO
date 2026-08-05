@@ -73,7 +73,7 @@ Revisão read-only por product-owner + designer + segurança. Relatório consoli
 
 ## 🚦 Go-live só após (condições do próprio parecer)
 1. ✅ **Parecer jurídico FORMAL** — **recebido** (versão revisada com o Mercado Pago como PSP, [`parecer-juridico-revisado-mp.md`](parecer-juridico-revisado-mp.md)).
-2. ⏳ **Contrato com PSP (Mercado Pago) assinado + conta PJ ativa** — **EM ANDAMENTO** (responsabilidade do fundador; prazo a confirmar — resposta B1). **Único 🔒 bloqueador remanescente.**
+2. ⏳ **Contrato com PSP (Mercado Pago) assinado + conta PJ ativa** — **EM ANDAMENTO** com o fundador **Raimundo** (CNPJ, contrato e questões tributárias já contabilizados; formalização do contrato MP é o próximo passo — atualização 2026-08-04, resposta B1). **Único 🔒 bloqueador remanescente.**
 3. ✅(conteúdo) **Termos de Uso e Política de Privacidade revisados** — **conteúdo APROVADO p/ publicação no go-live** (resposta D1); **publicar só no go-live** (rascunhos: [`draft-clausulas-mp-termos-privacidade.md`](draft-clausulas-mp-termos-privacidade.md)).
 4. 🔨 **Checklist acima 100% cumprido** — destravado pelas respostas de 2026-06-30 (ver abaixo); restam B3 tributarista, C2 DPA, C3 RIPD/DPO.
 
@@ -90,13 +90,13 @@ Fonte: `docs/Pauta única decisões jurídicas societárias Respostas.docx`. **T
 | **A2** | ✅ Logar **rotas autenticadas + ações sensíveis** (login/logout, alterações cadastrais, consentimentos, movimentações financeiras, acesso a dados de terceiros). **Não** logar navegação anônima. | Fiar `logAccess()` nesse escopo + flag `accessLogsEnabled`. |
 | **A3** | ✅ **Opção II (Brasil, `access_logs` sa-east-1)** — sem transferência internacional. | Já alinhado (tabela existe); descartar Opção I. |
 | **A4** | ✅ Expurgo **suspenso** sob ordem judicial/litígio/investigação. | Implementar **flag de "retenção legal" por registro** ANTES de ligar os crons. |
-| **B1** 🔒 | ⏳ Contrato MP **em andamento** (fundador; prazo a confirmar). | — (bloqueador de go-live). |
+| **B1** 🔒 | ⏳ Contrato MP **em andamento com o fundador Raimundo** — CNPJ, contrato e questões tributárias já contabilizados; formalização do contrato MP é o próximo passo (atualização 2026-08-04). | Fundador Raimundo — (bloqueador de go-live). |
 | **B2** | ✅ NF da ShareO sobre os 15% (ISS + PIS/COFINS). 85% = **não-receita** (terceiros em trânsito); locador emite a própria. | Automação de NF = análise futura. |
-| **B3** | 🔴 **Sem parecer de tributarista ainda** — regime (Simples/Presumido/Real) a definir. | Pendente especialista. |
+| **B3** | 🟡 **Em andamento com o fundador Raimundo** — regime tributário (Simples/Presumido/Real) contabilizado junto com CNPJ e questões contratuais; formalização do contrato MP é o próximo passo na sequência (atualização 2026-08-04). | Fundador Raimundo. |
 | **B4** | ✅ ShareO **não é sujeito obrigado** (PSP assume KYC/KYB/monitoramento). Manter **política mínima** de PLD/FT: KYC/KYB básico (feito), monitoramento de suspeitas, canal de reporte, treinamento, logs de alertas 5a. Sem comunicação direta ao COAF. | Redigir política mínima. |
 | **C1** | ✅ Selfie **É dado biométrico sensível (art. 11)** — interesse legítimo **insuficiente**; exige **consentimento específico e destacado** (art. 11 II "a"). | Ajustar base legal no RIPD (risco F-09), texto de consentimento separado dos Termos, segurança reforçada. |
-| **C2** | 🟡 **Em análise** (DPAs/cláusulas-padrão dos subprocessadores EUA + MP). | Pendente. |
-| **C3** | 🟡 **Em análise** (validação/assinatura do RIPD + designação formal do DPO). | Pendente. |
+| **C2** | 🟡 **Responsável nomeado (2026-08-04): fundador Raimundo Gomes da Silva**, para o período de MVP e primeiro ano de atividade. DPAs/cláusulas-padrão dos subprocessadores (EUA + MP) ainda a formalizar. | Raimundo Gomes da Silva. |
+| **C3** | 🟡 **Responsável nomeado (2026-08-04): fundador Raimundo Gomes da Silva** será o **DPO formal** para o período de MVP e primeiro ano de atividade. Validação/assinatura do RIPD ainda pendente. | Raimundo Gomes da Silva (DPO). |
 | **C4** | ✅ Incluir **MP como operador** na Política; corrigir "nunca compartilhamos com terceiros" → texto de compartilhamento controlado (redação fornecida). | Atualizar draft da Política + RIPD. |
 | **D1** 🔒 | ✅ Conteúdo revisado dos Termos/Política **aprovado p/ publicação no go-live**. | Publicar só no go-live (condição 3). |
 | **D2** | ✅ Arrependimento **7 dias corridos, antes da retirada**. Reembolso via MP: locatário recebe integral, ShareO **estorna os 15%**. Exceção: locação iniciada → só cancelamento. | Implementar atrás da flag `withdrawalRightEnabled`. |
@@ -107,4 +107,4 @@ Fonte: `docs/Pauta única decisões jurídicas societárias Respostas.docx`. **T
 | **E2** | ✅ Risco de dano/perda **ao locatário** (salvo vício preexistente/força maior), **sem caução** no MVP (cláusula fornecida). | Inserir cláusula no contrato (item 6). |
 | **E3** | ✅ **Art. 19 MCI**: ShareO não responde por conteúdo de terceiros salvo ordem judicial; adotar **notice-and-takedown voluntário** (botão Reportar, análise, remoção de ilícitos, logs). Cláusula fornecida. | Cláusula nos Termos + procedimento de remoção. |
 
-**Pendentes (não destravados):** B1 🔒 (contrato MP — bloqueador de go-live), B3 (tributarista), C2 (DPAs), C3 (RIPD/DPO formal).
+**Pendentes (não destravados), atualizado 2026-08-04:** B1 🔒 e B3 — em andamento com o fundador **Raimundo** (CNPJ/contrato/tributário contabilizados, formalização do contrato MP é o próximo passo). C2 e C3 — **Raimundo Gomes da Silva nomeado responsável** (DPO para C3) pelo período de MVP e primeiro ano de atividade; formalização de DPAs (C2) e assinatura do RIPD (C3) ainda pendentes de execução.
