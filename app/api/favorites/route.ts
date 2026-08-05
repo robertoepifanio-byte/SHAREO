@@ -16,6 +16,10 @@ export async function GET(req: NextRequest) {
     const favorites = await prisma.favorite.findMany({
       where:   { userId },
       orderBy: { createdAt: "desc" },
+      // Sem paginação de verdade na tela (a página mostra tudo de uma vez) — este
+      // take é só um teto defensivo contra uma conta com milhares de favoritos
+      // carregando joins pesados numa lambda só.
+      take: 300,
       select: {
         createdAt: true,
         item: {

@@ -21,6 +21,9 @@ import { getUploadLimits } from "@/lib/platform-config"
 import { isImageType, isMagicBytesValid, EXT_BY_MIME } from "@/lib/imageUpload"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 
+export const runtime = "nodejs"
+export const maxDuration = 60
+
 const ALLOWED_BUCKETS = new Set(["booking-photos", "item-images"])
 
 export async function POST(req: NextRequest) {

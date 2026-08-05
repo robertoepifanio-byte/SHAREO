@@ -9,6 +9,9 @@ import { getUploadLimits } from "@/lib/platform-config"
 import { ALLOWED_IMAGE_MIMES, EXT_BY_MIME } from "@/lib/imageUpload"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 
+export const runtime = "nodejs"
+export const maxDuration = 60
+
 const BUCKET = process.env.NEXT_PUBLIC_STORAGE_BUCKET ?? "item-images"
 
 function isImageType(mimeType: string): boolean {

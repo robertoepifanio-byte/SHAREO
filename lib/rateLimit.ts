@@ -77,6 +77,7 @@ export const RATE_LIMITS = {
   pjWebhooks:     { limit: 10, windowMs: 60_000 },              // 10/min por usuário
   adminCreate:    { limit: 5,  windowMs: 24 * 60 * 60 * 1000 }, // 5/dia por admin
   upload:         { limit: 30, windowMs: 60_000 },               // 30/min por usuário (booking-photos, item-images, id-docs)
+  dataExport:     { limit: 3,  windowMs: 24 * 60 * 60 * 1000 },  // 3/dia por usuário (LGPD art. 20 — 11 findMany sem paginação, protege contra loop)
 } as const
 
 // ─── Public API ───────────────────────────────────────────────────────────────

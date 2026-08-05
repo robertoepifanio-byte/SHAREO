@@ -52,6 +52,7 @@
 | ✅ **Termos — cláusula explícita da taxa (#4 do D4)** | ✅ MESCLADO (#42) | Seção 6 dos Termos com taxa 15% dinâmica + repasse semanal + teto R$500. |
 | **`/bem-vindo` — generalizar a copy (PÓS lançamento)** | 🔵 pós-lançamento | Remover o tom de piloto ("Você é um dos primeiros 🎉") após o go-live. Arquivo: `app/bem-vindo/page.tsx`. |
 | **KYB PJ — feedback dos testers do cadastro** | ⏳ aguardando | Tratar achados do roteiro `docs/roteiro-teste-cadastro-pj.pdf` quando os testers devolverem. |
+| **Verificar geocode automático no fluxo de criar item em produção** | ⏳ aguardando Roberto | PR #265 (05/08) corrigiu o `ItemForm` pra geocodificar automaticamente o endereço do perfil ao criar item (antes salvava coordenadas hardcoded permanentes). Sem teste automatizado cobrindo esse fluxo — verificar manualmente em `shareo-prod`: criar um item de teste e conferir se a coordenada salva bate com a do perfil (não com o centro do Brasil, `-14.235, -51.9253`). |
 
 ---
 
