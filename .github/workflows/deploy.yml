@@ -390,16 +390,17 @@ jobs:
 
       # Health check contra a URL real do deployment (não www.shareo.com.br —
       # o domínio fica no placeholder Netlify até B1 resolver). Deployment
-      # Protection do Vercel pode retornar 401 em vez de 200 aqui — isso é
-      # ESPERADO (confirma que o acesso está restrito), não é falha de deploy.
+      # Protection do Vercel responde 302 (redirect pro login) pra requests
+      # não-autenticadas — CONFIRMADO em teste real (run 31012928956, 2026-08-05)
+      # — isso é ESPERADO (confirma que o acesso está restrito), não é falha.
       - name: Post-deploy health check
         continue-on-error: true
         run: |
           echo "Aguardando 30s para o deploy propagar..."
           sleep 30
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.deploy.outputs.deploy-url }}/api/health")
-          echo "Status: $STATUS (200 = OK sem Deployment Protection ativa; 401 = OK COM proteção ativa)"
-          if [ "$STATUS" != "200" ] && [ "$STATUS" != "401" ]; then
+          echo "Status: $STATUS (200 = OK sem proteção; 302/401 = OK COM Deployment Protection ativa)"
+          if [ "$STATUS" != "200" ] && [ "$STATUS" != "302" ] && [ "$STATUS" != "401" ]; then
             echo "Health check falhou com status $STATUS — verifique o Vercel Dashboard para rollback"
             exit 1
           fi
