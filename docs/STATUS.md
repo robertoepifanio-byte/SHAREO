@@ -383,8 +383,9 @@ Próximo passo: resolver P0 sem bloqueador externo (hardcoded + scripts) → agu
 | **Mapbox** | Free (50k tile requests) | Pay-as-you-go — US$0.50/1.000 requests acima do free | ~US$0–10/mês *(não verificado)* |
 | **Mercado Pago** | Test/sandbox mode | Live mode — % sobre transação | % sobre GMV |
 | **UptimeRobot** | Free (5 min interval) | Free suficiente para MVP | US$0 |
+| **Apple Developer Program** | ⏳ Sem conta ainda — iOS Fase 1 é só scaffolding/CI (ver [[project-app-ios-fase1]]) | Necessário p/ teste em device real, TestFlight e publicação na App Store (Fase 2, deferida) | ~US$99/**ano** (~US$8,25/mês) *(preço de tabela público Apple — não verificado, é individual, não a org)* |
 
-**Estimativa infra mês 1 produção:** ~US$65–95/mês (Supabase = ~$25 base + ~$10 do `shareo-prd` adicional pós-D4 = ~$35; resto não verificado nesta sessão).
+**Estimativa infra mês 1 produção:** ~US$73–103/mês (Supabase = ~$25 base + ~$10 do `shareo-prd` adicional pós-D4 = ~$35; + Apple Developer ~$8/mês quando a Fase 2 iOS começar; resto não verificado nesta sessão).
 
 ### Projetos Supabase — 3 ambientes isolados
 
