@@ -26,6 +26,11 @@ on:
       # workflow); mobile-v* → build EAS (eas-release.yml). Os prefixos não colidem.
       - "web-v*"
 
+  # Disparo manual do job "production" — uso interno enquanto shareo.com.br fica
+  # no placeholder (decisão do fundador, 2026-08-04). Web-v* segue reservado pro
+  # go-live público real; workflow_dispatch é só pra testar o ambiente shareo-prd.
+  workflow_dispatch:
+
 env:
   NODE_VERSION: "22"
   PNPM_VERSION: "11"
@@ -319,19 +324,21 @@ jobs:
           retention-days: 30
 
   # ─────────────────────────────────────────────────────────────────
-  # JOB 4: Production Deploy — somente via tag de release web (web-v*)
-  # Staging deve ser validado antes de promover para produção.
-  # Para fazer deploy: git tag web-v1.12.0 && git push origin web-v1.12.0
+  # JOB 4: Production Deploy — projeto Vercel/Supabase SEPARADO do staging
+  # (shareo-prod / shareo-prd, ver ADR pendente + memória project-d4-juridico).
+  # Dispara via tag web-v* (go-live público, ainda gated por D4) OU manualmente
+  # (workflow_dispatch — uso interno, equipe técnica + fundadores, atrás de
+  # Vercel Deployment Protection; shareo.com.br fica no placeholder até B1).
+  # Para fazer deploy público real (só pós-D4): git tag web-v1.12.0 && git push origin web-v1.12.0
   # Requer aprovação no ambiente "production" do GitHub (Required reviewers)
   # ─────────────────────────────────────────────────────────────────
   production:
     name: Deploy Production
     runs-on: ubuntu-latest
-    # Dispara APENAS em tags de release web (web-v*) — nunca em push direto na main
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/web-v')
+    # Tag de release web (go-live público) OU disparo manual (teste interno)
+    if: (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/web-v')) || github.event_name == 'workflow_dispatch'
     environment:
       name: production
-      url: https://www.shareo.com.br
     steps:
       - uses: actions/checkout@v4
 
@@ -351,24 +358,28 @@ jobs:
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_PROD }}
 
       - name: Build project (production)
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_PROD }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL_PROD }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY_PROD }}
           DATABASE_URL: ${{ secrets.DATABASE_URL_PROD }}
-          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET_PROD }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY_PROD }}
+          HMAC_KEY: ${{ secrets.HMAC_KEY_PROD }}
 
       - name: Deploy to production
-        run: vercel deploy --prebuilt --prod --archive=tgz --token=${{ secrets.VERCEL_TOKEN }}
+        id: deploy
+        run: |
+          DEPLOY_URL=$(vercel deploy --prebuilt --prod --archive=tgz --token=${{ secrets.VERCEL_TOKEN }})
+          echo "deploy-url=$DEPLOY_URL" >> "$GITHUB_OUTPUT"
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_PROD }}
 
       - name: Run DB migrations on production
         continue-on-error: true
@@ -377,16 +388,18 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL_PROD }}
           DIRECT_URL: ${{ secrets.DIRECT_URL_PROD }}
 
-      # Monitorar após deploy — falha dispara rollback manual via Vercel Dashboard
-      # continue-on-error: remover quando domínio www.shareo.com.br estiver apontado para Vercel
+      # Health check contra a URL real do deployment (não www.shareo.com.br —
+      # o domínio fica no placeholder Netlify até B1 resolver). Deployment
+      # Protection do Vercel pode retornar 401 em vez de 200 aqui — isso é
+      # ESPERADO (confirma que o acesso está restrito), não é falha de deploy.
       - name: Post-deploy health check
         continue-on-error: true
         run: |
           echo "Aguardando 30s para o deploy propagar..."
           sleep 30
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://www.shareo.com.br/api/health)
-          if [ "$STATUS" != "200" ]; then
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.deploy.outputs.deploy-url }}/api/health")
+          echo "Status: $STATUS (200 = OK sem Deployment Protection ativa; 401 = OK COM proteção ativa)"
+          if [ "$STATUS" != "200" ] && [ "$STATUS" != "401" ]; then
             echo "Health check falhou com status $STATUS — verifique o Vercel Dashboard para rollback"
             exit 1
           fi
-          echo "Health check OK: $STATUS"
