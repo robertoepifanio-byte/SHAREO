@@ -10,6 +10,7 @@ import { Select } from "@/components/ui/Select"
 import { Textarea } from "@/components/ui/Textarea"
 import { ListingQualityIndicator } from "./ListingQualityIndicator"
 import { ItemCardPreview } from "./ItemCardPreview"
+import { BRAZIL_DEFAULT } from "@/lib/geo-constants"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -177,8 +178,8 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
   const [city,          setCity]          = useState(initialData?.city          ?? (process.env.NEXT_PUBLIC_DEFAULT_CITY ?? ""))
   const [state,         setState]         = useState(initialData?.state         ?? (process.env.NEXT_PUBLIC_DEFAULT_STATE ?? ""))
   const [neighborhood,  setNeighborhood]  = useState(initialData?.neighborhood  ?? "")
-  const [latitude,      setLatitude]      = useState(initialData?.latitude      ?? Number(process.env.NEXT_PUBLIC_DEFAULT_LAT ?? -5.7945))
-  const [longitude,     setLongitude]     = useState(initialData?.longitude     ?? Number(process.env.NEXT_PUBLIC_DEFAULT_LNG ?? -35.211))
+  const [latitude,      setLatitude]      = useState(initialData?.latitude      ?? Number(process.env.NEXT_PUBLIC_DEFAULT_LAT ?? BRAZIL_DEFAULT.lat))
+  const [longitude,     setLongitude]     = useState(initialData?.longitude     ?? Number(process.env.NEXT_PUBLIC_DEFAULT_LNG ?? BRAZIL_DEFAULT.lng))
   const [voltage,               setVoltage]               = useState<string>(initialData?.voltage ?? "")
   const [requireIdVerification, setRequireIdVerification] = useState(initialData?.requireIdVerification ?? false)
   const [requirePhone,          setRequirePhone]          = useState(initialData?.requirePhone          ?? false)
@@ -306,6 +307,12 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
           setState(s)
           setNeighborhood(addr.neighborhood)
           setAddress(addr.address)
+          // Em create, os campos são travados no valor do perfil e o usuário
+          // nunca dá blur neles (onBlur só geocodifica em modo edit) — sem isso
+          // latitude/longitude ficam presas no fallback hardcoded (ex.: centro
+          // do Brasil) e viram permanentes no item, quebrando o filtro de
+          // distância. Geocodifica aqui, uma vez, assim que o endereço chega.
+          if (mode === "create") void geocodeFromAddress(addr.neighborhood, c, s)
         }
         setProfileAddressLoaded(true)
       })
@@ -333,10 +340,10 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
 
   // ─── Location ──────────────────────────────────────────────────────────────
 
-  async function geocodeAddress() {
+  async function geocodeFromAddress(nb: string, cty: string, uf: string) {
     if (gpsUsedRef.current) return
-    const query = [neighborhood.trim(), city.trim(), state, "Brasil"].filter(Boolean).join(", ")
-    if (city.trim().length < 2) return
+    const query = [nb.trim(), cty.trim(), uf, "Brasil"].filter(Boolean).join(", ")
+    if (cty.trim().length < 2) return
     const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
     if (!token || token.endsWith("...")) return
 
@@ -361,6 +368,11 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
     } finally {
       setGeocoding(false)
     }
+  }
+
+  // Wrapper sobre o estado atual — usado no onBlur em modo edit.
+  async function geocodeAddress() {
+    return geocodeFromAddress(neighborhood, city, state)
   }
 
   // ─── Images ────────────────────────────────────────────────────────────────

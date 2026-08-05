@@ -371,6 +371,7 @@ jobs:
           AUTH_SECRET: ${{ secrets.AUTH_SECRET_PROD }}
           ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY_PROD }}
           HMAC_KEY: ${{ secrets.HMAC_KEY_PROD }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET_PROD }}
 
       - name: Deploy to production
         id: deploy
@@ -382,7 +383,6 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_PROD }}
 
       - name: Run DB migrations on production
-        continue-on-error: true
         run: pnpm prisma generate && pnpm db:migrate:deploy
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL_PROD }}
