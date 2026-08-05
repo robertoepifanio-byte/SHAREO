@@ -6,7 +6,7 @@ Marketplace de economia circular para aluguel local de itens. Lançamento nacion
 
 - **Código:** `C:\Users\Roberto\Documents\2026\ShareO`
 - **Staging:** `https://shareo-rouge.vercel.app` — NÃO é produção
-- **Produção:** ainda não existe — só após D4 (consulta jurídica) + validação total staging
+- **Produção:** projeto `shareo-prd`/`shareo-prod` **criado em 2026-08-05** (exceção autorizada pelo fundador em 04/08) — mas é **só para uso interno** (equipe técnica + fundadores, atrás de Vercel Deployment Protection). **`shareo.com.br` continua apontando pro placeholder** e **nenhum go-live público acontece antes de D4** (consulta jurídica) + validação total staging. Ver `docs/juridico/checklist-conformidade-juridica.md` e memória `project-d4-juridico`.
 
 ## Stack
 
