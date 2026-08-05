@@ -20,6 +20,8 @@ import { getLateFeeMultiplier } from "@/lib/platform-config"
 export const runtime = "nodejs"
 export const maxDuration = 60
 
+const BATCH_SIZE = 10
+
 function startOfDay(d: Date) {
   const r = new Date(d)
   r.setUTCHours(0, 0, 0, 0)
@@ -29,6 +31,25 @@ function endOfDay(d: Date) {
   const r = new Date(d)
   r.setUTCHours(23, 59, 59, 999)
   return r
+}
+
+// Processa items em lotes para evitar explodir o pool de conexões.
+// Paralelo dentro do lote, sequencial entre lotes.
+async function processInBatches<T>(
+  items: T[],
+  batchSize: number,
+  fn: (item: T) => Promise<void>,
+): Promise<{ ok: number; failed: number }> {
+  let ok = 0, failed = 0
+  for (let i = 0; i < items.length; i += batchSize) {
+    const chunk = items.slice(i, i + batchSize)
+    const results = await Promise.allSettled(chunk.map(fn))
+    for (const r of results) {
+      if (r.status === "fulfilled") ok++
+      else failed++
+    }
+  }
+  return { ok, failed }
 }
 
 export async function GET(req: NextRequest) {
@@ -90,36 +111,50 @@ export async function GET(req: NextRequest) {
     }),
   ])
 
-  const sent: string[] = []
+  const sent:   string[] = []
+  const failed: string[] = []
 
-  for (const b of startReminders) {
-    await sendReminderStartTomorrow(
-      b.borrower.email, b.borrower.name,
-      b.owner.email,    b.owner.name,
-      bookingItemsLabel(b.item.title, b._count.bookingItems || 1), b.id,
-      b.startDate,
-    ).catch((e) => console.error("[cron] start reminder", b.id, e))
-    sent.push(`start:${b.id}`)
-  }
+  const startStats = await processInBatches(startReminders, BATCH_SIZE, async (b) => {
+    try {
+      await sendReminderStartTomorrow(
+        b.borrower.email, b.borrower.name,
+        b.owner.email,    b.owner.name,
+        bookingItemsLabel(b.item.title, b._count.bookingItems || 1), b.id,
+        b.startDate,
+      )
+      sent.push(`start:${b.id}`)
+    } catch (e) {
+      console.error("[cron] start reminder", b.id, e)
+      failed.push(`start:${b.id}`)
+      throw e
+    }
+  })
 
-  for (const b of returnReminders) {
-    await sendReminderReturnTomorrow(
-      b.borrower.email, b.borrower.name,
-      bookingItemsLabel(b.item.title, b._count.bookingItems || 1), b.id,
-      b.endDate,
-    ).catch((e) => console.error("[cron] return reminder", b.id, e))
-    sent.push(`return:${b.id}`)
-  }
+  const returnStats = await processInBatches(returnReminders, BATCH_SIZE, async (b) => {
+    try {
+      await sendReminderReturnTomorrow(
+        b.borrower.email, b.borrower.name,
+        bookingItemsLabel(b.item.title, b._count.bookingItems || 1), b.id,
+        b.endDate,
+      )
+      sent.push(`return:${b.id}`)
+    } catch (e) {
+      console.error("[cron] return reminder", b.id, e)
+      failed.push(`return:${b.id}`)
+      throw e
+    }
+  })
 
   const appUrl = APP_URL
 
-  for (const b of overdueBookings) {
+  const overdueStats = await processInBatches(overdueBookings, BATCH_SIZE, async (b) => {
     const daysLate = Math.ceil(
       (startOfDay(today).getTime() - startOfDay(b.endDate).getTime()) / 86_400_000
     )
     const itemsLabel = bookingItemsLabel(b.item.title, b._count.bookingItems || 1)
 
-    // Primeira detecção de atraso: grava lateFeeAmount + cria cobrança Stripe
+    // Primeira detecção de atraso: grava lateFeeAmount + cria cobrança Stripe.
+    // Ordem dentro de uma mesma reserva é intencional — não paralelizar.
     if (b.lateFeeAmount == null) {
       const lateFeeAmount = Math.round(b.dailyPrice * lateFeeMultiplier * daysLate)
 
@@ -160,20 +195,40 @@ export async function GET(req: NextRequest) {
         sent.push(`late_fee:${b.id}`)
       } catch (e) {
         console.error("[cron] late fee charge", b.id, e instanceof Error ? e.message : e)
+        failed.push(`late_fee:${b.id}`)
+        // Não propaga — o lembrete diário de atraso continua mesmo se a cobrança falhar
       }
     }
 
     // Lembrete diário de atraso (independente de já ter cobrado)
-    await sendReminderOverdue(
-      b.borrower.email, b.borrower.name,
-      b.owner.email,    b.owner.name,
-      itemsLabel,       b.id,
-      b.endDate,        daysLate,
-      b.dailyPrice,     lateFeeMultiplier,
-    ).catch((e) => console.error("[cron] overdue reminder", b.id, e))
-    sent.push(`overdue:${b.id}`)
-  }
+    try {
+      await sendReminderOverdue(
+        b.borrower.email, b.borrower.name,
+        b.owner.email,    b.owner.name,
+        itemsLabel,       b.id,
+        b.endDate,        daysLate,
+        b.dailyPrice,     lateFeeMultiplier,
+      )
+      sent.push(`overdue:${b.id}`)
+    } catch (e) {
+      console.error("[cron] overdue reminder", b.id, e)
+      failed.push(`overdue:${b.id}`)
+      throw e
+    }
+  })
 
-  console.warn(`[cron/reminders] sent=${sent.length}`, sent)
-  return NextResponse.json({ ok: true, sent: sent.length, ids: sent })
+  console.warn(
+    `[cron/reminders] start=${startStats.ok}ok/${startStats.failed}fail` +
+    ` return=${returnStats.ok}ok/${returnStats.failed}fail` +
+    ` overdue=${overdueStats.ok}ok/${overdueStats.failed}fail`,
+    { sent, failed },
+  )
+
+  return NextResponse.json({
+    ok:        true,
+    sent:      sent.length,
+    failed:    failed.length,
+    ids:       sent,
+    failedIds: failed,
+  })
 }
