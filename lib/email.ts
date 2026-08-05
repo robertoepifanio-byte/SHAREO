@@ -1,6 +1,7 @@
 import { Resend } from "resend"
 import { APP_URL } from "@/lib/app-url"
 import { formatPrice, formatDateLong } from "@/utils/format"
+import { prisma } from "@/lib/prisma"
 
 const hasResendKey =
   typeof process.env.RESEND_API_KEY === "string" &&
@@ -16,6 +17,16 @@ function getResend(): Resend | null {
 
 // || (não ??): EMAIL_FROM vazio no Vercel não pode virar from inválido
 const FROM = process.env.EMAIL_FROM || "noreply@shareo.com.br"
+
+// Persiste falha persistente de e-mail crítico para reprocessamento pelo cron email-retry.
+// Silencia erros do próprio enqueue: se o banco estiver fora, não queremos cascata.
+async function enqueueEmail(
+  to: string,
+  templateKey: string,
+  payloadJson: Record<string, string | number | boolean | null>,
+): Promise<void> {
+  await prisma.emailQueue.create({ data: { to, templateKey, payloadJson } })
+}
 
 /**
  * Rótulo do item para assuntos/corpos de e-mail e notificações.
@@ -241,6 +252,7 @@ export async function sendPasswordResetEmail(
   to: string,
   name: string,
   token: string,
+  allowQueue = true,
 ): Promise<void> {
   const resend = getResend()
   if (!resend) return
@@ -255,7 +267,13 @@ export async function sendPasswordResetEmail(
     html:    passwordResetHtml(firstName, resetUrl),
   }, "password-reset")
 
-  if (error) throw new Error(`Resend error: ${error.message}`)
+  if (error) {
+    if (allowQueue) {
+      await enqueueEmail(to, "password-reset", { to, name, token })
+        .catch((e) => console.error(`[email-queue] falha ao enfileirar password-reset: ${e}`))
+    }
+    throw new Error(`Resend error: ${error.message}`)
+  }
 }
 
 export async function sendExportReadyEmail(
@@ -303,6 +321,7 @@ export async function sendVerificationEmail(
   to: string,
   name: string,
   token: string,
+  allowQueue = true,
 ): Promise<void> {
   const resend = getResend()
   if (!resend) return
@@ -339,7 +358,13 @@ export async function sendVerificationEmail(
     html,
   }, "verification")
 
-  if (error) throw new Error(`Resend error: ${error.message}`)
+  if (error) {
+    if (allowQueue) {
+      await enqueueEmail(to, "verification", { to, name, token })
+        .catch((e) => console.error(`[email-queue] falha ao enfileirar verification: ${e}`))
+    }
+    throw new Error(`Resend error: ${error.message}`)
+  }
 }
 
 // ─── Lembretes automáticos ────────────────────────────────────────────────────
@@ -458,19 +483,26 @@ export async function sendLateFeeEmail(
   to: string, name: string,
   itemTitle: string, bookingId: string,
   lateFeeAmountCents: number, paymentUrl: string,
+  allowQueue = true,
 ): Promise<void> {
   const resend = getResend()
   if (!resend) return
   const firstName        = name.split(" ")[0]
   const lateFeeFormatted = formatPrice(lateFeeAmountCents)
   const bookingUrl = `${APP_URL}/reservas/${bookingId}`
-  const { error } = await resend.emails.send({
+  const { error } = await sendWithRetry(resend, {
     from:    `ShareO <${FROM}>`,
     to,
     subject: `🚨 Taxa de atraso — ${itemTitle} — ShareO`,
     html:    lateFeeHtml(firstName, itemTitle, lateFeeFormatted, paymentUrl, bookingUrl),
-  })
-  if (error) throw new Error(`Resend error: ${error.message}`)
+  }, "late-fee")
+  if (error) {
+    if (allowQueue) {
+      await enqueueEmail(to, "late-fee", { to, name, itemTitle, bookingId, lateFeeAmountCents, paymentUrl })
+        .catch((e) => console.error(`[email-queue] falha ao enfileirar late-fee: ${e}`))
+    }
+    throw new Error(`Resend error: ${error.message}`)
+  }
 }
 
 function idVerifiedHtml(firstName: string) {
@@ -627,6 +659,7 @@ export async function sendFounderInviteEmail(
   to: string,
   name: string,
   token: string,
+  allowQueue = true,
 ): Promise<void> {
   const resend = getResend()
   if (!resend) return
@@ -641,7 +674,13 @@ export async function sendFounderInviteEmail(
     html:    founderInviteHtml(firstName, setPasswordUrl),
   }, "founder-invite")
 
-  if (error) throw new Error(`Resend error: ${error.message}`)
+  if (error) {
+    if (allowQueue) {
+      await enqueueEmail(to, "founder-invite", { to, name, token })
+        .catch((e) => console.error(`[email-queue] falha ao enfileirar founder-invite: ${e}`))
+    }
+    throw new Error(`Resend error: ${error.message}`)
+  }
 }
 
 /** Devolução em andamento — avisa o LOCADOR que o locatário iniciou a devolução e precisa de confirmação */
