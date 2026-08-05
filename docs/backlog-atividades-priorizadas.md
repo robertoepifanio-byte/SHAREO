@@ -53,6 +53,24 @@
 | **`/bem-vindo` — generalizar a copy (PÓS lançamento)** | 🔵 pós-lançamento | Remover o tom de piloto ("Você é um dos primeiros 🎉") após o go-live. Arquivo: `app/bem-vindo/page.tsx`. |
 | **KYB PJ — feedback dos testers do cadastro** | ⏳ aguardando | Tratar achados do roteiro `docs/roteiro-teste-cadastro-pj.pdf` quando os testers devolverem. |
 | **Verificar geocode automático no fluxo de criar item em produção** | ⏳ aguardando Roberto | PR #265 (05/08) corrigiu o `ItemForm` pra geocodificar automaticamente o endereço do perfil ao criar item (antes salvava coordenadas hardcoded permanentes). Sem teste automatizado cobrindo esse fluxo — verificar manualmente em `shareo-prod`: criar um item de teste e conferir se a coordenada salva bate com a do perfil (não com o centro do Brasil, `-14.235, -51.9253`). |
+| **`DATABASE_URL_PROD` sem `connection_limit=1`** | 🔴 bloqueado — precisa da senha (Claude nunca viu/vê o valor do secret) | Achado do painel de não-funcionais (eixo carga): sem esse parâmetro, o Prisma abre pool interno de ~3 conexões por instância serverless contra o PgBouncer (porta 6543), o que pode saturar o compute NANO sob concorrência. Ação: no painel Supabase do `shareo-prd`, copiar a connection string do transaction pooler, adicionar `&connection_limit=1` no fim, e rodar `echo "postgresql://...&connection_limit=1" \| gh secret set DATABASE_URL_PROD` localmente (nunca colar a URL pro Claude). |
+
+---
+
+## 🧪 Painel de Testes Não-Funcionais em produção (05/08/2026) — backlog dos achados
+
+> Origem: painel de especialistas (qa/devops/arquiteto/segurança/designer) sobre os 5 eixos de teste não-funcional (desempenho/carga/estresse/segurança/usabilidade) contra o `shareo-prod` real, com verificação adversarial. 28 achados confirmados. **Já corrigido + mesclado:** PR #265 (4 achados Alto — cache do `isSessionStale`, migration sem `continue-on-error`, `CRON_SECRET_PROD`, geocode automático no create) e o PR seguinte (11 achados Médio/Baixo mecânicos — observabilidade, tap targets, cores hardcoded, `maxDuration`, rate limit no export, índice de busca). **Abaixo: o que exige migração de dados, decisão de arquitetura, ou nova tabela/cron** — não é "correção óbvia" de uma linha.
+
+| ID | Item | Por que é backlog | Sev. |
+|---|---|---|---|
+| NFR-BL1 | Filtro de distância carrega até 500 itens na lambda antes de paginar (`app/itens/page.tsx:127-134`, `ARQ-ALTO-09`) | Fix correto é bounding box no `WHERE` do Prisma antes da Haversine em JS — muda a query central de listagem de itens (o fluxo mais usado do produto). Merece revisão isolada, não deploy junto com 10 outras mudanças. | Médio |
+| NFR-BL2 | `viewCount` incrementado via `UPDATE` síncrono por visualização, sem batching (`app/api/items/[id]/route.ts:62`, `app/itens/[id]/page.tsx:184`) | Fix real é acumular em Redis (Upstash já usado no projeto) + flush periódico via cron — arquitetura nova, não patch local. | Médio |
+| NFR-BL3 | 5 queries em paralelo por detalhe de item pressionam o pool (`app/api/items/[id]/route.ts:82-129`) | Fix é `unstable_cache` com tags + TTL de staleness — decisão de qual dado pode ficar "quase em tempo real" (ex.: `ownerStats`) é de produto, não só técnica. | Médio |
+| NFR-BL4 | Paginação + `orderBy bookings._count` sem índice de suporte (`app/api/items/route.ts:26-35`) | Fix é denormalizar `bookingCount` em `Item` (coluna + incremento via `after()`) — migração de schema + backfill dos itens existentes. | Médio |
+| NFR-BL5 | Cron `/api/cron/reminders` processa reservas do dia em loop `for..of` sequencial dentro de `maxDuration=60s` | Só vira risco real com volume — decidir entre paralelizar com `Promise.allSettled` em lotes ou dividir o cron; qualquer uma muda o comportamento de erro parcial. | Médio |
+| NFR-BL6 | Mapbox como ponto único de falha na geocodificação — falha silenciosa, sem retry nem reprocessamento automático (`lib/geocodeItem.ts`) | Fix é coluna `geocodeStatus` (`PENDING`/`OK`/`FAILED`) + cron de retry com backoff — schema novo + novo cron. `/api/admin/geocode-items` já existe como caminho manual. | Médio |
+| NFR-BL7 | E-mails via Resend com só 2 tentativas / 400ms, sem fila de retry nem DLQ (`lib/email.ts:38-60`) | Fix é uma tabela `EmailQueue` (padrão idêntico ao `MercadoPagoEventQueue` já em uso) + cron de reprocessamento — arquitetura nova. `docs/checklist-go-live.md:30` já sinaliza migrar o Resend pro plano pago antes de qualquer estresse real. | Médio |
+| NFR-BL8 | Deployment Protection do Vercel bloqueia qualquer teste de carga/estresse real contra `shareo-prod` vindo de fora | Não é um bug — é a própria proteção fazendo o trabalho dela. Não tem "correção"; só registrar que medição de carga real fica pra um ambiente dedicado pós-D4 (mesma nota já em `docs/backlog-atividades-priorizadas.md:31`). | — |
 
 ---
 
