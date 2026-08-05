@@ -291,7 +291,7 @@ export async function POST(req: Request) {
           updated++
         } else {
           const created_ = await prisma.item.create({
-            data:   { ...sharedData, ownerId, latitude: 0, longitude: 0 },
+            data:   { ...sharedData, ownerId, latitude: 0, longitude: 0, geocodeStatus: "PENDING" },
             select: { id: true },
           })
           items.push({ id: created_.id, title: d.titulo, action: "created" })
