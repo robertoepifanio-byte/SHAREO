@@ -22,6 +22,7 @@ import { ReviewDetails, ReviewSentiment } from "@/components/reviews/ReviewDetai
 import { TrackEvent } from "@/components/analytics/TrackEvent"
 import { formatPrice } from "@/utils/format"
 import { RatingStars } from "@/components/ui/RatingStars"
+import { incrementViewCount } from "@/lib/viewCounter"
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ back?: string; publicado?: string }> }
 
@@ -181,7 +182,8 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
     }),
   ])
 
-  after(() => { prisma.item.update({ where: { id }, data: { viewCount: { increment: 1 } } }).catch(() => {}) })
+  // NFR-BL2 — acumula no Redis; cron flush-view-counts persiste no Postgres em lote
+  after(() => { void incrementViewCount(id) })
 
   const [feeRateBps, contractCfg] = await Promise.all([
     getPlatformFeeRate(),

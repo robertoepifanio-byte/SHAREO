@@ -48,6 +48,10 @@
     {
       "path": "/api/cron/purge-access-logs",
       "schedule": "0 4 * * 1"
+    },
+    {
+      "path": "/api/cron/flush-view-counts",
+      "schedule": "0 0,8,16 * * *"
     }
   ]
 }
