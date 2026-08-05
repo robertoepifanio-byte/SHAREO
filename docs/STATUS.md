@@ -370,19 +370,25 @@ Próximo passo: resolver P0 sem bloqueador externo (hardcoded + scripts) → agu
 
 ### Infraestrutura de serviços
 
-| Serviço | Plano atual (staging) | Plano produção | Custo estimado/mês |
-|---|---|---|---|
-| **Vercel** | Pro (atual) | Pro — necessário para Cron Jobs e Edge Middleware | ~US$20/mês |
-| **Supabase (staging)** | Free tier — `zythygwvmrwrqmnrdufq` | **3º projeto isolado** (sa-east-1) | Free → Pro (~US$25) |
-| **Supabase (produção)** | ⏳ Não criado | Pro tier — 8 GB DB, 100 GB Storage, 5M row reads/mês | ~US$25/mês |
-| **Upstash Redis** | Pay-as-you-go | Pay-as-you-go (rate limit + blocklist) | ~US$0–5/mês |
-| **Resend (e-mail)** | Free (100/dia) | Starter US$20/mês — 50.000 e-mails/mês | ~US$20/mês |
-| **Sentry** | Free (5k eventos/mês) | Team US$26/mês se ultrapassar | ~US$0–26/mês |
-| **Mapbox** | Free (50k tile requests) | Pay-as-you-go — US$0.50/1.000 requests acima do free | ~US$0–10/mês |
-| **Stripe** | Test mode | Live mode — 2.99% + R$0.39 por transação (BR) | % sobre GMV |
-| **UptimeRobot** | Free (5 min interval) | Free suficiente para MVP | US$0 |
+**Atualizado em 2026-08-04** — org Supabase confirmada em **Pro** (screenshot real do painel; corrige a versão anterior desta tabela, que dizia "Free tier"/"org FREE só comporta 2 projetos" — não é mais verdade). Estrutura de custo confirmada **ao vivo na tela de criação de projeto**: **~US$25/mês de base** (plano Pro da org) **+ ~US$10/mês por projeto adicional** — não é um valor fixo isolado de $10/projeto como uma versão anterior desta tabela chegou a registrar. Vercel Pro e Supabase Pro já são licenças **ativas**, não mais projeção futura — mas os valores exatos cobrados hoje **não foram verificados nesta sessão** (sem acesso a token/API de billing); marcados como "checar no painel" onde não há confirmação direta.
 
-**Estimativa infra mês 1 produção:** ~US$70–100/mês (≈R$370–530)
+| Serviço | Plano atual (staging) | Plano produção | Custo/mês |
+|---|---|---|---|
+| **Vercel** | **Pro (ativo)** — Team `shareo-marketplace` | Mesmo plano | ~US$20/mês *(preço de tabela público — checar valor real no painel de cobrança)* |
+| **Supabase — base Pro da org** | **Pro (ativo)** — org `Shareo Marketplace de aluguel` | Mesmo plano | **~US$25/mês confirmado** (base da org, cobre o(s) projeto(s) incluído(s)) |
+| **Supabase — projeto adicional** | Staging (`zythygwvmrwrqmnrdufq`) já ativo | `shareo-prd`, criado só pós-D4 | **+~US$10/mês confirmado, por projeto além do incluído na base** |
+| **Upstash Redis** | Pay-as-you-go | Pay-as-you-go (rate limit + blocklist) | ~US$0–5/mês *(não verificado)* |
+| **Resend (e-mail)** | Free (100/dia) | Starter US$20/mês — 50.000 e-mails/mês | ~US$20/mês *(não verificado)* |
+| **Sentry** | Free (5k eventos/mês) | Team US$26/mês se ultrapassar | ~US$0–26/mês *(não verificado)* |
+| **Mapbox — mapa (GL JS)** | Free — **50.000 map loads/mês** (`mapbox-gl` v3.3.0 + `react-map-gl`, token `NEXT_PUBLIC_MAPBOX_TOKEN`) | Pay-as-you-go acima do free: $5,00/1k (50-100k) → $4,00/1k (100-200k) → $3,00/1k (200k-1M) | US$0/mês hoje *(confirmado em mapbox.com/pricing, 04/08)* |
+| **Mapbox — Geocoding API** | Free — **100.000 requests/mês** (`lib/geocodeItem.ts`, fire-and-forget no anúncio) | Pay-as-you-go acima do free: $0,75/1k (100-500k) → $0,60/1k (500k-1M) | US$0/mês hoje *(confirmado em mapbox.com/pricing, 04/08)* |
+| **Mercado Pago** | Test/sandbox mode | Live mode — % sobre transação | % sobre GMV |
+| **UptimeRobot** | Free (5 min interval) | Free suficiente para MVP | US$0 |
+| **Apple Developer Program** | ⏳ Sem conta ainda — iOS Fase 1 é só scaffolding/CI (ver [[project-app-ios-fase1]]) | Necessário p/ teste em device real, TestFlight e publicação na App Store (Fase 2, deferida) | ~US$99/**ano** (~US$8,25/mês) *(preço de tabela público Apple — não verificado, é individual, não a org)* |
+
+**Estimativa infra mês 1 produção:** ~US$73–103/mês (Supabase = ~$25 base + ~$10 do `shareo-prd` adicional pós-D4 = ~$35; + Apple Developer ~$8/mês quando a Fase 2 iOS começar; resto não verificado nesta sessão).
+
+**Pré-requisitos Mapbox (confirmado 04/08):** modelo puramente pay-as-you-go, **sem assinatura fixa obrigatória** — só o token de acesso já configurado (`NEXT_PUBLIC_MAPBOX_TOKEN`). Mapa e Geocoding são produtos/cotas **separados**, cada um com seu free tier próprio (não compartilham). Obrigação contratual do ToS: atribuição de marca visível ("© Mapbox © OpenStreetMap") no rodapé/mapa — já rastreado na tabela de licenças (linha `mapbox-gl`, item 6 abaixo).
 
 ### Projetos Supabase — 3 ambientes isolados
 
@@ -392,7 +398,7 @@ Próximo passo: resolver P0 sem bloqueador externo (hardcoded + scripts) → agu
 | Staging | `zythygwvmrwrqmnrdufq` | Validação CI/CD — dados de fixture |
 | **Produção** | ⏳ Criar após D4 (~$10/mês adicional confirmado) | Dados reais de usuários — **nunca misturar** |
 
-Ambos na org corporativa `Shareo Marketplace de aluguel` (FREE, NANO, sa-east-1), migrados em 2026-06-27. Os refs antigos da org pessoal (`jtianehxosfdrhjzqvqj` dev / `fflpuoluiqmhpvcxubqi` staging) foram **deletados em 2026-07-22** — se aparecerem em doc ou script, é resíduo. Org FREE só comporta 2 projetos → criar produção exige upgrade para Pro.
+Staging na org corporativa `Shareo Marketplace de aluguel` (**PRO** desde 04/08, NANO, sa-east-1), migrada em 2026-06-27. Os refs antigos da org pessoal (`jtianehxosfdrhjzqvqj` dev / `fflpuoluiqmhpvcxubqi` staging) foram **deletados em 2026-07-22** — se aparecerem em doc ou script, é resíduo. Org já em Pro → sem limite de contagem de projetos; custo é ~US$25/mês de base + ~US$10/mês por projeto além do incluído na base (confirmado 04/08).
 
 **Regra absoluta:** variáveis de env de produção (`DATABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXTAUTH_SECRET` etc.) **nunca** no `.env`, apenas em GitHub Secrets + Vercel env `production`.
 
