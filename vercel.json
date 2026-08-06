@@ -50,6 +50,10 @@
       "schedule": "0 4 * * 1"
     },
     {
+      "path": "/api/cron/geocode-retry",
+      "schedule": "0 5,17 * * *"
+    },
+    {
       "path": "/api/cron/flush-view-counts",
       "schedule": "0 0,8,16 * * *"
     }
