@@ -989,6 +989,24 @@ model MercadoPagoEventQueue {
   @@map("mercado_pago_event_queue")
 }
 
+// Fila de retry para e-mails críticos (NFR-BL7).
+// Armazena args primitivos (não JSX) para permitir reconstrução segura do envio.
+// Sem coluna de dedup: duplicatas ocasionais são inofensivas para e-mail.
+model EmailQueue {
+  id          String           @id @default(cuid())
+  to          String           // destinatário principal (para queries de admin)
+  templateKey String           // "verification" | "password-reset" | "late-fee" | "founder-invite"
+  payloadJson Json             // args primitivos necessários para reconstruir o envio
+  status      EventQueueStatus @default(PENDING)
+  attempts    Int              @default(0)
+  lastError   String?
+  processedAt DateTime?
+  createdAt   DateTime         @default(now())
+
+  @@index([status, createdAt])
+  @@map("email_queue")
+}
+
 // ─── Programa Fundadores ──────────────────────────────────
 
 model FounderLead {
