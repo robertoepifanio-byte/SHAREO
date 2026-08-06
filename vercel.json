@@ -48,6 +48,10 @@
     {
       "path": "/api/cron/purge-access-logs",
       "schedule": "0 4 * * 1"
+    },
+    {
+      "path": "/api/cron/geocode-retry",
+      "schedule": "0 5,17 * * *"
     }
   ]
 }
