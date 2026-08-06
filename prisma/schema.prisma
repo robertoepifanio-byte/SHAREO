@@ -54,6 +54,12 @@ enum ItemStatus {
   DELETED // Soft-delete — fonte de verdade para exclusão lógica
 }
 
+enum GeocodeStatus {
+  PENDING // aguardando geocodificação ou retry automático pelo cron
+  OK      // geocodificado com sucesso
+  FAILED  // esgotou tentativas — requer reprocessamento manual via /api/admin/geocode-items
+}
+
 enum BookingStatus {
   PENDING // Aguardando resposta do locador
   CONFIRMED // Locador aceitou
@@ -397,6 +403,11 @@ model Item {
   longitude    Float
   // Coluna geográfica PostGIS (Unsupported até Prisma nativo suportar)
   // geom        Unsupported("geometry(Point, 4326)")?
+
+  // Rastreamento de geocodificação — suporta retry automático pelo cron /api/cron/geocode-retry
+  geocodeStatus      GeocodeStatus @default(OK)
+  geocodeAttempts    Int           @default(0)
+  geocodeLastTriedAt DateTime?
 
   // Voltagem — para itens elétricos/eletrônicos
   voltage String? // "110V" | "220V" | "Bivolt" — null = não se aplica
