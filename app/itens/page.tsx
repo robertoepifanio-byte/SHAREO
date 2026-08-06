@@ -54,7 +54,7 @@ function getOrderBy(sort?: string) {
     case "price_asc":  return [{ pricePerDay: "asc"  as const }, id]
     case "price_desc": return [{ pricePerDay: "desc" as const }, id]
     case "views":      return [{ viewCount:   "desc" as const }, id]
-    case "rented":     return [{ bookings: { _count: "desc" as const } }, id]
+    case "rented":     return [{ bookingsCount: "desc" as const }, id]
     default:           return [{ createdAt:   "desc" as const }, id]
   }
 }
@@ -126,12 +126,34 @@ export default async function ExplorarPage({ searchParams }: Props) {
   // a paginação JS opere sobre o conjunto completo — evita dupla paginação.
   const useJsFilter = useDistFilter || !!minRating
 
+  // NFR-BL1: bounding box reduz drasticamente linhas retornadas pelo banco antes do
+  // Haversine em JS. A caixa retangular (lat/lng offsets) sobre-seleciona; o Haversine
+  // abaixo refina para o círculo exato. Ativo só quando há ponto de referência (dist filter).
+  // Sem filtro de distância mas com minRating, não há bbox possível — mantém take:500.
+  // Number.isFinite: ulat/ulng vêm de query string — um valor malformado (?ulat=abc)
+  // vira NaN aqui, e NaN no WHERE do Prisma lança em vez de devolver vazio como o
+  // path só-JS fazia antes. Sem bbox válido, cai pro Haversine puro em JS (useDistFilter
+  // continua true, só bboxWhere fica undefined).
+  const distRadius = Number(dist)
+  const bboxWhere = (useDistFilter && Number.isFinite(userLat) && Number.isFinite(userLng) && Number.isFinite(distRadius))
+    ? (() => {
+      const dlat = distRadius / 111.32
+      const dlng = distRadius / (111.32 * Math.cos((userLat as number) * (Math.PI / 180)))
+      return {
+        latitude:  { gte: (userLat as number) - dlat, lte: (userLat as number) + dlat },
+        longitude: { gte: (userLng as number) - dlng, lte: (userLng as number) + dlng },
+      }
+    })()
+    : undefined
+
   const dbResult = await Promise.all([
     prisma.item.findMany({
-      where,
-      // ARQ-ALTO-09 (paliativo até PostGIS): filtro JS (distância/rating) opera sobre o
-      // conjunto, mas com TETO de 500 itens p/ não carregar a tabela inteira na lambda.
-      take: useJsFilter ? 500 : PAGE_SIZE,
+      where: bboxWhere ? { ...where, ...bboxWhere } : where,
+      // Com bbox ativo o banco já filtra a maior parte — take reduzido para PAGE_SIZE*5 (100).
+      // Sem bbox (só minRating, ou ulat/ulng/dist malformados na URL): mantém 500 — sem
+      // pré-filtro geográfico no banco, precisa da rede mais larga pro Haversine em JS.
+      // ARQ-ALTO-09 (origem): paliativo pré-PostGIS; bbox é a melhoria incremental.
+      take: bboxWhere ? PAGE_SIZE * 5 : useJsFilter ? 500 : PAGE_SIZE,
       ...(useJsFilter ? {} : { skip }),
       orderBy: getOrderBy(sort),
       select: {

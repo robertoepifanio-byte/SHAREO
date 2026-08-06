@@ -25,10 +25,13 @@ const mockBookingItemCM   = jest.fn().mockResolvedValue({ count: 1 })
 const mockConversationCM  = jest.fn()
 const mockCouponUpdateMany = jest.fn().mockResolvedValue({ count: 1 })
 
+const mockItemUpdate = jest.fn().mockResolvedValue({})
+
 jest.mock("@/lib/prisma", () => {
   const tx = {
     booking:      { create:     (...a: unknown[]) => mockBookingCreate(...a) },
     bookingItem:  { createMany: (...a: unknown[]) => mockBookingItemCM(...a) },
+    item:         { update:     (...a: unknown[]) => mockItemUpdate(...a) },
     conversation: { create:     (...a: unknown[]) => mockConversationCM(...a) },
     coupon:       { updateMany:  (...a: unknown[]) => mockCouponUpdateMany(...a) },
   }

@@ -330,6 +330,14 @@ export async function POST(req: NextRequest) {
         data: perItem.map((p) => ({ bookingId: b.id, itemId: p.itemId, dailyPrice: p.dailyPrice, totalPrice: p.totalPrice })),
       })
 
+      // Mantém bookingsCount do item principal sincronizado (NFR-BL4).
+      // Replica o comportamento de { bookings: { _count } }: conta via Booking.itemId
+      // (só o item principal), sem filtro de status — não é decrementado em cancelamento.
+      await tx.item.update({
+        where: { id: itemId },
+        data:  { bookingsCount: { increment: 1 } },
+      })
+
       // Consome o cupom na mesma transação (corrida: condição usedAt null garante uso único)
       if (couponId) {
         const consumed = await tx.coupon.updateMany({

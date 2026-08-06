@@ -423,7 +423,8 @@ model Item {
   approvedAt   DateTime?
   approvedById String?
 
-  viewCount Int       @default(0)
+  viewCount     Int       @default(0)
+  bookingsCount Int       @default(0)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
@@ -440,6 +441,7 @@ model Item {
   @@index([latitude, longitude])
   @@index([status, isApproved, deletedAt])
   @@index([slug])
+  @@index([bookingsCount])
   @@map("items")
 }
 
