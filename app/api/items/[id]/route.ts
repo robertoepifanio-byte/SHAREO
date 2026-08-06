@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
+import { unstable_cache } from "next/cache"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { UpdateItemSchema } from "@/lib/validations/items"
@@ -7,8 +8,67 @@ import { geocodeItem } from "@/lib/geocodeItem"
 import { userPublicSelect } from "@/lib/prisma/selects"
 import { getOwnerResponseBadge } from "@/lib/ownerStats"
 import { resolveUserId } from "@/lib/resolveUserId"
+import { incrementViewCount } from "@/lib/viewCounter"
 
 type RouteContext = { params: Promise<{ id: string }> }
+
+// Movido para módulo para ser referenciado nos wrappers unstable_cache abaixo
+const relatedSelect = {
+  id: true, title: true, pricePerDay: true, condition: true,
+  city: true, state: true, neighborhood: true, status: true,
+  images:   { select: { url: true }, orderBy: { order: "asc" as const }, take: 1 },
+  category: { select: { name: true, slug: true } },
+  owner:    { select: { name: true, isVerified: true } },
+  _count:   { select: { reviews: true, favorites: true } },
+} as const
+
+// NFR-BL3 — queries auxiliares que toleram 5 min de staleness ficam cacheadas.
+// A query principal do item e o ownerStats (groupBy de reservas) permanecem live.
+// revalidate: 300s — dado que muda raramente (novo anúncio do dono, categoria renomeada).
+
+const getCachedResponseBadge = unstable_cache(
+  (ownerId: string) => getOwnerResponseBadge(ownerId),
+  ["owner-response-badge"],
+  { revalidate: 300, tags: ["owner-response-badge"] }
+)
+
+const getCachedSimilarItems = unstable_cache(
+  (categoryId: string, city: string, excludeId: string) =>
+    prisma.item.findMany({
+      where: {
+        categoryId,
+        city,
+        deletedAt:  null,
+        status:     "AVAILABLE",
+        isApproved: true,
+        id:         { not: excludeId },
+        owner:      { deletedAt: null },
+      },
+      select:  relatedSelect,
+      orderBy: { viewCount: "desc" },
+      take:    4,
+    }),
+  ["similar-items"],
+  { revalidate: 300, tags: ["similar-items"] }
+)
+
+const getCachedOwnerItems = unstable_cache(
+  (ownerId: string, excludeId: string) =>
+    prisma.item.findMany({
+      where: {
+        ownerId,
+        deletedAt:  null,
+        status:     "AVAILABLE",
+        isApproved: true,
+        id:         { not: excludeId },
+      },
+      select:  relatedSelect,
+      orderBy: { viewCount: "desc" },
+      take:    4,
+    }),
+  ["owner-items"],
+  { revalidate: 300, tags: ["owner-items"] }
+)
 
 export async function GET(req: NextRequest, { params }: RouteContext) {
   try {
@@ -57,30 +117,20 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
       )
     }
 
-    // Incremento de viewCount após a resposta (só conta para itens públicos)
-    after(() =>
-      prisma.item.update({ where: { id }, data: { viewCount: { increment: 1 } } }).catch((e) => console.error("[viewCount]", e instanceof Error ? e.message : e))
-    )
+    // NFR-BL2 — acumula no Redis; cron flush-view-counts persiste no Postgres em lote
+    after(() => incrementViewCount(id))
 
     // Estatísticas do proprietário — fonte: app/itens/[id]/page.tsx linhas
     // 122-139 (mesma lógica exata, replicada aqui pra expor via API pro
     // mobile; a página do site roda isso direto via Server Component, não
     // consome este endpoint).
     //
-    // P1-31 / Story B — itens similares e itens do mesmo anunciante:
-    // Replicam EXATAMENTE as queries de page.tsx linhas 141-181.
+    // NFR-BL3 — responseBadge, similarItems e ownerItems cacheados 5 min
+    // via unstable_cache (definidos no módulo). ownerStats (groupBy de reservas)
+    // permanece live pois muda com mais frequência.
     // `category.slug` incluído p/ o ItemCard do mobile (requer slug p/ ícone).
-    const relatedSelect = {
-      id: true, title: true, pricePerDay: true, condition: true,
-      city: true, state: true, neighborhood: true, status: true,
-      images:   { select: { url: true }, orderBy: { order: "asc" as const }, take: 1 },
-      category: { select: { name: true, slug: true } },
-      owner:    { select: { name: true, isVerified: true } },
-      _count:   { select: { reviews: true, favorites: true } },
-    } as const
-
     const [responseBadge, ownerStats, similarItems, ownerItems] = await Promise.all([
-      getOwnerResponseBadge(item.ownerId),
+      getCachedResponseBadge(item.ownerId),
       prisma.booking.groupBy({
         by: ["status"],
         where: { ownerId: item.ownerId, deletedAt: null },
@@ -97,35 +147,9 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
         }
       }),
       // P1-31 — itens similares (mesma categoria + cidade, excluindo o atual)
-      // Fonte: page.tsx linhas 141-161
-      prisma.item.findMany({
-        where: {
-          categoryId: item.category.id,
-          city:       item.city,
-          deletedAt:  null,
-          status:     "AVAILABLE",
-          isApproved: true,
-          id:         { not: item.id },
-          owner:      { deletedAt: null },
-        },
-        select: relatedSelect,
-        orderBy: { viewCount: "desc" },
-        take: 4,
-      }),
+      getCachedSimilarItems(item.category.id, item.city, item.id),
       // Story B — outros itens do MESMO anunciante (locação multi-item)
-      // Fonte: page.tsx linhas 162-181
-      prisma.item.findMany({
-        where: {
-          ownerId:    item.ownerId,
-          deletedAt:  null,
-          status:     "AVAILABLE",
-          isApproved: true,
-          id:         { not: item.id },
-        },
-        select: relatedSelect,
-        orderBy: { viewCount: "desc" },
-        take: 4,
-      }),
+      getCachedOwnerItems(item.ownerId, item.id),
     ])
 
     // Privacidade (SEC-MIN-06 / MAJ-S14-04): coordenada exata e endereço só p/ dono/admin.

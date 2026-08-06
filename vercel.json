@@ -54,6 +54,10 @@
       "schedule": "0 5,17 * * *"
     },
     {
+      "path": "/api/cron/flush-view-counts",
+      "schedule": "0 0,8,16 * * *"
+    },
+    {
       "path": "/api/cron/email-retry",
       "schedule": "*/15 * * * *"
     }
