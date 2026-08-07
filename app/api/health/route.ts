@@ -31,14 +31,23 @@ function codigoDeFalha(e: unknown): string {
   const m = msg.match(/\bP\d{4}\b/)
   if (m) return m[0]
 
-  // Sem código conhecido: devolve tipo + 1ª linha da mensagem COM CREDENCIAL
-  // REMOVIDA. Sem isto o diagnóstico vira adivinhação entre causas com
-  // correções completamente diferentes.
-  const primeiraLinha = msg.split("\n").find((l) => l.trim().length > 0) ?? ""
-  const semCredencial = primeiraLinha
+  // Sem código conhecido: devolve tipo + as linhas ÚTEIS da mensagem, com
+  // credencial removida. O Prisma abre com um cabeçalho genérico
+  // ("Invalid `prisma.x()` invocation:") e só depois diz a causa — pegar a
+  // primeira linha não ajudava.
+  const util = msg
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) =>
+      l.length > 0 &&
+      !/^Invalid `.*` invocation/.test(l) &&
+      !l.startsWith("-->") &&
+      !/^\d+\s*\|/.test(l),
+    )
+    .join(" · ")
     .replace(/\/\/[^@\s]*@/g, "//***@")          // user:senha@host → ***@host
     .replace(/postgres(ql)?:\/\/\S*/gi, "<url>") // qualquer URL restante
-  return `${err?.name ?? "Error"}: ${semCredencial.slice(0, 160)}`
+  return `${err?.name ?? "Error"}: ${util.slice(0, 240)}`
 }
 
 export async function GET() {
