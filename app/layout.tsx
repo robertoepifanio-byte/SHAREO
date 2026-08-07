@@ -7,7 +7,9 @@ import { AppFooter } from "@/components/layout/AppFooter"
 import { ServiceWorkerRegister } from "@/components/layout/ServiceWorkerRegister"
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics"
 import { Providers } from "@/components/layout/Providers"
+import { PreLaunchFooter } from "@/components/layout/PreLaunchFooter"
 import { jsonLdScript } from "@/lib/jsonLd"
+import { PRELAUNCH_ENABLED, NOINDEX_ENABLED } from "@/lib/prelaunch"
 import "./globals.css"
 
 const montserrat = Montserrat({
@@ -52,9 +54,11 @@ export const metadata: Metadata = {
     site:   "@shareo_br",
     images: ["/logos/og-image-v5.webp"],
   },
+  // NEXT_PUBLIC_NOINDEX é ligada em STAGING: sem isso o Google indexa o host de
+  // teste e racha autoridade com shareo.com.br antes mesmo do go-live.
   robots: {
-    index:  true,
-    follow: true,
+    index:  !NOINDEX_ENABLED,
+    follow: !NOINDEX_ENABLED,
   },
   appleWebApp: {
     capable:          true,
@@ -101,13 +105,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         >
           Pular para o conteúdo principal
         </a>
-        {/* Padding bottom garante que o BottomNav não tape o conteúdo no mobile */}
+        {/* Padding bottom garante que o BottomNav não tape o conteúdo no mobile.
+            No pré-lançamento não há BottomNav, então o padding vira 72px de vazio
+            morto no rodapé de uma landing de conversão — por isso é condicional. */}
         <Providers nonce={nonce}>
-          <div id="main-content" className="pb-[72px] md:pb-0">
+          <div id="main-content" className={PRELAUNCH_ENABLED ? "" : "pb-[72px] md:pb-0"}>
             {children}
-            <AppFooter />
+            {/* AppFooter e BottomNav apontam para /itens, /reservas, /perfil,
+                /cadastro… — todos bloqueados pelo gate. Trocados por um rodapé
+                enxuto com marca + legais. */}
+            {PRELAUNCH_ENABLED ? <PreLaunchFooter /> : <AppFooter />}
           </div>
-          <BottomNav />
+          {!PRELAUNCH_ENABLED && <BottomNav />}
           <ThemedToaster />
           <ServiceWorkerRegister />
           {/* P3-82: GA4 — carregado apenas quando NEXT_PUBLIC_GA_MEASUREMENT_ID definido */}

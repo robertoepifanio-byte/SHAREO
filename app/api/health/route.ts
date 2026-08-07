@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { PRELAUNCH_ENABLED, NOINDEX_ENABLED } from "@/lib/prelaunch"
 
 export const runtime    = "nodejs"
 export const dynamic    = "force-dynamic"
@@ -58,6 +59,12 @@ export async function GET() {
       status:    allOk ? "healthy" : "degraded",
       timestamp: new Date().toISOString(),
       checks,
+      // Flags inlinadas em build-time. Expostas aqui porque é a única forma
+      // barata de conferir o valor no ARTEFATO DEPLOYADO — se a env var for
+      // marcada Sensitive no Vercel, ela chega vazia no build e o gate de
+      // pré-lançamento fica desligado em silêncio. Não é dado sensível: é
+      // observável na própria navegação.
+      flags: { prelaunch: PRELAUNCH_ENABLED, noindex: NOINDEX_ENABLED },
       ...(exposeErrors && Object.keys(errors).length > 0 && { errors }),
     },
     { status },

@@ -2,6 +2,7 @@ import { getToken } from "next-auth/jwt"
 import { jwtVerify } from "jose"
 import { NextResponse, type NextRequest } from "next/server"
 import { isSessionStale } from "@/lib/redis-admin-blocklist"
+import { PRELAUNCH_ENABLED, isPrelaunchAllowed } from "@/lib/prelaunch"
 
 const PROTECTED_PREFIXES = [
   "/dashboard",
@@ -93,6 +94,43 @@ export async function middleware(req: NextRequest) {
   }
 
   const { pathname } = req.nextUrl
+
+  // ─── Gate de pré-lançamento ─────────────────────────────────────────────────
+  // Com NEXT_PUBLIC_PRELAUNCH_MODE=true o site serve só a landing de captação
+  // (+ legais, auth e admin) — o marketplace fica fora do ar para o público.
+  // Ver lib/prelaunch.ts para a allowlist e o porquê de ser env var, não flag
+  // de banco (middleware roda em Edge e não pode importar Prisma).
+  //
+  // Vem ANTES do early-return abaixo de propósito: as rotas públicas de
+  // marketing (/itens, /sobre, /ganhar…) nem chegam lá, e são justamente as
+  // que precisam ser bloqueadas.
+  if (PRELAUNCH_ENABLED && !isPrelaunchAllowed(pathname)) {
+    // getToken() só nas rotas BLOQUEADAS: o caminho feliz (/, /pilotos, assets,
+    // /api/founders) sai antes sem pagar o custo de decodificar o JWT.
+    const gateToken = await getToken({
+      req,
+      secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
+      cookieName: process.env.NODE_ENV === "production"
+        ? "__Secure-authjs.session-token"
+        : "authjs.session-token",
+    })
+
+    // Admin logado atravessa o gate — é como a equipe valida o marketplace
+    // enquanto a campanha está no ar.
+    if (gateToken?.role !== "ADMIN") {
+      if (pathname.startsWith("/api/")) {
+        // 503 e não 404: 404 mentiria para o monitoramento e para o app mobile,
+        // que passa a receber isto nas rotas de reserva enquanto o gate estiver ligado.
+        return NextResponse.json(
+          { error: { code: "PRELAUNCH", message: "Indisponível durante o pré-lançamento." } },
+          { status: 503, headers: { "Retry-After": "3600" } },
+        )
+      }
+      // 307 (temporário) e não 308: o gate é reversível por flag; um 308 ficaria
+      // cacheado no browser do visitante depois de desligarmos.
+      return NextResponse.redirect(new URL("/", req.url), 307)
+    }
+  }
 
   const isAdminRoute     = ADMIN_PREFIXES.some((p) => pathname.startsWith(p))
   // /perfil is protected but /perfil/[id] (public profile) is public

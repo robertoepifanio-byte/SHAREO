@@ -19,9 +19,19 @@ const getFounderCount = unstable_cache(
   { revalidate: 300, tags: ["founders"] },
 )
 
-export async function ListaVIP() {
+type Props = {
+  /**
+   * Nível do título da seção. Na home normal ela é uma seção entre outras (`h2`);
+   * na home de pré-lançamento ela É a página, e precisa ser o `h1` — do contrário
+   * o documento fica sem h1 (ou com dois), que a suíte de a11y acusa.
+   */
+  as?: "h1" | "h2"
+}
+
+export async function ListaVIP({ as = "h2" }: Props = {}) {
   const { total, thisWeek } = await getFounderCount()
   const showCount = total >= 10
+  const Heading = as
 
   return (
     <section
@@ -47,14 +57,14 @@ export async function ListaVIP() {
           Pré-lançamento · Primeiros no Brasil
         </div>
 
-        <h2
+        <Heading
           id="vip-title"
           className="mb-3 font-display text-[24px] font-extrabold leading-snug text-white xl:text-[32px]"
         >
           O Shareo está chegando.
           <br />
           <span className="text-accent">Entre na lista.</span>
-        </h2>
+        </Heading>
 
         <p className="mx-auto mb-9 max-w-[520px] text-[15px] leading-relaxed text-white/85">
           Seja avisado em primeira mão quando lançarmos e conheça as condições

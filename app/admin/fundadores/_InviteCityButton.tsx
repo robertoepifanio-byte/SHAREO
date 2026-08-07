@@ -4,17 +4,26 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 
 interface Props {
+  /** Grafia canônica, só para exibir na confirmação. */
   city:    string
+  /** Chave normalizada — é ela que seleciona os leads (ver comentário abaixo). */
+  cityNorm: string | null
   state:   string | null
   pending: number
+  /** Restringe a um bairro dentro da cidade (drill-down nível 3). */
+  neighborhoodNorm?: string | null
 }
 
 /**
  * Convida (cria conta mínima + e-mail "defina sua senha") todos os leads PENDING
  * de uma cidade — base para abrir uma cidade-piloto. Pede confirmação porque
  * dispara e-mails reais.
+ *
+ * Envia `cityNorm`, não `city`: a linha do ranking agrupa todas as grafias da
+ * mesma cidade ("São Paulo" + "sao paulo"), e filtrar por texto convidaria só
+ * uma delas — deixando o resto do grupo para trás sem nenhum aviso.
  */
-export function InviteCityButton({ city, state, pending }: Props) {
+export function InviteCityButton({ city, cityNorm, state, pending, neighborhoodNorm }: Props) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [msg,     setMsg]     = useState("")
@@ -33,7 +42,12 @@ export function InviteCityButton({ city, state, pending }: Props) {
       const res = await fetch("/api/admin/founders/invite", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ city, state: state ?? undefined, limit: 200 }),
+        body:    JSON.stringify({
+          cityNorm:         cityNorm ?? undefined,
+          neighborhoodNorm: neighborhoodNorm ?? undefined,
+          state:            state ?? undefined,
+          limit:            200,
+        }),
       })
       const json = await res.json()
       if (!res.ok) { setError(json.error?.message ?? "Falha ao convidar."); return }

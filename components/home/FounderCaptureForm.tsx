@@ -1,17 +1,30 @@
 "use client"
 
-import { useEffect, useState, type FormEvent } from "react"
+import { useEffect, useRef, useState, type FormEvent } from "react"
 import { CONSENT_VERSION } from "@/lib/legal-config"
+import { maskCEP } from "@/lib/forms/masks"
+import { fetchAddressByCep } from "@/lib/forms/address"
 
 type IntentOption = "proprietario" | "locatario"
 type State  = "collapsed" | "expanded" | "loading" | "success" | "error-network" | "error-duplicate"
 type SourceValue = "ORGANIC" | "VIP_LANDING" | "REFERRAL" | "GOOGLE_ADS" | "META_ADS"
+
+/**
+ * `idle`     — nada digitado ainda
+ * `loading`  — consultando o ViaCEP
+ * `ok`       — endereço resolvido (o readout mostra o que foi encontrado)
+ * `notfound` — CEP bem formado mas inexistente → revela preenchimento manual
+ * `error`    — ViaCEP fora do ar / sem rede → revela preenchimento manual
+ */
+type CepState = "idle" | "loading" | "ok" | "notfound" | "error"
 
 type Attribution = {
   source:      SourceValue
   utmSource?:  string
   utmMedium?:  string
   utmCampaign?: string
+  utmContent?: string
+  utmTerm?:    string
   referrerUrl?: string
 }
 
@@ -35,14 +48,17 @@ function readAttribution(): Attribution {
   if (typeof window === "undefined") return { source: "VIP_LANDING" }
   const p = new URLSearchParams(window.location.search)
   const utmSource   = p.get("utm_source")
-  const utmMedium   = p.get("utm_medium")
-  const utmCampaign = p.get("utm_campaign")
   const ref         = p.get("ref")
   return {
     source:      deriveSource(utmSource, ref),
-    utmSource:   utmSource   ?? undefined,
-    utmMedium:   utmMedium   ?? undefined,
-    utmCampaign: utmCampaign ?? undefined,
+    utmSource:   utmSource            ?? undefined,
+    utmMedium:   p.get("utm_medium")  ?? undefined,
+    utmCampaign: p.get("utm_campaign") ?? undefined,
+    // utm_content/utm_term identificam o CRIATIVO — sem eles não dá para comparar
+    // variações de anúncio no Meta, e acrescentar o campo depois de dezenas de
+    // milhares de leads é caro.
+    utmContent:  p.get("utm_content") ?? undefined,
+    utmTerm:     p.get("utm_term")    ?? undefined,
     referrerUrl: document.referrer || undefined,
   }
 }
@@ -63,11 +79,26 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
   const [selected, setSelected]   = useState<Set<IntentOption>>(new Set(["proprietario"]))
   const [name, setName]           = useState("")
   const [email, setEmail]         = useState("")
+
+  // Localização. `city`/`uf` continuam sendo a fonte da verdade do envio — o CEP
+  // é só o caminho rápido para preenchê-los.
+  const [cepVal, setCepVal]       = useState("")
+  const [cepState, setCepState]   = useState<CepState>("idle")
+  const [neighborhood, setNeighborhood] = useState("")
   const [city, setCity]           = useState(defaultCity ?? "")
   const [uf, setUf]               = useState(defaultUf ?? "")
+  const [showManual, setShowManual] = useState(false)
+
   const [lgpdConsent, setLgpdConsent] = useState(false)
   const [position, setPosition]   = useState(0)
   const [attribution, setAttribution] = useState<Attribution>({ source: "VIP_LANDING" })
+
+  // Descarta respostas obsoletas do ViaCEP: digitar rápido "50030230" → "50030231"
+  // pode resolver fora de ordem e sobrescrever o endereço certo pelo antigo.
+  // (fetchAddressByCep é compartilhado com outras 2 telas e não aceita AbortSignal —
+  // não vale alterar a assinatura só por isto.)
+  const cepSeq = useRef(0)
+  const manualRef = useRef<HTMLInputElement>(null)
 
   // Captura atribuição (UTM/ref) uma vez, no cliente — define o canal de origem do lead.
   useEffect(() => { setAttribution(readAttribution()) }, [])
@@ -85,10 +116,63 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
     })
   }
 
+  /** Revela cidade/UF/bairro manuais e leva o foco para lá. */
+  function revealManual() {
+    setShowManual(true)
+    // rAF: o input só existe depois do próximo render.
+    requestAnimationFrame(() => manualRef.current?.focus())
+  }
+
+  async function lookupCep(digits: string) {
+    const seq = ++cepSeq.current
+    setCepState("loading")
+    try {
+      const addr = await fetchAddressByCep(digits)
+      if (seq !== cepSeq.current) return // chegou atrasada — ignora
+
+      // fetchAddressByCep devolve null para CEP inexistente e LANÇA em falha de
+      // rede. São dois caminhos de UX distintos, por isso o null-check e o catch.
+      if (!addr) {
+        setCepState("notfound")
+        revealManual()
+        return
+      }
+
+      if (addr.city)  setCity(addr.city)
+      if (addr.state) setUf(addr.state.toUpperCase())
+      setNeighborhood(addr.neighborhood ?? "")
+      setCepState("ok")
+
+      // Municípios de CEP único (ex.: 78890-000) voltam com bairro vazio no
+      // ViaCEP. Nesse caso pedimos o bairro à parte — mas ele NUNCA bloqueia o
+      // envio (a coluna é nullable).
+      if (!addr.neighborhood) revealManual()
+      else setShowManual(false)
+    } catch {
+      if (seq !== cepSeq.current) return
+      setCepState("error")
+      revealManual()
+    }
+  }
+
+  // Dispara ao completar 8 dígitos, com debounce curto. O onBlur do input serve
+  // de rede de segurança para quem cola o CEP e sai do campo antes do timer.
+  useEffect(() => {
+    const digits = cepVal.replace(/\D/g, "")
+    if (digits.length !== 8) {
+      if (cepState !== "idle" && digits.length < 8) setCepState("idle")
+      return
+    }
+    const t = setTimeout(() => { void lookupCep(digits) }, 300)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cepVal])
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setState("loading")
     try {
+      const cepDigits = cepVal.replace(/\D/g, "")
       const res = await fetch("/api/founders/leads", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
@@ -101,9 +185,16 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
           source:           attribution.source,
           city:             city.trim(),
           state:            uf.trim().toUpperCase(),
+          cep:              cepDigits.length === 8 ? cepDigits : undefined,
+          neighborhood:     neighborhood.trim() || undefined,
+          // Permite medir a taxa de fallback do ViaCEP em produção sem
+          // instrumentação extra.
+          addressSource:    cepState === "ok" ? "CEP" : "MANUAL",
           utmSource:        attribution.utmSource,
           utmMedium:        attribution.utmMedium,
           utmCampaign:      attribution.utmCampaign ?? campaign,
+          utmContent:       attribution.utmContent,
+          utmTerm:          attribution.utmTerm,
           referrerUrl:      attribution.referrerUrl,
         }),
       })
@@ -175,7 +266,16 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
     )
   }
 
-  // expanded | loading | error-network
+  const isLoading = state === "loading"
+  const inputCls =
+    "h-11 w-full rounded-lg border border-white/20 bg-white/[0.08] px-4 text-sm text-white placeholder:text-white/40 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
+
+  // O portão de envio continua sendo CIDADE + UF, exatamente como antes do CEP.
+  // O CEP é atalho, nunca requisito: ViaCEP fora do ar não pode zerar a captação
+  // de uma campanha paga.
+  const canSubmit =
+    !isLoading && !!email.trim() && !!city.trim() && uf.trim().length === 2 && lgpdConsent
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -192,14 +292,14 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
               role="checkbox"
               aria-checked={isChecked}
               onClick={() => toggleIntent(opt)}
-              disabled={state === "loading"}
+              disabled={isLoading}
               className={[
                 "min-h-[44px] rounded-lg border px-3 text-sm font-semibold transition-colors",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-primary",
                 isChecked
                   ? "border-accent bg-accent/20 text-white"
                   : "border-white/20 text-white/70 hover:border-white/40 hover:text-white",
-                state === "loading" ? "opacity-60" : "",
+                isLoading ? "opacity-60" : "",
               ].join(" ")}
             >
               <span className="flex items-center justify-center gap-1.5">
@@ -220,8 +320,8 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
           placeholder="Seu nome (opcional)"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          disabled={state === "loading"}
-          className="h-11 w-full rounded-lg border border-white/20 bg-white/[0.08] px-4 text-sm text-white placeholder:text-white/40 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
+          disabled={isLoading}
+          className={inputCls}
         />
       </div>
 
@@ -236,42 +336,160 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          disabled={state === "loading"}
-          className="h-11 w-full rounded-lg border border-white/20 bg-white/[0.08] px-4 text-sm text-white placeholder:text-white/40 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
+          disabled={isLoading}
+          className={inputCls}
         />
       </div>
 
-      <div className="grid grid-cols-[1fr_auto] gap-2">
-        <div>
-          <label htmlFor="founder-city" className="sr-only">Cidade</label>
+      {/* ── CEP ───────────────────────────────────────────────────────────────
+          Rótulo VISÍVEL (não sr-only): o campo carrega peso semântico — é o que
+          determina o bairro usado no ranking de cidades-piloto — e placeholder
+          sozinho some ao começar a digitar. */}
+      <div>
+        <label htmlFor="founder-cep" className="mb-1 block text-left text-xs font-semibold uppercase tracking-wider text-white/70">
+          CEP
+        </label>
+        <div className="relative">
           <input
-            id="founder-city"
+            id="founder-cep"
             type="text"
-            autoComplete="address-level2"
-            placeholder="Sua cidade *"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            required
-            disabled={state === "loading"}
-            className="h-11 w-full rounded-lg border border-white/20 bg-white/[0.08] px-4 text-sm text-white placeholder:text-white/40 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
+            inputMode="numeric"
+            autoComplete="postal-code"
+            placeholder="00000-000"
+            maxLength={9}
+            value={cepVal}
+            onChange={(e) => setCepVal(maskCEP(e.target.value))}
+            onBlur={() => {
+              const d = cepVal.replace(/\D/g, "")
+              if (d.length === 8 && cepState === "idle") void lookupCep(d)
+            }}
+            disabled={isLoading}
+            aria-describedby="founder-cep-hint founder-cep-status"
+            aria-invalid={cepState === "notfound" || undefined}
+            aria-busy={cepState === "loading" || undefined}
+            className={inputCls}
           />
+          {cepState === "loading" && (
+            <svg
+              className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-white/60"
+              width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2" aria-hidden="true"
+            >
+              <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+            </svg>
+          )}
         </div>
-        <div>
-          <label htmlFor="founder-uf" className="sr-only">Estado (UF)</label>
-          <input
-            id="founder-uf"
-            type="text"
-            autoComplete="address-level1"
-            placeholder="UF *"
-            maxLength={2}
-            value={uf}
-            onChange={(e) => setUf(e.target.value.toUpperCase())}
-            required
-            disabled={state === "loading"}
-            className="h-11 w-16 rounded-lg border border-white/20 bg-white/[0.08] px-3 text-center text-sm uppercase text-white placeholder:text-white/40 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
-          />
+
+        <p id="founder-cep-hint" className="mt-1 text-left text-xs leading-snug text-white/45">
+          Usamos só para saber seu bairro e escolher as primeiras cidades.
+          Não pedimos número nem complemento.
+        </p>
+
+        {/* Leitura do endereço vigente / mensagens de estado.
+            Mostra sempre que houver cidade — venha ela do ViaCEP OU do
+            defaultCity de /pilotos/[cidade]. Sem isto, quem chega pela landing
+            de cidade não veria (nem poderia corrigir) onde está se cadastrando.
+            aria-live para o leitor de tela anunciar o preenchimento automático. */}
+        <div id="founder-cep-status" role="status" aria-live="polite" className="mt-1.5 text-left">
+          {cepState !== "notfound" && cepState !== "error" && city && !showManual && (
+            <p className="text-xs text-white/80">
+              <span aria-hidden="true">📍 </span>
+              {neighborhood ? <>Bairro <strong className="font-semibold">{neighborhood}</strong> · </> : null}
+              <strong className="font-semibold">{city}</strong>{uf ? `/${uf}` : ""}{" "}
+              <button
+                type="button"
+                onClick={revealManual}
+                className="ml-1 underline decoration-white/40 hover:decoration-white"
+              >
+                Não é aqui? Corrigir
+              </button>
+            </p>
+          )}
+          {cepState === "notfound" && (
+            <p className="text-xs text-amber-200">
+              CEP não encontrado. Confira os campos abaixo.
+            </p>
+          )}
+          {cepState === "error" && (
+            <p className="text-xs text-amber-200">
+              Não conseguimos consultar o CEP agora. Preencha os campos abaixo.
+            </p>
+          )}
         </div>
       </div>
+
+      {/* ── Preenchimento manual ────────────────────────────────────────────────
+          Sempre disponível como saída: CEP inexistente, ViaCEP fora do ar, ou
+          município de CEP único (que devolve bairro vazio). Nunca é um beco sem
+          saída — é o caminho que mantém a conversão de pé. */}
+      {showManual && (
+        <div className="flex flex-col gap-2 rounded-lg border border-white/15 bg-white/[0.04] p-3">
+          <div>
+            <label htmlFor="founder-neighborhood" className="mb-1 block text-left text-xs font-semibold uppercase tracking-wider text-white/70">
+              Bairro <span className="font-normal normal-case text-white/45">(opcional)</span>
+            </label>
+            <input
+              ref={manualRef}
+              id="founder-neighborhood"
+              type="text"
+              autoComplete="address-level3"
+              placeholder="Seu bairro"
+              value={neighborhood}
+              onChange={(e) => setNeighborhood(e.target.value)}
+              disabled={isLoading}
+              className={inputCls}
+            />
+          </div>
+          <div className="grid grid-cols-[1fr_auto] gap-2">
+            <div>
+              <label htmlFor="founder-city" className="mb-1 block text-left text-xs font-semibold uppercase tracking-wider text-white/70">
+                Cidade *
+              </label>
+              <input
+                id="founder-city"
+                type="text"
+                autoComplete="address-level2"
+                placeholder="Sua cidade"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                required
+                disabled={isLoading}
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label htmlFor="founder-uf" className="mb-1 block text-left text-xs font-semibold uppercase tracking-wider text-white/70">
+                UF *
+              </label>
+              <input
+                id="founder-uf"
+                type="text"
+                autoComplete="address-level1"
+                placeholder="UF"
+                maxLength={2}
+                value={uf}
+                onChange={(e) => setUf(e.target.value.toUpperCase())}
+                required
+                disabled={isLoading}
+                className="h-11 w-16 rounded-lg border border-white/20 bg-white/[0.08] px-3 text-center text-sm uppercase text-white placeholder:text-white/40 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Escape hatch para quem não quer digitar CEP nenhum. Só aparece quando
+          ainda não há cidade resolvida — com cidade definida o link de correção
+          já vive no readout acima. */}
+      {!showManual && !city && (
+        <button
+          type="button"
+          onClick={revealManual}
+          className="self-center text-xs text-white/50 underline decoration-white/25 hover:text-white/80 hover:decoration-white/60"
+        >
+          Prefiro informar cidade e estado
+        </button>
+      )}
 
       {state === "error-network" && (
         <div role="alert" className="rounded-lg border border-red-400/30 bg-red-400/10 px-4 py-2.5 text-center text-sm text-white">
@@ -287,25 +505,22 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
           type="checkbox"
           checked={lgpdConsent}
           onChange={(e) => setLgpdConsent(e.target.checked)}
-          disabled={state === "loading"}
+          disabled={isLoading}
           className="form-checkbox mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-white/30 bg-white/10 accent-accent"
         />
         <span className="text-xs leading-snug text-white/60">
-          Concordo em receber comunicações sobre o lançamento do Shareo. Posso cancelar a qualquer momento
-          pelo e-mail{" "}
-          <a href="mailto:privacidade@shareo.com.br" className="underline decoration-white/30 hover:decoration-white/60">
-            privacidade@shareo.com.br
-          </a>.
+          Concordo em receber comunicações sobre o lançamento do Shareo. Todo e-mail
+          nosso traz um link de cancelamento em um clique.
         </span>
       </label>
 
       <button
         type="submit"
-        disabled={state === "loading" || !email.trim() || !city.trim() || uf.trim().length !== 2 || !lgpdConsent}
-        aria-busy={state === "loading"}
+        disabled={!canSubmit}
+        aria-busy={isLoading}
         className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg bg-brand px-6 py-3 text-sm font-semibold uppercase tracking-[0.4px] text-white transition-colors hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary disabled:cursor-not-allowed disabled:opacity-70"
       >
-        {state === "loading" ? (
+        {isLoading ? (
           <>
             <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
