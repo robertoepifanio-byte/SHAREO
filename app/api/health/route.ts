@@ -53,6 +53,31 @@ function codigoDeFalha(e: unknown): string {
   return `${err?.name ?? "Error"}: ${util.slice(0, 240)}`
 }
 
+/**
+ * Impressão digital da connection string que o RUNTIME recebeu.
+ *
+ * Existe porque "a variável está certa no painel" e "a função recebeu o valor
+ * certo" são afirmações diferentes — e a segunda é a que importa. Comparando
+ * comprimento + prefixo + hash truncado com o valor sabidamente bom, dá para
+ * afirmar se são idênticos sem nunca expor a senha.
+ *
+ * Seguro em produção: prefixo é só o protocolo, e 8 hex de SHA-256 não permitem
+ * reverter nem comparar por força bruta um segredo de alta entropia.
+ */
+async function digitalDaUrl(): Promise<Record<string, string | number | boolean>> {
+  const raw = process.env.DATABASE_URL
+  if (!raw) return { presente: false }
+  const { createHash } = await import("crypto")
+  return {
+    presente:   true,
+    tamanho:    raw.length,
+    prefixo:    raw.slice(0, 15),
+    hash:       createHash("sha256").update(raw).digest("hex").slice(0, 8),
+    // Espaço/quebra de linha nas pontas é invisível no painel e quebra a auth.
+    temEspacos: raw !== raw.trim(),
+  }
+}
+
 export async function GET() {
   const checks: Record<string, "ok" | "error"> = {}
   const errors: Record<string, string> = {}
@@ -113,6 +138,8 @@ export async function GET() {
       // pré-lançamento fica desligado em silêncio. Não é dado sensível: é
       // observável na própria navegação.
       flags: { prelaunch: PRELAUNCH_ENABLED, noindex: NOINDEX_ENABLED },
+      // Só quando o banco falha — é diagnóstico, não telemetria de rotina.
+      ...(checks.db === "error" && { dbUrl: await digitalDaUrl() }),
       // Códigos são seguros em produção (não identificam infra); a mensagem crua
       // continua restrita a dev.
       ...(Object.keys(codes).length > 0 && { codes }),
