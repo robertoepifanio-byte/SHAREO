@@ -23,13 +23,22 @@ export const revalidate = 0
  * o que já custou horas de diagnóstico em dois ambientes.
  */
 function codigoDeFalha(e: unknown): string {
-  const err = e as { code?: string; errorCode?: string; message?: string }
+  const err = e as { name?: string; code?: string; errorCode?: string; message?: string }
   const msg = err?.message ?? String(e)
   if (msg.includes("DATABASE_URL not configured")) return "NO_DATABASE_URL"
   const code = err?.code ?? err?.errorCode
   if (typeof code === "string" && code.length > 0) return code
   const m = msg.match(/\bP\d{4}\b/)
-  return m ? m[0] : "UNKNOWN"
+  if (m) return m[0]
+
+  // Sem código conhecido: devolve tipo + 1ª linha da mensagem COM CREDENCIAL
+  // REMOVIDA. Sem isto o diagnóstico vira adivinhação entre causas com
+  // correções completamente diferentes.
+  const primeiraLinha = msg.split("\n").find((l) => l.trim().length > 0) ?? ""
+  const semCredencial = primeiraLinha
+    .replace(/\/\/[^@\s]*@/g, "//***@")          // user:senha@host → ***@host
+    .replace(/postgres(ql)?:\/\/\S*/gi, "<url>") // qualquer URL restante
+  return `${err?.name ?? "Error"}: ${semCredencial.slice(0, 160)}`
 }
 
 export async function GET() {
