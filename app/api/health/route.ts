@@ -45,8 +45,11 @@ function codigoDeFalha(e: unknown): string {
       !/^\d+\s*\|/.test(l),
     )
     .join(" · ")
-    .replace(/\/\/[^@\s]*@/g, "//***@")          // user:senha@host → ***@host
-    .replace(/postgres(ql)?:\/\/\S*/gi, "<url>") // qualquer URL restante
+    // Remove só a parte de credencial (user:senha@). NÃO substituir a menção
+    // literal a "postgresql://" — a mensagem mais útil do Prisma é justamente
+    // "the URL must start with the protocol `postgresql://`", e escrubá-la
+    // esconderia a causa que se quer diagnosticar.
+    .replace(/\/\/[^@\s/]*:[^@\s/]*@/g, "//***:***@")
   return `${err?.name ?? "Error"}: ${util.slice(0, 240)}`
 }
 
