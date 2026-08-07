@@ -72,11 +72,18 @@ const ALLOW_PREFIX = [
   "/api/health",
   "/api/cron",
 
-  // Estáticos servidos fora de /_next (o matcher do middleware ainda os alcança)
+  // Estáticos servidos fora de /_next.
+  //
+  // ⚠️ Precisam estar aqui: o `matcher` do middleware só isenta `_next/static`,
+  // `_next/image`, `favicon.ico` e `images/` — todo o resto de public/ passa
+  // pelo gate. Um asset fora desta lista recebe 307 para "/" e a imagem quebra
+  // silenciosamente (o navegador só mostra o alt). Ao criar pasta nova em
+  // public/ que a landing use, acrescentar aqui E cobrir no teste.
   "/logos",
   "/icons",
   "/fonts",
   "/favicon",
+  "/campanha",   // banners da campanha de pré-lançamento
   "/opengraph-image",
   "/apple-icon",
   "/_vercel",

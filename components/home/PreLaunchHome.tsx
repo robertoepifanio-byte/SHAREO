@@ -1,4 +1,5 @@
 import { PreLaunchHeader } from "@/components/layout/PreLaunchHeader"
+import { CampaignBanner } from "@/components/home/CampaignBanner"
 import { ListaVIP } from "@/components/home/ListaVIP"
 
 /**
@@ -34,11 +35,19 @@ const passos = [
 export function PreLaunchHome() {
   return (
     <>
-      <PreLaunchHeader />
+      {/*
+        Cabeçalho sem logo (o banner logo abaixo já traz a marca) e com o selo de
+        pré-lançamento. Sendo sticky, o aviso de que o serviço ainda não abriu
+        acompanha a rolagem inteira em vez de sumir no topo.
+      */}
+      <PreLaunchHeader variant="minimal" showBadge />
 
       <main id="conteudo">
-        {/* Bloco principal de captação — é o h1 da página */}
-        <ListaVIP as="h1" />
+        {/* Arte da campanha (duas orientações, ver CampaignBanner) */}
+        <CampaignBanner />
+
+        {/* h1 da página. `hideBadge` porque o selo subiu para o cabeçalho. */}
+        <ListaVIP as="h1" hideBadge />
 
         {/* Como vai funcionar — tempo futuro de propósito: nada está no ar ainda,
             e prometer no presente seria propaganda de serviço inexistente. */}
