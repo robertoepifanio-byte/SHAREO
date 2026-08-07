@@ -104,6 +104,11 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL_STAGING }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY_STAGING }}
+          # Preview espelha o staging: é nele que se revisa a campanha antes do merge.
+          # Sem isto o preview mostraria o marketplace e esconderia justamente a
+          # mudança que o PR propõe.
+          NEXT_PUBLIC_PRELAUNCH_MODE: "true"
+          NEXT_PUBLIC_NOINDEX: "true"
 
       - name: Deploy preview to Vercel
         id: deploy
