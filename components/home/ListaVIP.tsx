@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache"
 import { prisma } from "@/lib/prisma"
 import { FounderCaptureForm } from "./FounderCaptureForm"
+import { PrelaunchBadge } from "./PrelaunchBadge"
 
 const getFounderCount = unstable_cache(
   async () => {
@@ -26,9 +27,18 @@ type Props = {
    * o documento fica sem h1 (ou com dois), que a suíte de a11y acusa.
    */
   as?: "h1" | "h2"
+  /**
+   * Esconde o selo de pré-lançamento desta seção. Usado quando ele já aparece
+   * no cabeçalho sticky da landing de campanha — mostrar nos dois lugares seria
+   * repetição a poucos pixels de distância.
+   *
+   * Default `false` para a home de marketplace continuar exatamente como está:
+   * lá não existe cabeçalho de campanha, e o selo tem que permanecer aqui.
+   */
+  hideBadge?: boolean
 }
 
-export async function ListaVIP({ as = "h2" }: Props = {}) {
+export async function ListaVIP({ as = "h2", hideBadge = false }: Props = {}) {
   const { total, thisWeek } = await getFounderCount()
   const showCount = total >= 10
   const Heading = as
@@ -46,16 +56,7 @@ export async function ListaVIP({ as = "h2" }: Props = {}) {
       />
 
       <div className="relative z-10">
-        <div
-          role="note"
-          className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-amber-400/50 bg-amber-400/20 px-3.5 py-1.5 text-xs font-semibold text-amber-200"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="10"/>
-            <polyline points="12 6 12 12 16 14"/>
-          </svg>
-          Pré-lançamento · Primeiros no Brasil
-        </div>
+        {!hideBadge && <PrelaunchBadge className="mb-5" />}
 
         <Heading
           id="vip-title"

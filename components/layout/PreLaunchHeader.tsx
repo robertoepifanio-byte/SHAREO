@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/layout/ThemeToggle"
+import { PrelaunchBadge } from "@/components/home/PrelaunchBadge"
 
 /**
  * Cabeçalho do modo de pré-lançamento: logo + tema, nada mais.
@@ -17,12 +18,19 @@ type Props = {
    * da primeira tela. Default `"full"` para não afetar outros usos.
    */
   variant?: "full" | "minimal"
+  /**
+   * Mostra o selo de pré-lançamento no cabeçalho. Como ele é sticky, o aviso de
+   * que o serviço ainda não abriu acompanha a rolagem inteira — em vez de sumir
+   * assim que a pessoa passa do topo. Quando ligado, a ListaVIP deve receber
+   * `hideBadge` para o selo não aparecer duas vezes.
+   */
+  showBadge?: boolean
 }
 
-export function PreLaunchHeader({ variant = "full" }: Props = {}) {
+export function PreLaunchHeader({ variant = "full", showBadge = false }: Props = {}) {
   return (
     <header className="sticky top-0 z-[200] bg-primary" role="banner">
-      <div className={`container flex h-16 items-center gap-2 ${variant === "minimal" ? "justify-end" : "justify-between"}`}>
+      <div className={`container flex h-16 items-center gap-2 ${variant === "minimal" && !showBadge ? "justify-end" : "justify-between"}`}>
         {variant === "full" && (
           <Link
             href="/"
@@ -43,6 +51,8 @@ export function PreLaunchHeader({ variant = "full" }: Props = {}) {
             </span>
           </Link>
         )}
+
+        {showBadge && <PrelaunchBadge />}
 
         <ThemeToggle />
       </div>

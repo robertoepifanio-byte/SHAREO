@@ -35,15 +35,19 @@ const passos = [
 export function PreLaunchHome() {
   return (
     <>
-      {/* O banner abre a página e já traz a marca — daí o cabeçalho sem logo. */}
-      <PreLaunchHeader variant="minimal" />
+      {/*
+        Cabeçalho sem logo (o banner logo abaixo já traz a marca) e com o selo de
+        pré-lançamento. Sendo sticky, o aviso de que o serviço ainda não abriu
+        acompanha a rolagem inteira em vez de sumir no topo.
+      */}
+      <PreLaunchHeader variant="minimal" showBadge />
 
       <main id="conteudo">
         {/* Arte da campanha (duas orientações, ver CampaignBanner) */}
         <CampaignBanner />
 
-        {/* Bloco principal de captação — é o h1 da página */}
-        <ListaVIP as="h1" />
+        {/* h1 da página. `hideBadge` porque o selo subiu para o cabeçalho. */}
+        <ListaVIP as="h1" hideBadge />
 
         {/* Como vai funcionar — tempo futuro de propósito: nada está no ar ainda,
             e prometer no presente seria propaganda de serviço inexistente. */}
