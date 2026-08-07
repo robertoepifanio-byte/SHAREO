@@ -7,9 +7,35 @@ export const runtime    = "nodejs"
 export const dynamic    = "force-dynamic"
 export const revalidate = 0
 
+/**
+ * Código curto e estável da falha, seguro para expor em produção.
+ *
+ * A mensagem crua do Prisma carrega hostname/driver e fica restrita a dev
+ * (S14-MIN-07), mas o CÓDIGO não identifica infraestrutura nenhuma — e é ele
+ * que diz o que consertar:
+ *   P1013 → connection string malformada (sobrou `VAR=` ou aspas no valor)
+ *   P1000 → senha incorreta
+ *   P1001 → não alcançou o servidor (host/porta)
+ *   P2021 → tabela não existe (migrations não rodaram)
+ *   NO_DATABASE_URL → variável vazia no runtime (escopo errado / Sensitive)
+ *
+ * Sem isso, um `db: "error"` obriga a adivinhar entre cinco causas distintas —
+ * o que já custou horas de diagnóstico em dois ambientes.
+ */
+function codigoDeFalha(e: unknown): string {
+  const err = e as { code?: string; errorCode?: string; message?: string }
+  const msg = err?.message ?? String(e)
+  if (msg.includes("DATABASE_URL not configured")) return "NO_DATABASE_URL"
+  const code = err?.code ?? err?.errorCode
+  if (typeof code === "string" && code.length > 0) return code
+  const m = msg.match(/\bP\d{4}\b/)
+  return m ? m[0] : "UNKNOWN"
+}
+
 export async function GET() {
   const checks: Record<string, "ok" | "error"> = {}
   const errors: Record<string, string> = {}
+  const codes:  Record<string, string> = {}
 
   // ── 1. Banco de dados ────────────────────────────────────────────────────
   try {
@@ -17,6 +43,7 @@ export async function GET() {
     checks.db = "ok"
   } catch (e) {
     checks.db = "error"
+    codes.db  = codigoDeFalha(e)
     errors.db = e instanceof Error ? e.message : String(e)
   }
 
@@ -65,6 +92,9 @@ export async function GET() {
       // pré-lançamento fica desligado em silêncio. Não é dado sensível: é
       // observável na própria navegação.
       flags: { prelaunch: PRELAUNCH_ENABLED, noindex: NOINDEX_ENABLED },
+      // Códigos são seguros em produção (não identificam infra); a mensagem crua
+      // continua restrita a dev.
+      ...(Object.keys(codes).length > 0 && { codes }),
       ...(exposeErrors && Object.keys(errors).length > 0 && { errors }),
     },
     { status },
