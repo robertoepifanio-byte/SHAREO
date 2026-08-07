@@ -5,7 +5,7 @@ import { revalidateTag } from "next/cache"
 import { prisma } from "@/lib/prisma"
 import { assignWave } from "@/lib/founders"
 import { sendFounderWelcomeEmail } from "@/lib/email"
-import { CONSENT_VERSION } from "@/lib/legal-config"
+import { MARKETING_CONSENT_VERSION } from "@/lib/legal-config"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { normalizePlace } from "@/lib/geo/normalize-place"
 
@@ -17,7 +17,11 @@ const Schema = z.object({
   name:             z.string().min(2).max(100).optional(),
   intent:           z.enum(["proprietario", "locatario", "ambos"]).default("proprietario"),
   marketingConsent: z.literal(true, { errorMap: () => ({ message: "Consentimento obrigatório" }) }),
-  consentVersion:   z.string().default(CONSENT_VERSION),
+  consentVersion:   z.string().default(MARKETING_CONSENT_VERSION),
+  // OPCIONAL: telefone é o campo de maior atrito numa captação, e exigi-lo
+  // custaria inscrições. Mesmo formato E.164 de User.phone, para não criar um
+  // segundo padrão de telefone no banco.
+  phone:            z.string().regex(/^\+55\d{10,11}$/, "Telefone inválido").optional(),
   source:           z.enum(SOURCE_VALUES).default("VIP_LANDING"),
   // Obrigatórios: a cidade/UF definem onde os Pilotos serão implantados.
   // Continuam exigidos mesmo com a captura por CEP — o formulário sempre os
@@ -61,7 +65,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { email, name, intent, consentVersion, source, city, state,
+    const { email, name, phone, intent, consentVersion, source, city, state,
             cep, neighborhood, addressSource,
             utmSource, utmMedium, utmCampaign, utmContent, utmTerm, referrerUrl } = parsed.data
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
@@ -101,6 +105,10 @@ export async function POST(req: NextRequest) {
       consentUserAgent:   ua,
     }
 
+    // Só grava o telefone se ele veio. Numa reativação sem telefone, preserva o
+    // que já existia em vez de apagar o dado por omissão.
+    const phoneData = phone ? { phone } : {}
+
     // Deduplicação por e-mail
     const existing = await prisma.founderLead.findUnique({
       where:  { email: emailLower },
@@ -133,6 +141,7 @@ export async function POST(req: NextRequest) {
           intent,
           status:    "PENDING",
           deletedAt: null,
+          ...phoneData,
           ...placeData,
           ...attributionData,
           ...consentData,
@@ -158,6 +167,7 @@ export async function POST(req: NextRequest) {
       data: {
         email:  emailLower,
         name:   name ?? null,
+        phone:  phone ?? null,
         intent,
         status: "PENDING",
         ...placeData,

@@ -1021,6 +1021,14 @@ model FounderLead {
   status        LeadStatus   @default(PENDING)
   source        SignupSource @default(VIP_LANDING)
 
+  // Telefone do interessado, em E.164 (+5584999999999) — mesmo formato de User.phone.
+  // OPCIONAL de propósito: telefone é o dado de maior atrito num formulário de
+  // captação, e exigi-lo custaria inscrições numa campanha paga. Serve para contato
+  // por WhatsApp na ativação da cidade-piloto.
+  // ⚠️ Só disparar por telefone para leads com consentVersion >= "marketing-v1.0":
+  // os anteriores aceitaram um texto que falava apenas de e-mail.
+  phone String? @db.VarChar(20)
+
   // Localização do interessado — define a região dos pilotos (Piloto 1, Piloto 2…)
   // Preenchida via ViaCEP a partir do CEP (campanha nacional); o formulário mantém
   // preenchimento manual como fallback quando o CEP falha ou não existe.

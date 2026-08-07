@@ -75,10 +75,10 @@ export async function GET(req: NextRequest) {
         orderBy: { queuePosition: "asc" },
         take:    MAX_RAW_ROWS,
         select: {
-          queuePosition: true, email: true, name: true, intent: true, status: true,
+          queuePosition: true, email: true, name: true, phone: true, intent: true, status: true,
           state: true, city: true, neighborhood: true, cep: true,
           source: true, utmCampaign: true, utmContent: true,
-          addressSource: true, createdAt: true,
+          addressSource: true, consentVersion: true, createdAt: true,
         },
       })
 
@@ -90,6 +90,12 @@ export async function GET(req: NextRequest) {
         posicao:    l.queuePosition,
         email:      l.email,
         nome:       l.name ?? "",
+        telefone:   l.phone ?? "",
+        // Determina se este lead pode receber contato por WhatsApp: quem entrou
+        // antes de "marketing-v1.0" aceitou um texto que falava só de e-mail.
+        // Sai na planilha para quem for disparar não precisar adivinhar.
+        pode_whatsapp: l.phone && l.consentVersion.startsWith("marketing-") ? "sim" : "nao",
+        versao_consentimento: l.consentVersion,
         intencao:   l.intent,
         status:     l.status,
         uf:         l.state ?? "",

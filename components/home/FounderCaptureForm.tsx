@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useRef, useState, type FormEvent } from "react"
-import { CONSENT_VERSION } from "@/lib/legal-config"
-import { maskCEP } from "@/lib/forms/masks"
+import { MARKETING_CONSENT_VERSION, MARKETING_CONSENT_TEXT } from "@/lib/legal-config"
+import { maskCEP, maskPhone } from "@/lib/forms/masks"
 import { fetchAddressByCep } from "@/lib/forms/address"
 
 type IntentOption = "proprietario" | "locatario"
@@ -79,6 +79,7 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
   const [selected, setSelected]   = useState<Set<IntentOption>>(new Set(["proprietario"]))
   const [name, setName]           = useState("")
   const [email, setEmail]         = useState("")
+  const [phone, setPhone]         = useState("")
 
   // Localização. `city`/`uf` continuam sendo a fonte da verdade do envio — o CEP
   // é só o caminho rápido para preenchê-los.
@@ -173,15 +174,21 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
     setState("loading")
     try {
       const cepDigits = cepVal.replace(/\D/g, "")
+      // O usuário digita "(84) 99999-0000"; o banco guarda E.164 ("+5584999990000"),
+      // mesmo formato de User.phone. Menos de 10 dígitos = incompleto → não envia.
+      const phoneDigits = phone.replace(/\D/g, "")
+      const phoneE164 = phoneDigits.length >= 10 ? `+55${phoneDigits}` : undefined
+
       const res = await fetch("/api/founders/leads", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email:            email.trim().toLowerCase(),
           name:             name.trim() || undefined,
+          phone:            phoneE164,
           intent:           resolveIntent(selected),
           marketingConsent: lgpdConsent,
-          consentVersion:   CONSENT_VERSION,
+          consentVersion:   MARKETING_CONSENT_VERSION,
           source:           attribution.source,
           city:             city.trim(),
           state:            uf.trim().toUpperCase(),
@@ -339,6 +346,28 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
           disabled={isLoading}
           className={inputCls}
         />
+      </div>
+
+      <div>
+        <label htmlFor="founder-phone" className="sr-only">
+          WhatsApp (opcional)
+        </label>
+        <input
+          id="founder-phone"
+          type="tel"
+          inputMode="numeric"
+          autoComplete="tel-national"
+          placeholder="WhatsApp (opcional)"
+          maxLength={15}
+          value={phone}
+          onChange={(e) => setPhone(maskPhone(e.target.value))}
+          disabled={isLoading}
+          aria-describedby="founder-phone-hint"
+          className={inputCls}
+        />
+        <p id="founder-phone-hint" className="mt-1 text-left text-xs leading-snug text-white/45">
+          Se quiser, avisamos você por aqui também quando abrirmos na sua cidade.
+        </p>
       </div>
 
       {/* ── CEP ───────────────────────────────────────────────────────────────
@@ -508,9 +537,13 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
           disabled={isLoading}
           className="form-checkbox mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded border-white/30 bg-white/10 accent-accent"
         />
+        {/*
+          Texto vem de lib/legal-config.ts: é a MESMA string que
+          MARKETING_CONSENT_VERSION versiona e que fica gravada no lead, então o
+          que a pessoa aceitou é reconstituível a partir do registro.
+        */}
         <span className="text-xs leading-snug text-white/60">
-          Concordo em receber comunicações sobre o lançamento do Shareo. Todo e-mail
-          nosso traz um link de cancelamento em um clique.
+          {MARKETING_CONSENT_TEXT}
         </span>
       </label>
 
