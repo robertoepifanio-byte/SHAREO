@@ -22,6 +22,34 @@ export const CONSENT_VERSION = "v1.1"
  */
 export const BIOMETRIC_CONSENT_VERSION = "biometric-v1.0"
 
+/**
+ * Versão do consentimento de MARKETING da lista de interessados (pré-lançamento).
+ *
+ * Ciclo próprio, independente de CONSENT_VERSION — mesmo racional do consentimento
+ * biométrico acima: mudar o que a campanha pede não deveria forçar reaceite dos
+ * Termos por todo mundo, nem misturar as duas trilhas de auditoria.
+ *
+ * Histórico:
+ *   (sem versão própria) — até 2026-08-07 os leads gravavam CONSENT_VERSION ("v1.1"),
+ *     sob um texto que falava SÓ de e-mail.
+ *   marketing-v1.0 — passa a coletar telefone/WhatsApp; o texto abaixo diz isso
+ *     explicitamente. Leads anteriores permanecem com "v1.1" e NÃO consentiram
+ *     contato por WhatsApp — não incluir esses números em disparo por telefone.
+ *
+ * Alterar MARKETING_CONSENT_TEXT exige subir esta versão.
+ */
+export const MARKETING_CONSENT_VERSION = "marketing-v1.0"
+
+/**
+ * Texto exato do consentimento exibido no formulário de captação. Fonte única:
+ * a UI renderiza esta constante, e é ela que MARKETING_CONSENT_VERSION versiona —
+ * assim o que foi aceito é reconstituível a partir do valor gravado no lead.
+ */
+export const MARKETING_CONSENT_TEXT =
+  "Concordo em receber comunicações sobre o lançamento do Shareo por e-mail e, " +
+  "se eu informar meu telefone, por WhatsApp. Posso cancelar quando quiser — " +
+  "todo e-mail nosso traz um link de cancelamento em um clique."
+
 /** Data da última atualização dos documentos (exibição amigável). */
 export const POLICY_UPDATED_AT = "junho de 2026"
 
