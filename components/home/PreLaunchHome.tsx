@@ -1,4 +1,5 @@
 import { PreLaunchHeader } from "@/components/layout/PreLaunchHeader"
+import { CampaignBanner } from "@/components/home/CampaignBanner"
 import { ListaVIP } from "@/components/home/ListaVIP"
 
 /**
@@ -34,9 +35,13 @@ const passos = [
 export function PreLaunchHome() {
   return (
     <>
-      <PreLaunchHeader />
+      {/* O banner abre a página e já traz a marca — daí o cabeçalho sem logo. */}
+      <PreLaunchHeader variant="minimal" />
 
       <main id="conteudo">
+        {/* Arte da campanha (duas orientações, ver CampaignBanner) */}
+        <CampaignBanner />
+
         {/* Bloco principal de captação — é o h1 da página */}
         <ListaVIP as="h1" />
 

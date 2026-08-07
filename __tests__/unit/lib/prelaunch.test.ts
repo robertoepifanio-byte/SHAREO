@@ -16,6 +16,19 @@ describe("isPrelaunchAllowed", () => {
     })
   })
 
+  describe("libera os estáticos que a landing usa", () => {
+    // Regressão: o matcher do middleware NÃO isenta public/, então asset fora da
+    // allowlist recebe 307 e a imagem quebra em silêncio — só o alt aparece.
+    it.each([
+      "/campanha/banner-h-1280.webp",
+      "/campanha/banner-v-1024.webp",
+      "/logos/shareo-logo.png",
+      "/icons/ferramentas.png",
+    ])("%s", (path) => {
+      expect(isPrelaunchAllowed(path)).toBe(true)
+    })
+  })
+
   describe("libera os destinos dos e-mails transacionais", () => {
     // Sem isto, TODO convite de piloto morreria na home:
     // lib/email.ts monta /definir-senha/[token] e /esqueci-senha/[token].
