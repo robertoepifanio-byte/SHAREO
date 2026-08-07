@@ -17,29 +17,15 @@ import { prisma } from "@/lib/prisma"
 import { requireAdminRole } from "@/lib/auth/admin-guards"
 import { auditLog } from "@/lib/audit"
 import { sendExportReadyEmail } from "@/lib/email"
+// toCsv vivia aqui como função local; foi extraído para lib/csv.ts quando a
+// exportação de interessados da campanha passou a precisar do mesmo escape
+// (incluindo a proteção contra formula injection, S14-SEC-06).
+import { toCsv } from "@/lib/csv"
 
 export const runtime = "nodejs"
 
 const MAX_DAYS_SYNC  = 90
 const MAX_DAYS_TOTAL = 5 * 365 // ADR-017: 5 anos
-
-function toCsv(rows: Record<string, unknown>[]): string {
-  if (rows.length === 0) return ""
-  const headers = Object.keys(rows[0])
-  const escape  = (v: unknown) => {
-    let s = v == null ? "" : String(v)
-    // CSV formula injection (S14-SEC-06): neutraliza células iniciadas por =,+,-,@,TAB,CR
-    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s
-    return s.includes(",") || s.includes('"') || s.includes("\n") || s.includes("\r")
-      ? `"${s.replace(/"/g, '""')}"`
-      : s
-  }
-  const lines = [
-    headers.join(","),
-    ...rows.map((r) => headers.map((h) => escape(r[h])).join(",")),
-  ]
-  return lines.join("\r\n")
-}
 
 function fmtBrl(cents: number | null | undefined) {
   return cents == null ? "" : (cents / 100).toFixed(2)

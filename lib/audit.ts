@@ -10,6 +10,9 @@ export type AuditAction =
   | "PLATFORM_CONFIG_UPDATED"
   | "ADMIN_ROLE_GRANTED"
   | "EXPORT_FINANCIAL"
+  // Exportação nível-lead da campanha de pré-lançamento (contém e-mail/nome).
+  // Distinta de EXPORT_FINANCIAL: outro dado, outro requisito de retenção.
+  | "EXPORT_FOUNDER_LEADS"
   | "PIX_PAYMENT_CONFIRMED"
   | "kyc.selfie.view"
 

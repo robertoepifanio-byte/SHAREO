@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { unstable_cache } from "next/cache"
 import { prisma } from "@/lib/prisma"
 import { PILOT_CITIES, getPilotCity } from "@/lib/pilot-cities"
+import { normalizePlace } from "@/lib/geo/normalize-place"
 import { FounderCaptureForm } from "@/components/home/FounderCaptureForm"
 
 // ISR: as landings mudam pouco; revalida a cada hora.
@@ -35,18 +36,24 @@ export async function generateMetadata(
 }
 
 // Contagem por cidade — social proof local. Cacheada e invalidada pela tag "founders".
+//
+// Casa por `cityNorm` e não por `city: { equals, mode: "insensitive" }`: o
+// insensitive do Postgres ignora CAIXA, mas não ACENTO — "sao paulo" digitado à
+// mão não batia com "São Paulo" e a contagem saía menor do que a real. `cityNorm`
+// é a chave dobrada gravada em write time (ver lib/geo/normalize-place.ts).
 function getCityCount(name: string, uf: string) {
+  const key = normalizePlace(name)
   return unstable_cache(
     async () => {
       try {
         return await prisma.founderLead.count({
-          where: { deletedAt: null, state: uf, city: { equals: name, mode: "insensitive" } },
+          where: { deletedAt: null, state: uf, cityNorm: key },
         })
       } catch {
         return 0
       }
     },
-    ["founder-count", uf, name.toLowerCase()],
+    ["founder-count", uf, key ?? ""],
     { revalidate: 300, tags: ["founders"] },
   )()
 }

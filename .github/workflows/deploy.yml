@@ -190,6 +190,13 @@ jobs:
           NEXT_PUBLIC_SENTRY_ENV: staging
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SKIP_RATE_LIMIT: "true"
+          # Campanha nacional de pré-lançamento. Literal explícito aqui (e não só
+          # no painel do Vercel) para o gate não depender do `vercel pull`.
+          # Ver lib/prelaunch.ts. Trocar exige redeploy — é build-time.
+          NEXT_PUBLIC_PRELAUNCH_MODE: "true"
+          # Staging nunca pode ser indexado: o Google racharia autoridade com
+          # shareo.com.br antes mesmo do go-live.
+          NEXT_PUBLIC_NOINDEX: "true"
 
       - name: Deploy to staging (--prod → atualiza shareo-rouge.vercel.app)
         id: deploy
@@ -381,6 +388,12 @@ jobs:
           # SEC-CRIT-02/03 kill-switch: garante que o bypass de rate limit (SKIP_RATE_LIMIT/
           # E2E_SECRET) fica inerte em produção mesmo que um valor vaze por cópia de env.
           E2E_BYPASS_DISABLED: "true"
+          # Produção é uso INTERNO (Deployment Protection) e serve para validar o
+          # marketplace inteiro — o gate de pré-lançamento fica desligado aqui.
+          # A campanha nacional roda em staging; ligar isto em produção é decisão
+          # separada, junto do go-live público (gated por D4).
+          NEXT_PUBLIC_PRELAUNCH_MODE: "false"
+          NEXT_PUBLIC_NOINDEX: "false"
 
       - name: Deploy to production
         id: deploy

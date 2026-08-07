@@ -1022,14 +1022,31 @@ model FounderLead {
   source        SignupSource @default(VIP_LANDING)
 
   // Localização do interessado — define a região dos pilotos (Piloto 1, Piloto 2…)
-  city  String?
-  state String? @db.Char(2)
+  // Preenchida via ViaCEP a partir do CEP (campanha nacional); o formulário mantém
+  // preenchimento manual como fallback quando o CEP falha ou não existe.
+  city         String?
+  state        String? @db.Char(2)
+  cep          String? @db.Char(8)  // só dígitos, sem máscara
+  neighborhood String? @db.VarChar(120)
+
+  // Chaves de agrupamento (acento dobrado, minúsculas) — ver lib/geo/normalize-place.ts.
+  // Gravadas em write time para o painel poder usar groupBy no banco em vez de
+  // carregar todos os leads em memória. `city`/`neighborhood` acima seguem sendo a
+  // grafia original, usada para exibição.
+  cityNorm         String? @map("city_norm") @db.VarChar(120)
+  neighborhoodNorm String? @map("neighborhood_norm") @db.VarChar(120)
+
+  // "CEP" | "MANUAL" — mede a taxa de fallback do ViaCEP em produção sem
+  // instrumentação extra. Se o manual disparar, o ViaCEP está degradado.
+  addressSource String? @map("address_source") @db.VarChar(10)
 
   // Atribuição de campanha (UTM) — mede canal/cidade de origem dos leads pagos/orgânicos.
   // `source` (enum acima) é derivado destes na API; estes guardam o detalhe bruto.
   utmSource   String?
   utmMedium   String?
   utmCampaign String?
+  utmContent  String? // criativo — necessário p/ teste A/B no Meta
+  utmTerm     String?
   referrerUrl String? @db.VarChar(500)
 
   // LGPD — consentimento explícito (LGPD Art. 7 + ANPD)
@@ -1056,6 +1073,10 @@ model FounderLead {
 
   @@index([status])
   @@index([createdAt])
+  // Ranking de cidades-piloto no /admin/fundadores (groupBy por região).
+  @@index([state, cityNorm])
+  // Drill-down de bairro — só consultado com UF + cidade já filtrados.
+  @@index([state, cityNorm, neighborhoodNorm])
   @@map("founder_leads")
 }
 

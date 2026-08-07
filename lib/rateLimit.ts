@@ -78,6 +78,11 @@ export const RATE_LIMITS = {
   adminCreate:    { limit: 5,  windowMs: 24 * 60 * 60 * 1000 }, // 5/dia por admin
   upload:         { limit: 30, windowMs: 60_000 },               // 30/min por usuário (booking-photos, item-images, id-docs)
   dataExport:     { limit: 3,  windowMs: 24 * 60 * 60 * 1000 },  // 3/dia por usuário (LGPD art. 20 — 11 findMany sem paginação, protege contra loop)
+  // Captação da campanha nacional. 10/min (e não 5) porque CGNAT de operadora
+  // móvel e NAT corporativo colocam muita gente legítima atrás do mesmo IP —
+  // num pico de campanha paga, 5/min derrubaria conversão real.
+  foundersLead:   { limit: 10, windowMs: 60_000 },               // 10/min por IP
+  foundersExport: { limit: 10, windowMs: 60_000 },               // 10/min por admin
 } as const
 
 // ─── Public API ───────────────────────────────────────────────────────────────

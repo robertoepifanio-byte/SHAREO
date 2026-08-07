@@ -9,6 +9,13 @@
       "autoPort": true
     },
     {
+      "name": "shareo-prelaunch",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["next", "start", "-p", "3005"],
+      "port": 3005,
+      "autoPort": true
+    },
+    {
       "name": "dark-mode-prototype",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["serve", "docs", "-l", "3001", "--no-clipboard"],

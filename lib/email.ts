@@ -1,5 +1,6 @@
 import { Resend } from "resend"
 import { APP_URL } from "@/lib/app-url"
+import { unsubscribeUrl } from "@/lib/founders-unsubscribe"
 import { formatPrice, formatDateLong } from "@/utils/format"
 import { prisma } from "@/lib/prisma"
 
@@ -582,7 +583,7 @@ export async function sendIdRejectedEmail(to: string, name: string, reason: stri
   if (error) throw new Error(`Resend error: ${error.message}`)
 }
 
-function founderWelcomeHtml(firstName: string, queuePosition: number) {
+function founderWelcomeHtml(firstName: string, queuePosition: number, unsubUrl: string) {
   return baseLayout(`
     <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
       Você está na lista, ${firstName}!
@@ -600,7 +601,9 @@ function founderWelcomeHtml(firstName: string, queuePosition: number) {
     </div>
 
     <p style="margin:0;font-size:12px;color:#94A3B8;line-height:1.6;">
-      Para sair da lista a qualquer momento, envie um e-mail para
+      Não quer mais receber?
+      <a href="${unsubUrl}" style="color:#007B3C;">Cancelar inscrição</a>
+      — um clique, sem precisar responder. Dúvidas de privacidade:
       <a href="mailto:privacidade@shareo.com.br" style="color:#007B3C;">privacidade@shareo.com.br</a>.
     </p>
   `)
@@ -615,11 +618,19 @@ export async function sendFounderWelcomeEmail(
   if (!resend) return
 
   const firstName = name.split(" ")[0]
+  const unsubUrl  = unsubscribeUrl(APP_URL, to)
   const { error } = await resend.emails.send({
     from:    `ShareO <${FROM}>`,
     to,
     subject: `Você é o #${queuePosition}° na lista de fundadores do ShareO!`,
-    html:    founderWelcomeHtml(firstName, queuePosition),
+    html:    founderWelcomeHtml(firstName, queuePosition, unsubUrl),
+    // RFC 8058 — descadastro em um clique. Exigido pelas regras de bulk sender
+    // do Gmail/Yahoo para remetentes de volume, que é o caso da campanha nacional.
+    // Sem estes headers o provedor tende a classificar como spam.
+    headers: {
+      "List-Unsubscribe":      `<${unsubUrl}>, <mailto:privacidade@shareo.com.br?subject=unsubscribe>`,
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+    },
   })
   if (error) throw new Error(`Resend error: ${error.message}`)
 }
