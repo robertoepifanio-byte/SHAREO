@@ -73,6 +73,37 @@ export function CampaignBanner() {
       </div>
 
       {/*
+        CTA logo abaixo da arte. Sem ele o único botão da página é o do
+        formulário, que com o banner como hero cai em ~1407px no mobile — bem
+        abaixo da dobra. Aqui ele aparece por volta de 650px, dentro da primeira
+        tela da maioria dos aparelhos.
+
+        Âncora pura, sem JS: o destino #lista-vip é uma seção real, então o link
+        funciona mesmo antes da hidratação e para quem navega por teclado.
+      */}
+      <div className="bg-navy-deep px-6 pb-7 text-center">
+        <a
+          href="#lista-vip"
+          className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg bg-brand px-8 py-3 text-sm font-semibold uppercase tracking-[0.4px] text-white transition-colors hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-navy-deep"
+        >
+          Entrar na lista
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M12 5v14M19 12l-7 7-7-7" />
+          </svg>
+        </a>
+      </div>
+
+      {/*
         Faixa de transição. Medido no preview: a arte termina em rgb(0,19,58) e a
         ListaVIP abre o gradiente em rgb(30,77,128) — a emenda direta vira uma
         linha horizontal dura entre navy escuro e azul médio, que lê como falha

@@ -46,7 +46,11 @@ export async function ListaVIP({ as = "h2", hideBadge = false }: Props = {}) {
   return (
     <section
       id="lista-vip"
-      className="relative overflow-hidden bg-gradient-to-br from-primary to-navy-deep px-6 py-16 text-center"
+      // scroll-mt-16 = altura do cabeçalho sticky (h-16). Sem isso, ao chegar
+      // aqui por âncora (#lista-vip) o topo da seção fica escondido atrás dele.
+      // Vale para as duas páginas: a landing e a home de marketplace têm
+      // cabeçalho sticky da mesma altura.
+      className="relative scroll-mt-16 overflow-hidden bg-gradient-to-br from-primary to-navy-deep px-6 py-16 text-center"
       aria-labelledby="vip-title"
     >
       {/* Orbe decorativo */}
