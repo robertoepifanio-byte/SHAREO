@@ -57,6 +57,21 @@ const ALLOW_PREFIX = [
   // TODO convite de piloto morreria na home.
   "/login",
   "/sair",
+
+  // /dashboard NÃO é conteúdo de campanha — está aqui para quebrar um ciclo de
+  // redirecionamento. O middleware manda para /dashboard quem tenta /admin sem
+  // ser ADMIN, e também quem abre /login já logado. Com /dashboard bloqueado,
+  // as duas rotas terminavam na landing:
+  //
+  //   /admin/... → (role ≠ ADMIN) → /dashboard → (gate) → landing
+  //   /login     → (já logado)    → /dashboard → (gate) → landing
+  //
+  // O efeito é que um usuário logado como não-admin não conseguia nem VER o
+  // formulário de login para trocar de conta — a única saída era /sair, que
+  // depende de JS. Aconteceu com o fundador em 07/08 ao tentar abrir o painel.
+  //
+  // Liberar aqui não expõe nada: a própria página exige sessão.
+  "/dashboard",
   "/esqueci-senha",
   "/definir-senha",
   "/verify-email",
