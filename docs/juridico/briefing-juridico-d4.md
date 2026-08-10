@@ -1,7 +1,7 @@
 # Briefing Jurídico — ShareO (D4)
 
 **Versão:** 2026-06-28 · **Para:** consultoria/advogado(a) responsável pelo parecer (D4).
-**Propósito:** dossiê técnico-jurídico **standalone** do ShareO para subsidiar o parecer legal de go-live. Complementa o documento de cobrança [`docs/juridico/d4-cobranca-juridico.md`](d4-cobranca-juridico.md) (que traz a mensagem pronta de envio + as 5 questões-núcleo).
+**Propósito:** dossiê técnico-jurídico **standalone** do ShareO para subsidiar o parecer legal de go-live. Complementa o documento de cobrança [`docs/juridico/d4-cobranca-juridico.md`](d4-cobranca-juridico.md) (que traz a mensagem pronta de envio + as 8 questões-núcleo).
 
 > ⚠️ Este material foi preparado pela equipe de produto/tecnologia para **descrever fielmente o modelo e identificar as áreas que dependem de análise jurídica**. Ele **não** substitui o parecer — pelo contrário, é o insumo para ele. Nenhuma afirmação aqui deve ser lida como conclusão legal.
 
@@ -44,6 +44,7 @@ Dados tratados, por categoria (detalhe técnico no Anexo, §8):
 - **Documentos:** **CPF** (PF) e **CNPJ** + dados do responsável legal (PJ) — armazenados **criptografados (AES-256-GCM)** com índice de unicidade por **HMAC-SHA256** (não há CPF/CNPJ em claro no banco).
 - **Documentos de imagem:** bucket **privado** `id-docs` (verificação de identidade).
 - **Transacionais/comportamentais:** reservas, avaliações (reviews), chat in-app.
+- **Navegação/medição:** **Google Analytics 4** de primeira parte, com **IP anonimizado**, já em uso. **Não há banner de consentimento de cookies.** Para a campanha de divulgação pretende-se instalar o **Meta Pixel** — que, diferentemente do GA4, **compartilha dados de navegação com um terceiro (Meta) para uso publicitário do próprio terceiro**. O código já existe no repositório e está **inerte** (não carrega sem a variável de ambiente correspondente). Ver questão **#8** no §5.
 
 > **Pergunta central:** o tratamento atende à **minimização** e às bases legais adequadas? Há obrigação adicional além do que já fizemos (Encarregado designado, consentimento versionado, exclusão art. 18, portabilidade art. 20)? Há **transferência internacional** relevante a formalizar (banco em sa-east-1, mas subprocessadores de e-mail/erro/mapas nos EUA — ver Anexo)?
 
@@ -87,7 +88,7 @@ Dados tratados, por categoria (detalhe técnico no Anexo, §8):
 
 ## 5. Perguntas para o parecer
 
-As **5 questões-núcleo** (formato pronto de envio) estão em [`docs/juridico/d4-cobranca-juridico.md` §2](d4-cobranca-juridico.md). Em resumo:
+As **8 questões-núcleo** (formato pronto de envio) estão em [`docs/juridico/d4-cobranca-juridico.md` §2](d4-cobranca-juridico.md). As **5 originais**, em resumo:
 
 1. **Lei 12.865/2013** — *merchant of record* com repasse via PIX exige autorização BACEN / enquadra como instituição de pagamento? Estrutura alternativa?
 2. **Fiscal** — tributos sobre a taxa de 15%; NF por repasse/transação; valor em trânsito vs. receita.
@@ -95,10 +96,12 @@ As **5 questões-núcleo** (formato pronto de envio) estão em [`docs/juridico/d
 4. **CDC / Termos** — a redação atual (taxa/repasse/teto/aceite/arrependimento) basta?
 5. **PLD/FT** — PIX centralizado torna a ShareO sujeito obrigado? Qual programa (KYC/KYB, monitoramento, COAF)?
 
-**Questões fundacionais adicionais** (levantadas na revisão pré-go-live, além das 5 acima):
+**Questões adicionais** (além das 5 acima — #6 e #7 vieram da revisão pré-go-live; **#8**, do preparo da campanha de divulgação, em 10/08):
 
 6. **Civil — contrato de locação e risco sem caução** (Código Civil, locação de coisas — arts. 565+): qual a estrutura do **contrato de locação** entre locador e locatário (intermediado pela plataforma) e como **alocar contratualmente o risco de dano/perda** do item entre as três partes, considerando que o MVP **não exige caução**? Há cláusulas mínimas exigíveis?
 7. **Marco Civil — responsabilidade do provedor** (Lei 12.965/2014, art. 19): qual o **regime de responsabilidade da plataforma** por conteúdo/anúncio de terceiros e por atos praticados entre usuários? Quais obrigações de **notificação/retirada** de conteúdo e de **guarda de logs** se aplicam?
+8. **Cookies e tecnologias de publicidade** (LGPD arts. 7º e 9º): pretende-se veicular anúncios no Meta (Facebook/Instagram) e instalar o **Meta Pixel** para medir conversão. O pixel **compartilha dados de navegação do visitante com o Meta, para uso publicitário do próprio Meta** — não é analytics de primeira parte. Hoje o site roda apenas **GA4 com IP anonimizado** e **não possui banner de consentimento**. Perguntamos: **(a)** qual **base legal** sustenta o compartilhamento — consentimento (art. 7º, I) ou legítimo interesse (art. 7º, IX)?; **(b)** sendo consentimento, ele precisa ser **prévio e granular** (analytics separado de publicidade), e que exigências há quanto à **revogação**?; **(c)** o **GA4 já em uso** demanda o mesmo tratamento, ou a distinção entre analytics próprio e compartilhamento com terceiro altera a resposta?
+    > A resposta a **(c)** define o escopo: se o GA4 também exigir consentimento, o banner deixa de ser requisito da campanha e passa a ser **pendência já existente**, independentemente de anunciarmos.
 
 **Outras pendências fundacionais** (não exaustivas): registro da **marca "ShareO"** no INPI; necessidade de **seguro/garantia** para danos ao item e cláusula de limitação de responsabilidade.
 

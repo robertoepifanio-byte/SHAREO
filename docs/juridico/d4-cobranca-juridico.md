@@ -1,6 +1,6 @@
 # D4 — Material de cobrança do parecer jurídico **FORMAL**
 
-**Atualizado:** 2026-06-29 · **Status:** **parecer PRELIMINAR recebido em 2026-06-28** (AI-assistido, construído sobre o `briefing-juridico-d4.md`, **em revisão com a advogada**) → **cobrando agora o parecer FORMAL** que confirme os ajustes e libere o go-live.
+**Atualizado:** 2026-08-10 (acrescentada a questão **#8 — cookies e Meta Pixel**) · **Status:** **parecer PRELIMINAR recebido em 2026-06-28** (AI-assistido, construído sobre o `briefing-juridico-d4.md`, **em revisão com a advogada**) → **cobrando agora o parecer FORMAL** que confirme os ajustes e libere o go-live.
 **Para:** fundadores encaminharem ao escritório/advogado responsável.
 **Contexto interno:** D4 é o **único bloqueador** de go-live em produção do ShareO. Tudo o mais (código, infraestrutura, validação em staging) está pronto. O parecer preliminar concluiu que o **modelo é "juridicamente viável"** com **5 ajustes críticos**; falta a **versão FORMAL** (e o contrato com o PSP + Termos/Política revisados) para destravar.
 
@@ -27,6 +27,10 @@
 > 5. **PLD/FT (Lei 9.613/1998):** com o PSP licenciado assumindo parte do monitoramento, qual a **política mínima** que ainda cabe à ShareO (KYC/KYB leve, monitoramento, COAF)?
 > 6. **Civil (CC, locação):** validação do **contrato de locação de bens móveis** aceito eletronicamente por locador e locatário e da **alocação do risco de dano/perda sem caução** (arts. 565+).
 > 7. **Marco Civil (Lei 12.965/2014):** confirmação do regime de **guarda de logs de acesso por 6 meses (art. 15)** e do procedimento de **notificação e retirada** de conteúdo de terceiros (art. 19).
+> 8. **Cookies e tecnologias de publicidade (LGPD):** pretendemos veicular anúncios no Meta (Facebook/Instagram) e, para medir conversão, instalar o **Meta Pixel**, que compartilha dados de navegação do visitante com o Meta para uso publicitário **do próprio Meta**. Hoje o site roda apenas **Google Analytics 4 de primeira parte, com IP anonimizado, e não possui banner de consentimento de cookies**. Perguntamos:
+>     - **(a)** Qual **base legal** sustenta esse compartilhamento — **consentimento** (art. 7º, I) ou **legítimo interesse** (art. 7º, IX)?
+>     - **(b)** Sendo consentimento, ele precisa ser **prévio e granular** (separando analytics de publicidade), ou um aceite único é suficiente? Há exigência quanto à **facilidade de revogação**?
+>     - **(c)** O **GA4 já em uso** (primeira parte, IP anonimizado) demanda o mesmo tratamento, ou a distinção entre analytics próprio e compartilhamento com terceiro altera a resposta?
 >
 > Ficamos à disposição para uma call de 30 min para fechar os pontos pendentes. Agradecemos o retorno.
 >
@@ -35,9 +39,9 @@
 
 ---
 
-## 2. As 7 questões-núcleo (versão de referência)
+## 2. As 8 questões-núcleo (versão de referência)
 
-> As 5 originais foram endereçadas no parecer preliminar; **#6 e #7** surgiram na revisão pré-go-live (skill `/shareo-juridico`). O parecer **FORMAL** deve fechar todas.
+> As 5 originais foram endereçadas no parecer preliminar; **#6 e #7** surgiram na revisão pré-go-live (skill `/shareo-juridico`); **#8** surgiu ao preparar a campanha de divulgação (10/08). O parecer **FORMAL** deve fechar todas.
 
 | # | Tema | Pergunta-núcleo | Posição preliminar |
 |---|---|---|---|
@@ -48,6 +52,7 @@
 | 5 | **PLD/FT (Lei 9.613/1998)** | Com PSP, qual política mínima ainda cabe à ShareO? | Parte recai no PSP; manter política mínima |
 | 6 | **Civil (CC)** | Contrato de locação eletrônico + risco de dano/perda sem caução (arts. 565+). | Risco alocado ao locatário |
 | 7 | **Marco Civil** | Guarda de logs 6 meses (art. 15) + notificação/retirada (art. 19). | Art. 15 obrigatório |
+| 8 | **Cookies / adtech (LGPD)** | Base legal do Meta Pixel (compartilha navegação com terceiro para uso publicitário dele); consentimento prévio e granular?; o GA4 de primeira parte exige o mesmo? | Sem posição — **não temos banner de cookies hoje** |
 
 ---
 
@@ -81,6 +86,7 @@ Para o advogado entender que a parte técnica não é o gargalo:
 - **DNS/domínio** de produção (`shareo.com.br`).
 - **Captação de usuários reais** e início da operação comercial.
 - **Tag de release `web-v1.x`** (go-live).
+- **Meta Pixel / mídia paga no Meta** (questão #8). O código está implementado e **inerte** — sem a variável de ambiente nada é carregado e nenhuma requisição sai para o Meta. Não há passivo se correndo: o custo da demora é apenas anunciar sem otimização por conversão.
 
 > Condições do próprio parecer para go-live: **parecer FORMAL + contrato PSP assinado + conta PJ ativa + Termos/Política revisados publicados + checklist 100%**. Cada semana de atraso adia o início da operação, com o MVP já 100% pronto em staging.
 
