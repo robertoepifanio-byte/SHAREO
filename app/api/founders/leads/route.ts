@@ -3,7 +3,7 @@ import { NextResponse, after } from "next/server"
 import { z } from "zod"
 import { revalidateTag } from "next/cache"
 import { prisma } from "@/lib/prisma"
-import { assignWave } from "@/lib/founders"
+import { assignWave, generateReferralCode } from "@/lib/founders"
 import { sendFounderWelcomeEmail } from "@/lib/email"
 import { MARKETING_CONSENT_VERSION } from "@/lib/legal-config"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
@@ -41,6 +41,9 @@ const Schema = z.object({
   utmContent:       z.string().max(200).optional(),
   utmTerm:          z.string().max(200).optional(),
   referrerUrl:      z.string().max(500).optional(),
+  // Código de quem indicou (o `ref` da URL). Aceita só o alfabeto do gerador —
+  // é dado de terceiro vindo de link público, então não entra cru no banco.
+  referredByCode:   z.string().regex(/^[23456789A-HJ-NP-Z]{8}$/).optional(),
 })
 
 export async function POST(req: NextRequest) {
@@ -66,7 +69,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { email, name, phone, intent, consentVersion, source, city, state,
-            cep, neighborhood, addressSource,
+            cep, neighborhood, addressSource, referredByCode,
             utmSource, utmMedium, utmCampaign, utmContent, utmTerm, referrerUrl } = parsed.data
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
            ?? req.headers.get("x-real-ip")
@@ -90,6 +93,9 @@ export async function POST(req: NextRequest) {
 
     const attributionData = {
       source:      source as SourceValue,
+      // Só grava se veio; numa reativação sem `ref` preserva quem indicou da
+      // primeira vez, em vez de apagar a atribuição por omissão.
+      ...(referredByCode ? { referredByCode } : {}),
       utmSource:   utmSource   ?? null,
       utmMedium:   utmMedium   ?? null,
       utmCampaign: utmCampaign ?? null,
@@ -112,7 +118,7 @@ export async function POST(req: NextRequest) {
     // Deduplicação por e-mail
     const existing = await prisma.founderLead.findUnique({
       where:  { email: emailLower },
-      select: { id: true, queuePosition: true, deletedAt: true, status: true, wave: true },
+      select: { id: true, queuePosition: true, deletedAt: true, status: true, wave: true, referralCode: true },
     })
 
     if (existing && !existing.deletedAt && existing.status !== "UNSUBSCRIBED") {
@@ -141,12 +147,15 @@ export async function POST(req: NextRequest) {
           intent,
           status:    "PENDING",
           deletedAt: null,
+          // Leads criados antes da migração de indicação não têm código. Atribui
+          // um agora, para que a tela de sucesso possa oferecer o convite.
+          ...(existing.referralCode ? {} : { referralCode: generateReferralCode() }),
           ...phoneData,
           ...placeData,
           ...attributionData,
           ...consentData,
         },
-        select: { id: true, queuePosition: true, wave: true },
+        select: { id: true, queuePosition: true, wave: true, referralCode: true },
       })
 
       after(() =>
@@ -156,26 +165,61 @@ export async function POST(req: NextRequest) {
       )
       revalidateTag("founders")
 
+      // O boas-vindas só era disparado no caminho de criação. Quem se
+      // descadastrava e voltava não recebia nada, ficava sem confirmação e
+      // concluía que o envio tinha falhado — logo depois de reconquistarmos a
+      // pessoa, que é o pior momento para o silêncio.
+      const reactivatedName = name?.trim() || email.split("@")[0]
+      after(() => sendFounderWelcomeEmail(emailLower, reactivatedName, lead.queuePosition).catch(() => {}))
+
       return NextResponse.json(
-        { data: { leadId: lead.id, queuePosition: lead.queuePosition, wave: lead.wave } },
+        {
+          data: {
+            leadId:        lead.id,
+            queuePosition: lead.queuePosition,
+            wave:          lead.wave,
+            referralCode:  lead.referralCode,
+          },
+        },
         { status: 201 },
       )
     }
 
-    // queuePosition é atribuído atomicamente pelo DB via autoincrement
-    const lead = await prisma.founderLead.create({
-      data: {
-        email:  emailLower,
-        name:   name ?? null,
-        phone:  phone ?? null,
-        intent,
-        status: "PENDING",
-        ...placeData,
-        ...attributionData,
-        ...consentData,
-      },
-      select: { id: true, queuePosition: true },
-    })
+    // queuePosition é atribuído atomicamente pelo DB via autoincrement.
+    //
+    // O retry cobre a colisão de referralCode (coluna UNIQUE). Com 31^8 ≈ 8,5e11
+    // combinações ela é improvável a ponto de nunca acontecer — mas se acontecer
+    // sem retry o lead se perde com 500, e perder captação de campanha paga por
+    // sorteio é inaceitável. Duas tentativas bastam: a chance de duas seguidas
+    // é o quadrado de improvável.
+    let lead: { id: string; queuePosition: number; referralCode: string | null } | null = null
+    for (let attempt = 0; attempt < 2 && !lead; attempt++) {
+      try {
+        lead = await prisma.founderLead.create({
+          data: {
+            email:  emailLower,
+            name:   name ?? null,
+            phone:  phone ?? null,
+            intent,
+            status: "PENDING",
+            referralCode: generateReferralCode(),
+            ...placeData,
+            ...attributionData,
+            ...consentData,
+          },
+          select: { id: true, queuePosition: true, referralCode: true },
+        })
+      } catch (err) {
+        // P2002 = violação de UNIQUE. Só vale retentar se foi o código; se foi o
+        // e-mail, é corrida com outra aba e o certo é deixar estourar para o
+        // catch externo (o findUnique acima já cobre o caso normal).
+        const target = (err as { code?: string; meta?: { target?: string[] } })
+        const isCodeCollision =
+          target.code === "P2002" && (target.meta?.target ?? []).some((t) => t.includes("referral_code"))
+        if (!isCodeCollision || attempt === 1) throw err
+      }
+    }
+    if (!lead) throw new Error("Falha ao criar lead após retry de referralCode")
 
     // wave é determinístico pela posição — atualizar de forma não-crítica
     const wave = assignWave(lead.queuePosition)
@@ -195,7 +239,16 @@ export async function POST(req: NextRequest) {
     after(() => sendFounderWelcomeEmail(emailLower, displayName, lead.queuePosition).catch(() => {}))
 
     return NextResponse.json(
-      { data: { leadId: lead.id, queuePosition: lead.queuePosition, wave } },
+      {
+        data: {
+          leadId:        lead.id,
+          queuePosition: lead.queuePosition,
+          wave,
+          // O formulário monta o link de convite com isto. Sem devolver o código
+          // aqui, o compartilhamento não teria como ser atribuído.
+          referralCode:  lead.referralCode,
+        },
+      },
       { status: 201 },
     )
   } catch (e) {

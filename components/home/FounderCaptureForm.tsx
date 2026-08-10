@@ -4,10 +4,11 @@ import { useEffect, useRef, useState, type FormEvent } from "react"
 import { MARKETING_CONSENT_VERSION, MARKETING_CONSENT_TEXT } from "@/lib/legal-config"
 import { maskCEP, maskPhone } from "@/lib/forms/masks"
 import { fetchAddressByCep } from "@/lib/forms/address"
+import { trackEvent } from "@/components/analytics/GoogleAnalytics"
+import { readAttribution, type Attribution } from "@/lib/founders-attribution"
 
 type IntentOption = "proprietario" | "locatario"
 type State  = "collapsed" | "expanded" | "loading" | "success" | "error-network" | "error-duplicate"
-type SourceValue = "ORGANIC" | "VIP_LANDING" | "REFERRAL" | "GOOGLE_ADS" | "META_ADS"
 
 /**
  * `idle`     — nada digitado ainda
@@ -18,49 +19,10 @@ type SourceValue = "ORGANIC" | "VIP_LANDING" | "REFERRAL" | "GOOGLE_ADS" | "META
  */
 type CepState = "idle" | "loading" | "ok" | "notfound" | "error"
 
-type Attribution = {
-  source:      SourceValue
-  utmSource?:  string
-  utmMedium?:  string
-  utmCampaign?: string
-  utmContent?: string
-  utmTerm?:    string
-  referrerUrl?: string
-}
-
 function resolveIntent(selected: Set<IntentOption>): "proprietario" | "locatario" | "ambos" {
   if (selected.has("proprietario") && selected.has("locatario")) return "ambos"
   if (selected.has("locatario")) return "locatario"
   return "proprietario"
-}
-
-// Deriva o canal (enum SignupSource) a partir dos parâmetros da URL.
-// Indicação (ref) tem prioridade; depois utm_source conhecido; senão landing VIP.
-function deriveSource(utmSource: string | null, ref: string | null): SourceValue {
-  if (ref) return "REFERRAL"
-  const s = utmSource?.toLowerCase() ?? ""
-  if (s.includes("meta") || s.includes("facebook") || s.includes("instagram") || s === "fb" || s === "ig") return "META_ADS"
-  if (s.includes("google") || s === "adwords") return "GOOGLE_ADS"
-  return "VIP_LANDING"
-}
-
-function readAttribution(): Attribution {
-  if (typeof window === "undefined") return { source: "VIP_LANDING" }
-  const p = new URLSearchParams(window.location.search)
-  const utmSource   = p.get("utm_source")
-  const ref         = p.get("ref")
-  return {
-    source:      deriveSource(utmSource, ref),
-    utmSource:   utmSource            ?? undefined,
-    utmMedium:   p.get("utm_medium")  ?? undefined,
-    utmCampaign: p.get("utm_campaign") ?? undefined,
-    // utm_content/utm_term identificam o CRIATIVO — sem eles não dá para comparar
-    // variações de anúncio no Meta, e acrescentar o campo depois de dezenas de
-    // milhares de leads é caro.
-    utmContent:  p.get("utm_content") ?? undefined,
-    utmTerm:     p.get("utm_term")    ?? undefined,
-    referrerUrl: document.referrer || undefined,
-  }
 }
 
 type Props = {
@@ -92,6 +54,7 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
 
   const [lgpdConsent, setLgpdConsent] = useState(false)
   const [position, setPosition]   = useState(0)
+  const [referralCode, setReferralCode] = useState<string | null>(null)
   const [attribution, setAttribution] = useState<Attribution>({ source: "VIP_LANDING" })
 
   // Descarta respostas obsoletas do ViaCEP: digitar rápido "50030230" → "50030231"
@@ -203,21 +166,62 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
           utmContent:       attribution.utmContent,
           utmTerm:          attribution.utmTerm,
           referrerUrl:      attribution.referrerUrl,
+          referredByCode:   attribution.ref,
         }),
       })
 
       if (res.status === 409) { setState("error-duplicate"); return }
       if (!res.ok)            { setState("error-network");   return }
 
-      const json = await res.json() as { data: { queuePosition: number } }
+      const json = await res.json() as { data: { queuePosition: number; referralCode: string | null } }
       setPosition(json.data.queuePosition)
+      setReferralCode(json.data.referralCode)
       setState("success")
+
+      // Conversão da campanha. Fica DEPOIS do sucesso confirmado: disparar no
+      // clique contaria tentativa como conversão e inflaria a taxa que decide
+      // onde o orçamento de mídia vai.
+      //
+      // Nenhum parâmetro carrega PII — nem e-mail, nem telefone, nem o CEP.
+      trackEvent({
+        name: "founder_lead_submit",
+        params: {
+          uf:           uf.trim().toUpperCase(),
+          lead_source:  attribution.source,
+          utm_campaign: attribution.utmCampaign ?? campaign ?? "(nenhuma)",
+          has_phone:    !!phoneE164,
+          cep_used:     cepState === "ok",
+        },
+      })
     } catch {
       setState("error-network")
     }
   }
 
   if (state === "success") {
+    /*
+      Link de convite. Antes era a string fixa "https://shareo.com.br", que hoje
+      serve o placeholder Netlify — TODO convite orgânico caía numa página que não
+      capta nada, justamente o canal que não custa nada.
+
+      NEXT_PUBLIC_APP_URL é a variável canônica do repo (app/layout.tsx,
+      sitemap.ts, robots.ts). O fallback é window.location.origin: se a variável
+      faltar no build, o convite ainda aponta para o site de onde a pessoa veio,
+      em vez de para um domínio errado.
+
+      Leva `ref` (quem indicou) e UTM próprio, para o painel separar boca a boca
+      de mídia paga. `ref` só entra se o lead tem código — os criados antes da
+      migração de indicação não têm.
+    */
+    const base = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
+    const inviteParams = new URLSearchParams({
+      utm_source:   "whatsapp",
+      utm_medium:   "referral",
+      utm_campaign: attribution.utmCampaign ?? campaign ?? "indicacao",
+    })
+    if (referralCode) inviteParams.set("ref", referralCode)
+    const inviteUrl = `${base}/?${inviteParams}`
+
     return (
       <div className="mx-auto flex max-w-[400px] flex-col items-center gap-4 py-4">
         <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent/20">
@@ -234,9 +238,10 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
           </p>
         </div>
         <a
-          href={`https://wa.me/?text=${encodeURIComponent("Entrei na lista de fundadores do Shareo — plataforma de aluguel de itens entre pessoas. Entre também: https://shareo.com.br")}`}
+          href={`https://wa.me/?text=${encodeURIComponent(`Entrei na lista de fundadores do Shareo — plataforma de aluguel de itens entre pessoas. Entre também: ${inviteUrl}`)}`}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => trackEvent({ name: "founder_invite_click", params: { queue_position: position } })}
           className="inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/20"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
