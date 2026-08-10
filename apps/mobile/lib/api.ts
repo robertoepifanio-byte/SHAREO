@@ -6,6 +6,42 @@ export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://staging.share
 
 const TOKENS_KEY = "shareo_tokens"
 
+/**
+ * Erro de API que preserva `status` e `error.code` do corpo.
+ *
+ * Antes, `apiFetch` jogava fora tudo menos a mensagem, e as telas recorriam a
+ * sniffing de string para decidir o que fazer (ex.: `msg.includes("404")` em
+ * app/reservas/[id].tsx). Isso quebra ao menor ajuste de texto no backend.
+ *
+ * `message` continua exatamente igual ao de antes, então o sniffing existente
+ * segue funcionando — esta mudança só ACRESCENTA informação.
+ *
+ * Campos atribuídos no corpo do construtor de propósito: `declare` em campo de
+ * classe passa no tsc e quebra no bundle do Metro (babel-preset-expo).
+ */
+export class ApiError extends Error {
+  status: number
+  code: string | null
+
+  constructor(message: string, status: number, code: string | null = null) {
+    super(message)
+    this.name = "ApiError"
+    this.status = status
+    this.code = code
+  }
+}
+
+/**
+ * `true` quando a API recusou por causa do gate de pré-lançamento.
+ *
+ * Checa a propriedade em vez de `instanceof ApiError`: com target ES5 o
+ * `instanceof` de classe que estende Error é traiçoeiro, e o erro pode ter
+ * cruzado uma fronteira de serialização (React Query, boundary) no caminho.
+ */
+export function isPrelaunchError(e: unknown): boolean {
+  return typeof e === "object" && e !== null && (e as { code?: unknown }).code === "PRELAUNCH"
+}
+
 interface Tokens {
   accessToken:  string
   refreshToken: string
@@ -59,7 +95,14 @@ export async function apiFetch<T = unknown>(
           ...(options.headers as Record<string, string> ?? {}),
         },
       })
-      if (!retry.ok) throw new Error(`API ${retry.status}`)
+      if (!retry.ok) {
+        const retryBody = await retry.json().catch(() => ({}))
+        throw new ApiError(
+          retryBody?.error?.message ?? `API ${retry.status}`,
+          retry.status,
+          retryBody?.error?.code ?? null,
+        )
+      }
       return retry.json()
     }
     // Refresh falhou — limpa tokens
@@ -69,7 +112,11 @@ export async function apiFetch<T = unknown>(
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    throw new Error(body?.error?.message ?? `API ${res.status}`)
+    throw new ApiError(
+      body?.error?.message ?? `API ${res.status}`,
+      res.status,
+      body?.error?.code ?? null,
+    )
   }
 
   return res.json()

@@ -24,7 +24,7 @@ import {
 import { router, useLocalSearchParams } from "expo-router"
 import { useQuery } from "@tanstack/react-query"
 import Svg, { Path, Circle, Polygon } from "react-native-svg"
-import { apiFetch, API_URL } from "@/lib/api"
+import { apiFetch, API_URL, isPrelaunchError } from "@/lib/api"
 import { useTheme } from "@/lib/theme"
 import { CategoryChip } from "@/components/ui/CategoryChip"
 import { ItemCard, ItemCardSkeleton, type ItemCardItem } from "@/components/items/ItemCard"
@@ -132,7 +132,7 @@ export default function ExplorarScreen() {
   // ── Busca de itens — inclui sort e maxPrice (novos parâmetros) ────────────
   // Fonte: lib/validations/items.ts (ListItemsQuerySchema) — params aceitos após esta PR:
   // search, categoryId, maxPrice (cents), sort; limit máximo elevado para 100.
-  const { data, isLoading, isRefetching, refetch } = useQuery<ApiResponse>({
+  const { data, isLoading, isRefetching, refetch, error } = useQuery<ApiResponse>({
     queryKey: ["items", search, activeCategoryId, sortValue, filterVals.priceMax, filterVals.dist, filterVals.userLat, filterVals.userLng],
     queryFn:  () => {
       const p = new URLSearchParams({ limit: String(apiLimit) })
@@ -380,7 +380,35 @@ export default function ExplorarScreen() {
           />
         )}
         ListEmptyComponent={
-          isLoading ? null : (
+          isLoading ? null : isPrelaunchError(error) ? (
+            // O gate de pré-lançamento responde 503 PRELAUNCH em /api/items. Sem
+            // este ramo, a falha caía no empty state genérico e o app dizia
+            // "Nenhum item encontrado" com o catálogo intacto do outro lado —
+            // foi o que aconteceu no staging em 07/08, com 606 itens no banco.
+            //
+            // Importa mais para o D4 do que para o staging: quando o gate subir
+            // em produção, TODO usuário com o app instalado veria "nenhum item"
+            // e concluiria que o Shareo quebrou.
+            //
+            // Textos verbatim de components/home/ListaVIP.tsx (título e
+            // subtítulo da seção "Entre na lista"), conforme a regra de
+            // transcrição literal do site.
+            <View style={s.empty}>
+              <Text style={s.emptyIcon}>🚀</Text>
+              <Text style={[s.emptyTitle, { color: tokens.navy }]}>O Shareo está chegando.</Text>
+              <Text style={[s.emptyDesc, { color: tokens.muted }]}>
+                Seja avisado em primeira mão quando lançarmos e conheça as condições
+                especiais que planejamos oferecer aos primeiros anunciantes.
+              </Text>
+              <TouchableOpacity
+                accessibilityRole="button"
+                onPress={() => Linking.openURL(API_URL)}
+                style={[s.prelaunchCta, { backgroundColor: tokens.green }]}
+              >
+                <Text style={s.prelaunchCtaText}>Entrar na lista</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
             <View style={s.empty}>
               <Text style={s.emptyIcon}>🔍</Text>
               <Text style={[s.emptyTitle, { color: tokens.navy }]}>Nenhum item encontrado</Text>
@@ -581,5 +609,21 @@ const s = StyleSheet.create({
   emptyDesc: {
     fontSize:  13,
     textAlign: "center",
+  },
+  prelaunchCta: {
+    // 44px de altura mínima — tap target do design system (min-h-11 no site).
+    minHeight:         44,
+    justifyContent:    "center",
+    marginTop:         20,
+    paddingHorizontal: 24,
+    borderRadius:      8,
+  },
+  prelaunchCtaText: {
+    // Branco sobre tokens.green (#007B3C, verde AÇÃO). Nunca sobre o verde claro
+    // #59C686, que dá contraste 2,07:1 e reprova no WCAG.
+    color:      "#FFFFFF",
+    fontSize:   14,
+    fontWeight: "600",
+    textAlign:  "center",
   },
 })
