@@ -47,6 +47,13 @@ export type GA4Event =
   | { name: "review_submitted";   params: { review_type: string; rating: number } }
   | { name: "search";             params: { search_term: string; results_count: number } }
   | { name: "favorite_added";     params: { item_id: string } }
+  // Campanha de pré-lançamento. Sem estes, o GA4 registra a VISITA da landing e
+  // não a conversão — e mídia paga fica sem sinal para otimizar.
+  //
+  // ⚠️ Nenhum parâmetro pode conter PII. `cep_used` é booleano de propósito: o
+  // CEP identifica a pessoa em conjunto com o resto e não pode sair do banco.
+  | { name: "founder_lead_submit";  params: { uf: string; lead_source: string; utm_campaign: string; has_phone: boolean; cep_used: boolean } }
+  | { name: "founder_invite_click"; params: { queue_position: number } }
 
 export function trackEvent(event: GA4Event) {
   if (typeof window === "undefined" || !("gtag" in window)) return

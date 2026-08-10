@@ -1057,6 +1057,19 @@ model FounderLead {
   utmTerm     String?
   referrerUrl String? @db.VarChar(500)
 
+  // Indicação entre leads. `source = REFERRAL` já existia, mas só dizia QUE houve
+  // indicação — o `ref` da URL era lido e descartado, então não dava para saber
+  // QUEM indicou. Sem isso o boca a boca (único canal disponível com verba zero)
+  // não é mensurável.
+  //
+  // Guarda o código, não o id: o link circula em WhatsApp e não pode expor
+  // identificador interno. Ver generateReferralCode() em lib/founders.ts.
+  //
+  // ⚠️ Rastreio apenas. Recompensa por indicação é benefício financeiro e segue
+  // bloqueada pelo D4 — o programa de comissão vive em model Referral, sobre User.
+  referralCode   String? @unique @map("referral_code")    @db.VarChar(16)
+  referredByCode String?         @map("referred_by_code") @db.VarChar(16)
+
   // LGPD — consentimento explícito (LGPD Art. 7 + ANPD)
   marketingConsentAt DateTime
   consentVersion     String   @default("v1.0")
@@ -1085,6 +1098,8 @@ model FounderLead {
   @@index([state, cityNorm])
   // Drill-down de bairro — só consultado com UF + cidade já filtrados.
   @@index([state, cityNorm, neighborhoodNorm])
+  // "quantos leads este código trouxe" — ranking de quem mais indicou.
+  @@index([referredByCode])
   @@map("founder_leads")
 }
 
