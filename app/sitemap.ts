@@ -14,6 +14,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   if (PRELAUNCH_ENABLED) {
     return [
       { url: BASE, lastModified: new Date(), changeFrequency: "daily", priority: 1.0 },
+      // Índice das cidades — é o destino natural de "veja se a sua cidade está
+      // na lista" em post orgânico, e o hub que liga as 14 landings entre si.
+      { url: `${BASE}/pilotos`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
       ...PILOT_CITIES.map((c) => ({
         url:             `${BASE}/pilotos/${c.slug}`,
         lastModified:    new Date(),
