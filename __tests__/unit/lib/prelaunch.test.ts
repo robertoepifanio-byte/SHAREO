@@ -65,7 +65,6 @@ describe("isPrelaunchAllowed", () => {
       "/itens",
       "/itens/abc123",
       "/itens/novo",
-      "/dashboard",
       "/perfil",
       "/reservas",
       "/mensagens",
@@ -83,6 +82,17 @@ describe("isPrelaunchAllowed", () => {
     ])("%s", (path) => {
       expect(isPrelaunchAllowed(path)).toBe(false)
     })
+  })
+
+  it("libera /dashboard para não prender o usuário fora do login", () => {
+    // Regressão do beco sem saída de 07/08. O middleware manda para /dashboard
+    // quem tenta /admin sem ser ADMIN e quem abre /login já logado; com
+    // /dashboard bloqueado, as duas rotas caíam na landing e não havia como
+    // chegar ao formulário de login para trocar de conta.
+    //
+    // /dashboard exige sessão por conta própria, então liberá-lo no gate não
+    // expõe nada — o que ele deixa de fazer é aprisionar.
+    expect(isPrelaunchAllowed("/dashboard")).toBe(true)
   })
 
   it("bloqueia /cadastro — signup público fica fechado na campanha", () => {
