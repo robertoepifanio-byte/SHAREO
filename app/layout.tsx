@@ -6,6 +6,7 @@ import { BottomNav } from "@/components/layout/BottomNav"
 import { AppFooter } from "@/components/layout/AppFooter"
 import { ServiceWorkerRegister } from "@/components/layout/ServiceWorkerRegister"
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics"
+import { MetaPixel } from "@/components/analytics/MetaPixel"
 import { Providers } from "@/components/layout/Providers"
 import { PreLaunchFooter } from "@/components/layout/PreLaunchFooter"
 import { jsonLdScript } from "@/lib/jsonLd"
@@ -121,6 +122,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <ServiceWorkerRegister />
           {/* P3-82: GA4 — carregado apenas quando NEXT_PUBLIC_GA_MEASUREMENT_ID definido */}
           <GoogleAnalytics nonce={nonce} />
+          {/* Meta Pixel — inerte sem NEXT_PUBLIC_META_PIXEL_ID.
+              ⚠️ Ligar exige parecer jurídico antes: compartilha dados com terceiro
+              para uso publicitário dele. Ver components/analytics/MetaPixel.tsx. */}
+          <MetaPixel nonce={nonce} />
         </Providers>
     </body>
     </html>

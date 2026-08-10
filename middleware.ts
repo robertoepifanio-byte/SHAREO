@@ -40,11 +40,15 @@ function buildCsp(nonce: string): string {
     // Dev: unsafe-inline + unsafe-eval para Next.js Fast Refresh e Mapbox WASM
     return [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob:",
+      // connect.facebook.net: Meta Pixel. Fica nos DOIS blocos de CSP para dev e
+      // produção não divergirem — bloqueio de pixel é falha silenciosa, e
+      // descobri-la só em produção é o pior lugar possível. Sem
+      // NEXT_PUBLIC_META_PIXEL_ID nada é carregado (ver components/analytics/MetaPixel.tsx).
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' blob: https://connect.facebook.net",
       "worker-src blob: 'self'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: *.supabase.co *.mapbox.com",
-      "connect-src 'self' ws: wss: *.supabase.co api.mapbox.com events.mapbox.com *.tiles.mapbox.com https://viacep.com.br",
+      "img-src 'self' data: blob: *.supabase.co *.mapbox.com https://www.facebook.com",
+      "connect-src 'self' ws: wss: *.supabase.co api.mapbox.com events.mapbox.com *.tiles.mapbox.com https://viacep.com.br https://www.facebook.com",
       "font-src 'self' data:",
       "frame-src 'none'",
       // SEC-BL4: frame-ancestors espelha X-Frame-Options: SAMEORIGIN (next.config.ts).
@@ -55,7 +59,10 @@ function buildCsp(nonce: string): string {
   return [
     "default-src 'self'",
     // nonce cobre scripts inline do Next.js, JSON-LD e GA4; wasm-unsafe-eval é exigido pelo Mapbox GL
-    `script-src 'self' 'nonce-${nonce}' 'wasm-unsafe-eval' blob: https://www.googletagmanager.com`,
+    // connect.facebook.net: Meta Pixel, inerte enquanto NEXT_PUBLIC_META_PIXEL_ID
+    // não existir. Liberado aqui porque bloqueio de pixel falha em SILÊNCIO: a
+    // campanha rodaria cega sem nada aparecer quebrado na tela.
+    `script-src 'self' 'nonce-${nonce}' 'wasm-unsafe-eval' blob: https://www.googletagmanager.com https://connect.facebook.net`,
     "worker-src blob: 'self'",
     // unsafe-inline para styles permanece por dependência de duas bibliotecas:
     //  • Tailwind CSS (JIT) injeta <style> inline no documento em runtime.
@@ -65,8 +72,8 @@ function buildCsp(nonce: string): string {
     // em build-time e incluí-los explicitamente aqui. Rastreado como item de
     // hardening pós-MVP (follow-up CSP style-src sem unsafe-inline).
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: *.supabase.co *.mapbox.com https://www.google-analytics.com",
-    "connect-src 'self' wss://*.supabase.co api.mapbox.com events.mapbox.com *.tiles.mapbox.com *.sentry.io https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://viacep.com.br",
+    "img-src 'self' data: blob: *.supabase.co *.mapbox.com https://www.google-analytics.com https://www.facebook.com",
+    "connect-src 'self' wss://*.supabase.co api.mapbox.com events.mapbox.com *.tiles.mapbox.com *.sentry.io https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://viacep.com.br https://www.facebook.com",
     "font-src 'self' data:",
     "frame-src 'none'",
     // SEC-BL4: frame-ancestors espelha X-Frame-Options: SAMEORIGIN (next.config.ts).
