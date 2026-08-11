@@ -20,13 +20,14 @@ import {
   StyleSheet,
   Platform,
   Linking,
+  useWindowDimensions,
 } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
 import { useQuery } from "@tanstack/react-query"
 import Svg, { Path, Circle, Polygon } from "react-native-svg"
 import { apiFetch, API_URL, isPrelaunchError } from "@/lib/api"
 import { useTheme } from "@/lib/theme"
-import { CategoryChip } from "@/components/ui/CategoryChip"
+import { CategoryChip, categoryChipHeight } from "@/components/ui/CategoryChip"
 import { ItemCard, ItemCardSkeleton, type ItemCardItem } from "@/components/items/ItemCard"
 import { RentBanner } from "@/components/items/RentBanner"
 import {
@@ -53,6 +54,12 @@ interface ApiResponse { data: Item[]; meta: { total: number } }
 interface CatResponse  { data: Category[] }
 
 // ── Ordenação — transcrita verbatim de _SortSelect.tsx linhas 5-11 ───────────
+// paddingVertical total (topo + base) da fileira de chips. Constante para a
+// altura da fileira e o estilo do padding não descolarem — foi justamente o
+// descolamento entre a altura da ScrollView e o tamanho do chip que fez o
+// rótulo das categorias ser cortado três vezes (09/07, 16/07, 10/08).
+const CHIPS_ROW_PAD = 20
+
 const SORT_OPTIONS = [
   { value: "recent",     label: "Mais próximos" },
   { value: "price_asc",  label: "Menor preço"   },
@@ -76,6 +83,13 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
 // ── Tela ──────────────────────────────────────────────────────────────────────
 export default function ExplorarScreen() {
   const { tokens } = useTheme()
+  // fontScale do sistema: a altura da fileira de categorias é derivada dele
+  // (ver categoryChipHeight). useWindowDimensions em vez de PixelRatio para a
+  // fileira reagir se o usuário mudar o tamanho da fonte com o app aberto.
+  const { fontScale } = useWindowDimensions()
+  // +CHIPS_ROW_PAD: paddingVertical de chipsRow (10 × 2). Sem margem extra: a
+  // altura acompanha o conteúdo, então folga arbitrária só esconderia erro.
+  const chipsRowHeight = categoryChipHeight(fontScale) + CHIPS_ROW_PAD
   const params = useLocalSearchParams<Record<string, string>>()
 
   // ── Estado de busca por texto (pré-existente) ─────────────────────────────
@@ -184,9 +198,23 @@ export default function ExplorarScreen() {
   // ── Render helpers ────────────────────────────────────────────────────────
   const sortLabel = SORT_OPTIONS.find((o) => o.value === sortValue)?.label ?? "Mais próximos"
 
-  return (
-    <View style={[s.screen, { backgroundColor: tokens.bg }]}>
-
+  // ── Cabeçalho rolável da página ────────────────────────────────────────────
+  // Correção 2026-08-10: busca, RentBanner e chips de categoria ficavam FIXOS
+  // acima do FlatList, e só o grid rolava. Dois problemas:
+  //
+  //   1. Divergia do site. Em app/itens/page.tsx o único `sticky` é `lg:`
+  //      (sidebar de desktop); em 375px tudo rola junto. A regra é transcrever.
+  //   2. Causava o corte relatado pelo testador (10/08): o bloco fixo consome a
+  //      altura da viewport e, com o RentBanner crescendo sob fonte grande, a
+  //      fileira de categorias (altura rígida) era espremida e os ícones
+  //      apareciam pela metade, sem rótulo.
+  //
+  // O fix de 16/07 (e6d4569) tratou o sintoma trocando ScrollView por View no
+  // banner; a causa — empilhar conteúdo de altura variável num topo fixo —
+  // continuava. Aqui os três blocos passam a ser ListHeaderComponent, então a
+  // página inteira rola e nada disputa altura com nada.
+  const pageHeader = (
+    <>
       {/* ── Busca (pré-existente) ── */}
       <View style={[s.searchWrap, { backgroundColor: tokens.surface, borderBottomColor: tokens.border }]}>
         <View style={[s.searchBar, { backgroundColor: tokens.bg, borderColor: tokens.border }]}>
@@ -236,13 +264,13 @@ export default function ExplorarScreen() {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={s.chipsRow}
-        style={[s.chipsScroll, { backgroundColor: tokens.surface, borderBottomColor: tokens.border }]}
+        style={[s.chipsScroll, { height: chipsRowHeight, backgroundColor: tokens.surface, borderBottomColor: tokens.border }]}
         accessibilityLabel="Filtrar por categoria"
         accessibilityRole="menu"
       >
         {categories.length === 0
           ? [0, 1, 2, 3].map((i) => (
-              <View key={i} style={[s.chipSkeleton, { backgroundColor: tokens.border }]} />
+              <View key={i} style={[s.chipSkeleton, { height: categoryChipHeight(fontScale), backgroundColor: tokens.border }]} />
             ))
           : (
             <>
@@ -268,6 +296,11 @@ export default function ExplorarScreen() {
           )
         }
       </ScrollView>
+    </>
+  )
+
+  return (
+    <View style={[s.screen, { backgroundColor: tokens.bg }]}>
 
       {/* ── Conteúdo com scroll ── */}
       <FlatList
@@ -281,6 +314,8 @@ export default function ExplorarScreen() {
         }
         ListHeaderComponent={
           <>
+            {pageHeader}
+
             {/* ── Botão "Filtros" ── _FilterTrigger.tsx, posição: após chips, antes do grid */}
             <FilterTriggerButton
               hasFilters={hasFilters}
@@ -482,9 +517,9 @@ const s = StyleSheet.create({
     color:      "#FFFFFF",
   },
   chipsScroll: {
-    // Altura explícita: a ScrollView horizontal não cresce sozinha com o conteúdo
-    // do chip (ícone 80 + rótulo 2 linhas) → sem isso o rótulo era cortado no Android.
-    height:            150,
+    // A altura vem de chipsRowHeight (inline) — a ScrollView horizontal não
+    // cresce sozinha com o conteúdo no Android, então precisa ser explícita,
+    // mas calculada a partir do chip e do fontScale, nunca fixa em pixel.
     borderBottomWidth: 1,
     borderBottomColor: "#E2E8F0",
   },
@@ -492,13 +527,11 @@ const s = StyleSheet.create({
     flexDirection:    "row",
     gap:              8,
     paddingHorizontal: 16,
-    paddingVertical:   10,
+    paddingVertical:   CHIPS_ROW_PAD / 2,
   },
-  // Casa com o card vertical do CategoryChip (ícone 64 + rótulo 2 linhas)
-  // pra não saltar de tamanho quando o loading termina.
+  // Mesma altura do chip real, pra não saltar de tamanho quando o loading termina.
   chipSkeleton: {
     width:        96,
-    height:       116,
     borderRadius: 10,
   },
   // Linha count + sort — "mb-4 flex items-center justify-between gap-3" (page.tsx:398)
