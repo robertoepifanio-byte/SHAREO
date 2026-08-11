@@ -23,13 +23,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { Image } from "expo-image"
 import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { apiFetch, API_URL } from "@/lib/api"
+import { apiFetch, API_URL, hasErrorCode } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
 import { fmtCurrency, calcBookingTotal } from "@/lib/pricing"
 import { useTheme } from "@/lib/theme"
 import { Stars } from "@/components/ui/Stars"
 import { ItemCard, type ItemCardItem } from "@/components/items/ItemCard"
 import { useRentalCart, type RentalCartItem } from "@/lib/rentalCart"
+import { ResendVerificationLink } from "@/components/ui/ResendVerificationLink"
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 interface ItemDetail {
@@ -483,6 +484,7 @@ export default function ItemDetailScreen() {
   const [note, setNote]           = useState("")
   const [coupon, setCoupon]       = useState("")
   const [bookingError, setBookingError] = useState("")
+  const [needsVerify,  setNeedsVerify]  = useState(false)
   const [pending, setPending]     = useState(false)
   const [success, setSuccess]     = useState(false)
 
@@ -622,6 +624,7 @@ export default function ItemDetailScreen() {
     }
     if (!isReady || !item) return
     setBookingError("")
+    setNeedsVerify(false)
     setPending(true)
     try {
       const res = await apiFetch<{ data: { id: string } }>("/api/bookings", {
@@ -639,6 +642,9 @@ export default function ItemDetailScreen() {
       router.push(`/reservas/${res.data.id}` as never)
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Erro ao solicitar reserva."
+      // E-mail não verificado é o único erro com ação possível aqui — o reenvio
+      // vive escondido em Perfil → Segurança e o usuário ficava sem saída.
+      if (hasErrorCode(err, "EMAIL_NOT_VERIFIED")) setNeedsVerify(true)
       setBookingError(msg)
     } finally {
       setPending(false)
@@ -1188,6 +1194,7 @@ export default function ItemDetailScreen() {
             {bookingError ? (
               <View style={[s.errorBox, { backgroundColor: themeMode === "dark" ? "#2A0A0A" : "#FEF2F2" }]} accessibilityRole="alert">
                 <Text style={[s.errorText, { color: tokens.error }]}>{bookingError}</Text>
+                {needsVerify ? <ResendVerificationLink /> : null}
               </View>
             ) : null}
 
