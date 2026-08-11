@@ -185,29 +185,5 @@ Multiplicadores configuráveis pelo SuperAdmin em `/admin/financeiro` (chaves `p
 
 ## Template de Importação PJ (Google Sheets)
 
-ID do template: `1NEd7Dn-zASPcNwuwMWHTErJWSVgKl3ByinRWfGIjcQI`
-URL de cópia para usuários: `https://docs.google.com/spreadsheets/d/{ID}/copy`
+Procedimento de atualização do template → skill `shareo-template-importacao`.
 
-**Para atualizar o template original** (requer acesso de edição ao Google Sheets — não há credenciais de API no projeto, editar manualmente):
-
-1. **Linhas de exemplo** — 2 linhas já inseridas (Furadeira/Ferramentas + Projetor/Eletrônicos)
-2. **Dropdown `categoria`** (C2:C1000) → Dados → Validação → Lista:
-   `Ferramentas,Eletrônicos,Construção,Esporte/Lazer,Festas,Eletrodomésticos`
-3. **Dropdown `condicao`** (G2:G1000) → Dados → Validação → Lista:
-   `NOVO,EXCELENTE,BOM,REGULAR`
-4. **Moeda R$** (D2:F1000) → Formatar → Número → Personalizado: `R$ #.##0,00`
-
-O template CSV local está em `public/template-importacao.csv` (6 linhas de exemplo, sem dropdowns).
-Parser valida categoria case-insensitive e condição após `.toUpperCase()`.
-
-## Subagentes (`.claude/Agents/`)
-
-`arquiteto-shareo`, `fullstack-dev-shareo`, `designer-shareo`, `devops-shareo`, `qa-shareo`, `seguranca-shareo`, `product-owner-shareo`, `gestor-projeto-shareo`, `seo-shareo`
-
-## Estado atual (12/06/2026)
-
-Commit `0fc0480`. Staging validado (smokes #1–#32 passando). Aguardando **D4** (jurídico) para go-live produção.
-
-Scripts temporários deletados ✅ (2026-06-12). Hardcoded P0 movidos para PlatformConfig ✅.
-
-Próximos passos: aguardar D4 → criar Supabase production → tag `web-v1.12.0` (convenção de release por plataforma — `web-v*` produção web, `mobile-v*` build EAS; ver ADR-027).
