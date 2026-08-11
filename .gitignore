@@ -99,3 +99,10 @@ scripts/daily-sim-logs/
 # ou vivem no Drive; nao versionar (repo incha e binario nao faz diff)
 docs/**/*.pdf
 docs/**/*.docx
+
+# Copias locais de builds do app (EAS) — APK de ~200 MB por build. Guardadas aqui
+# porque o artefato do EAS expira e ja foi apagado por engano (10/08), mas nao
+# versionadas: o binario e derivado do commit e nao faz diff.
+builds/
+*.apk
+*.aab
