@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { isPrelaunchOn, PRELAUNCH_SKIP } from './_support'
 import * as path from 'path'
 import * as fs from 'fs'
 
@@ -34,6 +35,9 @@ test.describe('Plano E2E Homepage — ShareO', () => {
   test.setTimeout(120_000)
 
   test('Estrutura · CTAs · Busca · Seções · Chips', async ({ page }) => {
+    // Com o gate ligado a home é a landing de captação, não o marketplace.
+    test.skip(await isPrelaunchOn(page.request, BASE_URL), PRELAUNCH_SKIP)
+
     const results: StepResult[] = []
     let abortError: Error | undefined
 

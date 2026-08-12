@@ -14,7 +14,7 @@
 import fs from 'fs'
 import path from 'path'
 import { test, expect } from '@playwright/test'
-import { apiWithRetry } from './_support'
+import { apiWithRetry, isPrelaunchOn, PRELAUNCH_SKIP } from './_support'
 import { SESSION_PATHS } from './fixtures/test-credentials'
 
 // ---------------------------------------------------------------------------
@@ -76,6 +76,9 @@ let loggedOut = false
 // ---------------------------------------------------------------------------
 
 test('Plano E2E Autenticação — Registro · Login · Logout · Recuperação de senha', async ({ page }) => {
+  // O registro público está fechado pelo gate (/cadastro fora da allowlist),
+  // então o plano inteiro depende de uma rota indisponível na campanha.
+  test.skip(await isPrelaunchOn(page.request), PRELAUNCH_SKIP)
   test.setTimeout(120_000)
 
   const startTime = Date.now()

@@ -15,7 +15,7 @@
 import fs from 'fs'
 import path from 'path'
 import { test, expect } from '@playwright/test'
-import { apiWithRetry } from './_support'
+import { apiWithRetry, isPrelaunchOn, PRELAUNCH_SKIP } from './_support'
 
 const BASE_URL    = process.env.STAGING_URL ?? 'https://shareo-rouge.vercel.app'
 const REPORT_PATH = path.resolve('e2e-integration-report.json')
@@ -74,6 +74,8 @@ test.describe('Plano E2E Integração — ShareO', () => {
   test.setTimeout(120_000)
 
   test('Compartilhamento · APIs · Consistência', async ({ page }) => {
+    test.skip(await isPrelaunchOn(page.request, BASE_URL), PRELAUNCH_SKIP)
+
     const results: StepResult[] = []
     let abortError: Error | undefined
     let stepFindings: string | undefined

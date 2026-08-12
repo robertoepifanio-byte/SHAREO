@@ -52,7 +52,16 @@ export function PreLaunchFooter() {
           </nav>
         </div>
 
-        <p className="mt-6 border-t border-white/20 pt-5 text-center text-xs text-white/80">
+        {/*
+          text-white (opaco), não text-white/80: sobre o bg-brand (#007B3C) o
+          branco a 80% compõe 4,03:1 — abaixo do mínimo 4,5:1 do WCAG AA para
+          texto pequeno (12px). Opaco dá 5,39:1. Era a única violação de
+          contraste da landing, e aparecia 6× nos relatórios do axe (3 páginas
+          auditadas × 2 temas) por ser o rodapé compartilhado.
+
+          A 90% daria 4,68:1, que passa raspando — não vale a margem.
+        */}
+        <p className="mt-6 border-t border-white/20 pt-5 text-center text-xs text-white">
           © {year} ShareO · Marketplace de aluguel entre pessoas
         </p>
       </div>

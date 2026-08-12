@@ -21,7 +21,7 @@
 import fs from 'fs'
 import path from 'path'
 import { test, expect } from '@playwright/test'
-import { apiWithRetry } from './_support'
+import { apiWithRetry, isPrelaunchOn, PRELAUNCH_SKIP } from './_support'
 import { SESSION_PATHS } from './fixtures/test-credentials'
 
 // ---------------------------------------------------------------------------
@@ -84,6 +84,7 @@ let createdItemId: string | null = null
 // ---------------------------------------------------------------------------
 
 test('Plano E2E Compartilhamento — Login · Criar · Link · Externo · Permissões · Excluir · Logout', async ({ page }) => {
+  test.skip(await isPrelaunchOn(page.request, BASE_URL), PRELAUNCH_SKIP)
   test.setTimeout(180_000) // contextos externos adicionam latência
 
   const startTime = Date.now()
