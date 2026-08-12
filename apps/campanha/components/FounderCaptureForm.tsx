@@ -175,7 +175,17 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
         }),
       })
 
-      if (res.status === 409) { setState("error-duplicate"); return }
+      // 409 = e-mail já cadastrado. A API devolve a posição na fila dentro do
+      // erro; aproveitamos para dizer QUAL é, em vez de um "você já está na
+      // lista" genérico que o usuário confunde com confirmação de novo cadastro.
+      if (res.status === 409) {
+        const dup = await res.json().catch(() => null) as
+          { error?: { data?: { queuePosition?: number } } } | null
+        // 0 = posição desconhecida (corpo inesperado); a UI omite o número.
+        setPosition(dup?.error?.data?.queuePosition ?? 0)
+        setState("error-duplicate")
+        return
+      }
       if (!res.ok)            { setState("error-network");   return }
 
       const json = await res.json() as { data: { queuePosition: number; referralCode: string | null } }
@@ -259,10 +269,25 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
   }
 
   if (state === "error-duplicate") {
+    /*
+      Este bloco é AVISO, não confirmação — e a diferença precisa ser visível.
+
+      Antes ele usava as mesmas cores de sucesso e dizia só "Você já está na
+      lista!". Quem reenviava lia como "cadastrado com sucesso" e concluía que
+      tinha criado um segundo registro (relatado pelo fundador em 12/08). Nada é
+      criado: o e-mail é UNIQUE e a API recusa com 409 antes de escrever.
+    */
     return (
       <div className="mx-auto max-w-[400px]">
-        <div role="alert" className="rounded-lg border border-accent/30 bg-accent/10 px-4 py-3 text-center text-sm text-success">
-          Você já está na lista! Será um dos primeiros a saber quando abrirmos.
+        <div
+          role="alert"
+          className="rounded-lg border border-border bg-white/10 px-4 py-3 text-center text-sm text-white"
+        >
+          <strong className="font-semibold">Este e-mail já estava na lista.</strong>
+          <br />
+          {position > 0
+            ? `Você é o Nº ${position} da fila — não criamos um cadastro novo.`
+            : "Não criamos um cadastro novo. Você será avisado quando abrirmos."}
         </div>
       </div>
     )
