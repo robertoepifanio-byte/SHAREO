@@ -74,7 +74,7 @@ test.describe('Plano E2E Integração — ShareO', () => {
   test.setTimeout(120_000)
 
   test('Compartilhamento · APIs · Consistência', async ({ page }) => {
-    test.skip(await isPrelaunchOn(page.request), PRELAUNCH_SKIP)
+    test.skip(await isPrelaunchOn(page.request, BASE_URL), PRELAUNCH_SKIP)
 
     const results: StepResult[] = []
     let abortError: Error | undefined

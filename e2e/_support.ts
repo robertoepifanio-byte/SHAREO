@@ -40,20 +40,33 @@ export async function apiWithRetry(
  * gate é inlinado no bundle em tempo de build, então só o ambiente sabe a
  * verdade — um `process.env` no CI mentiria sobre o que foi de fato deployado.
  */
-let prelaunchCache: boolean | undefined
+const prelaunchCache = new Map<string, boolean>()
 
-export async function isPrelaunchOn(request: APIRequestContext): Promise<boolean> {
-  if (prelaunchCache !== undefined) return prelaunchCache
+/**
+ * ⚠️ `baseUrl` NÃO é opcional por capricho. Vários planos definem o próprio
+ * `const BASE_URL = process.env.STAGING_URL ?? 'https://shareo-rouge...'` e
+ * falam com o staging mesmo quando o Playwright aponta para localhost. Medir o
+ * `/api/health` relativo (localhost) enquanto o teste chama o staging faz a
+ * guarda ler o gate do ambiente ERRADO: mediria "desligado", o teste rodaria e
+ * tomaria 503 do staging. Foi exatamente o que aconteceu na primeira versão
+ * desta guarda. Regra: passe o MESMO BASE_URL que o spec usa nas requisições.
+ */
+export async function isPrelaunchOn(request: APIRequestContext, baseUrl = ''): Promise<boolean> {
+  const chave = baseUrl || '(relativo)'
+  const cache = prelaunchCache.get(chave)
+  if (cache !== undefined) return cache
+  let valor = false
   try {
-    const res  = await request.get('/api/health')
+    const res  = await request.get(`${baseUrl}/api/health`, { failOnStatusCode: false })
     const json = await res.json()
-    prelaunchCache = json?.flags?.prelaunch === true
+    valor = json?.flags?.prelaunch === true
   } catch {
     // Health fora do ar não é motivo para pular teste — se o ambiente está
     // quebrado, a suíte DEVE falhar e mostrar isso.
-    prelaunchCache = false
+    valor = false
   }
-  return prelaunchCache
+  prelaunchCache.set(chave, valor)
+  return valor
 }
 
 /** Motivo padronizado, para o relatório dizer por que o plano não rodou. */

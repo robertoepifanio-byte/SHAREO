@@ -84,7 +84,7 @@ let createdItemId: string | null = null
 // ---------------------------------------------------------------------------
 
 test('Plano E2E Compartilhamento — Login · Criar · Link · Externo · Permissões · Excluir · Logout', async ({ page }) => {
-  test.skip(await isPrelaunchOn(page.request), PRELAUNCH_SKIP)
+  test.skip(await isPrelaunchOn(page.request, BASE_URL), PRELAUNCH_SKIP)
   test.setTimeout(180_000) // contextos externos adicionam latência
 
   const startTime = Date.now()

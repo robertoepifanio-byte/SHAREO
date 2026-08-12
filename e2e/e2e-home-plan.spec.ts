@@ -36,7 +36,7 @@ test.describe('Plano E2E Homepage — ShareO', () => {
 
   test('Estrutura · CTAs · Busca · Seções · Chips', async ({ page }) => {
     // Com o gate ligado a home é a landing de captação, não o marketplace.
-    test.skip(await isPrelaunchOn(page.request), PRELAUNCH_SKIP)
+    test.skip(await isPrelaunchOn(page.request, BASE_URL), PRELAUNCH_SKIP)
 
     const results: StepResult[] = []
     let abortError: Error | undefined
