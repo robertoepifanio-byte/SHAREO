@@ -17,7 +17,7 @@
 import fs from 'fs'
 import path from 'path'
 import { test, expect } from '@playwright/test'
-import { apiWithRetry } from './_support'
+import { apiWithRetry, isPrelaunchOn, PRELAUNCH_SKIP } from './_support'
 import { SESSION_PATHS } from './fixtures/test-credentials'
 
 // ---------------------------------------------------------------------------
@@ -194,6 +194,7 @@ function pushPlanResult(
 
 test.describe.serial('Plano 1 — Autenticação', () => {
   test('autenticação: registro · login · logout · recuperação de senha', async ({ page }) => {
+    test.skip(await isPrelaunchOn(page.request), PRELAUNCH_SKIP)
     test.setTimeout(120_000)
 
     const ts      = Date.now()
@@ -260,6 +261,7 @@ test.describe.serial('Plano 2 — Compartilhamento', () => {
   })
 
   test('compartilhamento: login · criar · link · externo · permissões · excluir · logout', async ({ page }) => {
+    test.skip(await isPrelaunchOn(page.request), PRELAUNCH_SKIP)
     test.setTimeout(180_000)
 
     const ts      = Date.now()
@@ -368,6 +370,7 @@ test.describe.serial('Plano 3 — Administração', () => {
   })
 
   test('administração: login · perfil · bloqueio admin · logout', async ({ page }) => {
+    test.skip(await isPrelaunchOn(page.request), PRELAUNCH_SKIP)
     test.setTimeout(120_000)
 
     const ts      = Date.now()
@@ -434,6 +437,7 @@ test.describe.serial('Plano 4 — Geral', () => {
   })
 
   test('geral: login · criar · editar · excluir · logout', async ({ page }) => {
+    test.skip(await isPrelaunchOn(page.request), PRELAUNCH_SKIP)
     test.setTimeout(120_000)
 
     const ts      = Date.now()

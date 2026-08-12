@@ -15,7 +15,7 @@
 import fs from 'fs'
 import path from 'path'
 import { test, expect } from '@playwright/test'
-import { apiWithRetry } from './_support'
+import { apiWithRetry, isPrelaunchOn, PRELAUNCH_SKIP } from './_support'
 import { SESSION_PATHS } from './fixtures/test-credentials'
 
 // ---------------------------------------------------------------------------
@@ -80,6 +80,7 @@ let createdItemId: string | null = null
 // ---------------------------------------------------------------------------
 
 test('Plano E2E Completo — Registro · Login · CRUD item · Logout', async ({ page }) => {
+  test.skip(await isPrelaunchOn(page.request), PRELAUNCH_SKIP)
   test.setTimeout(120_000)
 
   const startTime  = Date.now()
