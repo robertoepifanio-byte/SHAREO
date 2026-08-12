@@ -8,6 +8,7 @@ import { sendFounderWelcomeEmail } from "@/lib/email"
 import { MARKETING_CONSENT_VERSION } from "@/lib/legal-config"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { normalizePlace } from "@/lib/geo/normalize-place"
+import { comCors, respostaPreflight } from "@/lib/cors-campanha"
 
 const SOURCE_VALUES = ["ORGANIC", "VIP_LANDING", "REFERRAL", "GOOGLE_ADS", "META_ADS"] as const
 type SourceValue = (typeof SOURCE_VALUES)[number]
@@ -46,7 +47,24 @@ const Schema = z.object({
   referredByCode:   z.string().regex(/^[23456789A-HJ-NP-Z]{8}$/).optional(),
 })
 
+/**
+ * A landing da campanha vive em outro domínio (apps/campanha) e posta aqui
+ * direto do navegador — de propósito, para que `consentIp` e a chave de rate
+ * limit venham do IP REAL do visitante. Ver lib/cors-campanha.ts.
+ */
+export async function OPTIONS(req: NextRequest) {
+  return respostaPreflight(req.headers.get("origin"))
+}
+
 export async function POST(req: NextRequest) {
+  // Envolve todos os retornos de uma vez — são cinco caminhos (rate limit,
+  // validação, duplicado, sucesso, erro interno) e o navegador precisa dos
+  // cabeçalhos de CORS em TODOS, inclusive nos de erro: sem eles o fetch cai no
+  // catch com "erro de conexão" e o visitante nunca vê o motivo real.
+  return comCors(await handlePost(req), req.headers.get("origin"))
+}
+
+async function handlePost(req: NextRequest) {
   try {
     // SEC-ALTO-05: rota pública — rate limit por IP (anti-spam de leads + custo Resend)
     const rlIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
