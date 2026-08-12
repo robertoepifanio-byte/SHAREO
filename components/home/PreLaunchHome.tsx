@@ -1,5 +1,6 @@
 import { PreLaunchHeader } from "@/components/layout/PreLaunchHeader"
 import { CampaignBanner } from "@/components/home/CampaignBanner"
+import { ProgramBanner } from "@/components/home/ProgramBanner"
 import { ListaVIP } from "@/components/home/ListaVIP"
 
 /**
@@ -13,6 +14,39 @@ import { ListaVIP } from "@/components/home/ListaVIP"
  * já aprovada: selo de pré-lançamento, headline, os 4 benefícios, formulário e
  * prova social), promovida a `h1` por ser o título da página agora.
  */
+
+/*
+ * Alt das artes de programa.
+ *
+ * Todo o texto vive dentro da imagem, então o alt é o único acesso de quem usa
+ * leitor de tela — é longo de propósito e transcreve a arte, não a resume. As
+ * duas orientações de cada programa trazem a mesma mensagem, então um alt serve
+ * para o par.
+ */
+const ALT_FUNDADORES =
+  "Programa Fundadores ShareO. Você faz parte do começo de algo grande e por " +
+  "isso recebe benefícios exclusivos para sempre. Pioneiro: seja um dos " +
+  "primeiros a acreditar no poder do compartilhamento na sua região. Taxa " +
+  "reduzida: taxa promocional permanente para Fundadores em todas as suas " +
+  "locações. Destaque exclusivo: seu perfil e anúncios ganham mais " +
+  "visibilidade na plataforma. O que é o programa Fundadores: é o programa " +
+  "exclusivo para os 1.000 primeiros usuários que se cadastrarem na " +
+  "plataforma ShareO antes do lançamento oficial, com benefícios especiais e " +
+  "condições exclusivas e permanentes. Apenas 1.000 vagas disponíveis. " +
+  "Seja um Fundador ShareO: convide, transforme, ganhe todos os dias. " +
+  "Entrar na lista de pré-lançamento."
+
+const ALT_EMBAIXADORES =
+  "Programa Indique um Amigo e seja um Embaixador ShareO. Convide amigos, " +
+  "ajude a transformar vidas e ganhe com isso. Você ganhará comissão sobre a " +
+  "comissão recebida das locações do seu indicado sempre que ele fizer " +
+  "negócios na plataforma; as comissões são calculadas sobre o valor de " +
+  "comissão que a plataforma recebe em cada operação. São três categorias de " +
+  "embaixador: Bronze, de 1 a 10 indicados, ganha 2% da comissão em cada " +
+  "operação do seu indicado; Prata, de 11 a 50 indicados, ganha 3%; e Ouro, " +
+  "acima de 50 indicados, ganha 5%. Fácil de indicar, ganhos recorrentes, sem " +
+  "limite de indicações e transforme comunidades. " +
+  "Entrar na lista de pré-lançamento."
 
 const passos = [
   {
@@ -85,6 +119,33 @@ export function PreLaunchHome() {
               ))}
             </ol>
           </div>
+        </section>
+
+        {/*
+          Artes dos dois programas. Vêm DEPOIS de "Como vai funcionar" de
+          propósito: são o incentivo para entrar na lista, e só fazem sentido
+          para quem já entendeu o que é o ShareO. Fundadores primeiro porque é
+          o topo do funil — o convite de embaixador pressupõe conta na
+          plataforma, que na campanha ainda não existe.
+        */}
+        <section aria-labelledby="prelaunch-programas" className="bg-background">
+          <h2 id="prelaunch-programas" className="sr-only">
+            Programas Fundadores e Embaixadores
+          </h2>
+
+          <ProgramBanner
+            slug="fundadores"
+            larguraHorizontal={1536}
+            aspecto="aspect-[1024/1536] md:aspect-[1536/1024]"
+            alt={ALT_FUNDADORES}
+          />
+
+          <ProgramBanner
+            slug="embaixadores"
+            larguraHorizontal={1492}
+            aspecto="aspect-[1024/1536] md:aspect-[1492/1054]"
+            alt={ALT_EMBAIXADORES}
+          />
         </section>
       </main>
     </>

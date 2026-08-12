@@ -162,10 +162,13 @@ export default async function AdminEmbaixadoresPage({
       {isSuperAdmin && (
         <div className="rounded-xl border border-border bg-surface p-5">
           <h2 className="mb-4 font-semibold text-foreground">Configurações do programa</h2>
+          {/* Defaults espelham getTierCommissionRateBp() — que é quem de fato
+              calcula. Ver o aviso em lib/ambassador.ts: estas chaves de
+              PlatformConfig não são lidas por nenhum cálculo. */}
           <AmbassadorConfigForm
-            bronzeRate={Number(configMap["ambassadorBronzeRate"] ?? "300")}
-            silverRate={Number(configMap["ambassadorSilverRate"] ?? "500")}
-            goldRate={Number(configMap["ambassadorGoldRate"] ?? "700")}
+            bronzeRate={Number(configMap["ambassadorBronzeRate"] ?? "200")}
+            silverRate={Number(configMap["ambassadorSilverRate"] ?? "300")}
+            goldRate={Number(configMap["ambassadorGoldRate"] ?? "500")}
             payoutEnabled={payoutEnabled}
           />
         </div>

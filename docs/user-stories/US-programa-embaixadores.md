@@ -98,7 +98,7 @@ Quando o status da reserva muda para COMPLETED e o payout do proprietário
   é processado com sucesso
 Então o sistema calcula minha comissão:
   comissao = platformFeeAmount × (percentual_do_tier / 100)
-  comissao = R$30,00 × 3% = R$0,90
+  comissao = R$30,00 × 2% = R$0,60
 E um registro é criado em ReferralCredit com:
   amountCents = 90
   reason = "Comissão Bronze — locação #[bookingId] por [nome do indicado]"
@@ -126,7 +126,7 @@ Então vejo as seguintes informacoes:
   - Saldo de comissões acumuladas em reais (ex.: "R$ 4,20 acumulados")
   - Histórico de comissões: data, nome do indicado (anonimizado se necessário), valor
   - Barra de progresso para o próximo tier
-    ex.: "Voce esta no Bronze. Faltam 7 indicados ativos para o Prata (5%)."
+    ex.: "Voce esta no Bronze. Faltam 7 indicados ativos para o Prata (3%)."
   - Status de liberação: banner amarelo exibindo
     "Pagamentos em analise juridica. Seus creditos estao seguros e serao
      liberados apos a conclusao da validacao legal."
@@ -149,8 +149,8 @@ Dado que tenho 10 indicados ativos (tier Bronze) e um novo indicado conclui
 Quando o sistema atualiza o contador de indicados ativos para 11
 Então meu tier muda automaticamente de Bronze para Prata
 E recebo uma notificação:
-  "Voce subiu para o tier Prata! Sua comissao agora e de 5% da taxa ShareO."
-E as proximas comissoes sao calculadas com o percentual Prata (5%)
+  "Voce subiu para o tier Prata! Sua comissao agora e de 3% da taxa ShareO."
+E as proximas comissoes sao calculadas com o percentual Prata (3%)
 E o tier anterior Bronze nao se aplica retroativamente a creditos já gerados
 
 Dado que um indicado que contribuia para meu tier Prata nao conclui
@@ -242,9 +242,9 @@ model User {
 }
 
 enum AmbassadorTier {
-  BRONZE  // 1–10 indicados ativos → 3% da taxa ShareO
-  SILVER  // 11–50 indicados ativos → 5% da taxa ShareO
-  GOLD    // 51+ indicados ativos → 7% da taxa ShareO
+  BRONZE  // 1–10 indicados ativos → 2% da taxa ShareO
+  SILVER  // 11–50 indicados ativos → 3% da taxa ShareO
+  GOLD    // 51+ indicados ativos → 5% da taxa ShareO
 }
 ```
 
@@ -255,7 +255,7 @@ model ReferralCredit {
   // Campos novos:
   bookingId       String?   // FK opcional — rastreabilidade da locação que gerou o crédito
   ambassadorTier  String?   // snapshot do tier no momento da geração (Bronze/Prata/Ouro)
-  commissionRate  Int?      // basis points do percentual aplicado (300 = 3%, 500 = 5%, 700 = 7%)
+  commissionRate  Int?      // basis points do percentual aplicado (200 = 2%, 300 = 3%, 500 = 5%)
   isBlocked       Boolean   @default(true) // true = aguarda D4; false = disponível para resgate
 }
 ```
@@ -268,7 +268,7 @@ model ReferralCredit {
 // Nunca hardcode a taxa — sempre via getPlatformFeeRate()
 const feeRate = await getPlatformFeeRate()                    // ex.: 1500 bps = 15%
 const platformFee = Math.round(totalPrice * feeRate / 10000) // ex.: R$30,00
-const commissionRate = getTierCommissionRate(ambassadorTier)  // 300 | 500 | 700 bps
+const commissionRate = getTierCommissionRate(ambassadorTier)  // 200 | 300 | 500 bps
 const commission = Math.round(platformFee * commissionRate / 10000) // ex.: R$0,90
 ```
 
@@ -331,9 +331,9 @@ Dado que acesso /admin/embaixadores na aba "Configuracoes"
 Quando visualizo os tiers cadastrados
 Então vejo uma tabela editável com:
   Tier     | Indicados ativos (min) | Indicados ativos (max) | % da taxa ShareO
-  Bronze   | 1                      | 10                     | 3%
-  Prata    | 11                     | 50                     | 5%
-  Ouro     | 51                     | ilimitado              | 7%
+  Bronze   | 1                      | 10                     | 2%
+  Prata    | 11                     | 50                     | 3%
+  Ouro     | 51                     | ilimitado              | 5%
 E cada linha tem um campo numérico editável para o percentual
 E ao salvar, os novos percentuais são gravados em PlatformConfig com as chaves:
   "ambassadorBronzeRate", "ambassadorSilverRate", "ambassadorGoldRate"
@@ -414,9 +414,14 @@ E o arquivo é gerado de forma síncrona se o período <= 90 dias
 **Rota:** `/admin/embaixadores` — protegida por `requireAdminRole(["ADMIN_SUPERADMIN", "ADMIN_FINANCEIRO"])`
 
 **PlatformConfig — chaves novas para o painel admin:**
-- `ambassadorBronzeRate`: basis points (default 300 = 3%)
-- `ambassadorSilverRate`: basis points (default 500 = 5%)
-- `ambassadorGoldRate`: basis points (default 700 = 7%)
+- `ambassadorBronzeRate`: basis points (default 200 = 2%)
+- `ambassadorSilverRate`: basis points (default 300 = 3%)
+- `ambassadorGoldRate`: basis points (default 500 = 5%)
+
+> ⚠️ **Estas três chaves não são lidas por nenhum cálculo** (verificado em
+> 12/08/2026). O valor efetivo vem de `getTierCommissionRateBp()` em
+> `lib/ambassador.ts`. Editar pelo painel admin não altera comissão alguma —
+> defeito conhecido, ainda não corrigido.
 - `ambassadorTierBronzeMin` / `ambassadorTierBronzeMax`: limites de indicados ativos por tier
 - `ambassadorPayoutEnabled`: "false" | "true"
 

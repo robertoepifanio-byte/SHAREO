@@ -4,7 +4,7 @@
 // Testes da tela nativa do Programa Embaixadores.
 // Verifica rótulos verbatim e fluxos principais:
 //   - Estado de loading
-//   - Tier badges (Bronze 3% / Prata 5% / Ouro 7%) — verbatim de TIER_RATES
+//   - Tier badges (Bronze 2% / Prata 3% / Ouro 5%) — verbatim de TIER_RATES
 //   - Banner pré-lançamento — verbatim de _AmbassadorSection.tsx linha 124
 //   - Bloco de consentimento LGPD (quando !hasConsented)
 //   - Métricas (Indicados / Ativos / Comissão acumulada) — pós-consentimento
@@ -199,12 +199,12 @@ describe("EmbaixadorScreen — rótulos verbatim e fluxos principais", () => {
     expect(screen.getByText("Ouro")).toBeTruthy()
   })
 
-  it("exibe as 3 taxas verbatim: · 3%, · 5%, · 7%", () => {
+  it("exibe as 3 taxas verbatim: · 2%, · 3%, · 5%", () => {
     setupQuery(makeData(true, { totalReferrals: 0 }))
     render(<EmbaixadorScreen />)
+    expect(screen.getByText("· 2%")).toBeTruthy()
     expect(screen.getByText("· 3%")).toBeTruthy()
     expect(screen.getByText("· 5%")).toBeTruthy()
-    expect(screen.getByText("· 7%")).toBeTruthy()
   })
 
   // ── Banner pré-lançamento — verbatim de _AmbassadorSection.tsx linha 124 ──
@@ -325,16 +325,16 @@ describe("EmbaixadorScreen — rótulos verbatim e fluxos principais", () => {
 
   // ── Barra de progresso de tier ────────────────────────────────────────────
 
-  it("exibe 'Próximo: Bronze (3%)' quando activeReferrals=0 e hasConsented=true", () => {
+  it("exibe 'Próximo: Bronze (2%)' quando activeReferrals=0 e hasConsented=true", () => {
     setupQuery(makeData(true, { activeReferrals: 0, totalReferrals: 1 }))
     render(<EmbaixadorScreen />)
-    expect(screen.getByText(/Próximo: Bronze \(3%\)/)).toBeTruthy()
+    expect(screen.getByText(/Próximo: Bronze \(2%\)/)).toBeTruthy()
   })
 
-  it("exibe 'Próximo: Prata (5%)' quando activeReferrals=5 (tier Bronze)", () => {
+  it("exibe 'Próximo: Prata (3%)' quando activeReferrals=5 (tier Bronze)", () => {
     setupQuery(makeData(true, { activeReferrals: 5, totalReferrals: 5 }))
     render(<EmbaixadorScreen />)
-    expect(screen.getByText(/Próximo: Prata \(5%\)/)).toBeTruthy()
+    expect(screen.getByText(/Próximo: Prata \(3%\)/)).toBeTruthy()
   })
 
   it("exibe label 'Nível atual:' quando há progresso de tier", () => {

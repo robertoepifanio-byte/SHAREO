@@ -151,9 +151,9 @@ enum TransactionType {
 // ─── Programa de Embaixadores (ADR-022) ──────────────────────────
 
 enum AmbassadorTier {
-  BRONZE // 1–10 indicados ativos — 3% da taxa
-  SILVER // 11–50 indicados ativos — 5% da taxa
-  GOLD // 51+ indicados ativos — 7% da taxa
+  BRONZE // 1–10 indicados ativos — 2% da taxa
+  SILVER // 11–50 indicados ativos — 3% da taxa
+  GOLD // 51+ indicados ativos — 5% da taxa
 }
 
 enum ReferralStatus {
@@ -1214,7 +1214,7 @@ model AmbassadorCommission {
 
   // Snapshot — imutável após criação
   tierSnapshot      AmbassadorTier // tier vigente no momento da geração
-  tierPercentBp     Int // 300 | 500 | 700
+  tierPercentBp     Int // 200 | 300 | 500 (histórico pode conter 300 | 500 | 700 — snapshot imutável, taxa mudou em 12/08/2026)
   platformFeeAmount Int // centavos — capturado do Booking
   amountCents       Int // platformFeeAmount * tierPercentBp / 10000
 

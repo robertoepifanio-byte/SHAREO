@@ -16,6 +16,12 @@
       "autoPort": true
     },
     {
+      "name": "shareo-prelaunch-dev",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "cd /d C:\\Users\\Roberto\\Documents\\2026\\ShareO && set NEXT_PUBLIC_PRELAUNCH_MODE=true&& node_modules\\.bin\\next dev -p 3006"],
+      "port": 3006
+    },
+    {
       "name": "dark-mode-prototype",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["serve", "docs", "-l", "3001", "--no-clipboard"],

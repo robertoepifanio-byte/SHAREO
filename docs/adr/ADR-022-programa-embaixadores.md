@@ -29,9 +29,25 @@ Adicionalmente, o time precisa de uma alavanca de crescimento orgânico antes do
 
 ## Decisão
 
+> **Emenda de 2026-08-12 — percentuais revisados para 2% / 3% / 5%.**
+>
+> Os tiers passaram de BRONZE 3% · SILVER 5% · GOLD 7% para **BRONZE 2% ·
+> SILVER 3% · GOLD 5%**, alinhando o programa à arte da campanha nacional de
+> pré-lançamento (decisão do fundador). As **faixas de indicados não mudaram**
+> (1–10, 11–50, 51+), nem a base de cálculo (taxa da plataforma, nunca o GMV).
+>
+> A mudança **não é retroativa**: `AmbassadorCommission.tierPercentBp` é snapshot
+> imutável gravado na transação, então comissões anteriores mantêm 300/500/700 bp
+> — reescrevê-las corromperia a trilha de auditoria.
+>
+> As seções abaixo foram atualizadas onde são **normativas** (tabela de tiers,
+> exemplo numérico, impacto na receita). A seção de alternativas descartadas
+> preserva os números originais de propósito: é o raciocínio de junho, não a
+> regra vigente.
+
 ### Resumo executivo
 
-Substituir o cashback fixo R$15 por um **programa de embaixadores em três tiers** (BRONZE 3%, SILVER 5%, GOLD 7%), onde o percentual incide sobre a **taxa da plataforma** (não sobre o GMV) de cada reserva paga em que o locatário foi um indicado ativo do embaixador. A comissão é **registrada** no MVP mas **não paga**; payout depende de D4 jurídico + Stripe Connect (ou trilho PIX alternativo).
+Substituir o cashback fixo R$15 por um **programa de embaixadores em três tiers** (BRONZE 2%, SILVER 3%, GOLD 5%), onde o percentual incide sobre a **taxa da plataforma** (não sobre o GMV) de cada reserva paga em que o locatário foi um indicado ativo do embaixador. A comissão é **registrada** no MVP mas **não paga**; payout depende de D4 jurídico + Stripe Connect (ou trilho PIX alternativo).
 
 ### 1. Modelo de domínio — quatro entidades
 
@@ -55,18 +71,18 @@ comissão_centavos = round(platformFeeAmount × tierPercentBp / 10000)
 
 | Tier | Faixa de indicados ATIVOS (últimos 12 meses) | Percentual da taxa | Bp |
 |---|---|---|---|
-| BRONZE | 1–10 | 3% | 300 |
-| SILVER | 11–50 | 5% | 500 |
-| GOLD | 51+ | 7% | 700 |
+| BRONZE | 1–10 | 2% | 200 |
+| SILVER | 11–50 | 3% | 300 |
+| GOLD | 51+ | 5% | 500 |
 
 **“Indicado ativo”** é um `Referral` com `status = ACTIVE` (primeira reserva paga concluída) e `activatedAt >= now() - interval '12 months'`.
 
 **Tier é calculado no momento da geração da comissão** (não em cron). Função `getAmbassadorTier(activeReferrals)` é pura e testável; usada também no painel `/perfil/embaixador`.
 
 Exemplo: reserva R$200, taxa 15% → `platformFeeAmount = 3000` (centavos)
-- BRONZE → 90 centavos (R$0,90)
-- SILVER → 150 centavos (R$1,50)
-- GOLD → 210 centavos (R$2,10)
+- BRONZE → 60 centavos (R$0,60)
+- SILVER → 90 centavos (R$0,90)
+- GOLD → 150 centavos (R$1,50)
 
 ### 3. Estados do `Referral`
 
@@ -167,7 +183,7 @@ Ex.: 1% sobre o `totalPrice`.
 
 ### Positivas
 
-- **Custo escalonável** — comissão sai da taxa da plataforma e nunca ultrapassa 7%; receita líquida fica entre 13.95% (Bronze) e 13.95% (Gold) de 15% bruto, previsível.
+- **Custo escalonável** — comissão sai da taxa da plataforma e nunca ultrapassa 5%; receita líquida fica entre **14,70% (Bronze) e 14,25% (Gold)** de 15% bruto, previsível. (O texto original dizia "13.95% … 13.95%" para os dois tiers, o que estava errado já com os percentuais antigos — os valores corretos naquela regra eram 14,55% e 13,95%.)
 - **Incentivo composto** — Gold (51+ indicados ativos) tem 7x mais ganho marginal que o atual R$15 fixo após o 51º indicado.
 - **Ledger limpo** — `PlatformTransaction` com type `AMBASSADOR_COMMISSION` documenta cada centavo do P&L.
 - **Defensabilidade legal** — modelo de afiliados com taxa variável é mercado e amplamente regulado; mais defensável que “crédito promocional” na visão do CDC.
@@ -176,7 +192,7 @@ Ex.: 1% sobre o `totalPrice`.
 ### Negativas / trade-offs
 
 - **Complexidade conceitual maior** — usuário precisa entender tier, janela de 12 meses, “indicado ativo”. Mitigação: painel `/perfil/embaixador` com explicações inline e simulador visual.
-- **Comissões pequenas no Bronze** (R$0,90 a R$2,50 por locação típica) podem desmotivar até o usuário chegar a Silver. Mitigação: copy honesto + simulador “quanto eu ganharia se subisse para Silver?”.
+- **Comissões pequenas no Bronze** (R$0,60 a R$1,70 por locação típica) podem desmotivar até o usuário chegar a Silver. Mitigação: copy honesto + simulador “quanto eu ganharia se subisse para Silver?”.
 - **Dependência de D4 para payout** — no MVP usuário **vê** o que acumulou mas **não recebe**. Mitigação: badge claro no painel — *“Comissão em validação jurídica — payout previsto após GO-LIVE de produção.”*
 - **Migração de dados existentes** — usuários que receberam R$15 e ainda têm `ReferralCredit` não usado precisam de comunicação explícita. Mitigação: script + e-mail; produção bloqueada até confirmação de comunicação enviada.
 - **Cron extra** (`/api/cron/ambassador-decay`) — uma nova superfície de manutenção; usa o mesmo padrão de `CRON_SECRET` (ADR-013).

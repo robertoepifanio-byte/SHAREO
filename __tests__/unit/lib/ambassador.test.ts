@@ -136,7 +136,8 @@ describe("getTierLabel", () => {
 })
 
 describe("getTierCommissionRateBp", () => {
-  it("GOLD → 700 bps (7%)",   () => expect(getTierCommissionRateBp("GOLD")).toBe(700))
-  it("SILVER → 500 bps (5%)", () => expect(getTierCommissionRateBp("SILVER")).toBe(500))
-  it("BRONZE → 300 bps (3%)", () => expect(getTierCommissionRateBp("BRONZE")).toBe(300))
+  // Taxas alinhadas à arte da campanha em 12/08/2026 (antes: 3/5/7).
+  it("GOLD → 500 bps (5%)",   () => expect(getTierCommissionRateBp("GOLD")).toBe(500))
+  it("SILVER → 300 bps (3%)", () => expect(getTierCommissionRateBp("SILVER")).toBe(300))
+  it("BRONZE → 200 bps (2%)", () => expect(getTierCommissionRateBp("BRONZE")).toBe(200))
 })

@@ -22,6 +22,15 @@ describe("isPrelaunchAllowed", () => {
     it.each([
       "/campanha/banner-h-1280.webp",
       "/campanha/banner-v-1024.webp",
+      // Banners dos programas — as 8 variantes servidas por ProgramBanner.
+      "/campanha/fundadores-h-1280.webp",
+      "/campanha/fundadores-h-1536.webp",
+      "/campanha/fundadores-v-768.webp",
+      "/campanha/fundadores-v-1024.webp",
+      "/campanha/embaixadores-h-1280.webp",
+      "/campanha/embaixadores-h-1492.webp",
+      "/campanha/embaixadores-v-768.webp",
+      "/campanha/embaixadores-v-1024.webp",
       "/logos/shareo-logo.png",
       "/icons/ferramentas.png",
     ])("%s", (path) => {
