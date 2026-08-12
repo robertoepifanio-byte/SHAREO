@@ -2,7 +2,7 @@
  * lib/ambassador.ts
  * Programa de Embaixadores ShareO — ADR-022
  *
- * Tier: BRONZE (1–10) → 3% | SILVER (11–50) → 5% | GOLD (51+) → 7%
+ * Tier: BRONZE (1–10) → 2% | SILVER (11–50) → 3% | GOLD (51+) → 5%
  * Percentual incide sobre platformFeeAmount (nunca sobre o GMV).
  * Payout bloqueado até D4 jurídico (flag "ambassadorPayoutEnabled" = "false" em PlatformConfig).
  */
@@ -24,11 +24,24 @@ export function getAmbassadorTier(
   return null
 }
 
-/** Basis points por tier: 300 = 3%, 500 = 5%, 700 = 7% */
+/**
+ * Basis points por tier: 200 = 2%, 300 = 3%, 500 = 5%.
+ *
+ * Valores alinhados à arte da campanha em 2026-08-12 (antes: 3/5/7). A mudança
+ * NÃO é retroativa por design: `AmbassadorCommission.tierPercentBp` é snapshot
+ * imutável, gravado uma vez no momento da transação e nunca recalculado — logo
+ * só comissões novas usam a taxa nova, e nenhum backfill é devido.
+ *
+ * ⚠️ Esta função é a ÚNICA fonte usada no cálculo. As chaves
+ * `ambassadorBronzeRate/SilverRate/GoldRate` que /admin/embaixadores grava em
+ * PlatformConfig NÃO são lidas por ninguém (defeito pré-existente): salvar pelo
+ * painel não muda comissão alguma. Os defaults do painel foram alinhados a estes
+ * números para não exibir uma taxa que a plataforma não pratica.
+ */
 export function getTierCommissionRateBp(tier: AmbassadorTier): number {
-  if (tier === "GOLD")   return 700
-  if (tier === "SILVER") return 500
-  return 300 // BRONZE
+  if (tier === "GOLD")   return 500
+  if (tier === "SILVER") return 300
+  return 200 // BRONZE
 }
 
 export function getTierLabel(tier: AmbassadorTier | null): string {

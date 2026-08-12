@@ -84,7 +84,7 @@ export default async function BemVindoPage() {
             <h2 className="font-semibold text-primary">Convide amigos e seja embaixador</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Gere seu link de indicação e compartilhe com amigos. A cada locação de quem você
-              indicar, você acumula uma parte da nossa taxa (Bronze 3% · Prata 5% · Ouro 7%).
+              indicar, você acumula uma parte da nossa taxa (Bronze 2% · Prata 3% · Ouro 5%).
               Os créditos ficam guardados e são liberados após a validação jurídica.
             </p>
             <Link

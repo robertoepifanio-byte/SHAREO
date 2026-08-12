@@ -62,7 +62,7 @@ interface AmbassadorData {
 // Replicadas aqui para evitar import de lib do site no bundle mobile.
 
 // TIER_RATES verbatim de _AmbassadorSection.tsx linha 24
-const TIER_RATES: Record<AmbassadorTier, number> = { BRONZE: 3, SILVER: 5, GOLD: 7 }
+const TIER_RATES: Record<AmbassadorTier, number> = { BRONZE: 2, SILVER: 3, GOLD: 5 }
 const TIER_ORDER: AmbassadorTier[] = ["BRONZE", "SILVER", "GOLD"]
 
 // getTierLabel — verbatim de lib/ambassador.ts linha 34

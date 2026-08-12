@@ -3,7 +3,7 @@
 import { useState } from "react"
 
 interface Props {
-  bronzeRate:    number  // basis points (300 = 3%)
+  bronzeRate:    number  // basis points (200 = 2%)
   silverRate:    number
   goldRate:      number
   payoutEnabled: boolean

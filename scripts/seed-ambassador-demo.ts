@@ -272,7 +272,7 @@ async function main() {
 
   // ── 6. Bookings + Commissions (só para ACTIVE) ───────────────────────────────
 
-  const tierBp: Record<string, number> = { BRONZE: 300, SILVER: 500, GOLD: 700 }
+  const tierBp: Record<string, number> = { BRONZE: 200, SILVER: 300, GOLD: 500 }
   const PLATFORM_FEE_RATE = 1500 // 15% em basis points
 
   // Comissões por indicado ACTIVE: 1–3 bookings cada

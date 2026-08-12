@@ -67,3 +67,26 @@ const v = await gerar("banner-campanha-vertical.png",   [768, 1024],  "banner-v"
 console.log(`\n🎉 Banners gerados. Total: ${h + v} KB`)
 console.log(`   Um visitante baixa só uma orientação (<picture>):`)
 console.log(`   desktop ≈ ${h} KB no pior caso · mobile ≈ ${v} KB no pior caso`)
+
+/*
+ * ── Banners dos programas (Fundadores e Embaixadores) ────────────────────────
+ *
+ * Mesma técnica do banner principal, com duas diferenças que importam:
+ *
+ * 1. As horizontais NÃO são cinematográficas como a do hero (2,50:1) — são quase
+ *    quadradas (1,50:1 e 1,42:1). Servidas a 100vw num desktop de 1920px elas
+ *    passariam de 1.300px de altura, tomando a tela inteira. Por isso o
+ *    componente as limita a um contêiner central em vez de sangrar a página.
+ *
+ * 2. A largura nativa das horizontais (1536 e 1492) é MENOR que a do hero, então
+ *    a maior largura gerada é a própria nativa — `withoutEnlargement` impede
+ *    upscale, e pedir 1983 só produziria um arquivo igual com nome mentiroso.
+ */
+const fh = await gerar("programa-fundadores-horizontal.png",   [1280, 1536], "fundadores-h")
+const fv = await gerar("programa-fundadores-vertical.png",     [768, 1024],  "fundadores-v")
+const eh = await gerar("programa-embaixadores-horizontal.png", [1280, 1492], "embaixadores-h")
+const ev = await gerar("programa-embaixadores-vertical.png",   [768, 1024],  "embaixadores-v")
+
+console.log(`\n🎉 Banners de programa gerados. Total: ${fh + fv + eh + ev} KB`)
+console.log(`   Fundadores:   desktop ≈ ${fh} KB · mobile ≈ ${fv} KB`)
+console.log(`   Embaixadores: desktop ≈ ${eh} KB · mobile ≈ ${ev} KB`)
