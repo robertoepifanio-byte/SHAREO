@@ -188,6 +188,14 @@ jobs:
     name: E2E Tests (Playwright)
     runs-on: ubuntu-latest
     needs: [build]
+    # `if` obrigatório: o GitHub propaga "skipped" pela cadeia de needs. Quando o
+    # PR não toca apps/mobile, `test-mobile` é pulado; `build` sobrevive por causa
+    # do `!cancelled()` dele, mas o e2e (sem `if`) HERDAVA o pulo e não rodava.
+    #
+    # Efeito observado até 12/08/2026: todo PR só de web passava sem E2E nenhum,
+    # em silêncio — o check aparecia como "skipping" e o PR ficava verde. PRs que
+    # mexiam no mobile rodavam E2E; os de web, não. Exatamente o inverso do útil.
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL_STAGING }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY_STAGING }}
