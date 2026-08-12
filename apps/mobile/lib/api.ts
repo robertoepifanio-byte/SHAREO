@@ -39,7 +39,18 @@ export class ApiError extends Error {
  * cruzado uma fronteira de serialização (React Query, boundary) no caminho.
  */
 export function isPrelaunchError(e: unknown): boolean {
-  return typeof e === "object" && e !== null && (e as { code?: unknown }).code === "PRELAUNCH"
+  return hasErrorCode(e, "PRELAUNCH")
+}
+
+/** `true` quando o erro carrega `error.code` igual ao esperado. Ver nota acima
+ *  sobre por que a checagem é por propriedade, e não por `instanceof`. */
+export function hasErrorCode(e: unknown, code: string): boolean {
+  return typeof e === "object" && e !== null && (e as { code?: unknown }).code === code
+}
+
+/** `true` quando a API respondeu com o status HTTP informado. */
+export function hasErrorStatus(e: unknown, status: number): boolean {
+  return typeof e === "object" && e !== null && (e as { status?: unknown }).status === status
 }
 
 interface Tokens {

@@ -4,7 +4,14 @@ import { useState } from "react"
 
 type State = "idle" | "loading" | "success" | "error"
 
-export function ResendVerificationButton() {
+/**
+ * `standalone` — botão amarelo isolado (Perfil → Segurança).
+ * `inline`     — link dentro de um box de erro já existente (ex.: _PriceCalc),
+ *                seguindo o mesmo padrão visual do CTA "Completar cadastro →".
+ */
+type Variant = "standalone" | "inline"
+
+export function ResendVerificationButton({ variant = "standalone" }: { variant?: Variant }) {
   const [state, setState] = useState<State>("idle")
   const [errorMsg, setErrorMsg] = useState("")
 
@@ -42,7 +49,7 @@ export function ResendVerificationButton() {
 
   if (state === "success") {
     return (
-      <p className="text-sm text-green-700">
+      <p className={variant === "inline" ? "mt-1.5 text-xs font-semibold text-success" : "text-sm text-green-700"}>
         E-mail de verificação enviado. Verifique sua caixa de entrada e a pasta de spam.
       </p>
     )
@@ -50,7 +57,20 @@ export function ResendVerificationButton() {
 
   if (state === "error") {
     return (
-      <p className="text-sm text-destructive">{errorMsg}</p>
+      <p className={variant === "inline" ? "mt-1.5 text-xs" : "text-sm text-destructive"}>{errorMsg}</p>
+    )
+  }
+
+  if (variant === "inline") {
+    return (
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={state === "loading"}
+        className="mt-1.5 inline-block font-semibold text-brand hover:underline disabled:opacity-60"
+      >
+        {state === "loading" ? "Enviando…" : "Reenviar e-mail de verificação →"}
+      </button>
     )
   }
 

@@ -7,6 +7,7 @@ import { calcBookingTotal } from "@/lib/pricing"
 import { trackEvent } from "@/components/analytics/GoogleAnalytics"
 import { ContractAcceptanceCheckbox } from "@/components/booking/ContractAcceptanceCheckbox"
 import { RENTAL_CONTRACT_VERSION } from "@/lib/rental-contract"
+import { ResendVerificationButton } from "@/components/shared/ResendVerificationButton"
 
 interface Props {
   pricePerDay:      number
@@ -96,6 +97,7 @@ export function PriceCalc({
   const [coupon,    setCoupon]    = useState("")
   const [error,     setError]     = useState("")
   const [needsComplete, setNeedsComplete] = useState(false)
+  const [needsVerify,   setNeedsVerify]   = useState(false)
   const [pending,   startTransition] = useTransition()
   // Aceite eletrônico do contrato — só relevante quando contractRequired=true
   const [contractAccepted, setContractAccepted] = useState(false)
@@ -151,6 +153,7 @@ export function PriceCalc({
   async function solicitar() {
     setError("")
     setNeedsComplete(false)
+    setNeedsVerify(false)
     startTransition(async () => {
       const res = await fetch("/api/bookings", {
         method:  "POST",
@@ -174,6 +177,11 @@ export function PriceCalc({
         if (json.error?.code === "REGISTRATION_INCOMPLETE") {
           setNeedsComplete(true)
           setError(json.error?.message ?? "Complete seu cadastro para alugar.")
+          return
+        }
+        if (json.error?.code === "EMAIL_NOT_VERIFIED") {
+          setNeedsVerify(true)
+          setError(json.error?.message ?? "Confirme seu e-mail antes de realizar uma reserva.")
           return
         }
         const detail = json.error?.details
@@ -448,6 +456,7 @@ export function PriceCalc({
               Completar cadastro →
             </Link>
           )}
+          {needsVerify && <ResendVerificationButton variant="inline" />}
         </div>
       )}
 
