@@ -16,6 +16,12 @@
       "autoPort": true
     },
     {
+      "name": "campanha",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "cd /d C:\\Users\\Roberto\\Documents\\2026\\ShareO\\apps\\campanha && set NEXT_PUBLIC_SHAREO_API_URL=https://shareo-rouge.vercel.app&& set NEXT_PUBLIC_NOINDEX=true&& ..\\..\\node_modules\\.bin\\next dev -p 3007"],
+      "port": 3007
+    },
+    {
       "name": "shareo-prelaunch-dev",
       "runtimeExecutable": "cmd",
       "runtimeArgs": ["/c", "cd /d C:\\Users\\Roberto\\Documents\\2026\\ShareO && set NEXT_PUBLIC_PRELAUNCH_MODE=true&& node_modules\\.bin\\next dev -p 3006"],

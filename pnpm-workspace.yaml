@@ -1,5 +1,6 @@
 packages:
   - "apps/mobile"
+  - "apps/campanha"
 
 # pnpm 11 não lê mais o campo "pnpm" do package.json — overrides moram aqui.
 overrides:
