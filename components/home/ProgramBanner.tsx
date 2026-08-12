@@ -21,6 +21,11 @@
 interface Props {
   /** Prefixo dos arquivos em public/campanha/ (ex.: "fundadores"). */
   slug: string
+  /**
+   * Âncora do banner — destino dos CTAs do hero. Fica no contêiner externo (e
+   * não no <a>) para o scroll parar acima da arte inteira, não no meio dela.
+   */
+  id: string
   /** Largura nativa da arte horizontal — é a maior variante gerada. */
   larguraHorizontal: number
   /**
@@ -40,9 +45,9 @@ interface Props {
   prioritario?: boolean
 }
 
-export function ProgramBanner({ slug, larguraHorizontal, aspecto, alt, prioritario = false }: Props) {
+export function ProgramBanner({ slug, id, larguraHorizontal, aspecto, alt, prioritario = false }: Props) {
   return (
-    <div className="bg-background px-6 pb-14">
+    <div id={id} className="scroll-mt-20 bg-background px-6 pb-14">
       {/*
         O banner inteiro é clicável porque a própria arte traz um CTA impresso
         ("CADASTRE-SE AGORA", "INDICAR AMIGOS AGORA"). Sem link, o texto prometia

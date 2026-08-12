@@ -81,10 +81,42 @@ export function CampaignBanner() {
         Âncora pura, sem JS: o destino #lista-vip é uma seção real, então o link
         funciona mesmo antes da hidratação e para quem navega por teclado.
       */}
-      <div className="bg-navy-deep px-6 pb-7 text-center">
+      {/*
+        Três destinos, uma hierarquia só: "Entrar na lista" é a conversão da
+        campanha e continua sendo o único botão preenchido. Os programas entram
+        como secundários (contorno), porque são o ARGUMENTO para entrar na lista,
+        não uma ação concorrente — dar a eles o mesmo peso visual dividiria a
+        atenção do visitante entre três botões igualmente chamativos.
+
+        `flex-wrap` + `w-full sm:w-auto`: em 375px os três empilham em largura
+        total; a partir de sm ficam lado a lado.
+
+        O botão preenchido leva `border border-transparent` só para casar altura
+        com os de contorno — sem ela fica 2px mais baixo e a fileira desalinha.
+
+        `order-first sm:order-none` no "Entrar na lista": empilhado, ele cairia
+        116px abaixo da dobra, atrás de dois secundários — justamente o problema
+        que este CTA existe para resolver. No mobile ele vem primeiro; a partir
+        de sm volta para a direita, ao lado dos programas.
+      */}
+      <div className="flex flex-wrap items-center justify-center gap-3 bg-navy-deep px-6 pb-7">
+        <a
+          href="#programa-fundadores"
+          className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border border-white/70 px-6 py-3 text-sm font-semibold uppercase tracking-[0.4px] text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-navy-deep sm:w-auto"
+        >
+          Programa Fundadores
+        </a>
+
+        <a
+          href="#programa-embaixadores"
+          className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border border-white/70 px-6 py-3 text-sm font-semibold uppercase tracking-[0.4px] text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-navy-deep sm:w-auto"
+        >
+          Indique um amigo
+        </a>
+
         <a
           href="#lista-vip"
-          className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg bg-brand px-8 py-3 text-sm font-semibold uppercase tracking-[0.4px] text-white transition-colors hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-navy-deep"
+          className="order-first inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border border-transparent bg-brand px-8 py-3 sm:order-none text-sm font-semibold uppercase tracking-[0.4px] text-white transition-colors hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-navy-deep sm:w-auto"
         >
           Entrar na lista
           <svg

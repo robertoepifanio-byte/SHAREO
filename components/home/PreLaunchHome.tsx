@@ -135,6 +135,7 @@ export function PreLaunchHome() {
 
           <ProgramBanner
             slug="fundadores"
+            id="programa-fundadores"
             larguraHorizontal={1536}
             aspecto="aspect-[1024/1536] md:aspect-[1536/1024]"
             alt={ALT_FUNDADORES}
@@ -142,6 +143,7 @@ export function PreLaunchHome() {
 
           <ProgramBanner
             slug="embaixadores"
+            id="programa-embaixadores"
             larguraHorizontal={1492}
             aspecto="aspect-[1024/1536] md:aspect-[1492/1054]"
             alt={ALT_EMBAIXADORES}
