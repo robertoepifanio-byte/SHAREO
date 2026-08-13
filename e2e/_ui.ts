@@ -27,7 +27,18 @@ export async function logout(page: Page): Promise<void> {
   await page.goto('/dashboard')
   await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 })
 
-  const sair = page.getByRole('button', { name: /sair/i })
+  /**
+   * O "Sair" do UserDropdown é `<button type="button" role="menuitem">`. Um role
+   * EXPLÍCITO substitui o implícito na árvore de acessibilidade: para o Playwright
+   * aquele elemento não é mais um `button`, é um `menuitem`. Por isso o
+   * `getByRole('button', { name: /sair/i })` que os specs usavam nunca poderia
+   * casar — e, com a falha engolida pelo veredito PARCIAL, ninguém soube.
+   *
+   * O "Sair" do MobileMenu é `<button>` puro, sem role. Daí o `.or()`: um locator
+   * que funciona nos dois headers, em vez de um por viewport.
+   */
+  const sair = page.getByRole('menuitem', { name: /sair/i })
+    .or(page.getByRole('button', { name: /sair/i }))
 
   // As mensagens custom são essenciais: os runners dos planos truncam o erro em
   // `.message.split('\n')[0]`, então sem elas o relatório mostra só
