@@ -177,15 +177,26 @@ test.describe('Plano E2E Homepage — ShareO', () => {
           ]
 
           const missing: string[] = []
-          for (const sec of sections) {
-            const el = page.locator(`#${sec.id}`)
-            const visible = await el.isVisible().catch(() => false)
-            if (!visible) missing.push(sec.label)
+
+          /**
+           * `.catch(() => false)` cru reporta "seção ausente" para QUALQUER erro do
+           * seletor. Foi assim que um id duplicado na home (o wrapper `<div>` e o
+           * `<section>` interno carregavam o mesmo id) apareceu como CasosRenda e
+           * ItensProcurados sumidos: o strict mode do Playwright reclamava de 2
+           * elementos e o catch engolia o motivo. Aqui separamos os dois casos.
+           */
+          async function checarSecao(id: string, label: string) {
+            const el = page.locator(`#${id}`)
+            const n  = await el.count()
+            if (n === 0) { missing.push(label); return }
+            if (n > 1)   { missing.push(`${label} (id #${id} duplicado: ${n} elementos)`); return }
+            if (!(await el.isVisible())) missing.push(`${label} (presente, mas não visível)`)
           }
 
+          for (const sec of sections) await checarSecao(sec.id, sec.label)
+
           // "Como funciona" — section com h2 #how-title
-          const howVisible = await page.locator('#how-title').isVisible().catch(() => false)
-          if (!howVisible) missing.push('Como funciona')
+          await checarSecao('how-title', 'Como funciona')
 
           test.info().annotations.push({
             type: 'secoes',

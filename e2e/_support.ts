@@ -1,3 +1,5 @@
+// APENAS imports de tipo: este módulo precisa carregar sob o jest, que não
+// consegue instanciar o runtime do Playwright. Helper de UI vai em `_ui.ts`.
 import type { APIResponse } from '@playwright/test'
 
 export interface PlanStepLike {

@@ -18,6 +18,7 @@ import fs from 'fs'
 import path from 'path'
 import { test, expect } from '@playwright/test'
 import { apiWithRetry, assertNoFailedSteps } from './_support'
+import { logout } from './_ui'
 import { SESSION_PATHS } from './fixtures/test-credentials'
 
 // ---------------------------------------------------------------------------
@@ -159,18 +160,6 @@ async function registerAndLogin(page: Parameters<Parameters<typeof test>[1]>[0],
   expect(compRes.status(), `Completar cadastro falhou (${compRes.status()})`).toBe(200)
 
   return userId
-}
-
-async function logout(page: Parameters<Parameters<typeof test>[1]>[0]) {
-  await page.goto('/dashboard')
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 })
-  const btn = page.getByRole('button', { name: /sair/i })
-  await expect(btn).toBeVisible({ timeout: 8_000 })
-  await Promise.all([
-    page.waitForURL((url) => !url.pathname.includes('/dashboard'), { timeout: 20_000 }),
-    btn.click(),
-  ])
-  await expect(page).not.toHaveURL(/\/dashboard/)
 }
 
 function pushPlanResult(

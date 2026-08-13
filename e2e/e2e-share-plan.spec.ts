@@ -22,6 +22,7 @@ import fs from 'fs'
 import path from 'path'
 import { test, expect } from '@playwright/test'
 import { apiWithRetry, assertNoFailedSteps } from './_support'
+import { logout } from './_ui'
 import { SESSION_PATHS } from './fixtures/test-credentials'
 
 // ---------------------------------------------------------------------------
@@ -315,19 +316,7 @@ test('Plano E2E Compartilhamento — Login · Criar · Link · Externo · Permis
     // -----------------------------------------------------------------------
     // Step 7 — Logout  [low]
     // -----------------------------------------------------------------------
-    await runStep(7, '7. Logout', 'low', async () => {
-      await page.goto('/dashboard')
-      await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 })
-
-      const logoutBtn = page.getByRole('button', { name: /sair/i })
-      await expect(logoutBtn).toBeVisible({ timeout: 8_000 })
-
-      await Promise.all([
-        page.waitForURL((url) => !url.pathname.includes('/dashboard'), { timeout: 20_000 }),
-        logoutBtn.click(),
-      ])
-      await expect(page).not.toHaveURL(/\/dashboard/)
-    })
+    await runStep(7, '7. Logout', 'low', () => logout(page))
 
   } finally {
     // -----------------------------------------------------------------------

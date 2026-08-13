@@ -16,6 +16,7 @@ import fs from 'fs'
 import path from 'path'
 import { test, expect } from '@playwright/test'
 import { apiWithRetry, assertNoFailedSteps } from './_support'
+import { logout } from './_ui'
 import { SESSION_PATHS } from './fixtures/test-credentials'
 
 // ---------------------------------------------------------------------------
@@ -170,6 +171,24 @@ test('Plano E2E Completo — Registro · Login · CRUD item · Logout', async ({
       await page.locator('input[type="password"]').fill(TEST_USER.password)
       await page.getByRole('button', { name: /entrar|login|acessar/i }).click()
       await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 })
+
+      // Cadastro progressivo: POST /api/auth/register deixa profileCompletedAt = null
+      // de propósito, e POST /api/items reforça o gate server-side com 403
+      // REGISTRATION_INCOMPLETE. Sem concluir aqui, o Step 4 falha — como vinha
+      // falhando em silêncio (step 'high' = CONTINUAR). Mesmo padrão do share-plan.
+      const compRes = await apiWithRetry(() => page.request.patch('/api/users/me/complete-registration', {
+        data: {
+          userType: 'PF',
+          cpf:      TEST_USER.cpf,
+          city:     TEST_USER.city,
+          state:    TEST_USER.state,
+          phone:    '+5584999999999',
+        },
+      }))
+      expect(
+        compRes.status(),
+        `Completar cadastro falhou (${compRes.status()}): ${await compRes.text()}`,
+      ).toBe(200)
     })
 
     // Step 4 — high (CONTINUAR se falhar)
@@ -236,19 +255,7 @@ test('Plano E2E Completo — Registro · Login · CRUD item · Logout', async ({
     })
 
     // Step 7 — low (CONTINUAR)
-    await runStep(7, '7. Logout', 'low', async () => {
-      await page.goto('/dashboard')
-      await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 })
-
-      const logoutBtn = page.getByRole('button', { name: /sair/i })
-      await expect(logoutBtn).toBeVisible({ timeout: 8_000 })
-
-      await Promise.all([
-        page.waitForURL((url) => !url.pathname.includes('/dashboard'), { timeout: 20_000 }),
-        logoutBtn.click(),
-      ])
-      await expect(page).not.toHaveURL(/\/dashboard/)
-    })
+    await runStep(7, '7. Logout', 'low', () => logout(page))
 
   } finally {
     // -----------------------------------------------------------------------

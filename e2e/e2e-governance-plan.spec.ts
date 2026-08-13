@@ -163,9 +163,30 @@ test.describe('Plano E2E Governança — ShareO', () => {
           const robotsText = await robotsResp.text()
           // robots.txt usa "User-Agent" (capital A) — verificação case-insensitive
           expect(robotsText.toLowerCase(), 'robots.txt deve ter user-agent').toContain('user-agent')
-          expect(robotsText, 'robots.txt deve desautorizar /admin/').toContain('/admin')
-          expect(robotsText, 'robots.txt deve desautorizar /api/').toContain('/api')
-          expect(robotsText.toLowerCase(), 'robots.txt deve referenciar sitemap').toContain('sitemap')
+
+          /**
+           * Ambientes com NOINDEX_ENABLED (staging) devolvem bloqueio TOTAL:
+           * `Disallow: /`, sem lista de rotas e sem sitemap. É deliberado — impede
+           * o Google de indexar o host de teste e rachar autoridade de domínio com
+           * shareo.com.br antes do go-live (app/robots.ts).
+           *
+           * O teste exigia a forma de produção e reprovava contra staging. Como o
+           * step é 'high'/CONTINUAR, a reprovação ficava invisível. Agora cada
+           * ambiente é verificado pela forma que lhe cabe — e o bloqueio total é
+           * checado de verdade, em vez de ignorado.
+           */
+          const bloqueioTotal = /^\s*disallow:\s*\/\s*$/im.test(robotsText)
+
+          if (bloqueioTotal) {
+            expect(
+              robotsText.toLowerCase(),
+              'ambiente noindex não deve expor sitemap (convite à indexação)',
+            ).not.toContain('sitemap')
+          } else {
+            expect(robotsText, 'robots.txt deve desautorizar /admin/').toContain('/admin')
+            expect(robotsText, 'robots.txt deve desautorizar /api/').toContain('/api')
+            expect(robotsText.toLowerCase(), 'robots.txt deve referenciar sitemap').toContain('sitemap')
+          }
 
           // ── sitemap.xml ───────────────────────────────────────────────────
           const sitemapResp = await page.request.get(`${BASE_URL}/sitemap.xml`, { failOnStatusCode: false })
@@ -180,7 +201,9 @@ test.describe('Plano E2E Governança — ShareO', () => {
           const urlCount = (sitemapText.match(/<url>/g) ?? []).length
           expect(urlCount, 'sitemap.xml deve ter ao menos 3 URLs').toBeGreaterThanOrEqual(3)
 
-          stepFindings = `robots.txt ✓ (Disallow: /admin, /api) | sitemap.xml ✓ (${urlCount} URLs)`
+          stepFindings = bloqueioTotal
+            ? `robots.txt ✓ (bloqueio total — ambiente noindex) | sitemap.xml ✓ (${urlCount} URLs)`
+            : `robots.txt ✓ (Disallow: /admin, /api) | sitemap.xml ✓ (${urlCount} URLs)`
 
           test.info().annotations.push({
             type: 'seo-governance',
