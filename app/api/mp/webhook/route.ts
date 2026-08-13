@@ -89,15 +89,48 @@ export async function POST(req: Request) {
   const eventId = String(payload.id ?? `${type}:${dataId}:${payload.action ?? ""}`)
   const sellerUserId = payload.user_id != null ? String(payload.user_id) : null
 
-  // Validação de assinatura (quando o secret está configurado).
+  /**
+   * Validação de assinatura — obrigatória fora de sandbox.
+   *
+   * Antes, sem `MP_WEBHOOK_SECRET` o handler PULAVA a validação e seguia, com um
+   * `console.warn` como único sinal. O desenho de dois tempos limita o estrago
+   * (não confiamos no payload: consultamos `GET /v1/payments/{id}` e só marcamos
+   * pago se o MP disser `approved`), mas isso é mitigação, não autorização —
+   * a rota seguia aceitando requisição de qualquer origem, gravando na fila de
+   * eventos e disparando consulta com o token do vendedor indicado por quem
+   * chamou.
+   *
+   * O risco não é teórico neste projeto: o painel do `shareo-prod` já ficou com
+   * ZERO environment variables e quebrou cadastro em silêncio. Se o MP for ligado
+   * em produção sem o secret, o `warn` no log não impede nada.
+   *
+   * A chave do modo é a PRÓPRIA CREDENCIAL, não `VERCEL_ENV` (que aqui é ambíguo:
+   * staging também deploya como "production" no Vercel). Token de teste do MP tem
+   * prefixo `TEST-`; qualquer outro é credencial real e exige assinatura.
+   */
   const secret = process.env.MP_WEBHOOK_SECRET
+  const tokenDeTeste = (process.env.MP_ACCESS_TOKEN ?? "").startsWith("TEST-")
+
   if (secret) {
     if (!verifySignature(req, dataId, secret)) {
       console.warn("[mp webhook] assinatura inválida")
       return NextResponse.json({ error: "invalid signature" }, { status: 401 })
     }
+  } else if (tokenDeTeste) {
+    console.warn("[mp webhook] MP_WEBHOOK_SECRET ausente — pulando validação (sandbox, token TEST-)")
   } else {
-    console.warn("[mp webhook] MP_WEBHOOK_SECRET ausente — pulando validação de assinatura (sandbox)")
+    // Credencial real sem secret: RECUSA. Falhar fechado deixa reservas sem
+    // marcar como pagas até alguém configurar — e é exatamente isso que se quer,
+    // porque aparece no painel de webhooks do MP como erro, alto e imediato, em
+    // vez de um aviso de log que ninguém lê enquanto a rota aceita tudo.
+    console.error(
+      "[mp webhook] RECUSADO: MP_ACCESS_TOKEN é credencial real e MP_WEBHOOK_SECRET não está definida. " +
+      "Configure o secret no Vercel E nos GitHub Secrets antes de processar pagamentos.",
+    )
+    return NextResponse.json(
+      { error: "webhook signature not configured" },
+      { status: 503 },
+    )
   }
 
   // Só tratamos notificações de pagamento.
