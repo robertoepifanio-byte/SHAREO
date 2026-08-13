@@ -81,19 +81,20 @@ export function UserDropdown({ name, avatarUrl, role }: Props) {
       </button>
 
       {/* Dropdown */}
-      {open && (
-        {/*
-          `overflow-y-auto` + `max-h`: sem eles o menu era `overflow-hidden` sem
-          altura máxima, então em tela baixa o último item ("Sair") ficava fora da
-          viewport E o painel não rolava — inalcançável. A lista soma ~680px
-          (cabeçalho + 4 itens de Atividade + 8 de Conta + divisor + Sair, `h-11`
-          cada) começando abaixo de um header de 64px: passa de 720px de altura.
-          Num laptop 1366×768 (~640px úteis) o usuário não conseguia sair da conta.
+      {/*
+        Menu: `overflow-y-auto` + `max-h` são obrigatórios aqui. Sem eles o painel
+        era `overflow-hidden` sem altura máxima, então em tela baixa o último item
+        ("Sair") ficava fora da viewport E o painel não rolava — inalcançável.
+        A lista soma ~680px (cabeçalho + 4 itens de Atividade + 8 de Conta +
+        divisor + Sair, `h-11` cada) começando abaixo de um header de 64px: passa
+        dos 720px. Num laptop 1366×768 (~640px úteis) o usuário não conseguia sair
+        da conta pelo avatar.
 
-          Encontrado pelo E2E, que reportava "element is outside of the viewport" —
-          o `MobileMenu` já fazia isso certo (`overflow-y-auto max-h-[calc(100dvh-4rem)]`);
-          o dropdown de desktop tinha ficado para trás.
-        */}
+        Encontrado pelo E2E, que reportava "element is outside of the viewport".
+        O `MobileMenu` já fazia certo (`overflow-y-auto max-h-[calc(100dvh-4rem)]`);
+        o dropdown de desktop tinha ficado para trás.
+      */}
+      {open && (
         <div
           role="menu"
           className="absolute right-0 top-11 z-[300] max-h-[calc(100dvh-5rem)] w-52 overflow-y-auto overscroll-contain rounded-xl border border-border bg-surface shadow-xl"
