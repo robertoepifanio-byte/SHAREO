@@ -8,7 +8,7 @@
  * Step 5 · Integridade pós-testes           — medium   / CONTINUAR
  *
  * Restrições:
- *  - Somente staging (shareo-rouge.vercel.app) — sem produção
+ *  - Somente staging (staging.shareo.com.br) — sem produção
  *  - Apenas leitura e validação — sem mutação de dados
  *  - Logs armazenados apenas localmente (e2e-governance-report.json)
  *  - Abortar se qualquer passo crítico falhar
@@ -19,7 +19,7 @@ import path from 'path'
 import { test, expect } from '@playwright/test'
 import { assertNoFailedSteps } from './_support'
 
-const BASE_URL    = process.env.STAGING_URL ?? 'https://shareo-rouge.vercel.app'
+const BASE_URL    = process.env.BASE_URL ?? process.env.STAGING_URL ?? 'http://localhost:3000'
 const REPORT_PATH = path.resolve('e2e-governance-report.json')
 
 // ---------------------------------------------------------------------------

@@ -3,7 +3,7 @@ import * as path from 'path'
 import * as fs from 'fs'
 import { assertNoFailedSteps } from './_support'
 
-const BASE_URL = process.env.STAGING_URL ?? 'https://shareo-rouge.vercel.app'
+const BASE_URL = process.env.BASE_URL ?? process.env.STAGING_URL ?? 'http://localhost:3000'
 const REPORT_PATH = path.resolve('e2e-home-report.json')
 
 interface StepResult {

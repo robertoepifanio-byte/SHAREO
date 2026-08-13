@@ -63,7 +63,7 @@ function generateValidCPF(): string {
 // Dados por run
 // ---------------------------------------------------------------------------
 const RUN_TS  = Date.now()
-const BASE_URL = process.env.STAGING_URL ?? 'https://shareo-rouge.vercel.app'
+const BASE_URL = process.env.BASE_URL ?? process.env.STAGING_URL ?? 'http://localhost:3000'
 
 const TEST_USER = {
   name:           'Share E2E Playwright',
@@ -371,7 +371,7 @@ test('Plano E2E Compartilhamento — Login · Criar · Link · Externo · Permis
 test.describe('cleanup — desativar usuário de teste (share)', () => {
   test.skip(
     !fs.existsSync(SESSION_PATHS.admin),
-    'session-admin.json não encontrado — rode: STAGING_URL=https://shareo-rouge.vercel.app pnpm tsx scripts/create-staging-fixtures.ts',
+    'session-admin.json não encontrado — rode: STAGING_URL=https://staging.shareo.com.br pnpm tsx scripts/create-staging-fixtures.ts',
   )
   test.use({ storageState: SESSION_PATHS.admin })
 
@@ -391,7 +391,7 @@ test.describe('cleanup — desativar usuário de teste (share)', () => {
         type: 'warning',
         description:
           `Sessão admin expirada (HTTP ${res.status()}). ` +
-          `Recriar com: STAGING_URL=https://shareo-rouge.vercel.app pnpm tsx scripts/create-staging-fixtures.ts\n` +
+          `Recriar com: STAGING_URL=https://staging.shareo.com.br pnpm tsx scripts/create-staging-fixtures.ts\n` +
           `userId pendente de remoção: ${createdUserId}`,
       })
       return

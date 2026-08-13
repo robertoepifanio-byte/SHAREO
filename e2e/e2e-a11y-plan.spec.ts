@@ -440,7 +440,7 @@ test('Plano E2E Acessibilidade — Contraste · Teclado · ARIA · Formulários'
         name:        'Teste E2E Shareo - Acessibilidade',
         wcagLevel:   '2.1 AA',
         environment: 'staging',
-        url:         process.env.STAGING_URL ?? 'https://shareo-rouge.vercel.app',
+        url:         process.env.BASE_URL ?? process.env.STAGING_URL ?? 'http://localhost:3000',
         runAt:       new Date().toISOString(),
         axeVersion:  '4.9.1',
         totalMs,

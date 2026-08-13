@@ -4,7 +4,7 @@
  * Fluxo: Homepage → Cadastro (API) → Login (UI) → Logout → Recuperação de senha (UI)
  *
  * Restrições:
- *  - Somente staging (shareo-rouge.vercel.app) — sem produção
+ *  - Somente staging (staging.shareo.com.br) — sem produção
  *  - Sem alterações de infra
  *  - Dados de teste isolados (emails/CPFs únicos por run)
  *  - Logs armazenados apenas localmente (e2e-auth-plan-report.json)
@@ -216,7 +216,7 @@ test('Plano E2E Autenticação — Registro · Login · Logout · Recuperação 
       meta: {
         name:        'Teste E2E Shareo - Autenticação',
         environment: 'staging',
-        url:         process.env.STAGING_URL ?? 'https://shareo-rouge.vercel.app',
+        url:         process.env.BASE_URL ?? process.env.STAGING_URL ?? 'http://localhost:3000',
         runAt:       new Date(RUN_TS).toISOString(),
         totalMs,
         verdict,
@@ -254,7 +254,7 @@ test('Plano E2E Autenticação — Registro · Login · Logout · Recuperação 
 test.describe('cleanup — desativar usuário de teste (auth)', () => {
   test.skip(
     !fs.existsSync(SESSION_PATHS.admin),
-    'session-admin.json não encontrado — rode: STAGING_URL=https://shareo-rouge.vercel.app pnpm tsx scripts/create-staging-fixtures.ts',
+    'session-admin.json não encontrado — rode: STAGING_URL=https://staging.shareo.com.br pnpm tsx scripts/create-staging-fixtures.ts',
   )
   test.use({ storageState: SESSION_PATHS.admin })
 
@@ -275,7 +275,7 @@ test.describe('cleanup — desativar usuário de teste (auth)', () => {
         type: 'warning',
         description:
           `Sessão admin expirada (HTTP ${res.status()}). ` +
-          `Recriar com: STAGING_URL=https://shareo-rouge.vercel.app pnpm tsx scripts/create-staging-fixtures.ts\n` +
+          `Recriar com: STAGING_URL=https://staging.shareo.com.br pnpm tsx scripts/create-staging-fixtures.ts\n` +
           `userId pendente de remoção: ${createdUserId}`,
       })
       return

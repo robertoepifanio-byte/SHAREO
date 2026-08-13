@@ -12,7 +12,7 @@
  * Step 5 · Busca interativa e âncoras           — medium   / CONTINUAR
  *
  * Restrições:
- *  - Somente staging (shareo-rouge.vercel.app) — sem produção
+ *  - Somente staging (staging.shareo.com.br) — sem produção
  *  - Apenas leitura — sem mutação de dados
  *  - Logs armazenados localmente (e2e-ajuda-report.json)
  *  - Abortar se qualquer passo crítico falhar
@@ -23,7 +23,7 @@ import path from 'path'
 import { test, expect } from '@playwright/test'
 import { assertNoFailedSteps } from './_support'
 
-const BASE_URL    = process.env.STAGING_URL ?? 'https://shareo-rouge.vercel.app'
+const BASE_URL    = process.env.BASE_URL ?? process.env.STAGING_URL ?? 'http://localhost:3000'
 const REPORT_PATH = path.resolve('e2e-ajuda-report.json')
 const AJUDA_URL   = `${BASE_URL}/ajuda`
 

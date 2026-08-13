@@ -61,7 +61,7 @@ let   suiteShouldAbort = false
 const suitePlanResults: PlanSummary[] = []
 const suiteCreatedUserIds: string[]   = []
 const SUITE_START = Date.now()
-const BASE_URL    = process.env.STAGING_URL ?? 'https://shareo-rouge.vercel.app'
+const BASE_URL    = process.env.BASE_URL ?? process.env.STAGING_URL ?? 'http://localhost:3000'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -553,7 +553,7 @@ test.describe('Suite — Relatório Consolidado', () => {
 test.describe('Suite Cleanup — desativar usuários', () => {
   test.skip(
     !fs.existsSync(SESSION_PATHS.admin),
-    'session-admin.json não encontrado — rode: STAGING_URL=https://shareo-rouge.vercel.app pnpm tsx scripts/create-staging-fixtures.ts',
+    'session-admin.json não encontrado — rode: STAGING_URL=https://staging.shareo.com.br pnpm tsx scripts/create-staging-fixtures.ts',
   )
   test.use({ storageState: SESSION_PATHS.admin })
 
@@ -585,7 +585,7 @@ test.describe('Suite Cleanup — desativar usuários', () => {
         `${ok} usuários desativados · ${expired} sessão expirada · ${failed} falhas\n` +
         (expired > 0
           ? `Usuários pendentes: ${results.filter((r) => r.status === 'expired-session').map((r) => r.userId).join(', ')}\n` +
-            `Recriar sessão admin: STAGING_URL=https://shareo-rouge.vercel.app pnpm tsx scripts/create-staging-fixtures.ts`
+            `Recriar sessão admin: STAGING_URL=https://staging.shareo.com.br pnpm tsx scripts/create-staging-fixtures.ts`
           : ''),
     })
 
