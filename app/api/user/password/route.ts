@@ -47,8 +47,14 @@ export async function PATCH(req: NextRequest) {
     data:  { passwordHash: newHash },
   })
 
-  // SEC-CRIT-04: invalida sessões anteriores — um token roubado deixa de valer
-  await invalidateUserSessions(userId)
+  // SEC-CRIT-04: invalida sessões anteriores — um token roubado deixa de valer.
+  //
+  // O resultado é DEVOLVIDO na resposta. Antes a falha era engolida e o usuário
+  // recebia `{ ok: true }` mesmo quando as outras sessões seguiam válidas — ou
+  // seja, a interface afirmava exatamente a garantia que não tinha acontecido.
+  // A senha em si já foi trocada e isso não se desfaz; o que muda é a UI poder
+  // dizer a verdade e orientar a repetir, em vez de dar por encerrado.
+  const sessionsRevoked = await invalidateUserSessions(userId)
 
-  return NextResponse.json({ ok: true })
+  return NextResponse.json({ ok: true, sessionsRevoked })
 }
