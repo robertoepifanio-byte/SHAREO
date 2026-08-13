@@ -76,9 +76,23 @@ export async function logout(page: Page): Promise<void> {
     sair.first(),
     'logout: botão "Sair" não apareceu depois de abrir o menu do usuário',
   ).toBeVisible({ timeout: 8_000 })
-  await Promise.all([
-    page.waitForURL((url) => !url.pathname.includes('/dashboard'), { timeout: 20_000 }),
-    sair.first().click(),
-  ])
-  await expect(page).not.toHaveURL(/\/dashboard/)
+  await sair.first().click()
+
+  /**
+   * `signOut({ callbackUrl: '/' })` do NextAuth faz round-trip (csrf + signout) e
+   * só então navega. Contra staging isso é bem mais lento que os 20s originais, e
+   * o timeout cru do waitForURL não dizia ONDE a página parou — o relatório
+   * mostrava só "Timeout 20000ms exceeded".
+   *
+   * Verificado manualmente pelo fundador em 13/08/2026: o logout funciona no
+   * staging pela UI. Ou seja, aqui é o teste que precisa ser paciente e falar,
+   * não o produto que está quebrado.
+   */
+  try {
+    await page.waitForURL((url) => !url.pathname.includes('/dashboard'), { timeout: 45_000 })
+  } catch {
+    throw new Error(
+      `logout: clique em "Sair" não deslogou em 45s — página ainda em ${page.url()}`,
+    )
+  }
 }
