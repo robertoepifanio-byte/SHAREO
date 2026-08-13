@@ -16,7 +16,6 @@
 import fs from 'fs'
 import path from 'path'
 import { test, expect } from '@playwright/test'
-import { isPrelaunchOn, PRELAUNCH_SKIP } from './_support'
 
 const BASE_URL    = process.env.STAGING_URL ?? 'https://shareo-rouge.vercel.app'
 const REPORT_PATH = path.resolve('e2e-security-report.json')
@@ -66,7 +65,6 @@ test.describe('Plano E2E Segurança — ShareO', () => {
   test.setTimeout(120_000)
 
   test('Sessão · Auth · Admin · XSS', async ({ page, context }) => {
-    test.skip(await isPrelaunchOn(page.request, BASE_URL), PRELAUNCH_SKIP)
 
     const results: StepResult[] = []
     let abortError: Error | undefined

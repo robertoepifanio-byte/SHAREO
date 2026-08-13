@@ -29,7 +29,6 @@ jest.mock("@/lib/api", () => ({
       : Promise.resolve({ data: [], meta: { total: 0 } })
   ),
   API_URL: "https://staging.shareo.com.br",
-  isPrelaunchError: () => false,
   getTokens: jest.fn().mockResolvedValue(null),
 }))
 

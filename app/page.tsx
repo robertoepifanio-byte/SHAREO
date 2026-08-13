@@ -11,8 +11,6 @@ import { CasosRenda } from "@/components/home/CasosRenda"
 import { Seguranca } from "@/components/home/Seguranca"
 import { ListaVIP } from "@/components/home/ListaVIP"
 import { HeroSearch } from "@/components/home/HeroSearch"
-import { PreLaunchHome } from "@/components/home/PreLaunchHome"
-import { PRELAUNCH_ENABLED } from "@/lib/prelaunch"
 
 export const metadata: Metadata = {
   title: "ShareO — Use Mais. Possua Menos.",
@@ -90,12 +88,6 @@ const steps = [
 ]
 
 export default async function HomePage() {
-  // Retorno antecipado ANTES de qualquer query: a home de marketplace dispara 6
-  // consultas (categorias, contagens, média de avaliação) que a landing de
-  // pré-lançamento não usa. Numa página que vai receber tráfego pago, deixá-las
-  // rodando seria custo de banco e latência puros.
-  if (PRELAUNCH_ENABLED) return <PreLaunchHome />
-
   const session = await auth().catch(() => null)
 
   const cityName: string | null = session?.user?.id
