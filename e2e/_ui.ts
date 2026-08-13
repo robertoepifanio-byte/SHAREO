@@ -29,13 +29,22 @@ export async function logout(page: Page): Promise<void> {
 
   const sair = page.getByRole('button', { name: /sair/i })
 
+  // As mensagens custom são essenciais: os runners dos planos truncam o erro em
+  // `.message.split('\n')[0]`, então sem elas o relatório mostra só
+  // "expect(locator).toBeVisible() failed" e não dá para saber QUAL locator falhou.
   if (!(await sair.first().isVisible().catch(() => false))) {
     const menu = page.getByRole('button', { name: /menu do usuário/i })
-    await expect(menu).toBeVisible({ timeout: 8_000 })
+    await expect(
+      menu,
+      'logout: avatar "Menu do usuário" não encontrado no header de /dashboard',
+    ).toBeVisible({ timeout: 8_000 })
     await menu.click()
   }
 
-  await expect(sair.first()).toBeVisible({ timeout: 8_000 })
+  await expect(
+    sair.first(),
+    'logout: botão "Sair" não apareceu depois de abrir o menu do usuário',
+  ).toBeVisible({ timeout: 8_000 })
   await Promise.all([
     page.waitForURL((url) => !url.pathname.includes('/dashboard'), { timeout: 20_000 }),
     sair.first().click(),
