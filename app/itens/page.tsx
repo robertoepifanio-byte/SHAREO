@@ -15,6 +15,7 @@ import { FilterTrigger } from "./_FilterTrigger"
 import { ActiveFilterChips } from "./_ActiveFilterChips"
 import { haversineKm } from "@/lib/haversine"
 import { getUserCoords, BRAZIL_DEFAULT } from "@/lib/userLocation"
+import { getSearchMaxDistanceKm } from "@/lib/platform-config"
 import { MapToggle } from "./_MapToggle"
 import { PullToRefresh } from "@/components/items/PullToRefresh"
 import { FloatingCTA } from "@/components/items/FloatingCTA"
@@ -120,11 +121,35 @@ export default async function ExplorarPage({ searchParams }: Props) {
     }
   }
 
+  /*
+   * Ordenação por proximidade (sort=nearest).
+   *
+   * Antes deste bloco, o rótulo "Mais próximos" apontava para `sort=recent` e
+   * ordenava por `createdAt desc` — o nome mentia. Agora ele ordena de fato pela
+   * distância até o visitante, e recorta pelo teto que o admin define em
+   * /admin/itens (default 50 km).
+   *
+   * O teto vale SÓ aqui: nas outras ordenações o catálogo inteiro continua
+   * visível, senão quem mora longe de qualquer anunciante veria vitrine vazia.
+   *
+   * Precisa de origem. Sem GPS na URL e sem localização de perfil, `nearestOrigin`
+   * fica indefinido e a página pede a localização (ver _SortSelect) em vez de
+   * fingir uma ordem que não pode calcular.
+   */
+  const wantsNearest   = sort === "nearest"
+  const nearestLat     = sp.ulat ? Number(sp.ulat) : profileCoords?.lat
+  const nearestLng     = sp.ulng ? Number(sp.ulng) : profileCoords?.lng
+  const hasNearestOrigin = wantsNearest
+    && Number.isFinite(nearestLat) && Number.isFinite(nearestLng)
+  const nearestMaxKm   = wantsNearest ? await getSearchMaxDistanceKm() : 0
+
   const useDistFilter = !!(dist && userLat !== undefined && userLng !== undefined)
   // useJsFilter calculado antes da query para controlar skip/take no Prisma.
   // Quando qualquer filtro JS está ativo, Prisma busca todos os itens para que
   // a paginação JS opere sobre o conjunto completo — evita dupla paginação.
-  const useJsFilter = useDistFilter || !!minRating
+  // A ordenação por proximidade também é JS (Haversine pós-fetch), então entra
+  // no mesmo caminho: Prisma traz o conjunto e a paginação acontece depois.
+  const useJsFilter = useDistFilter || !!minRating || hasNearestOrigin
 
   // NFR-BL1: bounding box reduz drasticamente linhas retornadas pelo banco antes do
   // Haversine em JS. A caixa retangular (lat/lng offsets) sobre-seleciona; o Haversine
@@ -205,16 +230,37 @@ export default async function ExplorarPage({ searchParams }: Props) {
     return i.reviews.reduce((s, r) => s + r.rating, 0) / i.reviews.length
   }
 
+  /** Distância até o visitante, ou null quando o item não tem coordenada usável. */
+  function distanceFrom(i: typeof rawItems[number], lat: number, lng: number) {
+    if (!i.latitude || !i.longitude || (i.latitude === 0 && i.longitude === 0)) return null
+    return haversineKm(lat, lng, i.latitude, i.longitude)
+  }
+
   function passesJsFilters(i: typeof rawItems[number]) {
     if (useDistFilter) {
-      if (!i.latitude || !i.longitude || (i.latitude === 0 && i.longitude === 0)) return false
-      if (haversineKm(userLat!, userLng!, i.latitude, i.longitude) > Number(dist)) return false
+      const d = distanceFrom(i, userLat!, userLng!)
+      if (d === null || d > Number(dist)) return false
+    }
+    // Teto da ordenação por proximidade. Item sem coordenada sai: não dá para
+    // afirmar que está perto de nada.
+    if (hasNearestOrigin) {
+      const d = distanceFrom(i, nearestLat as number, nearestLng as number)
+      if (d === null || d > nearestMaxKm) return false
     }
     if (minRating && avgRating(i) < minRating) return false
     return true
   }
 
-  const jsFiltered  = useJsFilter ? rawItems.filter(passesJsFilters) : rawItems
+  const jsFiltered = useJsFilter ? rawItems.filter(passesJsFilters) : rawItems
+
+  // Ordena do mais perto ao mais longe. Depois dos filtros e ANTES da paginação —
+  // ordenar só a página atual daria uma lista ordenada por página, não no total.
+  if (hasNearestOrigin) {
+    jsFiltered.sort((a, b) =>
+      (distanceFrom(a, nearestLat as number, nearestLng as number) ?? Infinity) -
+      (distanceFrom(b, nearestLat as number, nearestLng as number) ?? Infinity),
+    )
+  }
 
   const pagedItems   = useJsFilter ? jsFiltered.slice(skip, skip + PAGE_SIZE) : rawItems
   const filteredTotal = useJsFilter ? jsFiltered.length : total
@@ -222,10 +268,14 @@ export default async function ExplorarPage({ searchParams }: Props) {
   // Attach computed distanceKm to each item for display in ItemCard
   const items = pagedItems.map((i) => ({
     ...i,
+    // Também na ordenação por proximidade: ordenar por distância sem MOSTRAR a
+    // distância deixaria a ordem sem explicação visível no card.
     distanceKm:
       useDistFilter && i.latitude && i.longitude
         ? haversineKm(userLat!, userLng!, i.latitude, i.longitude)
-        : null,
+        : hasNearestOrigin
+          ? distanceFrom(i, nearestLat as number, nearestLng as number)
+          : null,
   }))
 
   const totalPages = Math.ceil(filteredTotal / PAGE_SIZE)
@@ -428,7 +478,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
                   <option>Mais próximos</option>
                 </select>
               }>
-                <SortSelect current={sort} />
+                <SortSelect current={sort} hasProfileLocation={!!profileCoords} />
               </Suspense>
             </div>
 
