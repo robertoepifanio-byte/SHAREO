@@ -55,14 +55,41 @@ function epochKey(userId: string) {
  * Grava o timestamp atual (s) com TTL = maxAge; tokens com `loginAt` < epoch
  * são rejeitados no middleware.
  */
-export async function invalidateUserSessions(userId: string): Promise<void> {
-  if (!upstashUrl()) return
-  try {
-    const nowSec = Math.floor(Date.now() / 1000)
-    await upstashFetch(["SETEX", epochKey(userId), String(JWT_MAX_AGE_SECONDS), String(nowSec)])
-  } catch (e) {
-    console.warn("[blocklist] invalidateUserSessions falhou:", e instanceof Error ? e.message : e)
+export async function invalidateUserSessions(userId: string): Promise<boolean> {
+  if (!upstashUrl()) {
+    console.error("[blocklist] invalidateUserSessions: Upstash não configurado — sessões anteriores NÃO foram encerradas")
+    return false
   }
+
+  const nowSec = Math.floor(Date.now() / 1000)
+
+  /**
+   * Uma retentativa, e o resultado é DEVOLVIDO ao chamador.
+   *
+   * Assimetria que justifica isto: a LEITURA (`isSessionStale`) falhar é
+   * transitório — a próxima requisição tenta de novo. A ESCRITA falhar é
+   * PERMANENTE: o epoch nunca é gravado, e nada volta a tentar. Um blip do
+   * Upstash exatamente durante a troca de senha deixa o token roubado válido
+   * pelos 30 dias do `maxAge`, enquanto o usuário acredita que encerrou as
+   * outras sessões — que é justamente a garantia pela qual ele trocou a senha.
+   *
+   * Antes isso era `console.warn` e `Promise<void>`: o chamador não tinha como
+   * saber, e o usuário recebia `{ ok: true }` de qualquer jeito.
+   */
+  for (let tentativa = 1; tentativa <= 2; tentativa++) {
+    try {
+      await upstashFetch(["SETEX", epochKey(userId), String(JWT_MAX_AGE_SECONDS), String(nowSec)])
+      return true
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      if (tentativa === 2) {
+        console.error(`[blocklist] invalidateUserSessions FALHOU após 2 tentativas (userId=${userId}): ${msg}`)
+        return false
+      }
+      console.warn(`[blocklist] invalidateUserSessions tentativa ${tentativa} falhou: ${msg}`)
+    }
+  }
+  return false
 }
 
 // Cache em memória por instância (edge isolate reaproveitado entre requests
