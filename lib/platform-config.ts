@@ -202,6 +202,38 @@ export async function getLateFeeMultiplier(): Promise<number> {
   }
 }
 
+// ─── Raio máximo da ordenação por proximidade ────────────────────────────────
+
+/**
+ * Teto de distância, em km, aplicado quando o visitante ordena por
+ * "Mais próximos" em /itens. Vale SÓ para essa ordenação: nas demais o catálogo
+ * inteiro continua visível, senão quem mora longe de qualquer anunciante veria
+ * uma vitrine vazia.
+ *
+ * 50 km cobre uma região metropolitana inteira — largo o suficiente para não
+ * esvaziar o resultado numa base ainda pequena, e curto o suficiente para
+ * "próximo" significar alguma coisa.
+ *
+ * Editável pelo admin em /admin/itens (chave `searchMaxDistanceKm`).
+ */
+const DEFAULT_SEARCH_MAX_DISTANCE_KM = 50
+
+/** Limite de sanidade: acima disto "proximidade" perde sentido prático. */
+export const SEARCH_MAX_DISTANCE_LIMIT_KM = 500
+
+export async function getSearchMaxDistanceKm(): Promise<number> {
+  try {
+    const map = await loadConfig()
+    const v = intFrom(map, "searchMaxDistanceKm")
+    return Number.isFinite(v) && v > 0 && v <= SEARCH_MAX_DISTANCE_LIMIT_KM
+      ? v
+      : DEFAULT_SEARCH_MAX_DISTANCE_KM
+  } catch {
+    // Falha de banco não pode derrubar a busca: cai no default.
+    return DEFAULT_SEARCH_MAX_DISTANCE_KM
+  }
+}
+
 /**
  * Lê a taxa da plataforma do banco. Retorna o padrão (1500) se não encontrar.
  * Nunca lança exceção — usado no caminho crítico do checkout.

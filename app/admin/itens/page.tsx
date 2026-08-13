@@ -1,13 +1,23 @@
 import type { Metadata } from "next"
 import { requireAdminPage } from "@/lib/auth/require-admin"
+import { hasAdminRole } from "@/lib/auth/admin-guards"
 import { prisma } from "@/lib/prisma"
 import { ItemActions } from "./_Actions"
+import { SearchRadiusForm } from "./_SearchRadiusForm"
 import { formatPrice } from "@/utils/format"
+import { getSearchMaxDistanceKm, SEARCH_MAX_DISTANCE_LIMIT_KM } from "@/lib/platform-config"
 
 export const metadata: Metadata = { title: "Admin — Itens" }
 
 export default async function AdminItensPage() {
-  await requireAdminPage("ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL")
+  const session = await requireAdminPage("ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL")
+
+  const maxDistanceKm = await getSearchMaxDistanceKm()
+  // PATCH /api/admin/platform-config exige ADMIN_SUPERADMIN. Sem esta checagem o
+  // ADMIN_OPERACIONAL — que também acessa esta página — veria um formulário
+  // editável e tomaria 403 ao salvar: a permissão precisa aparecer na UI, não só
+  // no servidor.
+  const podeEditarConfig = hasAdminRole(session, "ADMIN_SUPERADMIN")
 
   const items = await prisma.item.findMany({
     where:   { deletedAt: null },
@@ -72,6 +82,23 @@ export default async function AdminItensPage() {
           ({items.length} total)
         </span>
       </h1>
+
+      <section className="mb-8 rounded-xl border border-border bg-surface p-4">
+        <h2 className="mb-1 text-sm font-semibold text-foreground">Alcance da busca</h2>
+        <p className="mb-3 text-xs text-muted-foreground">
+          Distância máxima considerada quando o visitante ordena por{" "}
+          <strong className="font-medium text-foreground">Mais próximos</strong> em /itens.
+          Não afeta as outras ordenações — nelas o catálogo inteiro continua visível.
+        </p>
+        {podeEditarConfig ? (
+          <SearchRadiusForm maxDistanceKm={maxDistanceKm} limiteKm={SEARCH_MAX_DISTANCE_LIMIT_KM} />
+        ) : (
+          <p className="text-sm text-foreground">
+            Atualmente <strong className="font-semibold">{maxDistanceKm} km</strong>.{" "}
+            <span className="text-muted-foreground">Só o superadmin pode alterar.</span>
+          </p>
+        )}
+      </section>
 
       {pending.length > 0 && (
         <section className="mb-8">
