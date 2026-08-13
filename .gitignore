@@ -106,3 +106,9 @@ docs/**/*.docx
 builds/
 *.apk
 *.aab
+
+# Placeholder "Em breve" servido no shareo.com.br pelo Netlify — NAO e publicado
+# a partir deste repositorio (nao ha netlify.toml aqui). Entrou por engano num
+# `git add` amplo em 12/08 e foi destrackeado; ignorado para nao voltar sozinho.
+# Os arquivos seguem em disco.
+public/em-breve/
