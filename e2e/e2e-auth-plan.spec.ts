@@ -184,20 +184,28 @@ test('Plano E2E Autenticação — Registro · Login · Logout · Recuperação 
       if (!createdUserId) throw new SkipStep('Usuário não criado — step 2 falhou')
 
       await page.goto('/esqueci-senha')
-      await expect(page.getByRole('heading', { name: /recuperar senha/i })).toBeVisible()
-
-      // Preenche e-mail e envia
-      await page.getByLabel(/e-?mail/i).fill(TEST_USER.email)
-      await page.getByRole('button', { name: /enviar link/i }).click()
-
-      // Aguarda o estado de sucesso: "Verifique seu e-mail"
       await expect(
-        page.getByRole('heading', { name: /verifique seu e-?mail/i }),
-      ).toBeVisible({ timeout: 10_000 })
+        page.getByRole('heading', { name: /recuperar senha/i }),
+        'recuperação: página /esqueci-senha não carregou o formulário',
+      ).toBeVisible()
+
+      // Preencher + enviar é repetido até o estado de sucesso aparecer, pelo mesmo
+      // motivo do logout: _ForgotPasswordForm é client component e um clique antes
+      // da hidratação é aceito sem handler. Refazer é idempotente — o fill sobrescreve
+      // e o POST só sai quando o onClick existir.
+      await expect(async () => {
+        await page.getByLabel(/e-?mail/i).fill(TEST_USER.email)
+        await page.getByRole('button', { name: /enviar link/i }).click()
+        await expect(
+          page.getByRole('heading', { name: /verifique seu e-?mail/i }),
+          'recuperação: envio não levou ao estado "Verifique seu e-mail"',
+        ).toBeVisible({ timeout: 5_000 })
+      }).toPass({ timeout: 30_000 })
 
       // Confirma mensagem com o e-mail usado
       await expect(
         page.getByText(TEST_USER.email),
+        'recuperação: e-mail informado não aparece na confirmação',
       ).toBeVisible({ timeout: 5_000 })
     })
 

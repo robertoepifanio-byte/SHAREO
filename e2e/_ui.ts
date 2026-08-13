@@ -38,7 +38,27 @@ export async function logout(page: Page): Promise<void> {
       menu,
       'logout: avatar "Menu do usuário" não encontrado no header de /dashboard',
     ).toBeVisible({ timeout: 8_000 })
-    await menu.click()
+
+    /**
+     * O clique é repetido até o menu abrir, de propósito.
+     *
+     * UserDropdown abre por useState: antes da hidratação do React o botão está
+     * na tela e clicável, mas o onClick ainda não existe — o clique é aceito e
+     * some. Contra staging (rede real, lambda fria) essa janela é larga o
+     * bastante para o `page.goto` + clique imediato cair dentro dela; em
+     * servidor local, rápido, o mesmo código passava.
+     *
+     * Diagnóstico que levou aqui: a mensagem custom mostrou que o avatar ERA
+     * encontrado e clicado, e mesmo assim o "Sair" nunca aparecia — ou seja, o
+     * problema não era o seletor, era o clique não surtir efeito.
+     */
+    await expect(async () => {
+      await menu.click()
+      await expect(
+        page.getByRole('menu'),
+        'logout: clique no avatar não abriu o menu (provável clique pré-hidratação)',
+      ).toBeVisible({ timeout: 2_000 })
+    }).toPass({ timeout: 20_000 })
   }
 
   await expect(
