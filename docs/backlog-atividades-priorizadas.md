@@ -399,7 +399,7 @@
 | Taxa de resposta do proprietário + contagem de locações na página do item | `app/itens/[id]/page.tsx:109–129, 531–549` |
 | Breadcrumb visual + JSON-LD na página do item | `app/itens/[id]/page.tsx:172, 257` |
 | Seção "Itens similares" na página do item | `app/itens/[id]/page.tsx:132, 609` |
-| Timeout automático de reserva (PENDING → cancelado em 2h via cron) | `app/api/cron/expire-bookings/route.ts` |
+| Timeout automático de reserva (PENDING → cancelado em 12h via cron) | `app/api/cron/expire-bookings/route.ts` |
 | E-mails de reengajamento pós-aluguel (1d, 7d, 30d) | `app/api/cron/reengagement/route.ts` |
 | Extensão de prazo — API completa (locatário solicita / proprietário aprova ou recusa) | `app/api/bookings/[id]/extend/route.ts` |
 | Abertura de disputa com motivo em texto | `_BookingActions.tsx` — botão "Abrir disputa" + textarea |
@@ -548,7 +548,7 @@
 | `lib/email.ts:561` + `cron/reminders/route.ts:118` | `1.5` | Multiplicador taxa de atraso | P0 |
 | `lib/ambassador.ts:16` | `11`, `51` | Limiares de tier Bronze/Prata/Ouro | P0 |
 | `lib/referral.ts:11` | `30` dias | Janela atribuição de referral | P0 |
-| `app/api/cron/expire-bookings/route.ts:26` | `2h` | Auto-cancel PENDING sem resposta | P1 |
+| `lib/platform-config.ts` | `12h` | Auto-cancel PENDING sem resposta (configurável via PlatformConfig: autoCancelPendingHours) | P1 |
 | `app/api/cron/auto-cancel/route.ts:20` | `48h` | Auto-cancel proprietário sem ação | P1 |
 | `app/api/bookings/[id]/route.ts:303` | `3` dias | Janela elegibilidade payout | P1 |
 | `app/api/items/[id]/images/route.ts:10` | `10` imagens | Máx fotos por item | P1 |

@@ -104,7 +104,7 @@ export default async function BookingSuccessPage({ searchParams }: Props) {
               <li className="flex items-start gap-3 text-sm">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white" aria-hidden="true">1</span>
                 <span className="text-muted-foreground">
-                  <strong className="text-foreground">Aguarde a confirmação</strong> — o proprietário tem até 2h para aceitar sua solicitação.
+                  <strong className="text-foreground">Aguarde a confirmação</strong> — o proprietário tem até 12h para aceitar sua solicitação.
                 </span>
               </li>
               <li className="flex items-start gap-3 text-sm">

@@ -5,12 +5,31 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { requireAdminRole } from "@/lib/auth/admin-guards"
 import { auditLog } from "@/lib/audit"
-import { clearPlatformConfigCache } from "@/lib/platform-config"
+import {
+  clearPlatformConfigCache,
+  AUTO_CANCEL_PENDING_HOURS_MIN,
+  AUTO_CANCEL_PENDING_HOURS_MAX,
+} from "@/lib/platform-config"
 
 const PatchSchema = z.object({
   value:       z.string().min(1),
   description: z.string().max(200).optional(),
 })
+
+/**
+ * Validadores de faixa por chave conhecida.
+ * Retorna string de erro se inválido, undefined se ok.
+ */
+const KEY_RANGE_VALIDATORS: Record<string, (v: string) => string | undefined> = {
+  autoCancelPendingHours: (v) => {
+    const n = parseInt(v, 10)
+    // String(n) !== v.trim() rejeita decimais ("12.5") e strings com lixo ("12abc")
+    // porque parseInt parsa só o prefixo numérico, ocultando o sufixo inválido.
+    if (isNaN(n) || String(n) !== v.trim() || n < AUTO_CANCEL_PENDING_HOURS_MIN || n > AUTO_CANCEL_PENDING_HOURS_MAX)
+      return `autoCancelPendingHours deve ser um inteiro entre ${AUTO_CANCEL_PENDING_HOURS_MIN} e ${AUTO_CANCEL_PENDING_HOURS_MAX}.`
+    return undefined
+  },
+}
 
 export async function GET() {
   const session = await auth()
@@ -43,6 +62,12 @@ export async function PATCH(req: NextRequest) {
   const parsed = PatchSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json({ error: "Dados inválidos", details: parsed.error.flatten() }, { status: 400 })
+  }
+
+  // Valida faixas para chaves conhecidas com restrição numérica.
+  const rangeError = KEY_RANGE_VALIDATORS[key]?.(parsed.data.value)
+  if (rangeError) {
+    return NextResponse.json({ error: rangeError }, { status: 422 })
   }
 
   const config = await prisma.platformConfig.upsert({

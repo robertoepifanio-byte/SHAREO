@@ -11,7 +11,7 @@
     },
     {
       "path": "/api/cron/expire-bookings",
-      "schedule": "0 4 * * *"
+      "schedule": "20 */6 * * *"
     },
     {
       "path": "/api/cron/return-reminders",
