@@ -310,7 +310,7 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
 
   const isLoading = state === "loading"
   const inputCls =
-    "h-11 w-full rounded-lg border border-white/20 bg-white/[0.08] px-4 text-sm text-white placeholder:text-white/40 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
+    "h-11 w-full rounded-lg border border-white/20 bg-white/[0.08] px-4 text-sm text-white placeholder:text-white/60 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
 
   // O portão de envio continua sendo CIDADE + UF, exatamente como antes do CEP.
   // O CEP é atalho, nunca requisito: ViaCEP fora do ar não pode zerar a captação
@@ -535,7 +535,7 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
                 onChange={(e) => setUf(e.target.value.toUpperCase())}
                 required
                 disabled={isLoading}
-                className="h-11 w-16 rounded-lg border border-white/20 bg-white/[0.08] px-3 text-center text-sm uppercase text-white placeholder:text-white/40 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
+                className="h-11 w-16 rounded-lg border border-white/20 bg-white/[0.08] px-3 text-center text-sm uppercase text-white placeholder:text-white/60 transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-60"
               />
             </div>
           </div>
@@ -606,7 +606,7 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
         )}
       </button>
 
-      <p className="text-center text-xs text-white/40">
+      <p className="text-center text-xs text-white/55">
         Ao continuar você aceita as{" "}
         <a href="/politicas" className="underline decoration-white/30 hover:decoration-white/60">
           políticas do Shareo

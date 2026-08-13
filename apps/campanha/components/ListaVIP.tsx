@@ -98,7 +98,7 @@ export async function ListaVIP({ as = "h2", hideBadge = false }: Props = {}) {
             </div>
             <div>
               <div className="mb-1 text-sm font-bold text-white">Condições especiais</div>
-              <div className="text-xs leading-snug text-white/60">
+              <div className="text-xs leading-snug text-white/70">
                 Os primeiros anunciantes terão reconhecimento exclusivo — detalhes no lançamento
               </div>
             </div>
@@ -112,7 +112,7 @@ export async function ListaVIP({ as = "h2", hideBadge = false }: Props = {}) {
             </div>
             <div>
               <div className="mb-1 text-sm font-bold text-white">Verificação de perfil gratuita</div>
-              <div className="text-xs leading-snug text-white/60">
+              <div className="text-xs leading-snug text-white/70">
                 Credibilidade desde o primeiro dia — sem custos adicionais
               </div>
             </div>
@@ -126,7 +126,7 @@ export async function ListaVIP({ as = "h2", hideBadge = false }: Props = {}) {
             </div>
             <div>
               <div className="mb-1 text-sm font-bold text-white">Acesso antecipado</div>
-              <div className="text-xs leading-snug text-white/60">
+              <div className="text-xs leading-snug text-white/70">
                 Você será avisado antes de todo mundo quando Shareo abrir na sua cidade
               </div>
             </div>
@@ -140,7 +140,7 @@ export async function ListaVIP({ as = "h2", hideBadge = false }: Props = {}) {
             </div>
             <div>
               <div className="mb-1 text-sm font-bold text-white">Primeiro a descobrir</div>
-              <div className="text-xs leading-snug text-white/60">
+              <div className="text-xs leading-snug text-white/70">
                 Novas funcionalidades chegam primeiro para quem está na lista
               </div>
             </div>
