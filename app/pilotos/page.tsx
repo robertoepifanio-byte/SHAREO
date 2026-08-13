@@ -10,7 +10,7 @@ import { jsonLdScript } from "@/lib/jsonLd"
 // próprio, invalidado pela tag "founders".
 export const revalidate = 3600
 
-const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://shareo-rouge.vercel.app"
+const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://shareo-rouge.vercel.app"
 
 const TITLE = "Onde o Shareo vai abrir primeiro — entre na lista da sua cidade"
 const DESCRIPTION =
