@@ -32,18 +32,15 @@ export class ApiError extends Error {
 }
 
 /**
- * `true` quando a API recusou por causa do gate de pré-lançamento.
+ * `true` quando o erro carrega `error.code` igual ao esperado.
  *
  * Checa a propriedade em vez de `instanceof ApiError`: com target ES5 o
  * `instanceof` de classe que estende Error é traiçoeiro, e o erro pode ter
  * cruzado uma fronteira de serialização (React Query, boundary) no caminho.
+ *
+ * (Havia aqui um `isPrelaunchError` para o 503 PRELAUNCH do gate. Removido em
+ * 12/08/2026 junto com o gate — o servidor não devolve mais esse código.)
  */
-export function isPrelaunchError(e: unknown): boolean {
-  return hasErrorCode(e, "PRELAUNCH")
-}
-
-/** `true` quando o erro carrega `error.code` igual ao esperado. Ver nota acima
- *  sobre por que a checagem é por propriedade, e não por `instanceof`. */
 export function hasErrorCode(e: unknown, code: string): boolean {
   return typeof e === "object" && e !== null && (e as { code?: unknown }).code === code
 }

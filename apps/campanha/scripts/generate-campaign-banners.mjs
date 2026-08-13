@@ -13,11 +13,8 @@
  * <picture> + <source media> em components/home/CampaignBanner.tsx — por isso
  * cada uma tem seu próprio conjunto de larguras em vez de um srcset único.
  *
- * ⚠️ Os arquivos ficam em public/campanha/, que precisa estar na ALLOW_PREFIX de
- * lib/prelaunch.ts: o matcher do middleware não isenta public/, então um asset
- * fora da allowlist levaria 307 e a imagem apareceria quebrada com o gate ligado.
- *
- * Execução: node scripts/generate-campaign-banners.mjs
+ * Execução (de dentro de apps/campanha):
+ *   node scripts/generate-campaign-banners.mjs
  * (como os demais scripts de imagem do projeto, é invocado à mão — não está no
  *  package.json nem no build.)
  */
@@ -29,7 +26,9 @@ import { fileURLToPath } from "url"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT      = join(__dirname, "..")
-const FONTES    = join(ROOT, "assets-fonte", "imagens")
+// Fontes e saída passaram a viver dentro de apps/campanha (12/08/2026, quando o
+// gate saiu do produto). Antes ficavam na raiz do repo, junto com o marketplace.
+const FONTES    = join(ROOT, "assets-fonte")
 const SAIDA     = join(ROOT, "public", "campanha")
 
 // Mesma qualidade usada no hero do site (scripts/generate-hero-image.mjs).

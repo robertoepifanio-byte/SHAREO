@@ -1,31 +1,12 @@
 import type { MetadataRoute } from "next"
 import { prisma } from "@/lib/prisma"
 import { PILOT_CITIES } from "@/lib/pilot-cities"
-import { PRELAUNCH_ENABLED } from "@/lib/prelaunch"
 
 export const dynamic = "force-dynamic"
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://shareo-rouge.vercel.app"
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // No pré-lançamento só existem, do ponto de vista do crawler, a landing e as
-  // páginas de cidade. Sai ANTES das queries: com `force-dynamic` elas rodariam
-  // a cada visita de crawler só para produzir URLs que o gate redireciona.
-  if (PRELAUNCH_ENABLED) {
-    return [
-      { url: BASE, lastModified: new Date(), changeFrequency: "daily", priority: 1.0 },
-      // Índice das cidades — é o destino natural de "veja se a sua cidade está
-      // na lista" em post orgânico, e o hub que liga as 14 landings entre si.
-      { url: `${BASE}/pilotos`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
-      ...PILOT_CITIES.map((c) => ({
-        url:             `${BASE}/pilotos/${c.slug}`,
-        lastModified:    new Date(),
-        changeFrequency: "weekly" as const,
-        priority:        0.9,
-      })),
-    ]
-  }
-
   const [items, categories, lojas] = await Promise.all([
     prisma.item.findMany({
       where:   { status: "AVAILABLE", isApproved: true, deletedAt: null },

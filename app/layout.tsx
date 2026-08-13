@@ -8,9 +8,8 @@ import { ServiceWorkerRegister } from "@/components/layout/ServiceWorkerRegister
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics"
 import { MetaPixel } from "@/components/analytics/MetaPixel"
 import { Providers } from "@/components/layout/Providers"
-import { PreLaunchFooter } from "@/components/layout/PreLaunchFooter"
 import { jsonLdScript } from "@/lib/jsonLd"
-import { PRELAUNCH_ENABLED, NOINDEX_ENABLED } from "@/lib/prelaunch"
+import { NOINDEX_ENABLED } from "@/lib/seo-flags"
 import "./globals.css"
 
 const montserrat = Montserrat({
@@ -106,18 +105,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         >
           Pular para o conteúdo principal
         </a>
-        {/* Padding bottom garante que o BottomNav não tape o conteúdo no mobile.
-            No pré-lançamento não há BottomNav, então o padding vira 72px de vazio
-            morto no rodapé de uma landing de conversão — por isso é condicional. */}
+        {/* Padding bottom garante que o BottomNav não tape o conteúdo no mobile. */}
         <Providers nonce={nonce}>
-          <div id="main-content" className={PRELAUNCH_ENABLED ? "" : "pb-[72px] md:pb-0"}>
+          <div id="main-content" className="pb-[72px] md:pb-0">
             {children}
-            {/* AppFooter e BottomNav apontam para /itens, /reservas, /perfil,
-                /cadastro… — todos bloqueados pelo gate. Trocados por um rodapé
-                enxuto com marca + legais. */}
-            {PRELAUNCH_ENABLED ? <PreLaunchFooter /> : <AppFooter />}
+            <AppFooter />
           </div>
-          {!PRELAUNCH_ENABLED && <BottomNav />}
+          <BottomNav />
           <ThemedToaster />
           <ServiceWorkerRegister />
           {/* P3-82: GA4 — carregado apenas quando NEXT_PUBLIC_GA_MEASUREMENT_ID definido */}

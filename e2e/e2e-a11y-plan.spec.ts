@@ -13,7 +13,6 @@
 import fs from 'fs'
 import path from 'path'
 import { test, expect, type Page } from '@playwright/test'
-import { isPrelaunchOn } from './_support'
 
 // ---------------------------------------------------------------------------
 // axe-core — injetado via page.evaluate() para bypassar o CSP (nonce-based).
@@ -135,20 +134,8 @@ function summaryLine(audit: PageAudit) {
 // ---------------------------------------------------------------------------
 // Pages to audit
 // ---------------------------------------------------------------------------
-const PUBLIC_PAGES_ABERTO = ['/', '/login', '/itens'] as const
-
-/**
- * Com o gate de pré-lançamento ligado, `/itens` e `/cadastro` respondem 307 para
- * a home — auditar essas URLs mediria a MESMA página três vezes, inflando cada
- * violação do rodapé compartilhado em 3 (foi exatamente o que aconteceu em
- * 12/08: um único defeito de contraste reportado como "3 violações").
- *
- * Trocamos pelas páginas que existem de verdade na campanha. Não é uma redução
- * de escopo: a landing e /pilotos são o que o visitante realmente vê enquanto o
- * gate está no ar, e antes não eram auditadas.
- */
-const PUBLIC_PAGES_CAMPANHA = ['/', '/login', '/pilotos'] as const
-const FORM_PAGES            = ['/login', '/cadastro'] as const
+const PUBLIC_PAGES = ['/', '/login', '/itens'] as const
+const FORM_PAGES   = ['/login', '/cadastro'] as const
 
 // ---------------------------------------------------------------------------
 // Suite principal
@@ -158,9 +145,6 @@ test('Plano E2E Acessibilidade — Contraste · Teclado · ARIA · Formulários'
   test.setTimeout(240_000)
 
   // Quais páginas existem depende do gate — ver nota nas constantes acima.
-  const PUBLIC_PAGES = (await isPrelaunchOn(page.request))
-    ? PUBLIC_PAGES_CAMPANHA
-    : PUBLIC_PAGES_ABERTO
 
   const startTime = Date.now()
   const results: StepResult[] = []
@@ -518,9 +502,6 @@ test('Plano E2E Acessibilidade — Contraste · Teclado · ARIA · Formulários'
 test('Acessibilidade — Modo Escuro (contraste + ARIA WCAG AA)', async ({ page }) => {
   test.setTimeout(120_000)
 
-  const PUBLIC_PAGES = (await isPrelaunchOn(page.request))
-    ? PUBLIC_PAGES_CAMPANHA
-    : PUBLIC_PAGES_ABERTO
 
   // Força o tema do SO para escuro; next-themes resolve "system" → dark.
   await page.emulateMedia({ colorScheme: 'dark' })

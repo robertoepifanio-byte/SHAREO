@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- SEO (~60 chars) -->
+  <title>ShareO — Em breve. Ganhe dinheiro com o que está parado.</title>
+  <meta name="description" content="O marketplace local para anunciar e alugar itens com segurança e praticidade. Local. Simples. Confiável. Sustentável. Lançamento nacional em 2026.">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#003366">
+
+  <!-- Open Graph -->
+  <meta property="og:type"        content="website">
+  <meta property="og:locale"      content="pt_BR">
+  <meta property="og:title"       content="ShareO — Em breve. Ganhe dinheiro com o que está parado.">
+  <meta property="og:description" content="O marketplace local para anunciar e alugar itens com segurança e praticidade. Lançamento nacional em 2026.">
+  <meta property="og:url"         content="https://www.shareo.com.br">
+  <!-- ATENÇÃO: a URL abaixo precisa bater com o host final onde a pasta /em-breve/ estará servida -->
+  <meta property="og:image"       content="https://www.shareo.com.br/em-breve/banner-em-breve.png">
+  <meta property="og:image:width"  content="1600">
+  <meta property="og:image:height" content="639">
+  <meta property="og:image:alt"   content="ShareO — Em breve. Ganhe dinheiro com o que está parado. Marketplace local para alugar e anunciar itens.">
+
+  <!-- Favicon inline (SVG data-URI — sem arquivo externo) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%23003366'/%3E%3Ctext x='32' y='47' font-family='Arial Black%2C sans-serif' font-size='40' font-weight='900' fill='%2359C686' text-anchor='middle'%3ES%3C/text%3E%3C/svg%3E">
+
+  <!-- Montserrat via Google Fonts CDN; fallback sans-serif nativo -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* ── RESET ── */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ── TOKENS DE COR (DID v1.0) ── */
+    :root {
+      --navy:        #003366;
+      --navy-deep:   #001428;   /* fundo que casa com o fundo escuro do banner */
+      --navy-mid:    #001f3f;
+      --green:       #007B3C;   /* ação — 7.2:1 sobre branco ✅ */
+      --green-light: #59C686;   /* apoio — NUNCA com texto branco (2.07:1 ❌) */
+      --white:       #FFFFFF;
+      --muted:       #94A3B8;   /* ~4.6:1 sobre navy-deep ✅ */
+      --font:        'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    /* ── BASE ── */
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: var(--font);
+      background-color: var(--navy-deep);
+      color: var(--white);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-x: hidden;
+    }
+
+    /* ── FUNDO: gradiente que funde com o navy escuro do banner ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background:
+        radial-gradient(ellipse 90% 45% at 50% -5%,
+          rgba(0, 123, 60, 0.30) 0%,
+          transparent 65%),
+        radial-gradient(ellipse 70% 50% at 15% 100%,
+          rgba(20, 77, 129, 0.40) 0%,
+          transparent 70%),
+        radial-gradient(ellipse 70% 50% at 85% 100%,
+          rgba(0, 51, 102, 0.40) 0%,
+          transparent 70%),
+        linear-gradient(180deg, #001428 0%, #001f3f 50%, #001428 100%);
+      pointer-events: none;
+    }
+
+    /* ── WRAPPER PRINCIPAL ── */
+    .page {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 32px 16px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+
+    /* ── HEADER (wordmark topo) ── */
+    .site-header {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+    }
+
+    .wordmark {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .wordmark-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--green);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .wordmark-icon svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .wordmark-text {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.4px;
+      color: var(--white);
+      line-height: 1;
+    }
+
+    .wordmark-text .accent {
+      color: var(--green-light);
+    }
+
+    /* Badge "Em breve" no canto direito do header */
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(0, 123, 60, 0.22);
+      border: 1px solid rgba(89, 198, 134, 0.38);
+      border-radius: 999px;
+      padding: 7px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--green-light);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green-light);
+      animation: pulse 2.4s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1;   transform: scale(1);   }
+      50%       { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .badge-dot { animation: none; }
+    }
+
+    /* ── BANNER (peça central) ── */
+    .banner-wrap {
+      width: 100%;
+      /* Desktop: centralizado com max-width e cantos arredondados */
+      max-width: 1140px;
+      border-radius: 12px;
+      overflow: hidden;
+      /* Leve sombra esverdeada que ecoa a marca */
+      box-shadow:
+        0 0 0 1px rgba(0, 123, 60, 0.25),
+        0 16px 64px rgba(0, 0, 0, 0.55),
+        0  4px 16px rgba(0, 123, 60, 0.15);
+      /* O banner tem fundo navy escuro — o wrapper tem o mesmo tom para não
+         haver borda dura caso o border-radius não rode em algum edge case */
+      background: #0d1d2e;
+      margin-bottom: 40px;
+    }
+
+    .banner-img {
+      display: block;
+      width: 100%;
+      height: auto;
+      /* Não cortar em nenhum tamanho */
+      object-fit: contain;
+    }
+
+    /* ── BLOCO DE TEXTO (SEO + legibilidade mobile) ── */
+    /*
+      O texto dentro da imagem fica pequeno no celular.
+      Este bloco HTML é legível em qualquer tela e melhora o SEO.
+      Em desktop grande fica discreto porque a imagem já comunica tudo.
+    */
+    .text-block {
+      width: 100%;
+      max-width: 720px;
+      text-align: center;
+      margin-bottom: 40px;
+      padding: 0 8px;
+    }
+
+    .text-slogan {
+      font-size: clamp(22px, 5vw, 36px);
+      font-weight: 800;
+      color: var(--white);
+      letter-spacing: -0.5px;
+      line-height: 1.15;
+      margin-bottom: 12px;
+    }
+
+    .text-slogan .highlight {
+      color: var(--green-light);
+    }
+
+    .text-sub {
+      font-size: clamp(14px, 2.2vw, 17px);
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.68);
+      line-height: 1.65;
+      max-width: 540px;
+      margin: 0 auto 16px;
+    }
+
+    .text-pillars {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1.6px;
+      text-transform: uppercase;
+      color: var(--green-light);
+      opacity: 0.85;
+    }
+
+    /* Divisor decorativo */
+    .divider {
+      width: 48px;
+      height: 3px;
+      border-radius: 2px;
+      background: linear-gradient(90deg, var(--green), var(--green-light));
+      margin: 0 auto 40px;
+    }
+
+    /* ── FORMULÁRIO DE INTERESSE ── */
+    .form-section {
+      width: 100%;
+      max-width: 500px;
+      margin-bottom: 48px;
+    }
+
+    .form-label-visible {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.60);
+      margin-bottom: 10px;
+      text-align: center;
+      letter-spacing: 0.2px;
+    }
+
+    /*
+      TODO: ligar este formulário a um endpoint real de e-mail marketing antes do go-live.
+      Opções: Formspree (formspree.io/f/SEU_ID), Mailchimp embedded form, ConvertKit.
+      Para Formspree: action="https://formspree.io/f/SEU_ID" method="POST", remover o JS abaixo.
+      Por ora: submit valida o e-mail e exibe mensagem via JS (sem envio real a backend).
+    -->
+    */
+    .email-form {
+      display: flex;
+      gap: 0;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(89, 198, 134, 0.28),
+        0 8px 32px rgba(0, 0, 0, 0.40);
+    }
+
+    .email-input {
+      flex: 1;
+      padding: 0 18px;
+      height: 52px;       /* tap target: 52px > 44px ✅ */
+      border: none;
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--white);
+      font-family: var(--font);
+      font-size: 15px;
+      font-weight: 500;
+      outline: none;
+      min-width: 0;       /* flex shrink sem overflow */
+    }
+
+    .email-input::placeholder {
+      color: rgba(255, 255, 255, 0.35);
+    }
+
+    .email-input:focus {
+      background: rgba(255, 255, 255, 0.11);
+      box-shadow: inset 0 0 0 2px rgba(89, 198, 134, 0.50);
+    }
+
+    /* Neutraliza o autofill amarelo do Chrome */
+    .email-input:-webkit-autofill,
+    .email-input:-webkit-autofill:hover,
+    .email-input:-webkit-autofill:focus {
+      -webkit-box-shadow: 0 0 0 1000px #001f3f inset;
+      -webkit-text-fill-color: #ffffff;
+    }
+
+    .btn-submit {
+      height: 52px;          /* tap target ≥ 44px ✅ */
+      padding: 0 24px;
+      background: var(--green);
+      color: var(--white);
+      border: none;
+      font-family: var(--font);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.18s ease;
+    }
+
+    .btn-submit:hover {
+      background: #005F2E;
+    }
+
+    .btn-submit:focus-visible {
+      outline: 3px solid var(--green-light);
+      outline-offset: 2px;
+    }
+
+    /* Estado de sucesso */
+    .form-success {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: rgba(0, 123, 60, 0.18);
+      border: 1px solid rgba(89, 198, 134, 0.40);
+      border-radius: 10px;
+      padding: 14px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      /* Verde-claro sobre navy escuro: contraste ~6:1 ✅
+         (NUNCA usar verde-claro sobre fundo BRANCO) */
+      color: var(--green-light);
+      min-height: 52px;
+    }
+
+    .form-success.visible {
+      display: flex;
+    }
+
+    .form-success-icon {
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .form-privacy {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.32);
+      text-align: center;
+      margin-top: 10px;
+      line-height: 1.6;
+    }
+
+    /* ── RODAPÉ ── */
+    .site-footer {
+      width: 100%;
+      max-width: 1140px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .footer-contact {
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.45);
+    }
+
+    .footer-contact a {
+      color: var(--green-light);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .footer-contact a:hover {
+      text-decoration: underline;
+    }
+
+    .footer-contact a:focus-visible {
+      outline: 2px solid var(--green-light);
+      outline-offset: 3px;
+      border-radius: 2px;
+    }
+
+    .footer-copy {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.22);
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    /* ── RESPONSIVIDADE ── */
+
+    /* Tablet ≥ 768px */
+    @media (min-width: 768px) {
+      .page {
+        padding: 40px 32px 48px;
+      }
+
+      .wordmark-text {
+        font-size: 30px;
+      }
+
+      .site-footer {
+        flex-direction: row;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .footer-copy {
+        text-align: right;
+      }
+    }
+
+    /* Desktop ≥ 1280px */
+    @media (min-width: 1280px) {
+      .page {
+        padding: 48px 64px 56px;
+      }
+
+      /* Em telas grandes o bloco de texto fica um pouco menor —
+         a imagem já comunica todo o conteúdo */
+      .text-slogan {
+        font-size: 28px;
+      }
+
+      .text-sub {
+        font-size: 15px;
+      }
+    }
+
+    /* Telas muito pequenas (< 380px): form empilhado */
+    @media (max-width: 379px) {
+      .email-form {
+        flex-direction: column;
+        border-radius: 10px;
+      }
+
+      .email-input {
+        width: 100%;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .btn-submit {
+        width: 100%;
+        border-radius: 0 0 10px 10px;
+        min-height: 48px; /* tap target ✅ */
+      }
+
+      .header-badge {
+        display: none; /* remove o badge para não amassar o header em 320px */
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="page" id="main-content">
+
+    <!-- ── BANNER (peça central) ── -->
+    <!--
+      Nota para o time: o PNG tem ~1.3 MB. Antes do go-live, considerar converter para
+      WebP (economia de ~40-60%) via: cwebp -q 85 banner-em-breve.png -o banner-em-breve.webp
+      e usar <picture> com source type="image/webp" + fallback <img> PNG.
+      Por ora, deixado como está (sem otimização/recompressão).
+    -->
+    <div class="banner-wrap">
+      <img
+        src="./banner-em-breve.png"
+        alt="ShareO — Em breve. Ganhe dinheiro com o que está parado. Marketplace local para alugar e anunciar itens. Local. Simples. Confiável. Sustentável."
+        width="1600"
+        height="639"
+        class="banner-img"
+        loading="eager"
+        decoding="async"
+      >
+    </div>
+
+  </main>
+
+</body>
+</html>
