@@ -76,7 +76,38 @@ export async function logout(page: Page): Promise<void> {
     sair.first(),
     'logout: botão "Sair" não apareceu depois de abrir o menu do usuário',
   ).toBeVisible({ timeout: 8_000 })
-  await sair.first().click()
+  /**
+   * Timeout PRÓPRIO no clique, curto de propósito.
+   *
+   * Sem ele o `click()` herda o orçamento do teste (120s): quando a
+   * acionabilidade não é satisfeita, o Playwright fica retentando até o teste
+   * inteiro estourar e o relatório mostra apenas "Test timeout of 120000ms
+   * exceeded" — que não diz NADA sobre o motivo. Com timeout próprio, o erro
+   * carrega o log de retentativa do Playwright, que nomeia a causa real
+   * (elemento instável, coberto por outro, sem receber eventos...).
+   *
+   * O `Promise.all([waitForURL, click])` anterior escondia isso: quem estourava
+   * primeiro era o waitForURL, então parecia "clicou mas não navegou" quando na
+   * verdade o clique nunca completava.
+   */
+  try {
+    await sair.first().click({ timeout: 15_000 })
+  } catch (e) {
+    // O log de acionabilidade do Playwright ("- element is not stable",
+    // "- element intercepts pointer events from <div…>") vem nas linhas SEGUINTES
+    // da mensagem — e os runners dos planos guardam só `.split('\n')[0]`.
+    // Achatamos as linhas úteis numa só para a causa sobreviver ao truncamento.
+    const bruto = e instanceof Error ? e.message : String(e)
+    const pistas = bruto
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l.startsWith('-') || /intercepts|not stable|not visible|not enabled|outside of the viewport/i.test(l))
+      .slice(0, 6)
+      .join(' | ')
+    throw new Error(
+      `logout: clique em "Sair" não completou — ${bruto.split('\n')[0]}${pistas ? ` :: ${pistas}` : ''}`,
+    )
+  }
 
   /**
    * `signOut({ callbackUrl: '/' })` do NextAuth faz round-trip (csrf + signout) e
