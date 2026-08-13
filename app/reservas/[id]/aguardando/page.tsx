@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { getAutoCancelConfig } from "@/lib/platform-config"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { ItemCard } from "@/components/items/ItemCard"
 import { CountdownTimer } from "@/components/booking/CountdownTimer"
@@ -54,8 +55,9 @@ export default async function AguardandoConfirmacaoPage({ params }: Props) {
     redirect(`/reservas/${id}`)
   }
 
-  // Deadline = createdAt + 2h
-  const deadline = new Date(booking.createdAt.getTime() + 2 * 60 * 60 * 1000)
+  // Deadline = createdAt + pendingHours (lido do PlatformConfig; default 12h)
+  const { pendingHours } = await getAutoCancelConfig()
+  const deadline = new Date(booking.createdAt.getTime() + pendingHours * 60 * 60 * 1000)
   const bookingCode = buildBookingCode(booking.id, booking.createdAt)
 
   // P1-34 — itens similares (Server Component)
@@ -126,7 +128,7 @@ export default async function AguardandoConfirmacaoPage({ params }: Props) {
           {/* P1-34 — Countdown */}
           <div className="mb-6 rounded-xl border border-yellow-200 bg-yellow-50 px-5 py-4">
             <p className="mb-3 text-center text-sm font-semibold text-yellow-800">
-              O proprietário tem 2h para responder
+              O proprietário tem {pendingHours}h para responder
             </p>
             <CountdownTimer deadlineIso={deadline.toISOString()} />
             <p className="mt-3 text-center text-xs text-yellow-700">

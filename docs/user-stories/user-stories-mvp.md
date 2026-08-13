@@ -103,8 +103,8 @@
 - Dado que estou na página de detalhe e clico em "Solicitar aluguel", quando seleciono datas válidas (início futuro, fim após início) e envio uma mensagem, então a solicitação é criada com status `PENDING` e vejo a tela de confirmação com o código `#SHR-AAAA-MMDD-NNN` e a seção "Próximos passos" (P1 item #25).
 - Dado que seleciono uma data de início no passado ou uma data de fim anterior ao início, quando tento enviar, então vejo mensagem de erro inline e o envio é bloqueado.
 - Dado que sou o proprietário do item, quando acesso a página de detalhe, então o botão "Solicitar aluguel" não é exibido (locatário não pode alugar o próprio item).
-- Dado que enviei uma solicitação, quando acesso a tela "Aguardando Confirmação", então vejo countdown de 2 horas e carrossel de itens similares enquanto espero a resposta do proprietário (P1 item #34).
-- Dado que o proprietário não responde em 2 horas, então recebo sugestão de itens similares; após 4 horas sem resposta, a solicitação é cancelada automaticamente e sou notificado (P1 item #24).
+- Dado que enviei uma solicitação, quando acesso a tela "Aguardando Confirmação", então vejo countdown de 12 horas e carrossel de itens similares enquanto espero a resposta do proprietário (P1 item #34).
+- Dado que o proprietário não responde em 12 horas, a solicitação é cancelada automaticamente e sou notificado (P1 item #24). [Prazo alterado de 2h para 12h em 2026-08-13 — 2h cancelava reservas legítimas de proprietários dormindo ou trabalhando.]
 
 **Notas técnicas:** Máquina de estados do aluguel (PRD seção 4.4). Dependências: HU-002, HU-004. Timeout automático via job/webhook Supabase. Código de reserva gerado no servidor.
 

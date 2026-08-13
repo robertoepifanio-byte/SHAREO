@@ -130,11 +130,11 @@ export async function getReferralWindowDays(): Promise<number> {
 // ─── Auto-cancelamento de reservas ───────────────────────────────────────────
 
 export interface AutoCancelConfig {
-  pendingHours: number // horas até cancelar PENDING sem resposta (default 2)
+  pendingHours: number // horas até cancelar PENDING sem resposta (default 12)
   ownerHours:   number // horas até cancelar quando proprietário não age (default 48)
 }
 
-const DEFAULT_AUTO_CANCEL: AutoCancelConfig = { pendingHours: 2, ownerHours: 48 }
+const DEFAULT_AUTO_CANCEL: AutoCancelConfig = { pendingHours: 12, ownerHours: 48 }
 
 export async function getAutoCancelConfig(): Promise<AutoCancelConfig> {
   try {

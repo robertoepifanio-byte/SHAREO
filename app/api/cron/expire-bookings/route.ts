@@ -1,9 +1,9 @@
 /**
  * GET /api/cron/expire-bookings
- * P1-24 — Timeout automático de reservas PENDING após 2h.
+ * P1-24 — Timeout automático de reservas PENDING após 12h (padrão; configurável via PlatformConfig: autoCancelPendingHours).
  *
  * Protegido por `Authorization: Bearer {CRON_SECRET}`.
- * Invocado via Vercel Cron (ex.: a cada 30min) ou manualmente.
+ * Invocado via Vercel Cron (1×/dia às 04:00 UTC) ou manualmente.
  *
  * Retorna JSON: { ok: true, cancelled: number, ids: string[] }
  */
