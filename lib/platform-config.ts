@@ -134,6 +134,10 @@ export interface AutoCancelConfig {
   ownerHours:   number // horas até cancelar quando proprietário não age (default 48)
 }
 
+/** Faixa válida para autoCancelPendingHours (editável via /admin/reservas). */
+export const AUTO_CANCEL_PENDING_HOURS_MIN = 1
+export const AUTO_CANCEL_PENDING_HOURS_MAX = 168 // 7 dias
+
 const DEFAULT_AUTO_CANCEL: AutoCancelConfig = { pendingHours: 12, ownerHours: 48 }
 
 export async function getAutoCancelConfig(): Promise<AutoCancelConfig> {

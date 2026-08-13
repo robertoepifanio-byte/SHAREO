@@ -3,7 +3,7 @@
  * P1-24 — Timeout automático de reservas PENDING após 12h (padrão; configurável via PlatformConfig: autoCancelPendingHours).
  *
  * Protegido por `Authorization: Bearer {CRON_SECRET}`.
- * Invocado via Vercel Cron a cada 6h (20 */6 * * * — 00:20, 06:20, 12:20, 18:20 UTC) ou manualmente.
+ * Invocado via Vercel Cron a cada 6h (schedule "20 *\/6 * * *" — 00:20, 06:20, 12:20, 18:20 UTC) ou manualmente.
  * Com threshold de 12h, a janela efetiva de cancelamento é entre 12h e 18h após a criação da reserva.
  *
  * Idempotência: a query filtra status: PENDING. Reserva já cancelada não volta a aparecer.
