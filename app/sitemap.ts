@@ -4,7 +4,7 @@ import { PILOT_CITIES } from "@/lib/pilot-cities"
 
 export const dynamic = "force-dynamic"
 
-const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://shareo-rouge.vercel.app"
+const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://shareo-rouge.vercel.app"
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [items, categories, lojas] = await Promise.all([

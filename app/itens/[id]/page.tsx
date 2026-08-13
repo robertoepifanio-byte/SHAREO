@@ -198,7 +198,7 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
 
   const ownerLocation = [item.owner.neighborhood, item.owner.city].filter(Boolean).join(", ")
 
-  const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://shareo-rouge.vercel.app"
+  const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://shareo-rouge.vercel.app"
 
   // P1-30 — BreadcrumbList JSON-LD
   const breadcrumbJsonLd = {

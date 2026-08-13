@@ -26,7 +26,18 @@ const inter = Inter({
   display:  "swap",
 })
 
-const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+/**
+ * `||`, não `??`. O `??` só cai no fallback com null/undefined — e em PR do
+ * Dependabot o GitHub NÃO expõe os secrets do repositório, então
+ * `NEXT_PUBLIC_APP_URL: ${{ secrets.STAGING_URL }}` chega como STRING VAZIA.
+ * Com `??`, `new URL("")` lançava `TypeError: Invalid URL` e o build quebrava
+ * em "Failed to collect configuration for /_not-found" — por isso TODO PR do
+ * Dependabot estava vermelho, independente do pacote que bumpava.
+ *
+ * Mesmo defeito do `getHmacKey()` (`??` × `||` com string vazia), corrigido em
+ * junho no PR #125. Vale para os 6 pontos que leem NEXT_PUBLIC_APP_URL.
+ */
+const BASE = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
 
 export const metadata: Metadata = {
   title: {

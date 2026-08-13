@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next"
 import { NOINDEX_ENABLED } from "@/lib/seo-flags"
 
-const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://shareo-rouge.vercel.app"
+const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://shareo-rouge.vercel.app"
 
 export default function robots(): MetadataRoute.Robots {
   // Staging: bloqueio total. Sem isso o Google indexa o host de teste e racha
