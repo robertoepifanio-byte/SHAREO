@@ -13,6 +13,7 @@
 import fs from 'fs'
 import path from 'path'
 import { test, expect, type Page } from '@playwright/test'
+import { assertNoFailedSteps } from './_support'
 
 // ---------------------------------------------------------------------------
 // axe-core — injetado via page.evaluate() para bypassar o CSP (nonce-based).
@@ -486,7 +487,7 @@ test('Plano E2E Acessibilidade — Contraste · Teclado · ARIA · Formulários'
         stepLines.join('\n'),
     })
 
-    if (abortError) throw abortError
+    assertNoFailedSteps('Plano Acessibilidade', results, abortError)
   }
 })
 

@@ -17,7 +17,7 @@
 import fs from 'fs'
 import path from 'path'
 import { test, expect } from '@playwright/test'
-import { apiWithRetry } from './_support'
+import { apiWithRetry, assertNoFailedSteps } from './_support'
 import { SESSION_PATHS } from './fixtures/test-credentials'
 
 // ---------------------------------------------------------------------------
@@ -245,7 +245,7 @@ test.describe.serial('Plano 1 — Autenticação', () => {
         type: 'Plano 1',
         description: `Verdict: ${verdict} | steps: ${results.map((r) => `${r.status === 'passed' ? '✓' : '✗'} ${r.name}`).join(' · ')}`,
       })
-      if (abortError) throw abortError
+      assertNoFailedSteps('Plano 1 — Autenticação', results, abortError)
     }
   })
 })
@@ -353,7 +353,7 @@ test.describe.serial('Plano 2 — Compartilhamento', () => {
         type: 'Plano 2',
         description: `Verdict: ${verdict} | steps: ${results.map((r) => `${r.status === 'passed' ? '✓' : '✗'} ${r.name}`).join(' · ')}`,
       })
-      if (abortError) throw abortError
+      assertNoFailedSteps('Plano 2 — Compartilhamento', results, abortError)
     }
   })
 })
@@ -419,7 +419,7 @@ test.describe.serial('Plano 3 — Administração', () => {
         type: 'Plano 3',
         description: `Verdict: ${verdict} | steps: ${results.map((r) => `${r.status === 'passed' ? '✓' : '✗'} ${r.name}`).join(' · ')}`,
       })
-      if (abortError) throw abortError
+      assertNoFailedSteps('Plano 3 — Administração', results, abortError)
     }
   })
 })
@@ -496,7 +496,7 @@ test.describe.serial('Plano 4 — Geral', () => {
         type: 'Plano 4',
         description: `Verdict: ${verdict} | steps: ${results.map((r) => `${r.status === 'passed' ? '✓' : '✗'} ${r.name}`).join(' · ')}`,
       })
-      if (abortError) throw abortError
+      assertNoFailedSteps('Plano 4 — Geral', results, abortError)
     }
   })
 })

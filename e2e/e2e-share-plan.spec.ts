@@ -21,7 +21,7 @@
 import fs from 'fs'
 import path from 'path'
 import { test, expect } from '@playwright/test'
-import { apiWithRetry } from './_support'
+import { apiWithRetry, assertNoFailedSteps } from './_support'
 import { SESSION_PATHS } from './fixtures/test-credentials'
 
 // ---------------------------------------------------------------------------
@@ -371,7 +371,7 @@ test('Plano E2E Compartilhamento — Login · Criar · Link · Externo · Permis
         stepLines.join('\n'),
     })
 
-    if (abortError) throw abortError
+    assertNoFailedSteps('Plano Compartilhamento', results, abortError)
   }
 })
 

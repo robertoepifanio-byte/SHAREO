@@ -21,6 +21,7 @@
 import fs from 'fs'
 import path from 'path'
 import { test, expect } from '@playwright/test'
+import { assertNoFailedSteps } from './_support'
 
 const BASE_URL    = process.env.STAGING_URL ?? 'https://shareo-rouge.vercel.app'
 const REPORT_PATH = path.resolve('e2e-ajuda-report.json')
@@ -418,7 +419,7 @@ test.describe('Plano E2E Central de Ajuda — ShareO', () => {
       }
 
       fs.writeFileSync(REPORT_PATH, JSON.stringify(report, null, 2))
-      if (abortError) throw abortError
+      assertNoFailedSteps('Plano Central de Ajuda', results, abortError)
     }
   })
 })

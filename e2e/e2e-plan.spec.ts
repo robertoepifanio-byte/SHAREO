@@ -15,7 +15,7 @@
 import fs from 'fs'
 import path from 'path'
 import { test, expect } from '@playwright/test'
-import { apiWithRetry } from './_support'
+import { apiWithRetry, assertNoFailedSteps } from './_support'
 import { SESSION_PATHS } from './fixtures/test-credentials'
 
 // ---------------------------------------------------------------------------
@@ -294,8 +294,8 @@ test('Plano E2E Completo — Registro · Login · CRUD item · Logout', async ({
         stepLines.join('\n'),
     })
 
-    // Re-throw para que o Playwright marque o teste como failed se houve abort
-    if (abortError) throw abortError
+    // Fecha o veredito COM sinal: abort re-lançado, e PARCIAL também falha.
+    assertNoFailedSteps('Plano E2E geral', results, abortError)
   }
 })
 
