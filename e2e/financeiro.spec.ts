@@ -25,6 +25,15 @@ import fs from 'fs'
 import { test, expect } from '@playwright/test'
 import { SESSION_PATHS } from './fixtures/test-credentials'
 
+/**
+ * Segredo do cron vem de env. Este repositório é PÚBLICO — o literal que estava
+ * inline nestes testes era legível por qualquer pessoa na internet, e os
+ * endpoints de cron do staging respondem publicamente. `||` e não `??`: env
+ * vazia precisa cair no fallback.
+ */
+const CRON_SECRET     = process.env.CRON_SECRET || ''
+const temCronSecret   = CRON_SECRET.length > 0
+
 const hasAdminSession        = fs.existsSync(SESSION_PATHS.admin)
 const hasLocatarioSession    = fs.existsSync(SESSION_PATHS.locatario)
 const hasProprietarioSession = fs.existsSync(SESSION_PATHS.proprietario)
@@ -260,8 +269,9 @@ test.describe('API — validações server-side do módulo financeiro', () => {
   })
 
   test('15b. GET /api/cron/payout com CRON_SECRET correto retorna 200', async ({ page }) => {
+    test.skip(!temCronSecret, 'CRON_SECRET não definida no ambiente')
     const res = await page.request.get('/api/cron/payout', {
-      headers: { Authorization: 'Bearer shareo-cron-2026' },
+      headers: { Authorization: `Bearer ${CRON_SECRET}` },
     })
     expect(res.status()).toBe(200)
     const body = await res.json() as { ok: boolean; processed: number; errors: number }
@@ -439,8 +449,9 @@ test.describe('Fase 4 — Relatório mensal admin', () => {
   })
 
   test('33. GET /api/cron/monthly-report com CRON_SECRET retorna relatório', async ({ page }) => {
+    test.skip(!temCronSecret, 'CRON_SECRET não definida no ambiente')
     const res = await page.request.get('/api/cron/monthly-report', {
-      headers: { Authorization: 'Bearer shareo-cron-2026' },
+      headers: { Authorization: `Bearer ${CRON_SECRET}` },
     })
     expect(res.status()).toBe(200)
     const body = await res.json() as { ok: boolean; report: { gmvCents: number } }
