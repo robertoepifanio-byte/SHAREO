@@ -95,7 +95,7 @@ SQL de manutenção/migration para staging → sempre usar `zythygwvmrwrqmnrdufq
 - **RLS:** desabilitado — segurança via guards server-side
 - **Geocoding:** Mapbox Geocoding API automático via `lib/geocodeItem.ts`
 - **Filtro distância:** Haversine em JS pós-fetch (não no Prisma)
-- **Cron:** `GET /api/cron/reminders` — `CRON_SECRET=shareo-cron-2026`, 08h BRT via Vercel Cron
+- **Cron:** `GET /api/cron/reminders` — autenticado por `Authorization: Bearer $CRON_SECRET` (valor **só** em env/GitHub Secrets; nunca versionar — repo público), 08h BRT via Vercel Cron
 - **Middleware cookie name:** `__Secure-authjs.session-token` em HTTPS, `authjs.session-token` em HTTP
 
 ## Módulo financeiro (MVP completo — commit 4ef3cb7)

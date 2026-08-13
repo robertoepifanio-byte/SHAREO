@@ -252,4 +252,7 @@ jobs:
           # Sem o token, a rajada da suíte bate no rate limit do staging e reprova por
           # limite de infra (o SKIP_RATE_LIMIT antigo só valia para servidor local).
           E2E_SECRET:  ${{ secrets.E2E_SECRET }}
-          CRON_SECRET: shareo-cron-2026
+          # Vem do secret do GitHub, nunca literal: este repositório é PÚBLICO e o
+          # valor que estava aqui era legível por qualquer pessoa na internet.
+          # O secret `CRON_SECRET` já existia — o literal era redundante além de vazado.
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}

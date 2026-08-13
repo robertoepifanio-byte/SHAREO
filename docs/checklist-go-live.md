@@ -45,7 +45,7 @@
 
 ## 4. Segredos e configuração de produção
 
-- ⚠️ ⬜ **Rotacionar `CRON_SECRET`** — hoje está hardcoded no repo (`shareo-cron-2026`). Gerar valor forte só em produção.
+- 🔴 ⬜ **Rotacionar `CRON_SECRET` — em STAGING TAMBÉM, não só em produção.** O literal foi removido do repo em 13/08, mas **remover não invalida**: o valor segue no histórico do git, e o repositório é **público**. Enquanto não rotacionar, qualquer pessoa na internet aciona os crons do staging — que enviam e-mail real via Resend (inclusive para leads da campanha), criam late fee no Stripe e cancelam reservas. Gerar valor forte novo, atualizar **Vercel env + GitHub Secret** (os dois lados) e conferir que `CRON_SECRET_PROD` é distinto.
 - ⚠️ ⬜ **`E2E_BYPASS_DISABLED=true`** em produção; **NUNCA** colocar `E2E_SECRET` nem `SKIP_RATE_LIMIT` no runtime de prod (desliga rate limit).
 - ⚠️ ⬜ **`NEXT_PUBLIC_*` NÃO podem ser "Sensitive"** no Vercel (senão não injetam no build → aparecem vazias).
 - ⬜ Gerar **`AUTH_SECRET` e `ENCRYPTION_KEY` novos** para produção.
