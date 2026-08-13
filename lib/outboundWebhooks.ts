@@ -57,6 +57,23 @@ async function fireOne(
       },
       body,
       signal: AbortSignal.timeout(10_000), // 10 segundos timeout
+      /**
+       * `manual` fecha o bypass clássico do guard de SSRF.
+       *
+       * O `isUrlSafeForWebhook()` acima valida a URL REGISTRADA — resolve o DNS e
+       * recusa IP privado/loopback/metadata. Mas o `fetch` seguia redirect por
+       * padrão (`follow`): bastava o dono do webhook apontar para um host público
+       * que ele controla e responder `302 → http://169.254.169.254/…` para o
+       * servidor buscar o endereço interno. O guard nunca via essa segunda URL.
+       *
+       * Piora com o `lastStatusCode`, que é gravado e exibido ao dono do webhook:
+       * vira oráculo para mapear serviço interno por código de resposta.
+       *
+       * Endpoint de webhook deve ser final — seguir redirect não tem utilidade
+       * legítima aqui. Com `manual`, o 3xx chega como resposta comum, não é
+       * seguido, e cai no ramo de falha abaixo (`!res.ok`).
+       */
+      redirect: "manual",
     })
     statusCode = res.status
 
