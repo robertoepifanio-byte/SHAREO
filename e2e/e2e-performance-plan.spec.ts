@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test'
 import * as path from 'path'
 import * as fs from 'fs'
+import { assertNoFailedSteps } from './_support'
 
-const BASE_URL = process.env.STAGING_URL ?? 'https://shareo-rouge.vercel.app'
+const BASE_URL = process.env.BASE_URL ?? process.env.STAGING_URL ?? 'http://localhost:3000'
 const REPORT_PATH = path.resolve('e2e-performance-report.json')
 const STRESS_CONCURRENT = 10
 
@@ -195,7 +196,7 @@ test.describe('Plano Performance — ShareO', () => {
       }
 
       fs.writeFileSync(REPORT_PATH, JSON.stringify(report, null, 2))
-      if (abortError) throw abortError
+      assertNoFailedSteps('Plano Performance', results, abortError)
     }
   })
 })

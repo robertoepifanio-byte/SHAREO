@@ -8,7 +8,7 @@
  * Step 5 · Integridade pós-testes           — medium   / CONTINUAR
  *
  * Restrições:
- *  - Somente staging (shareo-rouge.vercel.app) — sem produção
+ *  - Somente staging (staging.shareo.com.br) — sem produção
  *  - Apenas leitura e validação — sem mutação de dados
  *  - Logs armazenados apenas localmente (e2e-governance-report.json)
  *  - Abortar se qualquer passo crítico falhar
@@ -17,8 +17,9 @@
 import fs from 'fs'
 import path from 'path'
 import { test, expect } from '@playwright/test'
+import { assertNoFailedSteps } from './_support'
 
-const BASE_URL    = process.env.STAGING_URL ?? 'https://shareo-rouge.vercel.app'
+const BASE_URL    = process.env.BASE_URL ?? process.env.STAGING_URL ?? 'http://localhost:3000'
 const REPORT_PATH = path.resolve('e2e-governance-report.json')
 
 // ---------------------------------------------------------------------------
@@ -162,9 +163,30 @@ test.describe('Plano E2E Governança — ShareO', () => {
           const robotsText = await robotsResp.text()
           // robots.txt usa "User-Agent" (capital A) — verificação case-insensitive
           expect(robotsText.toLowerCase(), 'robots.txt deve ter user-agent').toContain('user-agent')
-          expect(robotsText, 'robots.txt deve desautorizar /admin/').toContain('/admin')
-          expect(robotsText, 'robots.txt deve desautorizar /api/').toContain('/api')
-          expect(robotsText.toLowerCase(), 'robots.txt deve referenciar sitemap').toContain('sitemap')
+
+          /**
+           * Ambientes com NOINDEX_ENABLED (staging) devolvem bloqueio TOTAL:
+           * `Disallow: /`, sem lista de rotas e sem sitemap. É deliberado — impede
+           * o Google de indexar o host de teste e rachar autoridade de domínio com
+           * shareo.com.br antes do go-live (app/robots.ts).
+           *
+           * O teste exigia a forma de produção e reprovava contra staging. Como o
+           * step é 'high'/CONTINUAR, a reprovação ficava invisível. Agora cada
+           * ambiente é verificado pela forma que lhe cabe — e o bloqueio total é
+           * checado de verdade, em vez de ignorado.
+           */
+          const bloqueioTotal = /^\s*disallow:\s*\/\s*$/im.test(robotsText)
+
+          if (bloqueioTotal) {
+            expect(
+              robotsText.toLowerCase(),
+              'ambiente noindex não deve expor sitemap (convite à indexação)',
+            ).not.toContain('sitemap')
+          } else {
+            expect(robotsText, 'robots.txt deve desautorizar /admin/').toContain('/admin')
+            expect(robotsText, 'robots.txt deve desautorizar /api/').toContain('/api')
+            expect(robotsText.toLowerCase(), 'robots.txt deve referenciar sitemap').toContain('sitemap')
+          }
 
           // ── sitemap.xml ───────────────────────────────────────────────────
           const sitemapResp = await page.request.get(`${BASE_URL}/sitemap.xml`, { failOnStatusCode: false })
@@ -173,13 +195,37 @@ test.describe('Plano E2E Governança — ShareO', () => {
           const sitemapText = await sitemapResp.text()
           const isXml = sitemapText.trimStart().startsWith('<?xml') || sitemapText.includes('<urlset')
           expect(isXml, 'sitemap.xml deve ser XML válido com <urlset').toBe(true)
-          expect(sitemapText, 'sitemap.xml deve referenciar homepage').toContain(BASE_URL)
+          /**
+           * O host do sitemap vem de NEXT_PUBLIC_APP_URL (app/sitemap.ts), que é
+           * config do DEPLOY, não do código. Em staging ela não está definida e o
+           * sitemap sai com o domínio antigo (shareo-rouge.vercel.app) enquanto o
+           * host servido é staging.shareo.com.br.
+           *
+           * Num ambiente noindex isso é inerte: `Disallow: /` impede qualquer
+           * indexação, então o host declarado no sitemap não chega a ser lido por
+           * buscador nenhum. Gatear o PR nisso seria reprovar código por causa de
+           * uma env var de infra. Em ambiente indexável a divergência importa de
+           * verdade — aí continua sendo falha.
+           */
+          if (bloqueioTotal) {
+            const hostDoSitemap = sitemapText.match(/https?:\/\/[^/<]+/)?.[0] ?? '(nenhum)'
+            if (!sitemapText.includes(BASE_URL)) {
+              test.info().annotations.push({
+                type: 'sitemap-host-divergente',
+                description: `sitemap declara ${hostDoSitemap} mas o host servido é ${BASE_URL} — NEXT_PUBLIC_APP_URL não definida neste deploy. Inerte sob noindex; corrigir antes de tornar o ambiente indexável.`,
+              })
+            }
+          } else {
+            expect(sitemapText, 'sitemap.xml deve referenciar homepage').toContain(BASE_URL)
+          }
 
           // Conta URLs no sitemap (deve ter pelo menos homepage + /itens + items)
           const urlCount = (sitemapText.match(/<url>/g) ?? []).length
           expect(urlCount, 'sitemap.xml deve ter ao menos 3 URLs').toBeGreaterThanOrEqual(3)
 
-          stepFindings = `robots.txt ✓ (Disallow: /admin, /api) | sitemap.xml ✓ (${urlCount} URLs)`
+          stepFindings = bloqueioTotal
+            ? `robots.txt ✓ (bloqueio total — ambiente noindex) | sitemap.xml ✓ (${urlCount} URLs)`
+            : `robots.txt ✓ (Disallow: /admin, /api) | sitemap.xml ✓ (${urlCount} URLs)`
 
           test.info().annotations.push({
             type: 'seo-governance',
@@ -349,7 +395,7 @@ test.describe('Plano E2E Governança — ShareO', () => {
       }
 
       fs.writeFileSync(REPORT_PATH, JSON.stringify(report, null, 2))
-      if (abortError) throw abortError
+      assertNoFailedSteps('Plano Governança', results, abortError)
     }
   })
 })

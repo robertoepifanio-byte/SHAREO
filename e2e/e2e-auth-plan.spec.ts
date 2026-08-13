@@ -4,7 +4,7 @@
  * Fluxo: Homepage → Cadastro (API) → Login (UI) → Logout → Recuperação de senha (UI)
  *
  * Restrições:
- *  - Somente staging (shareo-rouge.vercel.app) — sem produção
+ *  - Somente staging (staging.shareo.com.br) — sem produção
  *  - Sem alterações de infra
  *  - Dados de teste isolados (emails/CPFs únicos por run)
  *  - Logs armazenados apenas localmente (e2e-auth-plan-report.json)
@@ -14,7 +14,8 @@
 import fs from 'fs'
 import path from 'path'
 import { test, expect } from '@playwright/test'
-import { apiWithRetry } from './_support'
+import { apiWithRetry, assertNoFailedSteps } from './_support'
+import { logout } from './_ui'
 import { SESSION_PATHS } from './fixtures/test-credentials'
 
 // ---------------------------------------------------------------------------
@@ -171,18 +172,7 @@ test('Plano E2E Autenticação — Registro · Login · Logout · Recuperação 
 
     // Step 4 — high (CONTINUAR se falhar)
     await runStep(4, '4. Logout', 'high', async () => {
-      await page.goto('/dashboard')
-      await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 })
-
-      const logoutBtn = page.getByRole('button', { name: /sair/i })
-      await expect(logoutBtn).toBeVisible({ timeout: 8_000 })
-
-      // signOut({ callbackUrl: '/' }) — aguarda URL sair de /dashboard
-      await Promise.all([
-        page.waitForURL((url) => !url.pathname.includes('/dashboard'), { timeout: 20_000 }),
-        logoutBtn.click(),
-      ])
-      await expect(page).not.toHaveURL(/\/dashboard/)
+      await logout(page)
       loggedOut = true
     })
 
@@ -194,20 +184,28 @@ test('Plano E2E Autenticação — Registro · Login · Logout · Recuperação 
       if (!createdUserId) throw new SkipStep('Usuário não criado — step 2 falhou')
 
       await page.goto('/esqueci-senha')
-      await expect(page.getByRole('heading', { name: /recuperar senha/i })).toBeVisible()
-
-      // Preenche e-mail e envia
-      await page.getByLabel(/e-?mail/i).fill(TEST_USER.email)
-      await page.getByRole('button', { name: /enviar link/i }).click()
-
-      // Aguarda o estado de sucesso: "Verifique seu e-mail"
       await expect(
-        page.getByRole('heading', { name: /verifique seu e-?mail/i }),
-      ).toBeVisible({ timeout: 10_000 })
+        page.getByRole('heading', { name: /recuperar senha/i }),
+        'recuperação: página /esqueci-senha não carregou o formulário',
+      ).toBeVisible()
+
+      // Preencher + enviar é repetido até o estado de sucesso aparecer, pelo mesmo
+      // motivo do logout: _ForgotPasswordForm é client component e um clique antes
+      // da hidratação é aceito sem handler. Refazer é idempotente — o fill sobrescreve
+      // e o POST só sai quando o onClick existir.
+      await expect(async () => {
+        await page.getByLabel(/e-?mail/i).fill(TEST_USER.email)
+        await page.getByRole('button', { name: /enviar link/i }).click()
+        await expect(
+          page.getByRole('heading', { name: /verifique seu e-?mail/i }),
+          'recuperação: envio não levou ao estado "Verifique seu e-mail"',
+        ).toBeVisible({ timeout: 5_000 })
+      }).toPass({ timeout: 30_000 })
 
       // Confirma mensagem com o e-mail usado
       await expect(
         page.getByText(TEST_USER.email),
+        'recuperação: e-mail informado não aparece na confirmação',
       ).toBeVisible({ timeout: 5_000 })
     })
 
@@ -226,7 +224,7 @@ test('Plano E2E Autenticação — Registro · Login · Logout · Recuperação 
       meta: {
         name:        'Teste E2E Shareo - Autenticação',
         environment: 'staging',
-        url:         process.env.STAGING_URL ?? 'https://shareo-rouge.vercel.app',
+        url:         process.env.BASE_URL ?? process.env.STAGING_URL ?? 'http://localhost:3000',
         runAt:       new Date(RUN_TS).toISOString(),
         totalMs,
         verdict,
@@ -253,7 +251,7 @@ test('Plano E2E Autenticação — Registro · Login · Logout · Recuperação 
         stepLines.join('\n'),
     })
 
-    if (abortError) throw abortError
+    assertNoFailedSteps('Plano Autenticação', results, abortError)
   }
 })
 
@@ -264,7 +262,7 @@ test('Plano E2E Autenticação — Registro · Login · Logout · Recuperação 
 test.describe('cleanup — desativar usuário de teste (auth)', () => {
   test.skip(
     !fs.existsSync(SESSION_PATHS.admin),
-    'session-admin.json não encontrado — rode: STAGING_URL=https://shareo-rouge.vercel.app pnpm tsx scripts/create-staging-fixtures.ts',
+    'session-admin.json não encontrado — rode: STAGING_URL=https://staging.shareo.com.br pnpm tsx scripts/create-staging-fixtures.ts',
   )
   test.use({ storageState: SESSION_PATHS.admin })
 
@@ -285,7 +283,7 @@ test.describe('cleanup — desativar usuário de teste (auth)', () => {
         type: 'warning',
         description:
           `Sessão admin expirada (HTTP ${res.status()}). ` +
-          `Recriar com: STAGING_URL=https://shareo-rouge.vercel.app pnpm tsx scripts/create-staging-fixtures.ts\n` +
+          `Recriar com: STAGING_URL=https://staging.shareo.com.br pnpm tsx scripts/create-staging-fixtures.ts\n` +
           `userId pendente de remoção: ${createdUserId}`,
       })
       return

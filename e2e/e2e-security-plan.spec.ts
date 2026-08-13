@@ -7,7 +7,7 @@
  * Step 4 · Proteção inputs inválidos  — medium   / CONTINUAR
  *
  * Restrições:
- *  - Somente staging (shareo-rouge.vercel.app) — sem produção
+ *  - Somente staging (staging.shareo.com.br) — sem produção
  *  - Sem alterações de infra ou dados sensíveis
  *  - Logs armazenados apenas localmente (e2e-security-report.json)
  *  - Abortar se qualquer passo crítico falhar
@@ -16,8 +16,9 @@
 import fs from 'fs'
 import path from 'path'
 import { test, expect } from '@playwright/test'
+import { assertNoFailedSteps } from './_support'
 
-const BASE_URL    = process.env.STAGING_URL ?? 'https://shareo-rouge.vercel.app'
+const BASE_URL    = process.env.BASE_URL ?? process.env.STAGING_URL ?? 'http://localhost:3000'
 const REPORT_PATH = path.resolve('e2e-security-report.json')
 
 // ---------------------------------------------------------------------------
@@ -295,7 +296,7 @@ test.describe('Plano E2E Segurança — ShareO', () => {
       }
 
       fs.writeFileSync(REPORT_PATH, JSON.stringify(report, null, 2))
-      if (abortError) throw abortError
+      assertNoFailedSteps('Plano Segurança', results, abortError)
     }
   })
 })

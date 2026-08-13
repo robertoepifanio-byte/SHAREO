@@ -17,7 +17,8 @@
 import fs from 'fs'
 import path from 'path'
 import { test, expect } from '@playwright/test'
-import { apiWithRetry } from './_support'
+import { apiWithRetry, assertNoFailedSteps } from './_support'
+import { logout } from './_ui'
 import { SESSION_PATHS } from './fixtures/test-credentials'
 
 // ---------------------------------------------------------------------------
@@ -60,7 +61,7 @@ let   suiteShouldAbort = false
 const suitePlanResults: PlanSummary[] = []
 const suiteCreatedUserIds: string[]   = []
 const SUITE_START = Date.now()
-const BASE_URL    = process.env.STAGING_URL ?? 'https://shareo-rouge.vercel.app'
+const BASE_URL    = process.env.BASE_URL ?? process.env.STAGING_URL ?? 'http://localhost:3000'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -161,18 +162,6 @@ async function registerAndLogin(page: Parameters<Parameters<typeof test>[1]>[0],
   return userId
 }
 
-async function logout(page: Parameters<Parameters<typeof test>[1]>[0]) {
-  await page.goto('/dashboard')
-  await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 })
-  const btn = page.getByRole('button', { name: /sair/i })
-  await expect(btn).toBeVisible({ timeout: 8_000 })
-  await Promise.all([
-    page.waitForURL((url) => !url.pathname.includes('/dashboard'), { timeout: 20_000 }),
-    btn.click(),
-  ])
-  await expect(page).not.toHaveURL(/\/dashboard/)
-}
-
 function pushPlanResult(
   planNum:  number,
   name:     string,
@@ -245,7 +234,7 @@ test.describe.serial('Plano 1 — Autenticação', () => {
         type: 'Plano 1',
         description: `Verdict: ${verdict} | steps: ${results.map((r) => `${r.status === 'passed' ? '✓' : '✗'} ${r.name}`).join(' · ')}`,
       })
-      if (abortError) throw abortError
+      assertNoFailedSteps('Plano 1 — Autenticação', results, abortError)
     }
   })
 })
@@ -353,7 +342,7 @@ test.describe.serial('Plano 2 — Compartilhamento', () => {
         type: 'Plano 2',
         description: `Verdict: ${verdict} | steps: ${results.map((r) => `${r.status === 'passed' ? '✓' : '✗'} ${r.name}`).join(' · ')}`,
       })
-      if (abortError) throw abortError
+      assertNoFailedSteps('Plano 2 — Compartilhamento', results, abortError)
     }
   })
 })
@@ -419,7 +408,7 @@ test.describe.serial('Plano 3 — Administração', () => {
         type: 'Plano 3',
         description: `Verdict: ${verdict} | steps: ${results.map((r) => `${r.status === 'passed' ? '✓' : '✗'} ${r.name}`).join(' · ')}`,
       })
-      if (abortError) throw abortError
+      assertNoFailedSteps('Plano 3 — Administração', results, abortError)
     }
   })
 })
@@ -496,7 +485,7 @@ test.describe.serial('Plano 4 — Geral', () => {
         type: 'Plano 4',
         description: `Verdict: ${verdict} | steps: ${results.map((r) => `${r.status === 'passed' ? '✓' : '✗'} ${r.name}`).join(' · ')}`,
       })
-      if (abortError) throw abortError
+      assertNoFailedSteps('Plano 4 — Geral', results, abortError)
     }
   })
 })
@@ -564,7 +553,7 @@ test.describe('Suite — Relatório Consolidado', () => {
 test.describe('Suite Cleanup — desativar usuários', () => {
   test.skip(
     !fs.existsSync(SESSION_PATHS.admin),
-    'session-admin.json não encontrado — rode: STAGING_URL=https://shareo-rouge.vercel.app pnpm tsx scripts/create-staging-fixtures.ts',
+    'session-admin.json não encontrado — rode: STAGING_URL=https://staging.shareo.com.br pnpm tsx scripts/create-staging-fixtures.ts',
   )
   test.use({ storageState: SESSION_PATHS.admin })
 
@@ -596,7 +585,7 @@ test.describe('Suite Cleanup — desativar usuários', () => {
         `${ok} usuários desativados · ${expired} sessão expirada · ${failed} falhas\n` +
         (expired > 0
           ? `Usuários pendentes: ${results.filter((r) => r.status === 'expired-session').map((r) => r.userId).join(', ')}\n` +
-            `Recriar sessão admin: STAGING_URL=https://shareo-rouge.vercel.app pnpm tsx scripts/create-staging-fixtures.ts`
+            `Recriar sessão admin: STAGING_URL=https://staging.shareo.com.br pnpm tsx scripts/create-staging-fixtures.ts`
           : ''),
     })
 

@@ -2,8 +2,9 @@ import { test, chromium, firefox, webkit } from '@playwright/test'
 import type { Browser } from '@playwright/test'
 import * as path from 'path'
 import * as fs from 'fs'
+import { assertNoFailedSteps } from './_support'
 
-const BASE_URL = process.env.STAGING_URL ?? 'https://shareo-rouge.vercel.app'
+const BASE_URL = process.env.BASE_URL ?? process.env.STAGING_URL ?? 'http://localhost:3000'
 const REPORT_PATH = path.resolve('e2e-crossbrowser-report.json')
 
 interface StepResult {
@@ -153,7 +154,7 @@ test.describe('Plano Cross-Browser — ShareO', () => {
       }
 
       fs.writeFileSync(REPORT_PATH, JSON.stringify(report, null, 2))
-      if (abortError) throw abortError
+      assertNoFailedSteps('Plano Cross-browser', results, abortError)
     }
   })
 })

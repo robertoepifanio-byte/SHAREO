@@ -321,10 +321,14 @@ export default async function HomePage() {
         </section>
 
         {/* ─── QUEM JÁ ESTÁ GANHANDO ─── */}
-        <div id="casos-renda"><CasosRenda /></div>
+        {/* Sem wrapper com id: <CasosRenda> já renderiza <section id="casos-renda">.
+            O div duplicava o id (HTML inválido) e fazia qualquer seletor #casos-renda
+            casar 2 elementos. */}
+        <CasosRenda />
 
         {/* ─── ITENS MAIS PROCURADOS ─── */}
-        <div id="itens-procurados"><ItensProcurados /></div>
+        {/* idem: <ItensProcurados> já renderiza <section id="itens-procurados"> */}
+        <ItensProcurados />
 
         {/* ─── SEGURANÇA ─── */}
         <div id="seguranca"><Seguranca /></div>

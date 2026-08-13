@@ -6,7 +6,7 @@
  * Step 3 · Consistência front/back                — high     / CONTINUAR
  *
  * Restrições:
- *  - Somente staging (shareo-rouge.vercel.app) — sem produção
+ *  - Somente staging (staging.shareo.com.br) — sem produção
  *  - Apenas leitura (GET) — sem criação ou mutação de dados
  *  - Logs armazenados apenas localmente (e2e-integration-report.json)
  *  - Abortar se qualquer passo crítico falhar
@@ -15,9 +15,9 @@
 import fs from 'fs'
 import path from 'path'
 import { test, expect } from '@playwright/test'
-import { apiWithRetry } from './_support'
+import { apiWithRetry, assertNoFailedSteps } from './_support'
 
-const BASE_URL    = process.env.STAGING_URL ?? 'https://shareo-rouge.vercel.app'
+const BASE_URL    = process.env.BASE_URL ?? process.env.STAGING_URL ?? 'http://localhost:3000'
 const REPORT_PATH = path.resolve('e2e-integration-report.json')
 
 // ---------------------------------------------------------------------------
@@ -344,7 +344,7 @@ test.describe('Plano E2E Integração — ShareO', () => {
       }
 
       fs.writeFileSync(REPORT_PATH, JSON.stringify(report, null, 2))
-      if (abortError) throw abortError
+      assertNoFailedSteps('Plano Integração', results, abortError)
     }
   })
 })

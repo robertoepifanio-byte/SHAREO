@@ -6,7 +6,7 @@
  * Step 3 · Onboarding                 — medium   / CONTINUAR
  *
  * Restrições:
- *  - Somente staging (shareo-rouge.vercel.app) — sem produção
+ *  - Somente staging (staging.shareo.com.br) — sem produção
  *  - Sem criação de dados (apenas leitura de UI)
  *  - Logs armazenados apenas localmente (e2e-usability-report.json)
  *  - Abortar se qualquer passo crítico falhar
@@ -15,8 +15,9 @@
 import fs from 'fs'
 import path from 'path'
 import { test, expect } from '@playwright/test'
+import { assertNoFailedSteps } from './_support'
 
-const BASE_URL    = process.env.STAGING_URL ?? 'https://shareo-rouge.vercel.app'
+const BASE_URL    = process.env.BASE_URL ?? process.env.STAGING_URL ?? 'http://localhost:3000'
 const REPORT_PATH = path.resolve('e2e-usability-report.json')
 
 // ---------------------------------------------------------------------------
@@ -274,7 +275,7 @@ test.describe('Plano E2E Usabilidade — ShareO', () => {
       }
 
       fs.writeFileSync(REPORT_PATH, JSON.stringify(report, null, 2))
-      if (abortError) throw abortError
+      assertNoFailedSteps('Plano Usabilidade', results, abortError)
     }
   })
 })

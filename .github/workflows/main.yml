@@ -196,27 +196,6 @@ jobs:
     # em silêncio — o check aparecia como "skipping" e o PR ficava verde. PRs que
     # mexiam no mobile rodavam E2E; os de web, não. Exatamente o inverso do útil.
     if: ${{ !cancelled() && needs.build.result == 'success' }}
-    env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL_STAGING }}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY_STAGING }}
-      AUTH_SECRET: "ci-e2e-secret-placeholder-for-testing-only-32b"
-      DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/shareo_test"
-      DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/shareo_test"
-      ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
-    services:
-      postgres:
-        image: postgis/postgis:15-3.4
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: shareo_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -224,18 +203,35 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
       - run: npm install -g pnpm@${{ env.PNPM_VERSION }}
       - run: pnpm install --frozen-lockfile
-      - run: pnpm prisma generate
-      - run: pnpm prisma migrate deploy
-      - run: pnpm db:seed
-        env:
-          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/shareo_test"
-          DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/shareo_test"
-          NODE_ENV: test
       - run: pnpm playwright install --with-deps chromium
       # Espelha a lista curada da "Regressão Contínua (Staging)" (deploy.yml): specs de
       # fluxo de app/a11y. Specs orientados a staging (security*, cron, etc.) ficam fora
-      # deste smoke local — são cobertos pela regressão contra o ambiente real.
-      - name: Run E2E (specs estáveis de fluxo de app)
+      # deste smoke — são cobertos pela regressão contra o ambiente real.
+      #
+      # ALVO: staging, não um servidor local.
+      #
+      # Este job DECLARAVA `BASE_URL: http://localhost:3000` e subia Postgres + seed
+      # para servir um `pnpm dev`. Só que os specs e2e-*-plan liam
+      # `STAGING_URL ?? 'https://shareo-rouge.vercel.app'` e ignoravam esse BASE_URL:
+      # toda chamada com URL absoluta ia para staging enquanto as com caminho
+      # relativo iam para o localhost. O mesmo teste media DOIS ambientes — um plano
+      # chegava a logar em staging e procurar o botão em localhost.
+      #
+      # Ao alinhar os specs com o BASE_URL (13/08/2026) a suíte inteira apontou para
+      # o servidor local e reprovou em bloco: /api/health sem Supabase Storage,
+      # sitemap.xml com host de produção, /itens sem renderizar cards. Nada disso é
+      # regressão — é que estes planos nunca rodaram contra um build local, e fazê-los
+      # rodar exige token de Mapbox, storage e APP_URL no runner. Trabalho próprio.
+      #
+      # Aqui restauramos a intenção declarada no cabeçalho dos próprios specs
+      # ("Somente staging — sem produção") e passamos a dizê-la em voz alta: um único
+      # ambiente, coerente. Sem servidor local, o Postgres/migrate/seed deste job
+      # viraram peso morto — nenhum spec toca o banco direto — e saíram.
+      #
+      # Contrapartida assumida: o gate valida o staging já publicado, não o código
+      # deste PR. Era o que já acontecia de fato; agora está explícito. Converter
+      # estes planos para rodar contra o build do PR é o próximo passo, separado.
+      - name: Run E2E (specs estáveis de fluxo de app) — contra staging
         run: |
           pnpm test:e2e \
             e2e/e2e-plan.spec.ts \
@@ -248,6 +244,12 @@ jobs:
             e2e/e2e-governance-plan.spec.ts \
             e2e/e2e-usability-plan.spec.ts
         env:
-          BASE_URL: http://localhost:3000
-          SKIP_RATE_LIMIT: "true"
+          # Os dois: BASE_URL governa o baseURL do playwright.config (caminhos
+          # relativos) e STAGING_URL as URLs absolutas dos specs. Divergir de novo
+          # recria exatamente o bug de ambiente misto descrito acima.
+          BASE_URL:    ${{ secrets.STAGING_URL }}
+          STAGING_URL: ${{ secrets.STAGING_URL }}
+          # Sem o token, a rajada da suíte bate no rate limit do staging e reprova por
+          # limite de infra (o SKIP_RATE_LIMIT antigo só valia para servidor local).
+          E2E_SECRET:  ${{ secrets.E2E_SECRET }}
           CRON_SECRET: shareo-cron-2026

@@ -21,7 +21,8 @@
 import fs from 'fs'
 import path from 'path'
 import { test, expect } from '@playwright/test'
-import { apiWithRetry } from './_support'
+import { apiWithRetry, assertNoFailedSteps } from './_support'
+import { logout } from './_ui'
 import { SESSION_PATHS } from './fixtures/test-credentials'
 
 // ---------------------------------------------------------------------------
@@ -62,7 +63,7 @@ function generateValidCPF(): string {
 // Dados por run
 // ---------------------------------------------------------------------------
 const RUN_TS  = Date.now()
-const BASE_URL = process.env.STAGING_URL ?? 'https://shareo-rouge.vercel.app'
+const BASE_URL = process.env.BASE_URL ?? process.env.STAGING_URL ?? 'http://localhost:3000'
 
 const TEST_USER = {
   name:           'Share E2E Playwright',
@@ -315,19 +316,7 @@ test('Plano E2E Compartilhamento — Login · Criar · Link · Externo · Permis
     // -----------------------------------------------------------------------
     // Step 7 — Logout  [low]
     // -----------------------------------------------------------------------
-    await runStep(7, '7. Logout', 'low', async () => {
-      await page.goto('/dashboard')
-      await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 })
-
-      const logoutBtn = page.getByRole('button', { name: /sair/i })
-      await expect(logoutBtn).toBeVisible({ timeout: 8_000 })
-
-      await Promise.all([
-        page.waitForURL((url) => !url.pathname.includes('/dashboard'), { timeout: 20_000 }),
-        logoutBtn.click(),
-      ])
-      await expect(page).not.toHaveURL(/\/dashboard/)
-    })
+    await runStep(7, '7. Logout', 'low', () => logout(page))
 
   } finally {
     // -----------------------------------------------------------------------
@@ -371,7 +360,7 @@ test('Plano E2E Compartilhamento — Login · Criar · Link · Externo · Permis
         stepLines.join('\n'),
     })
 
-    if (abortError) throw abortError
+    assertNoFailedSteps('Plano Compartilhamento', results, abortError)
   }
 })
 
@@ -382,7 +371,7 @@ test('Plano E2E Compartilhamento — Login · Criar · Link · Externo · Permis
 test.describe('cleanup — desativar usuário de teste (share)', () => {
   test.skip(
     !fs.existsSync(SESSION_PATHS.admin),
-    'session-admin.json não encontrado — rode: STAGING_URL=https://shareo-rouge.vercel.app pnpm tsx scripts/create-staging-fixtures.ts',
+    'session-admin.json não encontrado — rode: STAGING_URL=https://staging.shareo.com.br pnpm tsx scripts/create-staging-fixtures.ts',
   )
   test.use({ storageState: SESSION_PATHS.admin })
 
@@ -402,7 +391,7 @@ test.describe('cleanup — desativar usuário de teste (share)', () => {
         type: 'warning',
         description:
           `Sessão admin expirada (HTTP ${res.status()}). ` +
-          `Recriar com: STAGING_URL=https://shareo-rouge.vercel.app pnpm tsx scripts/create-staging-fixtures.ts\n` +
+          `Recriar com: STAGING_URL=https://staging.shareo.com.br pnpm tsx scripts/create-staging-fixtures.ts\n` +
           `userId pendente de remoção: ${createdUserId}`,
       })
       return

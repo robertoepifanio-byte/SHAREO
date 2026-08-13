@@ -5,7 +5,7 @@
  *        → Excluir item → Logout → Cleanup (desativar usuário)
  *
  * Restrições:
- *  - Somente staging (shareo-rouge.vercel.app) — sem produção
+ *  - Somente staging (staging.shareo.com.br) — sem produção
  *  - Sem alterações de infra
  *  - Dados de teste isolados (emails/CPFs únicos por run)
  *  - Logs armazenados apenas localmente (e2e-plan-report.json)
@@ -15,7 +15,8 @@
 import fs from 'fs'
 import path from 'path'
 import { test, expect } from '@playwright/test'
-import { apiWithRetry } from './_support'
+import { apiWithRetry, assertNoFailedSteps } from './_support'
+import { logout } from './_ui'
 import { SESSION_PATHS } from './fixtures/test-credentials'
 
 // ---------------------------------------------------------------------------
@@ -170,6 +171,24 @@ test('Plano E2E Completo — Registro · Login · CRUD item · Logout', async ({
       await page.locator('input[type="password"]').fill(TEST_USER.password)
       await page.getByRole('button', { name: /entrar|login|acessar/i }).click()
       await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 })
+
+      // Cadastro progressivo: POST /api/auth/register deixa profileCompletedAt = null
+      // de propósito, e POST /api/items reforça o gate server-side com 403
+      // REGISTRATION_INCOMPLETE. Sem concluir aqui, o Step 4 falha — como vinha
+      // falhando em silêncio (step 'high' = CONTINUAR). Mesmo padrão do share-plan.
+      const compRes = await apiWithRetry(() => page.request.patch('/api/users/me/complete-registration', {
+        data: {
+          userType: 'PF',
+          cpf:      TEST_USER.cpf,
+          city:     TEST_USER.city,
+          state:    TEST_USER.state,
+          phone:    '+5584999999999',
+        },
+      }))
+      expect(
+        compRes.status(),
+        `Completar cadastro falhou (${compRes.status()}): ${await compRes.text()}`,
+      ).toBe(200)
     })
 
     // Step 4 — high (CONTINUAR se falhar)
@@ -236,19 +255,7 @@ test('Plano E2E Completo — Registro · Login · CRUD item · Logout', async ({
     })
 
     // Step 7 — low (CONTINUAR)
-    await runStep(7, '7. Logout', 'low', async () => {
-      await page.goto('/dashboard')
-      await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 })
-
-      const logoutBtn = page.getByRole('button', { name: /sair/i })
-      await expect(logoutBtn).toBeVisible({ timeout: 8_000 })
-
-      await Promise.all([
-        page.waitForURL((url) => !url.pathname.includes('/dashboard'), { timeout: 20_000 }),
-        logoutBtn.click(),
-      ])
-      await expect(page).not.toHaveURL(/\/dashboard/)
-    })
+    await runStep(7, '7. Logout', 'low', () => logout(page))
 
   } finally {
     // -----------------------------------------------------------------------
@@ -265,7 +272,7 @@ test('Plano E2E Completo — Registro · Login · CRUD item · Logout', async ({
       meta: {
         name:        'Teste E2E Shareo',
         environment: 'staging',
-        url:         process.env.STAGING_URL ?? 'https://shareo-rouge.vercel.app',
+        url:         process.env.BASE_URL ?? process.env.STAGING_URL ?? 'http://localhost:3000',
         runAt:       new Date(RUN_TS).toISOString(),
         totalMs,
         verdict,
@@ -294,8 +301,8 @@ test('Plano E2E Completo — Registro · Login · CRUD item · Logout', async ({
         stepLines.join('\n'),
     })
 
-    // Re-throw para que o Playwright marque o teste como failed se houve abort
-    if (abortError) throw abortError
+    // Fecha o veredito COM sinal: abort re-lançado, e PARCIAL também falha.
+    assertNoFailedSteps('Plano E2E geral', results, abortError)
   }
 })
 
@@ -306,7 +313,7 @@ test('Plano E2E Completo — Registro · Login · CRUD item · Logout', async ({
 test.describe('cleanup — desativar usuário de teste', () => {
   test.skip(
     !fs.existsSync(SESSION_PATHS.admin),
-    'session-admin.json não encontrado — rode: STAGING_URL=https://shareo-rouge.vercel.app pnpm tsx scripts/create-staging-fixtures.ts',
+    'session-admin.json não encontrado — rode: STAGING_URL=https://staging.shareo.com.br pnpm tsx scripts/create-staging-fixtures.ts',
   )
   test.use({ storageState: SESSION_PATHS.admin })
 
@@ -327,7 +334,7 @@ test.describe('cleanup — desativar usuário de teste', () => {
         type: 'warning',
         description:
           `Sessão admin expirada (HTTP ${res.status()}). ` +
-          `Recriar com: STAGING_URL=https://shareo-rouge.vercel.app pnpm tsx scripts/create-staging-fixtures.ts\n` +
+          `Recriar com: STAGING_URL=https://staging.shareo.com.br pnpm tsx scripts/create-staging-fixtures.ts\n` +
           `userId pendente de remoção: ${createdUserId}`,
       })
       return
