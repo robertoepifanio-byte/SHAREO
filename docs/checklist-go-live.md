@@ -8,14 +8,14 @@
 
 ## 0. 🔴 Bloqueador único
 
-- ⬜ **D4 — parecer jurídico** (5 questões: Lei 12.865, fiscal, LGPD, CDC/Termos, PLD). **Nada vai a produção antes disso.** Detalhe em `docs/` + memória do D4.
+- ✅ **D4 — parecer jurídico FORMAL recebido (30/06/2026)**, revisado com o Mercado Pago como PSP — `docs/juridico/parecer-juridico-revisado-mp.md`. É a **condição 1 de 4** do go-live. ⚠️ **Isto NÃO libera produção:** falta (2) contrato MP assinado + conta PJ — CNPJ ativo desde 11/08, **contrato em andamento**, é o bloqueador efetivo; (3) Termos/Política publicados **com a PJ identificada** (conteúdo aprovado, textos ainda não trazem razão social/CNPJ); (4) checklist 100% (B3 tributário, C2 DPAs, C3 RIPD+DPO).
 
 ---
 
 ## 1. Licenças de software
 
 - ⚠️ 🔵 **Mapbox GL (`mapbox-gl` v3)** — **licença proprietária + custo por uso** (mapas e Geocoding tarifados). Único dep comercial. Decidir orçamento/limite na conta Mapbox.
-- ⚠️ ⬜ **NextAuth `5.0.0-beta.31`** — está em **beta** num caminho crítico (auth). Definir versão GA + ADR-023 antes do go-live.
+- ⚠️ ⬜ **NextAuth `5.0.0-beta.32`** — segue em **beta** num caminho crítico (auth); item VÁLIDO, só a versão estava velha (era beta.31, subiu em 04/08 corrigindo 3 CVEs). Definir versão GA + ADR-023 antes do go-live.
 - 🧹 ⬜ **Remover dep morta** `@auth/prisma-adapter` (auth é JWT sem adapter).
 - ✅ Demais dependências (Radix, React 19, Prisma 6, Tailwind, zod, resend, upstash, supabase-js, etc.) = licenças **permissivas** (MIT/ISC/Apache/BSD), sem copyleft no runtime.
 
@@ -24,7 +24,7 @@
 ## 2. Infraestrutura — provisionar ambiente de produção isolado
 
 - ✅ **Vercel Pro** — pago/ativo (Team `shareo-marketplace`). Deploy por GitHub Actions (token).
-- ⚠️ ⬜ **Criar projeto Vercel separado `shareo-prod`** (espelhando o modelo de 2 projetos do Supabase). Hoje só existe **um** projeto (`shareo`), cujo slot **Production** está reaproveitado como **staging** (`shareo-rouge` / `staging.shareo.com.br`); "dev" não fica no Vercel (é local — `next dev`). 🚨 **Bug latente a corrigir ANTES do 1º deploy de prod:** os jobs `staging` e `production` do `deploy.yml` usam o **mesmo** `VERCEL_PROJECT_ID` e ambos fazem `vercel deploy --prod` → uma tag `web-v*` jogaria o build de prod no **mesmo slot do staging** (colisão). Fix: novo projeto + secret `VERCEL_PROJECT_ID_PROD` no job `production` (mudança pequena, **não toca o staging rodando**). Custo zero (Pro é por assento, não por projeto). Topologia-alvo: dev=local · staging=`shareo` · prod=`shareo-prod`.
+- ✅ **Projeto Vercel `shareo-prod` criado e testado (05/08/2026)** — topologia atual: dev=local · staging=`shareo` · prod=`shareo-prod`, com Deployment Protection ativa (uso interno). O **bug latente que este item alertava foi corrigido** no PR #262: os jobs `staging` e `production` do `deploy.yml` usavam o MESMO `VERCEL_PROJECT_ID` e uma tag `web-v*` jogaria o build de produção no slot do staging. Hoje o job `production` usa `VERCEL_PROJECT_ID_PROD` + `AUTH_SECRET_PROD`/`ENCRYPTION_KEY_PROD`/`HMAC_KEY_PROD` dedicados (verificado: 3 ocorrências de `VERCEL_PROJECT_ID_PROD` no workflow).
 - 🗓️ **Supabase produção** — **AGENDADO p/ 1ª semana de julho/2026** (migração para licença **Pro**, decisão dos fundadores). Criar **3º projeto** `shareo-prd` (sa-east-1, org corporativa) via `migrate deploy` em banco **VAZIO** (validado em ARQ-ALTO-15). 🚨 **NUNCA clonar o staging** (carrega drift). Pro = sem auto-pause, mais conexões, PITR. **Os secrets `DATABASE_URL_PROD` / `NEXT_PUBLIC_SUPABASE_*_PROD` só serão setados quando esse projeto existir.**
 - ⬜ **Upstash Redis de produção** — instância própria (rate limit + epoch de sessão; fail-open se ausente).
 - ⬜ **Resend Pro** — domínio `shareo.com.br` já verificado; subir de Free→Pro (~US$20) quando escalar (~20-30 reservas/dia).
