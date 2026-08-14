@@ -32,7 +32,11 @@
 
 ---
 
-## ⏭️ Pendências imediatas (atualizado 2026-06-30, s41)
+## ⏭️ Pendências imediatas (reconciliado 2026-08-13)
+
+> **Por que a data importa.** Em 13/08 uma varredura encontrou **4 entradas que descreviam o mundo errado** — 2 aqui e 2 no `checklist-go-live.md`: itens marcados como pendentes que já estavam feitos (parecer D4, projeto `shareo-prod`, GAP-CRIT-04b) e uma descrição obsoleta de comportamento de código (`MP_WEBHOOK_SECRET`). Todas foram corrigidas contra o código/estado atual, não contra memória.
+>
+> O risco de um registro assim não é ficar bonito: **um checklist que lista como pendente o que já foi feito treina quem lê a ignorá-lo**, e aí os itens que importam de verdade somem no ruído. Ao dar baixa em algo, dar baixa AQUI também — e ao mudar comportamento de código citado por uma linha, atualizar a linha no mesmo PR.
 
 | Item | Status | Ação |
 |---|---|---|
@@ -43,7 +47,7 @@
 | **~~Dark mode da Central de Ajuda~~** | ✅ **RESOLVIDO (#144)** | Overrides `dark:` nas 5 seções de FAQ + 3 callouts; status PENDING → token `text-booking-pending`. Verificado no preview (/ajuda escuro). |
 | **Prep pró-flag de biometria** | 🟡 **parcial (#145)** | ✅ FEITO: (1) botão "Revogar consentimento biométrico" na UI (só com flag ON + consentimento) + (2) export art.20 inclui `idSelfieConsentAt/Version/TextHash` (não `...Ip`). ⏳ RESTA (pós-D4, precisa DPO): (3) log `kyc.selfie.view` no admin; (4) adendo à Política citando art.11 II "a". Ver `docs/juridico/spec-consentimento-biometria-c1.md` (DoD). |
 | **Mercado Pago — validação humana (testers)** | 🟢 **EM ANDAMENTO** | Ciclo E2E já validado tecnicamente (reserva PAID + split + webhook real). Roteiro para testers entregue (`docs/guias/roteiro-teste-mercadopago.md`/`.pdf`, regra única = pagar como convidado). Aguardando retorno dos testers (canal WhatsApp 84 99662-2346). |
-| **Mercado Pago — `MP_WEBHOOK_SECRET`** | 🟡 **bloqueado em ação humana** | Código já valida `x-signature` quando o secret existe. Falta **obter o valor no painel do MP (Webhooks)** e adicioná-lo no Vercel (Production). Sem isso, o webhook funciona mas pula a validação de assinatura (aceitável no sandbox). |
+| **Mercado Pago — `MP_WEBHOOK_SECRET`** | 🔴 **PRÉ-REQUISITO, não mais opcional** (atualizado 13/08) | Falta **obter o valor no painel do MP (Webhooks)** e adicioná-lo no Vercel. ⚠️ **A descrição antiga ("o webhook funciona mas pula a validação, aceitável no sandbox") ficou obsoleta com o PR #305:** o webhook agora **falha fechado (503)** quando o `MP_ACCESS_TOKEN` NÃO é de sandbox (prefixo `TEST-`) e o secret está ausente. Sandbox segue pulando a validação; com credencial real, sem o secret não há pagamento — de propósito, para a falha aparecer no painel de webhooks do MP em vez de a rota aceitar requisição não autenticada. |
 | **Mercado Pago — remover override de sandbox (#122)** | 🔴 **antes do go-live** | Remover env `MP_SANDBOX_SELLER_TOKEN` + helper `sandboxSellerTokenOverride()` + 2 call sites (checkout/webhook). É bypass de teste. Fazer quando a validação humana fechar. |
 | **Mercado Pago — desacoplar PIX NOT NULL** | 🔵 **adiado p/ remoção do legado** | Callback OAuth é *update-only* (locador precisa ter PIX antes de conectar MP). Tornar `pixKey`/`holderName`/`pixKeyType` nullable toca ~25 call sites do modelo financeiro; sem benefício hoje (ninguém conecta MP sem PIX). PR dedicado quando removermos o PIX-manual/Stripe. |
 | **Central de Ajuda (`/ajuda`) — revisão dos especialistas** | 🎯 **META s41 (ver STATUS.md)** | A página descreve pagamento via **Stripe/cartão**; o modelo decidido é **Mercado Pago**. Revisão por product-owner + designer + jurídico contra o modelo atual (MP, repasse semanal, taxa 15%, teto R$500, valor máx. do bem R$1.000) e conformidade D4. **Gated D4** para publicar mudanças voltadas a pagamento. |
@@ -51,6 +55,8 @@
 | ✅ **KYB PJ — cron de revalidação de PJs verificadas** | ✅ FEITO (s34) | Bloco no cron `/api/cron/kyb` re-consulta PJs verificadas há +30 dias. |
 | ✅ **Termos — cláusula explícita da taxa (#4 do D4)** | ✅ MESCLADO (#42) | Seção 6 dos Termos com taxa 15% dinâmica + repasse semanal + teto R$500. |
 | **`/bem-vindo` — generalizar a copy (PÓS lançamento)** | 🔵 pós-lançamento | Remover o tom de piloto ("Você é um dos primeiros 🎉") após o go-live. Arquivo: `app/bem-vindo/page.tsx`. |
+| 🆕 **`NEXT_PUBLIC_APP_URL` não definida no staging** | 🟡 config de infra | O `sitemap.xml` do staging declara `shareo-rouge.vercel.app` enquanto o host servido é `staging.shareo.com.br`. **Inerte hoje** (robots devolve `Disallow: /`, nada é indexado) — mas **corrigir antes de tornar qualquer ambiente indexável**. O E2E de governança anota a divergência em vez de reprovar, de propósito: é env var de deploy, não código. Registrado 13/08. |
+| 🆕 **Dívida do meta-teste E2E (13/08)** | 🟡 qualidade | Levantada pela auditoria da suíte e ainda não atacada: (1) 6 testes do fluxo de reserva por UI em `test.skip` PERMANENTE (`booking-flow.spec.ts:290-417`, corpo implementado); (2) sem cobertura E2E para raio de proximidade, `ResendVerificationButton` na tela de reserva e tiers de embaixador 2/3/5%; (3) 10 `waitForTimeout` fixos em 6 arquivos (2-3s no `mapbox.spec.ts`); (4) dependência de ordem via `test-item-id.json`/`test-booking-id.json` com `fullyParallel: true` no config local. Detalhe em [[project-e2e-veredito-parcial]]. |
 | **KYB PJ — feedback dos testers do cadastro** | ⏳ aguardando | Tratar achados do roteiro `docs/roteiro-teste-cadastro-pj.pdf` quando os testers devolverem. |
 | **Verificar geocode automático no fluxo de criar item em produção** | ✅ **RESOLVIDO (06/08)** | PR #265 (05/08) corrigiu o `ItemForm` pra geocodificar automaticamente o endereço do perfil ao criar item. Roberto criou um item de teste em `shareo-prod` (após o fix das env vars do Vercel destravar o cadastro) — coordenada salva confere com o endereço do perfil, não com o centro do Brasil. |
 | **`DATABASE_URL_PROD` sem `connection_limit=1`** | ✅ **RESOLVIDO (06/08)** | Roberto atualizou os dois lados — GitHub Secret `DATABASE_URL_PROD` (build+migrate) e a env var `DATABASE_URL` no Vercel `shareo-prod` (runtime) — sem o valor passar pelo Claude. Deploy de produção disparado (`workflow_dispatch`, run `31099273959`, 3m57s) confirmando build/migrations/health check todos verdes com o novo parâmetro. |
@@ -205,7 +211,7 @@
 | ID | O quê falta | Local | Status |
 |---|---|---|---|
 | **GAP-MIN-06b** (⊕ MAJ-S14-04 / REG-06) | Truncamento de lat/lng foi só na listagem `/api/items`. **`/api/items/[id]` (público) e a página SSR `/itens` ainda expõem coords exatas** (~10m) do dono | `app/api/items/[id]/route.ts:17`, `app/itens/page.tsx` | ✅ confirmado |
-| **GAP-CRIT-04b** (⊕ MAJ-S14-01 / MAJ-S14-02) | Invalidação de sessão (SEC-CRIT-04) **não cobre mobile/Bearer** (`resolveUserId` só faz `jwtVerify`, sem `isSessionStale`) nem **reset-password** (não chama `invalidateUserSessions`). Token mobile roubado sobrevive à troca de senha | `lib/resolveUserId.ts:6-20`, `app/api/auth/reset-password/route.ts:73`, `app/api/auth/mobile/refresh` | ✅ confirmado |
+| ~~**GAP-CRIT-04b**~~ ✅ **FECHADO** (reconciliado 13/08) | Era: invalidação de sessão não cobria mobile/Bearer nem reset-password. **Verificado no código atual:** `lib/resolveUserId.ts` chama `isSessionStale` para o Bearer (usando `iat`, renovado a cada refresh) e `app/api/auth/reset-password/route.ts:82` chama `invalidateUserSessions`. A invalidação está ligada em 4 pontos: senha, e-mail, reset e mudança de role de admin. O registro é que envelheceu — o gap foi fechado sem alguém dar baixa aqui | `lib/resolveUserId.ts`, `app/api/auth/reset-password/route.ts:82` | ✅ resolvido |
 | **GAP-M-07b** (⊕ REG-05) | `take:24` foi só em `/api/items/[id]/route.ts`, **não na página SSR `app/itens/[id]/page.tsx:98`** (consumidor de maior tráfego) | `app/itens/[id]/page.tsx:98` | ✅ confirmado (impacto baixo: `select` granular + MVP 3 fotos) |
 
 ### 🔴 CRITICAL novos
