@@ -49,6 +49,9 @@ function buildCsp(nonce: string): string {
       "img-src 'self' data: blob: *.supabase.co *.mapbox.com https://www.facebook.com",
       "connect-src 'self' ws: wss: *.supabase.co api.mapbox.com events.mapbox.com *.tiles.mapbox.com https://viacep.com.br https://www.facebook.com",
       "font-src 'self' data:",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
       "frame-src 'none'",
       // SEC-BL4: frame-ancestors espelha X-Frame-Options: SAMEORIGIN (next.config.ts).
       // Alterar um implica alterar o outro em ambos os arquivos.
@@ -74,6 +77,17 @@ function buildCsp(nonce: string): string {
     "img-src 'self' data: blob: *.supabase.co *.mapbox.com https://www.google-analytics.com https://www.facebook.com",
     "connect-src 'self' wss://*.supabase.co api.mapbox.com events.mapbox.com *.tiles.mapbox.com *.sentry.io https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://viacep.com.br https://www.facebook.com",
     "font-src 'self' data:",
+    // Defesa em profundidade — 3 diretivas de risco zero (nada legítimo usa
+    // <base>, <object>/<embed>, nem form POST cross-origin; verificado):
+    //  • base-uri 'self' — FECHA UM BYPASS DO NONCE: sem ela, um <base> injetado
+    //    reescreve todas as URLs relativas, inclusive o carregamento de scripts
+    //    que o nonce do script-src deveria proteger.
+    //  • object-src 'none' — mata plugin/<embed> como vetor de XSS legado.
+    //  • form-action 'self' — impede que um form injetado poste dados a um
+    //    domínio do atacante (checkout MP/Stripe é redirect por link, não <form>).
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
     "frame-src 'none'",
     // SEC-BL4: frame-ancestors espelha X-Frame-Options: SAMEORIGIN (next.config.ts).
     // Alterar um implica alterar o outro em ambos os arquivos.
