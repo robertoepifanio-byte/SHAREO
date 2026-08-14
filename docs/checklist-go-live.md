@@ -45,7 +45,10 @@
 
 ## 4. Segredos e configuração de produção
 
-- 🔴 ⬜ **Rotacionar `CRON_SECRET` — em STAGING TAMBÉM, não só em produção.** O literal foi removido do repo em 13/08, mas **remover não invalida**: o valor segue no histórico do git, e o repositório é **público**. Enquanto não rotacionar, qualquer pessoa na internet aciona os crons do staging — que enviam e-mail real via Resend (inclusive para leads da campanha), criam late fee no Stripe e cancelam reservas. Gerar valor forte novo, atualizar **Vercel env + GitHub Secret** (os dois lados) e conferir que `CRON_SECRET_PROD` é distinto.
+- ✅ **`CRON_SECRET` ROTACIONADO (14/08/2026), staging e produção.** O literal saiu do repo em 13/08 (#306), mas remover não invalida — o valor seguia no histórico do git, público. Rotacionado nos dois ambientes com valores distintos (256 bits), Vercel env + GitHub Secret dos dois lados (`CRON_SECRET` 13:55, `CRON_SECRET_PROD` 15:54), com redeploy.
+  - **Prova em staging:** o segredo antigo passou de `200` para **`401`** em `/api/cron/purge-consent-ips`, com `/api/health` seguindo `200`. Antes da rotação o mesmo comando executava o cron — qualquer pessoa na internet conseguia, sem credencial nem sessão.
+  - **Gotcha do redeploy:** reexecutar o run mais recente NÃO deploya se os últimos commits forem só de docs — o job `changes` gateia por mudança de web e o workflow fica verde sem ter deployado. Foi preciso reexecutar o job `Deploy Staging` do último commit que tocou o app.
+  - ⚠️ **Não verificável de fora em produção:** o `shareo-prod` está atrás da Deployment Protection, então qualquer sonda leva 302 antes de chegar ao app — o resultado seria idêntico com ou sem a rotação. O sinal válido é o **painel de Cron Jobs do Vercel**: execuções verdes = segredo correto; 401 = divergência entre Vercel env e o que o cron envia.
 - ⚠️ ⬜ **`E2E_BYPASS_DISABLED=true`** em produção; **NUNCA** colocar `E2E_SECRET` nem `SKIP_RATE_LIMIT` no runtime de prod (desliga rate limit).
 - ⚠️ ⬜ **`NEXT_PUBLIC_*` NÃO podem ser "Sensitive"** no Vercel (senão não injetam no build → aparecem vazias).
 - ⬜ Gerar **`AUTH_SECRET` e `ENCRYPTION_KEY` novos** para produção.
