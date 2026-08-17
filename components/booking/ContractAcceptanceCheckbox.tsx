@@ -84,16 +84,28 @@ export function ContractAcceptanceCheckbox({
         </svg>
       </button>
 
-      {/* Texto do contrato — expansível */}
+      {/* Texto do contrato — expansível.
+
+          Sem `dangerouslySetInnerHTML`. Hoje `contractText` é sempre a constante
+          estática RENTAL_CONTRACT_TEXT (lib/rental-contract.ts) — verificado: a
+          única interpolação no template é ${RENTAL_CONTRACT_VERSION}, nenhum dado
+          de usuário. Então NÃO há XSS hoje.
+
+          Mas o `.replace(/\n/g, "<br/>")` + innerHTML era um XSS latente: no dia
+          em que alguém trocasse a fonte por texto dinâmico (nome de item, algo do
+          locador), a injeção entraria sem aviso e sem revisão. `white-space:
+          pre-line` preserva as quebras de linha SEM interpretar HTML — o React
+          escapa o texto, e a fragilidade deixa de existir por construção em vez
+          de por comentário. */}
       {open && (
         <div
           id="contract-text-panel"
           role="region"
           aria-label="Texto do contrato de locacao"
-          className="mb-2 max-h-64 overflow-y-auto rounded border border-amber-200 bg-white p-2.5 text-[11px] leading-relaxed text-muted-foreground"
-          // eslint-disable-next-line react/no-danger -- texto gerado pelo sistema, não por usuário
-          dangerouslySetInnerHTML={{ __html: contractText.replace(/\n/g, "<br/>") }}
-        />
+          className="mb-2 max-h-64 overflow-y-auto whitespace-pre-line rounded border border-amber-200 bg-white p-2.5 text-[11px] leading-relaxed text-muted-foreground"
+        >
+          {contractText}
+        </div>
       )}
 
       {/* Checkbox de aceite */}

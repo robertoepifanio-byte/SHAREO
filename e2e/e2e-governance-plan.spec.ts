@@ -62,6 +62,12 @@ const REQUIRED_HEADERS: { name: string; expected: string | RegExp }[] = [
   { name: 'referrer-policy',        expected: /strict-origin/i },
   { name: 'permissions-policy',     expected: /camera/i },
   { name: 'content-security-policy',expected: /default-src/i },
+  // Defesa em profundidade — se alguma destas sumir da CSP, o gate reprova.
+  // `base-uri` é a mais importante: sem ela um <base> injetado reescreve URLs
+  // relativas e contorna o nonce do script-src (middleware.ts).
+  { name: 'content-security-policy', expected: /base-uri 'self'/ },
+  { name: 'content-security-policy', expected: /object-src 'none'/ },
+  { name: 'content-security-policy', expected: /form-action 'self'/ },
 ]
 
 // HSTS pode estar ausente em staging sem custom domain (Vercel injeta em prod)
