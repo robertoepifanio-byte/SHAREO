@@ -6,9 +6,11 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
+  Linking,
+  Alert,
 } from "react-native"
 import { useEffect, useState } from "react"
-import { router } from "expo-router"
+import { router, useLocalSearchParams } from "expo-router"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { apiFetch } from "@/lib/api"
@@ -27,11 +29,24 @@ interface PixAccount {
   holderName: string | null
   bankName:   string | null
   status:     PixAccountStatus
+  stripeAccountId:      string | null
+  stripeChargesEnabled: boolean
+  stripePayoutsEnabled: boolean
 }
 
 interface PaymentAccountResponse {
-  account:    PixAccount | null
-  feeRateBps: number
+  account:             PixAccount | null
+  feeRateBps:          number
+  stripeConnectActive: boolean
+}
+
+// Mensagens do retorno do onboarding Stripe Connect (deep-link ?stripe=...),
+// verbatim de STRIPE_STATUS em app/perfil/recebimentos/page.tsx.
+const STRIPE_STATUS: Record<string, { ok: boolean; msg: string }> = {
+  concluido:  { ok: true,  msg: "Dados enviados à Stripe. Assim que a verificação terminar, sua conta fica ativa para receber." },
+  incompleto: { ok: false, msg: "O cadastro na Stripe ficou incompleto. Você pode retomar de onde parou a qualquer momento." },
+  sem_conta:  { ok: false, msg: "Não foi possível encontrar sua conta de recebimento. Tente novamente." },
+  erro:       { ok: false, msg: "Não foi possível conectar à Stripe. Tente novamente." },
 }
 
 interface SaveInput {
@@ -87,6 +102,8 @@ export default function RecebimentosScreen() {
   const user       = useAuth((s) => s.user)
   const qc         = useQueryClient()
   const { tokens } = useTheme()
+  const { stripe: stripeParam } = useLocalSearchParams<{ stripe?: string }>()
+  const stripeStatus = stripeParam ? STRIPE_STATUS[stripeParam] : undefined
 
   // ── Estado do formulário ───────────────────────────────────────────────────
   const [formInitialized, setFormInitialized] = useState(false)
@@ -105,9 +122,36 @@ export default function RecebimentosScreen() {
     enabled:  !!user,
   })
 
-  const account    = data?.account ?? null
-  const feeRateBps = data?.feeRateBps ?? 1500
-  const feeLabel   = `${feeRateBps / 100}%`
+  const account             = data?.account ?? null
+  const feeRateBps          = data?.feeRateBps ?? 1500
+  const feeLabel            = `${feeRateBps / 100}%`
+  const stripeConnectActive = data?.stripeConnectActive ?? false
+  const stripeReady         = account?.stripeChargesEnabled && account?.stripePayoutsEnabled
+
+  // Onboarding Stripe Connect (client:"mobile" → resposta JSON com a URL, o
+  // app abre com Linking.openURL — mesmo padrão do checkout MP em
+  // apps/mobile/app/reservas/[id].tsx).
+  // Fonte: app/api/payments/stripe/connect/route.ts (POST)
+  const stripeConnect = useMutation({
+    mutationFn: async () => {
+      const res = await apiFetch<{ data: { url: string } }>(
+        "/api/payments/stripe/connect",
+        { method: "POST" },
+      )
+      return res.data.url
+    },
+    onSuccess: async (url) => {
+      const canOpen = await Linking.canOpenURL(url)
+      if (canOpen) {
+        await Linking.openURL(url)
+      } else {
+        Alert.alert("Erro", "Não foi possível abrir o link de cadastro.")
+      }
+    },
+    onError: (e) => {
+      Alert.alert("Erro", e instanceof Error ? e.message : "Não foi possível conectar à Stripe.")
+    },
+  })
 
   // Inicializa o formulário com os dados da conta quando o carregamento termina (uma vez).
   useEffect(() => {
@@ -221,6 +265,23 @@ export default function RecebimentosScreen() {
             Cadastre a chave PIX para receber os repasses das suas locações.
             O valor fica retido na plataforma até o repasse semanal (toda segunda-feira).
           </Text>
+
+          {/* ── Banner de retorno do onboarding Stripe (verbatim de page.tsx) ── */}
+          {stripeStatus && (
+            <View
+              className={`mt-4 rounded-xl border p-3 ${
+                stripeStatus.ok
+                  ? "border-green-200 bg-green-50"
+                  : "border-red-200 bg-red-50"
+              }`}
+              accessible
+              accessibilityLiveRegion="polite"
+            >
+              <Text className={`text-sm ${stripeStatus.ok ? "text-green-700" : "text-red-600"}`}>
+                {stripeStatus.msg}
+              </Text>
+            </View>
+          )}
 
           {/* ── Card do formulário (verbatim de _PixAccountForm.tsx) ── */}
           <View className="mt-4 rounded-2xl border border-border bg-surface p-4 gap-4">
@@ -376,6 +437,69 @@ export default function RecebimentosScreen() {
               )}
             </TouchableOpacity>
           </View>
+
+          {/* ── Stripe Connect — PSP definitivo, onboarding EM CONSTRUÇÃO (ADR-028).
+              Só aparece com a flag ativa; verbatim de page.tsx. ── */}
+          {stripeConnectActive && (
+            <View className="mt-4 rounded-2xl border border-border bg-surface p-4 gap-3">
+              <Text className="font-semibold text-foreground">Receber pela Stripe</Text>
+              {account?.stripeAccountId ? (
+                stripeReady ? (
+                  <View className="gap-2">
+                    <Text className="text-sm text-green-700">
+                      ✅ Conta verificada e pronta para receber.
+                    </Text>
+                    <Text className="text-xs text-muted">
+                      Os repasses das suas locações cairão automaticamente na conta bancária
+                      cadastrada, já com a taxa ShareO de {feeLabel} descontada.
+                    </Text>
+                  </View>
+                ) : (
+                  <View className="gap-3">
+                    <Text className="text-sm text-muted">
+                      ⏳ Cadastro iniciado, verificação da Stripe pendente.
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => stripeConnect.mutate()}
+                      disabled={stripeConnect.isPending}
+                      accessibilityRole="button"
+                      accessibilityLabel="Continuar cadastro"
+                      className="min-h-[44px] items-start justify-center"
+                    >
+                      <Text className="text-sm font-medium text-brand">Continuar cadastro</Text>
+                    </TouchableOpacity>
+                  </View>
+                )
+              ) : (
+                <View className="gap-3">
+                  <Text className="text-sm text-muted">
+                    Cadastre seus dados bancários pela Stripe para receber os repasses
+                    automaticamente, sem espera pelo repasse manual.
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => stripeConnect.mutate()}
+                    disabled={stripeConnect.isPending}
+                    accessibilityRole="button"
+                    accessibilityLabel="Cadastrar dados bancários"
+                    accessibilityState={{ disabled: stripeConnect.isPending }}
+                    className={[
+                      "min-h-[52px] items-center justify-center rounded-xl",
+                      stripeConnect.isPending ? "bg-brand/50" : "bg-brand",
+                    ].join(" ")}
+                  >
+                    {stripeConnect.isPending ? (
+                      <View className="flex-row items-center gap-2">
+                        <ActivityIndicator size="small" color="#FFFFFF" />
+                        <Text className="text-base font-bold text-white">Abrindo...</Text>
+                      </View>
+                    ) : (
+                      <Text className="text-base font-bold text-white">Cadastrar dados bancários</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          )}
 
           {/* ── Como funciona (verbatim de page.tsx) ── */}
           <View className="mt-4 rounded-2xl border border-border bg-surface p-4 gap-3">

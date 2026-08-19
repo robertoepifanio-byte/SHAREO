@@ -148,6 +148,8 @@
 
 ## 💳 Avaliação: migração de pagamentos Stripe → Mercado Pago (s34, 2026-06-22)
 
+**⚠️ SUPERADO por [ADR-028](adr/ADR-028-reversao-stripe-connect.md) (19/08/2026):** o sócio majoritário reverteu a decisão abaixo — o PSP definitivo passou a ser **Stripe Connect**, não Mercado Pago (o Modelo B exigia que cada proprietário abrisse conta própria no MP, o que gerou forte rejeição comercial). Mercado Pago fica dormente, não removido. A menção a "Stripe Connect ~dez/2026" na linha do Modelo B abaixo também está superada — não é mais reavaliação futura, é a decisão vigente, com construção ainda não iniciada. Seção mantida como registro histórico da decisão de 28/06.
+
 **Status:** ✅ **DECIDIDO (2026-06-28, s39): Mercado Pago — Modelo B (split/marketplace).** Escolhido pelos fundadores e **recomendado pelo parecer D4** (split/escrow afasta o enquadramento da Lei 12.865). **Nenhum código alterado ainda** — a implementação **começa quando os fundadores fornecerem as credenciais de teste do app MP** (marketplace: `Client ID`/`Client Secret`/`Access Token`/webhook). **Nada vai a produção antes do parecer FORMAL (D4).** Ver `docs/juridico/checklist-conformidade-juridica.md` e memória [[project-mercadopago-migration]].
 
 **Por quê:** o Mercado Pago é nativo do Brasil (PIX/cartão/boleto), faz **PIX nativo com confirmação automática** (aposenta o checkout PIX manual temporário) e é **instituição de pagamento licenciada** — pode **amenizar** as questões #1/#5 do D4 (Lei 12.865 / PLD).

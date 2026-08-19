@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma"
 import type { Prisma } from "@prisma/client"
 import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
 import { processAmbassadorOnBookingPaid, cancelAmbassadorCommissions } from "@/lib/ambassador"
+import { syncStripeConnectAccount } from "@/lib/stripe-connect"
 
 // App Router já entrega o body raw via req.text() — não há bodyParser para desabilitar
 // (o `export const config = { api: { bodyParser } }` do Pages Router é ignorado aqui).
@@ -283,6 +284,18 @@ export async function POST(req: Request) {
         console.warn(
           `[stripe webhook] dispute closed ${dispute.id} status=${dispute.status} → booking ${newStatus}`,
         )
+        break
+      }
+
+      case "account.updated": {
+        // Connect (ADR-028, onboarding do proprietário — EM CONSTRUÇÃO).
+        // Só chega aqui se o endpoint estiver configurado para "escutar
+        // eventos em contas conectadas" no Dashboard da Stripe — sem isso,
+        // este case nunca dispara e a sincronização depende só do retorno
+        // do onboarding em app/api/stripe/connect/return/route.ts.
+        const account = event.data.object as Stripe.Account
+        await syncStripeConnectAccount(account)
+        console.warn(`[stripe webhook] account.updated ${account.id} charges=${account.charges_enabled} payouts=${account.payouts_enabled}`)
         break
       }
 

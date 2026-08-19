@@ -3,21 +3,31 @@ import type { NextRequest } from "next/server"
 import { resolveUserId } from "@/lib/resolveUserId"
 import { prisma } from "@/lib/prisma"
 import { getPlatformFeeRate } from "@/lib/platform-config"
+import { isStripeConnectActive } from "@/lib/stripe-connect"
 import { PaymentAccountSchema } from "@/lib/validations/payment-account"
 
+// Consumido pelo site (app/perfil/recebimentos/page.tsx faz a mesma leitura
+// direto via Prisma/Server Component) e pelo app mobile (Bearer via
+// resolveUserId — apps/mobile/app/perfil/recebimentos.tsx). Os campos
+// stripe* e `stripeConnectActive` foram adicionados junto com o onboarding
+// Stripe Connect (ADR-028) para o app renderizar a mesma seção que o site.
 export async function GET(req: NextRequest) {
   const userId = await resolveUserId(req)
   if (!userId) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
 
-  const [account, feeRateBps] = await Promise.all([
+  const [account, feeRateBps, stripeConnectActive] = await Promise.all([
     prisma.ownerPaymentAccount.findUnique({
       where:  { userId },
-      select: { id: true, pixKeyType: true, pixKey: true, holderName: true, bankName: true, status: true, updatedAt: true },
+      select: {
+        id: true, pixKeyType: true, pixKey: true, holderName: true, bankName: true, status: true, updatedAt: true,
+        stripeAccountId: true, stripeChargesEnabled: true, stripePayoutsEnabled: true,
+      },
     }),
     getPlatformFeeRate(),
+    isStripeConnectActive(),
   ])
 
-  return NextResponse.json({ account, feeRateBps })
+  return NextResponse.json({ account, feeRateBps, stripeConnectActive })
 }
 
 export async function POST(req: NextRequest) {

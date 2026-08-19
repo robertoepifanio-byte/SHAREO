@@ -60,6 +60,10 @@ async function paymentClientForSeller(sellerUserId: string | null) {
  * recebe o id do pagamento → consulta `GET /v1/payments/{id}` (com o token do
  * vendedor) → se `approved`, marca a reserva como paga (paridade com o Stripe).
  *
+ * DORMENTE desde ADR-028 (2026-08-19): o PSP definitivo passou a ser Stripe
+ * Connect, não o MP. Esta rota permanece funcional (não removida) mas fora do
+ * caminho de produção — ver docs/adr/ADR-028-reversao-stripe-connect.md.
+ *
  * - Assinatura: valida `x-signature` (HMAC) quando MP_WEBHOOK_SECRET está setado.
  * - Idempotência: dedupe pela id da notificação via MercadoPagoEventQueue.
  * - Gating: flag + credenciais → senão 404.

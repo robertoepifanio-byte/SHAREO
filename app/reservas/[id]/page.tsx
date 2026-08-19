@@ -9,7 +9,6 @@ import { BookingActions }      from "./_BookingActions"
 import { ReviewForm }          from "./_ReviewForm"
 import { PayButton }           from "@/components/bookings/PayButton"
 import { MpPayButton }         from "@/components/bookings/MpPayButton"
-import { PixPaymentPanel }     from "./_PixPaymentPanel"
 import { ContractBanner }      from "./_ContractBanner"
 import { CheckInOut }          from "./_CheckInOut"
 import { BookingProgressBar }  from "@/components/booking/BookingProgressBar"
@@ -17,7 +16,7 @@ import { BookingHistory }     from "@/components/booking/BookingHistory"
 import { ReturnCountdown }    from "@/components/booking/ReturnCountdown"
 import { ReturnChecklist }    from "@/components/booking/ReturnChecklist"
 import { ReturnConditionForm } from "@/components/booking/ReturnConditionForm"
-import { getPlatformFeeRate, calcSplit, getPlatformPixConfig } from "@/lib/platform-config"
+import { getPlatformFeeRate, calcSplit } from "@/lib/platform-config"
 import { isMercadoPagoActive } from "@/lib/mercadopago"
 import { deriveBookingHistory } from "@/lib/bookingHistory"
 import { BookingStatusBadge } from "@/components/ui/BookingStatusBadge"
@@ -84,7 +83,6 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
       createdAt:            true,
       respondedAt:          true,
       paidAt:               true,
-      pixDeclaredAt:        true,
       contractSignedAt:     true,
       activatedAt:          true,
       returnRequestedAt:    true,
@@ -136,11 +134,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
   const feeRateBps = await getPlatformFeeRate()
   const feeRatePct = feeRateBps / 100
 
-  // Checkout PIX manual (validação em staging): quando habilitado, troca o botão Stripe
-  // pelo painel com a chave PIX da plataforma. Default off → Stripe segue intacto.
-  const pix = await getPlatformPixConfig()
-  const pixCheckout = pix.enabled && !!pix.key
-  // Mercado Pago (Modelo B / split — ADR-026) tem prioridade quando ativo.
+  // Mercado Pago (Modelo B / split — ADR-026) tem prioridade quando ativo; senão Stripe.
   const mpActive = await isMercadoPagoActive()
   const feeRateLabel = feeRatePct % 1 === 0 ? feeRatePct.toFixed(0) : String(feeRatePct)
 
@@ -433,27 +427,6 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                   </p>
                   {mpActive ? (
                     <MpPayButton bookingId={booking.id} totalPrice={booking.totalPrice} />
-                  ) : pixCheckout ? (
-                    booking.pixDeclaredAt ? (
-                      <div className="flex items-start gap-3 rounded-lg border border-blue-medium/30 bg-blue-medium/10 p-3 text-sm">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mt-0.5 flex-shrink-0 text-blue-medium" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        <div>
-                          <p className="font-semibold text-blue-medium">Pagamento informado — aguardando confirmação</p>
-                          <p className="mt-0.5 text-xs text-muted-foreground">
-                            Recebemos seu aviso de pagamento via PIX. A ShareO vai conferir o recebimento e liberar a retirada. Você será notificado.
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <PixPaymentPanel
-                        bookingId={booking.id}
-                        totalPrice={booking.totalPrice}
-                        pixKey={pix.key!}
-                        pixKeyType={pix.keyType}
-                        holder={pix.holder}
-                        bank={pix.bank}
-                      />
-                    )
                   ) : (
                     <>
                       <div className="mb-3 flex items-center justify-between rounded-lg bg-background px-4 py-3 text-sm">
@@ -494,9 +467,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                     <line x1="12" y1="16" x2="12.01" y2="16"/>
                   </svg>
                   <p className="text-yellow-700">
-                    {pixCheckout && booking.pixDeclaredAt
-                      ? "O locatário informou o pagamento via PIX. Aguardando a ShareO confirmar o recebimento."
-                      : "Aguardando pagamento do locatário."}
+                    Aguardando pagamento do locatário.
                   </p>
                 </>
               )}
