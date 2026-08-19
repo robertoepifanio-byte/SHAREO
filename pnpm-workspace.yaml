@@ -10,6 +10,30 @@ overrides:
   "@shareo/mobile>@types/react": "~18.3.0"
   "@shareo/mobile>@types/react-dom": "~18.3.0"
 
+  # ── Triagem Dependabot 2026-08-19 ──────────────────────────────────────────
+  # Só cópias que alcançam runtime web / build web / dev. Trilha Expo (interno
+  # do mobile) NÃO é forçada aqui (risco de quebrar o RN build) — sobe com o SDK.
+  #
+  # cookie (CVE-2024-47764) — runtime web de sessão, via @supabase/ssr@0.4.1
+  # (pinado em ^0.6.0). Escopado p/ não mexer na cópia 1.1.1 do msw (dev).
+  # Bump do @supabase/ssr → 0.12 (SEC-MAJ-04) fica p/ PR próprio com teste de auth.
+  "@supabase/ssr>cookie": "^0.7.0"
+  # sharp — cópia 0.34.5 que o next puxa p/ otimização de imagem (next/image).
+  # Alinha com a dep direta 0.35.2 que já declaramos.
+  sharp: "^0.35.2"
+  # fast-uri (build web via ajv/webpack do @sentry + expo) — patch folha.
+  fast-uri: "^3.1.5"
+  # form-data (dev/test, jsdom/jest) — patch folha.
+  form-data: "^4.0.6"
+  # ip-address (dev, lighthouse/puppeteer) — patch folha.
+  ip-address: "^10.3.1"
+  # js-yaml — cópia 4.1.1 do eslint (dev). Escopado: a 3.15.1 do jest usa API v3
+  # (safeLoad) e não pode ir p/ v4; a 4.3.1 do expo é interna do mobile.
+  "@eslint/eslintrc>js-yaml": "^4.3.1"
+  # postcss — cópia 8.4.31 que o next embute (build CSS web/campanha). Escopado
+  # p/ não tocar a 8.4.49 do metro (mobile build).
+  "next>postcss": "^8.5.26"
+
 allowBuilds:
   '@prisma/client': true
   '@prisma/engines': true
