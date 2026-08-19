@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useTransition } from "react"
 import { getSupabaseBrowserClient } from "@/lib/supabase/client"
+import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js"
 import { formatDate } from "@/utils/format"
 
 interface Message {
@@ -71,7 +72,9 @@ export function ChatWindow({ conversationId, currentUserId, initialMessages, oth
       // Para produção: habilitar RLS na tabela messages com política de participante.
       const channel = supabase
         .channel(`conv:${conversationId}`)
-        .on<RealtimeMessageRow>(
+        // @supabase/ssr 0.12 usa o supabase-js do projeto (peer), cujo tipo de
+        // realtime não aceita mais o genérico em .on(); o row é tipado no callback.
+        .on(
           "postgres_changes",
           {
             event:  "INSERT",
@@ -79,8 +82,8 @@ export function ChatWindow({ conversationId, currentUserId, initialMessages, oth
             table:  "messages",
             filter: `conversation_id=eq.${conversationId}`,
           },
-          (payload) => {
-            const row = payload.new
+          (payload: RealtimePostgresChangesPayload<RealtimeMessageRow>) => {
+            const row = payload.new as RealtimeMessageRow
             // Ignora soft-deleted
             if (row.deleted_at) return
 
@@ -112,7 +115,7 @@ export function ChatWindow({ conversationId, currentUserId, initialMessages, oth
             }
           }
         )
-        .subscribe((status) => {
+        .subscribe((status: string) => {
           setIsLive(status === "SUBSCRIBED")
         })
 

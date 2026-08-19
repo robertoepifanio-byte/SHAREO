@@ -14,10 +14,12 @@ overrides:
   # Só cópias que alcançam runtime web / build web / dev. Trilha Expo (interno
   # do mobile) NÃO é forçada aqui (risco de quebrar o RN build) — sobe com o SDK.
   #
-  # cookie (CVE-2024-47764) — runtime web de sessão, via @supabase/ssr@0.4.1
-  # (pinado em ^0.6.0). Escopado p/ não mexer na cópia 1.1.1 do msw (dev).
-  # Bump do @supabase/ssr → 0.12 (SEC-MAJ-04) fica p/ PR próprio com teste de auth.
-  "@supabase/ssr>cookie": "^0.7.0"
+  # cookie: override removido — @supabase/ssr subiu p/ ^0.12.4 (SEC-MAJ-04), que
+  # já puxa cookie ^1.0.2 (corrigido) nativamente. Não precisa mais forçar.
+  # brace-expansion (GHSA-mh99-v99m-4gvg / GHSA-rgw5-rvv9-x895) — cópia 1.1.14
+  # via minimatch@3 (eslint/jest, dev). Escopado à linha 1.x p/ não colidir com
+  # as cópias 2.x/5.x (que já estão em versão corrigida).
+  "brace-expansion@1": "^1.1.18"
   # sharp — cópia 0.34.5 que o next puxa p/ otimização de imagem (next/image).
   # Alinha com a dep direta 0.35.2 que já declaramos.
   sharp: "^0.35.2"
