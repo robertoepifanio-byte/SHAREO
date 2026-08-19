@@ -349,6 +349,34 @@ export async function getBiometricConsentConfig(): Promise<BiometricConsentConfi
   }
 }
 
+// ─── Stripe Connect (PSP definitivo — ADR-028, EM CONSTRUÇÃO) ────────────────
+// Flag de feature: PlatformConfig.stripeConnectEnabled
+// Default OFF — com a flag desligada, o onboarding do proprietário via Stripe
+// Connect não fica visível/alcançável (mesmo padrão de getMercadoPagoConfig).
+// Ativar só depois que a conta Stripe da plataforma tiver o perfil de Connect
+// habilitado no Dashboard e o fluxo tiver sido validado em staging.
+
+export interface StripeConnectConfig {
+  enabled: boolean // chave stripeConnectEnabled ("true"/"false")
+}
+
+const DEFAULT_STRIPE_CONNECT: StripeConnectConfig = { enabled: false }
+
+/**
+ * Lê a configuração do onboarding Stripe Connect.
+ * Nunca lança exceção — default OFF garante que nada muda até ativação explícita.
+ */
+export async function getStripeConnectConfig(): Promise<StripeConnectConfig> {
+  try {
+    const map = await loadConfig()
+    return {
+      enabled: map.stripeConnectEnabled === "true",
+    }
+  } catch {
+    return DEFAULT_STRIPE_CONNECT
+  }
+}
+
 const DEFAULT_WEEKLY_MULTIPLIER  = 3   // preço semanal = 3× diária
 const DEFAULT_MONTHLY_MULTIPLIER = 15  // preço mensal  = 15× diária
 
