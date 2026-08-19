@@ -139,6 +139,20 @@ enum PixAccountStatus {
   REJECTED
 }
 
+// Espelha o ciclo de vida de uma connected account do Stripe Connect
+// (ADR-028). NOT_CONNECTED = locador ainda não iniciou o onboarding;
+// ONBOARDING = conta criada mas requirements pendentes (details_submitted
+// false ou charges/payouts desabilitados); ACTIVE = charges e payouts
+// habilitados; RESTRICTED = Stripe suspendeu recebimento (requirements
+// vencidos ou revisão de risco); REJECTED = conta encerrada pela Stripe.
+enum StripeConnectStatus {
+  NOT_CONNECTED
+  ONBOARDING
+  ACTIVE
+  RESTRICTED
+  REJECTED
+}
+
 enum TransactionType {
   PAYMENT_RECEIVED
   PLATFORM_FEE
@@ -484,15 +498,18 @@ model Booking {
   paymentStatus         PaymentStatus @default(PENDING)
   stripeSessionId       String?       @unique // Stripe Checkout Session ID
   stripePaymentIntentId String?
+  // Connected account do proprietário que recebeu o split desta reserva (ADR-028).
+  // Gravado por reserva (e não só em OwnerPaymentAccount) porque o locador pode
+  // trocar/reconectar a conta Stripe entre reservas — isto é o registro histórico
+  // de para onde o dinheiro desta transação específica foi.
+  stripeConnectedAccountId String?
   paidAt                DateTime?
 
-  // Pagamento via Mercado Pago (Modelo B / split — ADR-026, gated flag mercadoPagoEnabled)
+  // Pagamento via Mercado Pago (Modelo B / split — ADR-026, DORMENTE desde
+  // ADR-028: flag mercadoPagoEnabled permanece default OFF, código preservado
+  // sem uso em produção)
   mpPreferenceId String? @unique // Preference (Checkout Pro) criada para esta reserva
   mpPaymentId    String?         // ID do pagamento aprovado (retornado pelo webhook)
-
-  // Pagamento PIX manual (fase de validação em staging) — locatário declara que
-  // pagou na chave da plataforma; um admin confere o extrato e confirma o recebimento.
-  pixDeclaredAt         DateTime?
 
   cancelledAt   DateTime?
   cancelledById String?
@@ -893,6 +910,18 @@ model OwnerPaymentAccount {
   mpTokenExpiresAt DateTime?          // expiração do access_token (refresh antes disso)
   mpConnectedAt    DateTime?          // quando o locador concluiu o OAuth
   mpLiveMode       Boolean   @default(false) // false = sandbox/teste
+
+  // Conexão Stripe Connect (split automático 85/15 — ADR-028, reverte ADR-026).
+  // O locador NÃO abre conta Stripe própria visível: preenche dados bancários +
+  // KYC dentro da UI do ShareO (Custom) ou num onboarding hospedado simplificado
+  // (Express) — decisão de implementação registrada como pendência no ADR-028.
+  stripeAccountId        String?              @unique // "acct_..." da connected account
+  stripeConnectStatus    StripeConnectStatus  @default(NOT_CONNECTED)
+  stripeChargesEnabled   Boolean              @default(false) // reflete account.charges_enabled
+  stripePayoutsEnabled   Boolean              @default(false) // reflete account.payouts_enabled
+  stripeDetailsSubmitted Boolean              @default(false) // reflete account.details_submitted
+  stripeDisabledReason   String?                                // account.requirements.disabled_reason, se houver
+  stripeConnectedAt      DateTime?                              // quando charges+payouts ficaram habilitados pela 1ª vez
 
   @@map("owner_payment_accounts")
 }

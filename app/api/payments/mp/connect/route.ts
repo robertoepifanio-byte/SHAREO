@@ -8,6 +8,12 @@ import { buildOAuthAuthorizeUrl, isMercadoPagoActive } from "@/lib/mercadopago"
  * Inicia o onboarding OAuth do locador (Modelo B / split — ADR-026).
  * Redireciona o locador autenticado para autorizar a conexão da conta Mercado Pago.
  *
+ * DORMENTE desde ADR-028 (2026-08-19): o PSP definitivo passou a ser Stripe
+ * Connect, não o MP — a própria fricção deste onboarding OAuth (locador abrir
+ * conta em outra instituição) foi o motivo da reversão. Rota permanece
+ * funcional (não removida) mas fora do caminho de produção — ver
+ * docs/adr/ADR-028-reversao-stripe-connect.md.
+ *
  * Gating: flag mercadoPagoEnabled (default OFF) + credenciais. Com qualquer um
  * ausente, responde 404 (caminho inexistente) — o fluxo atual não é afetado.
  *
