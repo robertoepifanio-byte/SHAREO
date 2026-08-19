@@ -1,20 +1,20 @@
+import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
-import { APP_URL } from "@/lib/app-url"
-import { isStripeConnectActive, createOnboardingLink } from "@/lib/stripe-connect"
-
-const SETTINGS = "/perfil/recebimentos"
+import { isStripeConnectActive, createOnboardingLink, stripeConnectFinalRedirect } from "@/lib/stripe-connect"
 
 /**
  * O link de onboarding do Stripe (`account_onboarding`) expira depois de um
  * tempo curto. Se o locador demorar para preencher, a Stripe manda ele para
  * cá em vez de para o `return_url` — geramos um link novo e redirecionamos
- * de novo, sem exigir que ele clique em "Conectar" de novo manualmente.
+ * de novo, sem exigir que ele reabra "Conectar" manualmente.
+ *
+ * SEM sessão, mesmo motivo de app/api/stripe/connect/return/route.ts: a
+ * conta é identificada pelo `stripeAccountId` que viaja na URL, não por
+ * cookie/Bearer.
  *
  * Gating: flag stripeConnectEnabled + STRIPE_SECRET_KEY. Sem isso, 404.
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
   if (!(await isStripeConnectActive())) {
     return NextResponse.json(
       { error: { code: "NOT_FOUND", message: "Recurso indisponível." } },
@@ -22,24 +22,19 @@ export async function GET() {
     )
   }
 
-  const session = await auth()
-  if (!session?.user?.id) {
-    return NextResponse.redirect(`${APP_URL}/login?callbackUrl=${SETTINGS}`)
-  }
+  const { searchParams } = new URL(req.url)
+  const accountId = searchParams.get("account")
+  const client    = searchParams.get("client")
 
-  const account = await prisma.ownerPaymentAccount.findUnique({
-    where:  { userId: session.user.id },
-    select: { stripeAccountId: true },
-  })
-  if (!account?.stripeAccountId) {
-    return NextResponse.redirect(`${APP_URL}${SETTINGS}?stripe=sem_conta`)
+  if (!accountId || !accountId.startsWith("acct_")) {
+    return NextResponse.redirect(stripeConnectFinalRedirect(client, "sem_conta"))
   }
 
   try {
-    const onboardingUrl = await createOnboardingLink(account.stripeAccountId)
-    return NextResponse.redirect(onboardingUrl)
+    const url = await createOnboardingLink(accountId, client === "mobile" ? "mobile" : "web")
+    return NextResponse.redirect(url)
   } catch (e: unknown) {
     console.error("[GET /api/stripe/connect/refresh]", e instanceof Error ? e.message : e)
-    return NextResponse.redirect(`${APP_URL}${SETTINGS}?stripe=erro`)
+    return NextResponse.redirect(stripeConnectFinalRedirect(client, "erro"))
   }
 }

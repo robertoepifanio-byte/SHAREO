@@ -74,16 +74,35 @@ export async function getOrCreateConnectedAccount(userId: string): Promise<strin
   return account.id
 }
 
-/** Gera o link de onboarding hospedado pela Stripe para uma connected account. */
-export async function createOnboardingLink(accountId: string): Promise<string> {
+/**
+ * Gera o link de onboarding hospedado pela Stripe para uma connected account.
+ *
+ * `return_url`/`refresh_url` da Stripe precisam ser `https://` (não aceitam
+ * scheme customizado tipo `shareo://`) — por isso o destino final por
+ * plataforma (web navega no próprio site; mobile volta por deep-link) é
+ * decidido DEPOIS, pelas rotas /return e /refresh, usando o `client` que
+ * viaja aqui como query param. O `accountId` também viaja na URL: as rotas
+ * de retorno não dependem de sessão (o navegador externo do onboarding no
+ * mobile não carrega nem cookie nem Bearer token do app) — identificam a
+ * conta só pelo `stripeAccountId`, o mesmo padrão que o webhook já usa.
+ */
+export async function createOnboardingLink(accountId: string, client: "web" | "mobile" = "web"): Promise<string> {
   const stripe = getStripe()
+  const qs = `account=${accountId}&client=${client}`
   const link = await stripe.accountLinks.create({
     account:    accountId,
     type:       "account_onboarding",
-    refresh_url: `${APP_URL}${STRIPE_CONNECT_REFRESH_PATH}`,
-    return_url:  `${APP_URL}${STRIPE_CONNECT_RETURN_PATH}`,
+    refresh_url: `${APP_URL}${STRIPE_CONNECT_REFRESH_PATH}?${qs}`,
+    return_url:  `${APP_URL}${STRIPE_CONNECT_RETURN_PATH}?${qs}`,
   })
   return link.url
+}
+
+/** Redireciona pro destino certo por plataforma após return/refresh (ver createOnboardingLink). */
+export function stripeConnectFinalRedirect(client: string | null, status: string): string {
+  return client === "mobile"
+    ? `shareo://perfil/recebimentos?stripe=${status}`
+    : `${APP_URL}/perfil/recebimentos?stripe=${status}`
 }
 
 /**

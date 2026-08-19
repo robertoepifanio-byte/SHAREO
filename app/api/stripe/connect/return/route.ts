@@ -1,15 +1,7 @@
+import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
-import { APP_URL } from "@/lib/app-url"
 import { getStripe } from "@/lib/stripe"
-import { isStripeConnectActive, syncStripeConnectAccount } from "@/lib/stripe-connect"
-
-const SETTINGS = "/perfil/recebimentos"
-
-function back(status: string) {
-  return NextResponse.redirect(`${APP_URL}${SETTINGS}?stripe=${status}`)
-}
+import { isStripeConnectActive, syncStripeConnectAccount, stripeConnectFinalRedirect } from "@/lib/stripe-connect"
 
 /**
  * Retorno do onboarding Express (Stripe Connect — ADR-028). A Stripe manda o
@@ -18,9 +10,15 @@ function back(status: string) {
  * isso buscamos o Account fresco e sincronizamos o status real, em vez de
  * assumir sucesso só pelo redirect ter acontecido.
  *
+ * SEM sessão de propósito: no mobile, o `return_url` da Stripe abre no
+ * navegador externo do onboarding, que não carrega cookie nem Bearer token
+ * do app — não dá pra usar auth()/resolveUserId aqui. A conta é identificada
+ * só pelo `stripeAccountId` que viaja na própria URL (ver createOnboardingLink
+ * em lib/stripe-connect.ts) — mesmo padrão que o webhook account.updated usa.
+ *
  * Gating: flag stripeConnectEnabled + STRIPE_SECRET_KEY. Sem isso, 404.
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
   if (!(await isStripeConnectActive())) {
     return NextResponse.json(
       { error: { code: "NOT_FOUND", message: "Recurso indisponível." } },
@@ -28,25 +26,24 @@ export async function GET() {
     )
   }
 
-  const session = await auth()
-  if (!session?.user?.id) {
-    return NextResponse.redirect(`${APP_URL}/login?callbackUrl=${SETTINGS}`)
-  }
+  const { searchParams } = new URL(req.url)
+  const accountId = searchParams.get("account")
+  const client    = searchParams.get("client")
 
-  const account = await prisma.ownerPaymentAccount.findUnique({
-    where:  { userId: session.user.id },
-    select: { stripeAccountId: true },
-  })
-  if (!account?.stripeAccountId) return back("sem_conta")
+  if (!accountId || !accountId.startsWith("acct_")) {
+    return NextResponse.redirect(stripeConnectFinalRedirect(client, "sem_conta"))
+  }
 
   try {
     const stripe = getStripe()
-    const stripeAccount = await stripe.accounts.retrieve(account.stripeAccountId)
+    const stripeAccount = await stripe.accounts.retrieve(accountId)
     await syncStripeConnectAccount(stripeAccount)
 
-    return back(stripeAccount.details_submitted ? "concluido" : "incompleto")
+    return NextResponse.redirect(
+      stripeConnectFinalRedirect(client, stripeAccount.details_submitted ? "concluido" : "incompleto"),
+    )
   } catch (e: unknown) {
     console.error("[GET /api/stripe/connect/return]", e instanceof Error ? e.message : e)
-    return back("erro")
+    return NextResponse.redirect(stripeConnectFinalRedirect(client, "erro"))
   }
 }
