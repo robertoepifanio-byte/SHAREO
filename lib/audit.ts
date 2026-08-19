@@ -13,7 +13,6 @@ export type AuditAction =
   // Exportação nível-lead da campanha de pré-lançamento (contém e-mail/nome).
   // Distinta de EXPORT_FINANCIAL: outro dado, outro requisito de retenção.
   | "EXPORT_FOUNDER_LEADS"
-  | "PIX_PAYMENT_CONFIRMED"
   | "kyc.selfie.view"
 
 /** Grava uma entrada no audit log de forma fire-and-forget. Nunca lança exceção. */

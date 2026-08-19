@@ -96,7 +96,6 @@ function makeBooking(overrides: Record<string, unknown> = {}) {
     createdAt:             "2026-07-04T10:00:00Z",
     respondedAt:           null,
     paidAt:                null,
-    pixDeclaredAt:         null,
     contractSignedAt:      null,
     activatedAt:           null,
     returnRequestedAt:     null,

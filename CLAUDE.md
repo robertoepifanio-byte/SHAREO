@@ -19,7 +19,7 @@ Marketplace de economia circular para aluguel local de itens. Lançamento nacion
 | Auth | NextAuth.js v5 — JWT strategy **sem** PrismaAdapter |
 | Real-time | Supabase Realtime (chat) |
 | Mapas | Mapbox GL (`react-map-gl`) — token `NEXT_PUBLIC_MAPBOX_TOKEN` |
-| Pagamentos | Stripe Checkout Sessions (Test mode — UI Stripe Connect oculta até dez/2026) |
+| Pagamentos | Stripe Checkout Sessions simples (Test mode, ativo no código hoje). PSP definitivo decidido: **Stripe Connect** (split automático, [ADR-028](docs/adr/ADR-028-reversao-stripe-connect.md), 2026-08-19) — construção ainda não iniciada. Mercado Pago Modelo B (ADR-026) dormente, código preservado. |
 | E-mail | Resend (`RESEND_API_KEY`) |
 | Storage | Supabase Storage — `item-images` (público), `booking-photos` (público), `id-docs` (privado) |
 | Hosting | Vercel (main → staging automático) |
@@ -100,7 +100,7 @@ SQL de manutenção/migration para staging → sempre usar `zythygwvmrwrqmnrdufq
 
 ## Módulo financeiro (MVP completo — commit 4ef3cb7)
 
-- **D1:** PIX apenas no MVP. Stripe Connect reavaliado ~dez/2026. Código Stripe preservado mas invisível na UI.
+- **D1 (pagamentos):** decisão evoluiu — PIX manual da plataforma (MVP inicial) → Mercado Pago Modelo B (ADR-026, 2026-06-28) → reversão para Stripe Connect (ADR-028, 2026-08-19). **PSP definitivo: Stripe Connect (ADR-028, 2026-08-19) — construção ainda não iniciada.** Mercado Pago (ADR-026) dormente (flag `mercadoPagoEnabled` default OFF, código preservado). PIX manual removido do código (chave pessoal do fundador não existe mais).
 - **D2:** Sem caução no MVP. Teto R$500 por transação.
 - **D4 (BLOQUEADOR):** Consulta jurídica em análise — **nenhum go-live em produção antes do retorno.**
 - Taxa plataforma: 15% (`DEFAULT_FEE_RATE = 1500` basis points em `lib/platform-config.ts`)
