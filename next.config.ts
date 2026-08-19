@@ -84,7 +84,8 @@ export default process.env.SENTRY_AUTH_TOKEN
       project:   process.env.SENTRY_PROJECT ?? "shareo-web",
       authToken: process.env.SENTRY_AUTH_TOKEN,
       sourcemaps: { disable: false },
-      hideSourceMaps:        true,
+      // hideSourceMaps removido no @sentry/nextjs v10 — ocultar sourcemaps do
+      // client bundle passou a ser o comportamento padrão.
       widenClientFileUpload: true,
       telemetry:             false,
       silent:                true,

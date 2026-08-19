@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import * as XLSX from "xlsx"
+import ExcelJS from "exceljs"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import type { ItemCondition } from "@prisma/client"
@@ -53,18 +53,60 @@ function parseCSV(text: string): Record<string, string>[] {
 
 // ─── Excel (.xlsx) parser ─────────────────────────────────────────────────────
 
-function parseXLSX(buffer: ArrayBuffer): Record<string, string>[] {
-  const workbook = XLSX.read(buffer, { type: "array" })
-  const sheet    = workbook.Sheets[workbook.SheetNames[0]]
-  // raw:false converte todos os valores para string; defval:"" preenche células vazias
-  return XLSX.utils.sheet_to_json<Record<string, string>>(sheet, { raw: false, defval: "" })
-    .map((row) => {
-      const normalized: Record<string, string> = {}
-      for (const [k, v] of Object.entries(row)) {
-        normalized[k.trim().toLowerCase()] = String(v ?? "").trim()
-      }
-      return normalized
-    })
+// Chaves proibidas para evitar prototype pollution ao montar o objeto de linha
+// a partir de cabeçalhos controlados pelo autor da planilha.
+const UNSAFE_KEYS = new Set(["__proto__", "constructor", "prototype"])
+
+// Converte qualquer valor de célula do exceljs (string, número, data, fórmula,
+// hyperlink, richText…) para string — equivalente ao raw:false do antigo xlsx.
+function cellToString(value: ExcelJS.CellValue): string {
+  if (value === null || value === undefined) return ""
+  if (typeof value === "string")  return value
+  if (typeof value === "number")  return String(value)
+  if (typeof value === "boolean") return value ? "TRUE" : "FALSE"
+  if (value instanceof Date)      return value.toISOString()
+  if (typeof value === "object") {
+    const v = value as unknown as Record<string, unknown>
+    // fórmula → usa o resultado calculado
+    if ("result" in v)     return cellToString(v.result as ExcelJS.CellValue)
+    // hyperlink → texto visível
+    if ("text" in v)       return String(v.text ?? "")
+    // richText → concatena os fragmentos
+    if (Array.isArray(v.richText)) {
+      return (v.richText as Array<{ text?: string }>).map((r) => r.text ?? "").join("")
+    }
+  }
+  return String(value)
+}
+
+async function parseXLSX(buffer: ArrayBuffer): Promise<Record<string, string>[]> {
+  const workbook = new ExcelJS.Workbook()
+  // exceljs aceita ArrayBuffer em runtime (comprovado em teste); a assinatura
+  // declara um Buffer não-genérico, incompatível com o Buffer<ArrayBufferLike>
+  // do @types/node 22. `as never` contorna só o impasse de tipos.
+  await workbook.xlsx.load(buffer as never)
+
+  const sheet = workbook.worksheets[0]
+  if (!sheet) return []
+
+  // Primeira linha = cabeçalhos (indexados por coluna, 1-based no exceljs)
+  const headers: string[] = []
+  sheet.getRow(1).eachCell({ includeEmpty: true }, (cell, col) => {
+    headers[col] = cellToString(cell.value).trim().toLowerCase()
+  })
+
+  const rows: Record<string, string>[] = []
+  sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+    if (rowNumber === 1) return
+    const record: Record<string, string> = {}
+    for (let col = 1; col < headers.length; col++) {
+      const h = headers[col]
+      if (!h || UNSAFE_KEYS.has(h)) continue
+      record[h] = cellToString(row.getCell(col).value).trim()
+    }
+    rows.push(record)
+  })
+  return rows
 }
 
 // ─── Google Sheets URL → CSV ──────────────────────────────────────────────────
@@ -203,7 +245,7 @@ export async function POST(req: Request) {
 
       if (name.endsWith(".xlsx")) {
         try {
-          rows = parseXLSX(await f.arrayBuffer())
+          rows = await parseXLSX(await f.arrayBuffer())
         } catch {
           return NextResponse.json(
             { error: { code: "INVALID_FILE", message: "Não foi possível ler o arquivo Excel. Verifique se é um .xlsx válido." } },

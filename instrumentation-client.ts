@@ -1,3 +1,4 @@
+// Config de client do @sentry/nextjs v9+ (antes: sentry.client.config.ts).
 import * as Sentry from "@sentry/nextjs"
 import { scrubEvent } from "@/lib/sentry-scrub"
 
@@ -17,3 +18,6 @@ Sentry.init({
     return scrubEvent(event)
   },
 })
+
+// Instrumenta as transições de rota do App Router (navegação client-side).
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart

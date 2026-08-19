@@ -110,6 +110,11 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL_STAGING }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY_STAGING }}
           NEXT_PUBLIC_NOINDEX: "true"
+          # DSN inlinado também no preview (o staging já fazia isso na linha ~214).
+          # Sem isto o Sentry.init roda sem DSN e os eventos são capturados mas
+          # nunca entregues — previews ficavam sem observabilidade. Sem
+          # SENTRY_AUTH_TOKEN de propósito: não subir source maps a cada PR.
+          NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
 
       - name: Deploy preview to Vercel
         id: deploy
