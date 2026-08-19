@@ -6,7 +6,6 @@ import { prisma } from "@/lib/prisma"
 import type { Prisma } from "@prisma/client"
 import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
 import { processAmbassadorOnBookingPaid, cancelAmbassadorCommissions } from "@/lib/ambassador"
-import { syncStripeConnectAccount } from "@/lib/stripe-connect"
 
 // App Router já entrega o body raw via req.text() — não há bodyParser para desabilitar
 // (o `export const config = { api: { bodyParser } }` do Pages Router é ignorado aqui).
@@ -289,13 +288,18 @@ export async function POST(req: Request) {
 
       case "account.updated": {
         // Connect (ADR-028, onboarding do proprietário — EM CONSTRUÇÃO).
-        // Só chega aqui se o endpoint estiver configurado para "escutar
-        // eventos em contas conectadas" no Dashboard da Stripe — sem isso,
-        // este case nunca dispara e a sincronização depende só do retorno
-        // do onboarding em app/api/stripe/connect/return/route.ts.
+        // Este evento (v1) NÃO dispara para as connected accounts que
+        // criamos hoje (Accounts v2, ver lib/stripe-connect.ts) — v2 usa um
+        // mecanismo de assinatura diferente (Event Destinations, eventos
+        // "thin" via stripe.v2.core.events), ainda não configurado. Deixado
+        // como caminho morto/documentado em vez de removido: se algum dia
+        // uma conta v1 legada existir (ou v2 ganhar suporte a este webhook
+        // clássico), o log abaixo entrega o sinal sem fingir sincronizar —
+        // syncStripeConnectAccount espera o formato v2, não o objeto v1 que
+        // este evento carrega. A sincronização real hoje é só no retorno do
+        // onboarding, em app/api/stripe/connect/return/route.ts.
         const account = event.data.object as Stripe.Account
-        await syncStripeConnectAccount(account)
-        console.warn(`[stripe webhook] account.updated ${account.id} charges=${account.charges_enabled} payouts=${account.payouts_enabled}`)
+        console.warn(`[stripe webhook] account.updated ${account.id} recebido, mas Accounts v2 não sincroniza por aqui (ver comentário do case)`)
         break
       }
 

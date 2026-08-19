@@ -36,11 +36,14 @@ export async function GET(req: NextRequest) {
 
   try {
     const stripe = getStripe()
-    const stripeAccount = await stripe.accounts.retrieve(accountId)
+    const stripeAccount = await stripe.v2.core.accounts.retrieve(accountId, {
+      include: ["configuration.recipient", "requirements"],
+    })
     await syncStripeConnectAccount(stripeAccount)
 
+    const noPendingRequirements = (stripeAccount.requirements?.entries?.length ?? 0) === 0
     return NextResponse.redirect(
-      stripeConnectFinalRedirect(client, stripeAccount.details_submitted ? "concluido" : "incompleto"),
+      stripeConnectFinalRedirect(client, noPendingRequirements ? "concluido" : "incompleto"),
     )
   } catch (e: unknown) {
     console.error("[GET /api/stripe/connect/return]", e instanceof Error ? e.message : e)

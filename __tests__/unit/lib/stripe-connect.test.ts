@@ -1,55 +1,60 @@
-import { deriveStripeConnectStatus } from "@/lib/stripe-connect"
-import type { Stripe } from "stripe"
+import { deriveStripeConnectStatus, type StripeConnectAccount } from "@/lib/stripe-connect"
 
-/** Monta um Account mínimo — só os campos que deriveStripeConnectStatus lê. */
+/** Monta um Account v2 mínimo — só os campos que deriveStripeConnectStatus lê. */
 function account(overrides: {
-  charges_enabled?: boolean
-  payouts_enabled?: boolean
-  disabled_reason?: string | null
-}): Stripe.Account {
+  payouts?: "active" | "pending" | "restricted" | "unsupported"
+  transfers?: "active" | "pending" | "restricted" | "unsupported"
+}): StripeConnectAccount {
+  const { payouts, transfers } = overrides
   return {
-    charges_enabled: overrides.charges_enabled ?? false,
-    payouts_enabled: overrides.payouts_enabled ?? false,
-    requirements: overrides.disabled_reason !== undefined
-      ? { disabled_reason: overrides.disabled_reason }
-      : null,
-  } as unknown as Stripe.Account
+    configuration: {
+      recipient: {
+        applied: true,
+        capabilities: {
+          stripe_balance: {
+            payouts:          payouts ? { status: payouts, status_details: [] } : undefined,
+            stripe_transfers: transfers ? { status: transfers, status_details: [] } : undefined,
+          },
+        },
+      },
+    },
+  } as unknown as StripeConnectAccount
 }
 
-describe("deriveStripeConnectStatus", () => {
-  it("retorna ACTIVE quando charges e payouts estão habilitados", () => {
-    expect(deriveStripeConnectStatus(account({ charges_enabled: true, payouts_enabled: true }))).toBe("ACTIVE")
+describe("deriveStripeConnectStatus (Accounts v2)", () => {
+  it("retorna ACTIVE quando payouts e stripe_transfers estão active", () => {
+    expect(deriveStripeConnectStatus(account({ payouts: "active", transfers: "active" }))).toBe("ACTIVE")
   })
 
-  it("retorna ONBOARDING quando nada foi habilitado e não há disabled_reason", () => {
+  it("retorna ONBOARDING quando nenhum capability foi retornado ainda", () => {
     expect(deriveStripeConnectStatus(account({}))).toBe("ONBOARDING")
   })
 
-  it("retorna ONBOARDING mesmo com requirements presente mas disabled_reason null", () => {
-    expect(deriveStripeConnectStatus(account({ disabled_reason: null }))).toBe("ONBOARDING")
+  it("retorna ONBOARDING quando os dois estão pending", () => {
+    expect(deriveStripeConnectStatus(account({ payouts: "pending", transfers: "pending" }))).toBe("ONBOARDING")
   })
 
-  it("retorna RESTRICTED quando há disabled_reason que não começa com 'rejected.'", () => {
-    expect(deriveStripeConnectStatus(account({ disabled_reason: "requirements.pending_verification" }))).toBe("RESTRICTED")
+  it("retorna ONBOARDING quando um está active e o outro pending (ainda não pronto)", () => {
+    expect(deriveStripeConnectStatus(account({ payouts: "active", transfers: "pending" }))).toBe("ONBOARDING")
   })
 
-  it("retorna REJECTED quando disabled_reason começa com 'rejected.'", () => {
-    expect(deriveStripeConnectStatus(account({ disabled_reason: "rejected.fraud" }))).toBe("REJECTED")
+  it("retorna RESTRICTED quando payouts está restricted", () => {
+    expect(deriveStripeConnectStatus(account({ payouts: "restricted", transfers: "active" }))).toBe("RESTRICTED")
   })
 
-  it("prioriza REJECTED mesmo se charges/payouts ainda aparecerem como true (dado inconsistente vindo da Stripe)", () => {
-    expect(
-      deriveStripeConnectStatus(
-        account({ charges_enabled: true, payouts_enabled: true, disabled_reason: "rejected.fraud" }),
-      ),
-    ).toBe("REJECTED")
+  it("retorna RESTRICTED quando stripe_transfers está restricted", () => {
+    expect(deriveStripeConnectStatus(account({ payouts: "active", transfers: "restricted" }))).toBe("RESTRICTED")
   })
 
-  it("não fica ACTIVE só com charges habilitado — payouts também precisa estar", () => {
-    expect(deriveStripeConnectStatus(account({ charges_enabled: true, payouts_enabled: false }))).toBe("ONBOARDING")
+  it("retorna REJECTED quando payouts está unsupported", () => {
+    expect(deriveStripeConnectStatus(account({ payouts: "unsupported", transfers: "active" }))).toBe("REJECTED")
   })
 
-  it("não fica ACTIVE só com payouts habilitado — charges também precisa estar", () => {
-    expect(deriveStripeConnectStatus(account({ charges_enabled: false, payouts_enabled: true }))).toBe("ONBOARDING")
+  it("retorna REJECTED quando stripe_transfers está unsupported", () => {
+    expect(deriveStripeConnectStatus(account({ payouts: "active", transfers: "unsupported" }))).toBe("REJECTED")
+  })
+
+  it("prioriza REJECTED sobre RESTRICTED quando um capability é unsupported e o outro restricted", () => {
+    expect(deriveStripeConnectStatus(account({ payouts: "unsupported", transfers: "restricted" }))).toBe("REJECTED")
   })
 })
