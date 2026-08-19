@@ -436,11 +436,11 @@ test.describe('Fase 4 — Relatório mensal admin', () => {
   test.skip(!hasAdminSession, 'Requer session-admin.json')
   test.use({ storageState: SESSION_PATHS.admin })
 
-  test('31. painel financeiro exibe card de PSP definitivo Stripe Connect', async ({ page }) => {
+  test('31. painel financeiro exibe card de reavaliação Stripe Connect', async ({ page }) => {
     await page.goto('/admin/financeiro')
     const body = await page.locator('body').textContent()
     expect(body).toContain('Stripe Connect')
-    expect(body).toContain('ADR-028')
+    expect(body).toContain('dez/2026')
   })
 
   test('32. GET /api/cron/monthly-report sem CRON_SECRET retorna 401', async ({ page }) => {

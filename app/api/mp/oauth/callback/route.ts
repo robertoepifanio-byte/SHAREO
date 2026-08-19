@@ -19,10 +19,6 @@ function back(status: string) {
  * (anti-CSRF) contra o cookie, trocamos o `code` pelos tokens do vendedor e os
  * guardamos CRIPTOGRAFADOS na conta de recebimento do locador.
  *
- * DORMENTE desde ADR-028 (2026-08-19): o PSP definitivo passou a ser Stripe
- * Connect, não o MP. Esta rota permanece funcional (não removida) mas fora do
- * caminho de produção — ver docs/adr/ADR-028-reversao-stripe-connect.md.
- *
  * Desacoplamento PIX: faz UPSERT — cria a conta sem PIX caso o locador não tenha
  * pré-cadastrado chave PIX. Campos pixKeyType/pixKey/holderName são agora nullable
  * (migration 20260630000000_decouple_pix_from_mp).

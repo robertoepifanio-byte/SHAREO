@@ -1,13 +1,6 @@
 /**
  * Mercado Pago — integração da Fase 2 (Modelo B / split via OAuth).
  *
- * DORMENTE desde ADR-028 (2026-08-19): o sócio majoritário reverteu o PSP
- * definitivo para Stripe Connect — a fricção do onboarding OAuth do MP
- * (proprietário precisa abrir conta em outra instituição) motivou a troca.
- * Este arquivo NÃO foi removido (só sai do caminho de produção): preserva o
- * investimento (OAuth, checkout, webhook) para o caso de reavaliação futura.
- * Ver docs/adr/ADR-028-reversao-stripe-connect.md.
- *
  * Gating em dois níveis (ambos precisam ser verdadeiros para o MP atuar):
  *   1. Flag de negócio  → `getMercadoPagoConfig().enabled` (PlatformConfig, default OFF)
  *   2. Credenciais      → `isMercadoPagoConfigured()` (env vars presentes)
@@ -16,10 +9,7 @@
  * Stripe oculto) não muda. As rotas de OAuth/checkout/webhook do MP só agem após
  * `assertMercadoPagoActive()` passar.
  *
- * Decisão original: ADR-026 (supersede ADR-012) — parcialmente superada pelo
- * ADR-028 no que diz respeito ao PSP escolhido (Stripe Connect, não MP). Nada
- * vai a produção antes do D4 (parecer FORMAL) — e, para o MP, isso já não é
- * mais o plano.
+ * Decisão: ADR-026 (supersede ADR-012). Nada vai a produção antes do D4 (parecer FORMAL).
  * Como obter as credenciais: docs/juridico/mercadopago-procedimentos-fundadores.md
  */
 import { MercadoPagoConfig, OAuth, Preference, Payment } from "mercadopago"
@@ -102,12 +92,6 @@ export async function isMercadoPagoActive(): Promise<boolean> {
  * Cheklist: (1) remover env `MP_SANDBOX_SELLER_TOKEN` do Vercel/GitHub Secrets,
  * (2) remover este helper, (3) remover call sites em /api/mp/webhook e /api/payments/mp/checkout,
  * (4) resetar campos mp* das contas teste_pj_01..10 criadas com a chave local de sandbox.
- *
- * Nota (ADR-028, 2026-08-19): este "go-live" do MP não é mais o plano — o PSP
- * definitivo virou Stripe Connect. O bypass continua inofensivo enquanto o
- * caminho MP estiver dormente: só atua depois que `isMercadoPagoActive()`
- * (flag `mercadoPagoEnabled` + credenciais) já deixou passar. A limpeza acima
- * fica pendente só se o MP for reativado algum dia; não é bloqueio do Connect.
  */
 export function sandboxSellerTokenOverride(): string | null {
   return process.env.MP_SANDBOX_SELLER_TOKEN?.trim() || null

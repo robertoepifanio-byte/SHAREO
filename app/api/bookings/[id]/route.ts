@@ -52,6 +52,7 @@ export async function GET(req: NextRequest, { params }: Params) {
         // checks de paymentStatus/activatedAt/etc. rodavam sempre com undefined).
         respondedAt:               true,
         paidAt:                    true,
+        pixDeclaredAt:             true,
         contractSignedAt:          true,
         activatedAt:               true,
         returnRequestedAt:         true,

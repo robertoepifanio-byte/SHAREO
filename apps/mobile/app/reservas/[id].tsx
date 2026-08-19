@@ -35,6 +35,7 @@ interface BookingDetail {
   createdAt:            string
   respondedAt:          string | null
   paidAt:               string | null
+  pixDeclaredAt:        string | null
   contractSignedAt:     string | null
   activatedAt:          string | null
   returnRequestedAt:    string | null

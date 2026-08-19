@@ -33,10 +33,6 @@ function err(code: string, message: string, status: number) {
  * = taxa ShareO (15%). O valor do locador vai direto para a conta MP dele; a ShareO
  * nunca retém o dinheiro de terceiros (afasta a Lei 12.865 — ver parecer D4).
  *
- * DORMENTE desde ADR-028 (2026-08-19): o PSP definitivo passou a ser Stripe
- * Connect, não o MP. Esta rota permanece funcional (não removida) mas fora do
- * caminho de produção — ver docs/adr/ADR-028-reversao-stripe-connect.md.
- *
  * Mantém os guards do checkout atual: CONFIRMED, só o locatário paga, teto R$500,
  * não pago ainda. Gating: flag mercadoPagoEnabled + credenciais → senão 404.
  */

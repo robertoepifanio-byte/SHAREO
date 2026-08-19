@@ -284,17 +284,17 @@ export default async function AdminFinanceiroPage() {
         </div>
       )}
 
-      {/* ── PSP definitivo: Stripe Connect (ADR-028) ── */}
+      {/* ── Reavaliação Stripe Connect (D1) ── */}
       <div className="rounded-xl border border-border bg-surface p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-sm font-semibold text-foreground">🔧 PSP definitivo: Stripe Connect</p>
+            <p className="text-sm font-semibold text-foreground">🔄 Reavaliação: Stripe Connect Brasil</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Decisão ADR-028 (19/08/2026): Stripe Connect é o PSP definitivo, com split automático 85% proprietário / 15% ShareO — implementação em andamento. Mercado Pago (ADR-026) segue dormente, código preservado.
+              Decisão D1 (05/06/2026): PIX centralizado no MVP. Stripe Connect BR será reavaliado ~6 meses após o lançamento.
             </p>
           </div>
           <span className="rounded-full border border-border px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-            Em implementação
+            Previsto: dez/2026
           </span>
         </div>
       </div>
