@@ -8,6 +8,63 @@
 
 ---
 
+## 🧭 Avaliação multi-perfil da plataforma (2026-08-19) — pendências registradas
+
+> Origem: [`avaliacao-plataforma-multiperfil-2026-08.md`](avaliacao-plataforma-multiperfil-2026-08.md) — jornada viva no staging (telas públicas) + auditoria de 5 especialistas (negócio, segurança/LGPD, QA, UI/UX, arquitetura). Achados **verificados por arquivo:linha** ou pela jornada viva; onde há inferência, está marcado.
+>
+> **Processo ENCERRADO** quanto à avaliação. Itens abaixo ficam para deliberação/execução. IDs `EVAL-*` são inéditos desta rodada; itens já existentes são **referenciados**, não duplicados. **Nada foi corrigido** aqui (exceto a baixa do SEC-MAJ-06, já aplicada acima na tabela MAJOR).
+>
+> ⛔ **Fluxos autenticados NÃO validados ao vivo** (anunciar → reservar → PIX): o assistente não pode digitar credenciais. **Pendente:** validação viva com o fundador logado antes de marcar esses fluxos como ✅ (regra de verificação por evidência).
+
+### 🔴 P0 — corrigir antes de qualquer go-live público
+
+| ID | Achado | Local | Nota |
+|---|---|---|---|
+| **EVAL-P0-01** ⚠️legal | `/termos` e `/privacidade` **não identificam a ShareO como PJ** (razão social, CNPJ 68.512.556/0001-09, sede). | textos legais | Obrigação CDC/Marco Civil; risco de nulidade dos termos no dia 1. Relaciona-se a LGPD-01/03. Gated D4, mas independe do B1. |
+| **EVAL-P0-02** | Campos de localização (Cidade/Estado/Bairro/Endereço) no **modo create** parecem editáveis mas ignoram o input silenciosamente (`onChange` faz `if (mode==="create") return`, sem `disabled`/`readOnly`). | `components/items/ItemForm.tsx:898-953` | Proprietário que não lê o banner tenta digitar e trava. Fix: `readOnly`/`disabled` quando `mode==="create"`. |
+| **EVAL-P0-03** | **Chips de categoria no `/itens` mobile ~30-34px** (`py-1.5 text-xs`), abaixo dos 44px do DS. | `app/itens/page.tsx:370-409` | Filtrar por categoria fica difícil no mobile (tap target). |
+| **EVAL-P0-04** | **Política de cancelamento contraditória entre telas:** página do item mostra 3 faixas (100% >24h / 70% 24h-6h / 50% <6h); `/ajuda` diz "100% >24h / 30% de multa <24h". | página do item vs `/ajuda` | Contradição visível a qualquer usuário. Definir fonte única da verdade. Achado da **jornada viva**. |
+| **EVAL-P0-05** | Endpoint `declare-pix` (**único fluxo de pagamento do MVP**) **sem nenhum teste de integração**. | `app/api/bookings/[id]/declare-pix/route.ts` | Refactor quebra em silêncio. Cobre idempotência/teto/ownership só por leitura. |
+| **EVAL-P0-06** | Threshold de cobertura global em **1% de linhas** — sem enforcement real; meta H1 de 70% sem guardrail no CI. | `jest.config.ts:56` | Regressão de cobertura passa despercebida. |
+| ref **SEC-MAJ-07** | `SKIP_RATE_LIMIT`/`x-e2e-token` sem guarda de `NODE_ENV` — ver tabela MAJOR. | `lib/rateLimit.ts:94-100` | Já no backlog; reconfirmado pela auditoria. Condicionar a `NODE_ENV !== production`. |
+| ref (PIX pessoal) | Trocar **chave PIX pessoal do fundador → chave PJ** antes de ligar pagamento real. | `getPlatformPixConfig` | Gated D4; pré-requisito de ligar o pagamento. Ver [[project-pix-checkout-manual]]. |
+
+### 🟠 P1 — melhorias incrementais (antes de escalar aquisição)
+
+| ID | Achado | Local |
+|---|---|---|
+| **EVAL-P1-01** | `role="alert"` ausente no erro de reserva + tabs de modalidade sem semântica ARIA (`role="tab"/radiogroup`, `aria-selected`). Corroborado por 2 auditorias. | `_PriceCalc.tsx:448,215` |
+| **EVAL-P1-02** ⚠️verificar | Void promise em `geocodeItem` no PATCH de item (`.then(...)` sem `await`/`after()`) — pode morrer se a lambda congelar. (S14-M-19 resolveu o PATCH `/me`; este é o PATCH de **item**.) | `app/api/items/[id]/route.ts:266-267` |
+| **EVAL-P1-03** | `sort=nearest` sem bbox puxa 500 itens e ordena em JS — degrada com catálogo grande. | `app/itens/page.tsx:181,258` |
+| **EVAL-P1-04** | Seção "Fotos" é a última do formulário (maior motor de conversão) + limite de 3 na UI. (Ver S14-M-15: "3 é dica" — mas a UI faz cap em 3; backend suporta 10-24.) | `ItemForm.tsx:385,956+` |
+| **EVAL-P1-05** | Sem nota (rating) no card da listagem — sinal de confiança removido por trade-off de performance. Denormalizar `avgRating`. | `ItemCard.tsx:121-125` |
+| **EVAL-P1-06** | Validação de e-mail no cliente usa `!email.includes("@")` (aceita `"a@"`). | `RegisterForm.tsx:69` |
+| **EVAL-P1-07** | Textos de sugestão de preço em `text-[11px]` (abaixo do mínimo 12px do DS). | `ItemForm.tsx:694,715-735` |
+| ref **SEC-BL2** | `pixKey` do locador em texto claro no banco (enquanto CPF/CNPJ/tokens MP são AES-256-GCM). | `prisma/schema.prisma:878-879,1157-1158` |
+| ref backlog:159 | **UX de onboarding MP do proprietário** (OAuth) não validada — maior fricção do lado da oferta. | fluxo OAuth MP |
+| ref **ARQ-A-01/M-04/M-05** | Slugs nas URLs de item + ISR/SSG + `/categoria/[slug]` — pré-requisito de SEO nacional. | ADR-007 |
+
+### 🟡 P2 / Expansão — ajustes de modelo e polish
+
+| ID | Achado | Local |
+|---|---|---|
+| **EVAL-P2-01** | Rótulos divergentes p/ a mesma ação: "Reservar agora" (sticky CTA) vs "Solicitar locação" (PriceCalc). | `_StickyBookingCTA.tsx:65` vs `_PriceCalc.tsx:468` |
+| **EVAL-P2-02** | Deslogado vê "Solicitar locação" sem aviso de que login é necessário → redirect inesperado. | `_PriceCalc.tsx:473-479` |
+| **EVAL-P2-03** | `?ulat=abc` malformado propaga `NaN` no Haversine → lista vazia sem mensagem de erro. | `app/itens/page.tsx:163` |
+| **EVAL-P2-04** | Formatador BRL duplicado em ~8-10 componentes — falta `lib/format.ts` (`formatBRL(cents)`). | 8 arquivos (ver relatório §4.2) |
+| **EVAL-P2-05** | Cron de lembretes sem retry; health check não cobre MP/Resend; falta índice composto `(status,isApproved,deletedAt,latitude,longitude)`. | `cron/reminders`, `api/health`, `schema.prisma:441` |
+| **EVAL-P2-06** | DS: `--success` idêntico a `--brand`; `amber-*`/`red-*` hardcoded fora dos tokens; sem indicador de progresso no formulário longo. | `globals.css`, `ItemCard.tsx`, `ItemForm.tsx` |
+| **EVAL-P2-07** (modelo) | Confiança sem caução (D2): avaliar **garantia mínima** (retenção temporária via Modelo B) como H2. Priorizar **densidade por praça** antes de dispersão nacional (chicken-and-egg). | decisão de produto |
+
+### A verificar (podem já estar resolvidos — não classificar sem confirmar)
+
+- Rate limit nas rotas de auth (`phone/send-otp`, `forgot-password`, `register`) — enumeração + custo SMS.
+- Reaceite de `CONSENT_VERSION` v1.0→v1.1 para usuários antigos (prompt na UI).
+- Sentry `beforeSend` scrubbing de PII (Arquitetura viu `scrubEvent`; confirmar alcance).
+- ✅ `/ajuda` **já descreve Mercado Pago** (verificado ao vivo) — a nota antiga de "Stripe" era drift; sem ação.
+
+---
+
 ## 🧪 QA pré-lançamento (s36, 2026-06-23) — achados para deliberação
 
 > Bateria de validação de qualidade executada na branch `refactor/dedup` (sem criar funcionalidade, sem quebrar nada). **Todos os gates automatizados verdes.** Achados abaixo são **não-bloqueantes** e estão aqui para deliberação **antes** de qualquer execução.
