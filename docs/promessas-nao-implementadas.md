@@ -75,7 +75,7 @@ Nenhuma ação de código pendente; destravam no sign-off. Preparação paralela
 | # | Item | Decisão pendente |
 |---|---|---|
 | F-1 | Repasse PIX automático (1.1) | D1: integração bancária real em V1+ após volume |
-| F-2 | Stripe Connect BR (1.2) + conta Connect embaixador (2.5) | D1: reavaliação ~dez/2026 |
+| F-2 | Stripe Connect BR (1.2) + conta Connect embaixador (2.5) | Decidido — ADR-028 (19/08/2026): PSP definitivo, não é mais reavaliação futura. Construção (onboarding, checkout, webhooks) ainda não iniciada |
 | F-3 | Caução (1.3) | D2: pós V1-Financeiro |
 | F-4 | Informe IR em PDF (1.4) | ADR-019: só se houver demanda |
 | F-5 | Relatório mensal por e-mail (1.5) | ADR-020: V1+ com Resend pago |

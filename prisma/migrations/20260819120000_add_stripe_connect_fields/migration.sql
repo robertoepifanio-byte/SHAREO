@@ -12,7 +12,15 @@
 -- (lib/platform-config.ts), então nada muda em produção com esta migração.
 
 -- CreateEnum
-CREATE TYPE "StripeConnectStatus" AS ENUM ('NOT_CONNECTED', 'ONBOARDING', 'ACTIVE', 'RESTRICTED', 'REJECTED');
+-- Guarda de idempotência (DO $$ ... EXCEPTION duplicate_object): igual às
+-- colunas/índices abaixo (IF NOT EXISTS), para tolerar reaplicação manual do
+-- SQL fora do `prisma migrate deploy` — já aconteceu neste projeto antes
+-- (ver docs/STATUS.md, migration 20260622010000 aplicada à mão + `migrate resolve`).
+DO $$ BEGIN
+    CREATE TYPE "StripeConnectStatus" AS ENUM ('NOT_CONNECTED', 'ONBOARDING', 'ACTIVE', 'RESTRICTED', 'REJECTED');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- AlterTable: owner_payment_accounts — conexão Stripe Connect do proprietário
 ALTER TABLE "owner_payment_accounts" ADD COLUMN IF NOT EXISTS "stripeAccountId" TEXT;
