@@ -1,7 +1,6 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
-import { getStripe } from "@/lib/stripe"
-import { isStripeConnectActive, syncStripeConnectAccount, stripeConnectFinalRedirect } from "@/lib/stripe-connect"
+import { isStripeConnectActive, fetchAndSyncConnectAccount, stripeConnectFinalRedirect } from "@/lib/stripe-connect"
 
 /**
  * Retorno do onboarding Express (Stripe Connect — ADR-028). A Stripe manda o
@@ -35,11 +34,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const stripe = getStripe()
-    const stripeAccount = await stripe.v2.core.accounts.retrieve(accountId, {
-      include: ["configuration.recipient", "requirements"],
-    })
-    await syncStripeConnectAccount(stripeAccount)
+    const stripeAccount = await fetchAndSyncConnectAccount(accountId)
 
     const noPendingRequirements = (stripeAccount.requirements?.entries?.length ?? 0) === 0
     return NextResponse.redirect(
