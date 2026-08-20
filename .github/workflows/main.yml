@@ -125,6 +125,29 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm test:mobile
 
+  # Gate estável para required status check. `test-mobile` é condicional (pulado
+  # em PR só-web), e um required check condicional nunca reporta → travaria todo
+  # PR de web. Este gate SEMPRE roda e reporta: passa quando o mobile passou OU
+  # não precisou rodar; falha só quando o mobile de fato reprovou. Exija ESTE
+  # nome ("Mobile Tests Gate") na branch protection, não o "test-mobile" cru.
+  test-mobile-gate:
+    name: Mobile Tests Gate
+    runs-on: ubuntu-latest
+    needs: [test-mobile]
+    if: ${{ !cancelled() }}
+    steps:
+      - name: Verifica resultado do test-mobile
+        shell: bash
+        run: |
+          result="${{ needs.test-mobile.result }}"
+          echo "test-mobile result: $result"
+          if [ "$result" = "success" ] || [ "$result" = "skipped" ]; then
+            echo "OK — mobile passou ou não precisou rodar."
+          else
+            echo "Mobile tests reprovaram (result=$result)."
+            exit 1
+          fi
+
   audit:
     name: Security Audit
     runs-on: ubuntu-latest
