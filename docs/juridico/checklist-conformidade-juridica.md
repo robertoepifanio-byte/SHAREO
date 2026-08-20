@@ -60,6 +60,9 @@
 - 🔵 **Estrutura societária** revisada (PJ titular da conta e dos contratos com PSP).
 
 ## 9. Central de Ajuda (`/ajuda`) — revisão dos especialistas (s41)
+
+> 🔄 **Atualização 2026-08-20 (ADR-028):** com a reversão do PSP para **Stripe Connect**, a copy de pagamento de `/ajuda` e `/politicas` foi reescrita e alinhada ao que o código executa. O pacote de validação para a advogada é [`copy-pagamento-stripe-connect.md`](copy-pagamento-stripe-connect.md) — que **substitui** [`copy-pagamento-validacao-juridica.md`](copy-pagamento-validacao-juridica.md) (escrito para o Mercado Pago). O ponto de maior peso: a implementação *separate charges and transfers* faz o valor **transitar pela conta ShareO na Stripe**, o que não é o desenho que o parecer D4 validou para o MP ("a ShareO não retém nem custodia"). Segue **gated D4 — não publicar antes do sign-off**.
+
 Revisão read-only por product-owner + designer + segurança. Relatório consolidado: [`../auditorias/ajuda-revisao-especialistas-s41.md`](../auditorias/ajuda-revisao-especialistas-s41.md). Itens a levar à advogada (gated D4 — **não publicar antes do sign-off**):
 - 🔨 **Conteúdo de pagamento cita "Stripe"** em 7 trechos — reescrever para **Mercado Pago** (cruza item 1). Risco de **propaganda enganosa** (CDC art. 30/37); a FAQ "regulamentado pelo Banco Central via Stripe" toca a Lei 12.865 → **validar redação com a advogada**.
 - 🔨 **"Dinheiro retido na plataforma"** (6×) contradiz o Modelo B/split (custódia é do PSP) — reescrever (cruza itens 1/3).

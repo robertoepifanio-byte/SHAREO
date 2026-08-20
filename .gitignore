@@ -113,9 +113,13 @@ builds/
 # Os arquivos seguem em disco.
 public/em-breve/
 
-# Certificado digital da PJ (e-CNPJ). O .pfx e um PKCS#12 com a CHAVE PRIVADA —
-# repo publico, nunca versionar. Apareceram como untracked na raiz em 20/08 e
-# seriam pegos por qualquer `git add .`. Os arquivos seguem em disco.
+# Certificados digitais (e-CNPJ / A1) — NUNCA versionar: repositorio PUBLICO.
+# O .pfx contem a chave privada da empresa. Os arquivos reais foram movidos
+# em 20/08/2026 para ..\ShareO-certificados\ (fora da arvore do repo); estas
+# regras existem para o caso de uma copia reaparecer aqui dentro.
 *.pfx
 *.p12
-Certificado_Digital_*.zip
+*.cer
+*.crt
+*.key
+Certificado_Digital*

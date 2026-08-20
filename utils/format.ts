@@ -2,6 +2,29 @@ export function formatPrice(centavos: number, currency = "BRL"): string {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency }).format(centavos / 100)
 }
 
+/** Como formatPrice, mas omite os centavos quando são zero: 50000 → "R$ 500". */
+export function formatPriceShort(centavos: number, currency = "BRL"): string {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: centavos % 100 === 0 ? 0 : 2,
+  }).format(centavos / 100)
+}
+
+/**
+ * Rótulo de percentual sem casas decimais quando o valor é inteiro: 15 → "15%",
+ * 12.5 → "12,5%". Fonte única do formato usado em taxa da plataforma, multa de
+ * atraso e afins — evita reescrever o ternário `% 1 === 0` em cada tela.
+ */
+export function formatPercentLabel(pct: number): string {
+  return `${String(pct).replace(".", ",")}%`
+}
+
+/** Multiplicador em pt-BR: 1.5 → "1,5×", 1 → "1×". */
+export function formatMultiplier(mult: number): string {
+  return `${String(mult).replace(".", ",")}×`
+}
+
 export function formatDate(date: Date | string, opts?: Intl.DateTimeFormatOptions): string {
   return new Intl.DateTimeFormat("pt-BR", opts).format(new Date(date))
 }

@@ -260,6 +260,16 @@ export function calcSplit(totalPrice: number, feeRate: number) {
   return { platformFeeRate: feeRate, platformFeeAmount, ownerNetAmount }
 }
 
+/**
+ * Taxa de atraso na devolução, em centavos. Fonte única da fórmula: é usada
+ * tanto pela cobrança real (app/api/cron/reminders) quanto pelos exemplos
+ * publicados na Central de Ajuda — o valor divulgado tem que ser o cobrado.
+ * `multiplier` vem de getLateFeeMultiplier() (default 1.5).
+ */
+export function calcLateFee(dailyPrice: number, multiplier: number, daysLate: number) {
+  return Math.round(dailyPrice * multiplier * daysLate)
+}
+
 export const CHECKOUT_MAX_CENTS = 50_000 // R$ 500,00 — teto MVP (D2)
 
 /** Expiração da sessão Stripe Checkout em segundos (mín. 30min exigido pela Stripe) */

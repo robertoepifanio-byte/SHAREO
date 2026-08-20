@@ -3,6 +3,7 @@
  *
  * Foco nas funções síncronas que não dependem do Prisma:
  *  - calcSplit (financeiro crítico — basis points)
+ *  - calcLateFee (mesma fórmula do cron de atraso e dos exemplos da Central de Ajuda)
  *  - CHECKOUT_MAX_CENTS (constante de limite do MVP)
  *
  * As funções async (getPlatformFeeRate, getCancellationConfig, etc.)
@@ -10,7 +11,7 @@
  * de integração — não testadas aqui para não exigir mock de Prisma.
  */
 
-import { calcSplit, CHECKOUT_MAX_CENTS } from "@/lib/platform-config"
+import { calcSplit, calcLateFee, CHECKOUT_MAX_CENTS } from "@/lib/platform-config"
 
 // ---------------------------------------------------------------------------
 // calcSplit — lógica financeira crítica
@@ -152,5 +153,28 @@ describe("CHECKOUT_MAX_CENTS", () => {
   it("é um inteiro positivo", () => {
     expect(Number.isInteger(CHECKOUT_MAX_CENTS)).toBe(true)
     expect(CHECKOUT_MAX_CENTS).toBeGreaterThan(0)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// calcLateFee — a Central de Ajuda publica exatamente o que o cron cobra
+// ---------------------------------------------------------------------------
+
+describe("calcLateFee", () => {
+  it("aplica o multiplicador padrão de 1,5× por dia de atraso", () => {
+    expect(calcLateFee(8_000, 1.5, 1)).toBe(12_000)
+    expect(calcLateFee(8_000, 1.5, 3)).toBe(36_000)
+  })
+
+  it("com multiplicador 1 cobra exatamente uma diária por dia", () => {
+    expect(calcLateFee(5_000, 1, 2)).toBe(10_000)
+  })
+
+  it("arredonda para o centavo mais próximo", () => {
+    expect(calcLateFee(3_333, 1.5, 1)).toBe(5_000) // 4999.5 → 5000
+  })
+
+  it("é zero quando não há dias de atraso", () => {
+    expect(calcLateFee(8_000, 1.5, 0)).toBe(0)
   })
 })
