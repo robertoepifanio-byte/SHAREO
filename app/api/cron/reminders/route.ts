@@ -15,7 +15,7 @@ import {
   bookingItemsLabel,
 } from "@/lib/email"
 import { getStripe } from "@/lib/stripe"
-import { getLateFeeMultiplier } from "@/lib/platform-config"
+import { getLateFeeMultiplier, calcLateFee } from "@/lib/platform-config"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
@@ -156,7 +156,7 @@ export async function GET(req: NextRequest) {
     // Primeira detecção de atraso: grava lateFeeAmount + cria cobrança Stripe.
     // Ordem dentro de uma mesma reserva é intencional — não paralelizar.
     if (b.lateFeeAmount == null) {
-      const lateFeeAmount = Math.round(b.dailyPrice * lateFeeMultiplier * daysLate)
+      const lateFeeAmount = calcLateFee(b.dailyPrice, lateFeeMultiplier, daysLate)
 
       try {
         await prisma.booking.update({

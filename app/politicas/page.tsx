@@ -1,15 +1,36 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { AppHeader } from "@/components/layout/AppHeader"
+import {
+  getPlatformFeeRate,
+  getPayoutWindowDays,
+  getCancellationConfig,
+  CHECKOUT_MAX_CENTS,
+} from "@/lib/platform-config"
+import { formatPriceShort, formatPercentLabel } from "@/utils/format"
 
 export const metadata: Metadata = {
   title: "Políticas do ShareO",
   description: "Termos de uso, política de privacidade (LGPD), responsabilidade e cancelamento do ShareO.",
 }
 
-const LAST_UPDATED = "13 de junho de 2026"
+// JURÍDICO: data a confirmar no sign-off do D4 — §1.8 promete aviso prévio de 30 dias
+// para alterações substanciais, e a revisão de 2026-08-20 (ADR-028: PSP passa a ser
+// Stripe) altera as seções de pagamento, compartilhamento de dados e reembolso.
+// Avaliar junto com a advogada se exige bump de CONSENT_VERSION (lib/legal-config.ts).
+const LAST_UPDATED = "20 de agosto de 2026"
 
-export default function PoliticasPage() {
+export default async function PoliticasPage() {
+  const [feeRateBps, payoutWindowDays, cancel] = await Promise.all([
+    getPlatformFeeRate(),
+    getPayoutWindowDays(),
+    getCancellationConfig(),
+  ])
+
+  const feeLabel    = formatPercentLabel(feeRateBps / 100)
+  const maxLabel    = formatPriceShort(CHECKOUT_MAX_CENTS)
+  const payoutLabel = payoutWindowDays === 1 ? "1 dia" : `${payoutWindowDays} dias`
+
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
@@ -118,7 +139,22 @@ export default function PoliticasPage() {
                   e ao ShareO; e responder por danos causados ao item por uso indevido.
                 </PolicyBlock>
 
-                <PolicyBlock title="1.7 Alterações nos Termos">
+                <PolicyBlock title="1.7 Pagamentos e Taxa de Serviço">
+                  Os pagamentos das locações são processados pela <strong>Stripe</strong>, provedor de
+                  pagamentos contratado pelo ShareO, responsável pelo processamento da cobrança e pelo
+                  repasse ao Locador. Sobre o valor da locação, o ShareO cobra uma <strong>taxa de
+                  serviço de {feeLabel}</strong>, devida pelo Locatário e exibida no resumo antes da
+                  confirmação do pagamento; o valor restante é destinado ao Locador. Nesta versão da
+                  plataforma, o checkout aceita <strong>cartão de crédito à vista, sem parcelamento</strong>,
+                  e cada locação está sujeita ao limite de <strong>{maxLabel} por transação</strong>.
+                  O valor pago é <strong>retido</strong> e não é repassado ao Locador no ato do pagamento:
+                  o repasse torna-se elegível <strong>{payoutLabel} após a confirmação da devolução</strong>{" "}
+                  do item, prazo que cobre a janela de abertura de disputa, e fica suspenso enquanto
+                  houver disputa em análise. Para receber, o Locador deve cadastrar seus dados de
+                  recebimento em Meu Perfil → Recebimentos. Não há exigência de caução nesta versão.
+                </PolicyBlock>
+
+                <PolicyBlock title="1.8 Alterações nos Termos">
                   O ShareO poderá atualizar estas políticas a qualquer tempo. Alterações substanciais
                   serão comunicadas por e-mail com antecedência mínima de 30 dias. O uso contínuo da
                   plataforma após a entrada em vigor das alterações implica aceitação dos novos termos.
@@ -142,7 +178,9 @@ export default function PoliticasPage() {
                   Coletamos os seguintes dados pessoais: <strong>dados de cadastro</strong> (nome, e-mail,
                   CPF/CNPJ, telefone, endereço); <strong>dados de identidade</strong> (documento de
                   identificação com foto e selfie, para verificação de identidade opcional); <strong>dados
-                  financeiros</strong> (chave PIX para recebimento, histórico de transações); <strong>dados
+                  financeiros</strong> (dados bancários e de verificação informados ao provedor de
+                  pagamentos para recebimento de repasses, chave PIX para recebimento, histórico de
+                  transações); <strong>dados
                   de uso</strong> (endereços IP, logs de acesso, dispositivo e navegador);
                   <strong> dados de localização</strong> (cidade e estado informados no perfil;
                   coordenadas GPS somente quando o usuário concede permissão no dispositivo); e
@@ -159,8 +197,9 @@ export default function PoliticasPage() {
                 </PolicyBlock>
 
                 <PolicyBlock title="2.3 Compartilhamento de Dados">
-                  Seus dados podem ser compartilhados com: <strong>Stripe</strong> (processamento de
-                  cartão de crédito — sujeito à Política de Privacidade da Stripe Inc.);
+                  Seus dados podem ser compartilhados com: <strong>Stripe</strong> (processamento dos
+                  pagamentos, verificação dos dados do Locador e repasse dos valores, atuando como
+                  operador de dados financeiros — sujeito à Política de Privacidade da Stripe Inc.);
                   <strong> Supabase</strong> (infraestrutura de banco de dados e armazenamento —
                   servidores na região sa-east-1, Brasil); <strong>Resend</strong> (envio de
                   e-mails transacionais); <strong>Sentry</strong> (monitoramento de erros — dados
@@ -276,9 +315,9 @@ export default function PoliticasPage() {
                   A política de cancelamento leva em conta o tempo de antecedência em relação ao
                   início da locação:
                   <ul className="mt-2 space-y-1.5 text-sm">
-                    <li>• <strong>Mais de 72 horas antes:</strong> reembolso integral do valor pago.</li>
-                    <li>• <strong>Entre 24 e 72 horas antes:</strong> reembolso de 50% do valor pago.</li>
-                    <li>• <strong>Menos de 24 horas antes ou após o início:</strong> sem direito a reembolso.</li>
+                    <li>• <strong>Até {cancel.fullRefundHours} horas antes:</strong> reembolso integral do valor pago.</li>
+                    <li>• <strong>Entre {cancel.fullRefundHours} e {cancel.partialRefundHours} horas antes:</strong> reembolso de {cancel.partialPercent}% do valor pago.</li>
+                    <li>• <strong>Menos de {cancel.partialRefundHours} horas antes:</strong> reembolso de {cancel.latePercent}% do valor pago.</li>
                   </ul>
                   <p className="mt-2 text-sm text-muted-foreground">
                     Os prazos e percentuais acima refletem a configuração atual da plataforma e podem
@@ -294,10 +333,12 @@ export default function PoliticasPage() {
                 </PolicyBlock>
 
                 <PolicyBlock title="4.3 Processamento do Reembolso">
-                  Reembolsos são processados para o mesmo método de pagamento utilizado na reserva.
-                  O prazo de crédito depende do banco ou operadora do Locatário (geralmente de 5 a
-                  10 dias úteis para cartão de crédito). O ShareO não reterá taxa de serviço sobre
-                  o valor reembolsado.
+                  Reembolsos são processados pela Stripe para o mesmo método de pagamento utilizado
+                  na reserva. Como o checkout aceita, nesta versão, apenas cartão de crédito, o
+                  crédito aparece na fatura do cartão do Locatário no prazo praticado pelo banco ou
+                  operadora — geralmente de 5 a 10 dias úteis, podendo cair na fatura seguinte
+                  conforme a data de fechamento. O ShareO não reterá taxa de serviço sobre o valor
+                  reembolsado.
                 </PolicyBlock>
               </div>
             </section>

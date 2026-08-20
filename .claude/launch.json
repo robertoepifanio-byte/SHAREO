@@ -9,6 +9,13 @@
       "autoPort": true
     },
     {
+      "name": "shareo-next-dev",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["next", "dev", "-p", "3010"],
+      "port": 3010,
+      "autoPort": true
+    },
+    {
       "name": "shareo-prelaunch",
       "runtimeExecutable": "npx",
       "runtimeArgs": ["next", "start", "-p", "3005"],
