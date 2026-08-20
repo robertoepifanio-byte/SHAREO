@@ -1,23 +1,33 @@
 name: CI - ShareO
 
 on:
+  # Push: mudança SÓ de docs/config-de-agente não roda CI — economia real, e aqui
+  # o filtro é inofensivo porque nada depende do resultado de um push isolado.
   push:
     branches: ["**"]
-    # Mudança SÓ de docs/config-de-agente não roda CI (main não tem required checks)
     paths-ignore:
       - "docs/**"
       - "Documentos/**"
       - ".claude/**"
       - "**.md"
       - ".gitattributes"
+
+  # Pull request: SEM paths-ignore, de propósito.
+  #
+  # ⚠️ NÃO reintroduzir o filtro aqui. Desde 20/08/2026 a `main` tem branch
+  # protection exigindo "Lint and Type Check", "Tests" e "Mobile Tests Gate".
+  # Com paths-ignore, um PR só de docs não DISPARA esses jobs — e o GitHub não
+  # trata check ausente como dispensado, ele espera para sempre: o PR fica
+  # `BLOCKED`, sem nenhum check vermelho para explicar por quê. Aconteceu no
+  # PR #327 (atualização de STATUS.md), que só entrou com `gh pr merge --admin`.
+  # O comentário antigo dizia "main não tem required checks" — premissa que
+  # deixou de valer no dia em que a proteção foi criada, e foi o que tornou a
+  # armadilha invisível.
+  #
+  # Custo de rodar a CI num PR de docs: ~4 min. Barato perto de um override de
+  # branch protection a cada atualização de STATUS/ADR.
   pull_request:
     branches: [main]
-    paths-ignore:
-      - "docs/**"
-      - "Documentos/**"
-      - ".claude/**"
-      - "**.md"
-      - ".gitattributes"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
