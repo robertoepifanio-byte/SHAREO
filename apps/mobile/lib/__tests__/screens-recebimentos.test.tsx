@@ -5,7 +5,7 @@
 // componente quebrará o CI e sinaliza regressão de transcrição.
 
 import React from "react"
-import { render, screen, fireEvent, waitFor } from "@testing-library/react-native"
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react-native"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 import { Linking } from "react-native"
@@ -80,11 +80,15 @@ function makeQC() {
   return new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
 }
 
+// QueryClient do teste corrente — guardado em módulo para o afterEach encerrar
+// as queries e cancelar os timers de garbage collection do react-query.
+let queryClient: QueryClient | undefined
+
 function renderScreen() {
-  const qc = makeQC()
+  queryClient = makeQC()
   return render(
     <SafeAreaProvider initialMetrics={{ frame: { x: 0, y: 0, width: 375, height: 812 }, insets: { top: 0, left: 0, right: 0, bottom: 0 } }}>
-      <QueryClientProvider client={qc}>
+      <QueryClientProvider client={queryClient}>
         <RecebimentosScreen />
       </QueryClientProvider>
     </SafeAreaProvider>,
@@ -96,6 +100,21 @@ beforeEach(() => {
   mockStripeParam = undefined
 })
 
+afterEach(async () => {
+  // Drena microtasks/timers pendentes das queries e mutations do react-query
+  // ANTES do unmount, para que nenhuma atualização de estado assíncrona vaze
+  // para fora do act() (origem do warning "not wrapped in act" e da
+  // intermitência quando o timing muda sob carga da suíte completa).
+  await act(async () => {
+    await Promise.resolve()
+  })
+  // clear() remove as queries do cache e cancela o timer de GC (gcTime: 0
+  // agenda um setTimeout que, sem isso, ficava aberto após o teste — causa do
+  // "Jest did not exit / asynchronous operations that weren't stopped").
+  queryClient?.clear()
+  queryClient = undefined
+})
+
 // ── Testes ────────────────────────────────────────────────────────────────────
 
 describe("RecebimentosScreen — Stripe Connect (ADR-028)", () => {
@@ -103,7 +122,15 @@ describe("RecebimentosScreen — Stripe Connect (ADR-028)", () => {
     mockApiFetch.mockResolvedValueOnce(makeResponse({ stripeConnectActive: false }))
     renderScreen()
 
-    await waitFor(() => expect(screen.getByText("Cadastre a chave PIX para receber os repasses das suas locações.")).toBeTruthy())
+    // A descrição é um único <Text> com duas frases (recebimentos.tsx:264-267);
+    // o JSX une as linhas num só nó de texto ("...locações. O valor fica...").
+    // Casar por substring da 1ª frase (verbatim) evita depender de a frase 2
+    // estar concatenada — a causa da falha intermitente deste teste.
+    await waitFor(() =>
+      expect(
+        screen.getByText("Cadastre a chave PIX para receber os repasses das suas locações.", { exact: false }),
+      ).toBeTruthy(),
+    )
     expect(screen.queryByText("Receber pela Stripe")).toBeNull()
   })
 
