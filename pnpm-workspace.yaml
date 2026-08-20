@@ -52,6 +52,23 @@ overrides:
   # a linha 1.x tem override próprio acima e a 2.x já está corrigida.
   "brace-expansion@5": "^5.0.9"
 
+  # ── Triagem Dependabot 2026-08-20, 2ª leva ─────────────────────────────────
+  # Os dois alertas restantes que TÊM patch e não exigem major. Os outros 6
+  # ficam por impedimento real, não por esquecimento: image-size e extract-zip
+  # não têm patch publicado; deepmerge-ts (7→8) e uuid (7→11) exigiriam major
+  # dentro de @prisma/config e xcode, que sobem sozinhos.
+  #
+  # shell-quote (GHSA — DoS quadrático no parse()) — cópia 1.8.4 via
+  # react-devtools-core, só dev. Patch de folha, sem dependente afetado.
+  shell-quote: "^1.9.0"
+  # postcss (4 alertas: 3/40/41/58 — leitura arbitrária de .map por
+  # sourceMappingURL + XSS no stringify) — a cópia 8.4.49 vem do
+  # @expo/metro-config. É a "trilha Expo" que a triagem de 19/08 evitou forçar,
+  # mas aqui é minor dentro do 8.x (8.4.49 → 8.5.26, a MESMA versão que o resto
+  # do repo já usa), não major. ESCOPADO ao metro-config para não tocar em mais
+  # nada da árvore do Expo. Se o bundle Metro reclamar, é este override que sai.
+  "@expo/metro-config>postcss": "^8.5.26"
+
 allowBuilds:
   '@prisma/client': true
   '@prisma/engines': true
