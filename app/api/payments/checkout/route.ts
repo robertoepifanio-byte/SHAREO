@@ -128,6 +128,13 @@ export async function POST(req: NextRequest) {
         bookingId,
         userId: session.user.id,
       },
+      // ADR-028 — split real: agrupa a cobrança para o Transfer que o cron de
+      // repasse (app/api/cron/payout/route.ts) cria depois, quando o payout
+      // fica elegível (N dias após a devolução). O Transfer NÃO acontece aqui
+      // — mantém a retenção/proteção contra disputa que já existe hoje.
+      payment_intent_data: {
+        transfer_group: bookingId,
+      },
       success_url: `${appUrl}/reservas/sucesso?bookingId=${bookingId}`,
       cancel_url:  `${appUrl}/reservas/${bookingId}?payment=cancelled`,
       expires_at:  Math.floor(Date.now() / 1000) + STRIPE_CHECKOUT_EXPIRES_SECONDS,
