@@ -94,6 +94,16 @@ export async function getOrCreateConnectedAccount(userId: string): Promise<strin
       entity_type: "individual",
     },
     configuration: {
+      // A Stripe recusa stripe_transfers sem card_payments requisitado
+      // junto ("cannot be requested without configuration.merchant.
+      // capabilities.card_payments") — mesmo a conta não sendo merchant of
+      // record no nosso desenho (não usamos on_behalf_of). Requisitamos os
+      // dois porque a API exige, não porque mudamos o modelo de cobrança.
+      merchant: {
+        capabilities: {
+          card_payments: { requested: true },
+        },
+      },
       recipient: {
         capabilities: {
           stripe_balance: {
@@ -146,7 +156,12 @@ export async function createOnboardingLink(accountId: string, client: "web" | "m
     use_case: {
       type: "account_onboarding",
       account_onboarding: {
-        configurations: ["recipient"],
+        // Os dois — a conta tem as duas configurations aplicadas (ver
+        // getOrCreateConnectedAccount) porque a Stripe exige card_payments
+        // junto de stripe_transfers; sem listar "merchant" aqui também, o
+        // onboarding hospedado não coletaria os requirements dela e a
+        // capability ficaria pendente pra sempre.
+        configurations: ["recipient", "merchant"],
         refresh_url: `${APP_URL}${STRIPE_CONNECT_REFRESH_PATH}?${qs}`,
         return_url:  `${APP_URL}${STRIPE_CONNECT_RETURN_PATH}?${qs}`,
       },
