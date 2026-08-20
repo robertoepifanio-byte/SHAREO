@@ -51,6 +51,7 @@ import { getStripe } from "@/lib/stripe"
 import { prisma } from "@/lib/prisma"
 import { APP_URL } from "@/lib/app-url"
 import { getStripeConnectConfig } from "@/lib/platform-config"
+import { STRIPE_CONNECT_ACCOUNT_INCLUDES } from "@/lib/stripe-connect-events"
 
 export const STRIPE_CONNECT_RETURN_PATH  = "/api/stripe/connect/return"
 export const STRIPE_CONNECT_REFRESH_PATH = "/api/stripe/connect/refresh"
@@ -251,4 +252,22 @@ export async function syncStripeConnectAccount(account: StripeConnectAccount): P
     where: { stripeAccountId: account.id },
     data,
   })
+}
+
+/**
+ * Único ponto de leitura de um Account v2 — busca com os includes certos e já
+ * sincroniza. NÃO usar `stripe.v2.core.accounts.retrieve()`/
+ * `notification.fetchRelatedObject()` direto num call site: sem
+ * `STRIPE_CONNECT_ACCOUNT_INCLUDES`, `configuration.recipient`/`requirements`
+ * (opt-in na v2) voltam vazios e deriveStripeConnectStatus() REBAIXARIA uma
+ * conta ACTIVE para ONBOARDING. Usado pelo retorno do onboarding
+ * (app/api/stripe/connect/return/route.ts) e pelo webhook de Connect
+ * (app/api/webhooks/stripe-connect/route.ts).
+ */
+export async function fetchAndSyncConnectAccount(accountId: string): Promise<StripeConnectAccount> {
+  const account = await getStripe().v2.core.accounts.retrieve(accountId, {
+    include: [...STRIPE_CONNECT_ACCOUNT_INCLUDES],
+  })
+  await syncStripeConnectAccount(account)
+  return account
 }

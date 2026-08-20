@@ -112,3 +112,10 @@ builds/
 # `git add` amplo em 12/08 e foi destrackeado; ignorado para nao voltar sozinho.
 # Os arquivos seguem em disco.
 public/em-breve/
+
+# Certificado digital da PJ (e-CNPJ). O .pfx e um PKCS#12 com a CHAVE PRIVADA —
+# repo publico, nunca versionar. Apareceram como untracked na raiz em 20/08 e
+# seriam pegos por qualquer `git add .`. Os arquivos seguem em disco.
+*.pfx
+*.p12
+Certificado_Digital_*.zip

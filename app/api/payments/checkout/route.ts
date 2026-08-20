@@ -3,7 +3,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { stripe } from "@/lib/stripe"
+import { getStripe } from "@/lib/stripe"
 import { APP_URL } from "@/lib/app-url"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { getPlatformFeeRate, calcSplit, CHECKOUT_MAX_CENTS, STRIPE_CHECKOUT_EXPIRES_SECONDS } from "@/lib/platform-config"
@@ -106,9 +106,13 @@ export async function POST(req: NextRequest) {
 
     const appUrl = APP_URL
 
-    const checkoutSession = await stripe.checkout.sessions.create({
+    const checkoutSession = await getStripe().checkout.sessions.create({
       mode:                "payment",
-      payment_method_types: ["card"],
+      // ADR-028, item 1: Pix e boleto além de cartão. Checkout hospedado
+      // coleta os dados extras exigidos (CPF/nome pro boleto) sozinho — não
+      // precisa de campo nosso. Os dois cabem no teto de R$500 do MVP
+      // (boleto: R$5–49.999,99; Pix: R$0,50–3.000 por transação).
+      payment_method_types: ["card", "boleto", "pix"],
       customer_email:       booking.borrower.email ?? undefined,
       line_items: [
         {

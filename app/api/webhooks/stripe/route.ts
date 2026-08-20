@@ -1,221 +1,157 @@
-import { NextResponse, after } from "next/server"
-import { randomInt } from "node:crypto"
+import { after } from "next/server"
 import type { Stripe } from "stripe"
-import { stripe } from "@/lib/stripe"
+import { getStripe, idOf } from "@/lib/stripe"
+import { verifyStripeWebhookRequest } from "@/lib/payments/stripe-webhook"
 import { prisma } from "@/lib/prisma"
-import type { Prisma } from "@prisma/client"
-import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
-import { processAmbassadorOnBookingPaid, cancelAmbassadorCommissions } from "@/lib/ambassador"
+import { cancelAmbassadorCommissions } from "@/lib/ambassador"
+import { markRentalPaid } from "@/lib/payments/mark-booking-paid"
+import { reverseOwnerTransfer } from "@/lib/payments/owner-transfer"
+import { withStripeEventQueue } from "@/lib/payments/stripe-event-queue"
 
 // App Router já entrega o body raw via req.text() — não há bodyParser para desabilitar
 // (o `export const config = { api: { bodyParser } }` do Pages Router é ignorado aqui).
 
+const LOG = "[stripe webhook]"
+
+/** Taxa de atraso paga — registra o valor e avisa as duas partes. */
+async function handleLateFeePaid(session: Stripe.Checkout.Session, bookingId: string): Promise<void> {
+  const booking = await prisma.booking.update({
+    where:  { id: bookingId },
+    data:   { lateFeeAmount: session.amount_total ?? undefined },
+    select: { ownerId: true, borrowerId: true, item: { select: { title: true } } },
+  })
+
+  after(() =>
+    prisma.notification.createMany({
+      data: [
+        {
+          userId: booking.ownerId,
+          type:   "LATE_FEE_APPLIED" as never,
+          title:  "Taxa de atraso recebida",
+          body:   `A taxa de atraso de "${booking.item.title}" foi paga.`,
+          data:   { bookingId },
+        },
+        {
+          userId: booking.borrowerId,
+          type:   "LATE_FEE_APPLIED" as never,
+          title:  "Taxa de atraso paga",
+          body:   `Pagamento da taxa de atraso de "${booking.item.title}" confirmado.`,
+          data:   { bookingId },
+        },
+      ],
+    }).catch(() => undefined)
+  )
+
+  console.warn(`${LOG} late_fee paid for booking ${bookingId}`)
+}
+
+/**
+ * Sessão de Checkout efetivamente paga. Dois gatilhos chegam aqui:
+ * `checkout.session.completed` (cartão — já nasce "paid") e
+ * `checkout.session.async_payment_succeeded` (Pix/boleto, ADR-028 — a sessão
+ * "completa" antes e o pagamento confirma depois).
+ */
+async function handleCheckoutSessionPaid(session: Stripe.Checkout.Session): Promise<void> {
+  const bookingId = session.metadata?.bookingId
+  if (!bookingId) {
+    console.warn(`${LOG} ${session.id}: sem bookingId em metadata`)
+    return
+  }
+
+  if (session.metadata?.type === "late_fee") {
+    await handleLateFeePaid(session, bookingId)
+    return
+  }
+
+  await markRentalPaid({ bookingId, stripePaymentIntentId: idOf(session.payment_intent) })
+  console.warn(`${LOG} booking ${bookingId} paid (session ${session.id})`)
+}
+
 export async function POST(req: Request) {
-  const body      = await req.text()
-  const signature = req.headers.get("stripe-signature")
+  const verified = await verifyStripeWebhookRequest<Stripe.Event>(req, {
+    logPrefix:    LOG,
+    secretEnvVar: "STRIPE_WEBHOOK_SECRET",
+    verify:       (body, signature, secret) => getStripe().webhooks.constructEvent(body, signature, secret),
+  })
+  if (!verified.ok) return verified.response
+  const event = verified.payload
 
-  if (!signature) {
-    return NextResponse.json({ error: "Missing stripe-signature" }, { status: 400 })
-  }
-
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
-  if (!webhookSecret) {
-    console.error("[stripe webhook] STRIPE_WEBHOOK_SECRET not set")
-    return NextResponse.json({ error: "Webhook secret not configured" }, { status: 500 })
-  }
-
-  let event: Stripe.Event
-  try {
-    event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
-  } catch (err) {
-    console.error("[stripe webhook] signature verification failed:", err instanceof Error ? err.message : err)
-    return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
-  }
-
-  // Idempotência (S14-A-04): Stripe reenvia webhooks em retry — dedup por event.id
-  // usando StripeEventQueue (@unique stripeEventId). Eventos já COMPLETED saem 200.
-  const prior = await prisma.stripeEventQueue
-    .findUnique({ where: { stripeEventId: event.id }, select: { status: true } })
-    .catch(() => null)
-  if (prior?.status === "COMPLETED") {
-    return NextResponse.json({ received: true, duplicate: true })
-  }
-
-  try {
-    await prisma.stripeEventQueue.upsert({
-      where:  { stripeEventId: event.id },
-      create: { stripeEventId: event.id, type: event.type, payload: event as unknown as Prisma.InputJsonValue, status: "PROCESSING" },
-      update: { status: "PROCESSING", attempts: { increment: 1 } },
-    })
-
+  return withStripeEventQueue({ id: event.id, type: event.type, payload: event }, LOG, async () => {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session
-        const bookingId = session.metadata?.bookingId
-
-        if (!bookingId) {
-          console.warn("[stripe webhook] checkout.session.completed: no bookingId in metadata")
-          break
-        }
 
         if (session.payment_status !== "paid") {
-          console.warn(`[stripe webhook] session ${session.id} completed but payment_status=${session.payment_status}`)
+          // Pix/boleto (ADR-028): a sessão completa antes do pagamento
+          // confirmar — quem marca pago é async_payment_succeeded.
+          console.warn(`${LOG} session ${session.id} completed but payment_status=${session.payment_status} (aguardando confirmação assíncrona)`)
           break
         }
 
-        const paymentIntentId = typeof session.payment_intent === "string"
-          ? session.payment_intent
-          : (session.payment_intent?.id ?? null)
-
-        const isLateFee = session.metadata?.type === "late_fee"
-
-        if (isLateFee) {
-          // Taxa de atraso paga — registra e notifica ambas as partes
-          await prisma.booking.update({
-            where: { id: bookingId },
-            data:  { lateFeeAmount: session.amount_total ?? undefined },
-          })
-
-          const booking = await prisma.booking.findUnique({
-            where:  { id: bookingId },
-            select: {
-              ownerId: true, borrowerId: true,
-              item:    { select: { title: true } },
-            },
-          })
-          if (booking) {
-            after(() =>
-              prisma.notification.create({
-                data: {
-                  userId: booking.ownerId,
-                  type:   "LATE_FEE_APPLIED" as never,
-                  title:  "Taxa de atraso recebida",
-                  body:   `A taxa de atraso de "${booking.item.title}" foi paga.`,
-                  data:   { bookingId },
-                },
-              }).catch(() => undefined)
-            )
-
-            after(() =>
-              prisma.notification.create({
-                data: {
-                  userId: booking.borrowerId,
-                  type:   "LATE_FEE_APPLIED" as never,
-                  title:  "Taxa de atraso paga",
-                  body:   `Pagamento da taxa de atraso de "${booking.item.title}" confirmado.`,
-                  data:   { bookingId },
-                },
-              }).catch(() => undefined)
-            )
-          }
-
-          console.warn(`[stripe webhook] late_fee paid for booking ${bookingId}`)
-          break
-        }
-
-        // Pagamento de aluguel normal — gera token de retirada único de 6 dígitos
-        let pickupToken: string | null = null
-        for (let attempt = 0; attempt < 12 && !pickupToken; attempt++) { // ARQ-ALTO-14: teto de tentativas
-          const candidate = String(randomInt(100000, 1000000))
-          const conflict  = await prisma.booking.findFirst({ where: { pickupToken: candidate }, select: { id: true } })
-          if (!conflict) pickupToken = candidate
-        }
-        if (!pickupToken) throw new Error("pickupToken generation exhausted") // Stripe re-tenta o webhook
-
-        await prisma.booking.update({
-          where: { id: bookingId },
-          data: {
-            paymentStatus:         "PAID",
-            stripePaymentIntentId: paymentIntentId,
-            paidAt:                new Date(),
-            pickupToken,
-          },
-        })
-
-        const booking = await prisma.booking.findUnique({
-          where:  { id: bookingId },
-          select: {
-            ownerId: true,
-            pickupToken: true,
-            item: { select: { title: true } },
-            owner: {
-              select: {
-                name: true, cep: true, street: true,
-                neighborhood: true, city: true, state: true,
-              },
-            },
-          },
-        })
-        if (booking) {
-          after(() =>
-            dispatchWebhookEvent(booking.ownerId, "booking.paid", {
-              bookingId,
-              itemTitle: booking.item.title,
-            })
-          )
-
-          after(() =>
-            prisma.notification.create({
-              data: {
-                userId: booking.ownerId,
-                type:   "BOOKING_CONFIRMED",
-                title:  "Pagamento recebido!",
-                body:   `O aluguel de "${booking.item.title}" foi pago. Combine a entrega com o locatário.`,
-                data:   { bookingId },
-              },
-            }).catch((e) => console.error("[stripe webhook notification]", e instanceof Error ? e.message : e))
-          )
-        }
-
-        // Gerar comissão do embaixador se o locatário foi indicado — após a resposta
-        after(() =>
-          processAmbassadorOnBookingPaid(bookingId).catch((e) =>
-            console.error("[stripe webhook] ambassador commission error:", e instanceof Error ? e.message : e)
-          )
-        )
-
-        console.warn(`[stripe webhook] booking ${bookingId} paid (session ${session.id})`)
+        await handleCheckoutSessionPaid(session)
         break
       }
 
+      case "checkout.session.async_payment_succeeded": {
+        // Pix/boleto confirmados (ADR-028) — já chega "paid".
+        await handleCheckoutSessionPaid(event.data.object as Stripe.Checkout.Session)
+        break
+      }
+
+      // Sessão morreu sem pagar: expirou, ou o Pix/boleto não foi compensado
+      // (ADR-028). Mesmo desfecho — solta o stripeSessionId pra permitir nova
+      // tentativa. `updateMany` e não `update`: se a reserva sumiu, `update`
+      // lançaria P2025 → 500 → a Stripe retentaria pra sempre um evento que
+      // nunca vai dar certo.
+      case "checkout.session.async_payment_failed":
       case "checkout.session.expired": {
-        const session    = event.data.object as Stripe.Checkout.Session
-        const bookingId  = session.metadata?.bookingId
+        const session   = event.data.object as Stripe.Checkout.Session
+        const bookingId = session.metadata?.bookingId
         if (bookingId) {
-          // Remove o stripeSessionId expirado para permitir nova tentativa de pagamento
-          await prisma.booking.update({
-            where: { id: bookingId },
+          await prisma.booking.updateMany({
+            where: { id: bookingId, paymentStatus: { not: "PAID" } },
             data:  { stripeSessionId: null },
           })
-          console.warn(`[stripe webhook] checkout session expired for booking ${bookingId}`)
+          console.warn(`${LOG} ${event.type} → booking ${bookingId} liberado para nova tentativa (session ${session.id})`)
         }
         break
       }
 
       case "charge.refunded": {
-        const charge = event.data.object as Stripe.Charge
-        if (charge.payment_intent) {
-          const intentId = typeof charge.payment_intent === "string"
-            ? charge.payment_intent
-            : charge.payment_intent.id
+        const charge   = event.data.object as Stripe.Charge
+        const intentId = idOf(charge.payment_intent)
+        if (!intentId) break
 
-          await prisma.booking.updateMany({
-            where: { stripePaymentIntentId: intentId },
-            data:  { paymentStatus: "REFUNDED" },
+        const bookings = await prisma.booking.updateManyAndReturn({
+          where:  { stripePaymentIntentId: intentId },
+          data:   { paymentStatus: "REFUNDED" },
+          select: { id: true },
+        })
+
+        // ADR-028 — o dinheiro voltou pro locatário: se o repasse ao
+        // proprietário já tinha saído, traz de volta a parte proporcional.
+        // NÃO engolir o erro: deixar propagar marca o evento FAILED e faz a
+        // Stripe retentar, que é o que se quer quando dinheiro ficou no
+        // lugar errado. `charge.amount_refunded` é cumulativo por cobrança.
+        await Promise.all(bookings.map((booking) =>
+          reverseOwnerTransfer({
+            bookingId:      booking.id,
+            clawbackAmount: charge.amount_refunded,
+            chargedAmount:  charge.amount,
+            reason:         `Reembolso da reserva ${booking.id}`,
           })
-          console.warn(`[stripe webhook] refund for intent ${intentId}`)
-        }
+        ))
+
+        console.warn(`${LOG} refund for intent ${intentId}`)
         break
       }
 
       case "charge.dispute.created": {
-        const dispute = event.data.object as Stripe.Dispute
-        const intentId = typeof dispute.payment_intent === "string"
-          ? dispute.payment_intent
-          : (dispute.payment_intent?.id ?? null)
+        const dispute  = event.data.object as Stripe.Dispute
+        const intentId = idOf(dispute.payment_intent)
 
         if (!intentId) {
-          console.warn("[stripe webhook] charge.dispute.created: no payment_intent")
+          console.warn(`${LOG} charge.dispute.created: no payment_intent`)
           break
         }
 
@@ -230,97 +166,73 @@ export async function POST(req: Request) {
             where:  { role: "ADMIN", adminRole: "ADMIN_FINANCEIRO" },
             select: { id: true },
           })
-          for (const admin of admins) {
+          if (admins.length > 0) {
             after(() =>
-              prisma.notification.create({
-                data: {
+              prisma.notification.createMany({
+                data: admins.map((admin) => ({
                   userId: admin.id,
                   type:   "BOOKING_CANCELLED" as never, // reuse existing type
                   title:  "⚠️ Disputa aberta no Stripe",
                   body:   `Chargeback criado: dispute ${dispute.id} (R$ ${((dispute.amount ?? 0) / 100).toFixed(2)})`,
                   data:   { disputeId: dispute.id, paymentIntentId: intentId },
-                },
+                })),
               }).catch(() => undefined)
             )
           }
-          console.warn(`[stripe webhook] dispute created ${dispute.id} — booking marked DISPUTED`)
+          console.warn(`${LOG} dispute created ${dispute.id} — booking marked DISPUTED`)
         } else {
-          console.warn(`[stripe webhook] dispute ${dispute.id}: no booking found for intent ${intentId}`)
+          console.warn(`${LOG} dispute ${dispute.id}: no booking found for intent ${intentId}`)
         }
         break
       }
 
       case "charge.dispute.closed": {
-        const dispute = event.data.object as Stripe.Dispute
-        const intentId = typeof dispute.payment_intent === "string"
-          ? dispute.payment_intent
-          : (dispute.payment_intent?.id ?? null)
-
+        const dispute  = event.data.object as Stripe.Dispute
+        const intentId = idOf(dispute.payment_intent)
         if (!intentId) break
 
         // Se a disputa foi perdida → CANCELLED (sem repasse)
         // Se ganhou ou fechou sem penalidade → volta a COMPLETED
-        const newStatus = dispute.status === "lost" ? "CANCELLED" : "COMPLETED"
+        const isLost    = dispute.status === "lost"
+        const newStatus = isLost ? "CANCELLED" : "COMPLETED"
 
-        await prisma.booking.updateMany({
-          where: { stripePaymentIntentId: intentId, status: "DISPUTED" },
-          data:  { status: newStatus },
+        const affected = await prisma.booking.updateManyAndReturn({
+          where:  { stripePaymentIntentId: intentId, status: "DISPUTED" },
+          data:   { status: newStatus },
+          select: { id: true, totalPrice: true },
         })
 
-        // Cancelar comissões de embaixador se dispute perdida
-        if (dispute.status === "lost") {
-          const lostBooking = await prisma.booking.findFirst({
-            where:  { stripePaymentIntentId: intentId },
-            select: { id: true },
-          })
-          if (lostBooking) {
+        if (isLost) {
+          // ADR-028 — disputa perdida é o outro caminho de "o dinheiro voltou
+          // pro locatário". `dispute.amount` é o valor contestado e
+          // `booking.totalPrice` é o que foi cobrado (o mesmo `unit_amount`
+          // mandado pra Checkout Session), então dá pra proporcionalizar sem
+          // uma ida extra à API buscar o charge.
+          await Promise.all(affected.map(async (booking) => {
             after(() =>
-              cancelAmbassadorCommissions(lostBooking.id, `Dispute ${dispute.id} lost`).catch(() => undefined)
+              cancelAmbassadorCommissions(booking.id, `Dispute ${dispute.id} lost`).catch(() => undefined)
             )
-          }
+            await reverseOwnerTransfer({
+              bookingId:      booking.id,
+              clawbackAmount: dispute.amount ?? booking.totalPrice,
+              chargedAmount:  booking.totalPrice,
+              reason:         `Disputa perdida ${dispute.id}`,
+            })
+          }))
         }
 
-        console.warn(
-          `[stripe webhook] dispute closed ${dispute.id} status=${dispute.status} → booking ${newStatus}`,
-        )
+        console.warn(`${LOG} dispute closed ${dispute.id} status=${dispute.status} → booking ${newStatus}`)
         break
       }
 
-      case "account.updated": {
-        // Connect (ADR-028, onboarding do proprietário — EM CONSTRUÇÃO).
-        // Este evento (v1) NÃO dispara para as connected accounts que
-        // criamos hoje (Accounts v2, ver lib/stripe-connect.ts) — v2 usa um
-        // mecanismo de assinatura diferente (Event Destinations, eventos
-        // "thin" via stripe.v2.core.events), ainda não configurado. Deixado
-        // como caminho morto/documentado em vez de removido: se algum dia
-        // uma conta v1 legada existir (ou v2 ganhar suporte a este webhook
-        // clássico), o log abaixo entrega o sinal sem fingir sincronizar —
-        // syncStripeConnectAccount espera o formato v2, não o objeto v1 que
-        // este evento carrega. A sincronização real hoje é só no retorno do
-        // onboarding, em app/api/stripe/connect/return/route.ts.
-        const account = event.data.object as Stripe.Account
-        console.warn(`[stripe webhook] account.updated ${account.id} recebido, mas Accounts v2 não sincroniza por aqui (ver comentário do case)`)
-        break
-      }
-
+      // `account.updated` (v1) não é assinado por este endpoint de propósito:
+      // as connected accounts que criamos hoje são Accounts v2 (ver
+      // lib/stripe-connect.ts), que não disparam esse evento — usam Event
+      // Destinations ("thin"), tratados em
+      // app/api/webhooks/stripe-connect/route.ts. Cai aqui no default.
       default:
         // Ignora eventos não tratados
         break
     }
-
-    await prisma.stripeEventQueue.update({
-      where: { stripeEventId: event.id },
-      data:  { status: "COMPLETED", processedAt: new Date() },
-    })
-  } catch (e) {
-    console.error(`[stripe webhook] error processing ${event.type}:`, e instanceof Error ? e.message : e)
-    // Marca FAILED para permitir reprocessamento no retry do Stripe (dedup só bloqueia COMPLETED)
-    await prisma.stripeEventQueue
-      .update({ where: { stripeEventId: event.id }, data: { status: "FAILED", lastError: e instanceof Error ? e.message : String(e) } })
-      .catch(() => undefined)
-    // Retornar 500 faz o Stripe retentar o webhook
-    return NextResponse.json({ error: "Processing error" }, { status: 500 })
-  }
-
-  return NextResponse.json({ received: true })
+  })
 }
