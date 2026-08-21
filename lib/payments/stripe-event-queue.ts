@@ -26,6 +26,30 @@ interface QueuedEvent {
 }
 
 /**
+ * Normaliza o payload para JSON puro antes de gravar.
+ *
+ * 🪤 NÃO REMOVER. O payload v2 **não é** JSON puro: `parseEventNotification`
+ * anexa métodos (`fetchEvent`, `fetchRelatedObject`) e um `StripeContext` ao
+ * objeto que devolve. Prisma recusa valores assim numa coluna Json, então o
+ * `upsert` lançava e TODO evento de Connect morria com 500 — foi o que
+ * derrubou os pings em 21/08/2026. O caminho v1 nunca sofreu porque
+ * `constructEvent` devolve o resultado cru de um `JSON.parse`.
+ *
+ * O `as Prisma.InputJsonValue` que existia aqui não protegia nada: era
+ * justamente o cast que escondia isso do compilador.
+ *
+ * Falha de serialização não derruba o webhook: o payload é auditoria, e
+ * perder a linha da fila custaria a idempotência, que vale mais.
+ */
+function toPlainJson(value: unknown): Prisma.InputJsonValue {
+  try {
+    return JSON.parse(JSON.stringify(value ?? null)) ?? {}
+  } catch {
+    return {}
+  }
+}
+
+/**
  * Roda `handler` sob a fila de eventos e devolve a resposta HTTP que a Stripe
  * espera. O handler deve LANÇAR para pedir retry — o 500 e a marcação
  * `FAILED` saem daqui.
@@ -48,7 +72,7 @@ export async function withStripeEventQueue(
       create: {
         stripeEventId: event.id,
         type:          event.type,
-        payload:       event.payload as Prisma.InputJsonValue,
+        payload:       toPlainJson(event.payload),
         status:        "PROCESSING",
       },
       update: { status: "PROCESSING", attempts: { increment: 1 } },
