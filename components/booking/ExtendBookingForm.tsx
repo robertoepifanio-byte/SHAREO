@@ -7,6 +7,7 @@
 
 import { useState, useCallback, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
+import { toDateInputValue, addDaysToDateInput } from "@/utils/date-input"
 
 interface Props {
   bookingId:   string
@@ -17,21 +18,11 @@ interface Props {
   minNewEndDate?: string
 }
 
-function toDateInputValue(iso: string): string {
-  return new Date(iso).toISOString().slice(0, 10)
-}
-
-function addDays(iso: string, days: number): string {
-  const d = new Date(iso)
-  d.setDate(d.getDate() + days)
-  return d.toISOString().slice(0, 10)
-}
-
 export function ExtendBookingForm({ bookingId, currentEndDate, role, minNewEndDate }: Props) {
   const router = useRouter()
 
-  const minDate        = minNewEndDate ?? addDays(currentEndDate, 1)
-  const [newEndDate, setNewEndDate] = useState(addDays(currentEndDate, 1))
+  const minDate        = minNewEndDate ?? addDaysToDateInput(currentEndDate, 1)
+  const [newEndDate, setNewEndDate] = useState(addDaysToDateInput(currentEndDate, 1))
   const [submitting, setSubmitting] = useState(false)
   const [error, setError]           = useState<string | null>(null)
   const [success, setSuccess]       = useState<string | null>(null)

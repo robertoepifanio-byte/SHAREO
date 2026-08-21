@@ -157,8 +157,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const body   = await req.json()
     const parsed = PatchBookingSchema.safeParse(body)
     if (!parsed.success) {
+      // Mensagem do campo que falhou, mesmo padrão das rotas irmãs
+      // (bookings/[id]/extend, bookings/[id]/dispute): o genérico escondia qual
+      // campo o Zod recusou.
       return NextResponse.json(
-        { error: { code: "VALIDATION_ERROR", message: "Dados inválidos." } },
+        { error: { code: "VALIDATION_ERROR", message: parsed.error.issues[0]?.message ?? "Dados inválidos." } },
         { status: 400 },
       )
     }
