@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
 import type { BookingStatus } from "@prisma/client"
+import { toDatetimeLocalValue, toDateInputValue, addDaysToDateInput } from "@/utils/date-input"
 
 interface Props {
   bookingId:                  string
@@ -28,6 +29,21 @@ const REPORT_CATEGORIES = [
   { value: "OTHER",        label: "Outro" },
 ]
 
+/**
+ * Payload do horário real de retirada/devolução.
+ *
+ * Só envia `actualTime` quando o usuário REALMENTE editou o campo. Se deixou o
+ * valor pré-preenchido, o servidor usa o próprio relógio — que é o que o rótulo
+ * "Se não alterar, usa o horário atual" promete, e o que evita a rejeição por
+ * diferença de relógio: o valor era julgado contra o relógio do SERVIDOR, então
+ * um cliente adiantado alguns segundos era recusado por "não pode ser no futuro"
+ * num horário que ninguém digitou.
+ */
+function horarioEditado(valor: string, semente: string): { actualTime?: string } {
+  if (!valor || valor === semente) return {}
+  return { actualTime: new Date(valor).toISOString() }
+}
+
 const fmtDate = (iso: string) =>
   new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(new Date(iso))
 
@@ -48,15 +64,14 @@ export function BookingActions({
   // extend request
   const [newEndDate, setNewEndDate] = useState("")
 
-  // horário real de retirada / devolução
-  const nowLocal = () => {
-    const d = new Date()
-    d.setSeconds(0, 0)
-    return d.toISOString().slice(0, 16) // "YYYY-MM-DDTHH:MM"
-  }
+  // Horário real de retirada / devolução. O `*SeedRef` guarda o valor com que o
+  // campo foi pré-preenchido, para distinguir "o usuário editou" de "deixou como
+  // veio" — ver submitPickupTime().
   const [pickupTime,  setPickupTime]  = useState("")
+  const pickupSeedRef = useRef("")
   const [pickupTokenInput, setPickupTokenInput] = useState("")
   const [returnTime,  setReturnTime]  = useState("")
+  const returnSeedRef = useRef("")
 
   // report problem
   const [reportCategory, setReportCategory] = useState("")
@@ -207,17 +222,14 @@ export function BookingActions({
       setError("Informe o código de 6 dígitos apresentado pelo locatário.")
       return
     }
-    const actualTime = pickupTime
-      ? new Date(pickupTime).toISOString()
-      : new Date().toISOString()
-    await execCore("mark_active", { actualTime, pickupToken: pickupTokenInput.replace(/\s/g, "") })
+    await execCore("mark_active", {
+      ...horarioEditado(pickupTime, pickupSeedRef.current),
+      pickupToken: pickupTokenInput.replace(/\s/g, ""),
+    })
   }
 
   async function submitReturnTime() {
-    const actualTime = returnTime
-      ? new Date(returnTime).toISOString()
-      : new Date().toISOString()
-    await execCore("mark_returned", { actualTime })
+    await execCore("mark_returned", horarioEditado(returnTime, returnSeedRef.current))
   }
 
   // ─── Botões principais ────────────────────────────────────────────────────
@@ -228,13 +240,13 @@ export function BookingActions({
     if (status === "PENDING")
       buttons.push({ emoji: "✅", label: "Confirmar reserva",    variant: "primary", onClick: () => execCore("confirm") })
     if (status === "CONFIRMED")
-      buttons.push({ emoji: "▶️", label: "Marcar como ativo",    variant: "primary", onClick: () => { setPickupTime(nowLocal()); setPanel("pickup_time") } })
+      buttons.push({ emoji: "▶️", label: "Marcar como ativo",    variant: "primary", onClick: () => { const v = toDatetimeLocalValue(); pickupSeedRef.current = v; setPickupTime(v); setPanel("pickup_time") } })
     if (status === "RETURNED" && !hideReturnActions)
       buttons.push({ emoji: "📦", label: "Confirmar recebimento", variant: "primary", onClick: () => execCore("confirm_return") })
   }
   if (isBorrower) {
     if (status === "ACTIVE" && !hideReturnActions)
-      buttons.push({ emoji: "📦", label: "Devolver",   variant: "primary", onClick: () => { setReturnTime(nowLocal()); setPanel("return_time") } })
+      buttons.push({ emoji: "📦", label: "Devolver",   variant: "primary", onClick: () => { const v = toDatetimeLocalValue(); returnSeedRef.current = v; setReturnTime(v); setPanel("return_time") } })
     if (status === "ACTIVE")
       buttons.push({ emoji: "📅", label: "Solicitar extensão de prazo", variant: "ghost", onClick: () => setPanel("extend_request") })
   }
@@ -249,9 +261,7 @@ export function BookingActions({
   if (buttons.length === 0 && !conversationId && !showExtendRespond) return null
 
   // ─── Data mínima para extensão = amanhã ──────────────────────────────────
-  const minExtDate = new Date()
-  minExtDate.setDate(minExtDate.getDate() + 1)
-  const minExtDateStr = minExtDate.toISOString().split("T")[0]
+  const minExtDateStr = addDaysToDateInput(toDateInputValue(), 1)
 
   return (
     <div className="flex flex-col gap-3">
@@ -311,7 +321,7 @@ export function BookingActions({
             id="pickup-time-input"
             type="datetime-local"
             value={pickupTime}
-            max={nowLocal()}
+            max={toDatetimeLocalValue()}
             onChange={(e) => setPickupTime(e.target.value)}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-brand"
           />
@@ -349,7 +359,7 @@ export function BookingActions({
             id="return-time-input"
             type="datetime-local"
             value={returnTime}
-            max={nowLocal()}
+            max={toDatetimeLocalValue()}
             onChange={(e) => setReturnTime(e.target.value)}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-brand"
           />

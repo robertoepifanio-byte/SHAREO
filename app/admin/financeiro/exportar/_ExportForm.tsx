@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { toDateInputValue, addDaysToDateInput } from "@/utils/date-input"
 
 type JobStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED"
 
@@ -12,8 +13,8 @@ interface AsyncResult {
 }
 
 export function ExportForm() {
-  const today  = new Date().toISOString().slice(0, 10)
-  const month1 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+  const today  = toDateInputValue()
+  const month1 = addDaysToDateInput(today, -30)
 
   const [start, setStart]     = useState(month1)
   const [end, setEnd]         = useState(today)
