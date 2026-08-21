@@ -108,11 +108,27 @@ export async function POST(req: NextRequest) {
 
     const checkoutSession = await getStripe().checkout.sessions.create({
       mode:                "payment",
-      // ADR-028, item 1: Pix e boleto além de cartão. Checkout hospedado
-      // coleta os dados extras exigidos (CPF/nome pro boleto) sozinho — não
-      // precisa de campo nosso. Os dois cabem no teto de R$500 do MVP
-      // (boleto: R$5–49.999,99; Pix: R$0,50–3.000 por transação).
-      payment_method_types: ["card", "boleto", "pix"],
+      // SÓ CARTÃO — e isto é decisão, não pendência de implementação.
+      //
+      // Em 20/08/2026 esta lista chegou a incluir "boleto" e "pix", pelo item 1
+      // do ADR-028. Voltou pra cartão no mesmo dia, por dois motivos separados:
+      //
+      // 1. BOLETO: descartado pelos fundadores. Ele NÃO aceita reembolso — nem
+      //    parcial nem total (tabela de capacidades da Stripe) — e a política
+      //    de cancelamento publicada promete estorno em três faixas. Coerente
+      //    com a mesma decisão já tomada em 30/06 para o Mercado Pago
+      //    (docs/juridico/mp-pendencias-go-live.md).
+      // 2. PIX: a Stripe exige "good standing E no mínimo 60 DIAS de pagamentos
+      //    processados" pra liberar Pix em conta brasileira — é convite, não
+      //    autoatendimento. A ShareO processou zero pagamentos reais (produção
+      //    travada pelo D4), então o Pix só é pedível ~60 dias DEPOIS do
+      //    go-live com cartão.
+      //
+      // ⚠️ Esta lista é EXPLÍCITA, então um método não habilitado na conta faz
+      // a Checkout Session FALHAR INTEIRA — não degrada, não esconde o método.
+      // Só acrescente "pix" aqui quando ele estiver ativo no Dashboard, senão
+      // ninguém consegue pagar nem de cartão.
+      payment_method_types: ["card"],
       customer_email:       booking.borrower.email ?? undefined,
       line_items: [
         {
