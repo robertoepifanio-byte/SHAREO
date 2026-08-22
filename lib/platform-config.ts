@@ -158,6 +158,21 @@ export async function getAutoCancelConfig(): Promise<AutoCancelConfig> {
 
 const DEFAULT_PAYOUT_WINDOW_DAYS = 3
 
+/**
+ * Rótulo da janela de repasse: "1 dia" / "N dias".
+ *
+ * Mora aqui, ao lado do getter, porque a mesma ternária já estava copiada em 5
+ * páginas (ajuda, politicas, termos, perfil/recebimentos, perfil/repasses) — e o
+ * mobile precisaria de uma sexta. Duas delas são documentos contratuais.
+ *
+ * 🪤 `getPayoutWindowDays()` aceita 0 (`v >= 0`), e nenhuma das cópias tratava
+ * isso: sairia "fica retido por 0 dias" nos Termos.
+ */
+export function formatPayoutWindow(days: number): string {
+  if (days <= 0) return "no mesmo dia"
+  return days === 1 ? "1 dia" : `${days} dias`
+}
+
 export async function getPayoutWindowDays(): Promise<number> {
   try {
     const map = await loadConfig()
@@ -271,6 +286,21 @@ export function calcLateFee(dailyPrice: number, multiplier: number, daysLate: nu
 }
 
 export const CHECKOUT_MAX_CENTS = 50_000 // R$ 500,00 — teto MVP (D2)
+
+/**
+ * Teto do valor estimado do BEM anunciado — R$ 1.000,00, regra da fase inicial
+ * publicada em /ajuda e /politicas. Diferente de CHECKOUT_MAX_CENTS, que limita
+ * o valor da LOCAÇÃO.
+ *
+ * Até 22/08/2026 existia só no texto: `estimatedRetailPrice` aceitava qualquer
+ * valor >= 0. Aplicado na criação (zod) e na edição por regra de não-regressão
+ * (app/api/items/[id]/route.ts) — 59 dos 92 itens do staging já nasceram acima
+ * do teto, e recusá-los na edição travaria o catálogo legado.
+ *
+ * Conflitos em aberto sobre o VALOR (não sobre o mecanismo) estão em
+ * docs/juridico/decisoes-pendentes-cancelamento-disputa.md.
+ */
+export const MAX_ITEM_VALUE_CENTS = 100_000
 
 /** Expiração da sessão Stripe Checkout em segundos (mín. 30min exigido pela Stripe) */
 export const STRIPE_CHECKOUT_EXPIRES_SECONDS = 30 * 60

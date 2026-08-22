@@ -4,6 +4,7 @@ import { AppHeader } from "@/components/layout/AppHeader"
 import {
   getPlatformFeeRate,
   getPayoutWindowDays,
+  formatPayoutWindow,
   getCancellationConfig,
   CHECKOUT_MAX_CENTS,
 } from "@/lib/platform-config"
@@ -29,7 +30,7 @@ export default async function PoliticasPage() {
 
   const feeLabel    = formatPercentLabel(feeRateBps / 100)
   const maxLabel    = formatPriceShort(CHECKOUT_MAX_CENTS)
-  const payoutLabel = payoutWindowDays === 1 ? "1 dia" : `${payoutWindowDays} dias`
+  const payoutLabel = formatPayoutWindow(payoutWindowDays)
 
   return (
     <div className="min-h-screen bg-background">
@@ -332,13 +333,20 @@ export default async function PoliticasPage() {
                   do ShareO.
                 </PolicyBlock>
 
+                {/*
+                  Decisão dos fundadores (22/08/2026): esta seção descreve APENAS o
+                  que a Stripe de fato estabelece. A versão anterior prometia prazo
+                  fixo de "5 a 10 dias úteis" contado do cancelamento, o que o
+                  ShareO não controla — o estorno é emitido pela equipe e só a
+                  partir daí o prazo da operadora corre. Prometer o prazo cheio era
+                  oferta vinculante (CDC art. 30) sobre algo fora do nosso alcance.
+                */}
                 <PolicyBlock title="4.3 Processamento do Reembolso">
-                  Reembolsos são processados pela Stripe para o mesmo método de pagamento utilizado
-                  na reserva. Como o checkout aceita, nesta versão, apenas cartão de crédito, o
-                  crédito aparece na fatura do cartão do Locatário no prazo praticado pelo banco ou
-                  operadora — geralmente de 5 a 10 dias úteis, podendo cair na fatura seguinte
-                  conforme a data de fechamento. O ShareO não reterá taxa de serviço sobre o valor
-                  reembolsado.
+                  Reembolsos são processados pela Stripe, provedor de pagamentos do ShareO, e
+                  devolvidos ao mesmo meio de pagamento utilizado na reserva — não é possível
+                  reembolsar em conta ou meio diferente. Depois de emitido o estorno, o prazo até o
+                  crédito aparecer é definido pelo banco ou operadora do cartão, não pelo ShareO nem
+                  pela Stripe. O ShareO não retém a taxa de serviço sobre o valor reembolsado.
                 </PolicyBlock>
               </div>
             </section>

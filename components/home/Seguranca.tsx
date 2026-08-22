@@ -1,6 +1,6 @@
 import Link from "next/link"
 import Image from "next/image"
-import { getPlatformFeeRate, CHECKOUT_MAX_CENTS } from "@/lib/platform-config"
+import { getPlatformFeeRate, getPayoutWindowDays, formatPayoutWindow, CHECKOUT_MAX_CENTS } from "@/lib/platform-config"
 
 const LockIcon = (
   <Image
@@ -48,6 +48,8 @@ const ShieldIcon = (
 
 export async function Seguranca() {
   const feeRate = await getPlatformFeeRate()
+  // Sequencial: mesmo loadConfig(), que não deduplica chamadas em voo.
+  const payoutWindowDays = await getPayoutWindowDays()
   const feePct = (feeRate / 100).toLocaleString("pt-BR")
   const maxBRL = (CHECKOUT_MAX_CENTS / 100).toLocaleString("pt-BR")
 
@@ -57,7 +59,7 @@ export async function Seguranca() {
       icon: LockIcon,
       bullets: [
         "Você só paga depois que o proprietário confirma a reserva.",
-        "O valor fica retido na plataforma até o repasse semanal via PIX — toda segunda-feira.",
+        `O valor fica retido na plataforma por ${formatPayoutWindow(payoutWindowDays)} após a confirmação da devolução.`,
         `Taxa transparente de ${feePct}% e limite de R$ ${maxBRL} por locação no MVP.`,
       ],
     },

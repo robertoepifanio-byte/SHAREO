@@ -5,12 +5,14 @@ import { HelpSearchProvider, HelpSearchInput, HelpResults } from "@/components/a
 import {
   getPlatformFeeRate,
   getPayoutWindowDays,
+  formatPayoutWindow,
   getCancellationConfig,
   getLateFeeMultiplier,
   getAutoCancelConfig,
   calcSplit,
   calcLateFee,
   CHECKOUT_MAX_CENTS,
+  MAX_ITEM_VALUE_CENTS,
   type CancellationConfig,
 } from "@/lib/platform-config"
 import { formatPriceShort, formatPercentLabel, formatMultiplier } from "@/utils/format"
@@ -138,10 +140,11 @@ function buildFeeTable(v: HelpVars) { return [
   { label: "Taxa de serviço (cobrada do locatário)", value: `${v.feeLabel} do total`,        when: "Na confirmação do pagamento" },
   { label: "Anunciar na plataforma (locador)",       value: "Gratuito",                      when: "Sempre, sem mensalidade" },
   { label: "Repasse ao locador",                     value: "Valor líquido da locação",      when: `${v.payoutLabel} após a confirmação da devolução` },
-  // ⚠️ Regra de negócio da fase inicial, NÃO validada em código hoje
-  // (lib/validations/items.ts só exige estimatedRetailPrice >= 0). Não afirmar
-  // que o limite é verificado automaticamente enquanto isso não existir.
-  { label: "Valor máximo do bem anunciado",          value: "R$ 1.000 por item",             when: "Regra da fase inicial" },
+  // Validado na CRIAÇÃO desde 22/08/2026 (MAX_ITEM_VALUE_CENTS). Na edição não —
+  // 59 dos 92 itens do staging já estavam acima do teto quando a regra entrou, e
+  // herdar a validação travaria a edição deles. Por isso "ao publicar", e não
+  // "sempre".
+  { label: "Valor máximo do bem anunciado",          value: `${formatPriceShort(MAX_ITEM_VALUE_CENTS)} por item`, when: "Validado ao publicar o anúncio" },
   { label: "Limite por locação",                     value: `${v.maxLabel} por transação`,   when: "Validado no checkout" },
   { label: "Taxa por atraso na devolução",           value: `${v.lateMultLabel} o preço diário por dia`, when: "Gerada ao detectar o atraso" },
   { label: `Cancelamento até ${v.cancel.fullRefundHours}h antes da retirada`,                        value: "Reembolso de 100%",                       when: "Sem custo para o locatário" },
@@ -269,7 +272,7 @@ function buildSections(v: HelpVars) { return [
       { q: "Como funciona a taxa por atraso na devolução?",
         a: `Passado o prazo combinado, o app gera automaticamente uma cobrança de ${v.lateMultLabel} o preço diário do item por dia de atraso, enviada ao locatário por e-mail como link de pagamento. Exemplo: se o aluguel é R$ 50/dia e o atraso foi de 2 dias, a taxa é de ${formatPriceShort(calcLateFee(5000, v.lateMult, 2))}. Você recebe uma notificação de aviso 1 dia antes do prazo vencer. Para evitar a taxa, solicite uma extensão antes do prazo — e não depois.` },
       { q: "Existe limite no valor do bem anunciado?",
-        a: "Sim. Nesta primeira fase, a plataforma se destina a itens com valor estimado de até R$ 1.000. Esse limite existe para adequar o perfil de risco dos aluguéis enquanto a plataforma está em fase inicial, e anúncios acima dele podem ser removidos na moderação. Itens de maior valor estarão disponíveis em versões futuras." },
+        a: `Sim. Nesta primeira fase, a plataforma se destina a itens com valor estimado de até ${formatPriceShort(MAX_ITEM_VALUE_CENTS)}. O limite é verificado ao publicar o anúncio e existe para adequar o perfil de risco dos aluguéis enquanto a plataforma está em fase inicial. Anúncios anteriores acima dele podem ser removidos na moderação. Itens de maior valor estarão disponíveis em versões futuras.` },
       { q: "Existe taxa de cancelamento?",
         a: `O reembolso depende da antecedência em relação à data de retirada: até ${v.cancel.fullRefundHours}h antes, reembolso integral; entre ${v.cancel.fullRefundHours}h e ${v.cancel.partialRefundHours}h antes, ${v.cancel.partialPercent}% do valor pago; com menos de ${v.cancel.partialRefundHours}h, ${v.cancel.latePercent}%. A retenção cobre custos operacionais já incorridos. Cancelamentos pelo proprietário devolvem o valor integral ao locatário, e quem cancela com frequência pode ter a conta suspensa temporariamente.` },
       { q: "Recebo comprovante das transações?",
@@ -413,7 +416,7 @@ export default async function AjudaPage() {
     feeRateBps,
     feeLabel:      formatPercentLabel(feeRateBps / 100),
     maxLabel:      formatPriceShort(CHECKOUT_MAX_CENTS),
-    payoutLabel:   payoutWindowDays === 1 ? "1 dia" : `${payoutWindowDays} dias`,
+    payoutLabel:   formatPayoutWindow(payoutWindowDays),
     ownerHours:    autoCancel.ownerHours,
     lateMult,
     lateMultLabel: formatMultiplier(lateMult),

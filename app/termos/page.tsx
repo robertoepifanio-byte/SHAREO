@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { POLICY_UPDATED_AT } from "@/lib/legal-config"
-import { getPlatformFeeRate, CHECKOUT_MAX_CENTS } from "@/lib/platform-config"
+import { getPlatformFeeRate, getPayoutWindowDays, formatPayoutWindow, CHECKOUT_MAX_CENTS } from "@/lib/platform-config"
 
 export const metadata: Metadata = {
   title: "Termos de Uso — ShareO",
@@ -11,8 +11,16 @@ export const metadata: Metadata = {
 
 export default async function TermosPage() {
   // Taxa vigente lida da configuração da plataforma (sem hardcode — ver getPlatformFeeRate).
+  // 🪤 Sequencial de propósito: os dois getters batem no mesmo loadConfig(), que
+  // tem cache mas NÃO deduplica chamadas em voo. Em Promise.all, num cache frio as
+  // duas disparam `findMany` antes de qualquer uma popular o cache — duas queries
+  // em vez de uma, sem ganho de latência (a segunda já acha o cache quente).
   const feeRate = await getPlatformFeeRate()
+  const payoutWindowDays = await getPayoutWindowDays()
   const feePct  = (feeRate / 100).toLocaleString("pt-BR")
+  // Prazo de repasse também vem da config: os Termos prometiam "toda
+  // segunda-feira" enquanto o cron roda diariamente por janela de N dias.
+  const payoutLabel = formatPayoutWindow(payoutWindowDays)
   const maxPorTransacao = (CHECKOUT_MAX_CENTS / 100).toLocaleString("pt-BR", {
     style: "currency",
     currency: "BRL",
@@ -71,7 +79,7 @@ export default async function TermosPage() {
           <section>
             <h2 className="text-lg font-bold text-primary">6. Pagamentos e Taxa de Serviço</h2>
             <p className="text-muted-foreground leading-relaxed">
-              Os pagamentos são processados de forma segura pela plataforma, que intermedia o valor da locação entre locatário e locador. O locatário paga o valor da locação; sobre esse valor, o ShareO retém uma taxa de serviço de {feePct}% e repassa o restante ao locador. O repasse aos locadores é realizado semanalmente, às segundas-feiras, referente às locações concluídas. Cada transação está sujeita a um limite de {maxPorTransacao}. A taxa de serviço vigente é informada no momento da contratação e pode ser alterada mediante atualização destes Termos.
+              Os pagamentos são processados de forma segura pela plataforma, que intermedia o valor da locação entre locatário e locador. O locatário paga o valor da locação; sobre esse valor, o ShareO retém uma taxa de serviço de {feePct}% e repassa o restante ao locador. O repasse aos locadores fica elegível {payoutLabel} após a confirmação da devolução e é processado diariamente — sem vinculação a um dia fixo da semana. Essa janela cobre o prazo de abertura de disputa. Cada transação está sujeita a um limite de {maxPorTransacao}. A taxa de serviço vigente é informada no momento da contratação e pode ser alterada mediante atualização destes Termos.
             </p>
           </section>
 

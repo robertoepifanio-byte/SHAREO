@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { PixAccountForm } from "./_PixAccountForm"
-import { getPlatformFeeRate } from "@/lib/platform-config"
+import { getPlatformFeeRate, getPayoutWindowDays, formatPayoutWindow } from "@/lib/platform-config"
 import { isMercadoPagoActive } from "@/lib/mercadopago"
 import { isStripeConnectActive } from "@/lib/stripe-connect"
 
@@ -38,7 +38,7 @@ export default async function RecebimentosPage({
   const session = await auth()
   if (!session) redirect("/login?callbackUrl=/perfil/recebimentos")
 
-  const [account, feeRateBps, mpActive, stripeConnectActive] = await Promise.all([
+  const [account, feeRateBps, payoutWindowDays, mpActive, stripeConnectActive] = await Promise.all([
     prisma.ownerPaymentAccount.findUnique({
     where:  { userId: session.user.id },
       select: {
@@ -49,10 +49,12 @@ export default async function RecebimentosPage({
       },
     }),
     getPlatformFeeRate(),
+    getPayoutWindowDays(),
     isMercadoPagoActive(),
     isStripeConnectActive(),
   ])
-  const feeLabel = `${feeRateBps / 100}%`
+  const feeLabel    = `${feeRateBps / 100}%`
+  const payoutLabel = formatPayoutWindow(payoutWindowDays)
   const params = await searchParams
   const mpStatus = MP_STATUS[params.mp ?? ""]
   const stripeStatus = STRIPE_STATUS[params.stripe ?? ""]
@@ -80,7 +82,7 @@ export default async function RecebimentosPage({
             <h1 className="text-xl font-bold text-primary">Conta de Recebimento PIX</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Cadastre a chave PIX para receber os repasses das suas locações.
-              O valor fica retido na plataforma até o repasse semanal (toda segunda-feira).
+              O valor fica retido na plataforma por {payoutLabel} após a confirmação da devolução.
             </p>
           </div>
 
@@ -205,7 +207,7 @@ export default async function RecebimentosPage({
             <h2 className="font-semibold text-foreground">Como funciona o repasse</h2>
             {[
               { icon: "✅", title: "Devolução confirmada", desc: "Locatário e você confirmam a devolução do item." },
-              { icon: "⏳", title: "Repasse semanal", desc: "O valor fica retido até a próxima segunda-feira (feriado: primeiro dia útil seguinte)." },
+              { icon: "⏳", title: "Janela de retenção", desc: `O valor fica retido por ${payoutLabel} após a devolução — janela que cobre o prazo de abertura de disputa.` },
               { icon: "💸", title: "Repasse via PIX", desc: `O valor líquido (após a taxa ShareO de ${feeLabel}) é enviado para a sua chave cadastrada.` },
             ].map((item) => (
               <div key={item.title} className="flex gap-3">

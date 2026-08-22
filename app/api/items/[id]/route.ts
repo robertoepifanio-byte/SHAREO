@@ -4,6 +4,8 @@ import { unstable_cache } from "next/cache"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { UpdateItemSchema } from "@/lib/validations/items"
+import { MAX_ITEM_VALUE_CENTS } from "@/lib/platform-config"
+import { formatPriceShort } from "@/utils/format"
 import { geocodeItem } from "@/lib/geocodeItem"
 import { userPublicSelect } from "@/lib/prisma/selects"
 import { getOwnerResponseBadge } from "@/lib/ownerStats"
@@ -188,7 +190,7 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
     const { id } = await params
     const existing = await prisma.item.findFirst({
       where: { id, deletedAt: null },
-      select: { ownerId: true },
+      select: { ownerId: true, estimatedRetailPrice: true },
     })
 
     if (!existing) {
@@ -229,6 +231,34 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
     }
 
     const d = parsed.data
+
+    // Teto do valor do bem na EDIÇÃO — regra de NÃO-REGRESSÃO, não de teto puro.
+    //
+    // O `.max()` do CreateItemSchema sozinho era contornável em dois passos:
+    // criar dentro do teto e depois editar para qualquer valor. Mas recusar
+    // tudo acima do teto aqui travaria os anúncios legados — quando a regra
+    // entrou, 59 dos 92 itens do staging já estavam acima dela, e o dono nem
+    // conseguiria corrigir o título.
+    //
+    // A regra que atende os dois: aceita se o novo valor está dentro do teto OU
+    // se não é maior que o valor atual. Legado continua editável e pode baixar;
+    // ninguém escala valor por edição.
+    if (
+      d.estimatedRetailPrice != null &&
+      d.estimatedRetailPrice > MAX_ITEM_VALUE_CENTS &&
+      d.estimatedRetailPrice > (existing.estimatedRetailPrice ?? 0)
+    ) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "ITEM_VALUE_ABOVE_CAP",
+            message: `Nesta fase, o valor estimado do item não pode passar de ${formatPriceShort(MAX_ITEM_VALUE_CENTS)}.`,
+          },
+        },
+        { status: 422 }
+      )
+    }
+
     const updated = await prisma.item.update({
       where: { id },
       data: {

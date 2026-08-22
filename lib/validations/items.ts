@@ -1,4 +1,6 @@
 import { z } from "zod"
+import { MAX_ITEM_VALUE_CENTS } from "@/lib/platform-config"
+import { formatPriceShort } from "@/utils/format"
 
 const BR_STATES = [
   "AC","AL","AM","AP","BA","CE","DF","ES","GO","MA",
@@ -17,7 +19,15 @@ export const CreateItemSchema = z.object({
   pricePerWeek:  z.number().int().min(0).nullable().optional(),
   pricePerMonth: z.number().int().min(0).nullable().optional(),
   depositAmount:        z.number().int().min(0).nullable().optional(),
-  estimatedRetailPrice: z.number().int().min(0).nullable().optional(),
+  // Teto da fase inicial, publicado em /ajuda. Só na CRIAÇÃO — ver
+  // UpdateItemSchema abaixo para o porquê de a edição não herdar isto.
+  estimatedRetailPrice: z
+    .number()
+    .int()
+    .min(0)
+    .max(MAX_ITEM_VALUE_CENTS, `Nesta fase, o valor estimado do item não pode passar de ${formatPriceShort(MAX_ITEM_VALUE_CENTS)}`)
+    .nullable()
+    .optional(),
   address:       z.string().max(200).optional().or(z.literal("")).transform(v => v || undefined),
   city:          z.string().min(2, "Cidade obrigatória").max(100),
   state:         z.enum(BR_STATES, { errorMap: () => ({ message: "Estado inválido" }) }),
@@ -35,6 +45,11 @@ export const UpdateItemSchema = CreateItemSchema.partial().extend({
   // isActive mantido por retrocompatibilidade — mapeado para status na API
   isActive: z.boolean().optional(),
   status: z.enum(["AVAILABLE", "PAUSED"]).optional(),
+  // O teto NÃO é herdado aqui: a edição usa regra de NÃO-REGRESSÃO, aplicada em
+  // app/api/items/[id]/route.ts (aceita dentro do teto OU não maior que o valor
+  // atual). Herdar o `.max()` travaria os anúncios legados; deixar sem nada
+  // permitiria escalar valor por edição. Ver MAX_ITEM_VALUE_CENTS.
+  estimatedRetailPrice: z.number().int().min(0).nullable().optional(),
 })
 
 export type UpdateItemInput = z.infer<typeof UpdateItemSchema>
