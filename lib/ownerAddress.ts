@@ -38,6 +38,32 @@ export function hasPickupAddress<T extends OwnerAddressFields>(
   return Boolean(owner?.street?.trim())
 }
 
+/**
+ * Remove o endereço do proprietário quando quem lê ainda não tem direito a ele.
+ *
+ * 🪤 O `GET /api/bookings/[id]` selecionava `cep`/`street`/`neighborhood` sem
+ * nenhuma condição: bastava criar uma reserva — que o dono nem precisa aceitar —
+ * e ler a API para obter o endereço residencial de qualquer anunciante. As duas
+ * telas do produto escondem isso até `paymentStatus === "PAID"`, mas a API não,
+ * e a API é o que um script lê.
+ *
+ * O projeto já tem essa postura em `GET /api/items/[id]`, que zera `address` e
+ * trunca as coordenadas para quem não é o dono. Aqui ela faltava.
+ *
+ * `city`/`state` continuam sempre visíveis — já aparecem no anúncio público.
+ *
+ * Quem vê o endereço completo:
+ *   - o próprio proprietário (é o dado dele)
+ *   - o locatário, só depois de pagar
+ */
+export function redactOwnerAddress<T extends OwnerAddressFields>(
+  owner: T,
+  { isOwner, isPaid }: { isOwner: boolean; isPaid: boolean },
+): T {
+  if (isOwner || isPaid) return owner
+  return { ...owner, cep: null, street: null, neighborhood: null }
+}
+
 /** Endereço em uma linha, ou `null` quando não dá para chegar até ele. */
 export function formatPickupAddress(owner: OwnerAddressFields | null | undefined): string | null {
   if (!hasPickupAddress(owner)) return null

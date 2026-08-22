@@ -8,7 +8,7 @@
  * mandar o locatário a uma cidade inteira com a advertência de não aceitar
  * outro local.
  */
-import { hasPickupAddress, formatPickupAddress } from "@/lib/ownerAddress"
+import { hasPickupAddress, formatPickupAddress, redactOwnerAddress } from "@/lib/ownerAddress"
 
 const COMPLETO = {
   street:       "Av. Engenheiro Roberto Freire, 1234",
@@ -57,5 +57,47 @@ describe("formatPickupAddress", () => {
 
   it("cidade sem estado aparece sozinha", () => {
     expect(formatPickupAddress({ street: "Rua A", city: "Natal" })).toBe("Rua A, Natal")
+  })
+})
+
+/**
+ * Vazamento encontrado em 22/08/2026 pelo painel de dois atores: bastava criar
+ * uma reserva — que o dono nem precisa aceitar — e ler `GET /api/bookings/[id]`
+ * para obter o endereço residencial de qualquer anunciante. As telas escondiam
+ * até o pagamento; a API não.
+ */
+describe("redactOwnerAddress", () => {
+  const DONO = {
+    id: "u1", name: "Dono",
+    cep: "59082095", street: "Av. Roberto Freire, 1234",
+    neighborhood: "Capim Macio", city: "Natal", state: "RN",
+  }
+
+  it("esconde do locatário enquanto a reserva não foi paga — o vazamento", () => {
+    const r = redactOwnerAddress(DONO, { isOwner: false, isPaid: false })
+    expect(r.street).toBeNull()
+    expect(r.cep).toBeNull()
+    expect(r.neighborhood).toBeNull()
+  })
+
+  it("mantém cidade e estado — já são públicos no anúncio", () => {
+    const r = redactOwnerAddress(DONO, { isOwner: false, isPaid: false })
+    expect(r.city).toBe("Natal")
+    expect(r.state).toBe("RN")
+  })
+
+  it("libera para o locatário depois do pagamento — ele precisa ir até lá", () => {
+    expect(redactOwnerAddress(DONO, { isOwner: false, isPaid: true }).street)
+      .toBe("Av. Roberto Freire, 1234")
+  })
+
+  it("o proprietário sempre vê o próprio endereço, pago ou não", () => {
+    expect(redactOwnerAddress(DONO, { isOwner: true, isPaid: false }).street)
+      .toBe("Av. Roberto Freire, 1234")
+  })
+
+  it("não muda o objeto recebido", () => {
+    redactOwnerAddress(DONO, { isOwner: false, isPaid: false })
+    expect(DONO.street).toBe("Av. Roberto Freire, 1234")
   })
 })
