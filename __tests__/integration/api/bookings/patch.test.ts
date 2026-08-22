@@ -316,6 +316,58 @@ describe("PATCH /api/bookings/[id]", () => {
       expect(body.data.status).toBe("DISPUTED")
     })
 
+    /**
+     * 🪤 O motivo da disputa era EXIGIDO e depois DESCARTADO: só o branch de
+     * `cancel` gravava `cancelReason`. A disputa entrava no banco sem
+     * justificativa, e quem fosse arbitrar abria o caso sem saber do que se
+     * tratava. Achado do painel de dois atores, 22/08/2026.
+     */
+    it("open_dispute GRAVA o motivo — antes ele era exigido e jogado fora", async () => {
+      mockAuth.mockResolvedValue(makeSession(BORROWER_ID))
+      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "ACTIVE" }))
+      mockBookingUpdate.mockResolvedValue(makeUpdatedBooking("DISPUTED"))
+
+      await PATCH(makeReq({ action: "open_dispute", reason: "Furadeira não liga." }), makeParams())
+
+      expect(mockBookingUpdate).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ cancelReason: "Furadeira não liga." }),
+      }))
+    })
+
+    it("open_dispute NOTIFICA a outra parte, dizendo quem abriu", async () => {
+      // Antes não havia entrada de open_dispute no notifMap: a outra parte só
+      // descobria a disputa ao abrir o app por conta própria.
+      mockAuth.mockResolvedValue(makeSession(BORROWER_ID))
+      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "ACTIVE" }))
+      mockBookingUpdate.mockResolvedValue(makeUpdatedBooking("DISPUTED"))
+
+      await PATCH(makeReq({ action: "open_dispute", reason: "Furadeira não liga." }), makeParams())
+
+      expect(mockNotificationCreate).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({
+          userId: OWNER_ID, // quem recebe é o OUTRO lado
+          title:  "Disputa aberta",
+          // e o texto nomeia quem AGIU, não quem recebe
+          body:   expect.stringContaining("locatário abriu uma disputa"),
+        }),
+      }))
+    })
+
+    it("quando o LOCADOR abre, o locatário é notificado e o texto diz 'locador'", async () => {
+      mockAuth.mockResolvedValue(makeSession(OWNER_ID))
+      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "ACTIVE" }))
+      mockBookingUpdate.mockResolvedValue(makeUpdatedBooking("DISPUTED"))
+
+      await PATCH(makeReq({ action: "open_dispute", reason: "Devolvido com risco fundo." }), makeParams())
+
+      expect(mockNotificationCreate).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({
+          userId: BORROWER_ID,
+          body:   expect.stringContaining("locador abriu uma disputa"),
+        }),
+      }))
+    })
+
     // 7. RETURNED + confirm_return (owner) → 200, status COMPLETED
     it("RETURNED + confirm_return pelo owner → 200, status COMPLETED", async () => {
       mockAuth.mockResolvedValue(makeSession(OWNER_ID))

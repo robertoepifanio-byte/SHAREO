@@ -115,9 +115,14 @@ export async function POST(req: NextRequest, { params }: Params) {
       select: { id: true, status: true, updatedAt: true },
     })
 
-    // Notifica a outra parte
-    const notifyUserId = isOwner ? booking.borrowerId : booking.ownerId
-    const notifyRole   = isOwner ? "locatário" : "locador"
+    // Notifica a outra parte.
+    //
+    // 🪤 `notifyRole` descrevia QUEM RECEBE, mas o texto usa como QUEM ABRIU —
+    // então o destinatário lia "O locatário abriu uma disputa" quando ele mesmo
+    // era o locatário. Os dois papéis são opostos: quem recebe é o outro lado de
+    // quem agiu. Nomes explícitos para não voltar a confundir.
+    const notifyUserId  = isOwner ? booking.borrowerId : booking.ownerId
+    const papelDeQuemAbriu = isOwner ? "locador" : "locatário"
 
     after(() =>
       prisma.notification.create({
@@ -125,7 +130,7 @@ export async function POST(req: NextRequest, { params }: Params) {
           userId: notifyUserId,
           type:   "BOOKING_CANCELLED", // reutiliza tipo existente; o body indica disputa
           title:  "Disputa aberta",
-          body:   `O ${notifyRole} abriu uma disputa em "${booking.item.title}": ${reasonLabel}.`,
+          body:   `O ${papelDeQuemAbriu} abriu uma disputa em "${booking.item.title}": ${reasonLabel}.`,
           data:   { bookingId: id, photoUrl: photoUrl ?? null },
         },
       }).catch((e) => console.error("[dispute] notification:", e instanceof Error ? e.message : e))
