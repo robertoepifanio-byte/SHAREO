@@ -114,7 +114,11 @@ export async function POST(req: NextRequest, { params }: Params) {
       )
     }
 
-    const requestedDate = new Date(newEndDate)
+    // 🪤 `new Date("2026-08-27")` é meia-noite UTC — que no Brasil (UTC−3) é
+    // 26/08 às 21:00. A notificação dizia 27, a tela dizia 26. Ancorar ao
+    // meio-dia LOCAL é a convenção do projeto para datas de reserva (ver
+    // startOfTodayBR em lib/validations/bookings.ts).
+    const requestedDate = new Date(`${newEndDate}T12:00:00`)
     if (requestedDate <= new Date(booking.endDate)) {
       return NextResponse.json(
         { error: { code: "INVALID_DATE", message: "A nova data deve ser posterior à data de devolução atual." } },
@@ -221,6 +225,22 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (booking.extensionStatus !== "PENDING") {
       return NextResponse.json(
         { error: { code: "NO_PENDING_EXTENSION", message: "Não há solicitação de extensão pendente." } },
+        { status: 422 },
+      )
+    }
+
+    // 🪤 O POST exige ACTIVE, o PATCH não exigia nada: dava para o locatário
+    // pedir extensão, devolver o item, e o proprietário aprovar depois —
+    // estendendo o prazo de uma locação que já acabou e empurrando o `endDate`
+    // de uma reserva RETURNED para o futuro. Achado do painel de dois atores.
+    if (booking.status !== "ACTIVE") {
+      return NextResponse.json(
+        {
+          error: {
+            code:    "INVALID_STATUS",
+            message: "A locação não está mais em andamento — não é possível responder à extensão.",
+          },
+        },
         { status: 422 },
       )
     }

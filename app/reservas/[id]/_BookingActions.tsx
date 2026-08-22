@@ -15,6 +15,8 @@ interface Props {
   conversationId?:            string
   extensionStatus:            string | null
   extensionRequestedEndDate:  string | null
+  /** Fim atual da locação (ISO) — piso do seletor de extensão. */
+  endDate?:                   string | null
   /** Suprimir botões de devolução quando ReturnChecklist/ReturnConditionForm já os exibe */
   hideReturnActions?:         boolean
 }
@@ -49,7 +51,7 @@ const fmtDate = (iso: string) =>
 
 export function BookingActions({
   bookingId, status, isOwner, isBorrower,
-  conversationId, extensionStatus, extensionRequestedEndDate,
+  conversationId, extensionStatus, extensionRequestedEndDate, endDate,
   hideReturnActions,
 }: Props) {
   const router = useRouter()
@@ -247,7 +249,10 @@ export function BookingActions({
   if (isBorrower) {
     if (status === "ACTIVE" && !hideReturnActions)
       buttons.push({ emoji: "📦", label: "Devolver",   variant: "primary", onClick: () => { const v = toDatetimeLocalValue(); returnSeedRef.current = v; setReturnTime(v); setPanel("return_time") } })
-    if (status === "ACTIVE")
+    // 🪤 Sem checar `extensionStatus`, o botão continuava visível com um pedido
+    // já pendente e a API respondia 409 — o locatário levava um erro por clicar
+    // no que a tela ofereceu.
+    if (status === "ACTIVE" && extensionStatus !== "PENDING")
       buttons.push({ emoji: "📅", label: "Solicitar extensão de prazo", variant: "ghost", onClick: () => setPanel("extend_request") })
   }
   if (status === "PENDING" || status === "CONFIRMED")
@@ -260,8 +265,11 @@ export function BookingActions({
 
   if (buttons.length === 0 && !conversationId && !showExtendRespond) return null
 
-  // ─── Data mínima para extensão = amanhã ──────────────────────────────────
-  const minExtDateStr = addDaysToDateInput(toDateInputValue(), 1)
+  // ─── Data mínima para extensão = o dia seguinte ao FIM da locação ────────
+  // 🪤 Era "amanhã", mas a API exige `newEndDate > endDate` (extend/route.ts).
+  // Numa locação que termina daqui a duas semanas, o seletor oferecia treze
+  // datas que o servidor recusa. `endDate` é o limite real.
+  const minExtDateStr = addDaysToDateInput(endDate ?? toDateInputValue(), 1)
 
   return (
     <div className="flex flex-col gap-3">
