@@ -1,8 +1,6 @@
 // Fonte: app/termos/page.tsx
 // Taxa de serviço lida de /api/platform-config/public (nunca hardcode — CLAUDE.md).
-// CHECKOUT_MAX_CENTS = 50 000 basis cents → R$ 500,00 (constante de código, não do banco).
 
-import { useEffect, useState } from "react"
 import {
   View,
   Text,
@@ -10,42 +8,27 @@ import {
   TouchableOpacity,
   StyleSheet,
   Linking,
-  ActivityIndicator,
 } from "react-native"
 import { router } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useTheme } from "@/lib/theme"
-import { API_URL } from "@/lib/api"
+import { usePlatformConfig, formatPayoutWindow, formatMaxLabel } from "@/lib/platformConfig"
 
 // Constante espelhada de lib/legal-config.ts
 const POLICY_UPDATED_AT = "junho de 2026"
-
-// Limite por transação em reais — espelha CHECKOUT_MAX_CENTS / 100 de lib/platform-config.ts
-const MAX_POR_TRANSACAO = "R$ 500,00"
 
 export default function TermosScreen() {
   const { tokens } = useTheme()
   const insets = useSafeAreaInsets()
 
-  // Taxa da plataforma em basis points (ex: 1500 = 15%).
-  // Buscada de /api/platform-config/public para nunca hardcodar.
-  const [feeRateBps, setFeeRateBps] = useState<number | null>(null)
-
-  useEffect(() => {
-    fetch(`${API_URL}/api/platform-config/public`)
-      .then((r) => r.json())
-      .then((json) => {
-        const bps = json?.data?.feeRateBps
-        if (typeof bps === "number") setFeeRateBps(bps)
-      })
-      .catch(() => {
-        // Fallback: assume taxa padrão de 15% (1500 bps) se offline
-        setFeeRateBps(1500)
-      })
-  }, [])
-
-  // Converte basis points para string "15" (igual a (feeRate / 100).toLocaleString("pt-BR"))
-  const feePct = feeRateBps !== null ? String(feeRateBps / 100) : null
+  // 🪤 Antes: fetch próprio para a taxa e `MAX_POR_TRANSACAO = "R$ 500,00"`
+  // cravado "espelhando" CHECKOUT_MAX_CENTS. Espelho por comentário não segura
+  // — é a mesma classe de defasagem que fez esta tela e a Ajuda divergirem do
+  // site. Agora tudo vem da config, por um hook compartilhado.
+  const cfg = usePlatformConfig()
+  const feePct          = String(cfg.feeRateBps / 100)
+  const payoutLabel     = formatPayoutWindow(cfg.payoutWindowDays)
+  const maxPorTransacao = formatMaxLabel(cfg.checkoutMaxCents)
 
   return (
     <View style={[s.root, { backgroundColor: tokens.bg }]}>
@@ -157,23 +140,13 @@ export default function TermosScreen() {
 
         {/* ── Seção 6 — verbatim de page.tsx linhas 71-76 ── */}
         {/* Taxa: buscada de /api/platform-config/public, nunca hardcodada. */}
-        {/* Limite: R$ 500,00 = CHECKOUT_MAX_CENTS / 100 (constante de código). */}
         <View style={[s.section, { backgroundColor: tokens.bg }]}>
           <Text style={[s.sectionTitle, { color: tokens.navy }]}>
             6. Pagamentos e Taxa de Serviço
           </Text>
-          {feePct === null ? (
-            <ActivityIndicator
-              size="small"
-              color={tokens.navy}
-              style={s.loader}
-              accessibilityLabel="Carregando taxa de serviço"
-            />
-          ) : (
-            <Text style={[s.paragraph, { color: tokens.muted }]}>
-              Os pagamentos são processados de forma segura pela plataforma, que intermedia o valor da locação entre locatário e locador. O locatário paga o valor da locação; sobre esse valor, o ShareO retém uma taxa de serviço de {feePct}% e repassa o restante ao locador. O repasse aos locadores é realizado semanalmente, às segundas-feiras, referente às locações concluídas. Cada transação está sujeita a um limite de {MAX_POR_TRANSACAO}. A taxa de serviço vigente é informada no momento da contratação e pode ser alterada mediante atualização destes Termos.
-            </Text>
-          )}
+          <Text style={[s.paragraph, { color: tokens.muted }]}>
+              Os pagamentos são processados de forma segura pela plataforma, que intermedia o valor da locação entre locatário e locador. O locatário paga o valor da locação; sobre esse valor, o ShareO retém uma taxa de serviço de {feePct}% e repassa o restante ao locador. O repasse aos locadores fica elegível {payoutLabel} após a confirmação da devolução e é processado diariamente — sem vinculação a um dia fixo da semana. Essa janela cobre o prazo de abertura de disputa. Cada transação está sujeita a um limite de {maxPorTransacao}. A taxa de serviço vigente é informada no momento da contratação e pode ser alterada mediante atualização destes Termos.
+          </Text>
         </View>
 
         <View style={[s.divider, { backgroundColor: tokens.border }]} />

@@ -13,6 +13,7 @@ import { calcRefund } from "@/lib/cancellationPolicy"
 import { getCancellationConfig, getPayoutWindowDays } from "@/lib/platform-config"
 import { releaseCouponForBooking } from "@/lib/coupons"
 import { findOverlappingItem } from "@/lib/booking-availability"
+import { hasPickupAddress } from "@/lib/ownerAddress"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -179,7 +180,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         bookingItems: { select: { itemId: true } }, // Story B — revalidar todos os itens no confirm
         item:     { select: { title: true } },
         borrower: { select: { email: true, name: true } },
-        owner:    { select: { email: true, name: true } },
+        owner:    { select: { email: true, name: true, street: true } },
       },
     })
 
@@ -224,6 +225,22 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       return NextResponse.json(
         { error: { code: "FORBIDDEN", message: "Apenas o locatário pode executar esta ação." } },
         { status: 403 },
+      )
+    }
+
+    // Endereço completo é exigência NO MOMENTO EM QUE HÁ UMA LOCAÇÃO, não no
+    // cadastro (regra dos fundadores, 22/08/2026). `confirm` é esse momento: o
+    // proprietário assume a locação e o locatário passa a precisar saber onde
+    // buscar o item. Contexto do defeito: lib/ownerAddress.ts.
+    if (action === "confirm" && !hasPickupAddress(booking.owner)) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "OWNER_ADDRESS_REQUIRED",
+            message: "Cadastre seu endereço em Meu Perfil → Endereço antes de confirmar. O locatário precisa saber onde retirar o item.",
+          },
+        },
+        { status: 422 },
       )
     }
 

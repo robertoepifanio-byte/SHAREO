@@ -27,6 +27,7 @@ import {
 } from "react-native"
 import { router } from "expo-router"
 import { useQuery } from "@tanstack/react-query"
+import { usePlatformConfig, formatPayoutWindow } from "@/lib/platformConfig"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { apiFetch } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
@@ -95,6 +96,7 @@ export default function RepassesScreen() {
   const insets = useSafeAreaInsets()
   const user   = useAuth((s) => s.user)
   const { tokens } = useTheme()
+  const payoutLabel = formatPayoutWindow(usePlatformConfig().payoutWindowDays)
 
   const { data, isLoading, isRefetching, refetch } = useQuery({
     queryKey: ["user-payouts"],
@@ -173,7 +175,7 @@ export default function RepassesScreen() {
         >
           {/* Descrição verbatim do site */}
           <Text style={[s.desc, { color: tokens.muted }]}>
-            Histórico de repasses das suas locações. O valor fica retido na plataforma até o repasse semanal (toda segunda-feira).
+            Histórico de repasses das suas locações. O valor fica retido na plataforma por {payoutLabel} após a confirmação da devolução.
           </Text>
 
           {/* Conta PIX cadastrada — verbatim do site */}

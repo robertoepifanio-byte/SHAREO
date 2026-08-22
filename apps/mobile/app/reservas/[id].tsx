@@ -15,6 +15,7 @@ import * as ImagePicker from "expo-image-picker"
 import { apiFetch, API_URL, getTokens } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
 import { useTheme } from "@/lib/theme"
+import { formatPickupAddress } from "@/lib/ownerAddress"
 import { deriveBookingHistory } from "@/lib/bookingHistory"
 
 interface BookingDetail {
@@ -67,17 +68,6 @@ interface BookingDetail {
   reviews: { reviewType: string; rating: number; comment: string | null }[]
   // CheckInOut — fonte: app/reservas/[id]/page.tsx linhas 527-547 + _CheckInOut.tsx
   photos: { id: string; url: string; phase: string; createdAt: string }[]
-}
-
-// Formata o endereço de retirada — fonte: app/reservas/[id]/page.tsx linhas 42-53 (fmtOwnerAddress)
-function fmtOwnerAddress(owner: BookingDetail["owner"]): string | null {
-  const parts: string[] = []
-  if (owner.street)       parts.push(owner.street)
-  if (owner.neighborhood) parts.push(owner.neighborhood)
-  if (owner.city && owner.state) parts.push(`${owner.city} — ${owner.state}`)
-  else if (owner.city)    parts.push(owner.city)
-  if (owner.cep)          parts.push(`CEP ${owner.cep.replace(/(\d{5})(\d{3})/, "$1-$2")}`)
-  return parts.length ? parts.join(", ") : null
 }
 
 // Split da taxa da plataforma — fonte: app/reservas/[id]/page.tsx linhas 147-153.
@@ -405,7 +395,7 @@ export default function BookingDetailScreen() {
   const feeRateLabel = feeRatePct != null
     ? (feeRatePct % 1 === 0 ? feeRatePct.toFixed(0) : String(feeRatePct))
     : null
-  const pickupAddress = fmtOwnerAddress(booking.owner)
+  const pickupAddress = formatPickupAddress(booking.owner)
 
   // Histórico de eventos — fonte: lib/bookingHistory.ts (deriveBookingHistory)
   const historyEvents = deriveBookingHistory({

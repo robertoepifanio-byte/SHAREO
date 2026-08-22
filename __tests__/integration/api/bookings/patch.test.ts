@@ -124,6 +124,8 @@ function makeBooking(overrides: {
   status?: string
   ownerId?: string
   borrowerId?: string
+  /** Rua do proprietário — `null` simula quem ainda não cadastrou endereço. */
+  ownerStreet?: string | null
 }) {
   return {
     id:          BOOKING_ID,
@@ -136,7 +138,13 @@ function makeBooking(overrides: {
     bookingItems: [{ itemId: "item-id-004" }], // Story B — confirm revalida todos os itens
     item:        { title: "Furadeira Bosch" },
     borrower:    { email: "borrower@ex.com", name: "Locatário Teste" },
-    owner:       { email: "owner@ex.com",    name: "Proprietário Teste" },
+    // `street` preenchido por padrão: endereço completo virou exigência do
+    // `confirm` em 22/08/2026 — o locatário precisa saber onde retirar o item.
+    owner: {
+      email:  "owner@ex.com",
+      name:   "Proprietário Teste",
+      street: overrides.ownerStreet === undefined ? "Rua das Flores, 100" : overrides.ownerStreet,
+    },
   }
 }
 
@@ -179,6 +187,47 @@ describe("PATCH /api/bookings/[id]", () => {
 
       expect(res.status).toBe(200)
       expect(body.data.status).toBe("CONFIRMED")
+    })
+
+    /**
+     * Endereço completo é exigência NO MOMENTO DA LOCAÇÃO, não no cadastro
+     * (regra dos fundadores, 22/08/2026).
+     *
+     * O que motivou: a tela do locatário mostrava "Natal — RN" como local de
+     * retirada, com a advertência "não aceite outro local" — mandando alguém a
+     * uma cidade inteira. 41 dos 46 donos de item do staging não tinham rua.
+     */
+    it("confirm sem endereço do proprietário → 422 OWNER_ADDRESS_REQUIRED", async () => {
+      mockAuth.mockResolvedValue(makeSession(OWNER_ID))
+      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "PENDING", ownerStreet: null }))
+
+      const res  = await PATCH(makeReq({ action: "confirm" }), makeParams())
+      const body = await res.json() as { error: { code: string; message: string } }
+
+      expect(res.status).toBe(422)
+      expect(body.error.code).toBe("OWNER_ADDRESS_REQUIRED")
+      // A mensagem precisa dizer PARA ONDE ir — erro sem saída é erro pela metade.
+      expect(body.error.message).toMatch(/Endereço/i)
+      expect(mockBookingUpdate).not.toHaveBeenCalled()
+    })
+
+    it("rua só com espaços não conta como endereço", async () => {
+      mockAuth.mockResolvedValue(makeSession(OWNER_ID))
+      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "PENDING", ownerStreet: "   " }))
+
+      const res = await PATCH(makeReq({ action: "confirm" }), makeParams())
+      expect(res.status).toBe(422)
+    })
+
+    it("🪤 a exigência é SÓ do confirm — cancelar sem endereço continua possível", async () => {
+      // Prender o proprietário numa locação que ele não consegue nem recusar
+      // seria pior que o problema original.
+      mockAuth.mockResolvedValue(makeSession(OWNER_ID))
+      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "PENDING", ownerStreet: null }))
+      mockBookingUpdate.mockResolvedValue(makeUpdatedBooking("CANCELLED"))
+
+      const res = await PATCH(makeReq({ action: "cancel", reason: "Item indisponível" }), makeParams())
+      expect(res.status).toBe(200)
     })
 
     // Story B / ARQ-CRIT-01 — confirm revalida TODOS os itens da locação:

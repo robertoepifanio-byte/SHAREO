@@ -12,6 +12,7 @@
 
 import React from "react"
 import { render, screen, fireEvent, waitFor } from "@testing-library/react-native"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
 import EstimativaScreen from "@/app/anunciar/estimativa"
 
@@ -73,9 +74,27 @@ function fmt(val: number): string {
   })
 }
 
-function renderEstimativa() {
-  apiFetch.mockResolvedValueOnce({ data: { feeRateBps: 1500 } })
-  return render(<EstimativaScreen />)
+/**
+ * A taxa passou a vir de `usePlatformConfig()` (react-query) em vez de um
+ * `apiFetch` próprio — o app tinha 4 cópias do mesmo fetch, cada uma com seu
+ * default. Por isso o provider agora é obrigatório no render.
+ *
+ * `retry: false` + `gcTime: 0` para o teste não deixar timer pendurado; o
+ * `fetch` global é mockado porque o hook usa fetch direto (endpoint público,
+ * sem auth).
+ */
+function renderEstimativa(config: { feeRateBps: number } | "falha" = { feeRateBps: 1500 }) {
+  global.fetch = (config === "falha"
+    ? jest.fn().mockRejectedValue(new Error("network error"))
+    : jest.fn().mockResolvedValue({ ok: true, json: async () => ({ data: config }) })
+  ) as unknown as typeof fetch
+
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
+  return render(
+    <QueryClientProvider client={qc}>
+      <EstimativaScreen />
+    </QueryClientProvider>
+  )
 }
 
 // ── Testes ────────────────────────────────────────────────────────────────────
@@ -199,10 +218,10 @@ describe("EstimativaScreen — cálculo correto (mock feeRateBps = 1500)", () =>
    * taxaPlat     = 210 * (15/100)    = 31.5
    * ganhoLiquido = 210 - 31.5        = 178.5
    */
-  it("chama apiFetch com a rota pública correta", async () => {
+  it("busca a taxa na rota pública — não hardcode", async () => {
     renderEstimativa()
     await waitFor(() => {
-      expect(apiFetch).toHaveBeenCalledWith("/api/platform-config/public")
+      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining("/api/platform-config/public"))
     })
   })
 
@@ -268,16 +287,14 @@ describe("EstimativaScreen — cálculo correto (mock feeRateBps = 1500)", () =>
   })
 
   it("usa feeRateBps dinâmica de 2000 bps (20%) quando API retorna esse valor", async () => {
-    apiFetch.mockResolvedValueOnce({ data: { feeRateBps: 2000 } })
-    render(<EstimativaScreen />)
+    renderEstimativa({ feeRateBps: 2000 })
     await waitFor(() => {
       expect(screen.getByText("após taxa de 20%")).toBeTruthy()
     })
   })
 
-  it("mantém o default de 1500 bps (15%) se apiFetch falhar", async () => {
-    apiFetch.mockRejectedValueOnce(new Error("network error"))
-    render(<EstimativaScreen />)
+  it("mantém o default de 1500 bps (15%) se a rede falhar", async () => {
+    renderEstimativa("falha")
     await waitFor(() => {
       expect(screen.getByText("após taxa de 15%")).toBeTruthy()
     })
