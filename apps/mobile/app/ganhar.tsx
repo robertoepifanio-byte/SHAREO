@@ -15,6 +15,7 @@ import Svg, { Polyline } from "react-native-svg"
 import { router } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useTheme } from "@/lib/theme"
+import { usePlatformConfig, formatFeeLabel } from "@/lib/platformConfig"
 import { API_URL } from "@/lib/api"
 
 // ── Dados verbatim de _EarningsCalc.tsx ──────────────────────────────────────
@@ -57,20 +58,9 @@ export default function GanharScreen() {
   // ── FAQ accordion state ───────────────────────────────────────────────────
   const [faqOpen, setFaqOpen] = useState<Record<number, boolean>>({})
 
-  // ── Platform fee rate — verbatim de page.tsx (getPlatformFeeRate server) ──
-  // No app mobile, busca GET /api/platform-config/public (endpoint público).
-  // Fallback "15%" exibido até a resposta chegar.
-  const [feeLabel, setFeeLabel] = useState("15%")
-  useEffect(() => {
-    fetch(`${API_URL}/api/platform-config/public`)
-      .then((r) => r.json())
-      .then((json: { data?: { feeRateBps?: number } }) => {
-        if (json?.data?.feeRateBps) {
-          setFeeLabel(`${json.data.feeRateBps / 100}%`)
-        }
-      })
-      .catch(() => {/* mantém fallback "15%" */})
-  }, [])
+  // Taxa da plataforma — nunca hardcode (regra do projeto). O hook compartilha
+  // cache com as demais telas, então isto normalmente não custa requisição.
+  const feeLabel = formatFeeLabel(usePlatformConfig().feeRateBps)
 
   // ── Derived values — verbatim de _EarningsCalc.tsx ────────────────────────
   const cat        = CATEGORY_DATA[categorySlug]

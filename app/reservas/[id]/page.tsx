@@ -4,6 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { formatPickupAddress, hasPickupAddress } from "@/lib/ownerAddress"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { BookingActions }      from "./_BookingActions"
 import { ReviewForm }          from "./_ReviewForm"
@@ -38,18 +39,6 @@ type Props = {
 
 export const metadata: Metadata = { title: "Detalhe da Reserva" }
 
-function fmtOwnerAddress(owner: {
-  cep?: string | null; street?: string | null
-  neighborhood?: string | null; city?: string | null; state?: string | null
-}) {
-  const parts: string[] = []
-  if (owner.street)       parts.push(owner.street)
-  if (owner.neighborhood) parts.push(owner.neighborhood)
-  if (owner.city && owner.state) parts.push(`${owner.city} — ${owner.state}`)
-  else if (owner.city)   parts.push(owner.city)
-  if (owner.cep)         parts.push(`CEP ${owner.cep.replace(/(\d{5})(\d{3})/, "$1-$2")}`)
-  return parts.length ? parts.join(", ") : null
-}
 
 
 export default async function BookingDetailPage({ params, searchParams }: Props) {
@@ -339,6 +328,28 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
             </div>
           )}
 
+          {/* ── Endereço pendente — só o proprietário vê, e só quando a locação existe ──
+              Regra dos fundadores (22/08/2026): endereço completo não é exigência de
+              cadastro, vira exigência quando há locação. Este aviso é o par visível
+              do guard em `confirm` — o proprietário descobre aqui, não no erro. */}
+          {isOwner && !hasPickupAddress(booking.owner) && ["PENDING", "CONFIRMED"].includes(booking.status) && (
+            <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4">
+              <p className="text-sm font-semibold text-amber-900">
+                Cadastre seu endereço para a retirada
+              </p>
+              <p className="mt-1 text-xs text-amber-800">
+                O locatário precisa saber onde buscar o item. Sem a rua cadastrada,
+                ele vê apenas a orientação de combinar o local pelo chat.
+              </p>
+              <Link
+                href="/perfil/endereco"
+                className="mt-2 inline-block text-sm font-medium text-amber-900 underline hover:no-underline"
+              >
+                Cadastrar endereço →
+              </Link>
+            </div>
+          )}
+
           {/* ── Token de retirada — só após o pagamento confirmado, e enquanto não foi usado ── */}
           {isBorrower && booking.paymentStatus === "PAID" && booking.pickupToken && !booking.pickupTokenUsedAt && (
             <div className="mb-6 rounded-xl border-2 border-brand/40 bg-brand/5 p-5">
@@ -364,7 +375,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
 
               {/* Endereço de retirada */}
               {(() => {
-                const addr = fmtOwnerAddress(booking.owner)
+                const addr = formatPickupAddress(booking.owner)
                 return addr ? (
                   <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3">
                     <p className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-amber-800">

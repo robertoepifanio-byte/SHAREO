@@ -14,6 +14,7 @@ import { router, useLocalSearchParams } from "expo-router"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { apiFetch } from "@/lib/api"
+import { usePlatformConfig, formatPayoutWindow } from "@/lib/platformConfig"
 import { useAuth } from "@/lib/auth"
 import { useTheme } from "@/lib/theme"
 
@@ -101,6 +102,7 @@ export default function RecebimentosScreen() {
   const insets     = useSafeAreaInsets()
   const user       = useAuth((s) => s.user)
   const qc         = useQueryClient()
+  const payoutLabel = formatPayoutWindow(usePlatformConfig().payoutWindowDays)
   const { tokens } = useTheme()
   const { stripe: stripeParam } = useLocalSearchParams<{ stripe?: string }>()
   const stripeStatus = stripeParam ? STRIPE_STATUS[stripeParam] : undefined
@@ -263,7 +265,7 @@ export default function RecebimentosScreen() {
           {/* ── Descrição (verbatim de page.tsx) ── */}
           <Text className="text-sm text-muted">
             Cadastre a chave PIX para receber os repasses das suas locações.
-            O valor fica retido na plataforma até o repasse semanal (toda segunda-feira).
+            O valor fica retido na plataforma por {payoutLabel} após a confirmação da devolução.
           </Text>
 
           {/* ── Banner de retorno do onboarding Stripe (verbatim de page.tsx) ── */}
@@ -513,8 +515,8 @@ export default function RecebimentosScreen() {
               },
               {
                 icon:  "⏳",
-                title: "Repasse semanal",
-                desc:  "O valor fica retido até a próxima segunda-feira (feriado: primeiro dia útil seguinte).",
+                title: "Janela de retenção",
+                desc:  `O valor fica retido por ${payoutLabel} após a devolução — janela que cobre o prazo de abertura de disputa.`,
               },
               {
                 icon:  "💸",

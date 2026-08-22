@@ -12,6 +12,7 @@ import {
 } from "react-native"
 import { router } from "expo-router"
 import { useTheme } from "@/lib/theme"
+import { usePlatformConfig } from "@/lib/platformConfig"
 import { apiFetch } from "@/lib/api"
 
 // ── Dados de categoria — verbatim de _Calculadora.tsx linhas 6-14 ──────────────
@@ -39,17 +40,9 @@ function fmt(val: number): string {
 export default function EstimativaScreen() {
   const { tokens, mode } = useTheme()
 
-  // ── Taxa da plataforma (default 1500 bps = 15%, carregada via API) ───────────
-  // REGRA: nunca hardcode a taxa — sempre buscar de getPlatformFeeRate() via API.
-  const [feeRateBps, setFeeRateBps] = useState(1500)
-  const [feeLoading, setFeeLoading] = useState(true)
-
-  useEffect(() => {
-    apiFetch<{ data: { feeRateBps: number } }>("/api/platform-config/public")
-      .then((res) => setFeeRateBps(res.data.feeRateBps))
-      .catch(() => { /* mantém default 1500 bps */ })
-      .finally(() => setFeeLoading(false))
-  }, [])
+  // REGRA: nunca hardcode a taxa. O hook já embute o default e compartilha
+  // cache com as demais telas.
+  const feeRateBps = usePlatformConfig().feeRateBps
 
   // ── Estado da calculadora — mesmos defaults de _Calculadora.tsx linhas 23-25 ─
   const [catSlug, setCatSlug] = useState("ferramentas")
@@ -233,16 +226,12 @@ export default function EstimativaScreen() {
           {/* Você recebe (card verde — verbatim linha 127) */}
           <View style={[s.card, s.cardGreen]}>
             <Text style={s.cardCaptionWhite}>Você recebe</Text>
-            {feeLoading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" style={{ marginVertical: 4 }} />
-            ) : (
-              <Text style={s.cardValueWhite} testID="result-liquido">
-                {fmt(ganhoLiquido)}
-              </Text>
-            )}
+            <Text style={s.cardValueWhite} testID="result-liquido">
+              {fmt(ganhoLiquido)}
+            </Text>
             {/* "após taxa de {feeRatePct}%" — verbatim linha 130 */}
             <Text style={s.cardNoteWhite}>
-              {feeLoading ? "calculando…" : `após taxa de ${feeRatePct}%`}
+              {`após taxa de ${feeRatePct}%`}
             </Text>
           </View>
 
@@ -272,7 +261,7 @@ export default function EstimativaScreen() {
           </View>
           <View style={[s.breakdownRow, { borderBottomColor: tokens.border }]}>
             <Text style={[s.breakdownKey, { color: tokens.muted }]}>
-              {feeLoading ? "Taxa da plataforma" : `Taxa da plataforma (${feeRatePct}%)`}
+              {`Taxa da plataforma (${feeRatePct}%)`}
             </Text>
             <Text style={[s.breakdownVal, { color: tokens.error }]}>
               − {fmt(taxaPlat)}

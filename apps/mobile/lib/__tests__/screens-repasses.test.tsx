@@ -117,12 +117,19 @@ describe("RepassesScreen", () => {
 
   // ── Descrição verbatim ─────────────────────────────────────────────────────
 
-  it("logado: exibe descrição do repasse semanal (verbatim do site)", async () => {
+  // 🪤 Este teste fixava "até o repasse semanal (toda segunda-feira)" como
+  // contrato — a frase que a auditoria de 21/08/2026 apontou como falsa (o cron
+  // roda diariamente, por janela de N dias). Um teste que congela texto errado
+  // transforma a correção em "quebra de teste": este aqui de fato reprovou
+  // quando o texto foi consertado.
+  //
+  // A asserção agora é sobre a REGRA, não sobre a frase: a janela vem da config
+  // e o dia fixo da semana não pode voltar.
+  it("logado: descreve a retenção pela janela da config, sem dia fixo da semana", async () => {
     withUser()
     wrap(<RepassesScreen />)
-    expect(await screen.findByText(
-      "Histórico de repasses das suas locações. O valor fica retido na plataforma até o repasse semanal (toda segunda-feira)."
-    )).toBeTruthy()
+    expect(await screen.findByText(/O valor fica retido na plataforma por 3 dias após a confirmação da devolução\./)).toBeTruthy()
+    expect(screen.queryByText(/segunda-feira|repasse semanal/i)).toBeNull()
   })
 
   // ── Banner de conta PIX — sem conta ───────────────────────────────────────

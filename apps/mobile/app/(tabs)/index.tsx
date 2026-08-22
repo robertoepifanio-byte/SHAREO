@@ -259,7 +259,7 @@ export default function HomeScreen() {
       <ItensProcurados />
 
       {/* ── SEGURANÇA ── */}
-      <Seguranca feeRate={stats?.feeRate ?? null} checkoutMaxCents={stats?.checkoutMaxCents ?? null} />
+      <Seguranca />
 
       {/* ── LISTA VIP ──
           Fonte: components/home/ListaVIP.tsx (que já embute o FounderCaptureForm internamente, linha 128).

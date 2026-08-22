@@ -1,6 +1,6 @@
 // Fonte: components/home/Seguranca.tsx
-// Transcrição literal — 3 pilares de segurança. Taxa/teto vêm de /api/stats
-// (nunca hardcode — mesma regra do getPlatformFeeRate() do site).
+// Transcrição literal — 3 pilares de segurança. Taxa, teto e janela de repasse
+// vêm de /api/platform-config/public via usePlatformConfig (nunca hardcode).
 
 import React from "react"
 import { View, Text, TouchableOpacity, StyleSheet, Linking } from "react-native"
@@ -8,6 +8,7 @@ import { Image } from "expo-image"
 import Svg, { Polyline, Path } from "react-native-svg"
 import { API_URL } from "@/lib/api"
 import { useTheme } from "@/lib/theme"
+import { usePlatformConfig, formatPayoutWindow } from "@/lib/platformConfig"
 
 const LockIcon = <Image source={require("../../assets/icons/cadeado-shareo.png")} style={{ width: 28, height: 28 }} contentFit="contain" accessibilityLabel="" />
 const CheckIcon = <Svg width={28} height={28} viewBox="0 0 24 24" fill="none" stroke="#007B3C" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><Polyline points="20 6 9 17 4 12" /></Svg>
@@ -18,20 +19,25 @@ const ShieldIcon = (
   </Svg>
 )
 
-export function Seguranca({ feeRate, checkoutMaxCents }: { feeRate: number | null; checkoutMaxCents: number | null }) {
+export function Seguranca() {
   const { tokens, mode } = useTheme()
   // #D1FAE5 (green-100 tint) — sem token direto; tint decorativo para wrap de ícone
   const iconWrapBg = mode === "dark" ? "rgba(0,123,60,0.25)" : "#D1FAE5"
 
-  const feePct = feeRate != null ? (feeRate / 100).toLocaleString("pt-BR") : "…"
-  const maxBRL = checkoutMaxCents != null ? (checkoutMaxCents / 100).toLocaleString("pt-BR") : "…"
+  // Uma fonte só para os três valores. Antes, taxa e teto vinham por prop de
+  // /api/stats e a janela de repasse do hook — durante o carregamento a tela
+  // mostrava "…" num lugar e o valor real no outro.
+  const cfg = usePlatformConfig()
+  const payoutLabel = formatPayoutWindow(cfg.payoutWindowDays)
+  const feePct = (cfg.feeRateBps / 100).toLocaleString("pt-BR")
+  const maxBRL = (cfg.checkoutMaxCents / 100).toLocaleString("pt-BR")
 
   const pillars = [
     {
       title: "Pagamento protegido", icon: LockIcon,
       bullets: [
         "Você só paga depois que o proprietário confirma a reserva.",
-        "O valor fica retido na plataforma até o repasse semanal via PIX — toda segunda-feira.",
+        `O valor fica retido na plataforma por ${payoutLabel} após a confirmação da devolução.`,
         `Taxa transparente de ${feePct}% e limite de R$ ${maxBRL} por locação no MVP.`,
       ],
     },
