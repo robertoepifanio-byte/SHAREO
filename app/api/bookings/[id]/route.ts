@@ -13,7 +13,7 @@ import { calcRefund } from "@/lib/cancellationPolicy"
 import { getCancellationConfig, getPayoutWindowDays } from "@/lib/platform-config"
 import { releaseCouponForBooking } from "@/lib/coupons"
 import { findOverlappingItem } from "@/lib/booking-availability"
-import { hasPickupAddress } from "@/lib/ownerAddress"
+import { hasPickupAddress, redactOwnerAddress } from "@/lib/ownerAddress"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -111,14 +111,26 @@ export async function GET(req: NextRequest, { params }: Params) {
       )
     }
 
-    if (booking.borrower.id !== userId && booking.owner.id !== userId) {
+    const isOwner = booking.owner.id === userId
+    if (booking.borrower.id !== userId && !isOwner) {
       return NextResponse.json(
         { error: { code: "FORBIDDEN", message: "Acesso negado." } },
         { status: 403 },
       )
     }
 
-    return NextResponse.json({ data: booking })
+    // O endereço do proprietário só vai para quem tem direito a ele — ver
+    // redactOwnerAddress. Ser participante da reserva NÃO basta: qualquer pessoa
+    // cria uma reserva sem o dono aceitar.
+    return NextResponse.json({
+      data: {
+        ...booking,
+        owner: redactOwnerAddress(booking.owner, {
+          isOwner,
+          isPaid: booking.paymentStatus === "PAID",
+        }),
+      },
+    })
   } catch (e) {
     console.error("[GET /api/bookings/:id]", e instanceof Error ? e.message : e)
     return NextResponse.json(
