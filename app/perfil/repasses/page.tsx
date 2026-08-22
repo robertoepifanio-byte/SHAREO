@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { getPayoutWindowDays, formatPayoutWindow } from "@/lib/platform-config"
 import { AppHeader } from "@/components/layout/AppHeader"
 
 export const metadata: Metadata = { title: "Meus Repasses" }
@@ -22,10 +23,16 @@ export default async function RepassesPage() {
   const session = await auth()
   if (!session) redirect("/login?callbackUrl=/perfil/repasses")
 
-  const account = await prisma.ownerPaymentAccount.findUnique({
-    where:  { userId: session.user.id },
-    select: { id: true, pixKey: true, pixKeyType: true, holderName: true, status: true },
-  })
+  // Paralelo aqui (ao contrário de /termos): são consultas DISTINTAS — config e
+  // banco —, não dois getters disputando o mesmo cache.
+  const [payoutWindowDays, account] = await Promise.all([
+    getPayoutWindowDays(),
+    prisma.ownerPaymentAccount.findUnique({
+      where:  { userId: session.user.id },
+      select: { id: true, pixKey: true, pixKeyType: true, holderName: true, status: true },
+    }),
+  ])
+  const payoutLabel = formatPayoutWindow(payoutWindowDays)
 
   const payouts = account
     ? await prisma.payout.findMany({
@@ -73,7 +80,7 @@ export default async function RepassesPage() {
             <div>
               <h1 className="text-xl font-bold text-primary">Meus Repasses</h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Histórico de repasses das suas locações. O valor fica retido na plataforma até o repasse semanal (toda segunda-feira).
+                Histórico de repasses das suas locações. O valor fica retido na plataforma por {payoutLabel} após a confirmação da devolução.
               </p>
             </div>
             <Link

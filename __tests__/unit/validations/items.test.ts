@@ -12,6 +12,8 @@ import {
   UpdateItemSchema,
   ListItemsQuerySchema,
 } from "@/lib/validations/items"
+import { MAX_ITEM_VALUE_CENTS } from "@/lib/platform-config"
+import { formatPriceShort } from "@/utils/format"
 
 // ---------------------------------------------------------------------------
 // Base válido
@@ -216,6 +218,46 @@ describe("CreateItemSchema", () => {
 // ---------------------------------------------------------------------------
 // UpdateItemSchema
 // ---------------------------------------------------------------------------
+
+/**
+ * Teto do valor do bem — regra da fase inicial, publicada em /ajuda e /politicas.
+ *
+ * Até 22/08/2026 existia só no texto: `estimatedRetailPrice` aceitava qualquer
+ * valor >= 0, e a Central de Ajuda afirmava que itens acima de R$ 1.000 "não
+ * podem ser anunciados". A auditoria de pagamento pegou a divergência.
+ */
+describe("teto de valor do bem (MAX_ITEM_VALUE_CENTS)", () => {
+  it("aceita item exatamente no teto", () => {
+    const r = CreateItemSchema.safeParse({ ...BASE_ITEM, estimatedRetailPrice: MAX_ITEM_VALUE_CENTS })
+    expect(r.success).toBe(true)
+  })
+
+  it("recusa item acima do teto, com o valor formatado na mensagem", () => {
+    const r = CreateItemSchema.safeParse({ ...BASE_ITEM, estimatedRetailPrice: MAX_ITEM_VALUE_CENTS + 1 })
+    expect(r.success).toBe(false)
+    if (!r.success) {
+      // Formatado como no resto do site ("R$ 1.000"), não cru ("R$ 1000").
+      expect(r.error.issues[0].message).toContain(formatPriceShort(MAX_ITEM_VALUE_CENTS))
+    }
+  })
+
+  it("aceita null — o campo não virou obrigatório", () => {
+    expect(CreateItemSchema.safeParse({ ...BASE_ITEM, estimatedRetailPrice: null }).success).toBe(true)
+  })
+
+  it("o SCHEMA de edição não carrega o teto — quem decide é a rota", () => {
+    // 🪤 Não confundir com "a edição aceita qualquer valor". O schema é
+    // permissivo de propósito porque a regra da edição é de NÃO-REGRESSÃO e
+    // precisa do valor ATUAL do item, que só a rota conhece (PUT
+    // /api/items/[id]): aceita dentro do teto OU não maior que o que já está lá.
+    //
+    // Herdar o `.max()` aqui travaria os anúncios legados — 59 dos 92 itens do
+    // staging já estavam acima do teto quando a regra entrou, e o dono nem
+    // conseguiria corrigir o título.
+    const r = UpdateItemSchema.safeParse({ estimatedRetailPrice: MAX_ITEM_VALUE_CENTS * 8 })
+    expect(r.success).toBe(true)
+  })
+})
 
 describe("UpdateItemSchema", () => {
   it("aceita objeto vazio (todos os campos são opcionais em update)", () => {
