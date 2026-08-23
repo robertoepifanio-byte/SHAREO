@@ -10,10 +10,11 @@ import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
 import type { WebhookEvent } from "@/lib/outboundWebhooks"
 import { sendBookingConfirmedEmail, sendBookingCancelledEmail, sendReturnInProgressEmail, sendReturnCompletedEmail, bookingItemsLabel } from "@/lib/email"
 import { calcRefund } from "@/lib/cancellationPolicy"
-import { getCancellationConfig, getPayoutWindowDays } from "@/lib/platform-config"
+import { getCancellationConfig, getRentalContractConfig } from "@/lib/platform-config"
 import { releaseCouponForBooking } from "@/lib/coupons"
 import { findOverlappingItem } from "@/lib/booking-availability"
 import { hasPickupAddress, redactOwnerAddress } from "@/lib/ownerAddress"
+import { criarPayoutDaReserva } from "@/lib/payout"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -189,6 +190,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         id: true, status: true, borrowerId: true, ownerId: true,
         itemId: true, startDate: true, endDate: true, totalPrice: true, totalDays: true,
         paymentStatus: true,
+        contractSignedAt: true, // guard do mark_active — ver abaixo
         pickupToken: true, pickupTokenUsedAt: true,
         bookingItems: { select: { itemId: true } }, // Story B — revalidar todos os itens no confirm
         item:     { select: { title: true } },
@@ -330,6 +332,31 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           { status: 409 },
         )
       }
+      // 🪤 Contrato assinado é condição para o item trocar de mãos — quando o
+      // aceite está LIGADO.
+      //
+      // O portão existia só na CRIAÇÃO da reserva (POST /api/bookings, via
+      // rentalContractAcceptanceEnabled). A retirada nunca olhava para
+      // `contractSignedAt`, então qualquer reserva que chegasse a CONFIRMED sem
+      // assinatura — as criadas antes de ligar a flag, ou por qualquer caminho
+      // que não passe pela criação — podia ser retirada e concluída sem contrato.
+      // Visto ao vivo em staging: retirada às 14:15, assinatura às 14:18.
+      //
+      // Atrelado à MESMA flag do aceite: com ela OFF (padrão, gated D4) nada
+      // muda. Isto não decide se o contrato é obrigatório — só faz a retirada
+      // respeitar a decisão que a flag já carrega.
+      const contratoCfg = await getRentalContractConfig()
+      if (contratoCfg.enabled && !booking.contractSignedAt) {
+        return NextResponse.json(
+          {
+            error: {
+              code:    "CONTRACT_NOT_SIGNED",
+              message: "O locatário precisa assinar o contrato antes da retirada.",
+            },
+          },
+          { status: 422 },
+        )
+      }
       if (booking.pickupToken !== pickupToken) {
         return NextResponse.json(
           { error: { code: "TOKEN_INVALID", message: "Código de retirada inválido. Verifique com o locatário." } },
@@ -450,26 +477,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       updated = await prisma.booking.update({ where: { id }, data, select: updateSelect })
     }
 
-    // FIN-3.3 — criar Payout elegível N dias após devolução confirmada (PlatformConfig: payoutWindowDays)
+    // FIN-3.3 — criar Payout elegível N dias após devolução confirmada.
+    // A lógica mora em lib/payout.ts porque a resolução de disputa pelo admin
+    // (resolve_completed) leva ao MESMO estado terminal e precisa do mesmo repasse.
     if (action === "confirm_return") {
-      const payoutWindowDays = await getPayoutWindowDays()
-      const eligibleAfter = new Date(now.getTime() + payoutWindowDays * 24 * 60 * 60 * 1000)
-      const ownerAccount  = await prisma.ownerPaymentAccount.findUnique({
-        where:  { userId: booking.ownerId },
-        select: { id: true },
-      })
-      if (ownerAccount && updated.ownerNetAmount) {
-        // await obrigatório — fire-and-forget morre quando a lambda congela e o payout se perde
-        await prisma.payout.create({
-          data: {
-            ownerPaymentAccountId: ownerAccount.id,
-            bookingId:             id,
-            amount:                updated.ownerNetAmount,
-            status:                "PENDING",
-            eligibleAfter,
-          },
-        }).catch((e) => console.error("[FIN-3.3] payout.create:", e instanceof Error ? e.message : e))
-      }
+      await criarPayoutDaReserva(id, booking.ownerId, updated.ownerNetAmount, "confirm_return")
+        .catch((e) => console.error("[FIN-3.3] criarPayoutDaReserva:", e instanceof Error ? e.message : e))
     }
 
     // E-mails transacionais — após a resposta.

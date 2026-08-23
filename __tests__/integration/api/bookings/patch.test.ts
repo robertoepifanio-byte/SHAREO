@@ -78,6 +78,18 @@ jest.mock("@/lib/auth", () => ({
   auth: () => mockAuth(),
 }))
 
+// Flag do aceite de contrato (rentalContractAcceptanceEnabled). O getter real lê
+// PlatformConfig com cache de 60s, o que impediria ligar/desligar entre testes —
+// daí o override. O resto do módulo continua real (defaults de cancelamento etc.).
+//
+// A leitura de `contratoLigado` está DENTRO da arrow, avaliada na chamada: ler a
+// variável no corpo da factory daria TDZ.
+let contratoLigado = false
+jest.mock("@/lib/platform-config", () => ({
+  ...jest.requireActual("@/lib/platform-config"),
+  getRentalContractConfig: async () => ({ enabled: contratoLigado }),
+}))
+
 jest.mock("@/lib/email", () => ({
   sendBookingConfirmedEmail: jest.fn().mockResolvedValue(undefined),
   sendBookingCancelledEmail: jest.fn().mockResolvedValue(undefined),
@@ -135,6 +147,8 @@ function makeBooking(overrides: {
   ownerStreet?: string | null
   /** Reservas de teste nascem NÃO pagas, como no fluxo real. */
   paymentStatus?: string
+  /** `null` simula reserva sem contrato assinado. */
+  contractSignedAt?: Date | null
 }) {
   return {
     id:          BOOKING_ID,
@@ -146,6 +160,7 @@ function makeBooking(overrides: {
     totalPrice:  300,
     totalDays:   2,
     paymentStatus: overrides.paymentStatus ?? "PENDING",
+    contractSignedAt: overrides.contractSignedAt === undefined ? new Date("2026-06-01T00:00:00Z") : overrides.contractSignedAt,
     bookingItems: [{ itemId: "item-id-004" }], // Story B — confirm revalida todos os itens
     item:        { title: "Furadeira Bosch" },
     borrower:    { email: "borrower@ex.com", name: "Locatário Teste" },
@@ -177,6 +192,7 @@ beforeEach(() => {
   jest.clearAllMocks()
   mockNotificationCreate.mockResolvedValue({})
   mockBookingPhotoCount.mockResolvedValue(1)
+  contratoLigado = false // padrão do produto (gated D4)
 })
 
 // ---------------------------------------------------------------------------
@@ -370,6 +386,45 @@ describe("PATCH /api/bookings/[id]", () => {
 
       expect(res.status).toBe(200)
       expect(body.data.status).toBe("RETURNED")
+    })
+
+    // 4b. Guard do contrato na retirada.
+    //
+    // O portão do aceite existia só na CRIAÇÃO da reserva. A retirada nunca
+    // olhava `contractSignedAt`, então reserva que chegasse a CONFIRMED sem
+    // assinatura — criada antes de ligar a flag, ou por caminho que não passe
+    // pela criação — era retirada e concluída sem contrato. Visto ao vivo:
+    // retirada às 14:15, assinatura às 14:18.
+    it("mark_active com aceite LIGADO e contrato não assinado → 422 CONTRACT_NOT_SIGNED", async () => {
+      contratoLigado = true
+      mockAuth.mockResolvedValue(makeSession(OWNER_ID))
+      mockBookingFindUnique.mockResolvedValue(
+        makeBooking({ status: "CONFIRMED", contractSignedAt: null }),
+      )
+
+      const res  = await PATCH(makeReq({ action: "mark_active", pickupToken: "123456" }), makeParams())
+      const body = await res.json() as { error: { code: string } }
+
+      expect(res.status).toBe(422)
+      expect(body.error.code).toBe("CONTRACT_NOT_SIGNED")
+      expect(mockBookingUpdateMany).not.toHaveBeenCalled()
+    })
+
+    // A contrapartida: com a flag DESLIGADA (padrão de hoje, gated D4) o guard
+    // não pode mudar nada. Sem este teste, ligar a trava por engano passaria.
+    it("mark_active com aceite DESLIGADO e contrato não assinado → segue normalmente", async () => {
+      contratoLigado = false
+      mockAuth.mockResolvedValue(makeSession(OWNER_ID))
+      mockBookingFindUnique.mockResolvedValue({
+        ...makeBooking({ status: "CONFIRMED", contractSignedAt: null }),
+        pickupToken:       "123456",
+        pickupTokenUsedAt: null,
+      })
+      mockBookingFindUniqueOrThrow.mockResolvedValue(makeUpdatedBooking("ACTIVE"))
+
+      const res = await PATCH(makeReq({ action: "mark_active", pickupToken: "123456" }), makeParams())
+
+      expect(res.status).toBe(200)
     })
 
     // 5b. Guard da foto de devolução (decisão do fundador, 2026-08-23).
