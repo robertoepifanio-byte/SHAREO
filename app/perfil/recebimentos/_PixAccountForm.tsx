@@ -84,11 +84,6 @@ export function PixAccountForm({ existing }: Props) {
         </div>
       )}
 
-      {/* Aviso MVP */}
-      <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
-        No MVP, a verificação é feita manualmente pela equipe ShareO em até 1 dia útil.
-        Você só receberá repasses após a chave ser verificada.
-      </div>
 
       {/* Tipo de chave */}
       <fieldset className="space-y-1.5">

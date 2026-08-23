@@ -289,3 +289,4 @@ jobs:
           # valor que estava aqui era legível por qualquer pessoa na internet.
           # O secret `CRON_SECRET` já existia — o literal era redundante além de vazado.
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
+

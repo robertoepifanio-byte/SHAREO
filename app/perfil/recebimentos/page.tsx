@@ -78,11 +78,18 @@ export default async function RecebimentosPage({
       <main className="container py-8">
         <div className="mx-auto max-w-lg space-y-6">
 
+          {/* 🪤 Esta tela abria com o formulário de PIX e o título "Conta de
+              Recebimento PIX", com a Stripe num card secundário lá embaixo.
+              Descrevia o mundo anterior à ADR-028: hoje o repasse automático é
+              pela Stripe e o PIX é o caminho MANUAL, usado só por quem não
+              conectou. O fundador abriu a tela procurando onde informar os dados
+              da Stripe e não achou (23/08). A ordem agora segue a realidade. */}
           <div>
-            <h1 className="text-xl font-bold text-primary">Conta de Recebimento PIX</h1>
+            <h1 className="text-xl font-bold text-primary">Como você recebe</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Cadastre a chave PIX para receber os repasses das suas locações.
-              O valor fica retido na plataforma por {payoutLabel} após a confirmação da devolução.
+              O valor fica retido na plataforma por {payoutLabel} após a confirmação da
+              devolução. Depois disso, o repasse sai pelo método que você tiver configurado
+              abaixo.
             </p>
           </div>
 
@@ -112,9 +119,6 @@ export default async function RecebimentosPage({
             </div>
           )}
 
-          <div className="rounded-xl border border-border bg-surface p-5">
-            <PixAccountForm existing={account} />
-          </div>
 
           {/* Stripe Connect — PSP definitivo, onboarding EM CONSTRUÇÃO (ADR-028).
               Só aparece com a flag ativa; ainda não conecta a nenhum checkout real. */}
@@ -163,6 +167,24 @@ export default async function RecebimentosPage({
               )}
             </div>
           )}
+
+          {/* PIX — caminho MANUAL de repasse. Não é código morto: o
+              cron/payout só usa a Stripe quando `stripeConnectStatus === "ACTIVE"`;
+              fora disso cai aqui e um ADMIN_FINANCEIRO paga à mão. Apagar este
+              formulário deixaria sem receber quem não conectou a Stripe. */}
+          <div className="rounded-xl border border-border bg-surface p-5 space-y-3">
+            <div>
+              <h2 className="font-semibold text-foreground">
+                {stripeReady ? "Chave PIX (reserva)" : "Receber por PIX"}
+              </h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {stripeReady
+                  ? "Sua conta Stripe está ativa, então o repasse sai automaticamente. A chave PIX fica só como reserva."
+                  : "Alternativa enquanto a Stripe não estiver ativa. Por aqui o repasse NÃO é automático: a equipe ShareO executa o PIX manualmente, após verificar a chave em até 1 dia útil."}
+              </p>
+            </div>
+            <PixAccountForm existing={account} />
+          </div>
 
           {/* Mercado Pago — Modelo B / split (dormente desde ADR-028, só aparece com a flag ativa). */}
           {mpActive && (
