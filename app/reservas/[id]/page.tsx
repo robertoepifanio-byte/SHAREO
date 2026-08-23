@@ -592,6 +592,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
             conversationId={booking.conversation?.id}
             extensionStatus={booking.extensionStatus ?? null}
             extensionRequestedEndDate={booking.extensionRequestedEndDate?.toISOString() ?? null}
+            endDate={booking.endDate.toISOString()}
             hideReturnActions={
               (isBorrower && booking.status === "ACTIVE") ||
               (isOwner    && booking.status === "RETURNED")
