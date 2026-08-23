@@ -347,6 +347,31 @@ jobs:
           # da rajada da suíte. Deve ser o MESMO valor do E2E_SECRET no Vercel staging.
           E2E_SECRET: ${{ secrets.E2E_SECRET }}
 
+      # 🧹 Este é o ÚNICO job que roda o return-flow.spec, e é ele que cria os
+      # itens "Devolução E2E …". Até 23/08/2026 o staging tinha acumulado 183
+      # itens e 186 reservas, afogando as reservas reais na lista do usuário.
+      #
+      # O spec JÁ chama DELETE /api/items/{id} no finally, mas esse DELETE é SOFT
+      # (grava deletedAt, a linha fica) e a RESERVA não é apagada por nada — não
+      # existe endpoint para isso, nem deveria: reserva é registro de negócio.
+      # Sem caminho por HTTP, a limpeza precisa do banco. Daí o passo ser aqui.
+      #
+      # 🪤 O passo nasceu no job E2E do main.yml — que NÃO roda o return-flow. Ele
+      # rodava e dizia "nada a fazer" para sempre. Verificar a saída do passo, e
+      # não só o verde dele, foi o que pegou o engano.
+      #
+      # always(): o lixo nasce mesmo quando a suíte reprova.
+      # continue-on-error: faxina que falha não pode reprovar o E2E.
+      - name: Limpar dados criados pelo E2E (staging)
+        if: always()
+        continue-on-error: true
+        run: npx tsx scripts/limpar-lixo-teste-staging.ts --escopo=e2e --apply
+        env:
+          # Escopo `e2e` mira SÓ itens "Devolução E2E …" e o que pende deles. O
+          # script aborta sozinho se algum registro financeiro depender do alvo.
+          DATABASE_URL: ${{ secrets.DATABASE_URL_STAGING }}
+          DIRECT_URL:   ${{ secrets.DIRECT_URL_STAGING }}
+
       - name: Upload E2E reports
         if: always()
         uses: actions/upload-artifact@v4

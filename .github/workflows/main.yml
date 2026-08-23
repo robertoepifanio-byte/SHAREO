@@ -290,26 +290,3 @@ jobs:
           # O secret `CRON_SECRET` já existia — o literal era redundante além de vazado.
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
 
-      # 🧹 A suíte deixa lixo no staging a cada rodada e isso ENCHIA a lista de
-      # reservas do usuário de teste — 183 itens e 186 reservas acumuladas até
-      # 23/08/2026, afogando as reservas reais.
-      #
-      # O spec JÁ chama DELETE /api/items/{id} no finally, mas esse DELETE é SOFT
-      # (grava deletedAt, a linha fica) e a RESERVA não é apagada por nada — não
-      # existe endpoint para isso, nem deveria: reserva é registro de negócio.
-      # Sem caminho por HTTP, a limpeza precisa do banco. Daí o passo ser aqui.
-      #
-      # `always()`: o lixo nasce mesmo quando a suíte reprova. Rodar só no sucesso
-      # deixaria justamente as rodadas ruins sujando o ambiente.
-      #
-      # `continue-on-error`: limpeza que falha não pode reprovar o E2E. O veredito
-      # da suíte é sobre o produto, não sobre a faxina.
-      - name: Limpar dados criados pelo E2E (staging)
-        if: always()
-        continue-on-error: true
-        run: npx tsx scripts/limpar-lixo-teste-staging.ts --escopo=e2e --apply
-        env:
-          # Escopo `e2e` mira SÓ itens "Devolução E2E …" e o que pende deles. O
-          # script aborta sozinho se algum registro financeiro depender do alvo.
-          DATABASE_URL: ${{ secrets.DATABASE_URL_STAGING }}
-          DIRECT_URL:   ${{ secrets.DIRECT_URL_STAGING }}
