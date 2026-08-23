@@ -287,6 +287,15 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       )
     }
 
+    // 🪤 O motivo da disputa era EXIGIDO (TRANSITIONS.requiresReason) e depois
+    // descartado: só o branch de `cancel` gravava `cancelReason`. A disputa
+    // entrava no banco sem justificativa nenhuma, e quem fosse arbitrar abria o
+    // caso sem saber do que se tratava. O campo é o mesmo que a rota dedicada
+    // (bookings/[id]/dispute) já usa.
+    if (action === "open_dispute") {
+      data.cancelReason = reason
+    }
+
     // Registra o tempo de resposta do proprietário (para badge de responsividade)
     // Apenas na primeira ação sobre uma reserva PENDING (confirm ou cancel pelo dono)
     if (
@@ -496,6 +505,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       cancel:         { type: "BOOKING_CANCELLED",  title: "Reserva cancelada",          body: `A reserva de "${booking.item.title}" foi cancelada.` },
       mark_returned:  { type: "BOOKING_RETURNED",   title: "Devolução em andamento",     body: `O locatário iniciou a devolução de "${booking.item.title}". Confira o item e confirme o recebimento.` },
       confirm_return: { type: "BOOKING_RETURNED",   title: "Devolução confirmada!",      body: `O proprietário confirmou a devolução de "${booking.item.title}". A reserva está concluída.` },
+      // Faltava: abrir disputa por esta rota não avisava ninguém. A outra parte
+      // descobria só ao abrir o app. `quemAbriu` é quem AGIU, não quem recebe —
+      // ver o bug espelhado em bookings/[id]/dispute.
+      open_dispute:   { type: "BOOKING_CANCELLED",  title: "Disputa aberta",             body: `O ${isOwner ? "locador" : "locatário"} abriu uma disputa em "${booking.item.title}". A equipe ShareO vai analisar o caso.` },
     }
     const notif = notifMap[action]
     if (notif) {
