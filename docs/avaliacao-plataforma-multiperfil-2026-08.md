@@ -13,6 +13,22 @@
 
 ---
 
+## ⚠️ Errata — reverificado em 2026-08-23
+
+O corpo abaixo é preservado como **fotografia do dia 19/08**. Duas mudanças posteriores invalidaram partes dele. Leia esta errata antes de agir sobre qualquer item:
+
+| O que o relatório diz | Situação em 23/08 |
+|---|---|
+| PSP é o **Mercado Pago** (Modelo B); B1 = contrato MP; onboarding do proprietário por OAuth MP | ⚫ **Superado.** A [ADR-028](adr/ADR-028-reversao-stripe-connect.md) (19/08, no mesmo dia, depois desta avaliação) reverteu o PSP para **Stripe Connect**. O Mercado Pago ficou dormente (flag OFF, código preservado). O onboarding hoje é Stripe Express. |
+| **P0 §7** — `declare-pix` sem teste de integração | ⚫ **Sem objeto.** A rota foi removida junto com o PIX manual da plataforma. Zero ocorrências de `declare-pix` no código. A cobertura do **checkout Stripe** é uma pendência nova e separada. |
+| **P0 §8 / §3** — trocar chave PIX pessoal do fundador por chave PJ | ⚫ **Sem objeto.** `getPlatformPixConfig` e o fluxo de declaração manual não existem mais. (O `pixKey` do **proprietário**, usado no repasse, continua existindo — esse item permanece.) |
+| **§5.1** — "`/ajuda` já descreve Mercado Pago, não Stripe; a nota de drift está desatualizada" | 🔄 **Invertido.** `/ajuda` e `/politicas` foram reescritos em 20/08 e hoje descrevem Stripe, lendo a config em vez de valores fixos. A conclusão de "dar baixa" continua válida; a razão mudou. |
+| **P0 §4** — política de cancelamento contraditória entre a página do item e `/ajuda` | 🔴 **Ainda aberto, com contraste maior.** `/ajuda` e `/politicas` passaram a ler `lib/platform-config.ts`, mas `app/itens/[id]/page.tsx:625` e `app/reservas/sucesso/page.tsx:171` seguem com faixas hardcoded. |
+
+**Confirmados ainda verdadeiros em 23/08:** P0 de textos legais sem PJ (zero ocorrências de `68.512.556` em `.tsx`), campos de localização que ignoram input no modo create, chips de categoria abaixo de 44px, threshold de cobertura em `lines: 1`, e a baixa do SEC-MAJ-06 (o scrub existe em `app/api/users/me/route.ts`). Os itens P1/P2 **não** foram reverificados.
+
+---
+
 ## 1. Sumário Executivo
 
 **Veredito geral:** o produto está **tecnicamente maduro para um go-live controlado**, com disciplina de engenharia acima da média para o estágio (flags OFF para o não-validado, taxa dinâmica, guards de propriedade sistemáticos, LGPD real, webhooks fail-closed). **O gargalo não é o código — é a sequência de desbloqueios (D4/B1) e dois gaps estruturais de produto** (fricção de onboarding do lado da oferta e confiança sem caução).
