@@ -111,6 +111,37 @@ describe("PATCH /api/admin/disputes/[id]", () => {
     expect(mockPayoutCreate).not.toHaveBeenCalled()
   })
 
+  // Estorno da disputa é INTEGRAL, não a escada do cancelamento: a demora é do
+  // processo de mediação, não do locatário, e a disputa só existe depois da
+  // retirada — a escada quase sempre daria 50% a quem acabou de ganhar o caso.
+  // Decisão do fundador, 2026-08-23.
+  it("resolve_cancelled grava estorno INTEGRAL quando a reserva foi paga", async () => {
+    mockBookingUpdate.mockResolvedValue({ id: BOOKING_ID, status: "CANCELLED", updatedAt: new Date() })
+
+    await PATCH(makeReq({ action: "resolve_cancelled" }), makeParams())
+
+    expect(mockBookingUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ refundAmount: 10000, refundPercent: 100 }),
+      }),
+    )
+  })
+
+  // Não se estorna dinheiro que nunca entrou: um valor a devolver numa reserva
+  // não paga vira trabalho real na fila de alguém (mesma regra do #345).
+  it("resolve_cancelled em reserva NÃO paga grava estorno zero", async () => {
+    mockBookingFindUnique.mockResolvedValue({ ...makeBooking(), paymentStatus: "PENDING" })
+    mockBookingUpdate.mockResolvedValue({ id: BOOKING_ID, status: "CANCELLED", updatedAt: new Date() })
+
+    await PATCH(makeReq({ action: "resolve_cancelled" }), makeParams())
+
+    expect(mockBookingUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ refundAmount: 0, refundPercent: 0 }),
+      }),
+    )
+  })
+
   // `Payout.bookingId` NÃO é único no schema: nada no banco impede dois repasses
   // para a mesma reserva. Com dois caminhos criando repasse, deixou de ser teórico.
   it("não duplica repasse quando a reserva já tem um", async () => {

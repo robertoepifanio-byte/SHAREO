@@ -68,6 +68,20 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           cancelledAt:   new Date(),
           cancelledById: adminId,
           cancelReason:  adminNote ?? "Resolvido pelo administrador.",
+          // 🪤 Estorno da disputa: INTEGRAL, e de propósito NÃO usa calcRefund.
+          //
+          // A escada do cancelamento (100% / 70% / 50% conforme a proximidade da
+          // retirada) pune quem desiste em cima da hora. Em disputa a demora é do
+          // processo de mediação, não do locatário — e a disputa só existe depois
+          // da retirada, então a escada quase sempre cairia em 50%. Dar 50% a
+          // quem o admin acabou de dar razão é indefensável.
+          // Decisão do fundador, 2026-08-23.
+          //
+          // Só grava se o dinheiro entrou: valor a devolver numa reserva nunca
+          // paga vira trabalho real na fila de alguém (mesma regra do #345).
+          ...(booking.paymentStatus === "PAID"
+            ? { refundAmount: booking.totalPrice, refundPercent: 100 }
+            : { refundAmount: 0, refundPercent: 0 }),
         }),
         ...(nextStatus === "COMPLETED" && adminNote && {
           ownerNote: adminNote,
