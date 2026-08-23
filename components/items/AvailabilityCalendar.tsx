@@ -6,9 +6,13 @@
  *   verde  = livre
  *   vermelho = ocupado
  *   cinza  = passado (não selecionável)
+ *
+ * Clicar num dia LIVRE preenche a data de retirada no formulário de reserva
+ * (ver lib/selecionarRetirada.ts).
  */
 
 import { useState, useEffect, useCallback } from "react"
+import { selecionarRetirada } from "@/lib/selecionarRetirada"
 
 interface Props {
   itemId: string
@@ -99,12 +103,42 @@ function CalendarMonth({
 
           const isToday = cell.key === todayKey
 
+          // 🪤 Dia livre é CLICÁVEL e preenche a retirada no formulário.
+          //
+          // O calendário fica em destaque, sob o título "Disponibilidade", com as
+          // células destacadas — parece um seletor. Era só leitura, e o formulário
+          // que reserva fica em OUTRA coluna. O fundador clicou nos dias e concluiu
+          // que "a tela não deixa selecionar a data" (23/08).
+          //
+          // Ocupado e passado seguem como <div>: não há o que selecionar ali, e um
+          // botão desabilitado só levaria a outro clique sem resposta.
+          const selecionavel = !isPast && !isOccupied
+
+          if (selecionavel) {
+            return (
+              <button
+                key={cell.key}
+                type="button"
+                role="gridcell"
+                aria-label={`${label} — selecionar como data de retirada`}
+                onClick={() => selecionarRetirada(cell.key!)}
+                className={[
+                  "flex h-8 w-full cursor-pointer items-center justify-center rounded text-xs font-medium transition-colors hover:ring-1 hover:ring-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand",
+                  bgClass,
+                  isToday ? "ring-1 ring-brand ring-offset-1" : "",
+                ].join(" ")}
+              >
+                {cell.day}
+              </button>
+            )
+          }
+
           return (
             <div
               key={cell.key}
               role="gridcell"
               aria-label={label}
-              aria-disabled={isPast || isOccupied}
+              aria-disabled
               className={[
                 "flex h-8 w-full items-center justify-center rounded text-xs font-medium transition-colors",
                 bgClass,

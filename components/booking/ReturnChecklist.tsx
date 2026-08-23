@@ -23,6 +23,9 @@ const CHECKLIST_ITEMS = [
 
 const MIN_CHECKED = 3
 
+/** Índice de "Fotos do estado atual tiradas" — derivado da foto, ver abaixo. */
+const IDX_FOTO = CHECKLIST_ITEMS.indexOf("Fotos do estado atual tiradas")
+
 export function ReturnChecklist({ bookingId }: Props) {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -34,12 +37,24 @@ export function ReturnChecklist({ bookingId }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const checkedCount = checked.filter(Boolean).length
   // A foto entra na condição, e não só no texto: sem ela a API responde 422
   // RETURN_PHOTO_REQUIRED. O botão habilitado sem foto prometia algo que o
   // servidor recusa.
-  const temFoto      = photoFile !== null
-  const canConfirm   = checkedCount >= MIN_CHECKED && temFoto
+  const temFoto = photoFile !== null
+
+  // 🪤 "Fotos do estado atual tiradas" é DERIVADO da foto anexada, não uma
+  // pergunta. Enquanto era caixinha manual, dava nos dois erros opostos:
+  //
+  //  - marcar SEM foto — era um dos caminhos para fechar a devolução sem prova;
+  //  - anexar a foto e a caixinha continuar vazia, faltando 1 de 3 e empurrando
+  //    o locatário a marcar "Caixa/embalagem original (se aplicável)" num item
+  //    que não tem caixa. A tela induzia a uma declaração falsa para liberar o
+  //    botão (visto ao vivo, 23/08).
+  //
+  // Agora ela espelha o fato. Quem anexou, cumpriu; quem não anexou, não marca.
+  const checkedComFoto = checked.map((v, i) => (i === IDX_FOTO ? temFoto : v))
+  const checkedCount   = checkedComFoto.filter(Boolean).length
+  const canConfirm     = checkedCount >= MIN_CHECKED && temFoto
 
   function toggle(index: number) {
     setChecked((prev) => {
@@ -119,8 +134,8 @@ export function ReturnChecklist({ bookingId }: Props) {
         Checklist de devolução
       </h2>
       <p className="mb-4 text-xs text-muted-foreground">
-        Marque pelo menos {MIN_CHECKED} de {CHECKLIST_ITEMS.length} itens e envie uma foto do estado
-        do item para iniciar a devolução. Depois disso, o locador confirma o recebimento para
+        Envie uma foto do estado do item e marque pelo menos {MIN_CHECKED} de {CHECKLIST_ITEMS.length} itens
+        — a foto já conta como um deles. Depois disso, o locador confirma o recebimento para
         concluir a locação.
       </p>
 
@@ -129,27 +144,37 @@ export function ReturnChecklist({ bookingId }: Props) {
         <legend className="sr-only">Itens do checklist de devolução</legend>
         {CHECKLIST_ITEMS.map((label, i) => {
           const inputId = `return-check-${i}`
+          // O item da foto não é clicável: ele relata o que já está anexado.
+          const derivado = i === IDX_FOTO
+          const marcado  = checkedComFoto[i]
           return (
             <label
               key={label}
-              htmlFor={inputId}
-              className="flex min-h-[44px] cursor-pointer items-center gap-3 rounded-lg border border-border bg-background px-3 py-2.5 transition-colors hover:bg-muted/40 has-[:checked]:border-brand/40 has-[:checked]:bg-brand/5"
+              htmlFor={derivado ? undefined : inputId}
+              className={[
+                "flex min-h-[44px] items-center gap-3 rounded-lg border border-border bg-background px-3 py-2.5 transition-colors has-[:checked]:border-brand/40 has-[:checked]:bg-brand/5",
+                derivado ? "cursor-default" : "cursor-pointer hover:bg-muted/40",
+              ].join(" ")}
             >
               <input
                 id={inputId}
                 type="checkbox"
-                checked={checked[i]}
-                onChange={() => toggle(i)}
-                className="form-checkbox h-5 w-5 flex-shrink-0 rounded accent-brand focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 cursor-pointer"
-                aria-label={label}
+                checked={marcado}
+                onChange={() => { if (!derivado) toggle(i) }}
+                disabled={derivado}
+                className={[
+                  "form-checkbox h-5 w-5 flex-shrink-0 rounded accent-brand focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2",
+                  derivado ? "cursor-default" : "cursor-pointer",
+                ].join(" ")}
+                aria-label={derivado ? `${label} — marcado automaticamente ao anexar a foto` : label}
               />
               <span className={[
                 "text-sm leading-snug",
-                checked[i] ? "text-foreground font-medium" : "text-muted-foreground",
+                marcado ? "text-foreground font-medium" : "text-muted-foreground",
               ].join(" ")}>
                 {label}
               </span>
-              {checked[i] && (
+              {marcado && (
                 <svg
                   className="ml-auto h-4 w-4 flex-shrink-0 text-brand"
                   viewBox="0 0 24 24"
@@ -283,11 +308,13 @@ export function ReturnChecklist({ bookingId }: Props) {
         </p>
       ) : (
         <p className="mt-2 text-center text-xs text-muted-foreground" role="note">
-          {/* Diz o que FALTA, não a regra inteira: com o checklist já completo,
-              repetir "marque N itens" mandava o locatário procurar no lugar errado. */}
-          {checkedCount < MIN_CHECKED
-            ? `Marque pelo menos ${MIN_CHECKED} itens para habilitar a devolução.`
-            : "Envie uma foto do estado do item para habilitar a devolução."}
+          {/* Diz QUANTOS faltam, não a regra inteira. Repetir "marque 3 itens"
+              com a foto já anexada (que conta como um) mandava o locatário
+              procurar no lugar errado — e foi o que o empurrou a marcar
+              "Caixa/embalagem original" num item sem caixa. */}
+          {!temFoto
+            ? "Envie uma foto do estado do item para habilitar a devolução."
+            : `Marque mais ${MIN_CHECKED - checkedCount} ${MIN_CHECKED - checkedCount === 1 ? "item" : "itens"} para habilitar a devolução.`}
         </p>
       )}
     </section>
