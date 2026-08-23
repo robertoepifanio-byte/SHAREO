@@ -8,6 +8,68 @@
 
 ---
 
+## 🧭 Avaliação multi-perfil da plataforma (2026-08-19) — pendências registradas
+
+> Origem: [`avaliacao-plataforma-multiperfil-2026-08.md`](avaliacao-plataforma-multiperfil-2026-08.md) — jornada viva no staging (telas públicas) + auditoria de 5 especialistas (negócio, segurança/LGPD, QA, UI/UX, arquitetura). Achados **verificados por arquivo:linha** ou pela jornada viva; onde há inferência, está marcado.
+>
+> **Processo ENCERRADO** quanto à avaliação. Itens abaixo ficam para deliberação/execução. IDs `EVAL-*` são inéditos desta rodada; itens já existentes são **referenciados**, não duplicados. **Nada foi corrigido** aqui (exceto a baixa do SEC-MAJ-06, já aplicada abaixo na tabela MAJOR).
+>
+> ⛔ **Fluxos autenticados NÃO validados ao vivo** (anunciar → reservar → pagar): o assistente não pode digitar credenciais. **Pendente:** validação viva com o fundador logado antes de marcar esses fluxos como ✅ (regra de verificação por evidência).
+>
+> 🔁 **Reverificação em 2026-08-23** (coluna "Status 23/08"): cada P0 foi reconferido contra o código do `main` em `e6af9d6`. A ADR-028 (reversão para Stripe Connect, 19/08) tornou **dois** itens sem objeto. Os P1/P2 **não** foram reverificados — continuam como estavam em 19/08.
+
+### 🔴 P0 — corrigir antes de qualquer go-live público
+
+| ID | Achado | Local | Status 23/08 | Nota |
+|---|---|---|---|---|
+| **EVAL-P0-01** ⚠️legal | `/termos` e `/privacidade` **não identificam a ShareO como PJ** (razão social, CNPJ 68.512.556/0001-09, sede). | textos legais | 🔴 **ainda vale** — zero ocorrências de `68.512.556` em `.tsx` | Obrigação CDC/Marco Civil; risco de nulidade dos termos no dia 1. Relaciona-se a LGPD-01/03. Gated D4, mas independe do B1. |
+| **EVAL-P0-02** | Campos de localização (Cidade/Estado/Bairro/Endereço) no **modo create** parecem editáveis mas ignoram o input silenciosamente (`onChange` faz `if (mode !== "create") …`, sem `disabled`/`readOnly`). | `components/items/ItemForm.tsx` | 🔴 **ainda vale** | Proprietário que não lê o banner tenta digitar e trava. Fix: `readOnly`/`disabled` quando `mode==="create"`. |
+| **EVAL-P0-03** | **Chips de categoria no `/itens` mobile ~30-34px** (`py-1.5 text-xs`), abaixo dos 44px do DS. | `app/itens/page.tsx:370,387` | 🔴 **ainda vale** | Filtrar por categoria fica difícil no mobile (tap target). |
+| **EVAL-P0-04** | **Política de cancelamento contraditória entre telas:** página do item mostra faixas hardcoded; `/ajuda` diz outra coisa. | `app/itens/[id]/page.tsx:625`, `app/reservas/sucesso/page.tsx:171` | 🔴 **ainda vale — e piorou em contraste**: `/ajuda` e `/politicas` passaram a ler a config (reescrita de 20/08), mas esses **2 pontos seguem hardcoded** | A divergência agora é entre config e código, não entre dois textos. Fonte única da verdade = `lib/platform-config.ts`. Achado da **jornada viva**. |
+| ~~**EVAL-P0-05**~~ | ~~Endpoint `declare-pix` sem nenhum teste de integração.~~ | ~~`app/api/bookings/[id]/declare-pix/route.ts`~~ | ⚫ **OBSOLETO** — a rota não existe mais; o PIX manual da plataforma foi removido pela [ADR-028](adr/ADR-028-reversao-stripe-connect.md) (Stripe Connect). Zero ocorrências de `declare-pix` no código. | Sem objeto. A cobertura do **checkout Stripe** é uma pendência nova e separada. |
+| **EVAL-P0-06** | Threshold de cobertura global em **1% de linhas** — sem enforcement real; meta H1 de 70% sem guardrail no CI. | `jest.config.ts` | 🔴 **ainda vale** (`lines: 1`) | Regressão de cobertura passa despercebida. |
+| ref **SEC-MAJ-07** | `SKIP_RATE_LIMIT`/`x-e2e-token` sem guarda de `NODE_ENV` — ver tabela MAJOR. | `lib/rateLimit.ts` | 🔴 aberto | Já no backlog; reconfirmado pela auditoria. Condicionar a `NODE_ENV !== production`. |
+| ~~ref (PIX pessoal)~~ | ~~Trocar chave PIX pessoal do fundador → chave PJ antes de ligar pagamento real.~~ | ~~`getPlatformPixConfig`~~ | ⚫ **OBSOLETO** — helper e fluxo removidos pela ADR-028. | Sem objeto. (O `pixKey` do **proprietário**, usado em repasse, continua existindo — ver SEC-BL2, que **não** é afetado.) |
+
+### 🟠 P1 — melhorias incrementais (antes de escalar aquisição)
+
+> Não reverificados em 23/08 — estado conforme apurado em 19/08.
+
+| ID | Achado | Local |
+|---|---|---|
+| **EVAL-P1-01** | `role="alert"` ausente no erro de reserva + tabs de modalidade sem semântica ARIA (`role="tab"/radiogroup`, `aria-selected`). Corroborado por 2 auditorias. | `_PriceCalc.tsx:448,215` |
+| **EVAL-P1-02** ⚠️verificar | Void promise em `geocodeItem` no PATCH de item (`.then(...)` sem `await`/`after()`) — pode morrer se a lambda congelar. (S14-M-19 resolveu o PATCH `/me`; este é o PATCH de **item**.) | `app/api/items/[id]/route.ts:266-267` |
+| **EVAL-P1-03** | `sort=nearest` sem bbox puxa 500 itens e ordena em JS — degrada com catálogo grande. | `app/itens/page.tsx:181,258` |
+| **EVAL-P1-04** | Seção "Fotos" é a última do formulário (maior motor de conversão) + limite de 3 na UI. (Ver S14-M-15: "3 é dica" — mas a UI faz cap em 3; backend suporta 10-24.) | `ItemForm.tsx:385,956+` |
+| **EVAL-P1-05** | Sem nota (rating) no card da listagem — sinal de confiança removido por trade-off de performance. Denormalizar `avgRating`. | `ItemCard.tsx:121-125` |
+| **EVAL-P1-06** | Validação de e-mail no cliente usa `!email.includes("@")` (aceita `"a@"`). | `RegisterForm.tsx:69` |
+| **EVAL-P1-07** | Textos de sugestão de preço em `text-[11px]` (abaixo do mínimo 12px do DS). | `ItemForm.tsx:694,715-735` |
+| ref **SEC-BL2** | `pixKey` do locador em texto claro no banco (enquanto CPF/CNPJ são AES-256-GCM). | `prisma/schema.prisma` |
+| ref **ARQ-A-01/M-04/M-05** | Slugs nas URLs de item + ISR/SSG + `/categoria/[slug]` — pré-requisito de SEO nacional. | ADR-007 |
+
+### 🟡 P2 / Expansão — ajustes de modelo e polish
+
+> Não reverificados em 23/08 — estado conforme apurado em 19/08.
+
+| ID | Achado | Local |
+|---|---|---|
+| **EVAL-P2-01** | Rótulos divergentes p/ a mesma ação: "Reservar agora" (sticky CTA) vs "Solicitar locação" (PriceCalc). | `_StickyBookingCTA.tsx:65` vs `_PriceCalc.tsx:468` |
+| **EVAL-P2-02** | Deslogado vê "Solicitar locação" sem aviso de que login é necessário → redirect inesperado. | `_PriceCalc.tsx:473-479` |
+| **EVAL-P2-03** | `?ulat=abc` malformado propaga `NaN` no Haversine → lista vazia sem mensagem de erro. | `app/itens/page.tsx:163` |
+| **EVAL-P2-04** | Formatador BRL duplicado em ~8-10 componentes — falta `lib/format.ts` (`formatBRL(cents)`). | 8 arquivos (ver relatório §4.2) |
+| **EVAL-P2-05** | Cron de lembretes sem retry; health check não cobre PSP/Resend; falta índice composto `(status,isApproved,deletedAt,latitude,longitude)`. | `cron/reminders`, `api/health`, `schema.prisma` |
+| **EVAL-P2-06** | DS: `--success` idêntico a `--brand`; `amber-*`/`red-*` hardcoded fora dos tokens; sem indicador de progresso no formulário longo. | `globals.css`, `ItemCard.tsx`, `ItemForm.tsx` |
+| **EVAL-P2-07** (modelo) | Confiança sem caução (D2): avaliar **garantia mínima** (retenção temporária) como H2. Priorizar **densidade por praça** antes de dispersão nacional (chicken-and-egg). | decisão de produto |
+
+### A verificar (podem já estar resolvidos — não classificar sem confirmar)
+
+- Rate limit nas rotas de auth (`phone/send-otp`, `forgot-password`, `register`) — enumeração + custo SMS.
+- Reaceite de `CONSENT_VERSION` v1.0→v1.1 para usuários antigos (prompt na UI).
+- Sentry `beforeSend` scrubbing de PII (Arquitetura viu `scrubEvent`; confirmar alcance).
+- ⚠️ **Nota do PR original invertida:** o texto dizia "`/ajuda` já descreve Mercado Pago — a nota antiga de Stripe era drift". Isso **deixou de valer**: a ADR-028 (19/08) reverteu o PSP para Stripe Connect e a reescrita de 20/08 alinhou `/ajuda` e `/politicas` ao código. Hoje o Mercado Pago está dormente. Sem ação.
+
+---
+
 ## 🧪 QA pré-lançamento (s36, 2026-06-23) — achados para deliberação
 
 > Bateria de validação de qualidade executada na branch `refactor/dedup` (sem criar funcionalidade, sem quebrar nada). **Todos os gates automatizados verdes.** Achados abaixo são **não-bloqueantes** e estão aqui para deliberação **antes** de qualquer execução.
@@ -207,7 +269,7 @@
 >
 > ✅ **RESOLVIDOS na 2ª onda (commit desta sessão):** **S14-SEC-03** (SSRF — `lib/ssrfGuard.ts` bloqueia IP literal privado/loopback/metadata `169.254.169.254` em webhooks PJ, na criação e no disparo; DNS-rebinding domínio→IP-privado fica como follow-up por restrição de bundler do Next com `node:dns`), **S14-SEC-06** (CSV formula-injection — `escape()` do export prefixa células iniciadas por `=`/`+`/`-`/`@`/TAB/CR), **S14-M-14** (admin-role granular em `items/[id]` e `geocode-items` → `hasAdminRole(SUPERADMIN, OPERACIONAL)`; disputes mantém coarse pois os 3 roles tratam disputas), **S14-M-19** (`geocodeUserLocation` via `after()` no PATCH /me). SSRF testado por unidade (9 casos verde).
 >
-> **Permanecem para decisão:** GAP-M-07b (`take` SSR — baixo impacto), PlatformConfig cache (staleness×perf), `pickupToken @unique` (migration), error-envelopes + ownership-helper (refactor amplo), upload-limit drift (copy/produto), e os com dependência externa (SEC-CRIT-02 rotação Vercel, SEC-MAJ-04 deps, SEC-MAJ-06+LGPD/D4, ARQ-A-01/M-04/M-05 produto, NextAuth GA).
+> **Permanecem para decisão:** GAP-M-07b (`take` SSR — baixo impacto), PlatformConfig cache (staleness×perf), `pickupToken @unique` (migration), error-envelopes + ownership-helper (refactor amplo), upload-limit drift (copy/produto), e os com dependência externa (SEC-CRIT-02 rotação Vercel, SEC-MAJ-04 deps, ARQ-A-01/M-04/M-05 produto, NextAuth GA). ~~SEC-MAJ-06+LGPD/D4~~ ✅ **RESOLVIDO** (verificado 2026-08-19, reconfirmado 2026-08-23 — ver tabela MAJOR).
 
 ### 🟠 Cobertura INCOMPLETA de fixes do s13 (corrigir o que foi marcado "resolvido")
 
@@ -318,7 +380,7 @@
 | **SEC-MAJ-03** | Upload de doc de identidade (CPF/RG/selfie) sem whitelist MIME nem magic-bytes; contentType vem do cliente | `app/api/users/me/id-verification/route.ts:55-63` | XSS no painel admin via signed URL (SVG/HTML como "documento"). Comprometimento de admin = jackpot |
 | **SEC-MAJ-04** | `pnpm audit --prod`: 2 High (`rollup` path-traversal, `esbuild` RCE), 2 Moderate (`postcss`, `uuid`), 1 Low (`cookie`<0.7 via `@supabase/ssr` — path de sessão) | `pnpm-lock.yaml` | rollup/esbuild são build-time; `cookie` e `postcss` runtime. Atualizar `@sentry/nextjs` + `@supabase/ssr` |
 | **SEC-MAJ-05** ⊕ **ARQ-M-02** | NextAuth **v5.0.0-beta.31** em produção, sem ADR de risco nem plano de migração GA (changelog v5 já trocou cookies/callbacks) | `package.json`, `lib/auth.ts` | Auth é caminho crítico; beta sem garantia de patch de segurança. Criar ADR-023 (versão alvo, gatilho, soak) |
-| **SEC-MAJ-06** ⚠️LGPD | DELETE de conta anonimiza nome/e-mail/CPF mas **não** `borrowerNote/ownerNote/Review.comment/Message.content/OwnerPaymentAccount(PIX)/IDVerification.idDocumentUrl+selfie` | `app/api/users/me/route.ts:90-114` | Manter doc de identidade + PIX após exclusão viola LGPD art.18 (multa ANPD). Jurídico (D4) vai cobrar |
+| ~~**SEC-MAJ-06** ⚠️LGPD~~ ✅ **RESOLVIDO** (verificado 2026-08-19, reconfirmado 2026-08-23) | ~~DELETE de conta anonimiza nome/e-mail/CPF mas **não** `borrowerNote/ownerNote/Review.comment/Message.content/OwnerPaymentAccount(PIX)/IDVerification.idDocumentUrl+selfie`~~ — o DELETE atual faz scrub atômico de TODOS esses campos: `Review.comment→null`, `Message.content→"[mensagem removida]"+deletedAt`, `borrowerNote/ownerNote→null`, `pixKey→"REMOVIDO"`, `idDocumentUrl/idSelfieUrl→null`, arquivos `id-docs` removidos via `after()`. | `app/api/users/me/route.ts` | ✅ Sem violação de LGPD art.18. Só ficam retidos valores/datas de transações concluídas (CTN art.173, 5 anos, com aviso ao titular — permitido pelo art.18 §3º). Baixa dada conforme decisão do fundador (avaliação multi-perfil 2026-08). |
 | **SEC-MAJ-07** | Bypass global de rate limit: `SKIP_RATE_LIMIT=true` e `E2E_SECRET`+header `x-e2e-token` desligam TUDO; workflows setam `SKIP_RATE_LIMIT=true` | `lib/rateLimit.ts:94-100`, `.github/workflows/*` | Se a env vazar p/ Vercel prod, rate limits caem silenciosamente. Condicionar a `NODE_ENV !== production` |
 | **SEC-MAJ-09** | `pickupToken` (6 dígitos, controle anti-fraude da retirada) gerado com `Math.random()` (PRNG não-cripto) | `app/api/webhooks/stripe/route.ts:99-105`, `app/api/bookings/[id]/route.ts:262-268` | Previsão sequencial → "ativar" reserva alheia. Trocar por `crypto.randomInt(100000,1000000)` |
 | **QA-BUG-04** ⚠️app | `POST /api/auth/resend-verification` retorna **400 ALREADY_VERIFIED** quando e-mail já verificado — deveria ser **409** (RFC 7231 estado de recurso). Spec também tem assert invertido | `app/api/auth/resend-verification/route.ts:37-41` | Client que trata 400 como erro de input mostra mensagem genérica. **Único achado de semântica de API app-side novo do QA** |
@@ -376,7 +438,7 @@
   - ✅ **SEC-MIN-06 CONFIRMADO** — lat/lng exatos no GET público; considerar MAJOR (privacidade/segurança física + LGPD).
   - ⏳ **Ainda NÃO reverificados (hipóteses até confirmar):** SEC-MAJ-02/03/04/07/09, QA-BUG-04 e os ARQ-* além de A-01/A-02/A-03. O caso SEC-CRIT-03 (refutado) mostra que os subagentes erram por grep estreito — **não tratar severidade não-verificada como fato**.
 - **Estratégicas (decisão sua, não "bug"):** ARQ-A-01 (ADR-007 ISR/SSG), ARQ-M-04/05 (slugs e `/categoria`), SEC-MAJ-05⊕ARQ-M-02 (NextAuth beta).
-- **Bloqueador D4:** SEC-MAJ-06 + LGPD-01/03 são exatamente o que o jurídico vai cobrar — antecipar no dossiê da consulta.
+- **Bloqueador D4:** ~~SEC-MAJ-06~~ (✅ resolvido, verificado 2026-08-19) + LGPD-01/03 são exatamente o que o jurídico vai cobrar — antecipar no dossiê da consulta.
 - **Nada foi corrigido.** Aguardando sua deliberação sobre o que vira P0/P1/P2 e o que é aceito como risco.
 
 ---
