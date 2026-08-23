@@ -391,14 +391,26 @@ describe("ReturnChecklist — 4 checkboxes verbatim (ReturnChecklist.tsx linhas 
     )
   })
 
-  it("exibe aviso 'Marque pelo menos 3 itens para habilitar a devolução.' com 0 selecionados — verbatim linha 1132", async () => {
+  // Sem foto e sem itens, o aviso cobra a FOTO — ela é o primeiro bloqueio e o
+  // único que o locatário não consegue contornar marcando caixinhas.
+  it("com 0 selecionados e sem foto, o aviso cobra a foto — verbatim do ReturnChecklist.tsx", async () => {
     wrap(<BookingDetailScreen />)
     await waitForBookingLoad("Em andamento")
     await waitFor(() =>
       expect(screen.getByText(
-        "Marque pelo menos 3 itens para habilitar a devolução."
+        "Envie uma foto do estado do item para habilitar a devolução."
       )).toBeTruthy()
     )
+  })
+
+  // 🪤 A caixinha da foto NÃO é clicável: ela relata o que está anexado. Como
+  // pergunta manual, dava para marcá-la sem foto nenhuma — um dos caminhos para
+  // fechar a devolução sem prova.
+  it("o item 'Fotos do estado atual tiradas' não é tocável", async () => {
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Em andamento")
+    const item = await screen.findByLabelText("Fotos do estado atual tiradas")
+    expect(item.props.accessibilityState?.disabled ?? item.props.disabled).toBeTruthy()
   })
 
   it("botão 'Devolver' desabilitado com menos de 3 itens marcados — verbatim linha 1127", async () => {
@@ -424,7 +436,7 @@ describe("ReturnChecklist — 4 checkboxes verbatim (ReturnChecklist.tsx linhas 
     await waitForBookingLoad("Em andamento")
     await waitFor(() =>
       expect(screen.getByText(
-        /Marque pelo menos 3 de 4 itens e envie uma foto do estado do item para iniciar a devolução/
+        /Envie uma foto do estado do item e marque pelo menos 3 de 4 itens — a foto já conta como um deles/
       )).toBeTruthy()
     )
   })

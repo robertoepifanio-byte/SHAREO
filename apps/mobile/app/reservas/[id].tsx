@@ -1072,38 +1072,47 @@ export default function BookingDetailScreen() {
             Quando este componente está ativo, o botão "Devolver" do bottomBar é suprimido.
         ── */}
         {isBorrower && booking.status === "ACTIVE" && (() => {
-          const checkedCount = clChecked.filter(Boolean).length
           // Foto obrigatória — fonte: ReturnChecklist.tsx (`canConfirm`).
           // Sem ela a API responde 422 RETURN_PHOTO_REQUIRED, então habilitar o
           // botão só levaria o locatário a um erro.
-          const canConfirm   = checkedCount >= 3 && clPhotoUri !== null
+          const temFoto = clPhotoUri !== null
+          // "Fotos do estado atual tiradas" é DERIVADO da foto, não uma pergunta
+          // — fonte: ReturnChecklist.tsx (`checkedComFoto`). Como caixinha manual,
+          // dava para marcar SEM foto, e anexar a foto deixava a caixinha vazia,
+          // empurrando o locatário a marcar "Caixa/embalagem original" num item
+          // sem caixa.
+          const IDX_FOTO_CL   = CHECKLIST_ITEMS_CONST.indexOf("Fotos do estado atual tiradas")
+          const checkedComFoto = clChecked.map((v, i) => (i === IDX_FOTO_CL ? temFoto : v))
+          const checkedCount   = checkedComFoto.filter(Boolean).length
+          const canConfirm     = checkedCount >= 3 && temFoto
           return (
             <View style={[s.section, { borderColor: tokens.border, backgroundColor: tokens.surface, marginBottom: 12 }]}>
               <Text style={[s.sectionLabel, { color: tokens.text, fontSize: 14, fontWeight: "700", letterSpacing: 0, marginBottom: 4 }]}>
                 Checklist de devolução
               </Text>
               <Text style={[s.noteText, { color: tokens.muted, fontSize: 12, marginBottom: 14 }]}>
-                Marque pelo menos 3 de 4 itens e envie uma foto do estado do item para iniciar a devolução. Depois disso, o locador confirma o recebimento.
+                Envie uma foto do estado do item e marque pelo menos 3 de 4 itens — a foto já conta como um deles. Depois disso, o locador confirma o recebimento.
               </Text>
               {CHECKLIST_ITEMS_CONST.map((label, i) => (
                 <TouchableOpacity
                   key={label}
                   style={[
                     sChecklist.item,
-                    { borderColor: clChecked[i] ? "#007B3C" : tokens.border, backgroundColor: clChecked[i] ? (mode === "dark" ? "#0A2A1A" : "#F0FDF4") : tokens.bg },
+                    { borderColor: checkedComFoto[i] ? "#007B3C" : tokens.border, backgroundColor: checkedComFoto[i] ? (mode === "dark" ? "#0A2A1A" : "#F0FDF4") : tokens.bg },
                   ]}
-                  onPress={() => setClChecked((prev) => { const n = [...prev]; n[i] = !n[i]; return n })}
+                  onPress={() => { if (i === IDX_FOTO_CL) return; setClChecked((prev) => { const n = [...prev]; n[i] = !n[i]; return n }) }}
+                  disabled={i === IDX_FOTO_CL}
                   accessibilityRole="checkbox"
                   accessibilityLabel={label}
-                  accessibilityState={{ checked: clChecked[i] }}
+                  accessibilityState={{ checked: checkedComFoto[i] }}
                 >
                   <View style={[sChecklist.checkbox, {
-                    borderColor: clChecked[i] ? "#007B3C" : tokens.border,
-                    backgroundColor: clChecked[i] ? "#007B3C" : "transparent",
+                    borderColor: checkedComFoto[i] ? "#007B3C" : tokens.border,
+                    backgroundColor: checkedComFoto[i] ? "#007B3C" : "transparent",
                   }]}>
-                    {clChecked[i] && <Text style={sChecklist.checkmark}>✓</Text>}
+                    {checkedComFoto[i] && <Text style={sChecklist.checkmark}>✓</Text>}
                   </View>
-                  <Text style={[sChecklist.label, { color: clChecked[i] ? tokens.text : tokens.muted }]}>{label}</Text>
+                  <Text style={[sChecklist.label, { color: checkedComFoto[i] ? tokens.text : tokens.muted }]}>{label}</Text>
                 </TouchableOpacity>
               ))}
               {/* Progresso */}
@@ -1177,9 +1186,9 @@ export default function BookingDetailScreen() {
                 </Text>
               ) : (
                 <Text style={[s.noteText, { color: tokens.muted, fontSize: 11, textAlign: "center", marginTop: 6 }]}>
-                  {checkedCount < 3
-                    ? "Marque pelo menos 3 itens para habilitar a devolução."
-                    : "Envie uma foto do estado do item para habilitar a devolução."}
+                  {!temFoto
+                    ? "Envie uma foto do estado do item para habilitar a devolução."
+                    : `Marque mais ${3 - checkedCount} ${3 - checkedCount === 1 ? "item" : "itens"} para habilitar a devolução.`}
                 </Text>
               )}
             </View>

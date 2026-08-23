@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition, useMemo } from "react"
+import { useState, useTransition, useMemo, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { calcBookingTotal } from "@/lib/pricing"
@@ -8,6 +8,7 @@ import { trackEvent } from "@/components/analytics/GoogleAnalytics"
 import { ContractAcceptanceCheckbox } from "@/components/booking/ContractAcceptanceCheckbox"
 import { RENTAL_CONTRACT_VERSION } from "@/lib/rental-contract"
 import { ResendVerificationButton } from "@/components/shared/ResendVerificationButton"
+import { EVENTO_SELECIONAR_RETIRADA, type DetalheSelecionarRetirada } from "@/lib/selecionarRetirada"
 
 interface Props {
   pricePerDay:      number
@@ -150,6 +151,26 @@ export function PriceCalc({
     setError("")
   }
 
+  // Clique num dia livre do calendário de disponibilidade — ele fica em outra
+  // coluna e não tem como chamar isto por prop (a página é Server Component).
+  // Ver lib/selecionarRetirada.ts.
+  //
+  // Além de preencher, ROLA até o formulário e foca o campo: preencher em
+  // silêncio um campo fora da tela pareceria, de novo, que o clique não fez nada.
+  const campoRetiradaRef = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    function aoSelecionar(e: Event) {
+      const { data } = (e as CustomEvent<DetalheSelecionarRetirada>).detail
+      if (!data) return
+      handleStartChange(data)
+      campoRetiradaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })
+      campoRetiradaRef.current?.focus({ preventScroll: true })
+    }
+    window.addEventListener(EVENTO_SELECIONAR_RETIRADA, aoSelecionar)
+    return () => window.removeEventListener(EVENTO_SELECIONAR_RETIRADA, aoSelecionar)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   async function solicitar() {
     setError("")
     setNeedsComplete(false)
@@ -252,6 +273,7 @@ export function PriceCalc({
         </label>
         <input
           id="date-start"
+          ref={campoRetiradaRef}
           type="date"
           min={today}
           value={startDate}
