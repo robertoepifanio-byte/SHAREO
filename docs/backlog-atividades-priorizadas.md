@@ -33,6 +33,10 @@
 
 ### 🧹 Higiene de ambiente
 
+- **🔴 Preview de PR não tem banco — `NO_DATABASE_URL`.** Verificado em 23/08 no `/api/health` do preview do #350: `"db":"error"`, `"dbUrl":{"presente":false}`. O `Preview Deploy (PR)` do `deploy.yml` injeta só variáveis de BUILD (`NEXT_PUBLIC_*`); as de runtime teriam que vir do ambiente **Preview** do Vercel, onde não existem. Efeito: **nenhum preview abre página com dados** — item, listagem, reservas, perfil, admin. Sobram as estáticas.
+  - **Por que ninguém viu:** o E2E aponta para o STAGING (`BASE_URL: secrets.STAGING_URL`, `main.yml:283`), nunca para o preview. O preview só era exercitado por build, que passa.
+  - **Custo real:** revisar mudança de UI num PR é impossível — a verificação viva só acontece depois do merge, no staging. Foi o que barrou a checagem do calendário em 23/08.
+  - **Conserto:** acrescentar `DATABASE_URL`, `DIRECT_URL` e `SUPABASE_SERVICE_ROLE_KEY` (apontando para o **staging**) ao escopo *Preview* no painel do Vercel. É ação do fundador — envolve credencial, que o assistente não manuseia.
 - **Lixo de E2E se acumula sem limite.** Em 23/08 o staging tinha **183 itens + 186 reservas** de teste (179 `COMPLETED`), afogando as reservas reais na lista do usuário. Limpo por `scripts/limpar-lixo-teste-staging.ts` (modo seco por padrão, aborta se algum registro financeiro depender do alvo). **A causa não foi resolvida:** os specs não limpam o que criam, então volta a acumular a cada rodada.
 - **Período invertido confirmado ao vivo.** Reservas criadas antes do deploy do #345 têm `2028-02-27 → 2026-08-24`; as criadas depois saem corretas. As ~177 antigas **não se autocorrigem**.
 - **Atributo Hidden do Windows** em 5 specs e 3 scripts bloqueava escrita com EPERM. Limpo — são fontes versionados comuns e o Git não rastreia o atributo.
