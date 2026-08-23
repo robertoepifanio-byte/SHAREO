@@ -45,6 +45,12 @@ async function registerUser(user: typeof FIXTURE_LOCATARIO, retries = 3): Promis
         userType:       'PF',
         city:           user.city,
         state:          user.state,
+        // 🪤 Endereço completo é obrigatório para o proprietário confirmar
+        // reserva desde 22/08/2026 (422 OWNER_ADDRESS_REQUIRED). Enviamos para
+        // todos os fixtures porque qualquer um pode virar locador num smoke.
+        cep:            user.cep,
+        street:         user.street,
+        neighborhood:   user.neighborhood,
         consentVersion: user.consentVersion,
       }),
     })
