@@ -17,6 +17,7 @@ import fs from 'fs'
 import { test, expect } from '@playwright/test'
 import { SESSION_PATHS, FIXTURE_LOCATARIO, FIXTURE_PROPRIETARIO } from './fixtures/test-credentials'
 import { TEST_ITEM_PATH } from './fixtures/test-paths'
+import { enviarFotoDevolucao } from './_support'
 
 const hasSessions =
   fs.existsSync(SESSION_PATHS.locatario) &&
@@ -73,6 +74,7 @@ test.describe('smoke #23 — Exclusão de conta: bloqueio com ACTIVE booking; cl
     console.log(`  409 ACTIVE_BOOKING ✅ — conta não excluída`)
 
     // Cleanup: levar o booking até COMPLETED para liberar o locatário
+    await enviarFotoDevolucao(loc.request, bkA.id)
     await loc.request.patch(`/api/bookings/${bkA.id}`, { data: { action: 'mark_returned' } })
     await prop.request.patch(`/api/bookings/${bkA.id}`, { data: { action: 'confirm_return' } })
     console.log(`  Booking A levado até COMPLETED para liberar locatário`)

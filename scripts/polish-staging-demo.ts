@@ -550,6 +550,7 @@ async function addNewBookings(prisma: PrismaClient, e2eToken: string | undefined
     if (activeRes.status !== 200) { console.log(`    ⚠ mark_active → ${activeRes.status}`); continue }
 
     // Locatário marca como devolvido (sem confirm_return do dono ainda)
+    await borrower.http.uploadFotoDevolucao(bookingId)
     const returned = await borrower.http.json("PATCH", `/api/bookings/${bookingId}`, {
       action: "mark_returned",
     })

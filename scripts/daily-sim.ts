@@ -300,6 +300,35 @@ class HttpClient {
     }
   }
 
+  /**
+   * Foto de devolução (CHECKOUT) — obrigatória antes de `mark_returned` desde
+   * 2026-08-23, senão a API devolve 422 RETURN_PHOTO_REQUIRED e o robô para no
+   * meio do ciclo sem gerar Payout.
+   *
+   * ⚠️ Cópia do método de mesmo nome em `lib/sim-shared.ts`: este arquivo mantém
+   * um HttpClient local de propósito (ver nota na linha ~51). Mexeu num, mexa
+   * no outro.
+   */
+  async uploadFotoDevolucao(bookingId: string) {
+    const png = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+      "base64",
+    )
+    const fd = new FormData()
+    fd.append("bookingId", bookingId)
+    fd.append("phase", "CHECKOUT")
+    fd.append("file", new Blob([png], { type: "image/png" }), "devolucao.png")
+
+    const res = await fetch(`${this.baseUrl}/api/bookings/${bookingId}/photos`, {
+      method:   "POST",
+      headers:  this.headers(),
+      body:     fd,
+      redirect: "manual",
+    })
+    this.absorb(res)
+    return { status: res.status, ok: res.ok }
+  }
+
   /** Login por NextAuth credentials → guarda o cookie de sessão no jar. */
   async login(email: string, password: string): Promise<boolean> {
     const csrfRes = await fetch(this.baseUrl + "/api/auth/csrf", { headers: this.headers() })
@@ -651,6 +680,7 @@ async function runBooking(
   }
 
   // Devolução + confirmação → COMPLETED (gera Payout)
+  await borrower.http.uploadFotoDevolucao(bookingId)
   await act(borrower, { action: "mark_returned" })
   await act(owner, { action: "confirm_return" })
 

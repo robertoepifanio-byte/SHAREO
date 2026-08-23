@@ -14,6 +14,7 @@ import fs from 'fs'
 import { test, expect } from '@playwright/test'
 import { SESSION_PATHS, FIXTURE_LOCATARIO, FIXTURE_PROPRIETARIO } from './fixtures/test-credentials'
 import { TEST_ITEM_PATH } from './fixtures/test-paths'
+import { enviarFotoDevolucao } from './_support'
 
 const hasSessions =
   fs.existsSync(SESSION_PATHS.locatario) &&
@@ -236,6 +237,7 @@ test.describe('smoke #21 — Review flow: avaliações após booking COMPLETED',
         data: { action: 'mark_active', pickupToken: detail.pickupToken },
       })
       expect(activeRes.ok(), `mark_active falhou: ${activeRes.status()}`).toBeTruthy()
+      await enviarFotoDevolucao(loc.request, bookingId)
       const returnRes = await loc.request.patch(`/api/bookings/${bookingId}`, { data: { action: 'mark_returned' } })
       console.log(`  booking avançado para RETURNED → ${returnRes.status()}`)
       expect(returnRes.ok(), `mark_returned falhou: ${returnRes.status()}`).toBeTruthy()

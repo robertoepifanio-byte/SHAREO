@@ -1000,7 +1000,9 @@ export default function BookingDetailScreen() {
         {booking.cancelReason && (
           <View style={[s.alertBox, { borderColor: mode === "dark" ? "#F08C8466" : "#FECACA", backgroundColor: mode === "dark" ? "#2A0A0A" : "#FEF2F2" }]}>
             <View style={{ flex: 1 }}>
-              <Text style={[s.alertTitle, { color: mode === "dark" ? "#F08C84" : "#991B1B" }]}>Motivo do cancelamento</Text>
+              <Text style={[s.alertTitle, { color: mode === "dark" ? "#F08C84" : "#991B1B" }]}>
+                {booking.status === "DISPUTED" ? "Motivo da disputa" : "Motivo do cancelamento"}
+              </Text>
               <Text style={[s.alertDesc, { color: tokens.error }]}>{booking.cancelReason}</Text>
             </View>
           </View>
@@ -1071,14 +1073,17 @@ export default function BookingDetailScreen() {
         ── */}
         {isBorrower && booking.status === "ACTIVE" && (() => {
           const checkedCount = clChecked.filter(Boolean).length
-          const canConfirm   = checkedCount >= 3
+          // Foto obrigatória — fonte: ReturnChecklist.tsx (`canConfirm`).
+          // Sem ela a API responde 422 RETURN_PHOTO_REQUIRED, então habilitar o
+          // botão só levaria o locatário a um erro.
+          const canConfirm   = checkedCount >= 3 && clPhotoUri !== null
           return (
             <View style={[s.section, { borderColor: tokens.border, backgroundColor: tokens.surface, marginBottom: 12 }]}>
               <Text style={[s.sectionLabel, { color: tokens.text, fontSize: 14, fontWeight: "700", letterSpacing: 0, marginBottom: 4 }]}>
                 Checklist de devolução
               </Text>
               <Text style={[s.noteText, { color: tokens.muted, fontSize: 12, marginBottom: 14 }]}>
-                Marque pelo menos 3 de 4 itens para iniciar a devolução. Depois disso, o locador confirma o recebimento.
+                Marque pelo menos 3 de 4 itens e envie uma foto do estado do item para iniciar a devolução. Depois disso, o locador confirma o recebimento.
               </Text>
               {CHECKLIST_ITEMS_CONST.map((label, i) => (
                 <TouchableOpacity
@@ -1115,7 +1120,7 @@ export default function BookingDetailScreen() {
               </View>
               {/* Foto opcional */}
               <Text style={[s.noteText, { color: tokens.text, fontSize: 12, fontWeight: "600", marginTop: 14, marginBottom: 6 }]}>
-                Foto do estado atual <Text style={{ fontWeight: "400", color: tokens.muted }}>(recomendado)</Text>
+                Foto do estado atual <Text style={{ color: tokens.error }}>*</Text> <Text style={{ fontWeight: "400", color: tokens.muted }}>(obrigatória)</Text>
               </Text>
               {clPhotoUri ? (
                 <View style={{ position: "relative", marginBottom: 12 }}>
@@ -1172,7 +1177,9 @@ export default function BookingDetailScreen() {
                 </Text>
               ) : (
                 <Text style={[s.noteText, { color: tokens.muted, fontSize: 11, textAlign: "center", marginTop: 6 }]}>
-                  Marque pelo menos 3 itens para habilitar a devolução.
+                  {checkedCount < 3
+                    ? "Marque pelo menos 3 itens para habilitar a devolução."
+                    : "Envie uma foto do estado do item para habilitar a devolução."}
                 </Text>
               )}
             </View>

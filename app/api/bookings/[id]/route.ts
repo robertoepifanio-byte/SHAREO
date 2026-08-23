@@ -353,6 +353,30 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     // Isso permite exibir "Devolução solicitada" e "Devolução confirmada" como
     // eventos separados no histórico da locação.
     if (action === "mark_returned") {
+      // 🪤 Foto de devolução OBRIGATÓRIA (decisão do fundador, 2026-08-23).
+      //
+      // O checklist pedia 3 de 4 itens e tratava a foto como "recomendado", então
+      // dava para o locatário atestar "item limpo e no estado recebido" e, no
+      // minuto seguinte, abrir disputa dizendo que não funciona — sem uma única
+      // imagem para o time de mediação decidir. Uma locação inteira fechou assim
+      // em staging com ZERO fotos.
+      //
+      // A trava fica aqui e não só no ReturnChecklist porque o app mobile e
+      // qualquer chamada direta à API passam por este mesmo ponto.
+      const fotos = await prisma.bookingPhoto.count({
+        where: { bookingId: id, phase: "CHECKOUT" },
+      })
+      if (fotos === 0) {
+        return NextResponse.json(
+          {
+            error: {
+              code:    "RETURN_PHOTO_REQUIRED",
+              message: "Envie ao menos uma foto do estado do item antes de iniciar a devolução.",
+            },
+          },
+          { status: 422 },
+        )
+      }
       data.returnRequestedAt = effectiveTime
     }
     if (action === "confirm_return") {

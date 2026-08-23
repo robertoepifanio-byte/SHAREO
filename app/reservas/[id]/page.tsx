@@ -304,9 +304,16 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                 </div>
               )}
 
+              {/* 🪤 `cancelReason` guarda DOIS motivos distintos: o de cancelamento
+                  e o da disputa (o #343 passou a gravar o da disputa no mesmo campo,
+                  como a rota /dispute já fazia). Rotular sempre como "cancelamento"
+                  fazia a tela dizer "Motivo do cancelamento" numa reserva marcada
+                  "Em disputa". O painel do admin já distinguia; esta tela não. */}
               {booking.cancelReason && (
                 <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm">
-                  <p className="mb-1 font-semibold text-red-700">Motivo do cancelamento:</p>
+                  <p className="mb-1 font-semibold text-red-700">
+                    {booking.status === "DISPUTED" ? "Motivo da disputa:" : "Motivo do cancelamento:"}
+                  </p>
                   <p className="text-red-600">{booking.cancelReason}</p>
                 </div>
               )}

@@ -472,6 +472,7 @@ async function runBooking(
   }
 
   // Devolução + confirmação → COMPLETED
+  await borrower.http.uploadFotoDevolucao(bookingId)
   await act(borrower, { action: "mark_returned" })
   await act(owner, { action: "confirm_return" })
 

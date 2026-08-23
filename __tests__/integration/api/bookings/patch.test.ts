@@ -29,6 +29,10 @@ const mockBookingUpdateMany = jest.fn().mockResolvedValue({ count: 1 }) // mark_
 const mockBookingFindUniqueOrThrow = jest.fn()
 const mockBookingItemFindFirst = jest.fn().mockResolvedValue(null) // Story B: disponibilidade via booking_items, sem conflito
 const mockNotificationCreate = jest.fn()
+// Foto de devolução: `mark_returned` conta as fotos CHECKOUT e recusa quando é 0.
+// Padrão 1 (foto enviada) para não reescrever os testes que só atravessam o ciclo;
+// o teste do guard zera explicitamente.
+const mockBookingPhotoCount  = jest.fn()
 
 // S14-A-05/A-06: `confirm` roda dentro de prisma.$transaction (tx.booking.findFirst + update);
 // `mark_active` usa booking.updateMany (compare-and-swap) + findUniqueOrThrow.
@@ -49,6 +53,9 @@ jest.mock("@/lib/prisma", () => {
       bookingItem,
       notification: {
         create: (...args: unknown[]) => mockNotificationCreate(...args),
+      },
+      bookingPhoto: {
+        count: (...args: unknown[]) => mockBookingPhotoCount(...args),
       },
       ownerPaymentAccount: {
         findUnique: jest.fn().mockResolvedValue(null), // sem conta PIX → pula criação de payout
@@ -169,6 +176,7 @@ function makeUpdatedBooking(status: string) {
 beforeEach(() => {
   jest.clearAllMocks()
   mockNotificationCreate.mockResolvedValue({})
+  mockBookingPhotoCount.mockResolvedValue(1)
 })
 
 // ---------------------------------------------------------------------------
@@ -362,6 +370,41 @@ describe("PATCH /api/bookings/[id]", () => {
 
       expect(res.status).toBe(200)
       expect(body.data.status).toBe("RETURNED")
+    })
+
+    // 5b. Guard da foto de devolução (decisão do fundador, 2026-08-23).
+    //
+    // A regressão que isto trava: o checklist pedia 3 de 4 itens e tratava a foto
+    // como "recomendado", então dava para atestar "item limpo e no estado
+    // recebido" e, em seguida, abrir disputa dizendo que não funciona — sem uma
+    // única imagem para arbitrar. Uma locação fechou assim em staging com ZERO
+    // fotos. O guard fica na API porque o app mobile e chamadas diretas passam
+    // pelo mesmo ponto; travar só no ReturnChecklist não cobriria nenhum dos dois.
+    it("ACTIVE + mark_returned sem foto de devolução → 422 RETURN_PHOTO_REQUIRED", async () => {
+      mockAuth.mockResolvedValue(makeSession(BORROWER_ID))
+      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "ACTIVE" }))
+      mockBookingPhotoCount.mockResolvedValue(0)
+
+      const res  = await PATCH(makeReq({ action: "mark_returned" }), makeParams())
+      const body = await res.json() as { error: { code: string } }
+
+      expect(res.status).toBe(422)
+      expect(body.error.code).toBe("RETURN_PHOTO_REQUIRED")
+      // A transição NÃO pode ter acontecido.
+      expect(mockBookingUpdate).not.toHaveBeenCalled()
+    })
+
+    it("mark_returned conta apenas fotos da fase CHECKOUT", async () => {
+      mockAuth.mockResolvedValue(makeSession(BORROWER_ID))
+      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "ACTIVE" }))
+      mockBookingUpdate.mockResolvedValue(makeUpdatedBooking("RETURNED"))
+
+      await PATCH(makeReq({ action: "mark_returned" }), makeParams())
+
+      // Sem o filtro de fase, uma foto de RETIRADA liberaria a devolução.
+      expect(mockBookingPhotoCount).toHaveBeenCalledWith(
+        expect.objectContaining({ where: expect.objectContaining({ phase: "CHECKOUT" }) }),
+      )
     })
 
     // 6. ACTIVE + open_dispute (borrower, com reason) → 200, status DISPUTED

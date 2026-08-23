@@ -29,6 +29,7 @@ import fs from 'fs'
 import { test, expect } from '@playwright/test'
 import { SESSION_PATHS, FIXTURE_LOCATARIO } from './fixtures/test-credentials'
 import { TEST_ITEM_PATH } from './fixtures/test-paths'
+import { enviarFotoDevolucao } from './_support'
 
 const hasSessions =
   fs.existsSync(SESSION_PATHS.locatario) &&
@@ -96,6 +97,7 @@ test.describe('smoke #29 — Review após COMPLETED: guards, roles e auto-comple
     const { data: tokenData } = await tokenRes.json() as { data: { pickupToken: string | null } }
     expect(tokenData.pickupToken, 'pickupToken deve existir após confirm').toBeTruthy()
     await prop.request.patch(`${BASE}/api/bookings/${bk.id}`, { data: { action: 'mark_active', pickupToken: tokenData.pickupToken } })
+    await enviarFotoDevolucao(loc.request, bk.id, BASE)
     await loc.request.patch(`${BASE}/api/bookings/${bk.id}`, { data: { action: 'mark_returned' } })
     console.log(`  Booking avançado para RETURNED`)
 

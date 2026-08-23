@@ -1,6 +1,6 @@
 // APENAS imports de tipo: este módulo precisa carregar sob o jest, que não
 // consegue instanciar o runtime do Playwright. Helper de UI vai em `_ui.ts`.
-import type { APIResponse } from '@playwright/test'
+import type { APIResponse, APIRequestContext } from '@playwright/test'
 
 export interface PlanStepLike {
   name:   string
@@ -66,4 +66,37 @@ export async function apiWithRetry(
     res = await fn()
   }
   return res
+}
+/**
+ * PNG 1×1 válido — precisa ser um PNG de verdade porque
+ * `/api/bookings/[id]/photos` confere os magic bytes do arquivo, não só o MIME.
+ */
+const PNG_1X1 = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+  'base64',
+)
+
+/**
+ * enviarFotoDevolucao — sobe a foto de CHECKOUT exigida antes de `mark_returned`.
+ *
+ * Desde 2026-08-23 a API recusa `mark_returned` com 422 RETURN_PHOTO_REQUIRED
+ * quando a reserva não tem nenhuma foto de devolução (decisão do fundador: sem
+ * foto, uma disputa aberta depois da devolução não tem como ser arbitrada).
+ * Os specs que só querem ATRAVESSAR o ciclo até RETURNED chamam isto antes.
+ *
+ * Precisa ser o LOCATÁRIO (ou o proprietário) — a rota exige participante.
+ */
+export async function enviarFotoDevolucao(
+  request:   APIRequestContext,
+  bookingId: string,
+  /** Alguns specs montam URL absoluta a partir de BASE — passe-a aqui. */
+  base = '',
+): Promise<APIResponse> {
+  return request.post(`${base}/api/bookings/${bookingId}/photos`, {
+    multipart: {
+      bookingId,
+      phase: 'CHECKOUT',
+      file:  { name: 'devolucao.png', mimeType: 'image/png', buffer: PNG_1X1 },
+    },
+  })
 }

@@ -423,6 +423,7 @@ async function runBooking(
   }
 
   // ── COMPLETED / LATE_RETURN → completa o ciclo ───────────────────────────
+  await borrowerHttp.uploadFotoDevolucao(bookingId)
   await actBorrower({ action: "mark_returned" })
   await actOwner({ action: "confirm_return" })
 
