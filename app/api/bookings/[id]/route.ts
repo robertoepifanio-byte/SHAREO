@@ -188,6 +188,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       select: {
         id: true, status: true, borrowerId: true, ownerId: true,
         itemId: true, startDate: true, endDate: true, totalPrice: true, totalDays: true,
+        paymentStatus: true,
         pickupToken: true, pickupTokenUsedAt: true,
         bookingItems: { select: { itemId: true } }, // Story B — revalidar todos os itens no confirm
         item:     { select: { title: true } },
@@ -271,20 +272,28 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       data.cancelledById = userId
       data.cancelReason  = reason
 
-      // Calcula o reembolso com base na política de cancelamento do ShareO
-      const cancelConfig = await getCancellationConfig()
-      const refund = calcRefund(
-        new Date(booking.startDate),
-        now,
-        booking.totalPrice,
-        cancelConfig,
-      )
-      data.refundAmount  = refund.refundAmount
-      data.refundPercent = refund.refundPercent
-      // O motivo do reembolso é registrado internamente — não é exposto ao usuário via API
-      console.warn(
-        `[booking.cancel] id=${id} refundPercent=${refund.refundPercent} refundAmount=${refund.refundAmount} reason="${refund.reason}"`,
-      )
+      // 🪤 Só há reembolso se houve pagamento. Antes, cancelar uma reserva NUNCA
+      // PAGA gravava refundAmount > 0 — um valor a devolver que ninguém pagou.
+      // Como o estorno hoje é executado à mão no painel da Stripe, esse número
+      // ia parar na fila de trabalho de uma pessoa como se fosse real.
+      if (booking.paymentStatus === "PAID") {
+        const cancelConfig = await getCancellationConfig()
+        const refund = calcRefund(
+          new Date(booking.startDate),
+          now,
+          booking.totalPrice,
+          cancelConfig,
+        )
+        data.refundAmount  = refund.refundAmount
+        data.refundPercent = refund.refundPercent
+        // O motivo do reembolso é registrado internamente — não é exposto ao usuário via API
+        console.warn(
+          `[booking.cancel] id=${id} refundPercent=${refund.refundPercent} refundAmount=${refund.refundAmount} reason="${refund.reason}"`,
+        )
+      } else {
+        data.refundAmount  = 0
+        data.refundPercent = 0
+      }
     }
 
     // 🪤 O motivo da disputa era EXIGIDO (TRANSITIONS.requiresReason) e depois
@@ -329,6 +338,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       }
       data.activatedAt      = effectiveTime
       data.pickupTokenUsedAt = effectiveTime
+      // 🪤 O `endDate` passa a contar da retirada REAL — o locatário tem os N
+      // dias contratados a partir de quando recebeu o item. Mas o `startDate`
+      // ficava na data reservada: retirada antecipada produzia início DEPOIS do
+      // fim, e a lista do locatário exibia o período invertido.
+      // Depois de ativada, a locação é [retirada real, retirada + N dias].
+      data.startDate         = effectiveTime
       data.endDate           = new Date(effectiveTime.getTime() + booking.totalDays * 24 * 60 * 60 * 1000)
     }
 

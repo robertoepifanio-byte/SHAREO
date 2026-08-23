@@ -126,6 +126,8 @@ function makeBooking(overrides: {
   borrowerId?: string
   /** Rua do proprietário — `null` simula quem ainda não cadastrou endereço. */
   ownerStreet?: string | null
+  /** Reservas de teste nascem NÃO pagas, como no fluxo real. */
+  paymentStatus?: string
 }) {
   return {
     id:          BOOKING_ID,
@@ -135,6 +137,8 @@ function makeBooking(overrides: {
     startDate:   new Date("2026-06-10T00:00:00Z"),
     endDate:     new Date("2026-06-15T00:00:00Z"),
     totalPrice:  300,
+    totalDays:   2,
+    paymentStatus: overrides.paymentStatus ?? "PENDING",
     bookingItems: [{ itemId: "item-id-004" }], // Story B — confirm revalida todos os itens
     item:        { title: "Furadeira Bosch" },
     borrower:    { email: "borrower@ex.com", name: "Locatário Teste" },
@@ -228,6 +232,63 @@ describe("PATCH /api/bookings/[id]", () => {
 
       const res = await PATCH(makeReq({ action: "cancel", reason: "Item indisponível" }), makeParams())
       expect(res.status).toBe(200)
+    })
+
+    /**
+     * 🪤 Cancelar uma reserva NUNCA PAGA gravava `refundAmount > 0` — um valor a
+     * devolver que ninguém pagou. Como o estorno é executado à mão no painel da
+     * Stripe, esse número ia parar na fila de trabalho de uma pessoa como se
+     * fosse real. Achado do painel de dois atores, 22/08/2026.
+     */
+    it("cancelar reserva NÃO paga não registra reembolso", async () => {
+      mockAuth.mockResolvedValue(makeSession(BORROWER_ID))
+      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "CONFIRMED", paymentStatus: "PENDING" }))
+      mockBookingUpdate.mockResolvedValue(makeUpdatedBooking("CANCELLED"))
+
+      await PATCH(makeReq({ action: "cancel", reason: "Mudei de ideia" }), makeParams())
+
+      expect(mockBookingUpdate).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ refundAmount: 0, refundPercent: 0 }),
+      }))
+    })
+
+    it("cancelar reserva PAGA continua calculando o reembolso pela política", async () => {
+      mockAuth.mockResolvedValue(makeSession(BORROWER_ID))
+      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "CONFIRMED", paymentStatus: "PAID" }))
+      mockBookingUpdate.mockResolvedValue(makeUpdatedBooking("CANCELLED"))
+
+      await PATCH(makeReq({ action: "cancel", reason: "Mudei de ideia" }), makeParams())
+
+      // calcRefund está mockado devolvendo 100/100 no topo do arquivo.
+      expect(mockBookingUpdate).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ refundAmount: 100, refundPercent: 100 }),
+      }))
+    })
+
+    /**
+     * 🪤 `mark_active` recalculava o `endDate` a partir da retirada real mas
+     * deixava o `startDate` na data reservada. Retirada antecipada produzia
+     * início DEPOIS do fim, e a lista do locatário exibia o período invertido.
+     */
+    it("mark_active deixa o período coerente — início na retirada real, não depois do fim", async () => {
+      mockAuth.mockResolvedValue(makeSession(OWNER_ID))
+      mockBookingFindUnique.mockResolvedValue({
+        ...makeBooking({ status: "CONFIRMED" }),
+        pickupToken:       "123456",
+        pickupTokenUsedAt: null,
+      })
+      mockBookingFindUniqueOrThrow.mockResolvedValue(makeUpdatedBooking("ACTIVE"))
+
+      // Reserva marcada para 10/06; retirada acontece ANTES, em 01/06.
+      const retirada = "2026-06-01T14:00:00.000Z"
+      await PATCH(
+        makeReq({ action: "mark_active", pickupToken: "123456", actualTime: retirada }),
+        makeParams(),
+      )
+
+      const data = mockBookingUpdateMany.mock.calls[0][0].data as { startDate: Date; endDate: Date }
+      expect(data.startDate.toISOString()).toBe(retirada)
+      expect(data.endDate.getTime()).toBeGreaterThan(data.startDate.getTime())
     })
 
     // Story B / ARQ-CRIT-01 — confirm revalida TODOS os itens da locação:
