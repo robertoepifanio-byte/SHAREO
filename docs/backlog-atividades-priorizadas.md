@@ -8,6 +8,37 @@
 
 ---
 
+## 🔎 Painel de dois atores — achados da sessão de 2026-08-23 (locação viva no staging)
+
+> Origem: o fundador percorreu o ciclo completo de locação no staging como locador (Carlos) e locatária (Joana). Cada item abaixo foi **verificado no código E no banco**, não inferido.
+
+### ✅ Resolvidos nesta sessão
+
+| Achado | Evidência | Onde ficou o conserto |
+|---|---|---|
+| **Devolução sem foto, disputa sem prova.** A locatária marcou "item limpo e no estado recebido", devolveu e abriu disputa dizendo que não funciona. A reserva percorreu o ciclo com **zero fotos** — nada para o time de mediação arbitrar. | `bookingPhoto` = 0 na reserva `cmt5vrlvt…`; `MIN_CHECKED = 3` de 4 itens, e o upload era opcional — apesar de `ReturnChecklist.tsx:6` já dizer "+ upload de foto" | `mark_returned` → 422 `RETURN_PHOTO_REQUIRED` (API, não só a tela). Decisão do fundador, 23/08 |
+| **Retirada sem contrato assinado.** O portão do aceite existia só na criação da reserva; `mark_active` nunca lia `contractSignedAt`. | `activatedAt` 14:15:24 · `contractSignedAt` 14:18:14 — assinou 3 min **depois** de estar com o item | `mark_active` → 422 `CONTRACT_NOT_SIGNED`, **atrelado à mesma flag** `rentalContractAcceptanceEnabled`. Com ela OFF (padrão, gated D4) nada muda |
+| **Disputa resolvida a favor do proprietário nunca pagava.** `resolve_completed` leva ao mesmo estado terminal que `confirm_return` (COMPLETED), mas não criava `Payout`. Sem erro, sem log, sem registro. | `admin/disputes/[id]/route.ts` alterava só `status`; o bloco FIN-3.3 do repasse vivia dentro do `confirm_return` | Repasse extraído para `lib/payout.ts` e chamado nos **dois** caminhos. Não é política nova — é aplicar no caminho da disputa a regra que já valia fora dela |
+| **Repasse sumia em silêncio sem conta de recebimento.** `if (ownerAccount && …)` sem `else`: a reserva concluía, o dinheiro ficava com a plataforma e nada registrava que um repasse deixou de existir. | mesmo bloco FIN-3.3 | Aviso estruturado em `lib/payout.ts`. **Não resolve o caso** — só tira do escuro. Notificar o proprietário exigiria um valor novo no enum `NotificationType` (migração) |
+| **Disputa a favor do locatário não registrava estorno.** `resolve_cancelled` terminava em CANCELLED sem gravar `refundAmount` — e o estorno é executado à mão no painel da Stripe, então não havia o que executar. | `admin/disputes/[id]/route.ts` alterava só `status` e `cancelReason` | Grava estorno **INTEGRAL**, de propósito SEM `calcRefund`: a escada (100/70/50%) pune quem desiste em cima da hora, mas em disputa a demora é da mediação e o caso só existe depois da retirada — daria 50% a quem acabou de ganhar. Decisão do fundador, 23/08. Só grava se `paymentStatus = PAID` |
+| **"Motivo do cancelamento" numa reserva "Em disputa".** O #343 passou a gravar o motivo da disputa em `cancelReason`; a tela rotulava sempre como cancelamento. | print da reserva `DISPUTED` com o rótulo errado | Rótulo passa a seguir o `status`, na web e no app. O painel do admin já distinguia |
+
+### 🟠 Abertos — dependem de decisão, não de código
+
+| ID | Achado | Por que não implementei |
+|---|---|---|
+| **ATOR-02** | `mark_active` não confere pagamento. Item pode ser retirado sem a reserva estar `PAID`. | Não dá para consertar antes de decidir **como o E2E paga**: a suíte não tem caminho de pagamento (`x-e2e-token` é só bypass de rate limit), então todo spec vai de `confirm` direto para `mark_active`. Um guard aqui quebra a suíte inteira sem alternativa. |
+| **ATOR-03** | Extensão de prazo aprovada **não cobra nada**. O locatário fica mais dias sem pagamento adicional. | Produto: define preço da extensão, se cobra no ato ou no fim, e o que acontece se falhar. |
+| **ATOR-04** | Notificação de extensão usa o tipo `BOOKING_CONFIRMED`. | Corrigir exige valor novo no enum `NotificationType` — migração, que não rodo sem o fundador presente. |
+
+### 🧹 Higiene de ambiente
+
+- **Lixo de E2E se acumula sem limite.** Em 23/08 o staging tinha **183 itens + 186 reservas** de teste (179 `COMPLETED`), afogando as reservas reais na lista do usuário. Limpo por `scripts/limpar-lixo-teste-staging.ts` (modo seco por padrão, aborta se algum registro financeiro depender do alvo). **A causa não foi resolvida:** os specs não limpam o que criam, então volta a acumular a cada rodada.
+- **Período invertido confirmado ao vivo.** Reservas criadas antes do deploy do #345 têm `2028-02-27 → 2026-08-24`; as criadas depois saem corretas. As ~177 antigas **não se autocorrigem**.
+- **Atributo Hidden do Windows** em 5 specs e 3 scripts bloqueava escrita com EPERM. Limpo — são fontes versionados comuns e o Git não rastreia o atributo.
+
+---
+
 ## 🧭 Avaliação multi-perfil da plataforma (2026-08-19) — pendências registradas
 
 > Origem: [`avaliacao-plataforma-multiperfil-2026-08.md`](avaliacao-plataforma-multiperfil-2026-08.md) — jornada viva no staging (telas públicas) + auditoria de 5 especialistas (negócio, segurança/LGPD, QA, UI/UX, arquitetura). Achados **verificados por arquivo:linha** ou pela jornada viva; onde há inferência, está marcado.

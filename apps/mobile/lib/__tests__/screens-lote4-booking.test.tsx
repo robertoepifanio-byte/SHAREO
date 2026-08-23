@@ -419,14 +419,26 @@ describe("ReturnChecklist — 4 checkboxes verbatim (ReturnChecklist.tsx linhas 
     )
   })
 
-  it("instrução min 3 itens — verbatim linha 1045", async () => {
+  it("instrução do checklist exige os 3 itens E a foto — verbatim do ReturnChecklist.tsx", async () => {
     wrap(<BookingDetailScreen />)
     await waitForBookingLoad("Em andamento")
     await waitFor(() =>
       expect(screen.getByText(
-        /Marque pelo menos 3 de 4 itens para iniciar a devolução/
+        /Marque pelo menos 3 de 4 itens e envie uma foto do estado do item para iniciar a devolução/
       )).toBeTruthy()
     )
+  })
+
+  // A foto virou obrigatória em 2026-08-23 (decisão do fundador): sem ela a API
+  // responde 422 RETURN_PHOTO_REQUIRED. O rótulo tem que dizer isso, senão o
+  // locatário marca 3 itens, aperta "Devolver" e leva um erro sem explicação.
+  it("rótulo da foto diz obrigatória, não recomendado", async () => {
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Em andamento")
+    await waitFor(() =>
+      expect(screen.getByText(/\(obrigatória\)/)).toBeTruthy()
+    )
+    expect(screen.queryByText(/\(recomendado\)/)).toBeNull()
   })
 })
 

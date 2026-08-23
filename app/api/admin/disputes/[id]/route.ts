@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { criarPayoutDaReserva } from "@/lib/payout"
 import { z } from "zod"
 
 type Params = { params: Promise<{ id: string }> }
@@ -33,7 +34,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     const booking = await prisma.booking.findUnique({
       where:  { id },
-      select: { id: true, status: true, borrowerId: true, ownerId: true, item: { select: { title: true } } },
+      select: {
+        id: true, status: true, borrowerId: true, ownerId: true,
+        // Necessários para o desfecho financeiro da disputa — ver abaixo.
+        ownerNetAmount: true, totalPrice: true, paymentStatus: true,
+        item: { select: { title: true } },
+      },
     })
 
     if (!booking) {
@@ -62,6 +68,20 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           cancelledAt:   new Date(),
           cancelledById: adminId,
           cancelReason:  adminNote ?? "Resolvido pelo administrador.",
+          // 🪤 Estorno da disputa: INTEGRAL, e de propósito NÃO usa calcRefund.
+          //
+          // A escada do cancelamento (100% / 70% / 50% conforme a proximidade da
+          // retirada) pune quem desiste em cima da hora. Em disputa a demora é do
+          // processo de mediação, não do locatário — e a disputa só existe depois
+          // da retirada, então a escada quase sempre cairia em 50%. Dar 50% a
+          // quem o admin acabou de dar razão é indefensável.
+          // Decisão do fundador, 2026-08-23.
+          //
+          // Só grava se o dinheiro entrou: valor a devolver numa reserva nunca
+          // paga vira trabalho real na fila de alguém (mesma regra do #345).
+          ...(booking.paymentStatus === "PAID"
+            ? { refundAmount: booking.totalPrice, refundPercent: 100 }
+            : { refundAmount: 0, refundPercent: 0 }),
         }),
         ...(nextStatus === "COMPLETED" && adminNote && {
           ownerNote: adminNote,
@@ -69,6 +89,24 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       },
       select: { id: true, status: true, updatedAt: true },
     })
+
+    // 🪤 Desfecho FINANCEIRO da disputa — não existia.
+    //
+    // `resolve_completed` leva a reserva ao MESMO estado terminal que o
+    // `confirm_return` (COMPLETED), mas não criava repasse nenhum: o
+    // proprietário ganhava a disputa e nunca recebia, sem nada no banco
+    // registrando que um repasse deixou de existir. Isto aplica aqui a mesma
+    // regra que já valia no caminho sem disputa — não é política nova.
+    if (nextStatus === "COMPLETED") {
+      const r = await criarPayoutDaReserva(id, booking.ownerId, booking.ownerNetAmount, "resolve_completed")
+        .catch((e) => {
+          console.error("[disputa] criarPayoutDaReserva:", e instanceof Error ? e.message : e)
+          return null
+        })
+      if (r && !r.criado) {
+        console.warn(`[disputa] id=${id} resolvida a favor do proprietário SEM repasse — motivo=${r.motivo}`)
+      }
+    }
 
     after(() =>
       prisma.adminLog.create({

@@ -102,6 +102,37 @@ export class HttpClient {
     }
   }
 
+  /**
+   * Sobe a foto de devolução (fase CHECKOUT) exigida antes de `mark_returned`.
+   *
+   * Desde 2026-08-23 a API responde 422 RETURN_PHOTO_REQUIRED quando a reserva
+   * não tem nenhuma foto de devolução. Sem isto, TODO script de simulação para
+   * no meio do ciclo — inclusive o robô diário, e em silêncio, porque ele só
+   * registra o status e segue.
+   *
+   * O PNG precisa ser válido de verdade: a rota confere os magic bytes.
+   */
+  async uploadFotoDevolucao(bookingId: string) {
+    const png = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+      "base64",
+    )
+    const fd = new FormData()
+    fd.append("bookingId", bookingId)
+    fd.append("phase", "CHECKOUT")
+    fd.append("file", new Blob([png], { type: "image/png" }), "devolucao.png")
+
+    // Sem content-type manual: o fetch monta o boundary do multipart sozinho.
+    const res = await fetch(`${this.baseUrl}/api/bookings/${bookingId}/photos`, {
+      method:  "POST",
+      headers: this.headers(),
+      body:    fd,
+      redirect: "manual",
+    })
+    this.absorb(res)
+    return { status: res.status, ok: res.ok }
+  }
+
   /** Login por NextAuth credentials — guarda o cookie de sessão no jar. */
   async login(email: string, password: string): Promise<boolean> {
     const csrfRes = await fetch(this.baseUrl + "/api/auth/csrf", {

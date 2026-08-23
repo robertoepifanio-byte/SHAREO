@@ -30,11 +30,16 @@ export function ReturnChecklist({ bookingId }: Props) {
   const [checked, setChecked] = useState<boolean[]>(Array(CHECKLIST_ITEMS.length).fill(false))
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const photoUploadedRef = useRef(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const checkedCount = checked.filter(Boolean).length
-  const canConfirm   = checkedCount >= MIN_CHECKED
+  // A foto entra na condição, e não só no texto: sem ela a API responde 422
+  // RETURN_PHOTO_REQUIRED. O botão habilitado sem foto prometia algo que o
+  // servidor recusa.
+  const temFoto      = photoFile !== null
+  const canConfirm   = checkedCount >= MIN_CHECKED && temFoto
 
   function toggle(index: number) {
     setChecked((prev) => {
@@ -47,6 +52,9 @@ export function ReturnChecklist({ bookingId }: Props) {
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
+    // Foto nova = upload novo; sem isto, trocar a imagem depois de uma falha
+    // mandaria o mark_returned com a foto ANTIGA no bucket.
+    photoUploadedRef.current = false
     setPhotoFile(file)
     const url = URL.createObjectURL(file)
     setPhotoPreview(url)
@@ -56,8 +64,13 @@ export function ReturnChecklist({ bookingId }: Props) {
     setError(null)
     setLoading(true)
     try {
-      // Upload de foto (opcional — mas incentivado pelo checklist item 4)
-      if (photoFile) {
+      // Upload de foto — obrigatório. Vai ANTES do mark_returned porque é o
+      // registro dela que faz a transição passar no guard da API.
+      //
+      // `photoUploadedRef` evita duplicar: se o mark_returned falhar (rede,
+      // 429) e o usuário clicar de novo, a foto já está no bucket — subir outra
+      // só acumularia lixo no storage.
+      if (photoFile && !photoUploadedRef.current) {
         const formData = new FormData()
         formData.append("file", photoFile)
         formData.append("bookingId", bookingId)
@@ -71,6 +84,7 @@ export function ReturnChecklist({ bookingId }: Props) {
           const json = await uploadRes.json().catch(() => ({}))
           throw new Error(json?.error?.message ?? "Erro ao enviar foto.")
         }
+        photoUploadedRef.current = true
       }
 
       // Transição de status para RETURNED
@@ -105,8 +119,9 @@ export function ReturnChecklist({ bookingId }: Props) {
         Checklist de devolução
       </h2>
       <p className="mb-4 text-xs text-muted-foreground">
-        Marque pelo menos {MIN_CHECKED} de {CHECKLIST_ITEMS.length} itens para iniciar a devolução.
-        Depois disso, o locador confirma o recebimento para concluir a locação.
+        Marque pelo menos {MIN_CHECKED} de {CHECKLIST_ITEMS.length} itens e envie uma foto do estado
+        do item para iniciar a devolução. Depois disso, o locador confirma o recebimento para
+        concluir a locação.
       </p>
 
       {/* Itens do checklist */}
@@ -178,7 +193,8 @@ export function ReturnChecklist({ bookingId }: Props) {
       <div className="mb-5">
         <p className="mb-2 text-xs font-semibold text-foreground">
           Foto do estado atual
-          <span className="ml-1 font-normal text-muted-foreground">(recomendado)</span>
+          <span className="ml-1 text-destructive">*</span>
+          <span className="ml-1 font-normal text-muted-foreground">(obrigatória)</span>
         </p>
 
         <input
@@ -202,7 +218,7 @@ export function ReturnChecklist({ bookingId }: Props) {
             />
             <button
               type="button"
-              onClick={() => { setPhotoPreview(null); setPhotoFile(null) }}
+              onClick={() => { setPhotoPreview(null); setPhotoFile(null); photoUploadedRef.current = false }}
               className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-destructive text-white shadow-md hover:bg-destructive-hover transition-colors"
               aria-label="Remover foto"
             >
@@ -267,7 +283,11 @@ export function ReturnChecklist({ bookingId }: Props) {
         </p>
       ) : (
         <p className="mt-2 text-center text-xs text-muted-foreground" role="note">
-          Marque pelo menos {MIN_CHECKED} itens para habilitar a devolução.
+          {/* Diz o que FALTA, não a regra inteira: com o checklist já completo,
+              repetir "marque N itens" mandava o locatário procurar no lugar errado. */}
+          {checkedCount < MIN_CHECKED
+            ? `Marque pelo menos ${MIN_CHECKED} itens para habilitar a devolução.`
+            : "Envie uma foto do estado do item para habilitar a devolução."}
         </p>
       )}
     </section>

@@ -26,7 +26,7 @@
 import fs from 'fs'
 import { test, expect } from '@playwright/test'
 import { SESSION_PATHS } from './fixtures/test-credentials'
-import { apiWithRetry } from './_support'
+import { apiWithRetry, enviarFotoDevolucao } from './_support'
 
 // ---------------------------------------------------------------------------
 // Pré-condições de skip
@@ -174,8 +174,19 @@ test.describe('smoke #36 — fluxo de devolução: Devolução em Andamento → 
         expect((body as { error?: { code?: string } }).error?.code).toBe('INVALID_TRANSITION')
       })
 
+      // ── Guard: devolução sem foto é recusada (decisão do fundador, 23/08) ──
+      await test.step('guard: mark_returned sem foto → 422 RETURN_PHOTO_REQUIRED', async () => {
+        const res  = await loc.request.patch(`/api/bookings/${bookingId!}`, { data: { action: 'mark_returned' } })
+        const body = await res.json().catch(() => ({}))
+        expect(res.status(), `esperava 422, veio ${res.status()}: ${JSON.stringify(body)}`).toBe(422)
+        expect((body as { error?: { code?: string } }).error?.code).toBe('RETURN_PHOTO_REQUIRED')
+      })
+
       // ── Locatário inicia a devolução → "Devolução em andamento" (RETURNED) ──
       await test.step('locatário mark_returned → 200, status RETURNED (Devolução em andamento)', async () => {
+        const foto = await enviarFotoDevolucao(loc.request, bookingId!)
+        expect(foto.ok(), `upload da foto de devolução falhou: ${foto.status()}`).toBeTruthy()
+
         const res  = await apiWithRetry(() =>
           loc.request.patch(`/api/bookings/${bookingId!}`, { data: { action: 'mark_returned' } })
         )

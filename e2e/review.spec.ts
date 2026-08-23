@@ -18,6 +18,7 @@ import fs from 'fs'
 import { test, expect } from '@playwright/test'
 import { SESSION_PATHS } from './fixtures/test-credentials'
 import { TEST_BOOKING_PATH } from './fixtures/test-paths'
+import { enviarFotoDevolucao } from './_support'
 
 const hasLocatarioSession    = fs.existsSync(SESSION_PATHS.locatario)
 const hasProprietarioSession = fs.existsSync(SESSION_PATHS.proprietario)
@@ -74,6 +75,7 @@ test.describe('smoke #6 — locatário: ACTIVE → RETURNED', () => {
 
   test('locatário marca booking como RETURNED (mark_returned)', async ({ page }) => {
     const id  = bookingId()
+    await enviarFotoDevolucao(page.request, id)
     const res = await page.request.patch(`/api/bookings/${id}`, {
       data: { action: 'mark_returned' },
     })

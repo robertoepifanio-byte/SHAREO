@@ -2,6 +2,7 @@ import fs from 'fs'
 import { test, expect, type Page } from '@playwright/test'
 import { SESSION_PATHS } from './fixtures/test-credentials'
 import { TEST_ITEM_PATH, TEST_BOOKING_PATH, TEST_LIFECYCLE_PATH } from './fixtures/test-paths'
+import { enviarFotoDevolucao } from './_support'
 
 const hasLocatarioSession    = fs.existsSync(SESSION_PATHS.locatario)
 const hasProprietarioSession = fs.existsSync(SESSION_PATHS.proprietario)
@@ -173,6 +174,7 @@ test.describe('smoke #6 — ciclo completo PENDING→CONFIRMED→ACTIVE→RETURN
       console.log(`  ACTIVE ✅`)
 
       // — RETURNED: locatário marca devolução —
+      await enviarFotoDevolucao(loc.request, bookingId)
       const returnRes = await loc.request.patch(`/api/bookings/${bookingId}`, { data: { action: 'mark_returned' } })
       if (!returnRes.ok()) console.error(`  [mark_returned] ${returnRes.status()}:`, JSON.stringify(await returnRes.json().catch(() => ({}))))
       expect(returnRes.ok()).toBeTruthy()
