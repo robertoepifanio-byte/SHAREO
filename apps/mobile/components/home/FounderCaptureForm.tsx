@@ -247,7 +247,17 @@ export function FounderCaptureForm({
           utmCampaign:      campaign,
         }),
       })
-      if (res.status === 409) { setState("error-duplicate"); return }
+      // 409 = e-mail já cadastrado. A API devolve a posição na fila DENTRO do
+      // erro; aproveitamos para dizer QUAL é, em vez de um "você já está na
+      // lista" genérico que o usuário confunde com confirmação de novo cadastro.
+      if (res.status === 409) {
+        const dup = (await res.json().catch(() => null)) as
+          { error?: { data?: { queuePosition?: number } } } | null
+        // 0 = posição desconhecida (corpo inesperado); a UI omite o número.
+        setPosition(dup?.error?.data?.queuePosition ?? 0)
+        setState("error-duplicate")
+        return
+      }
       if (!res.ok)            { setState("error-network");   return }
       const json = (await res.json()) as { data: { queuePosition: number } }
       setPosition(json.data.queuePosition)
@@ -301,7 +311,11 @@ export function FounderCaptureForm({
     return (
       <View style={s.alertSuccess} accessibilityRole="alert">
         <Text style={s.alertSuccessText}>
-          Você já está na lista! Será um dos primeiros a saber quando abrirmos.
+          <Text style={s.alertStrong}>Este e-mail já estava na lista.</Text>
+          {"\n"}
+          {position > 0
+            ? `Você é o Nº ${position} da fila — não criamos um cadastro novo.`
+            : "Não criamos um cadastro novo. Você será avisado quando abrirmos."}
         </Text>
       </View>
     )
@@ -612,6 +626,8 @@ const s = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 12,
   },
   alertSuccessText: { fontSize: 14, color: "#59C686", textAlign: "center" },
+  // <strong> do site — o aviso tem duas frases e a primeira é a que importa.
+  alertStrong: { fontWeight: "600" },
   alertError: {
     borderRadius: 8, borderWidth: 1, borderColor: "rgba(248,113,113,0.30)",
     backgroundColor: "rgba(248,113,113,0.10)",
