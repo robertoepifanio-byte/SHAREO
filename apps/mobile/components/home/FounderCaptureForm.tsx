@@ -13,6 +13,7 @@ import {
   StyleSheet,
 } from "react-native"
 import Svg, { Path, Line, Polygon, Polyline } from "react-native-svg"
+import { router } from "expo-router"
 import { API_URL } from "@/lib/api"
 import { MARKETING_CONSENT_VERSION, MARKETING_CONSENT_TEXT } from "@/lib/legalConfig"
 import { maskCEP, maskPhone, phoneToE164, fetchAddressByCep } from "@/lib/forms"
@@ -581,7 +582,7 @@ export function FounderCaptureForm({
         {"Ao continuar você aceita as "}
         <Text
           style={s.footerLink}
-          onPress={() => Linking.openURL(`${API_URL}/politicas`)}
+          onPress={() => router.push("/politicas")}
           accessibilityRole="link"
         >
           políticas do Shareo

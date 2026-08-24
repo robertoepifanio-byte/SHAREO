@@ -16,7 +16,7 @@ import { render, screen } from "@testing-library/react"
 import fs from "node:fs"
 import path from "node:path"
 import { IdentificacaoPrestador } from "@/components/legal/IdentificacaoPrestador"
-import { LEGAL_ENTITY, CONSENT_VERSION, DPO_EMAIL, MARKETING_CONSENT_VERSION, MARKETING_CONSENT_TEXT } from "@/lib/legal-config"
+import { LEGAL_ENTITY, CONSENT_VERSION, DPO_EMAIL, PJ_DECLARATION_TEXT, MARKETING_CONSENT_VERSION, MARKETING_CONSENT_TEXT } from "@/lib/legal-config"
 
 const RAIZ = path.resolve(__dirname, "../../../..")
 const lerFonte = (arquivo: string) => fs.readFileSync(path.join(RAIZ, arquivo), "utf8")
@@ -113,6 +113,9 @@ describe("espelho do app", () => {
     ["endereço da sede", LEGAL_ENTITY.enderecoSede],
     ["versão dos Termos", CONSENT_VERSION],
     ["canal do DPO", DPO_EMAIL],
+    // Declaração sob as penas da lei (ADR-024) — registrada com data e IP.
+    // Divergir do site aqui é gravar prova de um texto que ninguém assinou.
+    ["declaração de vínculo PJ", PJ_DECLARATION_TEXT],
     // O app gravava CONSENT_VERSION ("v1.1") no lead sob um texto próprio, que
     // divergia do site — o lead ficava arquivado sob um texto que ninguém viu.
     ["versão do consentimento de marketing", MARKETING_CONSENT_VERSION],

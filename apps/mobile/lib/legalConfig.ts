@@ -48,3 +48,12 @@ export const MARKETING_CONSENT_TEXT =
 
 /** Espelha POLICY_UPDATED_AT de lib/legal-config.ts. */
 export const POLICY_UPDATED_AT = "junho de 2026"
+
+/**
+ * Espelha PJ_DECLARATION_TEXT de lib/legal-config.ts.
+ *
+ * Texto da declaração de vínculo exigida ao cadastrar uma Pessoa Jurídica (ADR-024 / M2).
+ * Alterar este texto no site exige bump de CONSENT_VERSION e atualização aqui.
+ */
+export const PJ_DECLARATION_TEXT =
+  "Declaro, sob as penas da lei (art. 299 do Código Penal — falsidade ideológica), que sou o(a) representante legal da pessoa jurídica do CNPJ informado, ou possuo poderes formais para representá-la perante a ShareO, e respondo pelos atos praticados nesta conta PJ. Reconheço que esta declaração é registrada com data, hora e endereço IP para fins de prova, conforme a Política de Privacidade."
