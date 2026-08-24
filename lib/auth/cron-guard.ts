@@ -13,8 +13,7 @@ import crypto      from "crypto"
 import { NextResponse } from "next/server"
 
 // M5 (SEC-MED): comparação em tempo constante — impede timing-attack ao tentar
-// adivinhar CRON_SECRET caractere a caractere. Paridade com verifySignature()
-// em app/api/mp/webhook/route.ts que já usa crypto.timingSafeEqual.
+// adivinhar CRON_SECRET caractere a caractere.
 function timingSafeStringEqual(a: string, b: string): boolean {
   const bufA = Buffer.from(a)
   const bufB = Buffer.from(b)

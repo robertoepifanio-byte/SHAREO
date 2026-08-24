@@ -150,8 +150,28 @@ O parecer jurídico e o RIPD foram escritos com o **Mercado Pago**, entidade **b
 
 Isso **não se resolve** trocando "Mercado Pago" por "Stripe" nos documentos. Precisa passar pelo jurídico (é matéria do D4). Atinge `docs/juridico/transferencia-internacional-dados.md`, `rascunho-ripd.md` e o item **C4** do checklist — todos ainda escritos na hipótese "operador no Brasil".
 
-### O código dormente do MP
+### O código dormente do MP — **decisão nº 6 REVOGADA**
 
-A decisão nº 6 deste ADR preservou OAuth, checkout e webhook do MP atrás da flag `mercadoPagoEnabled` (default OFF), para não perder o investimento caso fosse preciso reavaliar. Com o MP descartado, esse código passa a ser **peso morto**: superfície que ninguém exercita, que aparece em auditoria de dependências e que confunde quem lê o módulo financeiro.
+A decisão nº 6 deste ADR preservou OAuth, checkout e webhook do MP atrás da flag `mercadoPagoEnabled` (default OFF), para não perder o investimento caso fosse preciso reavaliar. Com o MP descartado isso virou peso morto, e **o fundador decidiu arrancar** (24/08/2026).
 
-**Não foi removido nesta atualização** — remover é mudança grande (schema, flag, rotas, testes) e merece decisão explícita, não efeito colateral de uma atualização de ADR. Fica registrado como pendência para o fundador decidir: manter dormente ou arrancar.
+**Removido do código:**
+
+| O quê | Onde |
+|---|---|
+| SDK | dependência `mercadopago` (package.json + lockfile) |
+| Integração | `lib/mercadopago.ts` |
+| Rotas | `/api/mp/oauth/callback`, `/api/mp/webhook`, `/api/payments/mp/checkout`, `/api/payments/mp/connect` |
+| UI web | `MpPayButton`, bloco "Receber pelo Mercado Pago" em `/perfil/recebimentos`, banner de retorno do OAuth (`?mp=`) |
+| UI app | mutation de checkout e botão "Pagar reserva" em `apps/mobile/app/reservas/[id].tsx` |
+| Config | flag `mercadoPagoEnabled` e `getMercadoPagoConfig()` |
+| Testes/scripts | `__tests__/integration/api/mp/`, `scripts/disable-mercadopago-staging.ts` |
+
+**Banco:** os campos também saíram, pela migração `20260824190000_remove_mercado_pago` — 9 colunas (`Booking.mpPreferenceId`/`mpPaymentId` e os 7 `mp*` de `OwnerPaymentAccount`), a tabela `mercado_pago_event_queue` e a linha `mercadoPagoEnabled` de `platform_configs`.
+
+É **destrutiva** e foi autorizada com escopo explícito, depois de conferir o que existia em staging: 1 reserva com preference/payment, 1 conta com tokens OAuth criptografados e 12 linhas na fila — tudo do sandbox, nenhuma transação real. Apagar os tokens de terceiro é também higiene de segurança: nenhum código restante conseguiria renová-los, revogá-los ou re-cifrá-los numa rotação de chave.
+
+🪤 Duas armadilhas que o ensaio pegou antes do merge: a tabela é `platform_configs` (plural, o `@@map` pluraliza) — no singular a migração aborta e o `migrate deploy` a marca como FALHADA, **travando todos os deploys seguintes**; e as migrations históricas do MP (`20260629…`, `20260630…`) ficam **intocadas**, porque o Prisma guarda checksum por migração e editá-las quebraria `migrate deploy` em todo ambiente que já as aplicou.
+
+🪤 **Consequência para o app:** o botão "Pagar reserva" chamava a rota do MP e virou um atalho para pagar no site. Na prática nada regrediu — com a flag desligada ele já só produzia "pagamento indisponível".
+
+E o caminho de pagamento do app **já estava quebrado na volta antes desta remoção**: a rota do MP mandava `back_urls` para `shareo://pagamento/sucesso`, mas não existe rota `pagamento` em `apps/mobile/app/` nem nenhum listener de deep-link no app inteiro — o retorno cairia no not-found. Portar o checkout Stripe (PSP-03) tem, portanto, uma perna barata (trocar `auth()` por `resolveUserId`, padrão já pronto em `/api/payments/stripe/connect`) e uma cara, que é o retorno — `success_url` da Stripe é http(s) e não aceita scheme customizado, então precisa de página-ponte no site ou `openAuthSessionAsync`. Isso é trabalho novo, não paridade.

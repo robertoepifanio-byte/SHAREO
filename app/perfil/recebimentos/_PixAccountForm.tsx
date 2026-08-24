@@ -8,8 +8,8 @@ type PixAccountStatus = "PENDING_VERIFICATION" | "VERIFIED" | "REJECTED"
 
 interface ExistingAccount {
   id: string
-  // Nullable desde o desacoplamento PIX/MP: locadores que conectaram o Mercado Pago
-  // sem ter PIX pré-cadastrado terão estes campos nulos até preencherem o formulário.
+  // Nullable desde o desacoplamento PIX/PSP: a conta de recebimento pode existir
+  // sem PIX pré-cadastrado, e aí estes campos ficam nulos até o formulário ser preenchido.
   pixKeyType: PixKeyType | null
   pixKey: string | null
   holderName: string | null

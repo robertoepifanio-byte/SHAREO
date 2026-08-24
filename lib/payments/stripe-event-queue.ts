@@ -12,8 +12,7 @@
  *     consertar uma falha transitória.
  *   - erro no handler ⇒ 500, porque é assim que se pede retry à Stripe.
  *
- * NÃO cobre o webhook do Mercado Pago (app/api/mp/webhook/route.ts): tabela
- * diferente (`MercadoPagoEventQueue`) e semântica de retry própria.
+ * Cobre os dois webhooks da Stripe: pagamento e Connect.
  */
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"

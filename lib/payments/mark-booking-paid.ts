@@ -22,11 +22,9 @@ import { processAmbassadorOnBookingPaid } from "@/lib/ambassador"
  */
 export async function markRentalPaid({
   bookingId,
-  mpPaymentId,
   stripePaymentIntentId,
 }: {
   bookingId:              string
-  mpPaymentId?:           string
   stripePaymentIntentId?: string | null
 }): Promise<void> {
   const current = await prisma.booking.findUnique({
@@ -50,9 +48,7 @@ export async function markRentalPaid({
       paymentStatus: "PAID",
       paidAt:        new Date(),
       pickupToken,
-      // Prisma trata `undefined` como "não mexe na coluna" — cada PSP passa
-      // só o seu id e o do outro fica intocado, sem spread condicional.
-      mpPaymentId,
+      // Prisma trata `undefined` como "não mexe na coluna".
       stripePaymentIntentId: stripePaymentIntentId ?? undefined,
     },
     select: { ownerId: true, item: { select: { title: true } } },

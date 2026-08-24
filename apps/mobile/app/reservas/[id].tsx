@@ -1,11 +1,11 @@
 // Fonte: app/reservas/[id]/page.tsx + app/reservas/[id]/_BookingActions.tsx
 //        + lib/bookingHistory.ts
-// Detalhe da reserva: status, histórico de eventos, datas, valores, pagamento MP,
+// Detalhe da reserva: status, histórico de eventos, datas, valores,
 // token de retirada, avisos de status, ações (cancelar, devolver, confirmar).
 // StyleSheet + tokens (useTheme) — migrado de className NativeWind para garantir
 // compatibilidade com todos os bundles de produção.
 
-import { View, Text, ScrollView, RefreshControl, TouchableOpacity, ActivityIndicator, Alert, Linking, StyleSheet, Modal, TextInput, Image as RNImage } from "react-native"
+import { View, Text, ScrollView, RefreshControl, TouchableOpacity, ActivityIndicator, Alert, StyleSheet, Modal, TextInput, Image as RNImage } from "react-native"
 import { useState, useEffect, useRef, useCallback } from "react"
 import { router, useLocalSearchParams } from "expo-router"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -296,45 +296,6 @@ export default function BookingDetailScreen() {
     },
     onError: (e) =>
       Alert.alert("Erro", e instanceof Error ? e.message : "Não foi possível concluir a ação."),
-  })
-
-  // Checkout Mercado Pago — rota unificada resolveUserId + client:"mobile"
-  // Fonte: app/api/payments/mp/checkout/route.ts + PR #161
-  const mpCheckout = useMutation({
-    mutationFn: async () => {
-      const res = await apiFetch<{ data: { url: string | null } }>(
-        "/api/payments/mp/checkout",
-        { method: "POST", body: JSON.stringify({ bookingId: id, client: "mobile" }) },
-      )
-      return res.data.url
-    },
-    onSuccess: async (url) => {
-      if (!url) {
-        Alert.alert(
-          "Pagamento indisponível",
-          "O pagamento online ainda não está disponível nesta versão. Entre em contato com o proprietário para combinar o pagamento.",
-        )
-        return
-      }
-      const canOpen = await Linking.canOpenURL(url)
-      if (canOpen) {
-        await Linking.openURL(url)
-      } else {
-        Alert.alert("Erro", "Não foi possível abrir o link de pagamento.")
-      }
-    },
-    onError: (e) => {
-      const msg = e instanceof Error ? e.message : ""
-      if (msg.includes("404") || msg.includes("indisponível") || msg.includes("NOT_FOUND")) {
-        Alert.alert("Pagamento indisponível", "O pagamento online ainda não está disponível nesta versão.")
-      } else if (msg.includes("OWNER_NOT_CONNECTED")) {
-        Alert.alert("Proprietário sem conta de pagamento", "O proprietário ainda não conectou uma conta para receber. Entre em contato via chat.")
-      } else if (msg.includes("BOOKING_NOT_CONFIRMED")) {
-        Alert.alert("Aguardando confirmação", "O proprietário precisa confirmar a reserva antes do pagamento.")
-      } else {
-        Alert.alert("Erro", msg || "Não foi possível iniciar o pagamento.")
-      }
-    },
   })
 
   // ── Guards após hooks (protocolo item 4) ──────────────────────────────────
@@ -1520,23 +1481,18 @@ export default function BookingDetailScreen() {
           },
         ]}
       >
-        {/* Pagar reserva (locatário + CONFIRMED + não pago) */}
+        {/* Pagamento (locatário + CONFIRMED + não pago).
+            O botão de pagar saiu do app junto com o Mercado Pago (24/08/2026): ele
+            chamava /api/payments/mp/checkout, e com a flag desligada só produzia
+            "pagamento indisponível". O checkout da Stripe ainda não foi portado
+            para o app — ver PSP-03 no backlog. Até lá, o aviso diz onde pagar em
+            vez de oferecer um botão que não paga. */}
         {canPay && (
-          <TouchableOpacity
-            style={[s.actionBtn, { backgroundColor: tokens.green }]}
-            onPress={() => mpCheckout.mutate()}
-            activeOpacity={0.85}
-            disabled={mpCheckout.isPending}
-            accessibilityRole="button"
-            accessibilityLabel="Pagar com Mercado Pago"
-            accessibilityState={{ disabled: mpCheckout.isPending }}
-          >
-            {mpCheckout.isPending ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Text style={s.actionBtnText}>Pagar reserva</Text>
-            )}
-          </TouchableOpacity>
+          <View style={[s.actionBtnOutline, { borderColor: tokens.border }]}>
+            <Text style={[s.actionBtnOutlineText, { color: tokens.muted }]}>
+              Pagamento disponível no site
+            </Text>
+          </View>
         )}
 
         {/* Devolver item (locatário + ACTIVE) — suprimido: ReturnChecklist exibe o botão no scroll.
