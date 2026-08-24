@@ -65,12 +65,25 @@ describe("Central de Ajuda — o que a copy NÃO pode dizer", () => {
     // proibido é Pix como meio de PAGAMENTO. Uma versão anterior desta regex
     // incluía `Pix,` e reprovava "…na sua chave PIX, se ainda não cadastrou".
     ["não oferece Pix como forma de pagamento",        /além de Pix|aceitamos? Pix|aceita Pix|pagar com Pix|Pix como forma|Pix ou boleto/i],
+    // ATOR-03 (24/08/2026): a extensão deixou de valer na aprovação. A copy
+    // dizia que o pagamento saía "na hora" — e a Ajuda tinha sido alinhada ao
+    // código quatro dias antes, o que mostra que alinhar uma vez não segura.
+    ["não promete que a extensão é cobrada na hora", /processado na hora|cobrado na hora/i],
   ])("%s", (_titulo, proibido) => {
     expect(TEXTO).not.toMatch(proibido)
   })
 
+})
+
+// A metade positiva: proibir a frase errada não garante que a certa exista —
+// apagar a promessa deixaria só silêncio no lugar.
+describe("Central de Ajuda — o que a copy PRECISA dizer", () => {
   it("nomeia a Stripe como provedor de pagamentos", () => {
     expect(TEXTO).toMatch(/Stripe/)
+  })
+
+  it("diz que o prazo da extensão só muda depois do pagamento", () => {
+    expect(TEXTO).toMatch(/só muda depois que esse pagamento é confirmado/)
   })
 })
 
