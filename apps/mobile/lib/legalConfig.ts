@@ -22,5 +22,29 @@ export const LEGAL_ENTITY = {
   emailContato: "suporte@shareo.com.br",
 }
 
+/** Espelha CONSENT_VERSION de lib/legal-config.ts — versão dos TERMOS, usada no cadastro. */
+export const CONSENT_VERSION = "v1.1"
+
+/** Espelha DPO_EMAIL de lib/legal-config.ts — LGPD art. 41. */
+export const DPO_EMAIL = "privacidade@shareo.com.br"
+
+/**
+ * Espelha MARKETING_CONSENT_VERSION de lib/legal-config.ts.
+ *
+ * 🪤 NÃO é CONSENT_VERSION. Gravar a versão dos Termos num lead de marketing
+ * arquiva a pessoa sob um texto que ela nunca viu — era o que o app fazia até
+ * 24/08/2026.
+ */
+export const MARKETING_CONSENT_VERSION = "marketing-v1.0"
+
+/**
+ * Espelha MARKETING_CONSENT_TEXT — é ESTE texto que a versão acima versiona.
+ *
+ * 🪤 Numa linha só de propósito: o teste de espelho compara a FONTE deste
+ * arquivo, e quebrar a string em concatenação o reprovaria à toa.
+ */
+export const MARKETING_CONSENT_TEXT =
+  "Concordo em receber comunicações sobre o lançamento do Shareo por e-mail e, se eu informar meu telefone, por WhatsApp. Posso cancelar quando quiser — todo e-mail nosso traz um link de cancelamento em um clique."
+
 /** Espelha POLICY_UPDATED_AT de lib/legal-config.ts. */
 export const POLICY_UPDATED_AT = "junho de 2026"

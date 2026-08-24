@@ -14,9 +14,7 @@ import {
 } from "react-native"
 import Svg, { Path, Line, Polygon, Polyline } from "react-native-svg"
 import { API_URL } from "@/lib/api"
-
-// CONSENT_VERSION transcrito de lib/legal-config.ts — "v1.1" (KYB leve PJ, junho 2026)
-const CONSENT_VERSION = "v1.1"
+import { MARKETING_CONSENT_VERSION, MARKETING_CONSENT_TEXT } from "@/lib/legalConfig"
 
 type IntentOption = "proprietario" | "locatario"
 type State =
@@ -156,7 +154,7 @@ export function FounderCaptureForm({
           name:             name.trim() || undefined,
           intent:           resolveIntent(selected),
           marketingConsent: lgpdConsent,
-          consentVersion:   CONSENT_VERSION,
+          consentVersion:   MARKETING_CONSENT_VERSION,
           // Mobile não tem URL params de atribuição — usa VIP_LANDING como default
           source:           "VIP_LANDING" as const,
           city:             city.trim(),
@@ -343,17 +341,12 @@ export function FounderCaptureForm({
         <View style={[s.checkbox, lgpdConsent && s.checkboxChecked]}>
           {lgpdConsent && <CheckmarkIcon />}
         </View>
-        <Text style={s.consentText}>
-          {"Concordo em receber comunicações sobre o lançamento do Shareo. Posso cancelar a qualquer momento pelo e-mail "}
-          <Text
-            style={s.consentLink}
-            onPress={() => Linking.openURL("mailto:privacidade@shareo.com.br")}
-            accessibilityRole="link"
-          >
-            privacidade@shareo.com.br
-          </Text>
-          {"."}
-        </Text>
+        {/*
+          Mesma string que MARKETING_CONSENT_VERSION versiona e que fica gravada
+          no lead — o que a pessoa aceitou é reconstituível a partir do registro.
+          Fonte: components/home/FounderCaptureForm.tsx (site).
+        */}
+        <Text style={s.consentText}>{MARKETING_CONSENT_TEXT}</Text>
       </TouchableOpacity>
 
       {/* Botão submit */}
@@ -492,7 +485,6 @@ const s = StyleSheet.create({
     flex: 1, fontSize: 12, lineHeight: 17,
     color: "rgba(255,255,255,0.60)",
   },
-  consentLink: { textDecorationLine: "underline" },
 
   // Submit
   submitBtn: {
