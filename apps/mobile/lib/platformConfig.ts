@@ -23,6 +23,8 @@ export interface PublicConfig {
   payoutWindowDays:  number
   checkoutMaxCents:  number
   ownerHours:        number
+  /** Se o aceite do contrato de locação é exigido (flag rentalContractAcceptanceEnabled). */
+  rentalContractRequired: boolean
   lateFeeMultiplier: number
   cancel: {
     fullRefundHours:    number
@@ -38,6 +40,8 @@ export const DEFAULT_CONFIG: PublicConfig = {
   payoutWindowDays:  3,
   checkoutMaxCents:  50_000,
   ownerHours:        48,
+  // Default FALSE, igual ao servidor: na dúvida, não prometer obrigação.
+  rentalContractRequired: false,
   lateFeeMultiplier: 1.5,
   cancel: { fullRefundHours: 24, partialRefundHours: 6, partialPercent: 70, latePercent: 50 },
 }

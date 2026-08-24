@@ -26,6 +26,7 @@ const mockGetPayoutWindowDays   = jest.fn()
 const mockGetCancellationConfig = jest.fn()
 const mockGetLateFeeMultiplier  = jest.fn()
 const mockGetAutoCancelConfig   = jest.fn()
+const mockGetRentalContractConfig = jest.fn()
 
 // 🪤 Os wrappers `(...a) => mockX(...a)` NÃO são cerimônia: o prefixo `mock`
 // permite REFERENCIAR a variável dentro da fábrica, mas a fábrica é içada e roda
@@ -37,6 +38,7 @@ jest.mock("@/lib/platform-config", () => ({
   getCancellationConfig: (...a: unknown[]) => mockGetCancellationConfig(...a),
   getLateFeeMultiplier:  (...a: unknown[]) => mockGetLateFeeMultiplier(...a),
   getAutoCancelConfig:   (...a: unknown[]) => mockGetAutoCancelConfig(...a),
+  getRentalContractConfig: (...a: unknown[]) => mockGetRentalContractConfig(...a),
   CHECKOUT_MAX_CENTS:    50_000,
 }))
 
@@ -49,6 +51,7 @@ beforeEach(() => {
   mockGetCancellationConfig.mockResolvedValue(CANCEL)
   mockGetLateFeeMultiplier.mockResolvedValue(1.5)
   mockGetAutoCancelConfig.mockResolvedValue({ ownerHours: 48, borrowerHours: 24 })
+  mockGetRentalContractConfig.mockResolvedValue({ enabled: false })
 })
 
 describe("GET /api/platform-config/public", () => {
@@ -63,7 +66,24 @@ describe("GET /api/platform-config/public", () => {
       cancel:            CANCEL,
       lateFeeMultiplier: 1.5,
       ownerHours:        48,
+      // Campo acrescentado em 24/08 por decisão consciente (a lista é fechada
+      // de propósito): sem ele o app não sabe se o contrato é exigido e exibia
+      // "Assinatura do contrato pendente" numa locação que o sistema deixa
+      // retirar e concluir sem contrato. É a MESMA flag que o guard de
+      // mark_active lê — a tela e a regra passam a ter uma fonte só.
+      rentalContractRequired: false,
     })
+  })
+
+  it("🪤 publica se o contrato é exigido — a tela não pode prometer obrigação que nada impõe", async () => {
+    // Ligada
+    mockGetRentalContractConfig.mockResolvedValue({ enabled: true })
+    expect((await (await GET()).json()).data.rentalContractRequired).toBe(true)
+
+    // Desligada (o default, gated D4) — foi este o caso visto ao vivo em 24/08,
+    // numa reserva já paga e com o item já retirado exibindo "assinatura pendente".
+    mockGetRentalContractConfig.mockResolvedValue({ enabled: false })
+    expect((await (await GET()).json()).data.rentalContractRequired).toBe(false)
   })
 
   it("acompanha a config em vez de devolver constante — nada aqui é hardcoded", async () => {
