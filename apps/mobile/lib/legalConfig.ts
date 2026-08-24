@@ -17,8 +17,8 @@
 export const LEGAL_ENTITY = {
   razaoSocial: "SHAREO MARKETPLACE DE INTERMEDIACAO DE NEGOCIOS LTDA",
   cnpj: "68.512.556/0001-09",
-  /** `null` até o endereço da Receita ser confirmado — ver a JSDoc no site. */
-  enderecoSede: null as string | null,
+  /** Do Comprovante de Situação Cadastral da Receita — ver a JSDoc no site. */
+  enderecoSede: "Rua Pais Leme, 215, conj. 1713 — Pinheiros, São Paulo/SP, CEP 05424-150" as string | null,
   emailContato: "suporte@shareo.com.br",
 }
 

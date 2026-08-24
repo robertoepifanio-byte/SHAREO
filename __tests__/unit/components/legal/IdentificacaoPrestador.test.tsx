@@ -34,6 +34,16 @@ describe("IdentificacaoPrestador", () => {
     expect(screen.getByText("A plataforma ShareO é operada por:")).toBeInTheDocument()
   })
 
+  it("publica o endereço da sede — sem ele a obrigação não se cumpre", () => {
+    render(<IdentificacaoPrestador />)
+
+    // Com o valor REAL da constante, não mockado: alguém devolver `enderecoSede`
+    // para null derruba este teste, que é o ponto. O Decreto 7.962/2013, art. 2º, I
+    // exige o endereço, e a página passaria a exibir só razão social e CNPJ.
+    expect(LEGAL_ENTITY.enderecoSede).not.toBeNull()
+    expect(screen.getByText(LEGAL_ENTITY.enderecoSede!)).toBeInTheDocument()
+  })
+
   it("na Política de Privacidade, identifica a empresa como CONTROLADORA (LGPD art. 9º, I)", () => {
     render(<IdentificacaoPrestador papel="controlador" />)
 
@@ -97,6 +107,7 @@ describe("espelho do app", () => {
     ["razão social", LEGAL_ENTITY.razaoSocial],
     ["CNPJ", LEGAL_ENTITY.cnpj],
     ["e-mail de contato", LEGAL_ENTITY.emailContato],
+    ["endereço da sede", LEGAL_ENTITY.enderecoSede],
   ])("mantém o mesmo %s do site", (_rotulo, valor) => {
     expect(espelho).toContain(valor)
   })

@@ -88,18 +88,24 @@ export const PJ_DECLARATION_TEXT =
  * O CNPJ 68.512.556/0001-09 saiu em 11/08/2026 com outra denominação. Num bloco
  * cuja única função é identificar a PJ, a razão social errada anula o propósito.
  */
+const ENDERECO_SEDE = "Rua Pais Leme, 215, conj. 1713 — Pinheiros, São Paulo/SP, CEP 05424-150"
+
 export const LEGAL_ENTITY = {
   razaoSocial: "SHAREO MARKETPLACE DE INTERMEDIACAO DE NEGOCIOS LTDA",
   cnpj: "68.512.556/0001-09",
   /**
-   * Endereço completo da sede (logradouro, nº, bairro, cidade/UF, CEP).
+   * Endereço da sede, conforme o **Comprovante de Inscrição e de Situação
+   * Cadastral** da Receita (confirmado pelo fundador em 2026-08-24). Campos do
+   * comprovante: R PAIS LEME · 215 · CONJ 1713 · 05.424-150 · PINHEIROS ·
+   * SAO PAULO · SP.
    *
-   * `null` enquanto o fundador não confirma o endereço registrado na Receita.
-   * Sabe-se que a sede é em Pinheiros/SP, mas bairro e cidade não cumprem o
-   * art. 2º, I do Decreto 7.962/2013 — e endereço parcial num documento legal
-   * é tão inútil quanto nenhum. Os componentes omitem a linha em vez de exibir
-   * dado incompleto. Preencher ANTES do go-live.
+   * 🪤 A fonte é o comprovante, não busca em agregador de CNPJ — site de
+   * terceiro fica desatualizado, e endereço errado aqui é o mesmo defeito da
+   * razão social de rascunho que quase entrou (ver a nota acima).
+   *
+   * O tipo continua aceitando `null` de propósito: os componentes omitem a
+   * linha em vez de renderizar vazio, e os testes exercitam os dois estados.
    */
-  enderecoSede: null as string | null,
+  enderecoSede: ENDERECO_SEDE as string | null,
   emailContato: "suporte@shareo.com.br",
 } as const

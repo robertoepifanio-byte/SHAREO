@@ -140,7 +140,9 @@ Isto muda duas coisas que este ADR havia deixado em aberto em 19/08.
 
 **1. A supersessão do [[ADR-026-pagamentos-mercado-pago-modelo-b]] vira total.** Em 19/08 o ADR-026 foi superado só quanto ao PSP escolhido, e o Modelo B seguia como caminho de volta. Não segue mais.
 
-**2. A pendência jurídica B1 muda de objeto.** O B1 do `docs/juridico/checklist-conformidade-juridica.md` era *constituir a PJ* + *contratar o PSP*, e a metade travada era o **contrato do Mercado Pago**, que exigia negociação e assinatura. Esse contrato **deixa de existir como pendência**: a relação com a Stripe se formaliza pela aceitação eletrônica do Stripe Services Agreement no cadastro da conta plataforma, não por instrumento assinado à parte. O que sobra do B1 é uma **confirmação**, não uma negociação: que a conta plataforma na Stripe esteja no **CNPJ 68.512.556/0001-09**, e não no CPF de um sócio — é a titularidade PJ que sustenta o desenho de "a ShareO não é merchant of record".
+**2. A pendência jurídica B1 fecha.** O B1 do `docs/juridico/checklist-conformidade-juridica.md` era *constituir a PJ* + *contratar o PSP*, e a metade travada era o **contrato do Mercado Pago**, que exigia negociação e assinatura. Esse contrato **deixa de existir como pendência**: a relação com a Stripe se formaliza pela aceitação eletrônica do Stripe Services Agreement no cadastro da conta plataforma, não por instrumento assinado à parte. O que sobrava do B1 era uma **confirmação**, não uma negociação: que a conta plataforma na Stripe estivesse no **CNPJ 68.512.556/0001-09**, e não no CPF de um sócio. O fundador confirmou no mesmo dia — conta `acct_1TbiQR…` ("Shareo Marketplace") no CNPJ da PJ, endereço comercial batendo com o Comprovante de Situação Cadastral. **B1 fechado.** É essa titularidade que sustenta o desenho de "a ShareO não é merchant of record".
+
+**Com isso, o D4 volta a ser o único bloqueador `🔒` de go-live** — e agora com um item novo dentro dele, a transferência internacional (abaixo).
 
 ### ⚠️ Consequência que NÃO é troca de nome: transferência internacional
 
