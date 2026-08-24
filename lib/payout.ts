@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma"
-import { getPayoutWindowDays } from "@/lib/platform-config"
+import { getPayoutWindowDays, getPlatformFeeRate, calcSplit } from "@/lib/platform-config"
 
 /**
  * Criação do repasse ao proprietário — ponto único.
@@ -59,18 +59,61 @@ export async function criarPayoutDaReserva(
   const payoutWindowDays = await getPayoutWindowDays()
   const eligibleAfter    = new Date(Date.now() + payoutWindowDays * 24 * 60 * 60 * 1000)
 
-  // `await` obrigatório: fire-and-forget morre quando a lambda congela e o
-  // repasse se perde sem deixar rastro.
-  const payout = await prisma.payout.create({
-    data: {
-      ownerPaymentAccountId: ownerAccount.id,
-      bookingId,
-      amount: ownerNetAmount,
-      status: "PENDING",
-      eligibleAfter,
-    },
-    select: { id: true },
+  // 🪤 Um repasse por COBRANÇA, não por reserva (ATOR-03).
+  //
+  // A Stripe EXIGE `source_transaction` em transferência envolvendo o Brasil, e
+  // ele liga a transferência a UMA cobrança. Quando houve extensão paga, o
+  // dinheiro está em duas cobranças distintas: a da locação e a das diárias
+  // extras. Um Transfer só pediria à cobrança original mais do que ela tem —
+  // recusa em silêncio no cron, ou, em extensão pequena, uma transferência que
+  // come a taxa da plataforma.
+  const extensao = await prisma.booking.findUnique({
+    where:  { id: bookingId },
+    select: { extensionAmountCents: true, extensionPaymentIntentId: true },
   })
 
-  return { criado: true, payoutId: payout.id, amount: ownerNetAmount }
+  const extra = extensao?.extensionAmountCents ?? 0
+  const temCobrancaPropria = extra > 0 && Boolean(extensao?.extensionPaymentIntentId)
+
+  // Sem extensão paga à parte, é o caso de sempre: um repasse, cobrança original.
+  const fatias = !temCobrancaPropria
+    ? [{ amount: ownerNetAmount, sourcePaymentIntentId: null }]
+    : await (async () => {
+        const feeRate  = await getPlatformFeeRate()
+        const daExtensao = calcSplit(extra, feeRate).ownerNetAmount
+        return [
+          // O resto sai da cobrança original. Subtrair (em vez de recalcular)
+          // garante que as duas fatias somem exatamente `ownerNetAmount` — não
+          // sobra nem falta centavo por arredondamento.
+          { amount: ownerNetAmount - daExtensao, sourcePaymentIntentId: null },
+          { amount: daExtensao, sourcePaymentIntentId: extensao!.extensionPaymentIntentId! },
+        ]
+      })()
+
+  // `await` obrigatório: fire-and-forget morre quando a lambda congela e o
+  // repasse se perde sem deixar rastro.
+  const criados = await prisma.$transaction(
+    fatias
+      .filter((f) => f.amount > 0)
+      .map((f) => prisma.payout.create({
+        data: {
+          ownerPaymentAccountId: ownerAccount.id,
+          bookingId,
+          amount:                f.amount,
+          sourcePaymentIntentId: f.sourcePaymentIntentId,
+          status:                "PENDING",
+          eligibleAfter,
+        },
+        select: { id: true },
+      })),
+  )
+
+  if (criados.length > 1) {
+    console.warn(
+      "[payout] id=" + bookingId + " origem=" + origem +
+      " 2 repasses (locação + extensão) — cobranças distintas",
+    )
+  }
+
+  return { criado: true, payoutId: criados[0].id, amount: ownerNetAmount }
 }

@@ -9,6 +9,7 @@ import { AppHeader } from "@/components/layout/AppHeader"
 import { BookingActions }      from "./_BookingActions"
 import { ReviewForm }          from "./_ReviewForm"
 import { PayButton }           from "@/components/bookings/PayButton"
+import { ExtensionPayButton }  from "@/components/bookings/ExtensionPayButton"
 import { ContractBanner }      from "./_ContractBanner"
 import { CheckInOut }          from "./_CheckInOut"
 import { BookingProgressBar }  from "@/components/booking/BookingProgressBar"
@@ -16,7 +17,7 @@ import { BookingHistory }     from "@/components/booking/BookingHistory"
 import { ReturnCountdown }    from "@/components/booking/ReturnCountdown"
 import { ReturnChecklist }    from "@/components/booking/ReturnChecklist"
 import { ReturnConditionForm } from "@/components/booking/ReturnConditionForm"
-import { getPlatformFeeRate, calcSplit } from "@/lib/platform-config"
+import { getPlatformFeeRate, calcSplitComDesconto } from "@/lib/platform-config"
 import { deriveBookingHistory } from "@/lib/bookingHistory"
 import { BookingStatusBadge } from "@/components/ui/BookingStatusBadge"
 import { formatPrice, formatDate, formatDateLong } from "@/utils/format"
@@ -99,6 +100,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
       },
       extensionStatus:           true,
       extensionRequestedEndDate: true,
+      extensionAmountCents:      true,
       pickupToken:       true,
       pickupTokenUsedAt: true,
       borrower:     { select: { id: true, name: true } },
@@ -126,9 +128,9 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
   // o locatário paga booking.totalPrice; a taxa é RETIDA do repasse ao proprietário
   // (não somada). platformFee + ownerNet = totalPrice. Cupom é absorvido pela taxa.
   const discountCents = booking.discountCents ?? 0
-  const grossSplit    = calcSplit(booking.totalPrice + discountCents, feeRateBps)
-  const platformFee   = Math.max(0, grossSplit.platformFeeAmount - discountCents)
-  const ownerNet      = grossSplit.ownerNetAmount
+  const split         = calcSplitComDesconto(booking.totalPrice, discountCents, feeRateBps)
+  const platformFee   = split.platformFeeAmount
+  const ownerNet      = split.ownerNetAmount
 
   const isOwner    = booking.owner.id    === userId
   const isBorrower = booking.borrower.id === userId
@@ -349,6 +351,23 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
               >
                 Cadastrar endereço →
               </Link>
+            </div>
+          )}
+
+          {/* ── Extensão aceita, aguardando as diárias extras (ATOR-03) ──
+              O proprietário já aceitou, mas o endDate NÃO se moveu: só se move
+              quando este pagamento confirma. Sem este bloco o locatário recebe
+              a notificação mandando pagar e não tem onde clicar. */}
+          {isBorrower
+            && booking.extensionStatus === "AWAITING_PAYMENT"
+            && (booking.extensionAmountCents ?? 0) > 0
+            && booking.extensionRequestedEndDate && (
+            <div className="mb-6">
+              <ExtensionPayButton
+                bookingId={booking.id}
+                amount={booking.extensionAmountCents!}
+                newEndDate={formatDateLong(booking.extensionRequestedEndDate)}
+              />
             </div>
           )}
 
