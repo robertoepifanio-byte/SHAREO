@@ -74,9 +74,32 @@ async function main() {
   console.log(`Escopo (events_from): ${EVENTS_FROM.join(", ")}`)
   console.log("─".repeat(60))
 
-  if (!process.env.STRIPE_SECRET_KEY) {
+  const chave = process.env.STRIPE_SECRET_KEY
+  if (!chave) {
     console.error("✗ STRIPE_SECRET_KEY vazio em .env.local.")
     process.exit(1)
+  }
+
+  // 🪤 Dizer em QUE AMBIENTE estamos, antes de qualquer coisa.
+  //
+  // Test e live têm listas de destinos separadas. Rodar com uma chave live
+  // contra um destino que existe no test faz o script dizer "nenhum existente
+  // para essa URL" — e, com --confirm, CRIAR um destino no ambiente errado,
+  // cujo signing_secret iria para o staging e nunca receberia evento nenhum.
+  // Aconteceu em 23/08/2026 e custou uma rodada de diagnóstico.
+  //
+  // O prefixo da chave é público por natureza (identifica o tipo, não o
+  // segredo) — imprimir só ele é seguro.
+  if (!chave.startsWith("sk_")) {
+    console.error(`✗ STRIPE_SECRET_KEY não parece uma chave de API (começa com "${chave.slice(0, 6)}").`)
+    console.error("  Chave de API começa com sk_test_ ou sk_live_. Um valor whsec_ é o segredo de")
+    console.error("  ASSINATURA do webhook e vai em STRIPE_CONNECT_WEBHOOK_SECRET, não aqui.")
+    process.exit(1)
+  }
+  const modo = chave.startsWith("sk_live_") ? "LIVE ⚠" : "TEST"
+  console.log(`Ambiente da chave: ${modo}`)
+  if (modo.startsWith("LIVE")) {
+    console.log("⚠  Chave de PRODUÇÃO. O staging usa o ambiente de TESTE — confira antes de --confirm.")
   }
   // getStripe() (lazy) em vez de `new Stripe(...)`: a apiVersion fica pinada
   // só em lib/stripe.ts — os nomes de evento da v2 são sensíveis a ela.
@@ -84,6 +107,14 @@ async function main() {
 
   const existing = await stripe.v2.core.eventDestinations.list({ include: ["webhook_endpoint.url"] })
   const dup = existing.data.find((d) => d.webhook_endpoint?.url === targetUrl)
+
+  // "Nenhum para essa URL" é ambíguo sozinho: pode ser ambiente vazio (chave do
+  // modo errado) ou destino já apagado. Listar o que existe desfaz a dúvida.
+  console.log(`\nDestinos neste ambiente (${modo}): ${existing.data.length}`)
+  for (const d of existing.data) {
+    const escopoD = (d as { events_from?: string[] }).events_from ?? []
+    console.log(`  · ${d.id}  ${d.webhook_endpoint?.url ?? "(url oculta)"}  [${escopoD.join(", ") || "sem events_from"}]`)
+  }
 
   if (dup) {
     console.log(`\nJá existe um Event Destination para essa URL: ${dup.id} (status: ${dup.status})`)
