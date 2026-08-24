@@ -2,7 +2,7 @@
 // Transcrição literal do formulário de captação de fundadores para React Native.
 // Estados, campos, textos e lógica de submit transcritos verbatim do componente do site.
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   View,
   Text,
@@ -14,11 +14,21 @@ import {
 } from "react-native"
 import Svg, { Path, Line, Polygon, Polyline } from "react-native-svg"
 import { API_URL } from "@/lib/api"
-
-// CONSENT_VERSION transcrito de lib/legal-config.ts — "v1.1" (KYB leve PJ, junho 2026)
-const CONSENT_VERSION = "v1.1"
+import { MARKETING_CONSENT_VERSION, MARKETING_CONSENT_TEXT } from "@/lib/legalConfig"
+import { maskCEP, maskPhone, phoneToE164, fetchAddressByCep } from "@/lib/forms"
 
 type IntentOption = "proprietario" | "locatario"
+
+/**
+ * Estado da consulta de CEP — transcrito do site.
+ *
+ * `idle`     — nada digitado ainda
+ * `loading`  — consultando o ViaCEP
+ * `ok`       — endereço resolvido (o readout mostra o que foi encontrado)
+ * `notfound` — CEP bem formado mas inexistente → revela preenchimento manual
+ * `error`    — ViaCEP fora do ar / sem rede → revela preenchimento manual
+ */
+type CepState = "idle" | "loading" | "ok" | "notfound" | "error"
 type State =
   | "collapsed"
   | "expanded"
@@ -127,10 +137,76 @@ export function FounderCaptureForm({
   )
   const [name, setName]               = useState("")
   const [email, setEmail]             = useState("")
-  const [city, setCity]               = useState(defaultCity ?? "")
-  const [uf, setUf]                   = useState(defaultUf ?? "")
+  const [phone, setPhone]             = useState("")
+
+  // Localização. `city`/`uf` continuam sendo a fonte da verdade do envio — o CEP
+  // é só o caminho rápido para preenchê-los.
+  const [cepVal, setCepVal]             = useState("")
+  const [cepState, setCepState]         = useState<CepState>("idle")
+  const [neighborhood, setNeighborhood] = useState("")
+  const [city, setCity]                 = useState(defaultCity ?? "")
+  const [uf, setUf]                     = useState(defaultUf ?? "")
+  const [showManual, setShowManual]     = useState(false)
+
   const [lgpdConsent, setLgpdConsent] = useState(false)
   const [position, setPosition]       = useState(0)
+
+  // Descarta respostas obsoletas do ViaCEP: digitar rápido "50030230" → "50030231"
+  // pode resolver fora de ordem e sobrescrever o endereço certo pelo antigo.
+  const cepSeq = useRef(0)
+
+  /** Revela cidade/UF/bairro manuais. */
+  function revealManual() {
+    setShowManual(true)
+  }
+
+  /** Estilo dos campos — o desabilitado durante o envio vale para todos. */
+  const inputStyle = (extra?: object) => [s.input, extra, state === "loading" && s.inputDisabled]
+
+  async function lookupCep(digits: string) {
+    const seq = ++cepSeq.current
+    setCepState("loading")
+    try {
+      const addr = await fetchAddressByCep(digits)
+      if (seq !== cepSeq.current) return // chegou atrasada — ignora
+
+      // fetchAddressByCep devolve null para CEP inexistente e LANÇA em falha de
+      // rede. São dois caminhos de UX distintos, por isso o null-check e o catch.
+      if (!addr) {
+        setCepState("notfound")
+        revealManual()
+        return
+      }
+
+      if (addr.city)  setCity(addr.city)
+      if (addr.state) setUf(addr.state.toUpperCase())
+      setNeighborhood(addr.neighborhood ?? "")
+      setCepState("ok")
+
+      // Municípios de CEP único (ex.: 78890-000) voltam com bairro vazio no
+      // ViaCEP. Nesse caso pedimos o bairro à parte — mas ele NUNCA bloqueia o
+      // envio (a coluna é nullable).
+      if (!addr.neighborhood) revealManual()
+      else setShowManual(false)
+    } catch {
+      if (seq !== cepSeq.current) return
+      setCepState("error")
+      revealManual()
+    }
+  }
+
+  // Dispara ao completar 8 dígitos, com debounce curto. O onBlur do input serve
+  // de rede de segurança para quem cola o CEP e sai do campo antes do timer.
+  useEffect(() => {
+    const digits = cepVal.replace(/\D/g, "")
+    if (digits.length !== 8) {
+      if (cepState !== "idle" && digits.length < 8) setCepState("idle")
+      return
+    }
+    const t = setTimeout(() => { void lookupCep(digits) }, 300)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cepVal])
 
   function toggleIntent(opt: IntentOption) {
     setSelected((prev) => {
@@ -148,23 +224,40 @@ export function FounderCaptureForm({
   async function handleSubmit() {
     setState("loading")
     try {
+      const cepDigits = cepVal.replace(/\D/g, "")
+
       const res = await fetch(`${API_URL}/api/founders/leads`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email:            email.trim().toLowerCase(),
           name:             name.trim() || undefined,
+          phone:            phoneToE164(phone),
           intent:           resolveIntent(selected),
           marketingConsent: lgpdConsent,
-          consentVersion:   CONSENT_VERSION,
+          consentVersion:   MARKETING_CONSENT_VERSION,
           // Mobile não tem URL params de atribuição — usa VIP_LANDING como default
           source:           "VIP_LANDING" as const,
           city:             city.trim(),
           state:            uf.trim().toUpperCase(),
+          cep:              cepDigits.length === 8 ? cepDigits : undefined,
+          neighborhood:     neighborhood.trim() || undefined,
+          // Permite medir a taxa de fallback do ViaCEP sem instrumentação extra.
+          addressSource:    cepState === "ok" ? "CEP" : "MANUAL",
           utmCampaign:      campaign,
         }),
       })
-      if (res.status === 409) { setState("error-duplicate"); return }
+      // 409 = e-mail já cadastrado. A API devolve a posição na fila DENTRO do
+      // erro; aproveitamos para dizer QUAL é, em vez de um "você já está na
+      // lista" genérico que o usuário confunde com confirmação de novo cadastro.
+      if (res.status === 409) {
+        const dup = (await res.json().catch(() => null)) as
+          { error?: { data?: { queuePosition?: number } } } | null
+        // 0 = posição desconhecida (corpo inesperado); a UI omite o número.
+        setPosition(dup?.error?.data?.queuePosition ?? 0)
+        setState("error-duplicate")
+        return
+      }
       if (!res.ok)            { setState("error-network");   return }
       const json = (await res.json()) as { data: { queuePosition: number } }
       setPosition(json.data.queuePosition)
@@ -218,7 +311,11 @@ export function FounderCaptureForm({
     return (
       <View style={s.alertSuccess} accessibilityRole="alert">
         <Text style={s.alertSuccessText}>
-          Você já está na lista! Será um dos primeiros a saber quando abrirmos.
+          <Text style={s.alertStrong}>Este e-mail já estava na lista.</Text>
+          {"\n"}
+          {position > 0
+            ? `Você é o Nº ${position} da fila — não criamos um cadastro novo.`
+            : "Não criamos um cadastro novo. Você será avisado quando abrirmos."}
         </Text>
       </View>
     )
@@ -275,7 +372,7 @@ export function FounderCaptureForm({
         placeholderTextColor="rgba(255,255,255,0.40)"
         autoComplete="name"
         editable={state !== "loading"}
-        style={[s.input, state === "loading" && s.inputDisabled]}
+        style={inputStyle()}
         accessibilityLabel="Nome"
       />
 
@@ -289,34 +386,140 @@ export function FounderCaptureForm({
         autoComplete="email"
         autoCapitalize="none"
         editable={state !== "loading"}
-        style={[s.input, state === "loading" && s.inputDisabled]}
+        style={inputStyle()}
         accessibilityLabel="E-mail"
       />
 
-      {/* Cidade + UF */}
-      <View style={s.cityRow}>
+      {/* WhatsApp (opcional) */}
+      <View>
         <TextInput
-          value={city}
-          onChangeText={setCity}
-          placeholder="Sua cidade *"
+          value={phone}
+          onChangeText={(v) => setPhone(maskPhone(v))}
+          placeholder="WhatsApp (opcional)"
           placeholderTextColor="rgba(255,255,255,0.40)"
-          autoComplete="street-address"
+          keyboardType="number-pad"
+          maxLength={15}
           editable={state !== "loading"}
-          style={[s.input, s.inputFlex, state === "loading" && s.inputDisabled]}
-          accessibilityLabel="Cidade"
+          style={inputStyle()}
+          accessibilityLabel="WhatsApp (opcional)"
         />
-        <TextInput
-          value={uf}
-          onChangeText={(t) => setUf(t.toUpperCase())}
-          placeholder="UF *"
-          placeholderTextColor="rgba(255,255,255,0.40)"
-          maxLength={2}
-          autoCapitalize="characters"
-          editable={state !== "loading"}
-          style={[s.input, s.inputUF, state === "loading" && s.inputDisabled]}
-          accessibilityLabel="Estado (UF)"
-        />
+        <Text style={s.fieldHint}>
+          Se quiser, avisamos você por aqui também quando abrirmos na sua cidade.
+        </Text>
       </View>
+
+      {/* ── CEP ───────────────────────────────────────────────────────────────
+          Rótulo VISÍVEL (não só placeholder), como no site: o campo determina o
+          bairro usado no ranking de cidades-piloto, e placeholder sozinho some
+          ao começar a digitar. */}
+      <View>
+        <Text style={s.fieldLabel}>CEP</Text>
+        <View>
+          <TextInput
+            value={cepVal}
+            onChangeText={(v) => setCepVal(maskCEP(v))}
+            onBlur={() => {
+              const d = cepVal.replace(/\D/g, "")
+              if (d.length === 8 && cepState === "idle") void lookupCep(d)
+            }}
+            placeholder="00000-000"
+            placeholderTextColor="rgba(255,255,255,0.40)"
+            keyboardType="number-pad"
+            maxLength={9}
+            editable={state !== "loading"}
+            style={inputStyle()}
+            accessibilityLabel="CEP"
+          />
+          {cepState === "loading" && (
+            <ActivityIndicator size="small" color="rgba(255,255,255,0.60)" style={s.cepSpinner} />
+          )}
+        </View>
+
+        <Text style={s.fieldHint}>
+          Usamos só para saber seu bairro e escolher as primeiras cidades.
+          Não pedimos número nem complemento.
+        </Text>
+
+        {/* Leitura do endereço vigente / mensagens de estado. Aparece sempre que
+            houver cidade — venha ela do ViaCEP OU do defaultCity. */}
+        <View style={s.cepStatus} accessibilityRole="text" accessibilityLiveRegion="polite">
+          {cepState !== "notfound" && cepState !== "error" && !!city && !showManual && (
+            <Text style={s.cepReadout}>
+              {"📍 "}
+              {neighborhood ? <>{"Bairro "}<Text style={s.cepStrong}>{neighborhood}</Text>{" · "}</> : null}
+              <Text style={s.cepStrong}>{city}</Text>{uf ? `/${uf}` : ""}{" "}
+              <Text style={s.cepCorrigir} onPress={revealManual} accessibilityRole="link">
+                Não é aqui? Corrigir
+              </Text>
+            </Text>
+          )}
+          {cepState === "notfound" && (
+            <Text style={s.cepAviso}>CEP não encontrado. Confira os campos abaixo.</Text>
+          )}
+          {cepState === "error" && (
+            <Text style={s.cepAviso}>Não conseguimos consultar o CEP agora. Preencha os campos abaixo.</Text>
+          )}
+        </View>
+      </View>
+
+      {/* ── Preenchimento manual ────────────────────────────────────────────────
+          Sempre disponível como saída: CEP inexistente, ViaCEP fora do ar, ou
+          município de CEP único (que devolve bairro vazio). Nunca é beco sem
+          saída — é o caminho que mantém a conversão de pé. */}
+      {showManual && (
+        <View style={s.manualBox}>
+          <View>
+            <Text style={s.fieldLabel}>
+              {"Bairro "}<Text style={s.fieldLabelOpcional}>(opcional)</Text>
+            </Text>
+            <TextInput
+              value={neighborhood}
+              onChangeText={setNeighborhood}
+              placeholder="Seu bairro"
+              placeholderTextColor="rgba(255,255,255,0.40)"
+              editable={state !== "loading"}
+              style={inputStyle()}
+              accessibilityLabel="Bairro (opcional)"
+            />
+          </View>
+          <View style={s.cityRow}>
+            <View style={s.inputFlex}>
+              <Text style={s.fieldLabel}>Cidade *</Text>
+              <TextInput
+                value={city}
+                onChangeText={setCity}
+                placeholder="Sua cidade"
+                placeholderTextColor="rgba(255,255,255,0.40)"
+                editable={state !== "loading"}
+                style={inputStyle()}
+                accessibilityLabel="Cidade"
+              />
+            </View>
+            <View>
+              <Text style={s.fieldLabel}>UF *</Text>
+              <TextInput
+                value={uf}
+                onChangeText={(t) => setUf(t.toUpperCase())}
+                placeholder="UF"
+                placeholderTextColor="rgba(255,255,255,0.40)"
+                maxLength={2}
+                autoCapitalize="characters"
+                editable={state !== "loading"}
+                style={inputStyle(s.inputUF)}
+                accessibilityLabel="Estado (UF)"
+              />
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* Saída para quem não quer digitar CEP nenhum. Só aparece sem cidade
+          resolvida — com cidade, o link de correção já vive no readout acima. */}
+      {!showManual && !city && (
+        <Text style={s.preferirManual} onPress={revealManual} accessibilityRole="link">
+          Prefiro informar cidade e estado
+        </Text>
+      )}
 
       {/* Erro de rede */}
       {state === "error-network" && (
@@ -343,17 +546,12 @@ export function FounderCaptureForm({
         <View style={[s.checkbox, lgpdConsent && s.checkboxChecked]}>
           {lgpdConsent && <CheckmarkIcon />}
         </View>
-        <Text style={s.consentText}>
-          {"Concordo em receber comunicações sobre o lançamento do Shareo. Posso cancelar a qualquer momento pelo e-mail "}
-          <Text
-            style={s.consentLink}
-            onPress={() => Linking.openURL("mailto:privacidade@shareo.com.br")}
-            accessibilityRole="link"
-          >
-            privacidade@shareo.com.br
-          </Text>
-          {"."}
-        </Text>
+        {/*
+          Mesma string que MARKETING_CONSENT_VERSION versiona e que fica gravada
+          no lead — o que a pessoa aceitou é reconstituível a partir do registro.
+          Fonte: components/home/FounderCaptureForm.tsx (site).
+        */}
+        <Text style={s.consentText}>{MARKETING_CONSENT_TEXT}</Text>
       </TouchableOpacity>
 
       {/* Botão submit */}
@@ -428,6 +626,8 @@ const s = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 12,
   },
   alertSuccessText: { fontSize: 14, color: "#59C686", textAlign: "center" },
+  // <strong> do site — o aviso tem duas frases e a primeira é a que importa.
+  alertStrong: { fontWeight: "600" },
   alertError: {
     borderRadius: 8, borderWidth: 1, borderColor: "rgba(248,113,113,0.30)",
     backgroundColor: "rgba(248,113,113,0.10)",
@@ -474,7 +674,41 @@ const s = StyleSheet.create({
   inputFlex: { flex: 1 },
   inputUF: { width: 64, textAlign: "center", textTransform: "uppercase" },
   inputDisabled: { opacity: 0.60 },
-  cityRow: { flexDirection: "row", gap: 8 },
+  cityRow: { flexDirection: "row", gap: 8, alignItems: "flex-end" },
+
+  // Campos com rótulo/dica visíveis (CEP e bloco manual) — text-xs do site.
+  fieldLabel: {
+    marginBottom: 4, fontSize: 12, fontWeight: "600",
+    letterSpacing: 0.8, textTransform: "uppercase",
+    color: "rgba(255,255,255,0.70)",
+  },
+  fieldLabelOpcional: {
+    fontWeight: "400", textTransform: "none", letterSpacing: 0,
+    color: "rgba(255,255,255,0.45)",
+  },
+  fieldHint: {
+    marginTop: 4, fontSize: 12, lineHeight: 17,
+    color: "rgba(255,255,255,0.45)",
+  },
+
+  // CEP
+  cepSpinner: { position: "absolute", right: 12, top: 0, bottom: 0 },
+  cepStatus:  { marginTop: 6 },
+  cepReadout: { fontSize: 12, lineHeight: 17, color: "rgba(255,255,255,0.80)" },
+  cepStrong:  { fontWeight: "600" },
+  cepCorrigir: { textDecorationLine: "underline" },
+  // amber-200 do site — aviso, não erro: o envio continua possível pelo manual.
+  cepAviso: { fontSize: 12, lineHeight: 17, color: "#FDE68A" },
+
+  manualBox: {
+    gap: 8, padding: 12, borderRadius: 8,
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.15)",
+    backgroundColor: "rgba(255,255,255,0.04)",
+  },
+  preferirManual: {
+    alignSelf: "center", fontSize: 12,
+    color: "rgba(255,255,255,0.50)", textDecorationLine: "underline",
+  },
 
   // Consentimento
   consentRow: {
@@ -492,7 +726,6 @@ const s = StyleSheet.create({
     flex: 1, fontSize: 12, lineHeight: 17,
     color: "rgba(255,255,255,0.60)",
   },
-  consentLink: { textDecorationLine: "underline" },
 
   // Submit
   submitBtn: {
