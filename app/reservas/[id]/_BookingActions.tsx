@@ -252,7 +252,10 @@ export function BookingActions({
     // 🪤 Sem checar `extensionStatus`, o botão continuava visível com um pedido
     // já pendente e a API respondia 409 — o locatário levava um erro por clicar
     // no que a tela ofereceu.
-    if (status === "ACTIVE" && extensionStatus !== "PENDING")
+    // 🪤 AWAITING_PAYMENT também bloqueia (ATOR-03): com a sessão de pagamento
+    // viva, um pedido novo sobrescreveria `extensionRequestedEndDate` — e o
+    // webhook aplica a data que estiver na linha, não a que foi paga.
+    if (status === "ACTIVE" && extensionStatus !== "PENDING" && extensionStatus !== "AWAITING_PAYMENT")
       buttons.push({ emoji: "📅", label: "Solicitar extensão de prazo", variant: "ghost", onClick: () => setPanel("extend_request") })
   }
   if (status === "PENDING" || status === "CONFIRMED")

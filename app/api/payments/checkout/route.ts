@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma"
 import { getStripe } from "@/lib/stripe"
 import { APP_URL } from "@/lib/app-url"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
-import { getPlatformFeeRate, calcSplit, CHECKOUT_MAX_CENTS, STRIPE_CHECKOUT_EXPIRES_SECONDS } from "@/lib/platform-config"
+import { getPlatformFeeRate, calcSplitComDesconto, CHECKOUT_MAX_CENTS, STRIPE_CHECKOUT_EXPIRES_SECONDS } from "@/lib/platform-config"
 import { formatDateMonthDay } from "@/utils/format"
 
 const Schema = z.object({
@@ -95,14 +95,8 @@ export async function POST(req: NextRequest) {
     // FIN-2.2: calcular split da plataforma antes de criar a Checkout Session.
     // P3-20: o split usa o valor BRUTO (sem cupom) — o proprietário recebe o valor cheio
     // e o desconto é deduzido da taxa da plataforma.
-    const feeRate  = await getPlatformFeeRate()
-    const discount = booking.discountCents ?? 0
-    const grossSplit = calcSplit(booking.totalPrice + discount, feeRate)
-    const split = {
-      platformFeeRate:   grossSplit.platformFeeRate,
-      platformFeeAmount: Math.max(0, grossSplit.platformFeeAmount - discount),
-      ownerNetAmount:    grossSplit.ownerNetAmount,
-    }
+    const feeRate = await getPlatformFeeRate()
+    const split   = calcSplitComDesconto(booking.totalPrice, booking.discountCents ?? 0, feeRate)
 
     const appUrl = APP_URL
 

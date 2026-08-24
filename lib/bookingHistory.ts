@@ -138,11 +138,18 @@ export function deriveBookingHistory(b: BookingForHistory): BookingHistoryEvent[
 
   // 7. Extensão de prazo respondida
   if (b.extensionRespondedAt && b.extensionStatus) {
-    const approved = b.extensionStatus === "APPROVED"
+    // 🪤 Três estados, não dois. Antes era `=== "APPROVED"` com else "recusada",
+    // então AWAITING_PAYMENT (ATOR-03 — aceita, esperando as diárias extras)
+    // aparecia como RECUSADA na linha do tempo, ao lado do banner mandando
+    // pagar. O locatário lia as duas coisas na mesma tela.
+    const label =
+      b.extensionStatus === "APPROVED"         ? "Extensão de prazo aprovada"
+      : b.extensionStatus === "AWAITING_PAYMENT" ? "Extensão de prazo aceita — aguardando pagamento"
+      : "Extensão de prazo recusada"
     events.push({
       key:       "extension_responded",
       at:        b.extensionRespondedAt,
-      label:     approved ? "Extensão de prazo aprovada" : "Extensão de prazo recusada",
+      label,
       actor:     b.owner.name,
       actorRole: "owner",
     })

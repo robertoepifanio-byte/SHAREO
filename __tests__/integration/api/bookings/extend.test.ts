@@ -13,6 +13,11 @@
  *
  * 2. `new Date("2026-08-27")` é meia-noite UTC, que no Brasil é 26/08 às 21:00.
  *    A notificação dizia 27 e a tela dizia 26.
+ *
+ * 3. (ATOR-03, 24/08) Aprovar não cobrava nada: o `endDate` era empurrado e
+ *    `totalDays`/`totalPrice`/split ficavam como estavam. Agora, reserva JÁ
+ *    PAGA vai para AWAITING_PAYMENT sem mover a data; reserva não paga aplica
+ *    na hora, porque o checkout normal cobra o total atualizado.
  */
 import { NextRequest } from "next/server"
 import { PATCH, POST } from "@/app/api/bookings/[id]/extend/route"
@@ -21,6 +26,8 @@ const mockQueryRaw   = jest.fn()
 const mockExecuteRaw = jest.fn().mockResolvedValue(1)
 const mockNotifCreate = jest.fn().mockResolvedValue({})
 
+const mockAplicarExtensao = jest.fn().mockResolvedValue(undefined)
+
 jest.mock("@/lib/prisma", () => ({
   prisma: {
     $queryRaw:   (...a: unknown[]) => mockQueryRaw(...a),
@@ -28,6 +35,18 @@ jest.mock("@/lib/prisma", () => ({
     notification: { create: (...a: unknown[]) => mockNotifCreate(...a) },
   },
 }))
+
+// aplicarExtensao mora em lib/payments/extension.ts e usa o client tipado do
+// Prisma — mockar só `$executeRaw` não a alcança. Mockada aqui para o teste
+// medir a DECISÃO da rota (aplicar agora vs. esperar pagamento), não o cálculo,
+// que tem teste próprio.
+jest.mock("@/lib/payments/extension", () => {
+  const real = jest.requireActual("@/lib/payments/extension")
+  return {
+    ...real,
+    aplicarExtensao: (...a: unknown[]) => mockAplicarExtensao(...a),
+  }
+})
 
 const mockAuth = jest.fn()
 jest.mock("@/lib/auth", () => ({ auth: () => mockAuth() }))
@@ -55,6 +74,8 @@ function booking(over: Partial<Record<string, unknown>> = {}) {
     itemTitle: "Furadeira Bosch",
     extensionStatus: "PENDING",
     extensionRequestedEndDate: new Date("2026-08-27T12:00:00Z"),
+    paymentStatus: "PENDING",
+    dailyPrice: 3500,
     ...over,
   }]
 }
@@ -63,6 +84,7 @@ beforeEach(() => {
   jest.clearAllMocks()
   mockExecuteRaw.mockResolvedValue(1)
   mockNotifCreate.mockResolvedValue({})
+  mockAplicarExtensao.mockResolvedValue(undefined)
 })
 
 describe("PATCH extend — guard de status", () => {
@@ -73,6 +95,61 @@ describe("PATCH extend — guard de status", () => {
     const res = await PATCH(req({ action: "approve" }), params)
     expect(res.status).toBe(200)
     expect(mockExecuteRaw).toHaveBeenCalled()
+  })
+
+  it("reserva NÃO paga: aplica a extensão na hora — o checkout cobra o total atualizado", async () => {
+    mockAuth.mockResolvedValue({ user: { id: OWNER_ID } })
+    mockQueryRaw.mockResolvedValue(booking({ paymentStatus: "PENDING" }))
+
+    const res  = await PATCH(req({ action: "approve" }), params)
+    const body = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(body.data.extensionStatus).toBe("APPROVED")
+    expect(mockAplicarExtensao).toHaveBeenCalledWith(BOOKING_ID)
+    // A data nova volta na resposta porque a extensão já vale.
+    expect(body.data.endDate).toBeDefined()
+  })
+
+  it("🪤 reserva JÁ PAGA: NÃO move a data — fica aguardando as diárias extras", async () => {
+    mockAuth.mockResolvedValue({ user: { id: OWNER_ID } })
+    mockQueryRaw.mockResolvedValue(booking({ paymentStatus: "PAID" }))
+
+    const res  = await PATCH(req({ action: "approve" }), params)
+    const body = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(body.data.extensionStatus).toBe("AWAITING_PAYMENT")
+    // 3 dias × R$ 35,00 = R$ 105,00
+    expect(body.data.extensionAmountCents).toBe(10500)
+    // O coração do ATOR-03: nada de estender antes de pagar.
+    expect(mockAplicarExtensao).not.toHaveBeenCalled()
+    expect(body.data.endDate).toBeUndefined()
+  })
+
+  it("avisa o locatário que falta pagar, com o valor", async () => {
+    mockAuth.mockResolvedValue({ user: { id: OWNER_ID } })
+    mockQueryRaw.mockResolvedValue(booking({ paymentStatus: "PAID" }))
+
+    await PATCH(req({ action: "approve" }), params)
+
+    const notif = mockNotifCreate.mock.calls[0][0].data
+    expect(notif.type).toBe("EXTENSION_APPROVED")
+    expect(notif.title).toBe("Extensão aceita — falta pagar")
+    expect(notif.body).toContain("105,00")
+  })
+
+  it("recusa continua sem cobrar nada e não aplica extensão", async () => {
+    mockAuth.mockResolvedValue({ user: { id: OWNER_ID } })
+    mockQueryRaw.mockResolvedValue(booking({ paymentStatus: "PAID" }))
+
+    const res  = await PATCH(req({ action: "reject" }), params)
+    const body = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(body.data.extensionStatus).toBe("REJECTED")
+    expect(mockAplicarExtensao).not.toHaveBeenCalled()
+    expect(mockNotifCreate.mock.calls[0][0].data.type).toBe("EXTENSION_REJECTED")
   })
 
   it("🪤 RECUSA aprovar extensão de locação já devolvida", async () => {
