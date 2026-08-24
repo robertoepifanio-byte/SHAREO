@@ -17,7 +17,7 @@ import { BookingHistory }     from "@/components/booking/BookingHistory"
 import { ReturnCountdown }    from "@/components/booking/ReturnCountdown"
 import { ReturnChecklist }    from "@/components/booking/ReturnChecklist"
 import { ReturnConditionForm } from "@/components/booking/ReturnConditionForm"
-import { getPlatformFeeRate, calcSplitComDesconto } from "@/lib/platform-config"
+import { getPlatformFeeRate, calcSplitComDesconto, getRentalContractConfig } from "@/lib/platform-config"
 import { deriveBookingHistory } from "@/lib/bookingHistory"
 import { BookingStatusBadge } from "@/components/ui/BookingStatusBadge"
 import { formatPrice, formatDate, formatDateLong } from "@/utils/format"
@@ -121,6 +121,14 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
   if (!booking) notFound()
 
   const feeRateBps = await getPlatformFeeRate()
+  // 🪤 O banner de contrato precisa ler a MESMA config que o guard de
+  // `mark_active` lê. Antes ele aparecia sempre, e com a flag OFF (default,
+  // gated D4) a tela dizia "Assinatura do contrato pendente" numa locação que
+  // o sistema deixa retirar e concluir sem contrato nenhum — visto ao vivo em
+  // 24/08, numa reserva já paga e com o item já retirado. Prometer obrigação
+  // que nada impõe é pior que não ter o banner: num documento de locação,
+  // sugere um contrato pendente que não existe.
+  const contratoCfg = await getRentalContractConfig()
   const feeRatePct = feeRateBps / 100
   const feeRateLabel = feeRatePct % 1 === 0 ? feeRatePct.toFixed(0) : String(feeRatePct)
 
@@ -507,8 +515,8 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
             </div>
           )}
 
-          {/* ── Contrato digital ── */}
-          {isBorrower && (booking.status === "CONFIRMED" || booking.status === "ACTIVE") && (
+          {/* ── Contrato digital — só quando a flag exige o aceite ── */}
+          {contratoCfg.enabled && isBorrower && (booking.status === "CONFIRMED" || booking.status === "ACTIVE") && (
             <ContractBanner
               bookingId={booking.id}
               itemTitle={booking.item.title}

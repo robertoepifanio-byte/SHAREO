@@ -5,6 +5,7 @@ import {
   getCancellationConfig,
   getLateFeeMultiplier,
   getAutoCancelConfig,
+  getRentalContractConfig,
   CHECKOUT_MAX_CENTS,
 } from "@/lib/platform-config"
 
@@ -30,12 +31,13 @@ import {
  * por mais de um minuto.
  */
 export async function GET() {
-  const [feeRateBps, payoutWindowDays, cancel, lateFeeMultiplier, autoCancel] = await Promise.all([
+  const [feeRateBps, payoutWindowDays, cancel, lateFeeMultiplier, autoCancel, contrato] = await Promise.all([
     getPlatformFeeRate(),
     getPayoutWindowDays(),
     getCancellationConfig(),
     getLateFeeMultiplier(),
     getAutoCancelConfig(),
+    getRentalContractConfig(),
   ])
 
   return NextResponse.json(
@@ -47,6 +49,9 @@ export async function GET() {
         cancel,
         lateFeeMultiplier,
         ownerHours: autoCancel.ownerHours,
+        // O app precisa saber para não exibir "assinatura pendente" de um
+        // contrato que nada exige — mesma config que o guard de mark_active lê.
+        rentalContractRequired: contrato.enabled,
       },
     },
     { headers: { "Cache-Control": "public, max-age=60, s-maxage=60" } },
