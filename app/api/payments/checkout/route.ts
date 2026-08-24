@@ -116,8 +116,7 @@ export async function POST(req: NextRequest) {
       // 1. BOLETO: descartado pelos fundadores. Ele NÃO aceita reembolso — nem
       //    parcial nem total (tabela de capacidades da Stripe) — e a política
       //    de cancelamento publicada promete estorno em três faixas. Coerente
-      //    com a mesma decisão já tomada em 30/06 para o Mercado Pago
-      //    (docs/juridico/mp-pendencias-go-live.md).
+      //    com a decisão de 30/06 sobre boleto (docs/adr/ADR-028-reversao-stripe-connect.md).
       // 2. PIX: a Stripe exige "good standing E no mínimo 60 DIAS de pagamentos
       //    processados" pra liberar Pix em conta brasileira — é convite, não
       //    autoatendimento. A ShareO processou zero pagamentos reais (produção

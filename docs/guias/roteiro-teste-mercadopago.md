@@ -1,3 +1,5 @@
+> ⚫ **DOCUMENTO HISTÓRICO — 2026-08-24.** O fundador decidiu que o **Mercado Pago não será utilizado**; o PSP é a Stripe ([`ADR-028`](../adr/ADR-028-reversao-stripe-connect.md)). Este roteiro não deve ser executado.
+
 # Roteiro de Teste — Pagamento com Mercado Pago (Staging)
 
 > **Ambiente:** `https://staging.shareo.com.br` — é teste, **não é produção**. Nenhum dinheiro real é movimentado.

@@ -131,8 +131,8 @@ export default function RecebimentosScreen() {
   const stripeReady         = account?.stripeChargesEnabled && account?.stripePayoutsEnabled
 
   // Onboarding Stripe Connect (client:"mobile" → resposta JSON com a URL, o
-  // app abre com Linking.openURL — mesmo padrão do checkout MP em
-  // apps/mobile/app/reservas/[id].tsx).
+  // app abre com Linking.openURL). É o padrão de rota que o app consome:
+  // GET para o site (cookie), POST para o app (Bearer via resolveUserId).
   // Fonte: app/api/payments/stripe/connect/route.ts (POST)
   const stripeConnect = useMutation({
     mutationFn: async () => {

@@ -1,6 +1,6 @@
 # ADR-028 — Reversão para Stripe Connect (split automático, sem exigir conta própria do locador)
 
-**Status:** Accepted (decisão do sócio majoritário Raimundo, 2026-08-19) — **supersede parcialmente [[ADR-026-pagamentos-mercado-pago-modelo-b]]** no que diz respeito ao PSP escolhido; produção segue **gated** por D4 e, adicionalmente, pela pendência jurídica específica do desenho Stripe Connect (ver "Riscos / Pendências").
+**Status:** Accepted (decisão do sócio majoritário Raimundo, 2026-08-19; **ampliada em 2026-08-24** — ver "Atualização" abaixo) — **supersede [[ADR-026-pagamentos-mercado-pago-modelo-b]]** no que diz respeito ao PSP escolhido; produção segue **gated** por D4 e, adicionalmente, pela pendência jurídica específica do desenho Stripe Connect (ver "Riscos / Pendências").
 **Data:** 2026-08-19
 **Decisores:** Raimundo (sócio majoritário).
 **Contexto:** ShareO — módulo financeiro.
@@ -24,7 +24,7 @@ Adotar **Stripe Connect** como PSP definitivo, com o seguinte desenho:
 3. **Proprietário não abre conta Stripe própria visível** — fornece dados bancários e passa por KYC dentro (ou por um link hospedado a partir) da interface do ShareO. Se será Connect **Custom** (KYC 100% dentro da UI do ShareO) ou **Express** (onboarding hospedado pela própria Stripe) é decisão de implementação, ainda em aberto — ver "Riscos / Pendências".
 4. **Liquidação:** Pix D+0/D+1, cartão à vista D+2 úteis, boleto D+2/D+3 — números fornecidos pelo sócio, a confirmar contra a documentação oficial da Stripe Brasil na fase de implementação.
 5. **Notas fiscais:** ShareO emite NFS-e sobre os 15% de comissão; proprietário emite nota sobre os 85%. Seguimos o mesmo entendimento fiscal já registrado no parecer D4 para o modelo MP ("15% é receita da ShareO, 85% não é") — o racional não muda com a troca de PSP, mas a integração técnica de emissão não existe hoje para nenhum dos dois PSPs.
-6. **Mercado Pago Modelo B fica DORMENTE, não removido:** a flag `PlatformConfig.mercadoPagoEnabled` permanece com default OFF no código (já era o padrão antes desta decisão) — o código (OAuth, checkout, webhook) é preservado para não perder o investimento caso seja necessário reavaliar, mas sai do caminho de produção.
+6. **Mercado Pago Modelo B fica DORMENTE, não removido** ⚠️ *(revisado em 24/08 — ver "Atualização 2026-08-24" no fim do documento)*: a flag `PlatformConfig.mercadoPagoEnabled` permanece com default OFF no código (já era o padrão antes desta decisão) — o código (OAuth, checkout, webhook) é preservado para não perder o investimento caso seja necessário reavaliar, mas sai do caminho de produção.
 7. **PIX manual da plataforma (chave pessoal do fundador) é removido integralmente do código**, não apenas desligado — era um risco temporário assumido só para validar o fluxo em staging, perde a função com o Connect, e era o próprio risco regulatório mais exposto do sistema hoje (dinheiro de terceiros passando pela conta pessoal de um sócio).
 
 ## Consequências
@@ -123,8 +123,55 @@ Até isso acontecer, o estado honesto é **"implementado, aguardando verificaç�
 
 ## Decisões relacionadas
 
-- **Supersede parcialmente [[ADR-026-pagamentos-mercado-pago-modelo-b]]** — mantém o objetivo de afastar o merchant-of-record centralizado, mas troca o PSP e o desenho de onboarding do proprietário.
+- **Supersede [[ADR-026-pagamentos-mercado-pago-modelo-b]]** — mantém o objetivo de afastar o merchant-of-record centralizado, mas troca o PSP e o desenho de onboarding do proprietário. Era supersessão *parcial* até 24/08/2026; passou a total (ver "Atualização" abaixo).
 - [[ADR-012-modelo-pix-centralizado]] — modelo original (merchant of record), já superado por ADR-026.
 - [[ADR-013-webhook-queue]] — reaproveita o padrão de fila idempotente (`StripeEventQueue`), agora também para eventos de Connect.
 - [[ADR-014-payout-trigger]] — gatilho de repasse; com destination charges o repasse deixa de depender do cron/admin manual.
 - D4 — consulta jurídica: [[project-d4-juridico]] — pendência de confirmar se o parecer cobre o desenho Connect (ver "Riscos / Pendências").
+
+
+---
+
+## Atualização — 2026-08-24: o Mercado Pago sai de cena por completo
+
+**Decisão do fundador:** o Mercado Pago **não será utilizado**. A Stripe é o PSP, sem plano B ativo.
+
+Isto muda duas coisas que este ADR havia deixado em aberto em 19/08.
+
+**1. A supersessão do [[ADR-026-pagamentos-mercado-pago-modelo-b]] vira total.** Em 19/08 o ADR-026 foi superado só quanto ao PSP escolhido, e o Modelo B seguia como caminho de volta. Não segue mais.
+
+**2. A pendência jurídica B1 fecha.** O B1 do `docs/juridico/checklist-conformidade-juridica.md` era *constituir a PJ* + *contratar o PSP*, e a metade travada era o **contrato do Mercado Pago**, que exigia negociação e assinatura. Esse contrato **deixa de existir como pendência**: a relação com a Stripe se formaliza pela aceitação eletrônica do Stripe Services Agreement no cadastro da conta plataforma, não por instrumento assinado à parte. O que sobrava do B1 era uma **confirmação**, não uma negociação: que a conta plataforma na Stripe estivesse no **CNPJ 68.512.556/0001-09**, e não no CPF de um sócio. O fundador confirmou no mesmo dia — conta `acct_1TbiQR…` ("Shareo Marketplace") no CNPJ da PJ, endereço comercial batendo com o Comprovante de Situação Cadastral. **B1 fechado.** É essa titularidade que sustenta o desenho de "a ShareO não é merchant of record".
+
+**Com isso, o D4 volta a ser o único bloqueador `🔒` de go-live** — e agora com um item novo dentro dele, a transferência internacional (abaixo).
+
+### ⚠️ Consequência que NÃO é troca de nome: transferência internacional
+
+O parecer jurídico e o RIPD foram escritos com o **Mercado Pago**, entidade **brasileira**, como operador dos dados de pagamento. A **Stripe é estrangeira**. Compartilhar dados pessoais com ela é **transferência internacional** (LGPD art. 33) — outra base legal, outra análise de risco, outra redação na Política de Privacidade.
+
+Isso **não se resolve** trocando "Mercado Pago" por "Stripe" nos documentos. Precisa passar pelo jurídico (é matéria do D4). Atinge `docs/juridico/transferencia-internacional-dados.md`, `rascunho-ripd.md` e o item **C4** do checklist — todos ainda escritos na hipótese "operador no Brasil".
+
+### O código dormente do MP — **decisão nº 6 REVOGADA**
+
+A decisão nº 6 deste ADR preservou OAuth, checkout e webhook do MP atrás da flag `mercadoPagoEnabled` (default OFF), para não perder o investimento caso fosse preciso reavaliar. Com o MP descartado isso virou peso morto, e **o fundador decidiu arrancar** (24/08/2026).
+
+**Removido do código:**
+
+| O quê | Onde |
+|---|---|
+| SDK | dependência `mercadopago` (package.json + lockfile) |
+| Integração | `lib/mercadopago.ts` |
+| Rotas | `/api/mp/oauth/callback`, `/api/mp/webhook`, `/api/payments/mp/checkout`, `/api/payments/mp/connect` |
+| UI web | `MpPayButton`, bloco "Receber pelo Mercado Pago" em `/perfil/recebimentos`, banner de retorno do OAuth (`?mp=`) |
+| UI app | mutation de checkout e botão "Pagar reserva" em `apps/mobile/app/reservas/[id].tsx` |
+| Config | flag `mercadoPagoEnabled` e `getMercadoPagoConfig()` |
+| Testes/scripts | `__tests__/integration/api/mp/`, `scripts/disable-mercadopago-staging.ts` |
+
+**Banco:** os campos também saíram, pela migração `20260824190000_remove_mercado_pago` — 9 colunas (`Booking.mpPreferenceId`/`mpPaymentId` e os 7 `mp*` de `OwnerPaymentAccount`), a tabela `mercado_pago_event_queue` e a linha `mercadoPagoEnabled` de `platform_configs`.
+
+É **destrutiva** e foi autorizada com escopo explícito, depois de conferir o que existia em staging: 1 reserva com preference/payment, 1 conta com tokens OAuth criptografados e 12 linhas na fila — tudo do sandbox, nenhuma transação real. Apagar os tokens de terceiro é também higiene de segurança: nenhum código restante conseguiria renová-los, revogá-los ou re-cifrá-los numa rotação de chave.
+
+🪤 Duas armadilhas que o ensaio pegou antes do merge: a tabela é `platform_configs` (plural, o `@@map` pluraliza) — no singular a migração aborta e o `migrate deploy` a marca como FALHADA, **travando todos os deploys seguintes**; e as migrations históricas do MP (`20260629…`, `20260630…`) ficam **intocadas**, porque o Prisma guarda checksum por migração e editá-las quebraria `migrate deploy` em todo ambiente que já as aplicou.
+
+🪤 **Consequência para o app:** o botão "Pagar reserva" chamava a rota do MP e virou um atalho para pagar no site. Na prática nada regrediu — com a flag desligada ele já só produzia "pagamento indisponível".
+
+E o caminho de pagamento do app **já estava quebrado na volta antes desta remoção**: a rota do MP mandava `back_urls` para `shareo://pagamento/sucesso`, mas não existe rota `pagamento` em `apps/mobile/app/` nem nenhum listener de deep-link no app inteiro — o retorno cairia no not-found. Portar o checkout Stripe (PSP-03) tem, portanto, uma perna barata (trocar `auth()` por `resolveUserId`, padrão já pronto em `/api/payments/stripe/connect`) e uma cara, que é o retorno — `success_url` da Stripe é http(s) e não aceita scheme customizado, então precisa de página-ponte no site ou `openAuthSessionAsync`. Isso é trabalho novo, não paridade.

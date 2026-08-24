@@ -84,7 +84,7 @@ function buildCsp(nonce: string): string {
     //    que o nonce do script-src deveria proteger.
     //  • object-src 'none' — mata plugin/<embed> como vetor de XSS legado.
     //  • form-action 'self' — impede que um form injetado poste dados a um
-    //    domínio do atacante (checkout MP/Stripe é redirect por link, não <form>).
+    //    domínio do atacante (checkout Stripe é redirect por link, não <form>).
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

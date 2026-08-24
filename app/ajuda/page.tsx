@@ -355,7 +355,8 @@ function buildSections(v: HelpVars) { return [
         a: "Pessoas jurídicas podem usar o ShareO com o plano PJ Premium. As regras incluem: CNPJ ativo e regular; emissão de nota fiscal para todas as locações (conforme legislação vigente); cumprimento das regras do CDC (Código de Defesa do Consumidor) na relação com locatários. PJs têm acesso a ferramentas avançadas como importação em massa, analytics e vitrine personalizada." },
       { q: "Meus dados estão protegidos? Como funciona a LGPD no ShareO?",
         a: "O ShareO segue integralmente a Lei Geral de Proteção de Dados (LGPD — Lei 13.709/2018) e coleta apenas os dados necessários para o funcionamento da plataforma. Você pode solicitar acesso, correção, portabilidade ou exclusão dos seus dados a qualquer momento em 'Meu Perfil > Privacidade e dados'. Os dados necessários para processar pagamentos e repasses são compartilhados com a Stripe (nosso provedor de pagamentos, que atua como operador de dados financeiros). Dados mínimos são transmitidos a outros prestadores de infraestrutura (hospedagem, e-mail transacional e monitoramento de erros), sempre sob acordo de confidencialidade. Não vendemos seus dados pessoais. Consulte nossa Política de Privacidade para a lista completa." },
-      // JURÍDICO (ADR-028): o parecer D4 validou o desenho do Mercado Pago, não o da Stripe.
+      // JURÍDICO (ADR-028): o parecer D4 validou o desenho do Mercado Pago, não o da Stripe —
+      // e a Stripe, sendo estrangeira, acrescenta transferência internacional (PSP-01).
       // Esta resposta descreve o papel da Stripe SEM afirmar enquadramento regulatório dela
       // (o texto anterior afirmava licenciamento BACEN do MP). Não publicar sem sign-off.
       { q: "O ShareO é regulamentado?",

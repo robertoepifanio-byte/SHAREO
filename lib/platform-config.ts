@@ -332,35 +332,6 @@ export async function getRentalContractConfig(): Promise<RentalContractConfig> {
   }
 }
 
-// ─── Mercado Pago (Modelo B / split — EM IMPLANTAÇÃO, gated D4) ──────────────
-// Flag de feature: PlatformConfig.mercadoPagoEnabled
-// Default OFF — com a flag desligada o fluxo de pagamento atual (Stripe
-// oculto) NÃO muda. Ativar só após: parecer FORMAL do D4 + contrato PSP +
-// credenciais configuradas (ver lib/mercadopago.ts e docs/juridico/mercadopago-procedimentos-fundadores.md).
-// ADR-026 supersede ADR-012.
-
-export interface MercadoPagoConfig {
-  enabled: boolean // chave mercadoPagoEnabled ("true"/"false")
-}
-
-const DEFAULT_MERCADO_PAGO: MercadoPagoConfig = { enabled: false }
-
-/**
- * Lê a configuração do Mercado Pago.
- * Nunca lança exceção — usado no caminho crítico do checkout.
- * Default OFF garante que o comportamento atual não muda até ativação explícita.
- */
-export async function getMercadoPagoConfig(): Promise<MercadoPagoConfig> {
-  try {
-    const map = await loadConfig()
-    return {
-      enabled: map.mercadoPagoEnabled === "true",
-    }
-  } catch {
-    return DEFAULT_MERCADO_PAGO
-  }
-}
-
 // ─── Consentimento biométrico da selfie (KYC — LGPD art. 11, gated D4) ───────
 // Flag de feature: PlatformConfig.biometricConsentRequired
 // Default OFF — com a flag desligada o fluxo de KYC atual NÃO muda (nenhum passo
@@ -392,7 +363,7 @@ export async function getBiometricConsentConfig(): Promise<BiometricConsentConfi
 // ─── Stripe Connect (PSP definitivo — ADR-028, EM CONSTRUÇÃO) ────────────────
 // Flag de feature: PlatformConfig.stripeConnectEnabled
 // Default OFF — com a flag desligada, o onboarding do proprietário via Stripe
-// Connect não fica visível/alcançável (mesmo padrão de getMercadoPagoConfig).
+// Connect não fica visível/alcançável.
 // Ativar só depois que a conta Stripe da plataforma tiver o perfil de Connect
 // habilitado no Dashboard e o fluxo tiver sido validado em staging.
 

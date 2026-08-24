@@ -8,7 +8,7 @@
 
 ## 0. 🔴 Bloqueador único
 
-- ✅ **D4 — parecer jurídico FORMAL recebido (30/06/2026)**, revisado com o Mercado Pago como PSP — `docs/juridico/parecer-juridico-revisado-mp.md`. É a **condição 1 de 4** do go-live. ⚠️ **Isto NÃO libera produção:** falta (2) contrato MP assinado + conta PJ — CNPJ ativo desde 11/08, **contrato em andamento**, é o bloqueador efetivo; (3) Termos/Política publicados **com a PJ identificada** (conteúdo aprovado, textos ainda não trazem razão social/CNPJ); (4) checklist 100% (B3 tributário, C2 DPAs, C3 RIPD+DPO).
+- ✅ **D4 — parecer jurídico FORMAL recebido (30/06/2026)**, revisado com o Mercado Pago como PSP — `docs/juridico/parecer-juridico-revisado-mp.md`. É a **condição 1 de 4** do go-live. ⚠️ **Isto NÃO libera produção**, e o quadro mudou em 24/08: (2) ✅ **fechada** — o MP foi descartado, o contrato que a travava ficou sem objeto, e a conta plataforma da Stripe está no CNPJ da PJ; (3) 🟡 a **identificação da PJ já está publicada** (razão social + CNPJ + sede em `/termos`, `/privacidade`, `/politicas`), mas os textos **ainda descrevem o MP como operador** e precisam ser reescritos junto com a análise de transferência internacional; (4) checklist 100% (B3 regime tributário, C2 DPAs, C3 RIPD+DPO). ⚠️ O parecer citado acima analisou o **Mercado Pago** — ver a ressalva no topo dele.
 
 ---
 

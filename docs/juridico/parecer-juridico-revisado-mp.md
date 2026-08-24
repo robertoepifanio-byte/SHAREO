@@ -1,3 +1,7 @@
+> ⚠️ **LER COM ESTA RESSALVA — 2026-08-24.** Este parecer analisou o desenho com o **Mercado Pago** como PSP. Em 24/08/2026 o fundador decidiu que o MP **não será utilizado**: o PSP é a **Stripe** ([`ADR-028`](../adr/ADR-028-reversao-stripe-connect.md)).
+>
+> O **racional jurídico continua valendo** — afastar o merchant-of-record centralizado, terceirizar o arranjo a um PSP licenciado (Lei 12.865/2013). O que **não** se transporta automaticamente é a análise de **transferência internacional de dados**: o MP é entidade brasileira, a Stripe é estrangeira (LGPD art. 33). **Reconfirmar com o jurídico antes do go-live** — é matéria de D4.
+
 # Parecer Jurídico (D4) — versão revisada com o Mercado Pago como PSP
 
 > **Status: PARECER FORMAL** (assinado pela advogada da ShareO). Reflete a decisão dos fundadores de **terceirizar o arranjo de pagamentos** contratando o **Mercado Pago** como PSP licenciado pelo BACEN. Supera a leitura preliminar de *merchant of record*.

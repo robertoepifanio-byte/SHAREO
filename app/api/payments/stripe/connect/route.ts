@@ -16,10 +16,9 @@ function err(code: string, message: string, status: number) {
  * hospedado pela Stripe.
  *
  * Gating: flag stripeConnectEnabled (default OFF) + STRIPE_SECRET_KEY. Com
- * qualquer um ausente, responde 404 — o fluxo atual de checkout não é afetado
- * (mesmo padrão de app/api/payments/mp/connect/route.ts).
+ * qualquer um ausente, responde 404 — o fluxo atual de checkout não é afetado.
  *
- * Dois métodos, mesmo padrão de app/api/payments/mp/checkout/route.ts:
+ * Dois métodos:
  * GET  → web (link `<a href>` do site, auth por cookie, resposta é o redirect).
  * POST → mobile (fetch autenticado por Bearer via resolveUserId, resposta é
  *        JSON com a URL — o app abre com Linking.openURL, mesmo padrão do

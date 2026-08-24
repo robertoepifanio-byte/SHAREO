@@ -7,7 +7,7 @@
  * `stripe.accounts.create({ type: "express" })` falha mesmo com a flag ligada.
  *
  * Este script só grava `value = "true"` — não mexe em nenhum código, mesmo
- * padrão de scripts/disable-mercadopago-staging.ts.
+ * padrão dos demais scripts de flag em staging.
  *
  * Comportamento:
  *   SEM --confirm  → dry-run: mostra o valor atual e o que seria escrito. NÃO grava.

@@ -6,21 +6,9 @@ import { prisma } from "@/lib/prisma"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { PixAccountForm } from "./_PixAccountForm"
 import { getPlatformFeeRate, getPayoutWindowDays, formatPayoutWindow } from "@/lib/platform-config"
-import { isMercadoPagoActive } from "@/lib/mercadopago"
 import { isStripeConnectActive } from "@/lib/stripe-connect"
 
 export const metadata: Metadata = { title: "Conta de Recebimento PIX" }
-
-// Mensagens do retorno do OAuth do Mercado Pago (?mp=...).
-// `sem_conta` não deve mais ocorrer após o desacoplamento PIX (upsert no callback),
-// mas mantida para compatibilidade com deploys antigos em staging.
-const MP_STATUS: Record<string, { ok: boolean; msg: string }> = {
-  conectado:  { ok: true,  msg: "Conta Mercado Pago conectada com sucesso." },
-  cancelado:  { ok: false, msg: "Conexão com o Mercado Pago cancelada." },
-  sem_conta:  { ok: false, msg: "Não foi possível criar sua conta de recebimento. Tente novamente." },
-  erro_state: { ok: false, msg: "Sessão de conexão expirada. Tente novamente." },
-  erro:       { ok: false, msg: "Não foi possível conectar ao Mercado Pago. Tente novamente." },
-}
 
 // Mensagens do retorno do onboarding Stripe Connect (?stripe=...).
 const STRIPE_STATUS: Record<string, { ok: boolean; msg: string }> = {
@@ -33,30 +21,27 @@ const STRIPE_STATUS: Record<string, { ok: boolean; msg: string }> = {
 export default async function RecebimentosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ mp?: string; stripe?: string }>
+  searchParams: Promise<{ stripe?: string }>
 }) {
   const session = await auth()
   if (!session) redirect("/login?callbackUrl=/perfil/recebimentos")
 
-  const [account, feeRateBps, payoutWindowDays, mpActive, stripeConnectActive] = await Promise.all([
+  const [account, feeRateBps, payoutWindowDays, stripeConnectActive] = await Promise.all([
     prisma.ownerPaymentAccount.findUnique({
     where:  { userId: session.user.id },
       select: {
         id: true, pixKeyType: true, pixKey: true, holderName: true, bankName: true, status: true,
-        mpConnectedAt: true, mpLiveMode: true,
         stripeAccountId: true, stripeConnectStatus: true, stripeChargesEnabled: true,
         stripePayoutsEnabled: true, stripeConnectedAt: true,
       },
     }),
     getPlatformFeeRate(),
     getPayoutWindowDays(),
-    isMercadoPagoActive(),
     isStripeConnectActive(),
   ])
   const feeLabel    = `${feeRateBps / 100}%`
   const payoutLabel = formatPayoutWindow(payoutWindowDays)
   const params = await searchParams
-  const mpStatus = MP_STATUS[params.mp ?? ""]
   const stripeStatus = STRIPE_STATUS[params.stripe ?? ""]
   const stripeReady = account?.stripeChargesEnabled && account?.stripePayoutsEnabled
 
@@ -92,19 +77,6 @@ export default async function RecebimentosPage({
               abaixo.
             </p>
           </div>
-
-          {mpStatus && (
-            <div
-              role="status"
-              className={`rounded-lg border p-3 text-sm ${
-                mpStatus.ok
-                  ? "border-success/30 bg-success/10 text-success"
-                  : "border-destructive/30 bg-destructive/10 text-destructive"
-              }`}
-            >
-              {mpStatus.msg}
-            </div>
-          )}
 
           {stripeStatus && (
             <div
@@ -185,44 +157,6 @@ export default async function RecebimentosPage({
             </div>
             <PixAccountForm existing={account} />
           </div>
-
-          {/* Mercado Pago — Modelo B / split (dormente desde ADR-028, só aparece com a flag ativa). */}
-          {mpActive && (
-            <div className="rounded-xl border border-border bg-surface p-5 space-y-3">
-              <h2 className="font-semibold text-foreground">Receber pelo Mercado Pago</h2>
-              {account?.mpConnectedAt ? (
-                <div className="space-y-2">
-                  <p className="inline-flex items-center gap-2 text-sm text-success">
-                    <span aria-hidden="true">✅</span>
-                    Conta conectada{account.mpLiveMode ? "" : " (ambiente de teste)"}.
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Os repasses das suas locações cairão automaticamente na sua conta Mercado Pago,
-                    já com a taxa ShareO de {feeLabel} descontada.
-                  </p>
-                  <a
-                    href="/api/payments/mp/connect"
-                    className="inline-flex min-h-11 items-center text-sm font-medium text-brand hover:underline"
-                  >
-                    Reconectar conta
-                  </a>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground">
-                    Conecte sua conta Mercado Pago para receber os repasses automaticamente,
-                    sem espera pelo repasse manual.
-                  </p>
-                  <a
-                    href="/api/payments/mp/connect"
-                    className="inline-flex min-h-11 items-center justify-center rounded-lg bg-brand px-4 text-sm font-semibold text-white hover:opacity-90"
-                  >
-                    Conectar Mercado Pago
-                  </a>
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Como funciona */}
           <div className="rounded-xl border border-border bg-surface p-5 space-y-3">
