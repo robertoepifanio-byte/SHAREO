@@ -295,15 +295,20 @@ export function calcSplitComDesconto(totalPrice: number, discountCents: number, 
 
 /**
  * Expiração das cobranças AVULSAS da reserva (taxa de atraso, diárias extras
- * de extensão): 72h, contra os 30 min do checkout da locação
+ * de extensão): 24h, contra os 30 min do checkout da locação
  * (STRIPE_CHECKOUT_EXPIRES_SECONDS).
  *
  * Prazos diferentes de propósito — o checkout da locação segura disponibilidade
  * do item e precisa liberar rápido; uma cobrança avulsa não bloqueia nada e o
- * usuário costuma pagar depois. O número vinha inline em dois arquivos, sem
- * nome que explicasse a diferença.
+ * usuário costuma pagar depois.
+ *
+ * 🪤 24h é o TETO DA STRIPE, não uma preferência: `expires_at` da Checkout
+ * Session tem que ficar entre 30 minutos e 24 horas da criação. O valor era 72h
+ * (copiado da cobrança de taxa de atraso, que nunca foi exercitada), e a Stripe
+ * recusava a criação da sessão — o usuário via só "Erro interno". Flagrado ao
+ * vivo em 24/08/2026, ao pagar as diárias extras de uma extensão.
  */
-export const STRIPE_CHARGE_EXPIRES_SECONDS = 72 * 60 * 60
+export const STRIPE_CHARGE_EXPIRES_SECONDS = 24 * 60 * 60
 
 /**
  * Taxa de atraso na devolução, em centavos. Fonte única da fórmula: é usada
