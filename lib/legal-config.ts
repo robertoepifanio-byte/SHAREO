@@ -67,3 +67,39 @@ export const PJ_DECLARATION_TEXT =
   "poderes formais para representá-la perante a ShareO, e respondo pelos atos " +
   "praticados nesta conta PJ. Reconheço que esta declaração é registrada com data, " +
   "hora e endereço IP para fins de prova, conforme a Política de Privacidade."
+
+/**
+ * Identificação da pessoa jurídica que opera a plataforma.
+ *
+ * Obrigação legal, não enfeite: o CDC (art. 44) e o Decreto 7.962/2013 (art. 2º, I —
+ * comércio eletrônico) exigem que razão social, CNPJ e endereço da sede apareçam
+ * em local de destaque. Sem isso, os Termos ficam sujeitos a alegação de nulidade
+ * já no primeiro dia de operação.
+ *
+ * Fonte única de propósito: os mesmos dados aparecem nos Termos, na Política de
+ * Privacidade (onde identificam o CONTROLADOR, LGPD art. 9º, I) e em /politicas.
+ * Três cópias literais divergiriam na primeira alteração de endereço. O app
+ * espelha esta constante em `apps/mobile/lib/legalConfig.ts` (o app não importa
+ * do pacote web) e um teste compara os dois valores.
+ *
+ * 🪤 `razaoSocial` é a da RECEITA, não a de rascunho. Os documentos jurídicos
+ * escritos ANTES da constituição (RIPD, consentimento de biometria) dizem
+ * "ShareO Marketplace de Aluguel Ltda." — nome que nunca existiu no registro.
+ * O CNPJ 68.512.556/0001-09 saiu em 11/08/2026 com outra denominação. Num bloco
+ * cuja única função é identificar a PJ, a razão social errada anula o propósito.
+ */
+export const LEGAL_ENTITY = {
+  razaoSocial: "SHAREO MARKETPLACE DE INTERMEDIACAO DE NEGOCIOS LTDA",
+  cnpj: "68.512.556/0001-09",
+  /**
+   * Endereço completo da sede (logradouro, nº, bairro, cidade/UF, CEP).
+   *
+   * `null` enquanto o fundador não confirma o endereço registrado na Receita.
+   * Sabe-se que a sede é em Pinheiros/SP, mas bairro e cidade não cumprem o
+   * art. 2º, I do Decreto 7.962/2013 — e endereço parcial num documento legal
+   * é tão inútil quanto nenhum. Os componentes omitem a linha em vez de exibir
+   * dado incompleto. Preencher ANTES do go-live.
+   */
+  enderecoSede: null as string | null,
+  emailContato: "suporte@shareo.com.br",
+} as const

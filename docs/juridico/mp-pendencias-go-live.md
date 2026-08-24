@@ -1,3 +1,5 @@
+> ⚫ **DOCUMENTO HISTÓRICO — 2026-08-24.** O fundador decidiu que o **Mercado Pago não será utilizado**; o PSP é a Stripe ([`ADR-028`](../adr/ADR-028-reversao-stripe-connect.md)). Nada aqui é procedimento vigente. Preservado como registro do desenho avaliado.
+
 # Mercado Pago — Pendências de Go-live
 
 Lista de itens a remover / resetar ANTES de ligar a flag `mercadoPagoEnabled` em produção.

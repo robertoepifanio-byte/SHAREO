@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { AppHeader } from "@/components/layout/AppHeader"
+import { IdentificacaoPrestador } from "@/components/legal/IdentificacaoPrestador"
 import { POLICY_UPDATED_AT } from "@/lib/legal-config"
 import { getPlatformFeeRate, getPayoutWindowDays, formatPayoutWindow, CHECKOUT_MAX_CENTS } from "@/lib/platform-config"
 
@@ -30,7 +31,12 @@ export default async function TermosPage() {
       <AppHeader />
       <main className="container py-10 max-w-3xl">
         <h1 className="text-3xl font-extrabold text-primary mb-2">Termos de Uso</h1>
-        <p className="text-sm text-muted-foreground mb-8">Última atualização: {POLICY_UPDATED_AT}</p>
+        <p className="text-sm text-muted-foreground mb-6">Última atualização: {POLICY_UPDATED_AT}</p>
+
+        {/* Em destaque, antes das cláusulas: exigência do Decreto 7.962/2013, art. 2º, I. */}
+        <div className="mb-8">
+          <IdentificacaoPrestador />
+        </div>
 
         <div className="prose prose-sm max-w-none text-foreground space-y-6">
 

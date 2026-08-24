@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { AppHeader } from "@/components/layout/AppHeader"
+import { IdentificacaoPrestador } from "@/components/legal/IdentificacaoPrestador"
 import {
   getPlatformFeeRate,
   getPayoutWindowDays,
@@ -407,7 +408,12 @@ export default async function PoliticasPage() {
                     seguranca@shareo.com.br
                   </a>
                 </p>
-                {/* JURÍDICO: adicionar CNPJ, razão social e endereço antes do go-live (CDC Art. 44) */}
+              </div>
+
+              {/* Fora do card de contatos de propósito: o bloco tem casca própria
+                  (borda + fundo surface) e aninhar as duas vira borda dentro de borda. */}
+              <div className="mt-4">
+                <IdentificacaoPrestador />
               </div>
             </section>
 

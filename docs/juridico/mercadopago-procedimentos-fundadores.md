@@ -1,3 +1,5 @@
+> ⚫ **DOCUMENTO HISTÓRICO — 2026-08-24.** O fundador decidiu que o **Mercado Pago não será utilizado**; o PSP é a Stripe ([`ADR-028`](../adr/ADR-028-reversao-stripe-connect.md)). Nada aqui é procedimento vigente. Preservado como registro do desenho avaliado.
+
 # Mercado Pago — Procedimentos e Decisões (para os fundadores)
 
 **Contexto:** o ShareO vai operar os pagamentos das locações pelo **Mercado Pago (MP)** — PSP **licenciado pelo Banco Central**, nativo do Brasil (PIX, cartão, boleto). Substitui o Stripe (oculto) e o **PIX manual temporário em chave pessoal** que está no staging hoje. Este documento tem **o que os fundadores precisam fazer/decidir**; o resumo técnico está no fim.

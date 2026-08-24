@@ -1,6 +1,6 @@
 # ADR-028 — Reversão para Stripe Connect (split automático, sem exigir conta própria do locador)
 
-**Status:** Accepted (decisão do sócio majoritário Raimundo, 2026-08-19) — **supersede parcialmente [[ADR-026-pagamentos-mercado-pago-modelo-b]]** no que diz respeito ao PSP escolhido; produção segue **gated** por D4 e, adicionalmente, pela pendência jurídica específica do desenho Stripe Connect (ver "Riscos / Pendências").
+**Status:** Accepted (decisão do sócio majoritário Raimundo, 2026-08-19; **ampliada em 2026-08-24** — ver "Atualização" abaixo) — **supersede [[ADR-026-pagamentos-mercado-pago-modelo-b]]** no que diz respeito ao PSP escolhido; produção segue **gated** por D4 e, adicionalmente, pela pendência jurídica específica do desenho Stripe Connect (ver "Riscos / Pendências").
 **Data:** 2026-08-19
 **Decisores:** Raimundo (sócio majoritário).
 **Contexto:** ShareO — módulo financeiro.
@@ -24,7 +24,7 @@ Adotar **Stripe Connect** como PSP definitivo, com o seguinte desenho:
 3. **Proprietário não abre conta Stripe própria visível** — fornece dados bancários e passa por KYC dentro (ou por um link hospedado a partir) da interface do ShareO. Se será Connect **Custom** (KYC 100% dentro da UI do ShareO) ou **Express** (onboarding hospedado pela própria Stripe) é decisão de implementação, ainda em aberto — ver "Riscos / Pendências".
 4. **Liquidação:** Pix D+0/D+1, cartão à vista D+2 úteis, boleto D+2/D+3 — números fornecidos pelo sócio, a confirmar contra a documentação oficial da Stripe Brasil na fase de implementação.
 5. **Notas fiscais:** ShareO emite NFS-e sobre os 15% de comissão; proprietário emite nota sobre os 85%. Seguimos o mesmo entendimento fiscal já registrado no parecer D4 para o modelo MP ("15% é receita da ShareO, 85% não é") — o racional não muda com a troca de PSP, mas a integração técnica de emissão não existe hoje para nenhum dos dois PSPs.
-6. **Mercado Pago Modelo B fica DORMENTE, não removido:** a flag `PlatformConfig.mercadoPagoEnabled` permanece com default OFF no código (já era o padrão antes desta decisão) — o código (OAuth, checkout, webhook) é preservado para não perder o investimento caso seja necessário reavaliar, mas sai do caminho de produção.
+6. **Mercado Pago Modelo B fica DORMENTE, não removido** ⚠️ *(revisado em 24/08 — ver "Atualização 2026-08-24" no fim do documento)*: a flag `PlatformConfig.mercadoPagoEnabled` permanece com default OFF no código (já era o padrão antes desta decisão) — o código (OAuth, checkout, webhook) é preservado para não perder o investimento caso seja necessário reavaliar, mas sai do caminho de produção.
 7. **PIX manual da plataforma (chave pessoal do fundador) é removido integralmente do código**, não apenas desligado — era um risco temporário assumido só para validar o fluxo em staging, perde a função com o Connect, e era o próprio risco regulatório mais exposto do sistema hoje (dinheiro de terceiros passando pela conta pessoal de um sócio).
 
 ## Consequências
@@ -123,8 +123,33 @@ Até isso acontecer, o estado honesto é **"implementado, aguardando verificaç�
 
 ## Decisões relacionadas
 
-- **Supersede parcialmente [[ADR-026-pagamentos-mercado-pago-modelo-b]]** — mantém o objetivo de afastar o merchant-of-record centralizado, mas troca o PSP e o desenho de onboarding do proprietário.
+- **Supersede [[ADR-026-pagamentos-mercado-pago-modelo-b]]** — mantém o objetivo de afastar o merchant-of-record centralizado, mas troca o PSP e o desenho de onboarding do proprietário. Era supersessão *parcial* até 24/08/2026; passou a total (ver "Atualização" abaixo).
 - [[ADR-012-modelo-pix-centralizado]] — modelo original (merchant of record), já superado por ADR-026.
 - [[ADR-013-webhook-queue]] — reaproveita o padrão de fila idempotente (`StripeEventQueue`), agora também para eventos de Connect.
 - [[ADR-014-payout-trigger]] — gatilho de repasse; com destination charges o repasse deixa de depender do cron/admin manual.
 - D4 — consulta jurídica: [[project-d4-juridico]] — pendência de confirmar se o parecer cobre o desenho Connect (ver "Riscos / Pendências").
+
+
+---
+
+## Atualização — 2026-08-24: o Mercado Pago sai de cena por completo
+
+**Decisão do fundador:** o Mercado Pago **não será utilizado**. A Stripe é o PSP, sem plano B ativo.
+
+Isto muda duas coisas que este ADR havia deixado em aberto em 19/08.
+
+**1. A supersessão do [[ADR-026-pagamentos-mercado-pago-modelo-b]] vira total.** Em 19/08 o ADR-026 foi superado só quanto ao PSP escolhido, e o Modelo B seguia como caminho de volta. Não segue mais.
+
+**2. A pendência jurídica B1 muda de objeto.** O B1 do `docs/juridico/checklist-conformidade-juridica.md` era *constituir a PJ* + *contratar o PSP*, e a metade travada era o **contrato do Mercado Pago**, que exigia negociação e assinatura. Esse contrato **deixa de existir como pendência**: a relação com a Stripe se formaliza pela aceitação eletrônica do Stripe Services Agreement no cadastro da conta plataforma, não por instrumento assinado à parte. O que sobra do B1 é uma **confirmação**, não uma negociação: que a conta plataforma na Stripe esteja no **CNPJ 68.512.556/0001-09**, e não no CPF de um sócio — é a titularidade PJ que sustenta o desenho de "a ShareO não é merchant of record".
+
+### ⚠️ Consequência que NÃO é troca de nome: transferência internacional
+
+O parecer jurídico e o RIPD foram escritos com o **Mercado Pago**, entidade **brasileira**, como operador dos dados de pagamento. A **Stripe é estrangeira**. Compartilhar dados pessoais com ela é **transferência internacional** (LGPD art. 33) — outra base legal, outra análise de risco, outra redação na Política de Privacidade.
+
+Isso **não se resolve** trocando "Mercado Pago" por "Stripe" nos documentos. Precisa passar pelo jurídico (é matéria do D4). Atinge `docs/juridico/transferencia-internacional-dados.md`, `rascunho-ripd.md` e o item **C4** do checklist — todos ainda escritos na hipótese "operador no Brasil".
+
+### O código dormente do MP
+
+A decisão nº 6 deste ADR preservou OAuth, checkout e webhook do MP atrás da flag `mercadoPagoEnabled` (default OFF), para não perder o investimento caso fosse preciso reavaliar. Com o MP descartado, esse código passa a ser **peso morto**: superfície que ninguém exercita, que aparece em auditoria de dependências e que confunde quem lê o módulo financeiro.
+
+**Não foi removido nesta atualização** — remover é mudança grande (schema, flag, rotas, testes) e merece decisão explícita, não efeito colateral de uma atualização de ADR. Fica registrado como pendência para o fundador decidir: manter dormente ou arrancar.

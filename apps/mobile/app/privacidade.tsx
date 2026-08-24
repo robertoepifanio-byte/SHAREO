@@ -14,6 +14,8 @@ import { router } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useTheme } from "@/lib/theme"
 import { API_URL } from "@/lib/api"
+import { IdentificacaoPrestador } from "@/components/legal/IdentificacaoPrestador"
+import { POLICY_UPDATED_AT } from "@/lib/legalConfig"
 
 // Rotas do site que têm tela nativa equivalente — navegam via router.push
 // em vez de abrir o navegador. (2026-07-09: 6 páginas do rodapé transcritas.)
@@ -77,9 +79,12 @@ export default function PrivacidadeScreen() {
             Política de Privacidade
           </Text>
           <Text style={[s.pageSubtitle, { color: tokens.muted }]}>
-            Última atualização: junho de 2026
+            Última atualização: {POLICY_UPDATED_AT}
           </Text>
         </View>
+
+        {/* Verbatim de page.tsx — identifica o controlador. */}
+        <IdentificacaoPrestador papel="controlador" />
 
         {/* ── Seção 1 — Introdução ── */}
         <View style={[s.section, { borderColor: tokens.border }]}>
