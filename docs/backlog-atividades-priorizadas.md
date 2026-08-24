@@ -28,8 +28,8 @@
 | ID | Achado | Por que não implementei |
 |---|---|---|
 | **ATOR-02** | `mark_active` não confere pagamento. Item pode ser retirado sem a reserva estar `PAID`. | Não dá para consertar antes de decidir **como o E2E paga**: a suíte não tem caminho de pagamento (`x-e2e-token` é só bypass de rate limit), então todo spec vai de `confirm` direto para `mark_active`. Um guard aqui quebra a suíte inteira sem alternativa. |
-| **ATOR-03** | Extensão de prazo aprovada **não cobra nada**. O locatário fica mais dias sem pagamento adicional. | Produto: define preço da extensão, se cobra no ato ou no fim, e o que acontece se falhar. |
-| **ATOR-04** | Notificação de extensão usa o tipo `BOOKING_CONFIRMED`. | Corrigir exige valor novo no enum `NotificationType` — migração, que não rodo sem o fundador presente. |
+| ~~**ATOR-03**~~ | ~~Extensão de prazo aprovada não cobra nada.~~ | 🟢 **RESOLVIDO em 2026-08-24** ([#361](https://github.com/robertoepifanio-byte/SHAREO/pull/361)). Decisão do fundador: preço = diárias estendidas, e **a extensão só vale depois de paga**. Reserva já paga vai a `AWAITING_PAYMENT` e o `endDate` só se move quando o pagamento confirma; reserva não paga recalcula os totais e o checkout normal cobra tudo. 🪤 A revisão pegou um defeito de dinheiro antes do merge: inflar o `ownerNetAmount` faria a Stripe recusar a transferência (ela exige `source_transaction` por cobrança no Brasil) — virou **um `Payout` por cobrança**. |
+| ~~**ATOR-04**~~ | ~~Notificação de extensão usa o tipo `BOOKING_CONFIRMED`.~~ | 🟢 **RESOLVIDO em 2026-08-24** ([#360](https://github.com/robertoepifanio-byte/SHAREO/pull/360) + [#361](https://github.com/robertoepifanio-byte/SHAREO/pull/361)) — enum ganhou `EXTENSION_REQUESTED`/`APPROVED`/`REJECTED`. Linhas antigas NÃO reclassificadas: reescrever histórico não conserta o que alguém já leu. |
 
 ### 🧹 Higiene de ambiente
 
