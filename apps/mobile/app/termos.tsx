@@ -13,9 +13,8 @@ import { router } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useTheme } from "@/lib/theme"
 import { usePlatformConfig, formatPayoutWindow, formatMaxLabel } from "@/lib/platformConfig"
-
-// Constante espelhada de lib/legal-config.ts
-const POLICY_UPDATED_AT = "junho de 2026"
+import { IdentificacaoPrestador } from "@/components/legal/IdentificacaoPrestador"
+import { POLICY_UPDATED_AT } from "@/lib/legalConfig"
 
 export default function TermosScreen() {
   const { tokens } = useTheme()
@@ -73,6 +72,9 @@ export default function TermosScreen() {
             Última atualização: {POLICY_UPDATED_AT}
           </Text>
         </View>
+
+        {/* Verbatim de page.tsx — vem antes das cláusulas. */}
+        <IdentificacaoPrestador />
 
         {/* ── Seção 1 — verbatim de page.tsx linhas 29-34 ── */}
         <View style={[s.section, { backgroundColor: tokens.bg }]}>

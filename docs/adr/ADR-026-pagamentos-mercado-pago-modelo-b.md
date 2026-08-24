@@ -1,6 +1,8 @@
 # ADR-026 — Pagamentos via Mercado Pago (Modelo B — Split/Marketplace)
 
-**Status:** Accepted (decisão dos fundadores, 2026-06-28) — **confirmado pelo parecer jurídico FORMAL** (2026-06-30, [`../juridico/parecer-juridico-revisado-mp.md`](../parecer-juridico-revisado-mp.md)); produção ainda **gated** por contrato MP + conta PJ + Termos/Política publicados + checklist 100%. **Supersede [[ADR-012-modelo-pix-centralizado]]**.
+**Status:** ⚫ **Superseded (2026-08-24)** — o fundador decidiu que o **Mercado Pago não será utilizado**. O PSP é a Stripe ([[ADR-028-reversao-stripe-connect]]), que em 19/08 já havia superado este ADR *parcialmente*; a decisão de 24/08 o supera por inteiro. Este documento fica como registro histórico do desenho Modelo B e do racional jurídico que continua válido (afastar o merchant-of-record centralizado) — **não** como orientação de implementação. Texto original abaixo.
+
+**Status original:** Accepted (decisão dos fundadores, 2026-06-28) — **confirmado pelo parecer jurídico FORMAL** (2026-06-30, [`../juridico/parecer-juridico-revisado-mp.md`](../parecer-juridico-revisado-mp.md)); produção ainda **gated** por contrato MP + conta PJ + Termos/Política publicados + checklist 100%. **Supersede [[ADR-012-modelo-pix-centralizado]]**.
 **Data:** 2026-06-28
 **Decisores:** Fundadores, Arquiteto, Product Owner — com base no parecer jurídico (D4).
 **Contexto:** ShareO — módulo financeiro.

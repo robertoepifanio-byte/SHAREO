@@ -40,8 +40,9 @@ o domínio `shareo.com.br`, ativar Mercado Pago/Stripe live, captar usuários re
 a tag `web-v1.12.0`) acontece **antes** do sign-off formal do D4 **e** da validação total do
 staging.
 **Por quê:** o D4 (consulta jurídica sobre o modelo de pagamento) é o **único bloqueador** de
-go-live. Mesmo com o parecer FORMAL recebido, ainda faltam: contrato Mercado Pago + conta PJ
-ativa + Termos/Política publicados + checklist 100%.
+go-live. Mesmo com o parecer FORMAL recebido, ainda faltam: Termos/Política publicados +
+checklist 100%. (O "contrato Mercado Pago + conta PJ" saiu da lista em 24/08/2026 — o MP foi
+descartado e a conta plataforma da Stripe está no CNPJ da PJ. Ver ADR-028.)
 **Como aplicar:** ao pedir "próximos passos", o Claude deve listar **só tarefas de staging**.
 Features de conformidade entram em staging **atrás de flag OFF / draft**, nunca ativadas.
 

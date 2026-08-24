@@ -36,6 +36,13 @@ const config: Config = {
     // apps/mobile é um pacote Expo com seu próprio jest (preset jest-expo, ambiente
     // react-native). O jest da raiz (next/jest, jsdom) NÃO deve coletar esses testes.
     "<rootDir>/apps/",
+    // 🪤 Worktrees de agentes vivem DENTRO da raiz e carregam cópias antigas do
+    // repo — inclusive testes já apagados aqui. Sem `node_modules` próprio, eles
+    // resolvem pelo da raiz, então um teste que morreu junto com a dependência
+    // dele volta a rodar e falhar num arquivo que ninguém vai procurar ("mas eu
+    // apaguei esse teste"). Aconteceu em 24/08 com o teste do webhook do Mercado
+    // Pago, depois que o pacote `mercadopago` saiu do package.json.
+    "<rootDir>/.claude/",
   ],
   collectCoverageFrom: [
     "lib/**/*.{ts,tsx}",

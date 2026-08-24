@@ -1,3 +1,5 @@
+> ⚫ **DOCUMENTO HISTÓRICO — 2026-08-24.** O Mercado Pago foi descartado ([`ADR-028`](adr/ADR-028-reversao-stripe-connect.md)) e a Central de Ajuda já foi reescrita para a Stripe em 20/08. Nada aqui deve ser aplicado ao código.
+
 # RASCUNHO — Reescrita da Central de Ajuda: Stripe → Mercado Pago
 
 > **RASCUNHO GATED — nao publicar.** Este documento mapeia, trecho a trecho, as alteracoes necessarias em `app/ajuda/page.tsx` para refletir o modelo de pagamentos via Mercado Pago (PSP licenciado, Modelo B/split). Aplicar ao codigo somente apos: parecer FORMAL recebido e validado + contrato MP assinado + conta PJ ativa + Termos/Politica publicados + checklist 100%. Ver [`juridico/checklist-conformidade-juridica.md`](juridico/checklist-conformidade-juridica.md), itens 1 e 9.

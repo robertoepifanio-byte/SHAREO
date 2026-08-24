@@ -1,3 +1,5 @@
+> ⚫ **DOCUMENTO HISTÓRICO — 2026-08-24.** O fundador decidiu que o **Mercado Pago não será utilizado**; o PSP é a Stripe ([`ADR-028`](../adr/ADR-028-reversao-stripe-connect.md)). Nada aqui é procedimento vigente. Preservado como registro do desenho avaliado. A versão vigente da copy de pagamento é [`copy-pagamento-stripe-connect.md`](copy-pagamento-stripe-connect.md).
+
 # Copy de pagamento — texto para validação jurídica
 
 **Data:** 2026-06-30 · **Para:** advogada da ShareO · **Referência:** item 4.1 da pauta de go-live (`../auditorias/pauta-revisao-fundadores-s41.md`).

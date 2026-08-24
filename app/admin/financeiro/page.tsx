@@ -188,7 +188,7 @@ export default async function AdminFinanceiroPage() {
                   <p className="text-xs text-muted-foreground">
                     {p.ownerPaymentAccount.pixKey
                       ? `${p.ownerPaymentAccount.holderName} · ${p.ownerPaymentAccount.pixKeyType}: ${p.ownerPaymentAccount.pixKey}`
-                      : "Repasse via Mercado Pago"}
+                      : "Sem chave PIX cadastrada"}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     Elegível desde {formatDateShort(p.eligibleAfter)}
@@ -290,7 +290,7 @@ export default async function AdminFinanceiroPage() {
           <div>
             <p className="text-sm font-semibold text-foreground">🔧 PSP definitivo: Stripe Connect</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Decisão ADR-028 (19/08/2026): Stripe Connect é o PSP definitivo, com split de {100 - currentFeeRate / 100}% para o proprietário e {currentFeeRate / 100}% para a ShareO. Construído: onboarding Express do proprietário, repasse automático via Transfer, checkout e reversão em reembolso. O checkout aceita <strong>só cartão à vista</strong>: o boleto foi descartado (não aceita reembolso) e o Pix depende de liberação da Stripe, que exige 60 dias de pagamentos processados. Falta ir a produção (bloqueado pelo D4 jurídico). Mercado Pago (ADR-026) segue dormente, código preservado.
+              Decisão ADR-028 (19/08/2026): Stripe Connect é o PSP definitivo, com split de {100 - currentFeeRate / 100}% para o proprietário e {currentFeeRate / 100}% para a ShareO. Construído: onboarding Express do proprietário, repasse automático via Transfer, checkout e reversão em reembolso. O checkout aceita <strong>só cartão à vista</strong>: o boleto foi descartado (não aceita reembolso) e o Pix depende de liberação da Stripe, que exige 60 dias de pagamentos processados. Falta ir a produção (bloqueado pelo D4 jurídico).
             </p>
           </div>
           <span className="rounded-full border border-border px-2.5 py-0.5 text-xs font-medium text-muted-foreground">

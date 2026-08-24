@@ -30,7 +30,7 @@
  * decisão registrada na conversa/memória do projeto. Pode ser revisitado se
  * a marca Stripe visível no onboarding virar objeção real dos proprietários.
  *
- * Gating em dois níveis (mesmo padrão de lib/mercadopago.ts):
+ * Gating em dois níveis:
  *   1. Flag de negócio → getStripeConnectConfig().enabled (PlatformConfig, default OFF)
  *   2. Credenciais     → STRIPE_SECRET_KEY presente (checado por getStripe())
  *

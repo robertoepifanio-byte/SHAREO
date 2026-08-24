@@ -37,8 +37,8 @@ O corpo abaixo é preservado como **fotografia do dia 19/08**. Duas mudanças po
 - Home, Explorar (78 anúncios, filtros de categoria/preço/distância/avaliação, 6 ordenações), detalhe de item (calendário de disponibilidade, 3 modalidades, comparação comprar-vs-alugar, política de cancelamento), login, cadastro progressivo com consentimento LGPD versionado, Central de Ajuda, layout responsivo mobile 375px (menu hambúrguer + bottom-nav).
 
 **Bloqueadores absolutos (não são código):**
-1. **B1 — contrato Mercado Pago** pendente de assinatura (Raimundo). Sem ele, pagamento real fica bloqueado por flag.
-2. **D4 — sign-off jurídico.**
+1. ~~**B1 — contrato Mercado Pago**~~ ⚫ **sem objeto desde 24/08/2026** — o MP foi descartado e a conta plataforma da Stripe está no CNPJ da PJ. B1 fechado.
+2. **D4 — sign-off jurídico.** ⚠️ Ganhou item novo: a Stripe é estrangeira, então o compartilhamento com o PSP virou **transferência internacional** (LGPD art. 33), hipótese que o parecer não analisou.
 
 **Achados P0 novos desta rodada (corrigíveis já, independentes de D4):** ver §5.1.
 
@@ -151,8 +151,8 @@ Priorização consolidada e **deduplicada** entre as 5 auditorias + jornada viva
 ### 5.1 P0 — Correções prioritárias (antes de qualquer go-live público)
 
 **Bloqueadores de negócio/jurídico (não-código):**
-1. **Fechar B1** — assinatura do contrato Mercado Pago (Raimundo). *Sem isso, todo o resto é teórico.*
-2. **D4** — sign-off jurídico.
+1. ~~**Fechar B1**~~ ⚫ **feito em 24/08/2026** por outro caminho: o MP foi descartado, o contrato ficou sem objeto e a titularidade PJ da conta Stripe foi confirmada.
+2. **D4** — sign-off jurídico. *Agora é o único bloqueador.*
 
 **Correções de código/produto (independentes de D4, podem começar já):**
 3. **Identificar a ShareO como PJ** em `/termos` e `/privacidade` (razão social + CNPJ + sede). *Risco de nulidade dos termos no dia 1.*
@@ -201,7 +201,7 @@ O código não é o risco. A engenharia demonstrou disciplina (segurança sistem
 
 **Sequência sugerida:**
 1. **Agora (não espera D4):** P0 itens 3–7 e 9 (jurídico-texto, UX de create, chips mobile, política de cancelamento, teste de declare-pix, guarda de rate-limit) + as verificações da §5.1. São baratos e removem riscos reais.
-2. **Portão B1/D4:** fechar contrato MP e sign-off jurídico. Só então trocar chave PIX para PJ e ligar pagamento real.
+2. **Portão D4** (o B1 fechou em 24/08): sign-off jurídico, incluindo a transferência internacional que a adoção da Stripe abriu. Só então ligar pagamento real.
 3. **Pós-desbloqueio:** P1 (confiança, SEO, onboarding MP) → validar unit economics numa praça piloto densa antes de acelerar aquisição nacional.
 
 **Validação viva pendente (requer o fundador logado):** anunciar um item ponta-a-ponta e submeter uma reserva/pagamento PIX no staging — a única parte que o assistente não pôde exercer por regra de segurança. Recomendo fazer isso antes de marcar os fluxos autenticados como ✅ (regra de verificação por evidência).

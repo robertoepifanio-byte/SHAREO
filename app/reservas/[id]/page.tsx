@@ -9,7 +9,7 @@ import { AppHeader } from "@/components/layout/AppHeader"
 import { BookingActions }      from "./_BookingActions"
 import { ReviewForm }          from "./_ReviewForm"
 import { PayButton }           from "@/components/bookings/PayButton"
-import { MpPayButton }         from "@/components/bookings/MpPayButton"
+import { ExtensionPayButton }  from "@/components/bookings/ExtensionPayButton"
 import { ContractBanner }      from "./_ContractBanner"
 import { CheckInOut }          from "./_CheckInOut"
 import { BookingProgressBar }  from "@/components/booking/BookingProgressBar"
@@ -17,8 +17,7 @@ import { BookingHistory }     from "@/components/booking/BookingHistory"
 import { ReturnCountdown }    from "@/components/booking/ReturnCountdown"
 import { ReturnChecklist }    from "@/components/booking/ReturnChecklist"
 import { ReturnConditionForm } from "@/components/booking/ReturnConditionForm"
-import { getPlatformFeeRate, calcSplit } from "@/lib/platform-config"
-import { isMercadoPagoActive } from "@/lib/mercadopago"
+import { getPlatformFeeRate, calcSplitComDesconto } from "@/lib/platform-config"
 import { deriveBookingHistory } from "@/lib/bookingHistory"
 import { BookingStatusBadge } from "@/components/ui/BookingStatusBadge"
 import { formatPrice, formatDate, formatDateLong } from "@/utils/format"
@@ -101,6 +100,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
       },
       extensionStatus:           true,
       extensionRequestedEndDate: true,
+      extensionAmountCents:      true,
       pickupToken:       true,
       pickupTokenUsedAt: true,
       borrower:     { select: { id: true, name: true } },
@@ -122,18 +122,15 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
 
   const feeRateBps = await getPlatformFeeRate()
   const feeRatePct = feeRateBps / 100
-
-  // Mercado Pago (Modelo B / split — ADR-026) tem prioridade quando ativo; senão Stripe.
-  const mpActive = await isMercadoPagoActive()
   const feeRateLabel = feeRatePct % 1 === 0 ? feeRatePct.toFixed(0) : String(feeRatePct)
 
   // Split da plataforma — espelha exatamente o checkout (lib/platform-config.calcSplit):
   // o locatário paga booking.totalPrice; a taxa é RETIDA do repasse ao proprietário
   // (não somada). platformFee + ownerNet = totalPrice. Cupom é absorvido pela taxa.
   const discountCents = booking.discountCents ?? 0
-  const grossSplit    = calcSplit(booking.totalPrice + discountCents, feeRateBps)
-  const platformFee   = Math.max(0, grossSplit.platformFeeAmount - discountCents)
-  const ownerNet      = grossSplit.ownerNetAmount
+  const split         = calcSplitComDesconto(booking.totalPrice, discountCents, feeRateBps)
+  const platformFee   = split.platformFeeAmount
+  const ownerNet      = split.ownerNetAmount
 
   const isOwner    = booking.owner.id    === userId
   const isBorrower = booking.borrower.id === userId
@@ -357,6 +354,23 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
             </div>
           )}
 
+          {/* ── Extensão aceita, aguardando as diárias extras (ATOR-03) ──
+              O proprietário já aceitou, mas o endDate NÃO se moveu: só se move
+              quando este pagamento confirma. Sem este bloco o locatário recebe
+              a notificação mandando pagar e não tem onde clicar. */}
+          {isBorrower
+            && booking.extensionStatus === "AWAITING_PAYMENT"
+            && (booking.extensionAmountCents ?? 0) > 0
+            && booking.extensionRequestedEndDate && (
+            <div className="mb-6">
+              <ExtensionPayButton
+                bookingId={booking.id}
+                amount={booking.extensionAmountCents!}
+                newEndDate={formatDateLong(booking.extensionRequestedEndDate)}
+              />
+            </div>
+          )}
+
           {/* ── Token de retirada — só após o pagamento confirmado, e enquanto não foi usado ── */}
           {isBorrower && booking.paymentStatus === "PAID" && booking.pickupToken && !booking.pickupTokenUsedAt && (
             <div className="mb-6 rounded-xl border-2 border-brand/40 bg-brand/5 p-5">
@@ -443,17 +457,11 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                   <p className="mb-4 text-sm text-muted-foreground">
                     Sua reserva foi confirmada! Faça o pagamento para o locador combinar a entrega do item.
                   </p>
-                  {mpActive ? (
-                    <MpPayButton bookingId={booking.id} totalPrice={booking.totalPrice} />
-                  ) : (
-                    <>
-                      <div className="mb-3 flex items-center justify-between rounded-lg bg-background px-4 py-3 text-sm">
-                        <span className="text-muted-foreground">Valor a pagar</span>
-                        <span className="font-bold text-foreground">{formatPrice(booking.totalPrice)}</span>
-                      </div>
-                      <PayButton bookingId={booking.id} totalPrice={booking.totalPrice} />
-                    </>
-                  )}
+                  <div className="mb-3 flex items-center justify-between rounded-lg bg-background px-4 py-3 text-sm">
+                    <span className="text-muted-foreground">Valor a pagar</span>
+                    <span className="font-bold text-foreground">{formatPrice(booking.totalPrice)}</span>
+                  </div>
+                  <PayButton bookingId={booking.id} totalPrice={booking.totalPrice} />
                 </>
               )}
             </div>

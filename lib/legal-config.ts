@@ -67,3 +67,45 @@ export const PJ_DECLARATION_TEXT =
   "poderes formais para representá-la perante a ShareO, e respondo pelos atos " +
   "praticados nesta conta PJ. Reconheço que esta declaração é registrada com data, " +
   "hora e endereço IP para fins de prova, conforme a Política de Privacidade."
+
+/**
+ * Identificação da pessoa jurídica que opera a plataforma.
+ *
+ * Obrigação legal, não enfeite: o CDC (art. 44) e o Decreto 7.962/2013 (art. 2º, I —
+ * comércio eletrônico) exigem que razão social, CNPJ e endereço da sede apareçam
+ * em local de destaque. Sem isso, os Termos ficam sujeitos a alegação de nulidade
+ * já no primeiro dia de operação.
+ *
+ * Fonte única de propósito: os mesmos dados aparecem nos Termos, na Política de
+ * Privacidade (onde identificam o CONTROLADOR, LGPD art. 9º, I) e em /politicas.
+ * Três cópias literais divergiriam na primeira alteração de endereço. O app
+ * espelha esta constante em `apps/mobile/lib/legalConfig.ts` (o app não importa
+ * do pacote web) e um teste compara os dois valores.
+ *
+ * 🪤 `razaoSocial` é a da RECEITA, não a de rascunho. Os documentos jurídicos
+ * escritos ANTES da constituição (RIPD, consentimento de biometria) dizem
+ * "ShareO Marketplace de Aluguel Ltda." — nome que nunca existiu no registro.
+ * O CNPJ 68.512.556/0001-09 saiu em 11/08/2026 com outra denominação. Num bloco
+ * cuja única função é identificar a PJ, a razão social errada anula o propósito.
+ */
+const ENDERECO_SEDE = "Rua Pais Leme, 215, conj. 1713 — Pinheiros, São Paulo/SP, CEP 05424-150"
+
+export const LEGAL_ENTITY = {
+  razaoSocial: "SHAREO MARKETPLACE DE INTERMEDIACAO DE NEGOCIOS LTDA",
+  cnpj: "68.512.556/0001-09",
+  /**
+   * Endereço da sede, conforme o **Comprovante de Inscrição e de Situação
+   * Cadastral** da Receita (confirmado pelo fundador em 2026-08-24). Campos do
+   * comprovante: R PAIS LEME · 215 · CONJ 1713 · 05.424-150 · PINHEIROS ·
+   * SAO PAULO · SP.
+   *
+   * 🪤 A fonte é o comprovante, não busca em agregador de CNPJ — site de
+   * terceiro fica desatualizado, e endereço errado aqui é o mesmo defeito da
+   * razão social de rascunho que quase entrou (ver a nota acima).
+   *
+   * O tipo continua aceitando `null` de propósito: os componentes omitem a
+   * linha em vez de renderizar vazio, e os testes exercitam os dois estados.
+   */
+  enderecoSede: ENDERECO_SEDE as string | null,
+  emailContato: "suporte@shareo.com.br",
+} as const

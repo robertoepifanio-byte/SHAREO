@@ -276,6 +276,36 @@ export function calcSplit(totalPrice: number, feeRate: number) {
 }
 
 /**
+ * Split considerando cupom de desconto (P3-20): o proprietário recebe sobre o
+ * valor BRUTO e o desconto sai da taxa da plataforma.
+ *
+ * `calcSplit` sozinha cobre só o caso sem cupom, e por isso a metade que falta
+ * — `calcSplit(total + desconto)` seguido de `max(0, taxa - desconto)` — vinha
+ * sendo recopiada: estava em 4 lugares, dois deles mostrando dinheiro na tela e
+ * um cobrando de verdade. Mudar a política do cupom exigia achar os quatro.
+ */
+export function calcSplitComDesconto(totalPrice: number, discountCents: number, feeRate: number) {
+  const bruto = calcSplit(totalPrice + discountCents, feeRate)
+  return {
+    platformFeeRate:   bruto.platformFeeRate,
+    platformFeeAmount: Math.max(0, bruto.platformFeeAmount - discountCents),
+    ownerNetAmount:    bruto.ownerNetAmount,
+  }
+}
+
+/**
+ * Expiração das cobranças AVULSAS da reserva (taxa de atraso, diárias extras
+ * de extensão): 72h, contra os 30 min do checkout da locação
+ * (STRIPE_CHECKOUT_EXPIRES_SECONDS).
+ *
+ * Prazos diferentes de propósito — o checkout da locação segura disponibilidade
+ * do item e precisa liberar rápido; uma cobrança avulsa não bloqueia nada e o
+ * usuário costuma pagar depois. O número vinha inline em dois arquivos, sem
+ * nome que explicasse a diferença.
+ */
+export const STRIPE_CHARGE_EXPIRES_SECONDS = 72 * 60 * 60
+
+/**
  * Taxa de atraso na devolução, em centavos. Fonte única da fórmula: é usada
  * tanto pela cobrança real (app/api/cron/reminders) quanto pelos exemplos
  * publicados na Central de Ajuda — o valor divulgado tem que ser o cobrado.
@@ -332,35 +362,6 @@ export async function getRentalContractConfig(): Promise<RentalContractConfig> {
   }
 }
 
-// ─── Mercado Pago (Modelo B / split — EM IMPLANTAÇÃO, gated D4) ──────────────
-// Flag de feature: PlatformConfig.mercadoPagoEnabled
-// Default OFF — com a flag desligada o fluxo de pagamento atual (Stripe
-// oculto) NÃO muda. Ativar só após: parecer FORMAL do D4 + contrato PSP +
-// credenciais configuradas (ver lib/mercadopago.ts e docs/juridico/mercadopago-procedimentos-fundadores.md).
-// ADR-026 supersede ADR-012.
-
-export interface MercadoPagoConfig {
-  enabled: boolean // chave mercadoPagoEnabled ("true"/"false")
-}
-
-const DEFAULT_MERCADO_PAGO: MercadoPagoConfig = { enabled: false }
-
-/**
- * Lê a configuração do Mercado Pago.
- * Nunca lança exceção — usado no caminho crítico do checkout.
- * Default OFF garante que o comportamento atual não muda até ativação explícita.
- */
-export async function getMercadoPagoConfig(): Promise<MercadoPagoConfig> {
-  try {
-    const map = await loadConfig()
-    return {
-      enabled: map.mercadoPagoEnabled === "true",
-    }
-  } catch {
-    return DEFAULT_MERCADO_PAGO
-  }
-}
-
 // ─── Consentimento biométrico da selfie (KYC — LGPD art. 11, gated D4) ───────
 // Flag de feature: PlatformConfig.biometricConsentRequired
 // Default OFF — com a flag desligada o fluxo de KYC atual NÃO muda (nenhum passo
@@ -392,7 +393,7 @@ export async function getBiometricConsentConfig(): Promise<BiometricConsentConfi
 // ─── Stripe Connect (PSP definitivo — ADR-028, EM CONSTRUÇÃO) ────────────────
 // Flag de feature: PlatformConfig.stripeConnectEnabled
 // Default OFF — com a flag desligada, o onboarding do proprietário via Stripe
-// Connect não fica visível/alcançável (mesmo padrão de getMercadoPagoConfig).
+// Connect não fica visível/alcançável.
 // Ativar só depois que a conta Stripe da plataforma tiver o perfil de Connect
 // habilitado no Dashboard e o fluxo tiver sido validado em staging.
 

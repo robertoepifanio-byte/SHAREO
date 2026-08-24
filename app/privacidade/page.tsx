@@ -1,6 +1,8 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { AppHeader } from "@/components/layout/AppHeader"
+import { IdentificacaoPrestador } from "@/components/legal/IdentificacaoPrestador"
+import { POLICY_UPDATED_AT } from "@/lib/legal-config"
 
 export const metadata: Metadata = {
   title: "Política de Privacidade — ShareO",
@@ -13,7 +15,12 @@ export default function PrivacidadePage() {
       <AppHeader />
       <main className="container py-10 max-w-3xl">
         <h1 className="text-3xl font-extrabold text-primary mb-2">Política de Privacidade</h1>
-        <p className="text-sm text-muted-foreground mb-8">Última atualização: junho de 2026</p>
+        <p className="text-sm text-muted-foreground mb-6">Última atualização: {POLICY_UPDATED_AT}</p>
+
+        {/* Quem é o controlador precisa vir antes do que ele faz com os dados (LGPD art. 9º, I). */}
+        <div className="mb-8">
+          <IdentificacaoPrestador papel="controlador" />
+        </div>
 
         <div className="prose prose-sm max-w-none text-foreground space-y-6">
 

@@ -1,3 +1,5 @@
+> ⚫ **DOCUMENTO HISTÓRICO — 2026-08-24.** O fundador decidiu que o **Mercado Pago não será utilizado**; o PSP é a Stripe ([`ADR-028`](../adr/ADR-028-reversao-stripe-connect.md)). Nada aqui é procedimento vigente. Preservado como registro do desenho avaliado.
+
 # RASCUNHO — Clausulas de Termos de Uso e Politica de Privacidade (terceirizacao do pagamento ao Mercado Pago)
 
 > **RASCUNHO GATED — nao publicar.** Insumo para a advogada revisar antes de aplicar em `app/termos/page.tsx` e `app/privacidade/page.tsx`. A publicacao so ocorre **apos** o parecer FORMAL ([`parecer-juridico-revisado-mp.md`](parecer-juridico-revisado-mp.md)) **e** o cumprimento das demais condicoes de go-live (contrato MP assinado + conta PJ ativa + checklist 100%). Nao confundir este arquivo com as paginas publicadas.
