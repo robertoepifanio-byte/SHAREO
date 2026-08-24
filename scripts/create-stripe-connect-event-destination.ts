@@ -41,6 +41,21 @@ const DEFAULT_URL = "https://staging.shareo.com.br"
 // tratar a partir da mesma fonte evita assinar um evento que ninguém trata.
 const ENABLED_EVENTS = [...STRIPE_CONNECT_EVENT_TYPES]
 
+// 🪤 `events_from` — o campo que faltava, e a causa de o destino nunca ter
+// recebido um único evento de conta (diagnosticado em 23/08/2026).
+//
+// Sem este parâmetro a Stripe assume `["@self"]`: só eventos emitidos pela
+// PRÓPRIA conta plataforma. Mas `v2.core.account[...]` de uma connected account
+// é emitido por ELA, não pela plataforma — então nada chegava. O sintoma era
+// cruel: o destino ficava "Ativo", o ping respondia 200, os 2 tipos certos
+// apareciam assinados, e mesmo assim a fila nunca via um evento de conta. A
+// aba Eventos do Workbench confirmou: os eventos NÃO EXISTIAM no fluxo da
+// plataforma. Não era entrega falhando, era emissão em outro lugar.
+//
+// `@self` fica junto por causa do ping do próprio destino, que é emitido pela
+// plataforma.
+const EVENTS_FROM = ["@self", "@accounts"] as const
+
 if (!loadEnvFile(".env.local")) {
   console.error("✗ .env.local não encontrado. Necessário para STRIPE_SECRET_KEY.")
   process.exit(1)
@@ -56,11 +71,35 @@ async function main() {
   console.log(`Modo: ${confirm ? "⚠  CRIANDO (--confirm)" : "DRY-RUN (somente leitura)"}`)
   console.log(`URL alvo: ${targetUrl}`)
   console.log(`Eventos: ${ENABLED_EVENTS.join(", ")}`)
+  console.log(`Escopo (events_from): ${EVENTS_FROM.join(", ")}`)
   console.log("─".repeat(60))
 
-  if (!process.env.STRIPE_SECRET_KEY) {
+  const chave = process.env.STRIPE_SECRET_KEY
+  if (!chave) {
     console.error("✗ STRIPE_SECRET_KEY vazio em .env.local.")
     process.exit(1)
+  }
+
+  // 🪤 Dizer em QUE AMBIENTE estamos, antes de qualquer coisa.
+  //
+  // Test e live têm listas de destinos separadas. Rodar com uma chave live
+  // contra um destino que existe no test faz o script dizer "nenhum existente
+  // para essa URL" — e, com --confirm, CRIAR um destino no ambiente errado,
+  // cujo signing_secret iria para o staging e nunca receberia evento nenhum.
+  // Aconteceu em 23/08/2026 e custou uma rodada de diagnóstico.
+  //
+  // O prefixo da chave é público por natureza (identifica o tipo, não o
+  // segredo) — imprimir só ele é seguro.
+  if (!chave.startsWith("sk_")) {
+    console.error(`✗ STRIPE_SECRET_KEY não parece uma chave de API (começa com "${chave.slice(0, 6)}").`)
+    console.error("  Chave de API começa com sk_test_ ou sk_live_. Um valor whsec_ é o segredo de")
+    console.error("  ASSINATURA do webhook e vai em STRIPE_CONNECT_WEBHOOK_SECRET, não aqui.")
+    process.exit(1)
+  }
+  const modo = chave.startsWith("sk_live_") ? "LIVE ⚠" : "TEST"
+  console.log(`Ambiente da chave: ${modo}`)
+  if (modo.startsWith("LIVE")) {
+    console.log("⚠  Chave de PRODUÇÃO. O staging usa o ambiente de TESTE — confira antes de --confirm.")
   }
   // getStripe() (lazy) em vez de `new Stripe(...)`: a apiVersion fica pinada
   // só em lib/stripe.ts — os nomes de evento da v2 são sensíveis a ela.
@@ -69,9 +108,40 @@ async function main() {
   const existing = await stripe.v2.core.eventDestinations.list({ include: ["webhook_endpoint.url"] })
   const dup = existing.data.find((d) => d.webhook_endpoint?.url === targetUrl)
 
+  // "Nenhum para essa URL" é ambíguo sozinho: pode ser ambiente vazio (chave do
+  // modo errado) ou destino já apagado. Listar o que existe desfaz a dúvida.
+  console.log(`\nDestinos neste ambiente (${modo}): ${existing.data.length}`)
+  for (const d of existing.data) {
+    const escopoD = (d as { events_from?: string[] }).events_from ?? []
+    console.log(`  · ${d.id}  ${d.webhook_endpoint?.url ?? "(url oculta)"}  [${escopoD.join(", ") || "sem events_from"}]`)
+  }
+
   if (dup) {
     console.log(`\nJá existe um Event Destination para essa URL: ${dup.id} (status: ${dup.status})`)
-    console.log("Nada a fazer — não duplica. Para trocar os eventos assinados, atualize via Dashboard ou stripe.v2.core.eventDestinations.update().")
+
+    // 🪤 "Já existe" NÃO é o mesmo que "está certo".
+    //
+    // O destino criado antes de 23/08/2026 tem `events_from: ["@self"]` e por
+    // isso nunca recebeu um único evento de conta — mas parecia saudável em
+    // todo o resto: status Ativo, ping respondendo 200, os 2 tipos certos
+    // assinados. Se este bloco só dissesse "nada a fazer", o script passaria
+    // batido pelo único defeito que ele precisa apontar.
+    const escopo = (dup as { events_from?: string[] }).events_from ?? []
+    console.log(`Escopo atual (events_from): ${escopo.length ? escopo.join(", ") : "(não informado)"}`)
+
+    if (!escopo.includes("@accounts")) {
+      console.log("\n⚠  ESCOPO INCORRETO — este destino NÃO recebe eventos das connected accounts.")
+      console.log("   Falta `@accounts`. Só com `@self` chegam apenas eventos da própria plataforma")
+      console.log("   (ex.: o ping do destino) — nunca um v2.core.account[...] de proprietário.")
+      console.log("\n   `events_from` é definido na CRIAÇÃO e não é editável pelo Dashboard.")
+      console.log("   Para corrigir: apague este destino no Dashboard e rode este script com --confirm.")
+      console.log("   Isso gera um signing_secret NOVO — atualize STRIPE_CONNECT_WEBHOOK_SECRET no")
+      console.log("   Vercel e faça redeploy, senão a verificação de assinatura passa a falhar com 400.")
+      return
+    }
+
+    console.log("Escopo correto. Nada a fazer — não duplica.")
+    console.log("Para trocar os eventos assinados, use o Dashboard ou stripe.v2.core.eventDestinations.update().")
     return
   }
 
@@ -89,6 +159,7 @@ async function main() {
     type:           "webhook_endpoint",
     event_payload:  "thin",
     enabled_events: ENABLED_EVENTS,
+    events_from:    [...EVENTS_FROM],
     webhook_endpoint: { url: targetUrl },
     include: ["webhook_endpoint.signing_secret", "webhook_endpoint.url"],
   })
