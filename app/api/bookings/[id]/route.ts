@@ -320,6 +320,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     // Grava horário real de retirada — exige token válido e o consome.
     // Regra: prazo de devolução = mesmo horário da retirada + totalDays.
     if (action === "mark_active") {
+      if (booking.paymentStatus !== "PAID") {
+        return NextResponse.json(
+          {
+            error: {
+              code:    "PAYMENT_REQUIRED",
+              message: "O pagamento da reserva ainda não foi confirmado. Aguarde a confirmação antes de retirar o item.",
+            },
+          },
+          { status: 402 },
+        )
+      }
       if (!pickupToken) {
         return NextResponse.json(
           { error: { code: "TOKEN_REQUIRED", message: "Código de retirada obrigatório." } },
