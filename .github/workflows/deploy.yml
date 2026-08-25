@@ -338,6 +338,12 @@ jobs:
             e2e/e2e-integration-plan.spec.ts \
             e2e/e2e-governance-plan.spec.ts \
             e2e/return-flow.spec.ts \
+            e2e/booking-flow.spec.ts \
+            e2e/review.spec.ts \
+            e2e/features-jun09.spec.ts \
+            e2e/security2.spec.ts \
+            e2e/security3.spec.ts \
+            e2e/security5.spec.ts \
             --config=playwright.staging.config.ts --workers=1
         env:
           STAGING_URL: ${{ secrets.STAGING_URL }}
@@ -346,6 +352,8 @@ jobs:
           # rate-limit nas rotas que repassam `req` (ex.: register), eliminando os 429
           # da rajada da suíte. Deve ser o MESMO valor do E2E_SECRET no Vercel staging.
           E2E_SECRET: ${{ secrets.E2E_SECRET }}
+          # Necessário para security2 smoke #20 validar que o bucket id-docs é privado.
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL_STAGING }}
 
       # 🧹 Este é o ÚNICO job que roda o return-flow.spec, e é ele que cria os
       # itens "Devolução E2E …". Até 23/08/2026 o staging tinha acumulado 183
