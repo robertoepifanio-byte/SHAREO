@@ -96,6 +96,7 @@ async function createTestItem(propPage: import('@playwright/test').Page, title: 
         categoryId:  cats[0].id,
         condition:   'GOOD',
         pricePerDay: 5000, // R$50,00 — valor fixo p/ calcular totalPrice esperado
+        estimatedRetailPrice: 100_000,
         city:        'São Paulo',
         state:       'SP',
         latitude:    -23.5505,

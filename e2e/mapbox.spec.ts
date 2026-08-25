@@ -77,6 +77,7 @@ test.describe('smoke #12 — Mapbox GL (/itens?view=map)', () => {
         categoryId,
         condition:   'GOOD',
         pricePerDay: 5000,
+        estimatedRetailPrice: 100_000,
         city:        'Natal',
         state:       'RN',
         latitude:    -5.7945,   // Natal/RN — onde os seed items estão
@@ -207,6 +208,7 @@ test.describe('smoke #12b — Mapbox GL pins e navegação', () => {
         categoryId,
         condition:   'GOOD',
         pricePerDay: 3000,
+        estimatedRetailPrice: 60_000,
         city:        'Natal',
         state:       'RN',
         latitude:    -5.7945,

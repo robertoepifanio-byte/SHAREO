@@ -80,6 +80,7 @@ async function createTestItem(propPage: import('@playwright/test').Page, title: 
         categoryId:  cats[0].id,
         condition:   'GOOD',
         pricePerDay: 5000,
+        estimatedRetailPrice: 100_000,
         city:        'São Paulo',
         state:       'SP',
         latitude:    -23.5505,
