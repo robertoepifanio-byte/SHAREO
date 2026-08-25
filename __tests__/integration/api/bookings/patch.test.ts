@@ -111,6 +111,11 @@ jest.mock("@/lib/cancellationPolicy", () => ({
   }),
 }))
 
+const mockEmitCancellationRefund = jest.fn().mockResolvedValue({ id: "re_test" })
+jest.mock("@/lib/payments/refund", () => ({
+  emitCancellationRefund: (...args: unknown[]) => mockEmitCancellationRefund(...args),
+}))
+
 // ---------------------------------------------------------------------------
 // IDs de referência
 // ---------------------------------------------------------------------------
@@ -149,6 +154,8 @@ function makeBooking(overrides: {
   paymentStatus?: string
   /** `null` simula reserva sem contrato assinado. */
   contractSignedAt?: Date | null
+  /** `null` simula reserva paga fora do fluxo Stripe (não deveria acontecer, mas é defendido). */
+  stripePaymentIntentId?: string | null
 }) {
   return {
     id:          BOOKING_ID,
@@ -160,6 +167,7 @@ function makeBooking(overrides: {
     totalPrice:  300,
     totalDays:   2,
     paymentStatus: overrides.paymentStatus ?? "PENDING",
+    stripePaymentIntentId: overrides.stripePaymentIntentId === undefined ? "pi_test_123" : overrides.stripePaymentIntentId,
     contractSignedAt: overrides.contractSignedAt === undefined ? new Date("2026-06-01T00:00:00Z") : overrides.contractSignedAt,
     bookingItems: [{ itemId: "item-id-004" }], // Story B — confirm revalida todos os itens
     item:        { title: "Furadeira Bosch" },
@@ -264,7 +272,7 @@ describe("PATCH /api/bookings/[id]", () => {
      * Stripe, esse número ia parar na fila de trabalho de uma pessoa como se
      * fosse real. Achado do painel de dois atores, 22/08/2026.
      */
-    it("cancelar reserva NÃO paga não registra reembolso", async () => {
+    it("cancelar reserva NÃO paga não registra reembolso nem chama a Stripe", async () => {
       mockAuth.mockResolvedValue(makeSession(BORROWER_ID))
       mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "CONFIRMED", paymentStatus: "PENDING" }))
       mockBookingUpdate.mockResolvedValue(makeUpdatedBooking("CANCELLED"))
@@ -274,6 +282,7 @@ describe("PATCH /api/bookings/[id]", () => {
       expect(mockBookingUpdate).toHaveBeenCalledWith(expect.objectContaining({
         data: expect.objectContaining({ refundAmount: 0, refundPercent: 0 }),
       }))
+      expect(mockEmitCancellationRefund).not.toHaveBeenCalled()
     })
 
     it("cancelar reserva PAGA continua calculando o reembolso pela política", async () => {
@@ -287,6 +296,49 @@ describe("PATCH /api/bookings/[id]", () => {
       expect(mockBookingUpdate).toHaveBeenCalledWith(expect.objectContaining({
         data: expect.objectContaining({ refundAmount: 100, refundPercent: 100 }),
       }))
+    })
+
+    /**
+     * pauta-raimundo-2026-08-22, item 1 — decisão "automatizar" (Raimundo, 25/08/2026).
+     * Antes disto, cancelar só CALCULAVA o valor; alguém emitia o estorno à mão
+     * no Dashboard da Stripe.
+     */
+    it("cancelar reserva PAGA emite o estorno automaticamente na Stripe", async () => {
+      mockAuth.mockResolvedValue(makeSession(BORROWER_ID))
+      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "CONFIRMED", paymentStatus: "PAID" }))
+      mockBookingUpdate.mockResolvedValue(makeUpdatedBooking("CANCELLED"))
+
+      await PATCH(makeReq({ action: "cancel", reason: "Mudei de ideia" }), makeParams())
+
+      expect(mockEmitCancellationRefund).toHaveBeenCalledWith({
+        bookingId:       BOOKING_ID,
+        paymentIntentId: "pi_test_123",
+        amount:          100,
+      })
+    })
+
+    it("cancelamento não falha se o estorno automático der erro — fica gravado para reprocessar", async () => {
+      mockAuth.mockResolvedValue(makeSession(BORROWER_ID))
+      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "CONFIRMED", paymentStatus: "PAID" }))
+      mockBookingUpdate.mockResolvedValue(makeUpdatedBooking("CANCELLED"))
+      mockEmitCancellationRefund.mockRejectedValueOnce(new Error("stripe indisponível"))
+
+      const res = await PATCH(makeReq({ action: "cancel", reason: "Mudei de ideia" }), makeParams())
+
+      expect(res.status).toBe(200)
+    })
+
+    it("🪤 reserva PAGA sem stripePaymentIntentId não chama a Stripe (defensivo — não deveria acontecer)", async () => {
+      mockAuth.mockResolvedValue(makeSession(BORROWER_ID))
+      mockBookingFindUnique.mockResolvedValue(
+        makeBooking({ status: "CONFIRMED", paymentStatus: "PAID", stripePaymentIntentId: null }),
+      )
+      mockBookingUpdate.mockResolvedValue(makeUpdatedBooking("CANCELLED"))
+
+      const res = await PATCH(makeReq({ action: "cancel", reason: "Mudei de ideia" }), makeParams())
+
+      expect(res.status).toBe(200)
+      expect(mockEmitCancellationRefund).not.toHaveBeenCalled()
     })
 
     /**

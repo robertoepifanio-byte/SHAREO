@@ -2,7 +2,7 @@
 
 **Contexto:** auditoria de pagamento de 21/08/2026 (o relatório completo entra no repositório junto com o PR da Central de Ajuda do app — `docs/auditorias/auditoria-pagamento-stripe-2026-08-21.md`). Das 5 decisões levantadas, três foram resolvidas em 22/08; estas duas dependem de definição com o Raimundo, porque as duas escolhem entre *mudar o texto* e *mudar o código*, em documentos contratuais publicados.
 
-⚠️ **Restrição que afeta a Decisão A:** o código **não emite estorno**. `refunds.create` não existe no repositório — o reembolso é calculado e gravado, mas alguém precisa executá-lo no Dashboard da Stripe. Qualquer decisão sobre percentual de reembolso herda esse gargalo manual.
+✅ **Restrição resolvida em 25/08/2026:** o código agora emite o estorno sozinho. `emitCancellationRefund` (`lib/payments/refund.ts`) chama `stripe.refunds.create` a partir de `PATCH /api/bookings/:id` (action=cancel) sempre que há valor a devolver — decisão de Raimundo no item 1 de `pauta-raimundo-2026-08-22.md`. Isso NÃO resolve a Decisão A abaixo (qual percentual aplicar quando quem cancela é o locador) — só remove o gargalo manual de execução, qualquer que seja o percentual decidido.
 
 ---
 

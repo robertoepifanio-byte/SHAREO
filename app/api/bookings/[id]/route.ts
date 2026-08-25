@@ -15,6 +15,7 @@ import { releaseCouponForBooking } from "@/lib/coupons"
 import { findOverlappingItem } from "@/lib/booking-availability"
 import { hasPickupAddress, redactOwnerAddress } from "@/lib/ownerAddress"
 import { criarPayoutDaReserva } from "@/lib/payout"
+import { emitCancellationRefund } from "@/lib/payments/refund"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -189,7 +190,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       select: {
         id: true, status: true, borrowerId: true, ownerId: true,
         itemId: true, startDate: true, endDate: true, totalPrice: true, totalDays: true,
-        paymentStatus: true,
+        paymentStatus: true, stripePaymentIntentId: true,
         contractSignedAt: true, // guard do mark_active — ver abaixo
         pickupToken: true, pickupTokenUsedAt: true,
         bookingItems: { select: { itemId: true } }, // Story B — revalidar todos os itens no confirm
@@ -268,6 +269,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     const now  = new Date()
     const data: Record<string, unknown> = { status: transition.nextStatus }
+    let refundAmount = 0
 
     if (action === "cancel") {
       data.cancelledAt   = now
@@ -286,8 +288,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           booking.totalPrice,
           cancelConfig,
         )
-        data.refundAmount  = refund.refundAmount
-        data.refundPercent = refund.refundPercent
+        refundAmount        = refund.refundAmount
+        data.refundAmount   = refund.refundAmount
+        data.refundPercent  = refund.refundPercent
         // O motivo do reembolso é registrado internamente — não é exposto ao usuário via API
         console.warn(
           `[booking.cancel] id=${id} refundPercent=${refund.refundPercent} refundAmount=${refund.refundAmount} reason="${refund.reason}"`,
@@ -494,6 +497,21 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (action === "confirm_return") {
       await criarPayoutDaReserva(id, booking.ownerId, updated.ownerNetAmount, "confirm_return")
         .catch((e) => console.error("[FIN-3.3] criarPayoutDaReserva:", e instanceof Error ? e.message : e))
+    }
+
+    // Estorno automático (pauta-raimundo-2026-08-22, item 1 — decisão "automatizar").
+    // `reverseOwnerTransfer` (repasse já feito ao proprietário, se houver) roda via
+    // webhook `charge.refunded`, disparado por este próprio refunds.create.
+    if (action === "cancel" && refundAmount > 0) {
+      if (booking.stripePaymentIntentId) {
+        await emitCancellationRefund({
+          bookingId:       id,
+          paymentIntentId: booking.stripePaymentIntentId,
+          amount:          refundAmount,
+        }).catch((e) => console.error("[booking.cancel] emitCancellationRefund:", e instanceof Error ? e.message : e))
+      } else {
+        console.error(`[booking.cancel] id=${id} refundAmount=${refundAmount} mas sem stripePaymentIntentId — estorno não pôde ser emitido`)
+      }
     }
 
     // E-mails transacionais — após a resposta.
