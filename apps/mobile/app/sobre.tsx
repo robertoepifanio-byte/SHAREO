@@ -9,8 +9,8 @@ import {
   Platform,
 } from "react-native"
 import { router } from "expo-router"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Image } from "expo-image"
+import { ScreenHeader } from "@/components/layout/ScreenHeader"
 import { useQuery } from "@tanstack/react-query"
 import Svg, { Path, Circle, Rect } from "react-native-svg"
 import { useTheme } from "@/lib/theme"
@@ -123,7 +123,6 @@ const VALOR_ICONS: Record<string, React.ComponentType<{ color: string }>> = {
 
 export default function SobreScreen() {
   const { tokens } = useTheme()
-  const insets     = useSafeAreaInsets()
 
   const { data: statsData } = useQuery({
     queryKey: ["stats-public"],
@@ -140,27 +139,7 @@ export default function SobreScreen() {
   return (
     <View style={[s.root, { backgroundColor: tokens.bg }]}>
 
-      {/* ── Header — padrão de dados.tsx / kyc.tsx ── */}
-      <View
-        style={[
-          s.header,
-          {
-            paddingTop:      insets.top + 8,
-            backgroundColor: tokens.surface,
-            borderColor:     tokens.border,
-          },
-        ]}
-      >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          accessibilityLabel="Voltar"
-          accessibilityRole="button"
-          style={s.backBtn}
-        >
-          <Text style={[s.backArrow, { color: tokens.muted }]}>‹</Text>
-        </TouchableOpacity>
-        <Text style={[s.headerTitle, { color: tokens.navy }]}>Sobre o ShareO</Text>
-      </View>
+      <ScreenHeader title="Sobre o ShareO" />
 
       <ScrollView
         style={s.scroll}
@@ -421,24 +400,6 @@ const s = StyleSheet.create({
   root:   { flex: 1 },
   scroll: { flex: 1 },
   content: { paddingBottom: 40 },
-
-  // ── Header ──────────────────────────────────────────────────────────────────
-  header: {
-    flexDirection:     "row",
-    alignItems:        "center",
-    gap:               12,
-    borderBottomWidth: 1,
-    paddingHorizontal: 16,
-    paddingBottom:     12,
-  },
-  backBtn: {
-    minHeight:      44,
-    minWidth:       44,
-    alignItems:     "center",
-    justifyContent: "center",
-  },
-  backArrow:   { fontSize: 28, lineHeight: 32 },
-  headerTitle: { flex: 1, fontSize: 18, fontWeight: "700" },
 
   // ── Hero ─────────────────────────────────────────────────────────────────────
   hero: {

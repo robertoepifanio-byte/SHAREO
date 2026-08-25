@@ -11,8 +11,8 @@ import {
   Linking,
 } from "react-native"
 import { router } from "expo-router"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useTheme } from "@/lib/theme"
+import { ScreenHeader } from "@/components/layout/ScreenHeader"
 import { API_URL } from "@/lib/api"
 import { IdentificacaoPrestador } from "@/components/legal/IdentificacaoPrestador"
 import { POLICY_UPDATED_AT } from "@/lib/legalConfig"
@@ -23,7 +23,6 @@ const NATIVE_ROUTES = new Set(["/termos", "/ajuda", "/comunidade", "/ganhar", "/
 
 export default function PrivacidadeScreen() {
   const { tokens } = useTheme()
-  const insets     = useSafeAreaInsets()
 
   function openMail(address: string) {
     Linking.openURL(`mailto:${address}`)
@@ -42,27 +41,7 @@ export default function PrivacidadeScreen() {
   return (
     <View style={[s.root, { backgroundColor: tokens.bg }]}>
 
-      {/* ── Header — padrão de sobre.tsx / dados.tsx ── */}
-      <View
-        style={[
-          s.header,
-          {
-            paddingTop:      insets.top + 8,
-            backgroundColor: tokens.surface,
-            borderColor:     tokens.border,
-          },
-        ]}
-      >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          accessibilityLabel="Voltar"
-          accessibilityRole="button"
-          style={s.backBtn}
-        >
-          <Text style={[s.backArrow, { color: tokens.muted }]}>‹</Text>
-        </TouchableOpacity>
-        <Text style={[s.headerTitle, { color: tokens.navy }]}>Política de Privacidade</Text>
-      </View>
+      <ScreenHeader title="Política de Privacidade" />
 
       <ScrollView
         style={s.scroll}
@@ -304,24 +283,6 @@ const s = StyleSheet.create({
   root:   { flex: 1 },
   scroll: { flex: 1 },
   content: { paddingBottom: 48 },
-
-  // ── Header ──────────────────────────────────────────────────────────────────
-  header: {
-    flexDirection:     "row",
-    alignItems:        "center",
-    gap:               12,
-    borderBottomWidth: 1,
-    paddingHorizontal: 16,
-    paddingBottom:     12,
-  },
-  backBtn: {
-    minHeight:      44,
-    minWidth:       44,
-    alignItems:     "center",
-    justifyContent: "center",
-  },
-  backArrow:   { fontSize: 28, lineHeight: 32 },
-  headerTitle: { flex: 1, fontSize: 18, fontWeight: "700" },
 
   // ── Cabeçalho da página ──────────────────────────────────────────────────────
   pageHead: {

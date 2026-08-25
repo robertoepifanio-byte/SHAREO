@@ -9,8 +9,8 @@ import {
   Platform,
 } from "react-native"
 import { router } from "expo-router"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useTheme } from "@/lib/theme"
+import { ScreenHeader } from "@/components/layout/ScreenHeader"
 
 // ── Dados verbatim de app/suporte/page.tsx ────────────────────────────────────
 
@@ -46,32 +46,11 @@ const SECTIONS = [
 
 export default function SuporteScreen() {
   const { tokens } = useTheme()
-  const insets     = useSafeAreaInsets()
 
   return (
     <View style={[s.root, { backgroundColor: tokens.bg }]}>
 
-      {/* ── Header — padrão de comunidade.tsx / sobre.tsx ── */}
-      <View
-        style={[
-          s.header,
-          {
-            paddingTop:      insets.top + 8,
-            backgroundColor: tokens.surface,
-            borderColor:     tokens.border,
-          },
-        ]}
-      >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          accessibilityLabel="Voltar"
-          accessibilityRole="button"
-          style={s.backBtn}
-        >
-          <Text style={[s.backArrow, { color: tokens.muted }]}>‹</Text>
-        </TouchableOpacity>
-        <Text style={[s.headerTitle, { color: tokens.navy }]}>Suporte</Text>
-      </View>
+      <ScreenHeader title="Suporte" />
 
       <ScrollView
         style={s.scroll}
@@ -183,24 +162,6 @@ const s = StyleSheet.create({
   root:    { flex: 1 },
   scroll:  { flex: 1 },
   content: { paddingBottom: 40 },
-
-  // ── Header ───────────────────────────────────────────────────────────────────
-  header: {
-    flexDirection:     "row",
-    alignItems:        "center",
-    gap:               12,
-    borderBottomWidth: 1,
-    paddingHorizontal: 16,
-    paddingBottom:     12,
-  },
-  backBtn: {
-    minHeight:      44,
-    minWidth:       44,
-    alignItems:     "center",
-    justifyContent: "center",
-  },
-  backArrow:   { fontSize: 28, lineHeight: 32 },
-  headerTitle: { flex: 1, fontSize: 18, fontWeight: "700" },
 
   // ── Hero / Título ─────────────────────────────────────────────────────────────
   heroSection: {
