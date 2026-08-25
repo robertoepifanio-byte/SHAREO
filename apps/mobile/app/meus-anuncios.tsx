@@ -485,10 +485,10 @@ export default function MeusAnunciosScreen() {
           </TouchableOpacity>
         )}
 
-        {/* "Integrações" → abre no browser */}
+        {/* "Integrações" → tela nativa (antes abria no navegador) */}
         <TouchableOpacity
           style={s.tabInactive}
-          onPress={() => Linking.openURL(`${API_URL}/meus-anuncios/integracoes`)}
+          onPress={() => router.push("/meus-anuncios/integracoes")}
           accessibilityRole="tab"
           accessibilityState={{ selected: false }}
           accessibilityLabel="Integrações"

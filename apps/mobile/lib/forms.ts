@@ -9,6 +9,25 @@
 // Cada tela nova que pedisse endereço fazia a próxima cópia — e foi assim que a
 // captação de leads acabou com um formulário diferente do site.
 
+/** Espelha maskCPF de lib/forms/masks.ts. Formata XXX.XXX.XXX-XX. */
+export function maskCPF(value: string): string {
+  const d = value.replace(/\D/g, "").slice(0, 11)
+  return d
+    .replace(/^(\d{3})(\d)/, "$1.$2")
+    .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/^(\d{3})\.(\d{3})\.(\d{3})(\d)/, "$1.$2.$3-$4")
+}
+
+/** Espelha maskCNPJ de lib/forms/masks.ts. Formata XX.XXX.XXX/XXXX-XX. */
+export function maskCNPJ(value: string): string {
+  const d = value.replace(/\D/g, "").slice(0, 14)
+  return d
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/^(\d{2})\.(\d{3})\.(\d{3})(\d)/, "$1.$2.$3/$4")
+    .replace(/^(\d{2})\.(\d{3})\.(\d{3})\/(\d{4})(\d)/, "$1.$2.$3/$4-$5")
+}
+
 /** Espelha maskCEP de lib/forms/masks.ts. Formata XXXXX-XXX. */
 export function maskCEP(value: string): string {
   const d = value.replace(/\D/g, "").slice(0, 8)

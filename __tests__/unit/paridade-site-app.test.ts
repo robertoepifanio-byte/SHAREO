@@ -53,6 +53,15 @@ const DIVERGENCIAS_CONHECIDAS: Record<string, { texto: string; motivo: string }[
     { texto: "Mais alugado", motivo: "PENDENTE (tarefa: fechar as 6 divergências de texto site-app): selo de destaque do site, ausente no card do app." },
     { texto: "Editar", motivo: "PENDENTE (tarefa: fechar as 6 divergências de texto site-app): atalho de edição do dono no card, ausente no app." },
   ],
+  // O breadcrumb "Início › X" do site não se transcreve: no app o caminho de
+  // volta é o botão do cabeçalho. Convenção já estabelecida antes destas telas
+  // — `app/comunidade/page.tsx` tem o breadcrumb e `apps/mobile/app/comunidade.tsx` não.
+  "app/politicas/page.tsx": [
+    { texto: "Início", motivo: "Breadcrumb do site; no app o retorno é o botão voltar do cabeçalho (mesma convenção de comunidade/sobre)." },
+  ],
+  "app/suporte/page.tsx": [
+    { texto: "Início", motivo: "Breadcrumb do site; no app o retorno é o botão voltar do cabeçalho (mesma convenção de comunidade/sobre)." },
+  ],
   "components/home/SimuladorRenda.tsx": [
     { texto: "Renda Mensal Estimada", motivo: "PENDENTE (tarefa: fechar as 6 divergências de texto site-app): rótulo do resultado; o app usa outra composição de tela." },
     { texto: "Cadastrar meu item agora", motivo: "PENDENTE (tarefa: fechar as 6 divergências de texto site-app): CTA do resultado, ausente no app." },
@@ -108,6 +117,17 @@ function listarTsx(dir: string): string[] {
   return out
 }
 
+/**
+ * Telas: o casamento por nome NÃO funciona aqui — o site usa
+ * `app/politicas/page.tsx` e o app, `apps/mobile/app/politicas.tsx`. Por isso o
+ * mapa é explícito. Sem ele, ~2.600 linhas de texto transcrito (incluindo o
+ * texto jurídico das Políticas) ficariam fora de qualquer rede.
+ */
+const MAPA_TELAS: [string, string][] = [
+  ["app/politicas/page.tsx", "apps/mobile/app/politicas.tsx"],
+  ["app/suporte/page.tsx", "apps/mobile/app/suporte.tsx"],
+]
+
 /** Pares descobertos por nome de arquivo — nada de lista manual a manter. */
 function descobrirPares(): [string, string][] {
   const porNome = new Map(listarTsx("apps/mobile/components").map((p) => [path.basename(p), p]))
@@ -116,7 +136,7 @@ function descobrirPares(): [string, string][] {
     .filter((par): par is [string, string] => Boolean(par[1]))
 }
 
-const PARES = descobrirPares()
+const PARES = [...descobrirPares(), ...MAPA_TELAS]
 
 describe("paridade de texto site ↔ app", () => {
   it("encontra os pares por nome de arquivo", () => {
