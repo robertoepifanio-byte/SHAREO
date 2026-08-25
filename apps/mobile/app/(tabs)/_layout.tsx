@@ -28,6 +28,7 @@ export default function TabsLayout() {
         menuOpen={menuOpen}
         onToggleMenu={() => setMenuOpen((v) => !v)}
         notificationCount={0}
+        isLoggedIn={!!user}
       />
 
       {/* Conteúdo da tela ativa */}

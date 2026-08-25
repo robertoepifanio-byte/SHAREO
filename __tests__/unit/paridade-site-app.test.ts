@@ -46,12 +46,10 @@ const DIVERGENCIAS_CONHECIDAS: Record<string, { texto: string; motivo: string }[
     { texto: "Tema", motivo: "O app troca tema pelo ThemeToggle no cabeçalho, não por item de menu." },
   ],
   "components/layout/AppHeader.tsx": [
-    { texto: "Use Mais. Possua Menos.", motivo: "PENDENTE (tarefa: fechar as 6 divergências de texto site-app): o cabeçalho do app não traz o slogan sob o logo. Divergência real, ainda não transcrita." },
-    { texto: "Entrar", motivo: "PENDENTE (tarefa: fechar as 6 divergências de texto site-app): o site mostra 'Entrar' no cabeçalho deslogado; o app leva ao login por outro caminho." },
-  ],
-  "components/items/ItemCard.tsx": [
-    { texto: "Mais alugado", motivo: "PENDENTE (tarefa: fechar as 6 divergências de texto site-app): selo de destaque do site, ausente no card do app." },
-    { texto: "Editar", motivo: "PENDENTE (tarefa: fechar as 6 divergências de texto site-app): atalho de edição do dono no card, ausente no app." },
+    {
+      texto: "Use Mais. Possua Menos.",
+      motivo: "Slogan usa `hidden lg:block` no site — invisível no breakpoint mobile (375px). O app transcreve o site em 375px, onde o texto não aparece.",
+    },
   ],
   // O breadcrumb "Início › X" do site não se transcreve: no app o caminho de
   // volta é o botão do cabeçalho. Convenção já estabelecida antes destas telas
@@ -61,10 +59,6 @@ const DIVERGENCIAS_CONHECIDAS: Record<string, { texto: string; motivo: string }[
   ],
   "app/suporte/page.tsx": [
     { texto: "Início", motivo: "Breadcrumb do site; no app o retorno é o botão voltar do cabeçalho (mesma convenção de comunidade/sobre)." },
-  ],
-  "components/home/SimuladorRenda.tsx": [
-    { texto: "Renda Mensal Estimada", motivo: "PENDENTE (tarefa: fechar as 6 divergências de texto site-app): rótulo do resultado; o app usa outra composição de tela." },
-    { texto: "Cadastrar meu item agora", motivo: "PENDENTE (tarefa: fechar as 6 divergências de texto site-app): CTA do resultado, ausente no app." },
   ],
 }
 
