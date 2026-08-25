@@ -309,6 +309,10 @@ jobs:
         env:
           STAGING_URL: ${{ secrets.STAGING_URL }}
           E2E_SECRET:  ${{ secrets.E2E_SECRET }}
+          # Promove o fixture de admin a ADMIN via UPDATE direto — sem isso o
+          # script fazia login como usuário comum e todo endpoint admin-only
+          # respondia 403 no job de E2E seguinte (feedback-e2e-admin-session-ci-sempre-403).
+          DIRECT_URL:  ${{ secrets.DIRECT_URL_STAGING }}
 
       # Os fixtures recém-criados nascem sem e-mail verificado / cadastro completo, o que
       # bloquearia anunciar (REGISTRATION_INCOMPLETE) e alugar (EMAIL_NOT_VERIFIED). Marcamos

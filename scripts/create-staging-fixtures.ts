@@ -4,18 +4,28 @@
  * O que faz:
  *  1. Registra locatário + proprietário + admin via POST /api/auth/register
  *     (idempotente: ignora EMAIL_ALREADY_EXISTS / CPF_ALREADY_EXISTS)
- *  2. Faz login de cada usuário via Playwright no staging
- *  3. Salva storageState em e2e/fixtures/session-*.json
- *  4. Para o admin: usa a API do Supabase (service_role) para setar role='ADMIN'
+ *  2. Para o admin: promove a role='ADMIN' via Prisma (precisa acontecer ANTES
+ *     do login — a role vai pro JWT no momento da autenticação, sessão antiga
+ *     não se atualiza sozinha)
+ *  3. Faz login de cada usuário via Playwright no staging
+ *  4. Salva storageState em e2e/fixtures/session-*.json
  *
- * Pré-requisito: SUPABASE_SERVICE_ROLE_KEY_STAGING e STAGING_URL no ambiente
- * (ou editar as constantes abaixo).
+ * Pré-requisito: DIRECT_URL (conexão direta, não pooler — evita timeout de
+ * transação curta no PgBouncer) e STAGING_URL no ambiente.
+ *
+ * 🪤 Até 25/08/2026 a promoção do admin era só um `console.log` com instrução de
+ * UPDATE manual no Supabase SQL Editor — nunca rodava de verdade em CI (runner
+ * efêmero, sessão nova a cada run, ninguém reaplicava o SQL). Resultado: a
+ * "sessão de admin" do CI era sempre um usuário comum, e todo endpoint
+ * admin-only respondia 403 — permanentemente, mascarando qualquer regressão
+ * real na área. Ver memória feedback-e2e-admin-session-ci-sempre-403.
  *
  * Uso:
  *   pnpm tsx scripts/create-staging-fixtures.ts
  */
 
 import { chromium } from '@playwright/test'
+import { PrismaClient } from '@prisma/client'
 import * as fs from 'fs'
 import * as path from 'path'
 import { FIXTURE_LOCATARIO, FIXTURE_PROPRIETARIO, FIXTURE_ADMIN, SESSION_PATHS } from '../e2e/fixtures/test-credentials'
@@ -23,9 +33,6 @@ import { FIXTURE_LOCATARIO, FIXTURE_PROPRIETARIO, FIXTURE_ADMIN, SESSION_PATHS }
 const STAGING_URL =
   process.env.STAGING_URL ??
   'https://shareo-git-main-robertoepifanio-bytes-projects.vercel.app'
-
-const SUPABASE_URL = process.env.SUPABASE_URL_STAGING ?? 'https://zythygwvmrwrqmnrdufq.supabase.co'
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY_STAGING ?? ''
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -115,33 +122,37 @@ async function loginAndSaveSession(
   }
 }
 
-async function getUserIdByEmail(email: string): Promise<string | null> {
-  if (!SERVICE_ROLE_KEY) return null
-
-  const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/User?email=eq.${encodeURIComponent(email)}&select=id`,
-    {
-      headers: {
-        apikey:        SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-      },
-    },
-  )
-  if (!res.ok) return null
-  const rows = await res.json() as { id: string }[]
-  return rows[0]?.id ?? null
-}
-
+/**
+ * Promove o fixture a ADMIN via Prisma, direto no banco — precisa rodar ANTES
+ * do login (loginAndSaveSession), porque a role vai pro JWT no momento da
+ * autenticação (lib/auth.ts, jwt callback: `token.role = u.role`). Promover
+ * depois do login não teria efeito na sessão já salva.
+ *
+ * `datasourceUrl: DIRECT_URL` — não o pooler (`DATABASE_URL`): é um UPDATE
+ * único e pontual, sem motivo pra passar pelo PgBouncer em modo transaction.
+ */
 async function promoteToAdmin(email: string): Promise<void> {
-  // PostgREST não expõe as tabelas da aplicação (sem grants para anon/authenticated).
-  // Alternativa: usar o Supabase SQL Editor ou o Prisma CLI com DATABASE_URL_STAGING.
-  console.log(`  ℹ️  Promoção de admin requer acesso direto ao DB.`)
-  console.log(`     Execute no Supabase SQL Editor (https://app.supabase.com/project/zythygwvmrwrqmnrdufq/sql):`)
-  console.log(``)
-  console.log(`     UPDATE users SET role = 'ADMIN' WHERE email = '${email}';`)
-  console.log(``)
-  console.log(`     Depois, salve a sessão novamente:`)
-  console.log(`     pnpm tsx scripts/create-staging-fixtures.ts --only-admin`)
+  const directUrl = process.env.DIRECT_URL
+  if (!directUrl) {
+    throw new Error(
+      'DIRECT_URL ausente no ambiente — não dá pra promover o fixture a ADMIN. ' +
+      'Defina DIRECT_URL (conexão direta com o Postgres de staging) antes de rodar este script.',
+    )
+  }
+
+  const prisma = new PrismaClient({ datasourceUrl: directUrl })
+  try {
+    const { count } = await prisma.user.updateMany({
+      where: { email },
+      data:  { role: 'ADMIN', adminRole: 'ADMIN_SUPERADMIN' },
+    })
+    if (count === 0) {
+      throw new Error(`Nenhum usuário encontrado com email ${email} — registerUser() rodou antes?`)
+    }
+    console.log(`  ✅ Promovido a ADMIN: ${email}`)
+  } finally {
+    await prisma.$disconnect()
+  }
 }
 
 // ---------------------------------------------------------------------------
