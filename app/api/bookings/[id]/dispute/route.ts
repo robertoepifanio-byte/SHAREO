@@ -6,7 +6,7 @@
 
 import { NextResponse, after, type NextRequest } from "next/server"
 import { z } from "zod"
-import { auth } from "@/lib/auth"
+import { withUser } from "@/lib/withUser"
 import { prisma } from "@/lib/prisma"
 import { isOwnStoragePhotoUrl } from "@/lib/validations/storageUrl"
 
@@ -35,13 +35,8 @@ const REASON_LABELS: Record<string, string> = {
 
 export async function POST(req: NextRequest, { params }: Params) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
-        { status: 401 },
-      )
-    }
+    const user = await withUser(req)
+    if (user instanceof NextResponse) return user
 
     const { id } = await params
     const body   = await req.json()
@@ -60,7 +55,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
 
     const { reason, description, photoUrl } = parsed.data
-    const userId = session.user.id
+    const userId = user.id
 
     const booking = await prisma.booking.findUnique({
       where:  { id },

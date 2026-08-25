@@ -14,16 +14,16 @@
  */
 import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
-import { auth } from "@/lib/auth"
+import { withUser } from "@/lib/withUser"
 import { prisma } from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
 
-export async function DELETE(_req: NextRequest) {
+export async function DELETE(req: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) return NextResponse.json({ error: { code: "UNAUTHORIZED" } }, { status: 401 })
+    const user = await withUser(req)
+    if (user instanceof NextResponse) return user
 
-    const userId = session.user.id
+    const userId = user.id
     const user = await prisma.user.findUnique({
       where:  { id: userId },
       select: { idSelfieUrl: true, idSelfieConsentAt: true },

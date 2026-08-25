@@ -12,7 +12,7 @@
 
 import { NextResponse, after, type NextRequest } from "next/server"
 import { z } from "zod"
-import { auth } from "@/lib/auth"
+import { withUser } from "@/lib/withUser"
 import { prisma } from "@/lib/prisma"
 import { diasExtras, valorExtensao, aplicarExtensao } from "@/lib/payments/extension"
 import { formatPrice } from "@/utils/format"
@@ -49,13 +49,8 @@ interface BookingExtRow {
 /** POST — locatário solicita nova data de devolução */
 export async function POST(req: NextRequest, { params }: Params) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
-        { status: 401 },
-      )
-    }
+    const user = await withUser(req)
+    if (user instanceof NextResponse) return user
 
     const { id } = await params
     const body   = await req.json()
@@ -69,7 +64,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
 
     const { newEndDate } = parsed.data
-    const userId          = session.user.id
+    const userId          = user.id
 
     const rows = await prisma.$queryRaw<BookingExtRow[]>`
       SELECT
@@ -171,13 +166,8 @@ export async function POST(req: NextRequest, { params }: Params) {
 /** PATCH — proprietário aprova ou recusa a extensão */
 export async function PATCH(req: NextRequest, { params }: Params) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
-        { status: 401 },
-      )
-    }
+    const user = await withUser(req)
+    if (user instanceof NextResponse) return user
 
     const { id } = await params
     const body   = await req.json()
@@ -191,7 +181,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
 
     const { action } = parsed.data
-    const userId      = session.user.id
+    const userId      = user.id
 
     const rows = await prisma.$queryRaw<BookingExtRow[]>`
       SELECT

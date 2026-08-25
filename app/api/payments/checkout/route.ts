@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { auth } from "@/lib/auth"
+import { withUser } from "@/lib/withUser"
 import { prisma } from "@/lib/prisma"
 import { getStripe } from "@/lib/stripe"
 import { APP_URL } from "@/lib/app-url"
@@ -15,15 +15,10 @@ const Schema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
-        { status: 401 },
-      )
-    }
+    const user = await withUser(req)
+    if (user instanceof NextResponse) return user
 
-    const rl = await checkRateLimit(`checkout:${session.user.id}`, RATE_LIMITS.checkout.limit, RATE_LIMITS.checkout.windowMs)
+    const rl = await checkRateLimit(`checkout:${user.id}`, RATE_LIMITS.checkout.limit, RATE_LIMITS.checkout.windowMs)
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const body   = await req.json()
@@ -62,7 +57,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Apenas o locatário pode pagar
-    if (booking.borrowerId !== session.user.id) {
+    if (booking.borrowerId !== user.id) {
       return NextResponse.json(
         { error: { code: "FORBIDDEN", message: "Acesso negado." } },
         { status: 403 },
@@ -139,7 +134,7 @@ export async function POST(req: NextRequest) {
       ],
       metadata: {
         bookingId,
-        userId: session.user.id,
+        userId: user.id,
       },
       // ADR-028 — split real: agrupa a cobrança para o Transfer que o cron de
       // repasse (app/api/cron/payout/route.ts) cria depois, quando o payout
