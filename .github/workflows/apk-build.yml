@@ -117,7 +117,7 @@ jobs:
             printf '%s\n\n' '### "Conflito com pacote já existente"?'
             printf '%s\n\n' 'Desinstale o ShareO e tente de novo. Se persistir: existe uma cópia em **perfil seguro / Vault / Pasta segura** do aparelho — entre nesse perfil, desinstale lá também e repita.'
             printf '%s\n\n' '---'
-            printf '%s\n\n' '[Guia completo com capturas de tela](https://github.com/${{ github.repository }}/blob/main/docs/guias/instalar-apk-android.md)'
+            printf '%s\n\n' '[Guia completo](https://github.com/${{ github.repository }}/blob/main/docs/guias/instalar-apk-android.md)'
             printf '_Build automático do `main` via GitHub Actions. Keystore debug — ao trocar de canal (EAS ↔ APK direto), desinstale antes. %s_\n' "${MAPBOX_STATUS}"
           } > /tmp/release-notes.md
 
