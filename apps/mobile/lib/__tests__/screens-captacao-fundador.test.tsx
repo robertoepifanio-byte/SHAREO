@@ -22,12 +22,27 @@ const VIACEP_OK = {
   uf:         "SP",
 }
 
-function mockViaCep(resposta: unknown, { falhar = false } = {}) {
-  global.fetch = jest.fn().mockImplementation(() =>
-    falhar
-      ? Promise.reject(new Error("sem rede"))
-      : Promise.resolve({ ok: true, json: async () => resposta }),
-  ) as unknown as typeof fetch
+function mockViaCep(resposta: unknown, { falhar = false, timeout = false } = {}) {
+  global.fetch = jest.fn().mockImplementation((_url: string, init?: RequestInit) => {
+    if (falhar) return Promise.reject(new Error("sem rede"))
+
+    if (timeout) {
+      // Simula ViaCEP aceitando a conexão mas sem responder.
+      // O AbortSignal passado por fetchAddressByCep dispara a rejeição quando
+      // o timer interno de 5 s chamar controller.abort().
+      return new Promise<never>((_, reject) => {
+        const signal = init?.signal as AbortSignal | undefined
+        if (signal) {
+          const rejeitar = () =>
+            reject(Object.assign(new Error("The user aborted a request."), { name: "AbortError" }))
+          if (signal.aborted) { rejeitar(); return }
+          signal.addEventListener("abort", rejeitar)
+        }
+      })
+    }
+
+    return Promise.resolve({ ok: true, json: async () => resposta })
+  }) as unknown as typeof fetch
 }
 
 afterEach(() => {
@@ -128,6 +143,32 @@ describe("consulta de CEP", () => {
     fireEvent.changeText(screen.getByPlaceholderText("00000-000"), "78890000")
 
     await waitFor(() => expect(screen.getByPlaceholderText("Seu bairro")).toBeTruthy())
+  })
+
+  it("abre o preenchimento manual quando o ViaCEP aceita mas não responde (timeout 5 s)", async () => {
+    // Prova de captura: mude VIACEP_TIMEOUT_MS para 9_999_999 em apps/mobile/lib/forms.ts
+    // e este teste travará — waitFor expirará sem ver os campos manuais.
+    jest.useFakeTimers()
+    mockViaCep(null, { timeout: true })
+    render(<FounderCaptureForm startExpanded />)
+
+    fireEvent.changeText(screen.getByPlaceholderText("00000-000"), "05424150")
+
+    // O componente usa debounce de 300 ms antes de chamar lookupCep.
+    // Depois, fetchAddressByCep aguarda até 5 000 ms pela resposta.
+    // Avançar 5 500 ms garante que ambos os timers disparam.
+    await act(async () => {
+      jest.advanceTimersByTime(5_500)
+    })
+
+    await waitFor(() =>
+      expect(
+        screen.getByText("Não conseguimos consultar o CEP agora. Preencha os campos abaixo."),
+      ).toBeTruthy(),
+    )
+    expect(screen.getByPlaceholderText("Sua cidade")).toBeTruthy()
+
+    jest.useRealTimers()
   })
 })
 
