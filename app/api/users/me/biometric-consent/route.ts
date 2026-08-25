@@ -20,14 +20,10 @@ import { createAdminClient } from "@/lib/supabase/admin"
 
 export async function DELETE(req: NextRequest) {
   try {
-    const user = await withUser(req)
+    const user = await withUser(req, { select: { idSelfieUrl: true, idSelfieConsentAt: true } })
     if (user instanceof NextResponse) return user
 
     const userId = user.id
-    const user = await prisma.user.findUnique({
-      where:  { id: userId },
-      select: { idSelfieUrl: true, idSelfieConsentAt: true },
-    })
 
     // Só quem TEM registro de consentimento biométrico pode revogá-lo. Isso evita
     // que um usuário VERIFIED pelo fluxo antigo (selfie enviada, mas idSelfieConsentAt

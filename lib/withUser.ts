@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
+import type { Prisma } from "@prisma/client"
 import { resolveUserId } from "@/lib/resolveUserId"
 import { prisma } from "@/lib/prisma"
 
@@ -23,14 +24,14 @@ const unauth = (): NextResponse =>
  * feedback-auth-cookie-only-mobile-401).
  */
 export async function withUser(req: NextRequest): Promise<{ id: string } | NextResponse>
-export async function withUser<S extends Record<string, boolean>>(
+export async function withUser<S extends Prisma.UserSelect>(
   req: NextRequest,
   opts: { select: S },
-): Promise<({ id: string } & { [K in keyof S]: unknown }) | NextResponse>
+): Promise<Prisma.UserGetPayload<{ select: S & { id: true } }> | NextResponse>
 export async function withUser(
   req: NextRequest,
-  opts?: { select?: Record<string, boolean> },
-): Promise<{ id: string } | NextResponse> {
+  opts?: { select?: Prisma.UserSelect },
+): Promise<Record<string, unknown> | NextResponse> {
   const userId = await resolveUserId(req)
   if (!userId) return unauth()
 
