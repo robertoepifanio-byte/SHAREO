@@ -68,7 +68,20 @@ jest.mock("@/lib/forms", () => {
 const mockApiFetch = apiFetch as jest.MockedFunction<typeof apiFetch>
 
 // expo-router está mockado no jest.setup.js; cast para acessar os jest.fn()
-const mockRouterBack = router.back as jest.MockedFunction<typeof router.back>
+const mockRouterBack    = router.back    as jest.MockedFunction<typeof router.back>
+const mockRouterReplace = router.replace as jest.MockedFunction<typeof router.replace>
+
+// Controla o retorno de useLocalSearchParams — padrão: sem callback.
+// O jest.mock abaixo substitui o mock global de jest.setup.js para este arquivo,
+// adicionando useLocalSearchParams que o componente agora usa.
+let mockSearchParams: Record<string, string> = {}
+jest.mock("expo-router", () => ({
+  router:               { back: jest.fn(), replace: jest.fn(), push: jest.fn() },
+  useLocalSearchParams: () => mockSearchParams,
+  Link:                 ({ children }: { children: React.ReactNode }) => children,
+  usePathname:          () => "/(auth)/completar",
+  useSegments:          () => [],
+}))
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -81,7 +94,10 @@ function preencherCamposMinimos() {
 
 // ── Setup ──────────────────────────────────────────────────────────────────────
 
-beforeEach(() => jest.clearAllMocks())
+beforeEach(() => {
+  jest.clearAllMocks()
+  mockSearchParams = {}
+})
 
 afterEach(async () => {
   await act(async () => {})
@@ -270,7 +286,7 @@ describe("CompletarCadastro — validação client-side", () => {
 // ── Submissão com sucesso ───────────────────────────────────────────────────────
 
 describe("CompletarCadastro — submissão bem-sucedida", () => {
-  it("chama PATCH /api/users/me/complete-registration e navega de volta", async () => {
+  it("chama PATCH /api/users/me/complete-registration e navega de volta (sem callback)", async () => {
     mockApiFetch.mockResolvedValueOnce({
       data: { id: "u1", profileCompletedAt: new Date().toISOString() },
     } as never)
@@ -285,6 +301,42 @@ describe("CompletarCadastro — submissão bem-sucedida", () => {
         expect.objectContaining({ method: "PATCH" }),
       )
       expect(mockRouterBack).toHaveBeenCalled()
+      expect(mockRouterReplace).not.toHaveBeenCalled()
+    })
+  })
+
+  it("com callback, chama router.replace(callback) após o PATCH bem-sucedido", async () => {
+    // Simula navegação de /(auth)/completar?callback=/itens/abc123 (caso do item detail)
+    mockSearchParams = { callback: "/itens/abc123" }
+    mockApiFetch.mockResolvedValueOnce({
+      data: { id: "u1", profileCompletedAt: new Date().toISOString() },
+    } as never)
+
+    render(<CompletarCadastroScreen />)
+    preencherCamposMinimos()
+    fireEvent.press(screen.getByText("Concluir cadastro"))
+
+    await waitFor(() => {
+      expect(mockRouterReplace).toHaveBeenCalledWith("/itens/abc123")
+      expect(mockRouterBack).not.toHaveBeenCalled()
+    })
+  })
+
+  it("com callback malicioso (fora do app), ignora e volta — protege contra open redirect", async () => {
+    // callback vem de deep link / universal link, não é confiável. "//evil.com" e URLs
+    // absolutas escapam do app; só path relativo (começando com "/" só) é aceito.
+    mockSearchParams = { callback: "//evil.com" }
+    mockApiFetch.mockResolvedValueOnce({
+      data: { id: "u1", profileCompletedAt: new Date().toISOString() },
+    } as never)
+
+    render(<CompletarCadastroScreen />)
+    preencherCamposMinimos()
+    fireEvent.press(screen.getByText("Concluir cadastro"))
+
+    await waitFor(() => {
+      expect(mockRouterBack).toHaveBeenCalled()
+      expect(mockRouterReplace).not.toHaveBeenCalled()
     })
   })
 
