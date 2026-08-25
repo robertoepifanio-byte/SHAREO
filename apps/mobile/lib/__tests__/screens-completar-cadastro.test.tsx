@@ -322,6 +322,24 @@ describe("CompletarCadastro — submissão bem-sucedida", () => {
     })
   })
 
+  it("com callback malicioso (fora do app), ignora e volta — protege contra open redirect", async () => {
+    // callback vem de deep link / universal link, não é confiável. "//evil.com" e URLs
+    // absolutas escapam do app; só path relativo (começando com "/" só) é aceito.
+    mockSearchParams = { callback: "//evil.com" }
+    mockApiFetch.mockResolvedValueOnce({
+      data: { id: "u1", profileCompletedAt: new Date().toISOString() },
+    } as never)
+
+    render(<CompletarCadastroScreen />)
+    preencherCamposMinimos()
+    fireEvent.press(screen.getByText("Concluir cadastro"))
+
+    await waitFor(() => {
+      expect(mockRouterBack).toHaveBeenCalled()
+      expect(mockRouterReplace).not.toHaveBeenCalled()
+    })
+  })
+
   it("exibe 'Concluindo…' enquanto aguarda a resposta", async () => {
     let resolveFetch!: (v: unknown) => void
     mockApiFetch.mockReturnValueOnce(

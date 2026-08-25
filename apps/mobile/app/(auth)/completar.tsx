@@ -210,6 +210,13 @@ function CheckboxCard({
   )
 }
 
+// callback vem de deep link / universal link — não confiável. Mesma checagem de
+// safeCallback() em app/(auth)/cadastro/completar/page.tsx: só aceita path relativo
+// (evita redirecionamento aberto pra fora do app via "https://..." ou "//evil.com").
+function safeCallback(raw: string | undefined): string | undefined {
+  return raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : undefined
+}
+
 // ── Tela principal ─────────────────────────────────────────────────────────────
 
 export default function CompletarCadastroScreen() {
@@ -328,8 +335,9 @@ export default function CompletarCadastroScreen() {
       // Com callback (ex.: /itens/[id] que precisava de cadastro completo), navega
       // diretamente para o destino — espelha ?callbackUrl= do site.
       // Sem callback, volta para a tela anterior (dashboard ou outra).
-      if (callback) {
-        router.replace(callback as never)
+      const dest = safeCallback(callback)
+      if (dest) {
+        router.replace(dest as never)
       } else {
         router.back()
       }

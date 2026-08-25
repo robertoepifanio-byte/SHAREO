@@ -16,6 +16,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
 import { calcCO2Savings } from "@/lib/co2"
+import { isRegistrationComplete } from "@/lib/registration"
 
 export async function GET(req: NextRequest) {
   try {
@@ -184,7 +185,7 @@ export async function GET(req: NextRequest) {
         co2Kg:           kgCO2,
         treesEquivalent,
         // Verbatim de app/dashboard/page.tsx linha 154
-        profileIncomplete: !!userProfile && userProfile.profileCompletedAt == null,
+        profileIncomplete: !isRegistrationComplete(userProfile),
       },
     })
   } catch (err) {
