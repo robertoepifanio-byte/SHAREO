@@ -225,4 +225,55 @@ describe("middleware", () => {
       expect(mockJwtVerify).not.toHaveBeenCalled()
     })
   })
+
+  describe("rotas /api/test/* — guard de ambiente", () => {
+    const OLD_ENV = process.env
+
+    beforeEach(() => {
+      process.env = { ...OLD_ENV }
+      mockGetToken.mockResolvedValue(null)
+    })
+
+    afterAll(() => {
+      process.env = OLD_ENV
+    })
+
+    it("bloqueia /api/test/* com 404 quando E2E_BYPASS_DISABLED=true", async () => {
+      process.env.E2E_BYPASS_DISABLED = "true"
+
+      const req = makeReq("/api/test/mark-booking-paid")
+      const res = await middleware(req)
+
+      expect(res.status).toBe(404)
+    })
+
+    it("deixa /api/test/* passar quando E2E_BYPASS_DISABLED não está setado", async () => {
+      delete process.env.E2E_BYPASS_DISABLED
+
+      const req = makeReq("/api/test/mark-booking-paid")
+      const res = await middleware(req)
+
+      // O middleware não barra — a rota em si aplica as demais camadas
+      expect(res.status).not.toBe(404)
+    })
+
+    it("deixa /api/test/* passar quando E2E_BYPASS_DISABLED=false", async () => {
+      process.env.E2E_BYPASS_DISABLED = "false"
+
+      const req = makeReq("/api/test/mark-booking-paid")
+      const res = await middleware(req)
+
+      expect(res.status).not.toBe(404)
+    })
+
+    it("não afeta rotas fora de /api/test/ com E2E_BYPASS_DISABLED=true", async () => {
+      process.env.E2E_BYPASS_DISABLED = "true"
+
+      const req = makeReq("/api/bookings")
+      const res = await middleware(req)
+
+      // /api/bookings é rota protegida — deve pedir autenticação (401), nunca 404
+      expect(res.status).toBe(401)
+    })
+  })
 })
