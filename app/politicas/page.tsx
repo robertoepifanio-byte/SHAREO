@@ -289,8 +289,10 @@ export default async function PoliticasPage() {
 
                 <PolicyBlock title="3.3 Disputas">
                   Em caso de conflito entre Locador e Locatário, o ShareO oferece um mecanismo de
-                  mediação disponível na plataforma. As partes devem abrir uma disputa no prazo de
-                  48 horas após o evento que a originou. O ShareO analisará as evidências apresentadas
+                  mediação disponível na plataforma. O prazo para abrir uma disputa depende de quem
+                  abre: o Locatário pode abrir enquanto a locação estiver ativa, antes de devolver o
+                  item; o Locador pode abrir somente depois que o Locatário devolver o item, em até
+                  48 horas a partir da devolução. O ShareO analisará as evidências apresentadas
                   e emitirá uma decisão em até 5 dias úteis, que poderá incluir reembolso parcial ou
                   total ao Locatário ou liberação do valor ao Locador. A decisão do ShareO é vinculante
                   para efeitos do repasse do valor retido na plataforma.

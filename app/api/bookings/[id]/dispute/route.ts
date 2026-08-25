@@ -9,6 +9,7 @@ import { z } from "zod"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { isOwnStoragePhotoUrl } from "@/lib/validations/storageUrl"
+import { checkDisputeWindow } from "@/lib/disputeWindow"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -69,6 +70,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         status:     true,
         borrowerId: true,
         ownerId:    true,
+        returnRequestedAt: true, // janela de 48h do locador — ver checagem abaixo
         item:       { select: { title: true } },
       },
     })
@@ -99,6 +101,17 @@ export async function POST(req: NextRequest, { params }: Params) {
             message: "Disputa só pode ser aberta em reservas ativas ou devolvidas.",
           },
         },
+        { status: 422 },
+      )
+    }
+
+    // pauta-raimundo-2026-08-22, item 3 — decisão de Raimundo (25/08/2026):
+    // janela assimétrica por quem abre. Regra compartilhada com PATCH
+    // /api/bookings/:id (action=open_dispute) via lib/disputeWindow.ts.
+    const windowCheck = checkDisputeWindow(booking, { isBorrower, isOwner })
+    if (!windowCheck.ok) {
+      return NextResponse.json(
+        { error: { code: "DISPUTE_WINDOW_CLOSED", message: windowCheck.message } },
         { status: 422 },
       )
     }

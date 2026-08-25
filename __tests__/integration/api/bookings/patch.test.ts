@@ -149,6 +149,12 @@ function makeBooking(overrides: {
   paymentStatus?: string
   /** `null` simula reserva sem contrato assinado. */
   contractSignedAt?: Date | null
+  /**
+   * Quando o locatário iniciou a devolução (mark_returned) — início da janela
+   * de 48h do locador para abrir disputa. `null` simula RETURNED sem esse
+   * timestamp (dado legado); default é "agora há pouco", dentro da janela.
+   */
+  returnRequestedAt?: Date | null
 }) {
   return {
     id:          BOOKING_ID,
@@ -161,6 +167,9 @@ function makeBooking(overrides: {
     totalDays:   2,
     paymentStatus: overrides.paymentStatus ?? "PENDING",
     contractSignedAt: overrides.contractSignedAt === undefined ? new Date("2026-06-01T00:00:00Z") : overrides.contractSignedAt,
+    returnRequestedAt: overrides.returnRequestedAt === undefined
+      ? new Date(Date.now() - 60 * 60 * 1000) // 1h atrás — dentro da janela de 48h
+      : overrides.returnRequestedAt,
     bookingItems: [{ itemId: "item-id-004" }], // Story B — confirm revalida todos os itens
     item:        { title: "Furadeira Bosch" },
     borrower:    { email: "borrower@ex.com", name: "Locatário Teste" },
@@ -532,7 +541,9 @@ describe("PATCH /api/bookings/[id]", () => {
 
     it("quando o LOCADOR abre, o locatário é notificado e o texto diz 'locador'", async () => {
       mockAuth.mockResolvedValue(makeSession(OWNER_ID))
-      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "ACTIVE" }))
+      // Locador só pode abrir depois da devolução (status RETURNED) — ver
+      // bloco "janela de disputa assimétrica" abaixo.
+      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "RETURNED" }))
       mockBookingUpdate.mockResolvedValue(makeUpdatedBooking("DISPUTED"))
 
       await PATCH(makeReq({ action: "open_dispute", reason: "Devolvido com risco fundo." }), makeParams())
@@ -543,6 +554,71 @@ describe("PATCH /api/bookings/[id]", () => {
           body:   expect.stringContaining("locador abriu uma disputa"),
         }),
       }))
+    })
+
+    /**
+     * pauta-raimundo-2026-08-22, item 3 — decisão de Raimundo (25/08/2026): a
+     * janela de abertura de disputa é assimétrica por quem abre.
+     */
+    describe("janela de disputa assimétrica (locador vs. locatário)", () => {
+      it("locatário NÃO pode abrir disputa depois de já ter devolvido (RETURNED)", async () => {
+        mockAuth.mockResolvedValue(makeSession(BORROWER_ID))
+        mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "RETURNED" }))
+
+        const res = await PATCH(makeReq({ action: "open_dispute", reason: "Tarde demais." }), makeParams())
+
+        expect(res.status).toBe(422)
+        const body = await res.json() as { error: { code: string } }
+        expect(body.error.code).toBe("DISPUTE_WINDOW_CLOSED")
+      })
+
+      it("locador NÃO pode abrir disputa enquanto a locação ainda está ativa (antes da devolução)", async () => {
+        mockAuth.mockResolvedValue(makeSession(OWNER_ID))
+        mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "ACTIVE" }))
+
+        const res = await PATCH(makeReq({ action: "open_dispute", reason: "Adiantando." }), makeParams())
+
+        expect(res.status).toBe(422)
+        const body = await res.json() as { error: { code: string } }
+        expect(body.error.code).toBe("DISPUTE_WINDOW_CLOSED")
+      })
+
+      it("locador NÃO pode abrir disputa depois de 48h da devolução", async () => {
+        mockAuth.mockResolvedValue(makeSession(OWNER_ID))
+        mockBookingFindUnique.mockResolvedValue(makeBooking({
+          status: "RETURNED",
+          returnRequestedAt: new Date(Date.now() - 49 * 60 * 60 * 1000), // 49h atrás
+        }))
+
+        const res = await PATCH(makeReq({ action: "open_dispute", reason: "Perdi o prazo." }), makeParams())
+
+        expect(res.status).toBe(422)
+        const body = await res.json() as { error: { code: string } }
+        expect(body.error.code).toBe("DISPUTE_WINDOW_CLOSED")
+      })
+
+      it("locador PODE abrir disputa dentro das 48h da devolução", async () => {
+        mockAuth.mockResolvedValue(makeSession(OWNER_ID))
+        mockBookingFindUnique.mockResolvedValue(makeBooking({
+          status: "RETURNED",
+          returnRequestedAt: new Date(Date.now() - 47 * 60 * 60 * 1000), // 47h atrás
+        }))
+        mockBookingUpdate.mockResolvedValue(makeUpdatedBooking("DISPUTED"))
+
+        const res = await PATCH(makeReq({ action: "open_dispute", reason: "Dentro do prazo." }), makeParams())
+
+        expect(res.status).toBe(200)
+      })
+
+      it("locador SEM returnRequestedAt (dado legado) não é bloqueado pela janela — fail-open", async () => {
+        mockAuth.mockResolvedValue(makeSession(OWNER_ID))
+        mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "RETURNED", returnRequestedAt: null }))
+        mockBookingUpdate.mockResolvedValue(makeUpdatedBooking("DISPUTED"))
+
+        const res = await PATCH(makeReq({ action: "open_dispute", reason: "Sem timestamp." }), makeParams())
+
+        expect(res.status).toBe(200)
+      })
     })
 
     // 7. RETURNED + confirm_return (owner) → 200, status COMPLETED

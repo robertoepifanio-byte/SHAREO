@@ -15,6 +15,7 @@ import { releaseCouponForBooking } from "@/lib/coupons"
 import { findOverlappingItem } from "@/lib/booking-availability"
 import { hasPickupAddress, redactOwnerAddress } from "@/lib/ownerAddress"
 import { criarPayoutDaReserva } from "@/lib/payout"
+import { checkDisputeWindow } from "@/lib/disputeWindow"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -191,6 +192,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         itemId: true, startDate: true, endDate: true, totalPrice: true, totalDays: true,
         paymentStatus: true,
         contractSignedAt: true, // guard do mark_active — ver abaixo
+        returnRequestedAt: true, // guard do open_dispute — ver abaixo (48h do locador)
         pickupToken: true, pickupTokenUsedAt: true,
         bookingItems: { select: { itemId: true } }, // Story B — revalidar todos os itens no confirm
         item:     { select: { title: true } },
@@ -241,6 +243,22 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         { error: { code: "FORBIDDEN", message: "Apenas o locatário pode executar esta ação." } },
         { status: 403 },
       )
+    }
+
+    // pauta-raimundo-2026-08-22, item 3 — decisão de Raimundo (25/08/2026): a
+    // janela de abertura de disputa é ASSIMÉTRICA por quem abre, não uma faixa
+    // única de status para os dois lados (TRANSITIONS.requiredStatus continua
+    // ["ACTIVE", "RETURNED"] porque cobre os dois papéis juntos — a checagem
+    // fina de QUAL status vale pra QUAL papel mora em lib/disputeWindow.ts,
+    // compartilhada com a rota dedicada POST /api/bookings/:id/dispute).
+    if (action === "open_dispute") {
+      const windowCheck = checkDisputeWindow(booking, { isBorrower, isOwner })
+      if (!windowCheck.ok) {
+        return NextResponse.json(
+          { error: { code: "DISPUTE_WINDOW_CLOSED", message: windowCheck.message } },
+          { status: 422 },
+        )
+      }
     }
 
     // Endereço completo é exigência NO MOMENTO EM QUE HÁ UMA LOCAÇÃO, não no
