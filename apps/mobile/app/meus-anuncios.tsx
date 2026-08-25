@@ -46,6 +46,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { apiFetch, API_URL } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
 import { useTheme } from "@/lib/theme"
+import type { MeData } from "@/lib/types"
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -69,10 +70,6 @@ interface ItemsResponse {
   total: number
 }
 
-interface MeData {
-  id:       string
-  userType: "PF" | "PJ"
-}
 
 // ── Formatação de moeda — verbatim de ItemCard.tsx do mobile ─────────────────
 const fmt = (cents: number) =>
