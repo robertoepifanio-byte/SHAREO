@@ -26,7 +26,7 @@
 import fs from 'fs'
 import { test, expect } from '@playwright/test'
 import { SESSION_PATHS } from './fixtures/test-credentials'
-import { apiWithRetry, enviarFotoDevolucao } from './_support'
+import { apiWithRetry, enviarFotoDevolucao, markBookingPaidForTest } from './_support'
 
 // ---------------------------------------------------------------------------
 // Pré-condições de skip
@@ -150,6 +150,7 @@ test.describe('smoke #36 — fluxo de devolução: Devolução em Andamento → 
         const pickupToken = (await detailRes.json() as { data: { pickupToken: string | null } }).data.pickupToken
         expect(pickupToken, 'pickupToken deve existir após o confirm').toBeTruthy()
 
+        await markBookingPaidForTest(prop.request, bookingId!)
         const activeRes = await apiWithRetry(() =>
           prop.request.patch(`/api/bookings/${bookingId!}`, { data: { action: 'mark_active', pickupToken } })
         )

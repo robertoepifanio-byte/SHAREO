@@ -77,6 +77,33 @@ const PNG_1X1 = Buffer.from(
 )
 
 /**
+ * markBookingPaidForTest — marca uma reserva como PAGA via rota de apoio E2E.
+ *
+ * Necessário porque o guard `PAYMENT_REQUIRED` em `mark_active` exige
+ * `paymentStatus === "PAID"` antes de aceitar a retirada do item. Os specs
+ * E2E não passam pelo checkout real (Stripe), então chamam esta rota para
+ * simular o estado pós-pagamento sem regenerar o pickupToken.
+ *
+ * A rota `/api/test/mark-booking-paid` é protegida por `x-e2e-token`
+ * (injetado globalmente pelo `playwright.config.ts` via `extraHTTPHeaders`)
+ * e desabilitada em produção via `E2E_BYPASS_DISABLED=true`.
+ */
+export async function markBookingPaidForTest(
+  request: APIRequestContext,
+  bookingId: string,
+  /** Alguns specs montam URL absoluta a partir de BASE — passe-a aqui. */
+  base = '',
+): Promise<void> {
+  const res = await request.post(`${base}/api/test/mark-booking-paid`, {
+    data: { bookingId },
+  })
+  if (!res.ok()) {
+    const body = await res.text().catch(() => '(sem corpo)')
+    throw new Error(`markBookingPaidForTest falhou: ${res.status()} — ${body}`)
+  }
+}
+
+/**
  * enviarFotoDevolucao — sobe a foto de CHECKOUT exigida antes de `mark_returned`.
  *
  * Desde 2026-08-23 a API recusa `mark_returned` com 422 RETURN_PHOTO_REQUIRED

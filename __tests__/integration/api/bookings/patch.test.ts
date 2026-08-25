@@ -297,7 +297,7 @@ describe("PATCH /api/bookings/[id]", () => {
     it("mark_active deixa o período coerente — início na retirada real, não depois do fim", async () => {
       mockAuth.mockResolvedValue(makeSession(OWNER_ID))
       mockBookingFindUnique.mockResolvedValue({
-        ...makeBooking({ status: "CONFIRMED" }),
+        ...makeBooking({ status: "CONFIRMED", paymentStatus: "PAID" }),
         pickupToken:       "123456",
         pickupTokenUsedAt: null,
       })
@@ -342,12 +342,30 @@ describe("PATCH /api/bookings/[id]", () => {
       expect(body.data.status).toBe("CANCELLED")
     })
 
+    // 2b. CONFIRMED + mark_active sem pagamento → 402 PAYMENT_REQUIRED
+    // Guard adicionado em 2026-08-24: impede retirada sem pagamento confirmado.
+    it("CONFIRMED + mark_active sem pagamento → 402 PAYMENT_REQUIRED", async () => {
+      mockAuth.mockResolvedValue(makeSession(OWNER_ID))
+      mockBookingFindUnique.mockResolvedValue({
+        ...makeBooking({ status: "CONFIRMED", paymentStatus: "PENDING" }),
+        pickupToken:       "123456",
+        pickupTokenUsedAt: null,
+      })
+
+      const res  = await PATCH(makeReq({ action: "mark_active", pickupToken: "123456" }), makeParams())
+      const body = await res.json() as { error: { code: string } }
+
+      expect(res.status).toBe(402)
+      expect(body.error.code).toBe("PAYMENT_REQUIRED")
+      expect(mockBookingUpdateMany).not.toHaveBeenCalled()
+    })
+
     // 3. CONFIRMED + mark_active (owner) → 200, status ACTIVE
     // mark_active exige pickupToken válido (gerado no confirm)
     it("CONFIRMED + mark_active pelo owner → 200, status ACTIVE", async () => {
       mockAuth.mockResolvedValue(makeSession(OWNER_ID))
       mockBookingFindUnique.mockResolvedValue({
-        ...makeBooking({ status: "CONFIRMED" }),
+        ...makeBooking({ status: "CONFIRMED", paymentStatus: "PAID" }),
         pickupToken:       "123456",
         pickupTokenUsedAt: null,
         totalDays:         5,
@@ -399,7 +417,7 @@ describe("PATCH /api/bookings/[id]", () => {
       contratoLigado = true
       mockAuth.mockResolvedValue(makeSession(OWNER_ID))
       mockBookingFindUnique.mockResolvedValue(
-        makeBooking({ status: "CONFIRMED", contractSignedAt: null }),
+        makeBooking({ status: "CONFIRMED", paymentStatus: "PAID", contractSignedAt: null }),
       )
 
       const res  = await PATCH(makeReq({ action: "mark_active", pickupToken: "123456" }), makeParams())
@@ -416,7 +434,7 @@ describe("PATCH /api/bookings/[id]", () => {
       contratoLigado = false
       mockAuth.mockResolvedValue(makeSession(OWNER_ID))
       mockBookingFindUnique.mockResolvedValue({
-        ...makeBooking({ status: "CONFIRMED", contractSignedAt: null }),
+        ...makeBooking({ status: "CONFIRMED", paymentStatus: "PAID", contractSignedAt: null }),
         pickupToken:       "123456",
         pickupTokenUsedAt: null,
       })
