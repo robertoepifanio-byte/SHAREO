@@ -41,6 +41,7 @@ import * as Sharing from "expo-sharing"
 import { apiFetch } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
 import { useTheme } from "@/lib/theme"
+import { ScreenHeader } from "@/components/layout/ScreenHeader"
 
 // ── Itens do card "Sobre seus dados" — verbatim de dados/page.tsx ─────────────
 const DATA_ITEMS = [
@@ -122,27 +123,7 @@ export default function DadosScreen() {
   return (
     <View style={[s.root, { backgroundColor: tokens.bg }]}>
 
-      {/* ── Header — verbatim do padrão kyc.tsx / favoritos.tsx ── */}
-      <View
-        style={[
-          s.header,
-          {
-            paddingTop:      insets.top + 8,
-            backgroundColor: tokens.surface,
-            borderColor:     tokens.border,
-          },
-        ]}
-      >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          accessibilityLabel="Voltar"
-          accessibilityRole="button"
-          style={s.backBtn}
-        >
-          <Text style={[s.backArrow, { color: tokens.muted }]}>‹</Text>
-        </TouchableOpacity>
-        <Text style={[s.headerTitle, { color: tokens.navy }]}>Privacidade e Dados</Text>
-      </View>
+      <ScreenHeader title="Privacidade e Dados" />
 
       <ScrollView
         style={s.scroll}
@@ -284,24 +265,6 @@ const s = StyleSheet.create({
     width:             "100%",
   },
   loginBtnText: { fontSize: 14, fontWeight: "700", color: "#FFFFFF" },
-
-  // Header
-  header: {
-    flexDirection:   "row",
-    alignItems:      "center",
-    gap:             12,
-    borderBottomWidth: 1,
-    paddingHorizontal: 16,
-    paddingBottom:   12,
-  },
-  backBtn: {
-    minHeight: 44,
-    minWidth:  44,
-    alignItems:      "center",
-    justifyContent:  "center",
-  },
-  backArrow:   { fontSize: 28, lineHeight: 32 },
-  headerTitle: { flex: 1, fontSize: 18, fontWeight: "700" },
 
   // Scroll / content
   scroll:   { flex: 1 },
