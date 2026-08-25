@@ -71,29 +71,42 @@ interface ViaCepResponse {
   uf?:         string
 }
 
+/** Espelha VIACEP_TIMEOUT_MS de lib/forms/address.ts. */
+const VIACEP_TIMEOUT_MS = 5_000
+
 /**
  * Espelha fetchAddressByCep de lib/forms/address.ts.
  *
  * - Devolve o endereço quando encontrado.
  * - Devolve `null` quando o CEP não existe (`data.erro`) ou não tem 8 dígitos.
- * - LANÇA em falha de rede.
+ * - LANÇA em falha de rede ou timeout de 5 s (tratar no chamador).
  *
  * 🪤 Os três desfechos são caminhos de UX distintos, e é por isso que o `null`
  * e a exceção não foram unificados: "CEP não existe" pede correção do campo,
  * "sem rede" pede o preenchimento manual.
+ *
+ * Usa AbortController + setTimeout para o timeout: compatível com Hermes (RN
+ * 0.71+). AbortSignal.timeout() não foi usado porque não está disponível em
+ * todas as versões do Hermes — ver apps/mobile/package.json.
  */
 export async function fetchAddressByCep(cep: string): Promise<AddressFromCep | null> {
   const digits = cep.replace(/\D/g, "")
   if (digits.length !== 8) return null
 
-  const res  = await fetch(`https://viacep.com.br/ws/${digits}/json/`)
-  const data = (await res.json()) as ViaCepResponse
-  if (data.erro) return null
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), VIACEP_TIMEOUT_MS)
+  try {
+    const res  = await fetch(`https://viacep.com.br/ws/${digits}/json/`, { signal: controller.signal })
+    const data = (await res.json()) as ViaCepResponse
+    if (data.erro) return null
 
-  return {
-    street:       data.logradouro || undefined,
-    neighborhood: data.bairro     || undefined,
-    city:         data.localidade || undefined,
-    state:        data.uf         || undefined,
+    return {
+      street:       data.logradouro || undefined,
+      neighborhood: data.bairro     || undefined,
+      city:         data.localidade || undefined,
+      state:        data.uf         || undefined,
+    }
+  } finally {
+    clearTimeout(timer)
   }
 }
