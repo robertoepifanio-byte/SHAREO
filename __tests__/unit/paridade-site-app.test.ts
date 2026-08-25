@@ -124,8 +124,9 @@ function listarTsx(dir: string): string[] {
  * texto jurídico das Políticas) ficariam fora de qualquer rede.
  */
 const MAPA_TELAS: [string, string][] = [
-  ["app/politicas/page.tsx", "apps/mobile/app/politicas.tsx"],
-  ["app/suporte/page.tsx", "apps/mobile/app/suporte.tsx"],
+  ["app/politicas/page.tsx",       "apps/mobile/app/politicas.tsx"],
+  ["app/suporte/page.tsx",         "apps/mobile/app/suporte.tsx"],
+  ["app/loja/[slug]/page.tsx",     "apps/mobile/app/loja/[slug].tsx"],
 ]
 
 /** Pares descobertos por nome de arquivo — nada de lista manual a manter. */
