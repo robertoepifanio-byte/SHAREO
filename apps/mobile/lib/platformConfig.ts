@@ -26,12 +26,6 @@ export interface PublicConfig {
   /** Se o aceite do contrato de locação é exigido (flag rentalContractAcceptanceEnabled). */
   rentalContractRequired: boolean
   lateFeeMultiplier: number
-  cancel: {
-    fullRefundHours:    number
-    partialRefundHours: number
-    partialPercent:     number
-    latePercent:        number
-  }
 }
 
 /** Espelha os defaults de lib/platform-config.ts — valem só até o fetch voltar. */
@@ -43,7 +37,6 @@ export const DEFAULT_CONFIG: PublicConfig = {
   // Default FALSE, igual ao servidor: na dúvida, não prometer obrigação.
   rentalContractRequired: false,
   lateFeeMultiplier: 1.5,
-  cancel: { fullRefundHours: 24, partialRefundHours: 6, partialPercent: 70, latePercent: 50 },
 }
 
 /**
@@ -53,8 +46,7 @@ export const DEFAULT_CONFIG: PublicConfig = {
  *
  * 🪤 O merge com os defaults não é decorativo — o app instalado no celular pode
  * ser mais velho ou mais novo que a API (ciclo de loja ≠ ciclo de deploy), e
- * campo ausente cai no default em vez de virar `undefined` no texto. `cancel` é
- * mesclado à parte porque o spread raso o trocaria inteiro.
+ * campo ausente cai no default em vez de virar `undefined` no texto.
  */
 export function usePlatformConfig(): PublicConfig {
   const { data } = useQuery({
@@ -64,7 +56,7 @@ export function usePlatformConfig(): PublicConfig {
       const res  = await fetch(`${API_URL}/api/platform-config/public`)
       const json = (await res.json()) as { data?: Partial<PublicConfig> }
       const d    = json?.data
-      return { ...DEFAULT_CONFIG, ...d, cancel: { ...DEFAULT_CONFIG.cancel, ...d?.cancel } }
+      return { ...DEFAULT_CONFIG, ...d }
     },
   })
   return data ?? DEFAULT_CONFIG
