@@ -91,7 +91,6 @@ export default function PoliticasScreen() {
   const feeLabel    = formatFeeLabel(cfg.feeRateBps)
   const payoutLabel = formatPayoutWindow(cfg.payoutWindowDays)
   const maxLabel    = formatMaxLabel(cfg.checkoutMaxCents)
-  const cancel      = cfg.cancel
 
   function openMail(address: string) {
     Linking.openURL(`mailto:${address}`)
@@ -375,39 +374,7 @@ export default function PoliticasScreen() {
 
         <PolicyBlock title="4.1 Cancelamento pelo Locatário" tokens={tokens}>
           <Text style={[s.body, { color: tokens.muted }]}>
-            A política de cancelamento leva em conta o tempo de antecedência em relação ao início da locação:
-          </Text>
-          <View style={[s.bulletList, { marginTop: 8 }]}>
-            <View style={s.bulletItem}>
-              <Text style={[s.bulletDot, { color: tokens.muted }]}>•</Text>
-              <Text style={[s.bulletText, { color: tokens.muted }]}>
-                <Text style={[s.bold, { color: tokens.text }]}>
-                  Até {cancel.fullRefundHours} horas antes:
-                </Text>
-                {" "}reembolso integral do valor pago.
-              </Text>
-            </View>
-            <View style={s.bulletItem}>
-              <Text style={[s.bulletDot, { color: tokens.muted }]}>•</Text>
-              <Text style={[s.bulletText, { color: tokens.muted }]}>
-                <Text style={[s.bold, { color: tokens.text }]}>
-                  Entre {cancel.fullRefundHours} e {cancel.partialRefundHours} horas antes:
-                </Text>
-                {" "}reembolso de {cancel.partialPercent}% do valor pago.
-              </Text>
-            </View>
-            <View style={s.bulletItem}>
-              <Text style={[s.bulletDot, { color: tokens.muted }]}>•</Text>
-              <Text style={[s.bulletText, { color: tokens.muted }]}>
-                <Text style={[s.bold, { color: tokens.text }]}>
-                  Menos de {cancel.partialRefundHours} horas antes:
-                </Text>
-                {" "}reembolso de {cancel.latePercent}% do valor pago.
-              </Text>
-            </View>
-          </View>
-          <Text style={[s.bodySmallMuted, { color: tokens.muted }]}>
-            Os prazos e percentuais acima refletem a configuração atual da plataforma e podem ser ajustados com aviso prévio de 30 dias.
+            O cancelamento não depende da antecedência em relação ao início da locação: o Locatário recebe de volta 100% do valor pago, descontada apenas a taxa que a Stripe já havia cobrado sobre a cobrança original — repassada integralmente ao provedor de pagamentos, sem retenção pelo ShareO.
           </Text>
         </PolicyBlock>
 

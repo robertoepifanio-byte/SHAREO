@@ -101,13 +101,11 @@ describe("Central de Ajuda — números vêm da config, não do texto", () => {
       checkoutMaxCents: 80_000,
       ownerHours: 12,
       lateFeeMultiplier: 2,
-      cancel: { fullRefundHours: 48, partialRefundHours: 12, partialPercent: 60, latePercent: 25 },
     })
     expect(outro).toMatch(/7 dias depois/)
     expect(outro).toMatch(/máximo por locação é R\$ 800/)
     expect(outro).toMatch(/até 12 horas para confirmar/)
     expect(outro).toMatch(/2× o preço diário|2× a diária/)
-    expect(outro).toMatch(/60% do valor pago|reembolso é de 60%/)
     expect(outro).not.toMatch(/3 dias depois|máximo por locação é R\$ 500/)
   })
 
@@ -118,7 +116,6 @@ describe("Central de Ajuda — números vêm da config, não do texto", () => {
       ...DEFAULT_CONFIG,
       ownerHours: 96,
       lateFeeMultiplier: 3,
-      cancel: { fullRefundHours: 72, partialRefundHours: 36, partialPercent: 33, latePercent: 11 },
     })
     expect(exotico).not.toMatch(/24 horas para confirmar/)
     expect(exotico).not.toMatch(/taxa de 30%/)
@@ -145,9 +142,9 @@ describe("Central de Ajuda — tabela de taxas renderizada", () => {
 
     expect(visivel).toMatch(/Valor líquido da locação/)
     expect(visivel).toMatch(/3 dias após a confirmação da devolução/)
-    // As faixas vêm da config — a versão antiga cravava "30% do valor".
-    expect(visivel).toMatch(/Reembolso de 70%/)
-    expect(visivel).toMatch(/Reembolso de 50%/)
+    // Política de cancelamento plana (sem faixas de horas).
+    expect(visivel).toMatch(/Reembolso de 100% ao locatário/)
+    expect(visivel).toMatch(/Reembolso de 100%, menos a taxa da Stripe/)
     expect(visivel).toMatch(/1,5× o preço diário/)
   })
 })

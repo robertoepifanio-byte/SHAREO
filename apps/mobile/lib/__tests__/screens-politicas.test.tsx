@@ -202,14 +202,11 @@ describe("PoliticasScreen — valores dinâmicos vêm de usePlatformConfig()", (
     expect(screen.getByText(/R\$ 500 por transação/)).toBeTruthy()
   })
 
-  it("exibe as regras de cancelamento do config (default: 24h / 6h / 70% / 50%)", () => {
+  it("exibe a política de cancelamento plana na seção 4.1", () => {
     wrap(<PoliticasScreen />)
-    // Seção 4.1 — bullets com valores dinâmicos
-    expect(screen.getByText(/Até 24 horas antes:/)).toBeTruthy()
-    expect(screen.getByText(/Entre 24 e 6 horas antes:/)).toBeTruthy()
-    expect(screen.getByText(/Menos de 6 horas antes:/)).toBeTruthy()
-    expect(screen.getByText(/reembolso de 70% do valor pago/)).toBeTruthy()
-    expect(screen.getByText(/reembolso de 50% do valor pago/)).toBeTruthy()
+    // Seção 4.1 — parágrafo único, sem faixas de horas.
+    expect(screen.getByText(/100% do valor pago/)).toBeTruthy()
+    expect(screen.getByText(/taxa que a Stripe já havia cobrado/)).toBeTruthy()
   })
 
   it("atualiza a taxa de serviço quando a config muda", () => {
@@ -252,29 +249,12 @@ describe("PoliticasScreen — valores dinâmicos vêm de usePlatformConfig()", (
     expect(screen.queryByText(/R\$ 500 por transação/)).toBeNull()
   })
 
-  it("atualiza as regras de cancelamento quando a config muda", () => {
-    const customConfig: PublicConfig = {
-      ...DEFAULT_CONFIG,
-      cancel: {
-        fullRefundHours:    48,
-        partialRefundHours: 12,
-        partialPercent:     80,
-        latePercent:        30,
-      },
-    }
-    mockUsePlatformConfig.mockReturnValue(customConfig)
-
+  it("seção 4.1 não exibe faixas de horas nem percentuais antigos", () => {
+    // A política de cancelamento é agora um parágrafo estático (sem config dinâmica).
     wrap(<PoliticasScreen />)
-
-    expect(screen.getByText(/Até 48 horas antes:/)).toBeTruthy()
-    expect(screen.getByText(/Entre 48 e 12 horas antes:/)).toBeTruthy()
-    expect(screen.getByText(/Menos de 12 horas antes:/)).toBeTruthy()
-    expect(screen.getByText(/reembolso de 80% do valor pago/)).toBeTruthy()
-    expect(screen.getByText(/reembolso de 30% do valor pago/)).toBeTruthy()
-
-    // Valores antigos não devem aparecer
-    expect(screen.queryByText(/Até 24 horas antes:/)).toBeNull()
-    expect(screen.queryByText(/reembolso de 70% do valor pago/)).toBeNull()
+    expect(screen.queryByText(/horas antes:/)).toBeNull()
+    expect(screen.queryByText(/reembolso de 70%/)).toBeNull()
+    expect(screen.queryByText(/reembolso de 50%/)).toBeNull()
   })
 })
 

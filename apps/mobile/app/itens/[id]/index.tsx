@@ -31,6 +31,7 @@ import { Stars } from "@/components/ui/Stars"
 import { ItemCard, type ItemCardItem } from "@/components/items/ItemCard"
 import { useRentalCart, type RentalCartItem } from "@/lib/rentalCart"
 import { ResendVerificationLink } from "@/components/ui/ResendVerificationLink"
+import { getCancellationPolicyLines } from "@/lib/cancellationPolicy"
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 interface ItemDetail {
@@ -1164,7 +1165,7 @@ export default function ItemDetailScreen() {
             <View style={[s.trustBox, { borderColor: tokens.green, backgroundColor: themeMode === "dark" ? "#0A2A1A" : "#F0FDF4" }]}>
               <Text style={[s.trustBoxTitle, { color: tokens.green }]}>🔒 Sua locação está protegida</Text>
               {[
-                "Cancelamento gratuito até 24h antes",
+                "Reembolso integral se você cancelar",
                 "Item protegido durante a locação",
                 "Suporte ShareO disponível 7 dias por semana",
               ].map((line) => (
@@ -1176,15 +1177,10 @@ export default function ItemDetailScreen() {
             </View>
 
             {/* Política de cancelamento — fonte: page.tsx linhas 637-665 +
-                lib/cancellationPolicy.ts DEFAULTS (o site também usa o export
-                estático CANCELLATION_POLICY_LINES, não a config dinâmica). */}
+                lib/cancellationPolicy.ts getCancellationPolicyLines() */}
             <View style={[s.trustBox, { borderColor: tokens.border, backgroundColor: tokens.surface }]}>
               <Text style={[s.trustBoxTitle, { color: tokens.navy }]}>Política de cancelamento</Text>
-              {[
-                { label: "Até 24h antes", detail: "reembolso total (100%)" },
-                { label: "Entre 24h e 6h antes", detail: "70% de reembolso" },
-                { label: "Menos de 6h antes", detail: "50% de reembolso" },
-              ].map((line) => (
+              {getCancellationPolicyLines().map((line) => (
                 <View key={line.label} style={s.trustBoxRow}>
                   <Text style={{ color: tokens.muted, fontSize: 13 }}>•</Text>
                   <Text style={[s.trustBoxText, { color: tokens.text }]}>

@@ -46,12 +46,6 @@ export interface PublicConfig {
   checkoutMaxCents:  number
   ownerHours:        number
   lateFeeMultiplier: number
-  cancel: {
-    fullRefundHours:    number
-    partialRefundHours: number
-    partialPercent:     number
-    latePercent:        number
-  }
 }
 
 /** Defaults idênticos aos de lib/platform-config.ts — valem só até o fetch voltar. */
@@ -61,7 +55,6 @@ export const DEFAULT_CONFIG: PublicConfig = {
   checkoutMaxCents:  50_000,
   ownerHours:        48,
   lateFeeMultiplier: 1.5,
-  cancel: { fullRefundHours: 24, partialRefundHours: 6, partialPercent: 70, latePercent: 50 },
 }
 
 /**
@@ -246,7 +239,7 @@ export function buildSections(v: HelpVars): Section[] { return [
       { q: "Como funciona o pagamento?",
         a: "Só é possível pagar depois que o proprietário confirmar a reserva. Quando ele aceitar, você recebe o aviso e pode clicar em 'Pagar agora'. O pagamento é processado pela Stripe, o provedor de pagamentos do ShareO, e nesta versão aceita cartão de crédito à vista (sem parcelamento). O valor pago fica retido e só é repassado ao proprietário depois da confirmação da devolução do item." },
       { q: "Posso cancelar uma reserva?",
-        a: `Sim. Enquanto a reserva estiver 'Aguardando' ou 'Confirmada', você pode cancelar na página da reserva. Cancelando até ${v.cancel.fullRefundHours} horas antes da retirada, o reembolso é integral; entre ${v.cancel.fullRefundHours}h e ${v.cancel.partialRefundHours}h antes, o reembolso é de ${v.cancel.partialPercent}%; com menos de ${v.cancel.partialRefundHours}h, de ${v.cancel.latePercent}%.` },
+        a: "Sim. Enquanto a reserva estiver 'Aguardando' ou 'Confirmada', você pode cancelar na página da reserva. O reembolso é sempre de 100% do que você pagou — se você mesmo cancelar, é descontada apenas a taxa que a Stripe cobrou na cobrança original; se o proprietário cancelar, não há desconto nenhum." },
       { q: "O que acontece na retirada do item?",
         a: "Combine com o proprietário pelo chat do app onde e quando retirar o item. Na entrega, o proprietário registra fotos do estado do item (check-in) e marca a reserva como 'Ativo'. O período de locação começa a contar a partir desse momento — o prazo de devolução é no mesmo horário, N dias depois. Exemplo: retirada em 10/10 às 10h → devolução até 11/10 às 10h (1 dia)." },
       { q: "E se o item não estiver como anunciado?",
@@ -348,7 +341,7 @@ export function buildSections(v: HelpVars): Section[] { return [
         // A versão anterior afirmava um bloqueio que não existe.
         a: "Sim. Nesta primeira fase, a plataforma se destina a itens com valor estimado de até R$ 1.000. Esse limite existe para adequar o perfil de risco dos aluguéis enquanto a plataforma está em fase inicial, e anúncios acima dele podem ser removidos na moderação. Itens de maior valor estarão disponíveis em versões futuras." },
       { q: "Existe taxa de cancelamento?",
-        a: `O reembolso depende da antecedência em relação à data de retirada: até ${v.cancel.fullRefundHours}h antes, reembolso integral; entre ${v.cancel.fullRefundHours}h e ${v.cancel.partialRefundHours}h antes, ${v.cancel.partialPercent}% do valor pago; com menos de ${v.cancel.partialRefundHours}h, ${v.cancel.latePercent}%. A retenção cobre custos operacionais já incorridos. Cancelamentos pelo proprietário devolvem o valor integral ao locatário, e quem cancela com frequência pode ter a conta suspensa temporariamente.` },
+        a: "O reembolso é sempre de 100% do valor pago, não importa a antecedência. A única exceção é quando é o próprio locatário quem cancela: nesse caso, é descontada a taxa que a Stripe já tinha cobrado na cobrança original — a ShareO não fica com nada disso, é repassado direto ao provedor de pagamento. Cancelamentos pelo proprietário não têm nenhum desconto, e quem cancela com frequência pode ter a conta suspensa temporariamente." },
       { q: "Recebo comprovante das transações?",
         a: "Sim. O ShareO emite comprovante eletrônico para todas as transações concluídas na plataforma. O comprovante é enviado automaticamente para o email cadastrado após o encerramento da reserva. Você também pode acessar o histórico completo em 'Meu Perfil > Meus repasses'." },
     ],
@@ -597,8 +590,7 @@ export default function AjudaScreen() {
         // Merge, e não substituição: o app instalado no celular pode ser mais
         // velho ou mais novo que a API (ciclo de loja ≠ ciclo de deploy). Campo
         // ausente cai no default em vez de virar `undefined` no meio do texto.
-        // `cancel` é mesclado à parte porque o spread raso o trocaria inteiro.
-        setCfg((atual) => ({ ...atual, ...d, cancel: { ...atual.cancel, ...d.cancel } }))
+        setCfg((atual) => ({ ...atual, ...d }))
       })
       .catch(() => {
         // Sem rede, a Ajuda abre com os defaults. Falhar em silêncio aqui é a
@@ -631,9 +623,8 @@ export default function AjudaScreen() {
     { label: "Valor máximo do bem anunciado",          value: "R$ 1.000 por item",           when: "Regra da fase inicial" },
     { label: "Limite por locação",                     value: `${v.maxLabel} por transação`,   when: "Validado no checkout" },
     { label: "Taxa por atraso na devolução",           value: `${v.lateMultLabel} o preço diário por dia`, when: "Gerada ao detectar o atraso" },
-    { label: `Cancelamento até ${v.cancel.fullRefundHours}h antes da retirada`,                          value: "Reembolso de 100%",                    when: "Sem custo para o locatário" },
-    { label: `Cancelamento entre ${v.cancel.fullRefundHours}h e ${v.cancel.partialRefundHours}h antes`,    value: `Reembolso de ${v.cancel.partialPercent}%`, when: "Descontado do valor pago" },
-    { label: `Cancelamento com menos de ${v.cancel.partialRefundHours}h antes`,                          value: `Reembolso de ${v.cancel.latePercent}%`,   when: "Descontado do valor pago" },
+    { label: "Cancelamento pelo locador",   value: "Reembolso de 100% ao locatário", when: "A ShareO abre mão da comissão; o locador não recebe repasse" },
+    { label: "Cancelamento pelo locatário", value: "Reembolso de 100%, menos a taxa da Stripe", when: "Taxa real da cobrança original, cobrada pela Stripe" },
   ]
 
   // ── Acordeão — guias de primeiros passos ───────────────────────────────────

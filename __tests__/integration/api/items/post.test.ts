@@ -60,6 +60,8 @@ const BASE_ITEM_PAYLOAD = {
   state:       "RN",
   latitude:    -5.795,
   longitude:   -35.211,
+  // Obrigatório na criação desde 25/08/2026 (pauta-raimundo-2026-08-22, item 4b).
+  estimatedRetailPrice: 80_000,
 }
 
 function makeRequest(body: Record<string, unknown>): NextRequest {
