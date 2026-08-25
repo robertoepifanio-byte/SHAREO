@@ -22,7 +22,7 @@ import {
   type TextInputProps,
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { router } from "expo-router"
+import { router, useLocalSearchParams } from "expo-router"
 import { useTheme, type Tokens } from "@/lib/theme"
 import { apiFetch, API_URL } from "@/lib/api"
 import { DPO_EMAIL, PJ_DECLARATION_TEXT } from "@/lib/legalConfig"
@@ -214,6 +214,10 @@ function CheckboxCard({
 
 export default function CompletarCadastroScreen() {
   const { tokens, mode } = useTheme()
+  // callback: rota para navegar após o cadastro ser concluído com sucesso.
+  // Espelha ?callbackUrl= do site (app/dashboard/page.tsx linha 197 e _PriceCalc.tsx linha 475).
+  // Quando ausente, router.back() replica o comportamento anterior.
+  const { callback } = useLocalSearchParams<{ callback?: string }>()
 
   // Estado — espelha o useState de CompleteRegistrationForm.tsx
   const [userType,          setUserType]          = useState<UserType>("PF")
@@ -320,9 +324,15 @@ export default function CompletarCadastroScreen() {
         method: "PATCH",
         body:   JSON.stringify(body),
       })
-      // Cadastro concluído — volta para a tela anterior (o guard que exigia o
-      // cadastro completo re-verificará e liberará o fluxo desejado).
-      router.back()
+      // Cadastro concluído.
+      // Com callback (ex.: /itens/[id] que precisava de cadastro completo), navega
+      // diretamente para o destino — espelha ?callbackUrl= do site.
+      // Sem callback, volta para a tela anterior (dashboard ou outra).
+      if (callback) {
+        router.replace(callback as never)
+      } else {
+        router.back()
+      }
     } catch (e: unknown) {
       setLoading(false)
       const err = e as { code?: string; status?: number; message?: string; details?: Record<string, string[]> }
