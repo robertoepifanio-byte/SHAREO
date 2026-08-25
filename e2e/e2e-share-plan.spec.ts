@@ -184,6 +184,7 @@ test('Plano E2E Compartilhamento — Login · Criar · Link · Externo · Permis
           categoryId:  cats[0].id,
           condition:   'GOOD',
           pricePerDay: 4500,
+          estimatedRetailPrice: 90_000,
           city:        'Natal',
           state:       'RN',
           latitude:    -5.7945,

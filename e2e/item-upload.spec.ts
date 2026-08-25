@@ -54,6 +54,7 @@ test.describe('smoke #9 — upload de imagem de item (Supabase Storage)', () => 
         categoryId,
         condition:   'GOOD',
         pricePerDay: 3000,
+        estimatedRetailPrice: 60_000,
         city:        'Natal',
         state:       'RN',
         latitude:    -5.7945,

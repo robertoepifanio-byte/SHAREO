@@ -270,7 +270,7 @@ test.describe.serial('Plano 2 — Compartilhamento', () => {
         const res = await apiWithRetry(() => page.request.post('/api/items', {
           data: {
             title, description: 'Item de teste da suíte E2E — pode ser removido',
-            categoryId: cats[0].id, condition: 'GOOD', pricePerDay: 4500,
+            categoryId: cats[0].id, condition: 'GOOD', pricePerDay: 4500, estimatedRetailPrice: 90_000,
             city: 'Natal', state: 'RN', latitude: -5.7945, longitude: -35.211,
           },
         }))
@@ -445,7 +445,7 @@ test.describe.serial('Plano 4 — Geral', () => {
         const res = await apiWithRetry(() => page.request.post('/api/items', {
           data: {
             title, description: 'CRUD geral da suíte E2E — pode ser removido',
-            categoryId: cats[0].id, condition: 'GOOD', pricePerDay: 3000,
+            categoryId: cats[0].id, condition: 'GOOD', pricePerDay: 3000, estimatedRetailPrice: 60_000,
             city: 'Natal', state: 'RN', latitude: -5.7945, longitude: -35.211,
           },
         }))
