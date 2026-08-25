@@ -177,4 +177,51 @@ describe("comportamento geral", () => {
       }),
     }))
   })
+
+  /**
+   * A mutação e a notificação vêm de lib/openDispute.ts, compartilhada com
+   * PATCH /api/bookings/:id (action=open_dispute) — mas o rótulo do motivo e a
+   * foto só existem no contrato desta rota dedicada (enum + descrição + foto
+   * opcional). Confirma que esse dado extra ainda chega na notificação depois
+   * da extração.
+   */
+  it("notificação inclui o rótulo do motivo estruturado (só esta rota tem)", async () => {
+    mockAuth.mockResolvedValue(session(BORROWER_ID))
+    mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "ACTIVE" }))
+
+    await POST(req({ reason: "VEIO_DANIFICADO", description: "Chegou com a lente rachada." }), params())
+
+    expect(mockNotificationCreate).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        body: expect.stringContaining("Veio danificado"),
+      }),
+    }))
+  })
+
+  it("photoUrl chega nos dados da notificação quando enviada", async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://zythygwvmrwrqmnrdufq.supabase.co"
+    const photoUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/booking-photos/foo.jpg`
+    mockAuth.mockResolvedValue(session(BORROWER_ID))
+    mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "ACTIVE" }))
+
+    await POST(req({ ...VALID_BODY, photoUrl }), params())
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL
+
+    expect(mockNotificationCreate).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        data: expect.objectContaining({ photoUrl }),
+      }),
+    }))
+  })
+
+  it("cancelReason gravado no formato estruturado [Disputa] Rótulo: descrição", async () => {
+    mockAuth.mockResolvedValue(session(BORROWER_ID))
+    mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "ACTIVE" }))
+
+    await POST(req({ reason: "FALTAM_ACESSORIOS", description: "Veio sem o carregador." }), params())
+
+    expect(mockBookingUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({ cancelReason: "[Disputa] Faltam acessórios: Veio sem o carregador." }),
+    }))
+  })
 })
