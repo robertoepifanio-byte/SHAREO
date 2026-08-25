@@ -29,40 +29,6 @@ function intFrom(map: Record<string, string>, key: string): number {
   return parseInt(map[key] ?? "", 10)
 }
 
-// ─── Política de cancelamento ─────────────────────────────────────────────────
-
-export interface CancellationConfig {
-  fullRefundHours:    number // horas antes do início para reembolso total (default 24)
-  partialRefundHours: number // horas antes do início para reembolso parcial (default 6)
-  partialPercent:     number // percentual de reembolso na faixa do meio (default 70)
-  latePercent:        number // percentual de reembolso na faixa mais curta (default 50)
-}
-
-const DEFAULT_CANCELLATION: CancellationConfig = {
-  fullRefundHours:    24,
-  partialRefundHours: 6,
-  partialPercent:     70,
-  latePercent:        50,
-}
-
-export async function getCancellationConfig(): Promise<CancellationConfig> {
-  try {
-    const map = await loadConfig()
-    const full    = intFrom(map, "cancelationFullRefundHours")
-    const partial = intFrom(map, "cancelationPartialRefundHours")
-    const pPct    = intFrom(map, "cancelationPartialPercent")
-    const lPct    = intFrom(map, "cancelationLatePercent")
-    return {
-      fullRefundHours:    Number.isFinite(full)    ? full    : DEFAULT_CANCELLATION.fullRefundHours,
-      partialRefundHours: Number.isFinite(partial) ? partial : DEFAULT_CANCELLATION.partialRefundHours,
-      partialPercent:     Number.isFinite(pPct)    ? pPct    : DEFAULT_CANCELLATION.partialPercent,
-      latePercent:        Number.isFinite(lPct)    ? lPct    : DEFAULT_CANCELLATION.latePercent,
-    }
-  } catch {
-    return DEFAULT_CANCELLATION
-  }
-}
-
 // ─── Cupom por avaliação (P3-20) ──────────────────────────────────────────────
 
 export interface ReviewCouponConfig {

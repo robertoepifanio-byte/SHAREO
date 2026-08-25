@@ -10,13 +10,14 @@ import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
 import type { WebhookEvent } from "@/lib/outboundWebhooks"
 import { sendBookingConfirmedEmail, sendBookingCancelledEmail, sendReturnInProgressEmail, sendReturnCompletedEmail, bookingItemsLabel } from "@/lib/email"
 import { calcRefund } from "@/lib/cancellationPolicy"
-import { getCancellationConfig, getRentalContractConfig } from "@/lib/platform-config"
+import { getRentalContractConfig } from "@/lib/platform-config"
 import { releaseCouponForBooking } from "@/lib/coupons"
 import { findOverlappingItem } from "@/lib/booking-availability"
 import { hasPickupAddress, redactOwnerAddress } from "@/lib/ownerAddress"
 import { criarPayoutDaReserva } from "@/lib/payout"
 import { checkDisputeWindow } from "@/lib/disputeWindow"
 import { openDispute } from "@/lib/openDispute"
+import { emitCancellationRefund, getChargeFeeCents } from "@/lib/payments/refund"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -191,7 +192,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       select: {
         id: true, status: true, borrowerId: true, ownerId: true,
         itemId: true, startDate: true, endDate: true, totalPrice: true, totalDays: true,
-        paymentStatus: true,
+        paymentStatus: true, stripePaymentIntentId: true,
         contractSignedAt: true, // guard do mark_active — ver abaixo
         returnRequestedAt: true, // guard do open_dispute — ver abaixo (48h do locador)
         pickupToken: true, pickupTokenUsedAt: true,
@@ -316,15 +317,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       // Como o estorno hoje é executado à mão no painel da Stripe, esse número
       // ia parar na fila de trabalho de uma pessoa como se fosse real.
       if (booking.paymentStatus === "PAID") {
-        const cancelConfig = await getCancellationConfig()
-        const refund = calcRefund(
-          new Date(booking.startDate),
-          now,
-          booking.totalPrice,
-          cancelConfig,
-        )
-        data.refundAmount  = refund.refundAmount
-        data.refundPercent = refund.refundPercent
+        // pauta-raimundo-2026-08-22, item 2 — decisão de Raimundo (25/08/2026):
+        // não é mais sobre antecedência, é sobre quem cancela. Locatário cancela
+        // → ele absorve a taxa REAL da Stripe (por isso a busca abaixo, só
+        // quando é ele); locador cancela → sem desconto nenhum.
+        const canceledBy = isOwner ? "owner" : "borrower"
+        const stripeFeeCents = canceledBy === "borrower" && booking.stripePaymentIntentId
+          ? await getChargeFeeCents(booking.stripePaymentIntentId)
+          : 0
+        const refund = calcRefund(booking.totalPrice, canceledBy, stripeFeeCents)
+        data.refundAmount   = refund.refundAmount
+        data.refundPercent  = refund.refundPercent
         // O motivo do reembolso é registrado internamente — não é exposto ao usuário via API
         console.warn(
           `[booking.cancel] id=${id} refundPercent=${refund.refundPercent} refundAmount=${refund.refundAmount} reason="${refund.reason}"`,
@@ -467,8 +470,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
 
     // Update atômico por ação (S14-A-05/A-06 — evita double-booking e ativação dupla em corrida).
-    const updateSelect = { id: true, status: true, updatedAt: true, ownerNetAmount: true, ownerId: true } as const
-    let updated: { id: string; status: BookingStatus; updatedAt: Date; ownerNetAmount: number | null; ownerId: string }
+    const updateSelect = { id: true, status: true, updatedAt: true, ownerNetAmount: true, ownerId: true, refundAmount: true } as const
+    let updated: { id: string; status: BookingStatus; updatedAt: Date; ownerNetAmount: number | null; ownerId: string; refundAmount: number | null }
 
     if (action === "confirm") {
       // Conflito de datas + update na MESMA transação serializável.
@@ -522,6 +525,21 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (action === "confirm_return") {
       await criarPayoutDaReserva(id, booking.ownerId, updated.ownerNetAmount, "confirm_return")
         .catch((e) => console.error("[FIN-3.3] criarPayoutDaReserva:", e instanceof Error ? e.message : e))
+    }
+
+    // Estorno automático (pauta-raimundo-2026-08-22, item 1 — decisão "automatizar").
+    // `reverseOwnerTransfer` (repasse já feito ao proprietário, se houver) roda via
+    // webhook `charge.refunded`, disparado por este próprio refunds.create.
+    if (action === "cancel" && updated.refundAmount && updated.refundAmount > 0) {
+      if (booking.stripePaymentIntentId) {
+        await emitCancellationRefund({
+          bookingId:       id,
+          paymentIntentId: booking.stripePaymentIntentId,
+          amount:          updated.refundAmount,
+        }).catch((e) => console.error("[booking.cancel] emitCancellationRefund:", e instanceof Error ? e.message : e))
+      } else {
+        console.error(`[booking.cancel] id=${id} refundAmount=${updated.refundAmount} mas sem stripePaymentIntentId — estorno não pôde ser emitido`)
+      }
     }
 
     // E-mails transacionais — após a resposta.

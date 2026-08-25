@@ -29,6 +29,8 @@ const BASE_ITEM = {
   state:       "PE" as const,
   latitude:    -8.0476,
   longitude:   -34.877,
+  // Obrigatório na criação desde 25/08/2026 — ver describe() abaixo.
+  estimatedRetailPrice: 80_000, // R$ 800,00, dentro do teto de MAX_ITEM_VALUE_CENTS
 }
 
 // ---------------------------------------------------------------------------
@@ -225,6 +227,10 @@ describe("CreateItemSchema", () => {
  * Até 22/08/2026 existia só no texto: `estimatedRetailPrice` aceitava qualquer
  * valor >= 0, e a Central de Ajuda afirmava que itens acima de R$ 1.000 "não
  * podem ser anunciados". A auditoria de pagamento pegou a divergência.
+ *
+ * pauta-raimundo-2026-08-22, item 4b — decisão de Raimundo (25/08/2026): o
+ * campo passou a ser OBRIGATÓRIO na criação, porque opcional deixava o teto
+ * contornável por quem simplesmente não preenchia.
  */
 describe("teto de valor do bem (MAX_ITEM_VALUE_CENTS)", () => {
   it("aceita item exatamente no teto", () => {
@@ -241,8 +247,20 @@ describe("teto de valor do bem (MAX_ITEM_VALUE_CENTS)", () => {
     }
   })
 
-  it("aceita null — o campo não virou obrigatório", () => {
-    expect(CreateItemSchema.safeParse({ ...BASE_ITEM, estimatedRetailPrice: null }).success).toBe(true)
+  it("recusa null — o campo é obrigatório na criação desde 25/08/2026", () => {
+    const { estimatedRetailPrice: _omit, ...withoutPrice } = BASE_ITEM
+    expect(CreateItemSchema.safeParse({ ...withoutPrice, estimatedRetailPrice: null }).success).toBe(false)
+  })
+
+  it("recusa payload sem o campo — não é mais opcional", () => {
+    const { estimatedRetailPrice: _omit, ...withoutPrice } = BASE_ITEM
+    const r = CreateItemSchema.safeParse(withoutPrice)
+    expect(r.success).toBe(false)
+  })
+
+  it("recusa zero — precisa de um valor real, não só 'preenchido'", () => {
+    const r = CreateItemSchema.safeParse({ ...BASE_ITEM, estimatedRetailPrice: 0 })
+    expect(r.success).toBe(false)
   })
 
   it("o SCHEMA de edição não carrega o teto — quem decide é a rota", () => {

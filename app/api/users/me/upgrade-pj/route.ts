@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { withUser } from "@/lib/withUser"
 import { prisma } from "@/lib/prisma"
 import { hashDocument } from "@/lib/crypto"
 import { safeServerError } from "@/lib/logger"
@@ -19,20 +19,15 @@ function clientIp(req: NextRequest): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
-        { status: 401 },
-      )
-    }
+    const user = await withUser(req)
+    if (user instanceof NextResponse) return user
 
-    const rl = await checkRateLimit(`upgrade-pj:${session.user.id}`, RATE_LIMITS.upgradePj.limit, RATE_LIMITS.upgradePj.windowMs, req)
+    const rl = await checkRateLimit(`upgrade-pj:${user.id}`, RATE_LIMITS.upgradePj.limit, RATE_LIMITS.upgradePj.windowMs, req)
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     // M4: só contas PF com cadastro completo (CPF verificado) podem virar PJ.
     const current = await prisma.user.findUnique({
-      where:  { id: session.user.id },
+      where:  { id: user.id },
       select: { userType: true, profileCompletedAt: true },
     })
 
@@ -111,7 +106,7 @@ export async function POST(req: NextRequest) {
     }
 
     await prisma.user.update({
-      where: { id: session.user.id },
+      where: { id: user.id },
       data:  buildPjUpdateData(input, verification),
     })
 

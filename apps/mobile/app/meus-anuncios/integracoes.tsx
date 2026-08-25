@@ -45,6 +45,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { apiFetch, API_URL } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
 import { useTheme } from "@/lib/theme"
+import type { MeData } from "@/lib/types"
+import { PjGate } from "@/components/ui/PjGate"
 
 // ── Constantes inlineadas de lib/outboundWebhooks.ts (web-only) ──────────────
 
@@ -81,11 +83,6 @@ type Webhook = {
   lastFiredAt:    string | null
   lastStatusCode: number | null
   createdAt:      string
-}
-
-interface MeData {
-  id:       string
-  userType: "PF" | "PJ"
 }
 
 // ── Ícones SVG verbatim do site ───────────────────────────────────────────────
@@ -350,15 +347,7 @@ export default function IntegracoesScreen() {
           <ActivityIndicator size="large" color={tokens.green} />
         </View>
       ) : !isPJ ? (
-        // ── PjGate — verbatim de components/premium/PjGate.tsx feature="generic" ──
-        <View style={[s.gateCard, { backgroundColor: tokens.surface, borderColor: tokens.border }]}>
-          <Text style={[s.gateTitle, { color: tokens.navy }]}>
-            Recurso exclusivo para contas PJ
-          </Text>
-          <Text style={[s.gateDesc, { color: tokens.muted }]}>
-            Este recurso está disponível apenas para contas de Pessoa Jurídica verificadas.
-          </Text>
-        </View>
+        <PjGate />
       ) : (
         <ScrollView
           style={s.scroll}
@@ -728,17 +717,6 @@ const s = StyleSheet.create({
     justifyContent:    "center",
   },
   tabInactiveText: { fontSize: 13, fontWeight: "600" },
-
-  // PjGate
-  gateCard: {
-    margin:       16,
-    borderWidth:  1,
-    borderRadius: 16,
-    padding:      20,
-    gap:          8,
-  },
-  gateTitle: { fontSize: 16, fontWeight: "700" },
-  gateDesc:  { fontSize: 14, lineHeight: 20 },
 
   // Painel — header
   panelHeader: {

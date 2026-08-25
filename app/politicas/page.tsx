@@ -6,7 +6,6 @@ import {
   getPlatformFeeRate,
   getPayoutWindowDays,
   formatPayoutWindow,
-  getCancellationConfig,
   CHECKOUT_MAX_CENTS,
 } from "@/lib/platform-config"
 import { formatPriceShort, formatPercentLabel } from "@/utils/format"
@@ -23,10 +22,9 @@ export const metadata: Metadata = {
 const LAST_UPDATED = "20 de agosto de 2026"
 
 export default async function PoliticasPage() {
-  const [feeRateBps, payoutWindowDays, cancel] = await Promise.all([
+  const [feeRateBps, payoutWindowDays] = await Promise.all([
     getPlatformFeeRate(),
     getPayoutWindowDays(),
-    getCancellationConfig(),
   ])
 
   const feeLabel    = formatPercentLabel(feeRateBps / 100)
@@ -316,17 +314,10 @@ export default async function PoliticasPage() {
 
               <div className="space-y-6">
                 <PolicyBlock title="4.1 Cancelamento pelo Locatário">
-                  A política de cancelamento leva em conta o tempo de antecedência em relação ao
-                  início da locação:
-                  <ul className="mt-2 space-y-1.5 text-sm">
-                    <li>• <strong>Até {cancel.fullRefundHours} horas antes:</strong> reembolso integral do valor pago.</li>
-                    <li>• <strong>Entre {cancel.fullRefundHours} e {cancel.partialRefundHours} horas antes:</strong> reembolso de {cancel.partialPercent}% do valor pago.</li>
-                    <li>• <strong>Menos de {cancel.partialRefundHours} horas antes:</strong> reembolso de {cancel.latePercent}% do valor pago.</li>
-                  </ul>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Os prazos e percentuais acima refletem a configuração atual da plataforma e podem
-                    ser ajustados com aviso prévio de 30 dias.
-                  </p>
+                  O cancelamento não depende da antecedência em relação ao início da locação: o
+                  Locatário recebe de volta 100% do valor pago, descontada apenas a taxa que a
+                  Stripe já havia cobrado sobre a cobrança original — repassada integralmente ao
+                  provedor de pagamentos, sem retenção pelo ShareO.
                 </PolicyBlock>
 
                 <PolicyBlock title="4.2 Cancelamento pelo Locador">

@@ -111,13 +111,14 @@ function toDisplay(cents: number | null | undefined): string {
 // ─── Price input helper ───────────────────────────────────────────────────────
 
 function PriceInput({
-  id, label, value, onChange, required, helper, onFocus, onBlur,
+  id, label, value, onChange, required, helper, error, onFocus, onBlur,
 }: {
   id: string; label: string; value: string; onChange: (v: string) => void
-  required?: boolean; helper?: string
+  required?: boolean; helper?: string; error?: string
   onFocus?: () => void; onBlur?: () => void
 }) {
   const helperId = helper ? `${id}-helper` : undefined
+  const errorId  = error  ? `${id}-error`  : undefined
   return (
     <div className="flex flex-col gap-1.5">
       <label htmlFor={id} className="text-sm font-medium text-foreground">
@@ -140,15 +141,18 @@ function PriceInput({
           onFocus={onFocus}
           onBlur={onBlur}
           placeholder="0,00"
-          aria-describedby={helperId}
+          aria-describedby={errorId ?? helperId}
+          aria-invalid={!!error}
           className={[
-            "h-11 w-full rounded-md border border-input bg-surface pl-10 pr-3 text-sm text-foreground",
+            "h-11 w-full rounded-md border bg-surface pl-10 pr-3 text-sm text-foreground",
             "placeholder:text-muted-foreground outline-none transition-colors",
-            "focus:border-ring focus:ring-2 focus:ring-ring/20",
+            "focus:ring-2 focus:ring-ring/20",
+            error ? "border-destructive focus:border-destructive" : "border-input focus:border-ring",
           ].join(" ")}
         />
       </div>
-      {helper && <p id={helperId} className="text-xs text-muted-foreground">{helper}</p>}
+      {error  && <p id={errorId}  className="text-xs text-destructive" role="alert">{error}</p>}
+      {!error && helper && <p id={helperId} className="text-xs text-muted-foreground">{helper}</p>}
     </div>
   )
 }
@@ -416,6 +420,10 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
     if (!categoryId)                    errs.categoryId  = "Selecione uma categoria"
     const dayPrice = toCents(pricePerDay)
     if (dayPrice < 100)                 errs.pricePerDay = "Preço mínimo: R$ 1,00/dia"
+    // Obrigatório só na criação — ver o mesmo corte em CreateItemSchema
+    // (lib/validations/items.ts). Editar não herda isso.
+    if (mode === "create" && toCents(estimatedRetailPrice) < 1)
+      errs.estimatedRetailPrice = "Informe o valor estimado do item"
     if (city.trim().length < 2)         errs.city        = "Cidade obrigatória"
     if (state.length !== 2)             errs.state       = "Selecione o estado"
     return errs
@@ -685,9 +693,11 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
               id="estimated-retail-price"
               label="Valor de compra estimado"
               value={estimatedRetailPrice}
-              onChange={setEstimatedRetailPrice}
+              onChange={(v) => { setEstimatedRetailPrice(v); setErrors((p) => ({ ...p, estimatedRetailPrice: undefined! })) }}
               onBlur={() => applyRetailSuggestion(estimatedRetailPrice)}
-              helper="Preencha para calcular automaticamente a diária sugerida"
+              required
+              error={errors.estimatedRetailPrice}
+              helper="Usado para calcular a diária sugerida e validar o teto de valor da fase inicial"
             />
             {priceSuggestion && (
               <p className="mt-1 text-xs text-brand">

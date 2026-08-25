@@ -10,15 +10,14 @@ import {
   Linking,
 } from "react-native"
 import { router } from "expo-router"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useTheme } from "@/lib/theme"
+import { ScreenHeader } from "@/components/layout/ScreenHeader"
 import { usePlatformConfig, formatPayoutWindow, formatMaxLabel } from "@/lib/platformConfig"
 import { IdentificacaoPrestador } from "@/components/legal/IdentificacaoPrestador"
 import { POLICY_UPDATED_AT } from "@/lib/legalConfig"
 
 export default function TermosScreen() {
   const { tokens } = useTheme()
-  const insets = useSafeAreaInsets()
 
   // 🪤 Antes: fetch próprio para a taxa e `MAX_POR_TRANSACAO = "R$ 500,00"`
   // cravado "espelhando" CHECKOUT_MAX_CENTS. Espelho por comentário não segura
@@ -32,27 +31,7 @@ export default function TermosScreen() {
   return (
     <View style={[s.root, { backgroundColor: tokens.bg }]}>
 
-      {/* ── Header — padrão de sobre.tsx / dados.tsx ── */}
-      <View
-        style={[
-          s.header,
-          {
-            paddingTop: insets.top + 8,
-            backgroundColor: tokens.surface,
-            borderColor: tokens.border,
-          },
-        ]}
-      >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          accessibilityLabel="Voltar"
-          accessibilityRole="button"
-          style={s.backBtn}
-        >
-          <Text style={[s.backArrow, { color: tokens.muted }]}>‹</Text>
-        </TouchableOpacity>
-        <Text style={[s.headerTitle, { color: tokens.navy }]}>Termos de Uso</Text>
-      </View>
+      <ScreenHeader title="Termos de Uso" />
 
       <ScrollView
         style={s.scroll}
@@ -249,24 +228,6 @@ const s = StyleSheet.create({
   root:   { flex: 1 },
   scroll: { flex: 1 },
   content: { paddingBottom: 48 },
-
-  // ── Header ───────────────────────────────────────────────────────────────────
-  header: {
-    flexDirection:     "row",
-    alignItems:        "center",
-    gap:               12,
-    borderBottomWidth: 1,
-    paddingHorizontal: 16,
-    paddingBottom:     12,
-  },
-  backBtn: {
-    minHeight:      44,
-    minWidth:       44,
-    alignItems:     "center",
-    justifyContent: "center",
-  },
-  backArrow:   { fontSize: 28, lineHeight: 32 },
-  headerTitle: { flex: 1, fontSize: 18, fontWeight: "700" },
 
   // ── Bloco de título da página ─────────────────────────────────────────────────
   titleSection: {

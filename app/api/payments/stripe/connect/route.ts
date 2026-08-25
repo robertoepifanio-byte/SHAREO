@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { resolveUserId } from "@/lib/resolveUserId"
+import { withUser } from "@/lib/withUser"
 import { APP_URL } from "@/lib/app-url"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { isStripeConnectActive, getOrCreateConnectedAccount, createOnboardingLink } from "@/lib/stripe-connect"
@@ -45,8 +45,9 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   if (!(await isStripeConnectActive())) return err("NOT_FOUND", "Recurso indisponível.", 404)
 
-  const userId = await resolveUserId(req)
-  if (!userId) return err("UNAUTHORIZED", "Autenticação necessária.", 401)
+  const reqUser = await withUser(req)
+  if (reqUser instanceof NextResponse) return reqUser
+  const userId = reqUser.id
 
   const rl = await checkRateLimit(`stripe-connect:${userId}`, RATE_LIMITS.checkout.limit, RATE_LIMITS.checkout.windowMs)
   if (!rl.allowed) return rateLimitResponse(rl.resetAt)

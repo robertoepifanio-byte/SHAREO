@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
 import { fileTypeFromBuffer } from "file-type"
 import { auth } from "@/lib/auth"
-import { resolveUserId } from "@/lib/resolveUserId"
+import { withUser } from "@/lib/withUser"
 import { prisma } from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getUploadLimits } from "@/lib/platform-config"
@@ -26,18 +26,14 @@ async function isMagicBytesValid(buffer: ArrayBuffer): Promise<boolean> {
 
 type RouteContext = { params: Promise<{ id: string }> }
 
-// Aceita Bearer token (mobile) ou cookie de sessão (web) via resolveUserId.
+// Aceita Bearer token (mobile) ou cookie de sessão (web) via withUser.
 // A checagem de propriedade (ownerId === userId || isAdmin) é feita localmente
 // porque assertOwnerOrAdmin requer um objeto Session completo do NextAuth.
 export async function POST(req: NextRequest, { params }: RouteContext) {
   try {
-    const userId = await resolveUserId(req)
-    if (!userId) {
-      return NextResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
-        { status: 401 }
-      )
-    }
+    const reqUser = await withUser(req)
+    if (reqUser instanceof NextResponse) return reqUser
+    const userId = reqUser.id
 
     const rl = await checkRateLimit(
       `upload:${userId}`,
@@ -159,13 +155,9 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
 export async function DELETE(req: NextRequest, { params }: RouteContext) {
   try {
     // Aceita Bearer JWT (mobile) ou session cookie (web) — mesmo padrão de POST nesta mesma rota
-    const userId = await resolveUserId(req)
-    if (!userId) {
-      return NextResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
-        { status: 401 }
-      )
-    }
+    const reqUser = await withUser(req)
+    if (reqUser instanceof NextResponse) return reqUser
+    const userId = reqUser.id
 
     const { id } = await params
     const { imageId } = (await req.json()) as { imageId?: string }
