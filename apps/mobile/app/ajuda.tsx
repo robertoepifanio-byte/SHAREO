@@ -173,7 +173,7 @@ export function buildLocadorSteps(v: HelpVars): Step[] { return [
   {
     step: 6, icon: "💰", title: "Receber a devolução e o pagamento",
     desc: `No horário combinado (mesmo horário da retirada), receba o item de volta. Use a opção 'Registrar fotos de check-out' e compare com as fotos do check-in. Se tudo estiver ok, confirme a devolução. O valor líquido entra na fila de repasse e fica disponível ${v.payoutLabel} depois. Avalie o locatário após cada devolução.`,
-    example: `Locação: R$ 120/dia × 2 dias = ${brl(24000)}. Taxa de plataforma (${v.feeLabel}) = ${brl(splitExemplo(24000, v.feeRateBps).fee)}. Você recebe ${brl(splitExemplo(24000, v.feeRateBps).net)}, ${v.payoutLabel} após a confirmação da devolução.`,
+    example: `1ª locação: R$ 120/dia × 2 dias = ${brl(24000)}. Taxa de plataforma (${v.feeLabel}) = ${brl(splitExemplo(24000, v.feeRateBps).fee)}. Você recebe ${brl(splitExemplo(24000, v.feeRateBps).net)}, ${v.payoutLabel} após a confirmação da devolução. 2ª locação: mesmo fluxo — ao confirmar o recebimento a reserva é concluída, aquelas datas voltam a ficar livres e o anúncio segue no ar, sem precisar recadastrar nada.`,
     tip: "Quanto mais avaliações positivas você tiver, mais alto o seu anúncio aparece nos resultados de busca.",
   },
   {
