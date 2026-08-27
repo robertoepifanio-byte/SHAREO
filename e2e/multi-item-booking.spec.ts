@@ -28,8 +28,10 @@
  * Todos os testes são auto-suficientes: criam os dados necessários no início e fazem
  * cleanup (cancelamento) no finally — não deixam lixo confirmado que bloquearia outros runs.
  *
- * Janelas de data: 400–500 dias no futuro para não conflitar com outros smokes (que usam
- * até ~370 dias). Cada teste usa um offset aleatório dentro da sua faixa.
+ * Janelas de data: cada teste tem faixa exclusiva, declarada no próprio ponto de uso — não
+ * há uma faixa única para o arquivo. A maioria fica em 400–500 dias, longe dos outros smokes;
+ * o smoke #34 é a exceção e fica sob AVAILABILITY_HORIZON_DAYS, porque asserta o endpoint de
+ * disponibilidade, que só enxerga 12 meses à frente.
  */
 
 import fs from 'fs'
@@ -47,8 +49,15 @@ const hasAllSessions =
   fs.existsSync(SESSION_PATHS.admin)
 
 // ---------------------------------------------------------------------------
-// Helpers de data — janela dedicada 400–500 dias no futuro
+// Helpers de data — faixa exclusiva por teste, declarada no ponto de uso
 // ---------------------------------------------------------------------------
+
+/**
+ * GET /api/items/[id]/availability só considera reservas com `startDate < hoje + 12 meses`
+ * (app/api/items/[id]/availability/route.ts). Teste que asserta availability precisa caber
+ * aqui — fora da janela a reserva existe mas não aparece como ocupada.
+ */
+const AVAILABILITY_HORIZON_DAYS = 365
 
 /** Cria uma janela [startDate, endDate] de `durationDays` a partir de `offsetDays` no futuro. */
 function futureWindow(offsetDays: number, durationDays: number = 2): { start: string; end: string } {
@@ -359,8 +368,11 @@ test.describe('smoke #34 — item secundário de locação CONFIRMED bloqueia no
       }
       console.log(`  itens: principal=${itemA}  secundário=${itemB}`)
 
-      // Janela 436–450 dias no futuro, 3 dias
-      const offset = rndOffset(436, 450)
+      // 🪤 Faixa DENTRO de AVAILABILITY_HORIZON_DAYS: este smoke asserta que availability
+      // reflete a ocupação. Ficava em 436–450 dias, fora do horizonte, e falhava acusando
+      // "bookingItems não está sendo consultado" — falso: a rota consulta corretamente,
+      // a reserva é que caía fora da janela olhada.
+      const offset = rndOffset(AVAILABILITY_HORIZON_DAYS - 65, AVAILABILITY_HORIZON_DAYS - 51)
       const { start, end } = futureWindow(offset, 3)
 
       // Passo 1: locatário cria locação multi-item (itemA principal + itemB secundário)
