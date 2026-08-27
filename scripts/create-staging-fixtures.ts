@@ -123,40 +123,84 @@ async function loginAndSaveSession(
 }
 
 /**
- * Promove o fixture a ADMIN via Prisma, direto no banco — precisa rodar ANTES
- * do login (loginAndSaveSession), porque a role vai pro JWT no momento da
- * autenticação (lib/auth.ts, jwt callback: `token.role = u.role`). Promover
- * depois do login não teria efeito na sessão já salva.
+ * Cliente Prisma único do script, criado sob demanda.
  *
- * `datasourceUrl: DIRECT_URL` — não o pooler (`DATABASE_URL`): é um UPDATE
- * único e pontual, sem motivo pra passar pelo PgBouncer em modo transaction.
+ * `datasourceUrl: DIRECT_URL` — não o pooler (`DATABASE_URL`): são UPDATEs curtos e
+ * pontuais, sem motivo pra passar pelo PgBouncer em modo transaction.
+ */
+let _db: PrismaClient | null = null
+function db(): PrismaClient {
+  if (!_db) {
+    const directUrl = process.env.DIRECT_URL
+    if (!directUrl) {
+      throw new Error(
+        'DIRECT_URL ausente no ambiente — os fixtures precisam de escrita direta no Postgres ' +
+        'de staging (promover admin, verificar e-mail, completar cadastro).',
+      )
+    }
+    _db = new PrismaClient({ datasourceUrl: directUrl })
+  }
+  return _db
+}
+
+/**
+ * Promove o fixture a ADMIN — precisa rodar ANTES do login, porque a role vai pro JWT
+ * no momento da autenticação (lib/auth.ts, jwt callback: `token.role = u.role`).
  */
 async function promoteToAdmin(email: string): Promise<void> {
-  const directUrl = process.env.DIRECT_URL
-  if (!directUrl) {
-    throw new Error(
-      'DIRECT_URL ausente no ambiente — não dá pra promover o fixture a ADMIN. ' +
-      'Defina DIRECT_URL (conexão direta com o Postgres de staging) antes de rodar este script.',
-    )
+  const { count } = await db().user.updateMany({
+    where: { email },
+    data:  { role: 'ADMIN', adminRole: 'ADMIN_SUPERADMIN' },
+  })
+  if (count === 0) {
+    throw new Error(`Nenhum usuário encontrado com email ${email} — registerUser() rodou antes?`)
   }
+  console.log(`  ✅ Promovido a ADMIN: ${email}`)
+}
 
-  const prisma = new PrismaClient({ datasourceUrl: directUrl })
-  try {
-    const { count } = await prisma.user.updateMany({
-      where: { email },
-      data:  { role: 'ADMIN', adminRole: 'ADMIN_SUPERADMIN' },
+/**
+ * Marca os e-mails dos fixtures como verificados.
+ *
+ * 🪤 `POST /api/bookings` lê `emailVerified` do BANCO a cada requisição e responde 403
+ * EMAIL_NOT_VERIFIED quando é null; `registerUser()` cria a conta sem verificação.
+ * Não conflita com e2e/email-verification.spec.ts, que registra usuário próprio.
+ */
+async function markEmailVerified(emails: string[]): Promise<void> {
+  const { count } = await db().user.updateMany({
+    where: { email: { in: emails }, emailVerified: null },
+    data:  { emailVerified: new Date() },
+  })
+  console.log(`  ✅ E-mails verificados: ${count} de ${emails.length} (o resto já estava)`)
+}
+
+/**
+ * Completa o cadastro dos fixtures que ficaram pela metade.
+ *
+ * 🪤 `registerUser()` é idempotente e NÃO reenvia dados de conta já existente, então uma
+ * conta criada por outro caminho fica sem `profileCompletedAt` — e `POST /api/bookings`
+ * responde 403 REGISTRATION_INCOMPLETE. Espelha o `commonData` de
+ * app/api/users/me/complete-registration/route.ts (manter os campos em sincronia).
+ */
+async function completeProfile(users: Array<typeof FIXTURE_LOCATARIO>): Promise<void> {
+  const now = new Date()
+  for (const user of users) {
+    const { count } = await db().user.updateMany({
+      where: { email: user.email, profileCompletedAt: null },
+      data: {
+        phone:              user.phone,
+        cep:                user.cep,
+        street:             user.street,
+        neighborhood:       user.neighborhood,
+        city:               user.city,
+        state:              user.state,
+        profileCompletedAt: now,
+        ageDeclaredAt:      now,
+      },
     })
-    if (count === 0) {
-      throw new Error(`Nenhum usuário encontrado com email ${email} — registerUser() rodou antes?`)
-    }
-    console.log(`  ✅ Promovido a ADMIN: ${email}`)
-  } finally {
-    await prisma.$disconnect()
+    console.log(count ? `  ✅ Cadastro completado: ${user.email}` : `  ℹ️  Cadastro já completo: ${user.email}`)
   }
 }
 
-// ---------------------------------------------------------------------------
-// Main
 // ---------------------------------------------------------------------------
 
 async function main() {
@@ -179,13 +223,22 @@ async function main() {
   await promoteToAdmin(FIXTURE_ADMIN.email)
   await loginAndSaveSession(FIXTURE_ADMIN.email, FIXTURE_ADMIN.password, SESSION_PATHS.admin)
 
+  // --- Guards de reserva: e-mail verificado + cadastro completo (os três) ---
+  console.log('\n📧 Verificação de e-mail:')
+  await markEmailVerified([FIXTURE_LOCATARIO.email, FIXTURE_PROPRIETARIO.email, FIXTURE_ADMIN.email])
+
+  console.log('\n📝 Cadastro completo:')
+  await completeProfile([FIXTURE_LOCATARIO, FIXTURE_PROPRIETARIO, FIXTURE_ADMIN])
+
   console.log('\n✨ Fixtures criados. Agora rode os smoke tests autenticados:')
   console.log('   pnpm playwright test e2e/admin.spec.ts --config=playwright.staging.config.ts')
   console.log('   pnpm playwright test e2e/chat.spec.ts  --config=playwright.staging.config.ts')
   console.log('   pnpm playwright test e2e/favorites.spec.ts --config=playwright.staging.config.ts\n')
 }
 
-main().catch((err) => {
-  console.error('\n❌ Erro:', err.message)
-  process.exit(1)
-})
+main()
+  .catch((err) => {
+    console.error('\n❌ Erro:', err.message)
+    process.exitCode = 1
+  })
+  .finally(() => _db?.$disconnect())

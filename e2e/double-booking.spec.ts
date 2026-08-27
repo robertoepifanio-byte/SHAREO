@@ -62,10 +62,12 @@ test.describe('smoke #10A — double-booking: dois PENDING, proprietário confir
 
     try {
       // — Ambos criam PENDING para as MESMAS datas (deve ser permitido) —
-      const [res1, res2] = await Promise.all([
-        loc.request.post('/api/bookings', { data: { ...payload, borrowerNote: 'Double-booking test — locatário' } }),
-        adm.request.post('/api/bookings', { data: { ...payload, borrowerNote: 'Double-booking test — admin' } }),
-      ])
+      // 🪤 SEQUENCIAL, não `Promise.all`: a criação roda em transação Serializable e
+      // app/api/bookings/route.ts mapeia a falha de serialização (P2034) para 409
+      // DATE_CONFLICT de propósito, então em paralelo uma das duas leva 409 legitimamente.
+      // O alvo deste smoke é o guard do CONFIRM, abaixo.
+      const res1 = await loc.request.post('/api/bookings', { data: { ...payload, borrowerNote: 'Double-booking test — locatário' } })
+      const res2 = await adm.request.post('/api/bookings', { data: { ...payload, borrowerNote: 'Double-booking test — admin' } })
 
       expect(res1.ok(), 'Locatário deve conseguir criar PENDING').toBeTruthy()
       expect(res2.ok(), 'Admin deve conseguir criar PENDING nas mesmas datas (PENDING não bloqueia PENDING)').toBeTruthy()

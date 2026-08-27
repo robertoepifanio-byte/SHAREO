@@ -314,17 +314,12 @@ jobs:
           # respondia 403 no job de E2E seguinte (feedback-e2e-admin-session-ci-sempre-403).
           DIRECT_URL:  ${{ secrets.DIRECT_URL_STAGING }}
 
-      # Os fixtures recém-criados nascem sem e-mail verificado / cadastro completo, o que
-      # bloquearia anunciar (REGISTRATION_INCOMPLETE) e alugar (EMAIL_NOT_VERIFIED). Marcamos
-      # ambos via DB para os 2 usuários de teste. continue-on-error: se falhar, o smoke dá SKIP
-      # (createTestItem → 403 → test.skip), sem derrubar o deploy.
-      - name: Provisionar usuários fixture (emailVerified + profileCompletedAt)
-        continue-on-error: true
-        run: |
-          printf '%s\n' "UPDATE users SET \"emailVerified\" = COALESCE(\"emailVerified\", now()), \"profileCompletedAt\" = COALESCE(\"profileCompletedAt\", now()) WHERE email IN ('locatario.fixture@shareo-test.com','proprietario.fixture@shareo-test.com');" \
-            | pnpm prisma db execute --stdin --url "$DIRECT_URL"
-        env:
-          DIRECT_URL: ${{ secrets.DIRECT_URL_STAGING }}
+      # (removido) "Provisionar usuários fixture": o mesmo UPDATE agora vive em
+      # scripts/create-staging-fixtures.ts, que roda no step acima. O SQL daqui listava os
+      # e-mails à mão e cobria só 2 dos 3 fixtures — o admin ficava de fora, e era ele que
+      # derrubava double-booking #10A/#10B e multi-item #34 com 403 REGISTRATION_INCOMPLETE.
+      # O script cobre os três, lê os e-mails de test-credentials.ts e grava também
+      # phone/cep/ageDeclaredAt, como POST /api/users/me/complete-registration faz.
 
       - name: Run E2E suite against staging
         run: |
