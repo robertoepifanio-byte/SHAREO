@@ -84,7 +84,7 @@ export function PricingMultipliersForm({ weeklyMultiplier, monthlyMultiplier }: 
       <button
         type="submit"
         disabled={saving}
-        className="rounded-lg bg-brand px-4 py-1.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
+        className="min-h-11 rounded-lg bg-brand px-4 py-1.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
       >
         {saving ? "Salvando…" : "Salvar"}
       </button>
