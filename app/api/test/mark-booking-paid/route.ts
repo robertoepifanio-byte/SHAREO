@@ -6,6 +6,13 @@
  * o confirm() já gerou o token; o objetivo desta rota é apenas habilitar
  * o guard de pagamento no mark_active sem simular um webhook Stripe inteiro.
  *
+ * Também grava o split financeiro (platformFeeRate/platformFeeAmount/
+ * ownerNetAmount), espelhando o que POST /api/payments/checkout grava ao
+ * criar a Checkout Session real — sem isso, ownerNetAmount fica null e
+ * criarPayoutDaReserva() nunca cria Payout para reserva paga via este stub
+ * (SEM_VALOR_LIQUIDO), mascarando specs que testam o ciclo até o repasse
+ * (achado ao vivo em financeiro-split.spec.ts, #392).
+ *
  * As três camadas de segurança (kill-switch, E2E_SECRET e x-e2e-token)
  * estão centralizadas em lib/e2eGuard.ts via withE2EGuard().
  */
@@ -13,6 +20,7 @@ import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { withE2EGuard } from "@/lib/e2eGuard"
+import { getPlatformFeeRate, calcSplitComDesconto } from "@/lib/platform-config"
 
 async function handler(req: NextRequest) {
   let bookingId: string | undefined
@@ -35,7 +43,7 @@ async function handler(req: NextRequest) {
 
   const booking = await prisma.booking.findUnique({
     where:  { id: bookingId },
-    select: { id: true, paymentStatus: true },
+    select: { id: true, paymentStatus: true, totalPrice: true, discountCents: true },
   })
 
   if (!booking) {
@@ -50,12 +58,21 @@ async function handler(req: NextRequest) {
     return NextResponse.json({ ok: true, alreadyPaid: true })
   }
 
-  // Grava apenas paymentStatus e paidAt — pickupToken NÃO é tocado
+  const feeRate = await getPlatformFeeRate()
+  const split   = calcSplitComDesconto(booking.totalPrice, booking.discountCents ?? 0, feeRate)
+
+  // Grava paymentStatus/paidAt + split — pickupToken NÃO é tocado
   // (o confirm() já gerou o token; regenerar aqui invalidaria o código
   // que o teste obteve via GET /api/bookings/[id])
   await prisma.booking.update({
     where: { id: bookingId },
-    data:  { paymentStatus: "PAID", paidAt: new Date() },
+    data: {
+      paymentStatus:     "PAID",
+      paidAt:            new Date(),
+      platformFeeRate:   split.platformFeeRate,
+      platformFeeAmount: split.platformFeeAmount,
+      ownerNetAmount:    split.ownerNetAmount,
+    },
   })
 
   return NextResponse.json({ ok: true, alreadyPaid: false })
