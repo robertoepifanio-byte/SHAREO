@@ -157,7 +157,11 @@ export function HelpSearchInput() {
           aria-controls="faq-results"
           className={[
             "h-12 w-full rounded-xl border border-white/20 bg-white shadow-lg",
-            "pl-12 pr-12 text-sm text-foreground placeholder:text-muted-foreground",
+            // Caixa é branca fixa (contraste contra o hero navy, ele mesmo fixo em
+            // qualquer tema) — texto/placeholder também fixos, não podem usar os
+            // tokens text-foreground/muted-foreground (invertem em dark mode e
+            // ficam quase brancos sobre fundo branco, texto digitado invisível).
+            "pl-12 pr-12 text-sm text-slate-900 placeholder:text-slate-500",
             "outline-none transition-shadow duration-fast",
             "focus:ring-2 focus:ring-white/50",
             // Remove o ícone nativo de limpar do input[type=search] em WebKit
