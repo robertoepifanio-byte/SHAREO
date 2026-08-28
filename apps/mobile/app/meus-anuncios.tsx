@@ -5,7 +5,9 @@
 // Decisões de transcrição documentadas:
 //   1. Barra de abas: rótulos e ordem verbatim ("Anúncios", "Desempenho",
 //      "Importar" só PJ, "Integrações"). Aba "Anúncios" = nativa (esta tela).
-//      Demais → Linking.openURL(API_URL + path), padrão já usado em perfil.tsx.
+//      "Desempenho" → router.push("/meus-anuncios/desempenho") (tela nativa criada
+//      junto a esta PR). "Integrações" → router.push("/meus-anuncios/integracoes")
+//      (tela nativa). "Importar" → Linking.openURL (ainda sem tela nativa).
 //   2. Botão "Editar" → router.push(`/itens/${id}/editar`) — rota nativa existe
 //      em apps/mobile/app/itens/[id]/editar.tsx.
 //   3. Botão "Pausar/Ativar" → PATCH /api/items/:id via apiFetch. Sem confirm()
@@ -458,10 +460,10 @@ export default function MeusAnunciosScreen() {
           <Text style={s.tabActiveText}>Anúncios</Text>
         </View>
 
-        {/* "Desempenho" → abre no browser */}
+        {/* "Desempenho" → tela nativa */}
         <TouchableOpacity
           style={s.tabInactive}
-          onPress={() => Linking.openURL(`${API_URL}/meus-anuncios/desempenho`)}
+          onPress={() => router.push("/meus-anuncios/desempenho")}
           accessibilityRole="tab"
           accessibilityState={{ selected: false }}
           accessibilityLabel="Desempenho"

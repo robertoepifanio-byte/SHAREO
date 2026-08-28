@@ -310,7 +310,7 @@ export default function IntegracoesScreen() {
 
         <TouchableOpacity
           style={s.tabInactive}
-          onPress={() => Linking.openURL(`${API_URL}/meus-anuncios/desempenho`)}
+          onPress={() => router.push("/meus-anuncios/desempenho")}
           accessibilityRole="tab"
           accessibilityState={{ selected: false }}
           accessibilityLabel="Desempenho"
