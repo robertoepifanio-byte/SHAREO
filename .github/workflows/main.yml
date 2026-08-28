@@ -267,6 +267,7 @@ jobs:
       - name: Run E2E (specs estáveis de fluxo de app) — contra staging
         run: |
           pnpm test:e2e \
+            e2e/financeiro-split.spec.ts \
             e2e/e2e-plan.spec.ts \
             e2e/e2e-auth-plan.spec.ts \
             e2e/e2e-share-plan.spec.ts \
