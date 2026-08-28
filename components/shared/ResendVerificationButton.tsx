@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { parseRetryAfterSeconds } from "@/lib/http"
 
 type State = "idle" | "loading" | "success" | "error"
 
@@ -27,8 +28,8 @@ export function ResendVerificationButton({ variant = "standalone" }: { variant?:
           return
         }
         if (res.status === 429) {
-          const retryAfter = parseInt(res.headers.get("Retry-After") ?? "", 10)
-          const minutes = Number.isFinite(retryAfter) ? Math.max(1, Math.ceil(retryAfter / 60)) : null
+          const retryAfter = parseRetryAfterSeconds(res)
+          const minutes = retryAfter ? Math.max(1, Math.ceil(retryAfter / 60)) : null
           setErrorMsg(
             minutes
               ? `Limite de reenvios atingido. Tente novamente em ${minutes} minuto${minutes > 1 ? "s" : ""}.`
