@@ -10,6 +10,12 @@ import type { Prisma } from "@prisma/client"
  */
 
 // Status que efetivamente bloqueiam a disponibilidade de um item numa janela.
+//
+// 🪤 app/api/items/[id]/availability/route.ts (a agenda visual) usa um conjunto MAIS
+// AMPLO — inclui RETURNED e COMPLETED — porque a exibição precisa cobrir o dia da
+// devolução em si. Os dois arquivos divergirem de propósito é intencional; se algum
+// dia RETURNED passar a valer como regra de negócio aqui (ex.: bloquear novo booking
+// até o repasse ser confirmado), é este `BLOCKING_STATUSES` que muda.
 const BLOCKING_STATUSES: Prisma.BookingWhereInput["status"] = { in: ["CONFIRMED", "ACTIVE"] }
 
 /**
