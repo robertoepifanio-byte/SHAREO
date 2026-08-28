@@ -356,7 +356,11 @@ export async function sendVerificationEmail(
   if (!resend) return
 
   const firstName  = name.split(" ")[0]
-  const verifyUrl  = `${APP_URL}/verify-email?token=${token}`
+  // Aponta pra rota de API que PROCESSA o token (grava emailVerified e redireciona
+  // pra /verify-email?success=1|error=...) — não pra própria página /verify-email,
+  // que só LÊ success/error da querystring e ignora token, redirecionando pra "/"
+  // em silêncio. O link nunca verificava nada; achado ao vivo em 28/08/2026.
+  const verifyUrl  = `${APP_URL}/api/auth/verify-email?token=${token}`
 
   const html = baseLayout(`
     <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
