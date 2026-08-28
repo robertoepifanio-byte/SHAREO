@@ -899,7 +899,13 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
           </p>
         )}
 
-        {/* Campos somente leitura (create e edit): o endereço vem sempre do perfil */}
+        {/*
+          Em modo "create" estes campos são travados no endereço do perfil (banner
+          acima) — não apenas via onChange neutralizado, mas com disabled de verdade.
+          Sem isso o campo parece editável (cursor piscando, sem estilo de bloqueio)
+          e a digitação é descartada em silêncio — foi relatado como "falha ao editar
+          endereço"/"falha ao publicar anúncio" por confundir o testador (#392-thiago).
+        */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="md:col-span-2">
             <Input
@@ -907,7 +913,6 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
               type="text"
               value={city}
               onChange={(e) => {
-                if (mode === "create") return
                 setCity(e.target.value)
                 setErrors((p) => ({ ...p, city: undefined! }))
                 gpsUsedRef.current = false
@@ -916,14 +921,13 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
               onBlur={mode === "edit" ? geocodeAddress : undefined}
               error={errors.city}
               required
-              disabled={loading}
+              disabled={loading || mode === "create"}
             />
           </div>
           <Select
             label="Estado"
             value={state}
             onChange={(e) => {
-              if (mode === "create") return
               setState(e.target.value)
               setErrors((p) => ({ ...p, state: undefined! }))
               gpsUsedRef.current = false
@@ -933,7 +937,7 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
             error={errors.state}
             placeholder="UF"
             required
-            disabled={loading}
+            disabled={loading || mode === "create"}
           >
             {BR_STATES.map((uf) => (
               <option key={uf} value={uf}>{uf}</option>
@@ -946,19 +950,19 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
             label="Bairro"
             type="text"
             value={neighborhood}
-            onChange={(e) => { if (mode !== "create") setNeighborhood(e.target.value) }}
+            onChange={(e) => setNeighborhood(e.target.value)}
             onBlur={mode === "edit" ? geocodeAddress : undefined}
             helper="Opcional — melhora a precisão no mapa"
-            disabled={loading}
+            disabled={loading || mode === "create"}
           />
           <Input
             label="Endereço"
             type="text"
             placeholder="Rua das Dunas, 123"
             value={address}
-            onChange={(e) => { if (mode !== "create") setAddress(e.target.value) }}
+            onChange={(e) => setAddress(e.target.value)}
             helper="Opcional — só compartilhado com o locatário após o pagamento confirmado"
-            disabled={loading}
+            disabled={loading || mode === "create"}
           />
         </div>
       </section>
