@@ -127,3 +127,76 @@ export async function enviarFotoDevolucao(
     },
   })
 }
+
+/**
+ * JPEG 1×1 válido — magic bytes FF D8 FF passam na validação de file-type de
+ * `POST /api/items/[id]/images` (diferente de PNG_1X1 acima, usado só na foto
+ * de devolução).
+ */
+export const MINIMAL_JPEG = Buffer.from(
+  'ffd8ffe000104a46494600010100000100010000ffdb004300080606070605080707' +
+  '07090909080a0c140d0c0b0b0c1912130f141d1a1f1e1d1a1c1c20242e2720222c' +
+  '231c1c2837292c30313434341f27393d38323c2e333432ffffc0000b080001000101' +
+  '011100ffc4001f0000010501010101010100000000000000000102030405060708090a' +
+  '0bffda00080101000003f0007fffd9',
+  'hex',
+)
+
+/** Janela de datas futura [start, start+durationDays] em ISO — evita colisão com outros specs. */
+export function futureWindow(offsetDays: number, durationDays: number): { start: string; end: string } {
+  const start = new Date(Date.now() + offsetDays * 86_400_000)
+  const end   = new Date(start.getTime() + durationDays * 86_400_000)
+  return { start: start.toISOString(), end: end.toISOString() }
+}
+
+/** Offset aleatório dentro de [min, max] dias — dá a cada run do spec uma janela própria. */
+export function rndOffset(min: number, max: number): number {
+  return min + Math.floor(Math.random() * (max - min + 1))
+}
+
+/**
+ * createTestItem — cria um item de teste (DRAFT → AVAILABLE via upload de foto).
+ * Retorna o id ou null se qualquer passo falhar (categorias, criação ou upload).
+ */
+export async function createTestItem(
+  propPage:    import('@playwright/test').Page,
+  title:       string,
+  description: string,
+  pricePerDay = 5000,
+): Promise<string | null> {
+  const catRes = await apiWithRetry(() => propPage.request.get('/api/categories'))
+  if (!catRes.ok()) return null
+  const { data: cats } = await catRes.json() as { data: { id: string }[] }
+  if (!cats?.length) return null
+
+  const createRes = await apiWithRetry(() =>
+    propPage.request.post('/api/items', {
+      data: {
+        title,
+        description,
+        categoryId:  cats[0].id,
+        condition:   'GOOD',
+        pricePerDay,
+        estimatedRetailPrice: 100_000,
+        city:        'São Paulo',
+        state:       'SP',
+        latitude:    -23.5505,
+        longitude:   -46.6333,
+      },
+    })
+  )
+  if (!createRes.ok()) return null
+  const { data: item } = await createRes.json() as { data: { id: string } }
+  if (!item?.id) return null
+
+  const imgRes = await apiWithRetry(() =>
+    propPage.request.post(`/api/items/${item.id}/images`, {
+      multipart: { file: { name: 'test.jpg', mimeType: 'image/jpeg', buffer: MINIMAL_JPEG } },
+    })
+  )
+  if (!imgRes.ok()) {
+    await propPage.request.delete(`/api/items/${item.id}`).catch(() => {})
+    return null
+  }
+  return item.id
+}
