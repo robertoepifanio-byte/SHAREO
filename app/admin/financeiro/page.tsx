@@ -103,12 +103,20 @@ export default async function AdminFinanceiroPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-primary">Financeiro</h1>
-        <Link
-          href="/admin/financeiro/exportar"
-          className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
-        >
-          ↓ Exportar CSV
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/admin/financeiro/repasses"
+            className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+          >
+            💸 Ver todos os repasses
+          </Link>
+          <Link
+            href="/admin/financeiro/exportar"
+            className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+          >
+            ↓ Exportar CSV
+          </Link>
+        </div>
       </div>
 
       {/* ── Métricas principais ── */}
