@@ -7,7 +7,12 @@
  * diagnóstico claro em vez de salvar um storageState inútil.
  */
 
-import { chromium } from "playwright"
+// 🪤 `playwright` (o pacote cru) NÃO é dependência deste projeto — só `@playwright/test`.
+// Enquanto o import apontava para "playwright", este script morria em MODULE_NOT_FOUND antes
+// da primeira linha, e as sessões financeiro/operacional nunca eram regeneradas: ficaram
+// congeladas em 05/06/2026 e todo spec que dependia delas caía em /login (12 falhas na suíte
+// de staging). Mesmo import usado por scripts/create-staging-fixtures.ts.
+import { chromium } from "@playwright/test"
 import * as fs from "fs"
 import * as path from "path"
 

@@ -2,9 +2,9 @@ import { NextResponse } from "next/server"
 import {
   getPlatformFeeRate,
   getPayoutWindowDays,
-  getCancellationConfig,
   getLateFeeMultiplier,
   getAutoCancelConfig,
+  getRentalContractConfig,
   CHECKOUT_MAX_CENTS,
 } from "@/lib/platform-config"
 
@@ -28,14 +28,18 @@ import {
  *
  * Cache-Control de 60s: esses valores mudam < 1×/mês e nunca ficam defasados
  * por mais de um minuto.
+ *
+ * Política de cancelamento NÃO entra aqui — pauta-raimundo-2026-08-22, item 2
+ * (decisão de Raimundo, 25/08/2026): reembolso é sempre 100% (menos a taxa da
+ * Stripe quando é o locatário quem cancela), não depende de nenhuma config.
  */
 export async function GET() {
-  const [feeRateBps, payoutWindowDays, cancel, lateFeeMultiplier, autoCancel] = await Promise.all([
+  const [feeRateBps, payoutWindowDays, lateFeeMultiplier, autoCancel, contrato] = await Promise.all([
     getPlatformFeeRate(),
     getPayoutWindowDays(),
-    getCancellationConfig(),
     getLateFeeMultiplier(),
     getAutoCancelConfig(),
+    getRentalContractConfig(),
   ])
 
   return NextResponse.json(
@@ -44,9 +48,11 @@ export async function GET() {
         feeRateBps,
         payoutWindowDays,
         checkoutMaxCents: CHECKOUT_MAX_CENTS,
-        cancel,
         lateFeeMultiplier,
         ownerHours: autoCancel.ownerHours,
+        // O app precisa saber para não exibir "assinatura pendente" de um
+        // contrato que nada exige — mesma config que o guard de mark_active lê.
+        rentalContractRequired: contrato.enabled,
       },
     },
     { headers: { "Cache-Control": "public, max-age=60, s-maxage=60" } },

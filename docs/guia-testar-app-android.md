@@ -4,6 +4,8 @@
 
 > Este guia cobre como gerar um APK de teste e instalá-lo num aparelho Android real, fora da Play Store. O app já sai do estado read-only: reserva, paga (atrás de flag), anuncia, favorita e envia verificação de identidade.
 
+> ⚠️ **Este é o caminho pelo EAS, cuja cota Free esgota.** Para entregar um APK a um testador, o canal atual é o build gratuito do GitHub Actions — ver [`docs/guias/instalar-apk-android.md`](guias/instalar-apk-android.md), escrito para quem instala pelo próprio celular. **Não misture os dois no mesmo aparelho:** as assinaturas são diferentes (EAS tem chave própria, o Actions assina com a keystore de debug) e a troca de canal exige desinstalar antes, perdendo os dados do app.
+
 ---
 
 ## 1. Pré-requisitos (uma vez só)

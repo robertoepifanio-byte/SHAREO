@@ -12,8 +12,10 @@
 
 import { NextResponse, after, type NextRequest } from "next/server"
 import { z } from "zod"
-import { auth } from "@/lib/auth"
+import { withUser } from "@/lib/withUser"
 import { prisma } from "@/lib/prisma"
+import { diasExtras, valorExtensao, aplicarExtensao } from "@/lib/payments/extension"
+import { formatPrice } from "@/utils/format"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -40,18 +42,15 @@ interface BookingExtRow {
   itemTitle:                string
   extensionStatus:          string | null
   extensionRequestedEndDate: Date | null
+  paymentStatus:            string
+  dailyPrice:               number
 }
 
 /** POST — locatário solicita nova data de devolução */
 export async function POST(req: NextRequest, { params }: Params) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
-        { status: 401 },
-      )
-    }
+    const user = await withUser(req)
+    if (user instanceof NextResponse) return user
 
     const { id } = await params
     const body   = await req.json()
@@ -65,7 +64,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
 
     const { newEndDate } = parsed.data
-    const userId          = session.user.id
+    const userId          = user.id
 
     const rows = await prisma.$queryRaw<BookingExtRow[]>`
       SELECT
@@ -143,7 +142,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       prisma.notification.create({
         data: {
           userId: booking.ownerId,
-          type:   "BOOKING_CONFIRMED",
+          type:   "EXTENSION_REQUESTED",
           title:  "Solicitação de extensão",
           body:   `O locatário solicitou estender a devolução de "${booking.itemTitle}" até ${new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(requestedDate)}.`,
           data:   { bookingId: id },
@@ -167,13 +166,8 @@ export async function POST(req: NextRequest, { params }: Params) {
 /** PATCH — proprietário aprova ou recusa a extensão */
 export async function PATCH(req: NextRequest, { params }: Params) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
-        { status: 401 },
-      )
-    }
+    const user = await withUser(req)
+    if (user instanceof NextResponse) return user
 
     const { id } = await params
     const body   = await req.json()
@@ -187,7 +181,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
 
     const { action } = parsed.data
-    const userId      = session.user.id
+    const userId      = user.id
 
     const rows = await prisma.$queryRaw<BookingExtRow[]>`
       SELECT
@@ -198,7 +192,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         b."endDate",
         i.title AS "itemTitle",
         b."extensionStatus",
-        b."extensionRequestedEndDate"
+        b."extensionRequestedEndDate",
+        b."paymentStatus",
+        b."dailyPrice"
       FROM bookings b
       JOIN items i ON i.id = b."itemId"
       WHERE b.id = ${id}
@@ -249,16 +245,56 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const isApproved     = action === "approve"
     const newExtStatus   = isApproved ? "APPROVED" : "REJECTED"
 
+    // ATOR-03 — aprovar não pode mais estender de graça.
+    //
+    // Antes: aprovar empurrava o `endDate` e pronto. `totalDays`, `totalPrice` e
+    // o split ficavam como estavam, então o locatário ganhava dias e o repasse
+    // ao proprietário saía calculado sobre o valor antigo.
+    //
+    // Agora há dois caminhos, e a diferença é quem já pagou:
+    //
+    //  • Reserva JÁ PAGA → a extensão fica AWAITING_PAYMENT: grava só o valor
+    //    das diárias extras e NÃO move o `endDate`. Ele só se move quando o
+    //    pagamento confirma (webhook → aplicarExtensao). Decisão do fundador:
+    //    nunca existe item emprestado a mais sem dinheiro correspondente.
+    //    🪤 Não dá para reusar o checkout comum aqui — ele cobra `totalPrice`
+    //    INTEIRO, o que cobraria a locação de novo.
+    //
+    //  • Reserva AINDA NÃO PAGA → aplica na hora e recalcula os totais. O
+    //    checkout normal já cobra o `totalPrice` atualizado, então a extensão
+    //    entra no mesmo pagamento e não precisa de cobrança separada.
+    let aguardandoPagamento = false
+    let valorExtra = 0
+
     if (isApproved && booking.extensionRequestedEndDate) {
-      await prisma.$executeRaw`
-        UPDATE bookings
-        SET
-          "extensionStatus"      = ${newExtStatus},
-          "extensionRespondedAt" = ${now},
-          "endDate"              = ${new Date(booking.extensionRequestedEndDate)},
-          "updatedAt"            = ${now}
-        WHERE id = ${id}
-      `
+      const dias = diasExtras(booking.endDate, new Date(booking.extensionRequestedEndDate))
+      valorExtra = valorExtensao(booking.dailyPrice, dias)
+
+      if (booking.paymentStatus === "PAID" && valorExtra > 0) {
+        aguardandoPagamento = true
+        await prisma.$executeRaw`
+          UPDATE bookings
+          SET
+            "extensionStatus"       = 'AWAITING_PAYMENT',
+            "extensionRespondedAt"  = ${now},
+            "extensionAmountCents"  = ${valorExtra},
+            "updatedAt"             = ${now}
+          WHERE id = ${id}
+        `
+      } else {
+        await prisma.$executeRaw`
+          UPDATE bookings
+          SET
+            "extensionStatus"       = ${newExtStatus},
+            "extensionRespondedAt"  = ${now},
+            "extensionAmountCents"  = ${valorExtra},
+            "updatedAt"             = ${now}
+          WHERE id = ${id}
+        `
+        // Move a data e recalcula totais/split num ponto único, o mesmo que o
+        // webhook usa — o irmão esquecido é sempre o que erra.
+        await aplicarExtensao(id)
+      }
     } else {
       await prisma.$executeRaw`
         UPDATE bookings
@@ -274,16 +310,24 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const dateStr = booking.extensionRequestedEndDate
       ? new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(new Date(booking.extensionRequestedEndDate))
       : ""
-    const notifBody = isApproved
-      ? `Sua extensão de prazo para "${booking.itemTitle}" até ${dateStr} foi aprovada.`
-      : `Sua solicitação de extensão para "${booking.itemTitle}" foi recusada pelo proprietário.`
+    // O texto precisa dizer que ainda falta pagar — senão o locatário acha que
+    // ganhou os dias e só descobre no dia da devolução que a data não mudou.
+    const notifBody = !isApproved
+      ? `Sua solicitação de extensão para "${booking.itemTitle}" foi recusada pelo proprietário.`
+      : aguardandoPagamento
+        ? `O proprietário aceitou estender "${booking.itemTitle}" até ${dateStr}. Para valer, pague as diárias extras: ${formatPrice(valorExtra)}.`
+        : `Sua extensão de prazo para "${booking.itemTitle}" até ${dateStr} foi aprovada.`
 
     after(() =>
       prisma.notification.create({
         data: {
           userId: booking.borrowerId,
-          type:   "BOOKING_CONFIRMED",
-          title:  isApproved ? "Extensão aprovada" : "Extensão recusada",
+          type:   isApproved ? "EXTENSION_APPROVED" : "EXTENSION_REJECTED",
+          title:  !isApproved
+            ? "Extensão recusada"
+            : aguardandoPagamento
+              ? "Extensão aceita — falta pagar"
+              : "Extensão aprovada",
           body:   notifBody,
           data:   { bookingId: id },
         },
@@ -294,10 +338,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       {
         data: {
           id,
-          extensionStatus: newExtStatus,
-          ...(isApproved && booking.extensionRequestedEndDate && {
+          extensionStatus: aguardandoPagamento ? "AWAITING_PAYMENT" : newExtStatus,
+          // `endDate` só entra na resposta quando a extensão JÁ vale. Devolvê-lo
+          // no caso AWAITING_PAYMENT faria a UI exibir a data nova antes do
+          // pagamento — exatamente o que esta mudança evita.
+          ...(isApproved && !aguardandoPagamento && booking.extensionRequestedEndDate && {
             endDate: new Date(booking.extensionRequestedEndDate),
           }),
+          ...(aguardandoPagamento && { extensionAmountCents: valorExtra }),
         },
       },
       { status: 200 },

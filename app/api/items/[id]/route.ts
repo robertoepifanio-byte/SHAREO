@@ -10,6 +10,7 @@ import { geocodeItem } from "@/lib/geocodeItem"
 import { userPublicSelect } from "@/lib/prisma/selects"
 import { getOwnerResponseBadge } from "@/lib/ownerStats"
 import { resolveUserId } from "@/lib/resolveUserId"
+import { withUser } from "@/lib/withUser"
 import { incrementViewCount } from "@/lib/viewCounter"
 
 type RouteContext = { params: Promise<{ id: string }> }
@@ -179,13 +180,9 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
 export async function PUT(req: NextRequest, { params }: RouteContext) {
   try {
     // Aceita Bearer JWT (mobile) ou session cookie (web) — mesmo padrão de POST /api/items/[id]/images
-    const userId = await resolveUserId(req)
-    if (!userId) {
-      return NextResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
-        { status: 401 }
-      )
-    }
+    const reqUser = await withUser(req)
+    if (reqUser instanceof NextResponse) return reqUser
+    const userId = reqUser.id
 
     const { id } = await params
     const existing = await prisma.item.findFirst({
@@ -316,13 +313,9 @@ export async function DELETE(req: NextRequest, { params }: RouteContext) {
     // acima. Antes usava auth() cookie-only → app mobile recebia 401 ao deletar
     // anúncio (achado da revisão s41, mesmo padrão sistêmico já corrigido em
     // GET/PUT/images desta rota; o DELETE tinha ficado pra trás).
-    const userId = await resolveUserId(req)
-    if (!userId) {
-      return NextResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
-        { status: 401 }
-      )
-    }
+    const reqUser = await withUser(req)
+    if (reqUser instanceof NextResponse) return reqUser
+    const userId = reqUser.id
 
     const { id } = await params
     const existing = await prisma.item.findFirst({

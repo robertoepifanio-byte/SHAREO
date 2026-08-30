@@ -1,9 +1,33 @@
 import fs from 'fs'
-import path from 'path'
 import { request, type APIRequestContext } from '@playwright/test'
+import { TEST_ITEM_PATH } from './fixtures/test-paths'
+import { SESSION_PATHS } from './fixtures/test-credentials'
 
-const SESSION_PROPRIETARIO = path.resolve('e2e/fixtures/session-proprietario.json')
-const TEST_ITEM_PATH       = path.resolve('e2e/fixtures/test-item-id.json')
+const SESSION_PROPRIETARIO = SESSION_PATHS.proprietario
+
+/** Lê o itemId do fixture. `undefined` = arquivo ausente ou ilegível (segue em frente calado). */
+function readFixtureItemId(): string | undefined {
+  if (!fs.existsSync(TEST_ITEM_PATH)) return undefined
+  try {
+    return (JSON.parse(fs.readFileSync(TEST_ITEM_PATH, 'utf-8')) as { itemId?: string }).itemId
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * Falha cedo, e com instrução, quando o item fixture sumiu do banco: sem ele `POST /api/bookings`
+ * responde 422 ITEM_UNAVAILABLE e a suíte desaba em ~30 falhas espalhadas que não apontam a causa.
+ */
+function assertFixtureItemExists(itemId: string, status: number) {
+  if (status >= 200 && status < 300) return
+  throw new Error(
+    `Item fixture ${itemId} não existe mais no staging (GET /api/items/${itemId} → ${status}).\n` +
+    `Os smokes de reserva/review/devolução dependem dele e falhariam todos com 422 ITEM_UNAVAILABLE.\n` +
+    `Conserto: rode o seed (idempotente, não apaga nada) antes da suíte:\n` +
+    `  node --env-file=.env.staging-migrate --import tsx scripts/seed-staging-full.ts`,
+  )
+}
 
 /**
  * Pré-limpeza: cancela reservas CONFIRMED/PENDING residuais no item fixture, deixadas por runs
@@ -19,16 +43,8 @@ const TEST_ITEM_PATH       = path.resolve('e2e/fixtures/test-item-id.json')
  *
  * Best-effort: qualquer falha aqui é ignorada (não derruba a suíte).
  */
-async function cleanupFixtureItemBookings(base: string) {
-  if (!fs.existsSync(SESSION_PROPRIETARIO) || !fs.existsSync(TEST_ITEM_PATH)) return
-
-  let itemId: string | undefined
-  try {
-    itemId = (JSON.parse(fs.readFileSync(TEST_ITEM_PATH, 'utf-8')) as { itemId?: string }).itemId
-  } catch {
-    return
-  }
-  if (!itemId) return
+async function cleanupFixtureItemBookings(base: string, itemId: string) {
+  if (!fs.existsSync(SESSION_PROPRIETARIO)) return
 
   const e2eToken = process.env.E2E_SECRET
   let owner: APIRequestContext
@@ -102,16 +118,26 @@ export default async function globalSetup() {
     '/api/auth/callback/credentials',
   ]
 
-  await Promise.all(
-    endpoints.map(endpoint =>
-      ctx.get(`${BASE}${endpoint}`).catch(() => null),
-    ),
-  )
+  // O GET do item fixture entra no MESMO Promise.all do aquecimento: é público como os demais,
+  // custa latência incremental zero e ainda aquece /api/items/[id], que os smokes de reserva mais
+  // usam — em vez de pagar um cold start serial só para essa checagem.
+  const fixtureItemId = readFixtureItemId()
+  const fixtureProbe  = fixtureItemId ? `/api/items/${fixtureItemId}` : null
+
+  const [, fixtureRes] = await Promise.all([
+    Promise.all(endpoints.map(endpoint => ctx.get(`${BASE}${endpoint}`).catch(() => null))),
+    fixtureProbe ? ctx.get(`${BASE}${fixtureProbe}`).catch(() => null) : Promise.resolve(null),
+  ])
 
   await ctx.dispose()
 
+  // Sem o item fixture não há suíte: falha aqui, com instrução, em vez de ~30 falhas em cascata.
+  // `fixtureRes === null` = falha de rede no probe; não é evidência de item ausente, deixa passar.
+  if (fixtureItemId && fixtureRes) assertFixtureItemExists(fixtureItemId, fixtureRes.status())
+
   // Pré-limpeza de reservas residuais que bloqueiam as janelas de data dos smokes de booking/review.
-  await cleanupFixtureItemBookings(BASE).catch(e =>
+  if (!fixtureItemId) return
+  await cleanupFixtureItemBookings(BASE, fixtureItemId).catch(e =>
     console.warn('[staging-setup] pré-limpeza falhou (ignorado):', e instanceof Error ? e.message : e),
   )
 }

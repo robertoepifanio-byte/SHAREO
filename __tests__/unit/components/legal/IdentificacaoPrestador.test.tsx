@@ -16,7 +16,7 @@ import { render, screen } from "@testing-library/react"
 import fs from "node:fs"
 import path from "node:path"
 import { IdentificacaoPrestador } from "@/components/legal/IdentificacaoPrestador"
-import { LEGAL_ENTITY } from "@/lib/legal-config"
+import { LEGAL_ENTITY, CONSENT_VERSION, DPO_EMAIL, PJ_DECLARATION_TEXT, MARKETING_CONSENT_VERSION, MARKETING_CONSENT_TEXT } from "@/lib/legal-config"
 
 const RAIZ = path.resolve(__dirname, "../../../..")
 const lerFonte = (arquivo: string) => fs.readFileSync(path.join(RAIZ, arquivo), "utf8")
@@ -101,6 +101,9 @@ describe("telas legais", () => {
 })
 
 describe("espelho do app", () => {
+  // 🪤 A comparação é feita contra a FONTE do espelho, então o texto longo mora
+  // lá numa linha só. Quebrá-lo em concatenação reprovaria por causa das aspas
+  // e do `+`, não por divergência real.
   const espelho = lerFonte("apps/mobile/lib/legalConfig.ts")
 
   it.each([
@@ -108,7 +111,39 @@ describe("espelho do app", () => {
     ["CNPJ", LEGAL_ENTITY.cnpj],
     ["e-mail de contato", LEGAL_ENTITY.emailContato],
     ["endereço da sede", LEGAL_ENTITY.enderecoSede],
+    ["versão dos Termos", CONSENT_VERSION],
+    ["canal do DPO", DPO_EMAIL],
+    // Declaração sob as penas da lei (ADR-024) — registrada com data e IP.
+    // Divergir do site aqui é gravar prova de um texto que ninguém assinou.
+    ["declaração de vínculo PJ", PJ_DECLARATION_TEXT],
+    // O app gravava CONSENT_VERSION ("v1.1") no lead sob um texto próprio, que
+    // divergia do site — o lead ficava arquivado sob um texto que ninguém viu.
+    ["versão do consentimento de marketing", MARKETING_CONSENT_VERSION],
+    ["texto do consentimento de marketing", MARKETING_CONSENT_TEXT],
   ])("mantém o mesmo %s do site", (_rotulo, valor) => {
     expect(espelho).toContain(valor)
+  })
+
+  // Espelhar a constante não adianta se a tela seguir com o literal ao lado —
+  // era exatamente o estado anterior: o espelho existia e as telas o ignoravam.
+  it("o formulário de captação usa as constantes de marketing", () => {
+    const form = semComentarios(lerFonte("apps/mobile/components/home/FounderCaptureForm.tsx"))
+    expect(form).toMatch(/consentVersion:\s*MARKETING_CONSENT_VERSION/)
+    expect(form).toContain("{MARKETING_CONSENT_TEXT}")
+  })
+
+  it("o cadastro usa a versão dos Termos do espelho", () => {
+    const register = semComentarios(lerFonte("apps/mobile/app/(auth)/register.tsx"))
+    expect(register).toMatch(/consentVersion:\s*CONSENT_VERSION/)
+  })
+
+  // 🪤 Em `it` separado de propósito: junto das asserções acima ele nunca
+  // rodaria — a primeira falha aborta o teste, e era a primeira que pegava a
+  // regressão. Aqui ele cobre o literal reaparecendo em QUALQUER ponto do arquivo.
+  it.each([
+    "apps/mobile/components/home/FounderCaptureForm.tsx",
+    "apps/mobile/app/(auth)/register.tsx",
+  ])("%s não traz a versão cravada de volta", (arquivo) => {
+    expect(semComentarios(lerFonte(arquivo))).not.toMatch(/"v1\.1"/)
   })
 })

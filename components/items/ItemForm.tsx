@@ -111,13 +111,14 @@ function toDisplay(cents: number | null | undefined): string {
 // ─── Price input helper ───────────────────────────────────────────────────────
 
 function PriceInput({
-  id, label, value, onChange, required, helper, onFocus, onBlur,
+  id, label, value, onChange, required, helper, error, onFocus, onBlur,
 }: {
   id: string; label: string; value: string; onChange: (v: string) => void
-  required?: boolean; helper?: string
+  required?: boolean; helper?: string; error?: string
   onFocus?: () => void; onBlur?: () => void
 }) {
   const helperId = helper ? `${id}-helper` : undefined
+  const errorId  = error  ? `${id}-error`  : undefined
   return (
     <div className="flex flex-col gap-1.5">
       <label htmlFor={id} className="text-sm font-medium text-foreground">
@@ -140,15 +141,18 @@ function PriceInput({
           onFocus={onFocus}
           onBlur={onBlur}
           placeholder="0,00"
-          aria-describedby={helperId}
+          aria-describedby={errorId ?? helperId}
+          aria-invalid={!!error}
           className={[
-            "h-11 w-full rounded-md border border-input bg-surface pl-10 pr-3 text-sm text-foreground",
+            "h-11 w-full rounded-md border bg-surface pl-10 pr-3 text-sm text-foreground",
             "placeholder:text-muted-foreground outline-none transition-colors",
-            "focus:border-ring focus:ring-2 focus:ring-ring/20",
+            "focus:ring-2 focus:ring-ring/20",
+            error ? "border-destructive focus:border-destructive" : "border-input focus:border-ring",
           ].join(" ")}
         />
       </div>
-      {helper && <p id={helperId} className="text-xs text-muted-foreground">{helper}</p>}
+      {error  && <p id={errorId}  className="text-xs text-destructive" role="alert">{error}</p>}
+      {!error && helper && <p id={helperId} className="text-xs text-muted-foreground">{helper}</p>}
     </div>
   )
 }
@@ -416,6 +420,10 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
     if (!categoryId)                    errs.categoryId  = "Selecione uma categoria"
     const dayPrice = toCents(pricePerDay)
     if (dayPrice < 100)                 errs.pricePerDay = "Preço mínimo: R$ 1,00/dia"
+    // Obrigatório só na criação — ver o mesmo corte em CreateItemSchema
+    // (lib/validations/items.ts). Editar não herda isso.
+    if (mode === "create" && toCents(estimatedRetailPrice) < 1)
+      errs.estimatedRetailPrice = "Informe o valor estimado do item"
     if (city.trim().length < 2)         errs.city        = "Cidade obrigatória"
     if (state.length !== 2)             errs.state       = "Selecione o estado"
     return errs
@@ -685,9 +693,11 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
               id="estimated-retail-price"
               label="Valor de compra estimado"
               value={estimatedRetailPrice}
-              onChange={setEstimatedRetailPrice}
+              onChange={(v) => { setEstimatedRetailPrice(v); setErrors((p) => ({ ...p, estimatedRetailPrice: undefined! })) }}
               onBlur={() => applyRetailSuggestion(estimatedRetailPrice)}
-              helper="Preencha para calcular automaticamente a diária sugerida"
+              required
+              error={errors.estimatedRetailPrice}
+              helper="Usado para calcular a diária sugerida e validar o teto de valor da fase inicial"
             />
             {priceSuggestion && (
               <p className="mt-1 text-xs text-brand">
@@ -889,7 +899,13 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
           </p>
         )}
 
-        {/* Campos somente leitura (create e edit): o endereço vem sempre do perfil */}
+        {/*
+          Em modo "create" estes campos são travados no endereço do perfil (banner
+          acima) — não apenas via onChange neutralizado, mas com disabled de verdade.
+          Sem isso o campo parece editável (cursor piscando, sem estilo de bloqueio)
+          e a digitação é descartada em silêncio — foi relatado como "falha ao editar
+          endereço"/"falha ao publicar anúncio" por confundir o testador (#392-thiago).
+        */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="md:col-span-2">
             <Input
@@ -897,7 +913,6 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
               type="text"
               value={city}
               onChange={(e) => {
-                if (mode === "create") return
                 setCity(e.target.value)
                 setErrors((p) => ({ ...p, city: undefined! }))
                 gpsUsedRef.current = false
@@ -906,14 +921,13 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
               onBlur={mode === "edit" ? geocodeAddress : undefined}
               error={errors.city}
               required
-              disabled={loading}
+              disabled={loading || mode === "create"}
             />
           </div>
           <Select
             label="Estado"
             value={state}
             onChange={(e) => {
-              if (mode === "create") return
               setState(e.target.value)
               setErrors((p) => ({ ...p, state: undefined! }))
               gpsUsedRef.current = false
@@ -923,7 +937,7 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
             error={errors.state}
             placeholder="UF"
             required
-            disabled={loading}
+            disabled={loading || mode === "create"}
           >
             {BR_STATES.map((uf) => (
               <option key={uf} value={uf}>{uf}</option>
@@ -936,19 +950,19 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
             label="Bairro"
             type="text"
             value={neighborhood}
-            onChange={(e) => { if (mode !== "create") setNeighborhood(e.target.value) }}
+            onChange={(e) => setNeighborhood(e.target.value)}
             onBlur={mode === "edit" ? geocodeAddress : undefined}
             helper="Opcional — melhora a precisão no mapa"
-            disabled={loading}
+            disabled={loading || mode === "create"}
           />
           <Input
             label="Endereço"
             type="text"
             placeholder="Rua das Dunas, 123"
             value={address}
-            onChange={(e) => { if (mode !== "create") setAddress(e.target.value) }}
+            onChange={(e) => setAddress(e.target.value)}
             helper="Opcional — só compartilhado com o locatário após o pagamento confirmado"
-            disabled={loading}
+            disabled={loading || mode === "create"}
           />
         </div>
       </section>

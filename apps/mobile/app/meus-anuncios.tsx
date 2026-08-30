@@ -5,7 +5,9 @@
 // Decisões de transcrição documentadas:
 //   1. Barra de abas: rótulos e ordem verbatim ("Anúncios", "Desempenho",
 //      "Importar" só PJ, "Integrações"). Aba "Anúncios" = nativa (esta tela).
-//      Demais → Linking.openURL(API_URL + path), padrão já usado em perfil.tsx.
+//      "Desempenho" → router.push("/meus-anuncios/desempenho") (tela nativa criada
+//      junto a esta PR). "Integrações" → router.push("/meus-anuncios/integracoes")
+//      (tela nativa). "Importar" → Linking.openURL (ainda sem tela nativa).
 //   2. Botão "Editar" → router.push(`/itens/${id}/editar`) — rota nativa existe
 //      em apps/mobile/app/itens/[id]/editar.tsx.
 //   3. Botão "Pausar/Ativar" → PATCH /api/items/:id via apiFetch. Sem confirm()
@@ -46,6 +48,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { apiFetch, API_URL } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
 import { useTheme } from "@/lib/theme"
+import type { MeData } from "@/lib/types"
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -69,10 +72,6 @@ interface ItemsResponse {
   total: number
 }
 
-interface MeData {
-  id:       string
-  userType: "PF" | "PJ"
-}
 
 // ── Formatação de moeda — verbatim de ItemCard.tsx do mobile ─────────────────
 const fmt = (cents: number) =>
@@ -461,10 +460,10 @@ export default function MeusAnunciosScreen() {
           <Text style={s.tabActiveText}>Anúncios</Text>
         </View>
 
-        {/* "Desempenho" → abre no browser */}
+        {/* "Desempenho" → tela nativa */}
         <TouchableOpacity
           style={s.tabInactive}
-          onPress={() => Linking.openURL(`${API_URL}/meus-anuncios/desempenho`)}
+          onPress={() => router.push("/meus-anuncios/desempenho")}
           accessibilityRole="tab"
           accessibilityState={{ selected: false }}
           accessibilityLabel="Desempenho"
@@ -485,10 +484,10 @@ export default function MeusAnunciosScreen() {
           </TouchableOpacity>
         )}
 
-        {/* "Integrações" → abre no browser */}
+        {/* "Integrações" → tela nativa (antes abria no navegador) */}
         <TouchableOpacity
           style={s.tabInactive}
-          onPress={() => Linking.openURL(`${API_URL}/meus-anuncios/integracoes`)}
+          onPress={() => router.push("/meus-anuncios/integracoes")}
           accessibilityRole="tab"
           accessibilityState={{ selected: false }}
           accessibilityLabel="Integrações"

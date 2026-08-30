@@ -14,6 +14,7 @@ import {
 import { router } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { useTheme } from "@/lib/theme"
+import { ScreenHeader } from "@/components/layout/ScreenHeader"
 import { API_URL } from "@/lib/api"
 
 // ── Dados verbatim de app/seguranca/page.tsx ─────────────────────────────────
@@ -90,27 +91,7 @@ export default function SegurancaScreen() {
   return (
     <View style={[s.root, { backgroundColor: tokens.bg }]}>
 
-      {/* ── Header — padrão de sobre.tsx / dados.tsx ── */}
-      <View
-        style={[
-          s.header,
-          {
-            paddingTop:      insets.top + 8,
-            backgroundColor: tokens.surface,
-            borderColor:     tokens.border,
-          },
-        ]}
-      >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          accessibilityLabel="Voltar"
-          accessibilityRole="button"
-          style={s.backBtn}
-        >
-          <Text style={[s.backArrow, { color: tokens.muted }]}>‹</Text>
-        </TouchableOpacity>
-        <Text style={[s.headerTitle, { color: tokens.navy }]}>Segurança</Text>
-      </View>
+      <ScreenHeader title="Segurança" />
 
       <ScrollView
         style={s.scroll}
@@ -224,24 +205,6 @@ const s = StyleSheet.create({
   root:   { flex: 1 },
   scroll: { flex: 1 },
   content: { paddingBottom: 40 },
-
-  // ── Header ──────────────────────────────────────────────────────────────────
-  header: {
-    flexDirection:     "row",
-    alignItems:        "center",
-    gap:               12,
-    borderBottomWidth: 1,
-    paddingHorizontal: 16,
-    paddingBottom:     12,
-  },
-  backBtn: {
-    minHeight:      44,
-    minWidth:       44,
-    alignItems:     "center",
-    justifyContent: "center",
-  },
-  backArrow:   { fontSize: 28, lineHeight: 32 },
-  headerTitle: { flex: 1, fontSize: 18, fontWeight: "700" },
 
   // ── Hero / página-título ─────────────────────────────────────────────────────
   // Equivalente ao <h1> + subtítulo do site (page.tsx linhas 16-17).

@@ -17,7 +17,7 @@ import fs from 'fs'
 import { test, expect } from '@playwright/test'
 import { SESSION_PATHS, FIXTURE_LOCATARIO, FIXTURE_PROPRIETARIO } from './fixtures/test-credentials'
 import { TEST_ITEM_PATH } from './fixtures/test-paths'
-import { enviarFotoDevolucao } from './_support'
+import { enviarFotoDevolucao, markBookingPaidForTest } from './_support'
 
 const hasSessions =
   fs.existsSync(SESSION_PATHS.locatario) &&
@@ -60,6 +60,7 @@ test.describe('smoke #23 — Exclusão de conta: bloqueio com ACTIVE booking; cl
     const tokenResA = await loc.request.get(`/api/bookings/${bkA.id}`)
     const { data: tokenDataA } = await tokenResA.json() as { data: { pickupToken: string | null } }
     expect(tokenDataA.pickupToken, 'pickupToken deve existir após confirm').toBeTruthy()
+    await markBookingPaidForTest(prop.request, bkA.id)
     await prop.request.patch(`/api/bookings/${bkA.id}`, { data: { action: 'mark_active', pickupToken: tokenDataA.pickupToken } })
 
     // Tentar excluir conta enquanto booking está ACTIVE → 409

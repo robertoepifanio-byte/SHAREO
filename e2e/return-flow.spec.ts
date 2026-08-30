@@ -26,7 +26,7 @@
 import fs from 'fs'
 import { test, expect } from '@playwright/test'
 import { SESSION_PATHS } from './fixtures/test-credentials'
-import { apiWithRetry, enviarFotoDevolucao } from './_support'
+import { apiWithRetry, enviarFotoDevolucao, markBookingPaidForTest, createTestItem, futureWindow, rndOffset } from './_support'
 
 // ---------------------------------------------------------------------------
 // Pré-condições de skip
@@ -35,73 +35,6 @@ import { apiWithRetry, enviarFotoDevolucao } from './_support'
 const hasSessions =
   fs.existsSync(SESSION_PATHS.locatario) &&
   fs.existsSync(SESSION_PATHS.proprietario)
-
-// ---------------------------------------------------------------------------
-// Helpers de data — janela dedicada 500–560 dias no futuro
-// ---------------------------------------------------------------------------
-
-function futureWindow(offsetDays: number, durationDays = 2): { start: string; end: string } {
-  const start = new Date(Date.now() + offsetDays * 86_400_000)
-  const end   = new Date(start.getTime() + durationDays * 86_400_000)
-  return { start: start.toISOString(), end: end.toISOString() }
-}
-
-function rndOffset(min: number, max: number): number {
-  return min + Math.floor(Math.random() * (max - min + 1))
-}
-
-// ---------------------------------------------------------------------------
-// JPEG mínimo válido (1×1px) — magic bytes FF D8 FF passam na validação de file-type
-// ---------------------------------------------------------------------------
-
-const MINIMAL_JPEG = Buffer.from(
-  'ffd8ffe000104a46494600010100000100010000ffdb004300080606070605080707' +
-  '07090909080a0c140d0c0b0b0c1912130f141d1a1f1e1d1a1c1c20242e2720222c' +
-  '231c1c2837292c30313434341f27393d38323c2e333432ffffc0000b080001000101' +
-  '011100ffc4001f0000010501010101010100000000000000000102030405060708090a' +
-  '0bffda00080101000003f0007fffd9',
-  'hex',
-)
-
-/**
- * Cria um item de teste (DRAFT → AVAILABLE via upload de foto). Retorna o id ou null.
- */
-async function createTestItem(propPage: import('@playwright/test').Page, title: string): Promise<string | null> {
-  const catRes = await apiWithRetry(() => propPage.request.get('/api/categories'))
-  if (!catRes.ok()) return null
-  const { data: cats } = await catRes.json() as { data: { id: string }[] }
-  if (!cats?.length) return null
-
-  const createRes = await apiWithRetry(() =>
-    propPage.request.post('/api/items', {
-      data: {
-        title,
-        description: 'Item de teste E2E — fluxo de devolução (pode ser removido)',
-        categoryId:  cats[0].id,
-        condition:   'GOOD',
-        pricePerDay: 5000,
-        city:        'São Paulo',
-        state:       'SP',
-        latitude:    -23.5505,
-        longitude:   -46.6333,
-      },
-    })
-  )
-  if (!createRes.ok()) return null
-  const { data: item } = await createRes.json() as { data: { id: string } }
-  if (!item?.id) return null
-
-  const imgRes = await apiWithRetry(() =>
-    propPage.request.post(`/api/items/${item.id}/images`, {
-      multipart: { file: { name: 'test.jpg', mimeType: 'image/jpeg', buffer: MINIMAL_JPEG } },
-    })
-  )
-  if (!imgRes.ok()) {
-    await propPage.request.delete(`/api/items/${item.id}`).catch(() => {})
-    return null
-  }
-  return item.id
-}
 
 // ---------------------------------------------------------------------------
 // Smoke #36
@@ -125,7 +58,7 @@ test.describe('smoke #36 — fluxo de devolução: Devolução em Andamento → 
     try {
       // ── Setup: item + reserva + confirm + mark_active → ACTIVE ──────────────
       await test.step('setup: item, reserva, confirm e mark_active → ACTIVE', async () => {
-        itemId = await createTestItem(prop, `Devolução E2E ${Date.now()}`)
+        itemId = await createTestItem(prop, `Devolução E2E ${Date.now()}`, 'Item de teste E2E — fluxo de devolução (pode ser removido)')
         test.skip(!itemId, 'Não foi possível criar o item de teste (setup falhou)')
 
         const { start, end } = futureWindow(rndOffset(500, 560), 2)
@@ -150,6 +83,7 @@ test.describe('smoke #36 — fluxo de devolução: Devolução em Andamento → 
         const pickupToken = (await detailRes.json() as { data: { pickupToken: string | null } }).data.pickupToken
         expect(pickupToken, 'pickupToken deve existir após o confirm').toBeTruthy()
 
+        await markBookingPaidForTest(prop.request, bookingId!)
         const activeRes = await apiWithRetry(() =>
           prop.request.patch(`/api/bookings/${bookingId!}`, { data: { action: 'mark_active', pickupToken } })
         )

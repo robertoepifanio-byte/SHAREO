@@ -34,6 +34,7 @@ import * as Location from "expo-location"
 import { apiFetch } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
 import { useTheme } from "@/lib/theme"
+import { maskCEP, fetchAddressByCep } from "@/lib/forms"
 
 // ─── Constantes ────────────────────────────────────────────────────────────────
 
@@ -55,22 +56,7 @@ interface UserAddress {
   neighborhood: string | null
 }
 
-interface ViaCepResponse {
-  erro?:        boolean
-  logradouro?:  string
-  bairro?:      string
-  uf?:          string
-  localidade?:  string
-}
-
 // ─── Helpers ───────────────────────────────────────────────────────────────────
-
-/** Formata CEP: XXXXX-XXX. Espelha maskCEP de lib/forms/masks.ts. */
-function maskCEP(v: string): string {
-  const digits = v.replace(/\D/g, "").slice(0, 8)
-  if (digits.length <= 5) return digits
-  return `${digits.slice(0, 5)}-${digits.slice(5)}`
-}
 
 /** Converte nome do estado (ex.: "Rio Grande do Norte") para sigla (ex.: "RN"). */
 function stateAbbr(name: string): string {
@@ -144,17 +130,16 @@ export default function EnderecoScreen() {
     setCepError("")
     setCepFilled(false)
     try {
-      const res  = await fetch(`https://viacep.com.br/ws/${digits}/json/`)
-      const data = (await res.json()) as ViaCepResponse
-      if (data.erro) {
+      const addr = await fetchAddressByCep(digits)
+      if (!addr) {
         setCepError("CEP não encontrado. Verifique e tente novamente.")
         return
       }
       lastFetchedCep.current = digits
-      if (data.logradouro) setStreetVal(data.logradouro)
-      if (data.bairro)     setNeighVal(data.bairro)
-      if (data.uf)         setStateVal(data.uf)
-      if (data.localidade) setCityVal(data.localidade)
+      if (addr.street)       setStreetVal(addr.street)
+      if (addr.neighborhood) setNeighVal(addr.neighborhood)
+      if (addr.state)        setStateVal(addr.state)
+      if (addr.city)         setCityVal(addr.city)
       setCepFilled(true)
     } catch {
       setCepError("Erro ao consultar o CEP. Verifique sua conexão.")
