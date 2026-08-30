@@ -111,6 +111,16 @@ jest.mock("@/lib/cancellationPolicy", () => ({
   }),
 }))
 
+const mockEmitCancellationRefund = jest.fn().mockResolvedValue({ id: "re_test" })
+// pauta-raimundo-2026-08-22, item 2: 0 por padrão = "taxa não apurada" — calcRefund
+// (mockado abaixo com refundAmount fixo) já cobre o cálculo em si; este mock só
+// evita que a rota chame a Stripe de verdade.
+const mockGetChargeFeeCents = jest.fn().mockResolvedValue(0)
+jest.mock("@/lib/payments/refund", () => ({
+  emitCancellationRefund: (...args: unknown[]) => mockEmitCancellationRefund(...args),
+  getChargeFeeCents:      (...args: unknown[]) => mockGetChargeFeeCents(...args),
+}))
+
 // ---------------------------------------------------------------------------
 // IDs de referência
 // ---------------------------------------------------------------------------
@@ -149,6 +159,14 @@ function makeBooking(overrides: {
   paymentStatus?: string
   /** `null` simula reserva sem contrato assinado. */
   contractSignedAt?: Date | null
+  /**
+   * Quando o locatário iniciou a devolução (mark_returned) — início da janela
+   * de 48h do locador para abrir disputa. `null` simula RETURNED sem esse
+   * timestamp (dado legado); default é "agora há pouco", dentro da janela.
+   */
+  returnRequestedAt?: Date | null
+  /** `null` simula reserva paga fora do fluxo Stripe (não deveria acontecer, mas é defendido). */
+  stripePaymentIntentId?: string | null
 }) {
   return {
     id:          BOOKING_ID,
@@ -160,7 +178,11 @@ function makeBooking(overrides: {
     totalPrice:  300,
     totalDays:   2,
     paymentStatus: overrides.paymentStatus ?? "PENDING",
+    stripePaymentIntentId: overrides.stripePaymentIntentId === undefined ? "pi_test_123" : overrides.stripePaymentIntentId,
     contractSignedAt: overrides.contractSignedAt === undefined ? new Date("2026-06-01T00:00:00Z") : overrides.contractSignedAt,
+    returnRequestedAt: overrides.returnRequestedAt === undefined
+      ? new Date(Date.now() - 60 * 60 * 1000) // 1h atrás — dentro da janela de 48h
+      : overrides.returnRequestedAt,
     bookingItems: [{ itemId: "item-id-004" }], // Story B — confirm revalida todos os itens
     item:        { title: "Furadeira Bosch" },
     borrower:    { email: "borrower@ex.com", name: "Locatário Teste" },
@@ -180,8 +202,13 @@ function makeSession(userId: string, role = "USER") {
 }
 
 /** Resultado de booking.update bem-sucedido. */
-function makeUpdatedBooking(status: string) {
-  return { id: BOOKING_ID, status, updatedAt: new Date() }
+/**
+ * refundAmount default 100: espelha o retorno mockado de calcRefund no topo do
+ * arquivo, já que a rota agora lê `updated.refundAmount` (o valor gravado no
+ * update) em vez de uma variável separada — ver pauta-raimundo-2026-08-22, item 2.
+ */
+function makeUpdatedBooking(status: string, refundAmount = 100) {
+  return { id: BOOKING_ID, status, updatedAt: new Date(), refundAmount }
 }
 
 // ---------------------------------------------------------------------------
@@ -264,16 +291,19 @@ describe("PATCH /api/bookings/[id]", () => {
      * Stripe, esse número ia parar na fila de trabalho de uma pessoa como se
      * fosse real. Achado do painel de dois atores, 22/08/2026.
      */
-    it("cancelar reserva NÃO paga não registra reembolso", async () => {
+    it("cancelar reserva NÃO paga não registra reembolso nem chama a Stripe", async () => {
       mockAuth.mockResolvedValue(makeSession(BORROWER_ID))
       mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "CONFIRMED", paymentStatus: "PENDING" }))
-      mockBookingUpdate.mockResolvedValue(makeUpdatedBooking("CANCELLED"))
+      // refundAmount: 0 — precisa refletir o que a rota de fato grava (não paga = sem
+      // reembolso), já que a rota agora lê `updated.refundAmount` do retorno do update.
+      mockBookingUpdate.mockResolvedValue(makeUpdatedBooking("CANCELLED", 0))
 
       await PATCH(makeReq({ action: "cancel", reason: "Mudei de ideia" }), makeParams())
 
       expect(mockBookingUpdate).toHaveBeenCalledWith(expect.objectContaining({
         data: expect.objectContaining({ refundAmount: 0, refundPercent: 0 }),
       }))
+      expect(mockEmitCancellationRefund).not.toHaveBeenCalled()
     })
 
     it("cancelar reserva PAGA continua calculando o reembolso pela política", async () => {
@@ -290,6 +320,74 @@ describe("PATCH /api/bookings/[id]", () => {
     })
 
     /**
+     * pauta-raimundo-2026-08-22, item 2 — decisão de Raimundo (25/08/2026): quem
+     * cancela decide o reembolso, não a antecedência. Locatário cancela → busca a
+     * taxa real da Stripe; locador cancela → nem chama a Stripe pra isso.
+     */
+    it("locatário cancela → busca a taxa real da Stripe (canceledBy=borrower)", async () => {
+      mockAuth.mockResolvedValue(makeSession(BORROWER_ID))
+      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "CONFIRMED", paymentStatus: "PAID" }))
+      mockBookingUpdate.mockResolvedValue(makeUpdatedBooking("CANCELLED"))
+
+      await PATCH(makeReq({ action: "cancel", reason: "Mudei de ideia" }), makeParams())
+
+      expect(mockGetChargeFeeCents).toHaveBeenCalledWith("pi_test_123")
+    })
+
+    it("locador cancela → NÃO busca taxa da Stripe (sem desconto nesse caso)", async () => {
+      mockAuth.mockResolvedValue(makeSession(OWNER_ID))
+      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "CONFIRMED", paymentStatus: "PAID" }))
+      mockBookingUpdate.mockResolvedValue(makeUpdatedBooking("CANCELLED"))
+
+      await PATCH(makeReq({ action: "cancel", reason: "Mudei de ideia" }), makeParams())
+
+      expect(mockGetChargeFeeCents).not.toHaveBeenCalled()
+    })
+
+    /**
+     * pauta-raimundo-2026-08-22, item 1 — decisão "automatizar" (Raimundo, 25/08/2026).
+     * Antes disto, cancelar só CALCULAVA o valor; alguém emitia o estorno à mão
+     * no Dashboard da Stripe.
+     */
+    it("cancelar reserva PAGA emite o estorno automaticamente na Stripe", async () => {
+      mockAuth.mockResolvedValue(makeSession(BORROWER_ID))
+      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "CONFIRMED", paymentStatus: "PAID" }))
+      mockBookingUpdate.mockResolvedValue(makeUpdatedBooking("CANCELLED"))
+
+      await PATCH(makeReq({ action: "cancel", reason: "Mudei de ideia" }), makeParams())
+
+      expect(mockEmitCancellationRefund).toHaveBeenCalledWith({
+        bookingId:       BOOKING_ID,
+        paymentIntentId: "pi_test_123",
+        amount:          100,
+      })
+    })
+
+    it("cancelamento não falha se o estorno automático der erro — fica gravado para reprocessar", async () => {
+      mockAuth.mockResolvedValue(makeSession(BORROWER_ID))
+      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "CONFIRMED", paymentStatus: "PAID" }))
+      mockBookingUpdate.mockResolvedValue(makeUpdatedBooking("CANCELLED"))
+      mockEmitCancellationRefund.mockRejectedValueOnce(new Error("stripe indisponível"))
+
+      const res = await PATCH(makeReq({ action: "cancel", reason: "Mudei de ideia" }), makeParams())
+
+      expect(res.status).toBe(200)
+    })
+
+    it("🪤 reserva PAGA sem stripePaymentIntentId não chama a Stripe (defensivo — não deveria acontecer)", async () => {
+      mockAuth.mockResolvedValue(makeSession(BORROWER_ID))
+      mockBookingFindUnique.mockResolvedValue(
+        makeBooking({ status: "CONFIRMED", paymentStatus: "PAID", stripePaymentIntentId: null }),
+      )
+      mockBookingUpdate.mockResolvedValue(makeUpdatedBooking("CANCELLED"))
+
+      const res = await PATCH(makeReq({ action: "cancel", reason: "Mudei de ideia" }), makeParams())
+
+      expect(res.status).toBe(200)
+      expect(mockEmitCancellationRefund).not.toHaveBeenCalled()
+    })
+
+    /**
      * 🪤 `mark_active` recalculava o `endDate` a partir da retirada real mas
      * deixava o `startDate` na data reservada. Retirada antecipada produzia
      * início DEPOIS do fim, e a lista do locatário exibia o período invertido.
@@ -297,7 +395,7 @@ describe("PATCH /api/bookings/[id]", () => {
     it("mark_active deixa o período coerente — início na retirada real, não depois do fim", async () => {
       mockAuth.mockResolvedValue(makeSession(OWNER_ID))
       mockBookingFindUnique.mockResolvedValue({
-        ...makeBooking({ status: "CONFIRMED" }),
+        ...makeBooking({ status: "CONFIRMED", paymentStatus: "PAID" }),
         pickupToken:       "123456",
         pickupTokenUsedAt: null,
       })
@@ -342,12 +440,30 @@ describe("PATCH /api/bookings/[id]", () => {
       expect(body.data.status).toBe("CANCELLED")
     })
 
+    // 2b. CONFIRMED + mark_active sem pagamento → 402 PAYMENT_REQUIRED
+    // Guard adicionado em 2026-08-24: impede retirada sem pagamento confirmado.
+    it("CONFIRMED + mark_active sem pagamento → 402 PAYMENT_REQUIRED", async () => {
+      mockAuth.mockResolvedValue(makeSession(OWNER_ID))
+      mockBookingFindUnique.mockResolvedValue({
+        ...makeBooking({ status: "CONFIRMED", paymentStatus: "PENDING" }),
+        pickupToken:       "123456",
+        pickupTokenUsedAt: null,
+      })
+
+      const res  = await PATCH(makeReq({ action: "mark_active", pickupToken: "123456" }), makeParams())
+      const body = await res.json() as { error: { code: string } }
+
+      expect(res.status).toBe(402)
+      expect(body.error.code).toBe("PAYMENT_REQUIRED")
+      expect(mockBookingUpdateMany).not.toHaveBeenCalled()
+    })
+
     // 3. CONFIRMED + mark_active (owner) → 200, status ACTIVE
     // mark_active exige pickupToken válido (gerado no confirm)
     it("CONFIRMED + mark_active pelo owner → 200, status ACTIVE", async () => {
       mockAuth.mockResolvedValue(makeSession(OWNER_ID))
       mockBookingFindUnique.mockResolvedValue({
-        ...makeBooking({ status: "CONFIRMED" }),
+        ...makeBooking({ status: "CONFIRMED", paymentStatus: "PAID" }),
         pickupToken:       "123456",
         pickupTokenUsedAt: null,
         totalDays:         5,
@@ -399,7 +515,7 @@ describe("PATCH /api/bookings/[id]", () => {
       contratoLigado = true
       mockAuth.mockResolvedValue(makeSession(OWNER_ID))
       mockBookingFindUnique.mockResolvedValue(
-        makeBooking({ status: "CONFIRMED", contractSignedAt: null }),
+        makeBooking({ status: "CONFIRMED", paymentStatus: "PAID", contractSignedAt: null }),
       )
 
       const res  = await PATCH(makeReq({ action: "mark_active", pickupToken: "123456" }), makeParams())
@@ -416,7 +532,7 @@ describe("PATCH /api/bookings/[id]", () => {
       contratoLigado = false
       mockAuth.mockResolvedValue(makeSession(OWNER_ID))
       mockBookingFindUnique.mockResolvedValue({
-        ...makeBooking({ status: "CONFIRMED", contractSignedAt: null }),
+        ...makeBooking({ status: "CONFIRMED", paymentStatus: "PAID", contractSignedAt: null }),
         pickupToken:       "123456",
         pickupTokenUsedAt: null,
       })
@@ -514,7 +630,9 @@ describe("PATCH /api/bookings/[id]", () => {
 
     it("quando o LOCADOR abre, o locatário é notificado e o texto diz 'locador'", async () => {
       mockAuth.mockResolvedValue(makeSession(OWNER_ID))
-      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "ACTIVE" }))
+      // Locador só pode abrir depois da devolução (status RETURNED) — ver
+      // bloco "janela de disputa assimétrica" abaixo.
+      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "RETURNED" }))
       mockBookingUpdate.mockResolvedValue(makeUpdatedBooking("DISPUTED"))
 
       await PATCH(makeReq({ action: "open_dispute", reason: "Devolvido com risco fundo." }), makeParams())
@@ -525,6 +643,71 @@ describe("PATCH /api/bookings/[id]", () => {
           body:   expect.stringContaining("locador abriu uma disputa"),
         }),
       }))
+    })
+
+    /**
+     * pauta-raimundo-2026-08-22, item 3 — decisão de Raimundo (25/08/2026): a
+     * janela de abertura de disputa é assimétrica por quem abre.
+     */
+    describe("janela de disputa assimétrica (locador vs. locatário)", () => {
+      it("locatário NÃO pode abrir disputa depois de já ter devolvido (RETURNED)", async () => {
+        mockAuth.mockResolvedValue(makeSession(BORROWER_ID))
+        mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "RETURNED" }))
+
+        const res = await PATCH(makeReq({ action: "open_dispute", reason: "Tarde demais." }), makeParams())
+
+        expect(res.status).toBe(422)
+        const body = await res.json() as { error: { code: string } }
+        expect(body.error.code).toBe("DISPUTE_WINDOW_CLOSED")
+      })
+
+      it("locador NÃO pode abrir disputa enquanto a locação ainda está ativa (antes da devolução)", async () => {
+        mockAuth.mockResolvedValue(makeSession(OWNER_ID))
+        mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "ACTIVE" }))
+
+        const res = await PATCH(makeReq({ action: "open_dispute", reason: "Adiantando." }), makeParams())
+
+        expect(res.status).toBe(422)
+        const body = await res.json() as { error: { code: string } }
+        expect(body.error.code).toBe("DISPUTE_WINDOW_CLOSED")
+      })
+
+      it("locador NÃO pode abrir disputa depois de 48h da devolução", async () => {
+        mockAuth.mockResolvedValue(makeSession(OWNER_ID))
+        mockBookingFindUnique.mockResolvedValue(makeBooking({
+          status: "RETURNED",
+          returnRequestedAt: new Date(Date.now() - 49 * 60 * 60 * 1000), // 49h atrás
+        }))
+
+        const res = await PATCH(makeReq({ action: "open_dispute", reason: "Perdi o prazo." }), makeParams())
+
+        expect(res.status).toBe(422)
+        const body = await res.json() as { error: { code: string } }
+        expect(body.error.code).toBe("DISPUTE_WINDOW_CLOSED")
+      })
+
+      it("locador PODE abrir disputa dentro das 48h da devolução", async () => {
+        mockAuth.mockResolvedValue(makeSession(OWNER_ID))
+        mockBookingFindUnique.mockResolvedValue(makeBooking({
+          status: "RETURNED",
+          returnRequestedAt: new Date(Date.now() - 47 * 60 * 60 * 1000), // 47h atrás
+        }))
+        mockBookingUpdate.mockResolvedValue(makeUpdatedBooking("DISPUTED"))
+
+        const res = await PATCH(makeReq({ action: "open_dispute", reason: "Dentro do prazo." }), makeParams())
+
+        expect(res.status).toBe(200)
+      })
+
+      it("locador SEM returnRequestedAt (dado legado) não é bloqueado pela janela — fail-open", async () => {
+        mockAuth.mockResolvedValue(makeSession(OWNER_ID))
+        mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "RETURNED", returnRequestedAt: null }))
+        mockBookingUpdate.mockResolvedValue(makeUpdatedBooking("DISPUTED"))
+
+        const res = await PATCH(makeReq({ action: "open_dispute", reason: "Sem timestamp." }), makeParams())
+
+        expect(res.status).toBe(200)
+      })
     })
 
     // 7. RETURNED + confirm_return (owner) → 200, status COMPLETED

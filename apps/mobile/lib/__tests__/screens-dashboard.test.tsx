@@ -103,12 +103,14 @@ function withoutUser() {
 }
 
 // Resposta mock com dados completos — cobre todas as seções do dashboard
+// profileIncomplete: false (cadastro completo — banner NÃO deve aparecer)
 const MOCK_DASHBOARD_DATA = {
   data: {
-    itemCount:      3,
-    totalViews:     142,
-    activeBookings: 2,
-    monthEarnings:  15000,  // R$ 150,00
+    itemCount:         3,
+    totalViews:        142,
+    activeBookings:    2,
+    monthEarnings:     15000,  // R$ 150,00
+    profileIncomplete: false,
     recentBookings: [
       {
         id:         "booking-1",
@@ -154,18 +156,27 @@ const MOCK_DASHBOARD_DATA = {
   },
 }
 
+// Resposta mock com cadastro incompleto — banner DEVE aparecer
+const MOCK_INCOMPLETE_DATA = {
+  data: {
+    ...MOCK_DASHBOARD_DATA.data,
+    profileIncomplete: true,
+  },
+}
+
 // Resposta mock vazia — estado sem dados (zero itens, zero reservas)
 const MOCK_EMPTY_DATA = {
   data: {
-    itemCount:       0,
-    totalViews:      0,
-    activeBookings:  0,
-    monthEarnings:   0,
-    recentBookings:  [],
-    suggestions:     [],
-    upcomingReturns: [],
-    co2Kg:           0,
-    treesEquivalent: 0,
+    itemCount:         0,
+    totalViews:        0,
+    activeBookings:    0,
+    monthEarnings:     0,
+    profileIncomplete: false,
+    recentBookings:    [],
+    suggestions:       [],
+    upcomingReturns:   [],
+    co2Kg:             0,
+    treesEquivalent:   0,
   },
 }
 
@@ -203,6 +214,56 @@ describe("DashboardScreen", () => {
       const { apiFetch } = require("@/lib/api") as { apiFetch: jest.Mock }
       wrap(<DashboardScreen />)
       expect(apiFetch).not.toHaveBeenCalled()
+    })
+  })
+
+  // ── Banner de cadastro incompleto — verbatim de dashboard/page.tsx linhas 179-202 ──
+  describe("banner de cadastro incompleto", () => {
+    it("exibe 'Complete seu cadastro' quando profileIncomplete=true (verbatim)", async () => {
+      withUser()
+      const { apiFetch } = require("@/lib/api") as { apiFetch: jest.Mock }
+      apiFetch.mockResolvedValueOnce(MOCK_INCOMPLETE_DATA)
+      wrap(<DashboardScreen />)
+      expect(await screen.findByText("Complete seu cadastro")).toBeTruthy()
+    })
+
+    it("exibe o subtítulo verbatim quando profileIncomplete=true", async () => {
+      withUser()
+      const { apiFetch } = require("@/lib/api") as { apiFetch: jest.Mock }
+      apiFetch.mockResolvedValueOnce(MOCK_INCOMPLETE_DATA)
+      wrap(<DashboardScreen />)
+      // 🪤 <Text> multilinha com inline <Text> — regex parcial no trecho mais curto
+      expect(
+        await screen.findByText(/Informe CPF e endereço \(ou CNPJ, se for empresa\)/),
+      ).toBeTruthy()
+    })
+
+    it("exibe botão 'Completar agora' quando profileIncomplete=true (verbatim)", async () => {
+      withUser()
+      const { apiFetch } = require("@/lib/api") as { apiFetch: jest.Mock }
+      apiFetch.mockResolvedValueOnce(MOCK_INCOMPLETE_DATA)
+      wrap(<DashboardScreen />)
+      expect(await screen.findByText("Completar agora")).toBeTruthy()
+    })
+
+    it("'Completar agora' navega para /(auth)/completar", async () => {
+      withUser()
+      const { apiFetch } = require("@/lib/api") as { apiFetch: jest.Mock }
+      apiFetch.mockResolvedValueOnce(MOCK_INCOMPLETE_DATA)
+      const { router: r } = require("expo-router") as { router: { push: jest.Mock } }
+      wrap(<DashboardScreen />)
+      fireEvent.press(await screen.findByText("Completar agora"))
+      expect(r.push).toHaveBeenCalledWith("/(auth)/completar")
+    })
+
+    it("NÃO exibe 'Complete seu cadastro' quando profileIncomplete=false", async () => {
+      withUser()
+      const { apiFetch } = require("@/lib/api") as { apiFetch: jest.Mock }
+      apiFetch.mockResolvedValueOnce(MOCK_DASHBOARD_DATA) // profileIncomplete: false
+      wrap(<DashboardScreen />)
+      await screen.findByText("RESERVAS ATIVAS") // aguarda o render
+      expect(screen.queryByText("Complete seu cadastro")).toBeNull()
+      expect(screen.queryByText("Completar agora")).toBeNull()
     })
   })
 

@@ -3,6 +3,10 @@ import { defineConfig, devices } from '@playwright/test'
 export default defineConfig({
   globalSetup: './e2e/staging-setup.ts',
   testDir: './e2e',
+  // e2e/visual/ tem config própria (playwright.visual.config.ts) e as baselines são nomeadas
+  // por projeto (`visual-desktop`/`visual-mobile`); aqui o projeto é `chromium` e não existe
+  // snapshot correspondente. Rode-as com `--config=playwright.visual.config.ts`.
+  testIgnore: '**/visual/**',
   fullyParallel: false,
   workers: 1, // staging usa estado compartilhado (fixtures, DB) — serial obrigatório
   retries: 1,

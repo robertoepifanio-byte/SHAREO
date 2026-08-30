@@ -18,7 +18,7 @@ import fs from 'fs'
 import { test, expect } from '@playwright/test'
 import { SESSION_PATHS } from './fixtures/test-credentials'
 import { TEST_BOOKING_PATH } from './fixtures/test-paths'
-import { enviarFotoDevolucao } from './_support'
+import { enviarFotoDevolucao, markBookingPaidForTest } from './_support'
 
 const hasLocatarioSession    = fs.existsSync(SESSION_PATHS.locatario)
 const hasProprietarioSession = fs.existsSync(SESSION_PATHS.proprietario)
@@ -47,6 +47,7 @@ test.describe('smoke #6 — proprietário: CONFIRMED → ACTIVE', () => {
       const { data: detail } = await detailRes.json() as { data: { pickupToken: string | null } }
       expect(detail.pickupToken, 'pickupToken deve existir após confirm (smoke #5)').toBeTruthy()
 
+      await markBookingPaidForTest(propCtx.request, id)
       const res = await propCtx.request.patch(`/api/bookings/${id}`, {
         data: { action: 'mark_active', pickupToken: detail.pickupToken },
       })

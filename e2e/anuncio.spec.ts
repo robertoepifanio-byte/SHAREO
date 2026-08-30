@@ -66,6 +66,7 @@ test.describe('anúncio — proprietário autenticado', () => {
         categoryId,
         condition:   'GOOD',
         pricePerDay: 5000,
+        estimatedRetailPrice: 100_000,
         city:        'Natal',
         state:       'RN',
         latitude:    -5.7945,

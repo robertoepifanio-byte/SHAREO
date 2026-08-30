@@ -1,12 +1,12 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { auth } from "@/lib/auth"
+import { withUser } from "@/lib/withUser"
 import { prisma } from "@/lib/prisma"
 import { getStripe } from "@/lib/stripe"
 import { APP_URL } from "@/lib/app-url"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
-import { getPlatformFeeRate, calcSplit, CHECKOUT_MAX_CENTS, STRIPE_CHECKOUT_EXPIRES_SECONDS } from "@/lib/platform-config"
+import { getPlatformFeeRate, calcSplitComDesconto, CHECKOUT_MAX_CENTS, STRIPE_CHECKOUT_EXPIRES_SECONDS } from "@/lib/platform-config"
 import { formatDateMonthDay } from "@/utils/format"
 
 const Schema = z.object({
@@ -15,15 +15,10 @@ const Schema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
-        { status: 401 },
-      )
-    }
+    const user = await withUser(req)
+    if (user instanceof NextResponse) return user
 
-    const rl = await checkRateLimit(`checkout:${session.user.id}`, RATE_LIMITS.checkout.limit, RATE_LIMITS.checkout.windowMs)
+    const rl = await checkRateLimit(`checkout:${user.id}`, RATE_LIMITS.checkout.limit, RATE_LIMITS.checkout.windowMs)
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const body   = await req.json()
@@ -62,7 +57,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Apenas o locatário pode pagar
-    if (booking.borrowerId !== session.user.id) {
+    if (booking.borrowerId !== user.id) {
       return NextResponse.json(
         { error: { code: "FORBIDDEN", message: "Acesso negado." } },
         { status: 403 },
@@ -95,14 +90,8 @@ export async function POST(req: NextRequest) {
     // FIN-2.2: calcular split da plataforma antes de criar a Checkout Session.
     // P3-20: o split usa o valor BRUTO (sem cupom) — o proprietário recebe o valor cheio
     // e o desconto é deduzido da taxa da plataforma.
-    const feeRate  = await getPlatformFeeRate()
-    const discount = booking.discountCents ?? 0
-    const grossSplit = calcSplit(booking.totalPrice + discount, feeRate)
-    const split = {
-      platformFeeRate:   grossSplit.platformFeeRate,
-      platformFeeAmount: Math.max(0, grossSplit.platformFeeAmount - discount),
-      ownerNetAmount:    grossSplit.ownerNetAmount,
-    }
+    const feeRate = await getPlatformFeeRate()
+    const split   = calcSplitComDesconto(booking.totalPrice, booking.discountCents ?? 0, feeRate)
 
     const appUrl = APP_URL
 
@@ -145,7 +134,7 @@ export async function POST(req: NextRequest) {
       ],
       metadata: {
         bookingId,
-        userId: session.user.id,
+        userId: user.id,
       },
       // ADR-028 — split real: agrupa a cobrança para o Transfer que o cron de
       // repasse (app/api/cron/payout/route.ts) cria depois, quando o payout

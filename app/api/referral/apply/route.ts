@@ -4,15 +4,15 @@
  */
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { withUser } from "@/lib/withUser"
 import { applyReferralCode } from "@/lib/referral"
 import { z } from "zod"
 
 const Schema = z.object({ code: z.string().min(1).max(20) })
 
 export async function POST(req: NextRequest) {
-  const session = await auth()
-  if (!session) return NextResponse.json({ error: { code: "UNAUTHORIZED" } }, { status: 401 })
+  const user = await withUser(req)
+  if (user instanceof NextResponse) return user
 
   const body = await req.json().catch(() => ({}))
   const parsed = Schema.safeParse(body)
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: { code: "VALIDATION_ERROR", message: "Código inválido." } }, { status: 400 })
   }
 
-  const result = await applyReferralCode(session.user.id, parsed.data.code)
+  const result = await applyReferralCode(user.id, parsed.data.code)
 
   if (!result.success) {
     return NextResponse.json({ error: { code: "REFERRAL_ERROR", message: result.error } }, { status: 422 })

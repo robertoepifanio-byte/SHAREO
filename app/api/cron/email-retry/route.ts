@@ -1,7 +1,9 @@
 /**
  * GET /api/cron/email-retry
  * Reprocessa entradas PENDING da fila de e-mails críticos (EmailQueue — NFR-BL7).
- * Executado a cada 15 min via Vercel Cron.
+ * Executado a cada 5 min via Vercel Cron (apertado de 15 min em 28/08/2026 —
+ * e-mail de verificação é etapa bloqueante pro cliente; o pior caso (1ª
+ * tentativa falhou) não pode fazer ele esperar tanto).
  *
  * Até MAX_ATTEMPTS tentativas por entrada; após isso marca FAILED definitivo e loga.
  * Limitação conhecida: sem alerta Sentry configurado — falhas definitivas ficam em

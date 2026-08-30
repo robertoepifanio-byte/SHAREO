@@ -5,6 +5,7 @@ import { verifyStripeWebhookRequest } from "@/lib/payments/stripe-webhook"
 import { prisma } from "@/lib/prisma"
 import { cancelAmbassadorCommissions } from "@/lib/ambassador"
 import { markRentalPaid } from "@/lib/payments/mark-booking-paid"
+import { aplicarExtensao } from "@/lib/payments/extension"
 import { reverseOwnerTransfer } from "@/lib/payments/owner-transfer"
 import { withStripeEventQueue } from "@/lib/payments/stripe-event-queue"
 
@@ -46,6 +47,59 @@ async function handleLateFeePaid(session: Stripe.Checkout.Session, bookingId: st
 }
 
 /**
+ * Diárias extras de uma extensão pagas — é AQUI que a extensão passa a valer
+ * (ATOR-03; o racional completo está em lib/payments/extension.ts).
+ *
+ * O `payment_intent` é gravado na reserva porque é dele que sai o Transfer da
+ * extensão: a cobrança da locação não tem esse dinheiro, e a Stripe exige
+ * `source_transaction` no Brasil.
+ */
+async function handleExtensionPaid(session: Stripe.Checkout.Session, bookingId: string): Promise<void> {
+  const resultado = await aplicarExtensao(bookingId, idOf(session.payment_intent))
+
+  if (!resultado.aplicada) {
+    // Retorno silencioso aqui significaria "a Stripe recebeu o dinheiro e nada
+    // aconteceu" — o desfecho que mais precisa de rastro.
+    console.warn(`${LOG} extensão NÃO aplicada em ${bookingId}: ${resultado.motivo} (session ${session.id})`)
+    return
+  }
+
+  const booking = await prisma.booking.findUnique({
+    where:  { id: bookingId },
+    select: { ownerId: true, borrowerId: true, endDate: true, item: { select: { title: true } } },
+  })
+  if (!booking) return
+
+  // As duas partes precisam saber: o proprietário aceitou e ficou esperando o
+  // dinheiro; o locatário precisa ver que a data mudou de fato.
+  const ate = new Intl.DateTimeFormat("pt-BR", { dateStyle: "long", timeZone: "America/Fortaleza" })
+    .format(booking.endDate)
+
+  after(() =>
+    prisma.notification.createMany({
+      data: [
+        {
+          userId: booking.borrowerId,
+          type:   "EXTENSION_APPROVED",
+          title:  "Extensão confirmada",
+          body:   `As diárias extras de "${booking.item.title}" foram pagas. A devolução passa a ser ${ate}.`,
+          data:   { bookingId },
+        },
+        {
+          userId: booking.ownerId,
+          type:   "EXTENSION_APPROVED",
+          title:  "Extensão paga",
+          body:   `O locatário pagou as diárias extras de "${booking.item.title}". A devolução passa a ser ${ate}.`,
+          data:   { bookingId },
+        },
+      ],
+    }).catch((e) => console.error(`${LOG} notificação de extensão:`, e instanceof Error ? e.message : e))
+  )
+
+  console.warn(`${LOG} extensão aplicada em ${bookingId}: +${resultado.dias}d, ${resultado.valor} centavos (session ${session.id})`)
+}
+
+/**
  * Sessão de Checkout efetivamente paga. Dois gatilhos chegam aqui:
  * `checkout.session.completed` (cartão — já nasce "paid") e
  * `checkout.session.async_payment_succeeded` (Pix/boleto, ADR-028 — a sessão
@@ -60,6 +114,14 @@ async function handleCheckoutSessionPaid(session: Stripe.Checkout.Session): Prom
 
   if (session.metadata?.type === "late_fee") {
     await handleLateFeePaid(session, bookingId)
+    return
+  }
+
+  // ATOR-03 — diárias extras de uma extensão aceita. A reserva JÁ está paga:
+  // esta cobrança é do valor adicional, e é aqui que a extensão passa a valer.
+  // Sem este ramo, cairia em markRentalPaid e o `endDate` nunca se moveria.
+  if (session.metadata?.type === "extension") {
+    await handleExtensionPaid(session, bookingId)
     return
   }
 

@@ -31,6 +31,7 @@ import { Stars } from "@/components/ui/Stars"
 import { ItemCard, type ItemCardItem } from "@/components/items/ItemCard"
 import { useRentalCart, type RentalCartItem } from "@/lib/rentalCart"
 import { ResendVerificationLink } from "@/components/ui/ResendVerificationLink"
+import { getCancellationPolicyLines } from "@/lib/cancellationPolicy"
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 interface ItemDetail {
@@ -483,8 +484,11 @@ export default function ItemDetailScreen() {
   const [numDays, setNumDays]     = useState(1)
   const [note, setNote]           = useState("")
   const [coupon, setCoupon]       = useState("")
-  const [bookingError, setBookingError] = useState("")
-  const [needsVerify,  setNeedsVerify]  = useState(false)
+  const [bookingError,   setBookingError]   = useState("")
+  const [needsVerify,    setNeedsVerify]    = useState(false)
+  // needsComplete: verbatim de _PriceCalc.tsx linha 100 — ativo quando a API retorna
+  // REGISTRATION_INCOMPLETE. Exibe CTA "Completar cadastro →" inline no erro.
+  const [needsComplete,  setNeedsComplete]  = useState(false)
   const [pending, setPending]     = useState(false)
   const [success, setSuccess]     = useState(false)
 
@@ -625,6 +629,7 @@ export default function ItemDetailScreen() {
     if (!isReady || !item) return
     setBookingError("")
     setNeedsVerify(false)
+    setNeedsComplete(false)
     setPending(true)
     try {
       const res = await apiFetch<{ data: { id: string } }>("/api/bookings", {
@@ -642,8 +647,9 @@ export default function ItemDetailScreen() {
       router.push(`/reservas/${res.data.id}` as never)
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Erro ao solicitar reserva."
-      // E-mail não verificado é o único erro com ação possível aqui — o reenvio
-      // vive escondido em Perfil → Segurança e o usuário ficava sem saída.
+      // Verbatim de _PriceCalc.tsx linhas 198-201: cadastro incompleto → CTA inline.
+      if (hasErrorCode(err, "REGISTRATION_INCOMPLETE")) setNeedsComplete(true)
+      // E-mail não verificado — o reenvio vive escondido em Perfil → Segurança.
       if (hasErrorCode(err, "EMAIL_NOT_VERIFIED")) setNeedsVerify(true)
       setBookingError(msg)
     } finally {
@@ -1159,7 +1165,7 @@ export default function ItemDetailScreen() {
             <View style={[s.trustBox, { borderColor: tokens.green, backgroundColor: themeMode === "dark" ? "#0A2A1A" : "#F0FDF4" }]}>
               <Text style={[s.trustBoxTitle, { color: tokens.green }]}>🔒 Sua locação está protegida</Text>
               {[
-                "Cancelamento gratuito até 24h antes",
+                "Reembolso integral se você cancelar",
                 "Item protegido durante a locação",
                 "Suporte ShareO disponível 7 dias por semana",
               ].map((line) => (
@@ -1171,15 +1177,10 @@ export default function ItemDetailScreen() {
             </View>
 
             {/* Política de cancelamento — fonte: page.tsx linhas 637-665 +
-                lib/cancellationPolicy.ts DEFAULTS (o site também usa o export
-                estático CANCELLATION_POLICY_LINES, não a config dinâmica). */}
+                lib/cancellationPolicy.ts getCancellationPolicyLines() */}
             <View style={[s.trustBox, { borderColor: tokens.border, backgroundColor: tokens.surface }]}>
               <Text style={[s.trustBoxTitle, { color: tokens.navy }]}>Política de cancelamento</Text>
-              {[
-                { label: "Até 24h antes", detail: "reembolso total (100%)" },
-                { label: "Entre 24h e 6h antes", detail: "70% de reembolso" },
-                { label: "Menos de 6h antes", detail: "50% de reembolso" },
-              ].map((line) => (
+              {getCancellationPolicyLines().map((line) => (
                 <View key={line.label} style={s.trustBoxRow}>
                   <Text style={{ color: tokens.muted, fontSize: 13 }}>•</Text>
                   <Text style={[s.trustBoxText, { color: tokens.text }]}>
@@ -1190,10 +1191,28 @@ export default function ItemDetailScreen() {
               ))}
             </View>
 
-            {/* Erro de booking */}
+            {/* Erro de booking — verbatim de _PriceCalc.tsx linhas 470-483 */}
             {bookingError ? (
               <View style={[s.errorBox, { backgroundColor: themeMode === "dark" ? "#2A0A0A" : "#FEF2F2" }]} accessibilityRole="alert">
                 <Text style={[s.errorText, { color: tokens.error }]}>{bookingError}</Text>
+                {/* CTA de cadastro incompleto — verbatim de _PriceCalc.tsx linhas 473-479.
+                    Navega para /(auth)/completar com callbackUrl para este item,
+                    espelhando /cadastro/completar?callbackUrl=/itens/{id} do site. */}
+                {needsComplete ? (
+                  <TouchableOpacity
+                    onPress={() =>
+                      router.push(
+                        `/(auth)/completar?callback=${encodeURIComponent(`/itens/${item.id}`)}` as never,
+                      )
+                    }
+                    accessibilityRole="link"
+                    accessibilityLabel="Completar cadastro"
+                  >
+                    <Text style={[s.errorCompleteLink, { color: tokens.green }]}>
+                      Completar cadastro →
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
                 {needsVerify ? <ResendVerificationLink /> : null}
               </View>
             ) : null}
@@ -1489,6 +1508,8 @@ const s = StyleSheet.create({
   // Erro / sucesso
   errorBox:  { backgroundColor: "#FEF2F2", borderRadius: 8, padding: 12, marginBottom: 12 },
   errorText: { color: "#B91C1C", fontSize: 13 },
+  // CTA inline "Completar cadastro →" — verbatim de _PriceCalc.tsx classe "font-semibold text-brand"
+  errorCompleteLink: { fontSize: 13, fontWeight: "600", marginTop: 6 },
   successBox:{ borderWidth: 1, borderRadius: 8, padding: 12, marginBottom: 12 },
 
   // Avaliações

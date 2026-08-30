@@ -48,15 +48,17 @@ interface UpcomingReturn {
 }
 
 interface DashboardData {
-  itemCount:       number
-  totalViews:      number
-  activeBookings:  number
-  monthEarnings:   number
-  recentBookings:  RecentBooking[]
-  suggestions:     SuggestionItem[]
-  upcomingReturns: UpcomingReturn[]
-  co2Kg:           number
-  treesEquivalent: number
+  itemCount:         number
+  totalViews:        number
+  activeBookings:    number
+  monthEarnings:     number
+  recentBookings:    RecentBooking[]
+  suggestions:       SuggestionItem[]
+  upcomingReturns:   UpcomingReturn[]
+  co2Kg:             number
+  treesEquivalent:   number
+  // Verbatim de app/dashboard/page.tsx linha 154 — true quando profileCompletedAt == null
+  profileIncomplete: boolean
 }
 
 // ── BOOKING_STATUS_LABEL — verbatim de components/ui/BookingStatusBadge.tsx ──
@@ -296,6 +298,50 @@ export default function DashboardScreen() {
       </View>
 
       <View style={s.content}>
+
+        {/* ── Aviso de cadastro incompleto — verbatim de dashboard/page.tsx linhas 179-202 ──
+            Condição: profileIncomplete === true (profileCompletedAt == null no banco).
+            CTA "Completar agora" navega para a tela nativa /(auth)/completar.
+            Opcional: não bloqueia o dashboard, apenas convida a completar. ── */}
+        {data.profileIncomplete && (
+          <View
+            style={[
+              s.incompleteCard,
+              {
+                borderColor:     `${tokens.green}4D`,
+                backgroundColor: `${tokens.green}0D`,
+              },
+            ]}
+            accessibilityRole="none"
+          >
+            {/* Ícone — verbatim SVG de dashboard/page.tsx linhas 183-188 (person-add) */}
+            <View style={[s.incompleteIcon, { backgroundColor: `${tokens.green}1A` }]}>
+              <IconUser color={tokens.green} />
+            </View>
+
+            <View style={s.incompleteBody}>
+              {/* Título — verbatim de dashboard/page.tsx linha 190 */}
+              <Text style={[s.incompleteTitle, { color: tokens.navy }]}>
+                Complete seu cadastro
+              </Text>
+              {/* Subtítulo — verbatim de dashboard/page.tsx linhas 191-193 */}
+              <Text style={[s.incompleteSub, { color: tokens.muted }]}>
+                Informe CPF e endereço (ou CNPJ, se for empresa) para poder anunciar e alugar. Leva menos de 1 minuto — é opcional até você usar.
+              </Text>
+            </View>
+
+            {/* CTA — verbatim de dashboard/page.tsx linha 195-200: "Completar agora" */}
+            <TouchableOpacity
+              style={[s.incompleteBtn, { backgroundColor: tokens.green }]}
+              onPress={() => router.push("/(auth)/completar")}
+              activeOpacity={0.85}
+              accessibilityRole="link"
+              accessibilityLabel="Completar agora"
+            >
+              <Text style={s.incompleteBtnText}>Completar agora</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* ── Stats 2×2 — verbatim de dashboard/page.tsx linhas 205-226 ── */}
         <View style={s.statsGrid}>
@@ -775,6 +821,34 @@ const s = StyleSheet.create({
     paddingTop:        16,
     gap:               16,
   },
+
+  // Aviso de cadastro incompleto — verbatim de dashboard/page.tsx linhas 179-202
+  incompleteCard: {
+    borderWidth:  1,
+    borderRadius: 14,
+    padding:      16,
+    gap:          12,
+  },
+  incompleteIcon: {
+    width:          44,
+    height:         44,
+    borderRadius:   22,
+    alignItems:     "center",
+    justifyContent: "center",
+    flexShrink:     0,
+  },
+  incompleteBody:    { flex: 1 },
+  incompleteTitle:   { fontSize: 14, fontWeight: "600" },
+  incompleteSub:     { fontSize: 12, marginTop: 2, lineHeight: 17 },
+  incompleteBtn: {
+    minHeight:         44,
+    borderRadius:      10,
+    paddingHorizontal: 16,
+    alignItems:        "center",
+    justifyContent:    "center",
+    alignSelf:         "flex-start",
+  },
+  incompleteBtnText: { fontSize: 13, fontWeight: "700", color: "#FFFFFF" },
 
   // Stats grid 2×2 — verbatim de dashboard/page.tsx linhas 205-226
   statsGrid: {

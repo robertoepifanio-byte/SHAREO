@@ -17,6 +17,7 @@ import { useAuth } from "@/lib/auth"
 import { useTheme } from "@/lib/theme"
 import { formatPickupAddress } from "@/lib/ownerAddress"
 import { deriveBookingHistory } from "@/lib/bookingHistory"
+import { usePlatformConfig } from "@/lib/platformConfig"
 
 interface BookingDetail {
   id:            string
@@ -190,6 +191,9 @@ export default function BookingDetailScreen() {
   const user       = useAuth((s) => s.user)
   const { tokens, mode } = useTheme()
   const qc         = useQueryClient()
+  // Config pública da plataforma — aqui só para saber se o contrato é exigido.
+  // Default `false` enquanto carrega: na dúvida, não prometer obrigação.
+  const cfg        = usePlatformConfig()
   const [historyExpanded, setHistoryExpanded] = useState(false)
   // Painel de cancelamento — fonte: _BookingActions.tsx linhas 43-46, 118-119, 262-283
   const [cancelModalVisible, setCancelModalVisible] = useState(false)
@@ -979,10 +983,12 @@ export default function BookingDetailScreen() {
 
         {/* ── ContractBanner — assinatura de contrato digital
             Fonte: app/reservas/[id]/_ContractBanner.tsx linhas 19-126
-            Condição: isBorrower + (CONFIRMED ou ACTIVE) — page.tsx linhas 513-525
+            Condição: flag rentalContractRequired + isBorrower + (CONFIRMED ou ACTIVE).
+            🪤 A flag é o que o guard de mark_active lê. Sem ela, a tela prometia
+            "assinatura pendente" num contrato que nada exige — ver page.tsx.
             API: POST /api/bookings/${id}/contract (contract/route.ts)
         ── */}
-        {isBorrower && (booking.status === "CONFIRMED" || booking.status === "ACTIVE") && (
+        {cfg.rentalContractRequired && isBorrower && (booking.status === "CONFIRMED" || booking.status === "ACTIVE") && (
           contractSigned ? (
             /* Estado: contrato assinado — _ContractBanner.tsx linhas 29-37 */
             <View style={[s.alertBox, { borderColor: mode === "dark" ? "#5BD08B66" : "#6EE7B7", backgroundColor: mode === "dark" ? "#0A2A1A" : "#ECFDF5", marginBottom: 12 }]}>

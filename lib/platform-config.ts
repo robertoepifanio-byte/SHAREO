@@ -29,40 +29,6 @@ function intFrom(map: Record<string, string>, key: string): number {
   return parseInt(map[key] ?? "", 10)
 }
 
-// ─── Política de cancelamento ─────────────────────────────────────────────────
-
-export interface CancellationConfig {
-  fullRefundHours:    number // horas antes do início para reembolso total (default 24)
-  partialRefundHours: number // horas antes do início para reembolso parcial (default 6)
-  partialPercent:     number // percentual de reembolso na faixa do meio (default 70)
-  latePercent:        number // percentual de reembolso na faixa mais curta (default 50)
-}
-
-const DEFAULT_CANCELLATION: CancellationConfig = {
-  fullRefundHours:    24,
-  partialRefundHours: 6,
-  partialPercent:     70,
-  latePercent:        50,
-}
-
-export async function getCancellationConfig(): Promise<CancellationConfig> {
-  try {
-    const map = await loadConfig()
-    const full    = intFrom(map, "cancelationFullRefundHours")
-    const partial = intFrom(map, "cancelationPartialRefundHours")
-    const pPct    = intFrom(map, "cancelationPartialPercent")
-    const lPct    = intFrom(map, "cancelationLatePercent")
-    return {
-      fullRefundHours:    Number.isFinite(full)    ? full    : DEFAULT_CANCELLATION.fullRefundHours,
-      partialRefundHours: Number.isFinite(partial) ? partial : DEFAULT_CANCELLATION.partialRefundHours,
-      partialPercent:     Number.isFinite(pPct)    ? pPct    : DEFAULT_CANCELLATION.partialPercent,
-      latePercent:        Number.isFinite(lPct)    ? lPct    : DEFAULT_CANCELLATION.latePercent,
-    }
-  } catch {
-    return DEFAULT_CANCELLATION
-  }
-}
-
 // ─── Cupom por avaliação (P3-20) ──────────────────────────────────────────────
 
 export interface ReviewCouponConfig {
@@ -274,6 +240,41 @@ export function calcSplit(totalPrice: number, feeRate: number) {
   const ownerNetAmount    = totalPrice - platformFeeAmount
   return { platformFeeRate: feeRate, platformFeeAmount, ownerNetAmount }
 }
+
+/**
+ * Split considerando cupom de desconto (P3-20): o proprietário recebe sobre o
+ * valor BRUTO e o desconto sai da taxa da plataforma.
+ *
+ * `calcSplit` sozinha cobre só o caso sem cupom, e por isso a metade que falta
+ * — `calcSplit(total + desconto)` seguido de `max(0, taxa - desconto)` — vinha
+ * sendo recopiada: estava em 4 lugares, dois deles mostrando dinheiro na tela e
+ * um cobrando de verdade. Mudar a política do cupom exigia achar os quatro.
+ */
+export function calcSplitComDesconto(totalPrice: number, discountCents: number, feeRate: number) {
+  const bruto = calcSplit(totalPrice + discountCents, feeRate)
+  return {
+    platformFeeRate:   bruto.platformFeeRate,
+    platformFeeAmount: Math.max(0, bruto.platformFeeAmount - discountCents),
+    ownerNetAmount:    bruto.ownerNetAmount,
+  }
+}
+
+/**
+ * Expiração das cobranças AVULSAS da reserva (taxa de atraso, diárias extras
+ * de extensão): 24h, contra os 30 min do checkout da locação
+ * (STRIPE_CHECKOUT_EXPIRES_SECONDS).
+ *
+ * Prazos diferentes de propósito — o checkout da locação segura disponibilidade
+ * do item e precisa liberar rápido; uma cobrança avulsa não bloqueia nada e o
+ * usuário costuma pagar depois.
+ *
+ * 🪤 24h é o TETO DA STRIPE, não uma preferência: `expires_at` da Checkout
+ * Session tem que ficar entre 30 minutos e 24 horas da criação. O valor era 72h
+ * (copiado da cobrança de taxa de atraso, que nunca foi exercitada), e a Stripe
+ * recusava a criação da sessão — o usuário via só "Erro interno". Flagrado ao
+ * vivo em 24/08/2026, ao pagar as diárias extras de uma extensão.
+ */
+export const STRIPE_CHARGE_EXPIRES_SECONDS = 24 * 60 * 60
 
 /**
  * Taxa de atraso na devolução, em centavos. Fonte única da fórmula: é usada

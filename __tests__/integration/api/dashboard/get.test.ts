@@ -24,6 +24,7 @@ const mockItemFindMany  = jest.fn()
 const mockBookingCount     = jest.fn()
 const mockBookingAggregate = jest.fn()
 const mockBookingFindMany  = jest.fn()
+const mockUserFindUnique   = jest.fn()
 
 jest.mock("@/lib/prisma", () => ({
   prisma: {
@@ -36,6 +37,9 @@ jest.mock("@/lib/prisma", () => ({
       count:     (...args: unknown[]) => mockBookingCount(...args),
       aggregate: (...args: unknown[]) => mockBookingAggregate(...args),
       findMany:  (...args: unknown[]) => mockBookingFindMany(...args),
+    },
+    user: {
+      findUnique: (...args: unknown[]) => mockUserFindUnique(...args),
     },
   },
 }))
@@ -53,6 +57,7 @@ describe("GET /api/dashboard", () => {
     mockBookingCount.mockResolvedValue(0)
     mockBookingAggregate.mockResolvedValue({ _sum: { totalPrice: null } })
     mockBookingFindMany.mockResolvedValue([])
+    mockUserFindUnique.mockResolvedValue({ profileCompletedAt: new Date("2026-01-01") })
   })
 
   it("401 sem sessão/Bearer (resolveUserId retorna null)", async () => {
@@ -76,6 +81,7 @@ describe("GET /api/dashboard", () => {
     expect(Array.isArray(json.data.upcomingReturns)).toBe(true)
     expect(json.data.co2Kg).toBeDefined()
     expect(json.data.treesEquivalent).toBeDefined()
+    expect(typeof json.data.profileIncomplete).toBe("boolean")
   })
 
   it("escopa todas as queries por ownerId/borrowerId do usuário resolvido — não vaza dados de outro usuário", async () => {
@@ -84,5 +90,21 @@ describe("GET /api/dashboard", () => {
     expect(mockItemCount).toHaveBeenCalledWith(
       expect.objectContaining({ where: expect.objectContaining({ ownerId: "user-1" }) }),
     )
+  })
+
+  it("profileIncomplete é true quando profileCompletedAt é null", async () => {
+    mockResolveUserId.mockResolvedValueOnce("user-1")
+    mockUserFindUnique.mockResolvedValueOnce({ profileCompletedAt: null })
+    const res = await GET(makeReq({ authorization: "Bearer valid-token" }))
+    const json = await res.json()
+    expect(json.data.profileIncomplete).toBe(true)
+  })
+
+  it("profileIncomplete é false quando profileCompletedAt está preenchido", async () => {
+    mockResolveUserId.mockResolvedValueOnce("user-1")
+    mockUserFindUnique.mockResolvedValueOnce({ profileCompletedAt: new Date("2026-01-01") })
+    const res = await GET(makeReq({ authorization: "Bearer valid-token" }))
+    const json = await res.json()
+    expect(json.data.profileIncomplete).toBe(false)
   })
 })

@@ -59,7 +59,7 @@
     },
     {
       "path": "/api/cron/email-retry",
-      "schedule": "*/15 * * * *"
+      "schedule": "*/5 * * * *"
     }
   ]
 }

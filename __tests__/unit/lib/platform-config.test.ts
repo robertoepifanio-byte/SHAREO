@@ -6,7 +6,7 @@
  *  - calcLateFee (mesma fórmula do cron de atraso e dos exemplos da Central de Ajuda)
  *  - CHECKOUT_MAX_CENTS (constante de limite do MVP)
  *
- * As funções async (getPlatformFeeRate, getCancellationConfig, etc.)
+ * As funções async (getPlatformFeeRate, getPayoutWindowDays, etc.)
  * dependem de `prisma.platformConfig.findMany` e são cobertas nos testes
  * de integração — não testadas aqui para não exigir mock de Prisma.
  */

@@ -5,7 +5,7 @@ import { revalidateTag } from "next/cache"
 import { prisma } from "@/lib/prisma"
 import { assignWave, generateReferralCode } from "@/lib/founders"
 import { sendFounderWelcomeEmail } from "@/lib/email"
-import { MARKETING_CONSENT_VERSION } from "@/lib/legal-config"
+import { MARKETING_CONSENT_VERSION, KNOWN_MARKETING_CONSENT_VERSIONS } from "@/lib/legal-config"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { normalizePlace } from "@/lib/geo/normalize-place"
 import { comCors, respostaPreflight } from "@/lib/cors-campanha"
@@ -18,7 +18,15 @@ const Schema = z.object({
   name:             z.string().min(2).max(100).optional(),
   intent:           z.enum(["proprietario", "locatario", "ambos"]).default("proprietario"),
   marketingConsent: z.literal(true, { errorMap: () => ({ message: "Consentimento obrigatório" }) }),
-  consentVersion:   z.string().default(MARKETING_CONSENT_VERSION),
+  // Aceita apenas versões conhecidas — strings arbitrárias invalidariam a
+  // trilha de auditoria LGPD (não há como provar qual texto o usuário viu).
+  // Clientes desatualizados que ainda enviam "v1.1" continuam sendo aceitos
+  // (versão legada real — usada até 2026-08-07); qualquer outra string recebe
+  // 422 com code "UNKNOWN_CONSENT_VERSION". O default cobre clientes que não
+  // enviam o campo (formulário sempre omite, APK pós-PR #367 também).
+  consentVersion: z
+    .enum(KNOWN_MARKETING_CONSENT_VERSIONS)
+    .default(MARKETING_CONSENT_VERSION),
   // OPCIONAL: telefone é o campo de maior atrito numa captação, e exigi-lo
   // custaria inscrições. Mesmo formato E.164 de User.phone, para não criar um
   // segundo padrão de telefone no banco.
@@ -80,9 +88,43 @@ async function handlePost(req: NextRequest) {
     const body   = await req.json().catch(() => null)
     const parsed = Schema.safeParse(body)
     if (!parsed.success) {
+      const fieldErrors = parsed.error.flatten().fieldErrors
+      // Erro específico e visível para versão de consentimento desconhecida:
+      // facilita diagnóstico quando um cliente desatualizado envia um valor
+      // arbitrário — sem este código, o operador precisaria vasculhar os logs
+      // de validação para entender o que chegou de errado.
+      if (fieldErrors.consentVersion) {
+        const raw = typeof body === "object" && body !== null
+          ? String((body as Record<string, unknown>).consentVersion ?? "(ausente)")
+          : "(body inválido)"
+        console.warn(
+          "[POST /api/founders/leads] consentVersion desconhecida recebida:",
+          raw,
+        )
+        return NextResponse.json(
+          {
+            error: {
+              code:    "UNKNOWN_CONSENT_VERSION",
+              message: "Versão de consentimento de marketing desconhecida.",
+              // Não devolver `raw` ao cliente — evitar eco de input arbitrário.
+            },
+          },
+          { status: 422 },
+        )
+      }
       return NextResponse.json(
-        { error: { code: "VALIDATION_ERROR", details: parsed.error.flatten().fieldErrors } },
+        { error: { code: "VALIDATION_ERROR", details: fieldErrors } },
         { status: 400 },
+      )
+    }
+
+    // Aviso operacional: versão legada aceita (cliente desatualizado ainda em
+    // circulação). Não é erro, mas merece atenção caso persista após a janela
+    // de atualização dos APKs / cache do apps/campanha.
+    if (parsed.data.consentVersion !== MARKETING_CONSENT_VERSION) {
+      console.warn(
+        "[POST /api/founders/leads] consentVersion legada aceita:",
+        parsed.data.consentVersion,
       )
     }
 

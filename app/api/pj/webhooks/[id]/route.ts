@@ -1,8 +1,8 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { z } from "zod"
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { resolveUserId } from "@/lib/resolveUserId"
 import { WEBHOOK_EVENTS } from "@/lib/outboundWebhooks"
 
 type Params = { params: Promise<{ id: string }> }
@@ -13,10 +13,11 @@ const PatchSchema = z.object({
 })
 
 // PATCH — ativar/desativar ou atualizar eventos
+// Aceita Bearer JWT (app mobile) via resolveUserId — além de cookie NextAuth.
 export async function PATCH(req: NextRequest, { params }: Params) {
   try {
-    const session = await auth()
-    if (!session) {
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 },
@@ -29,7 +30,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       select: { userId: true },
     })
 
-    if (!hook || hook.userId !== session.user.id) {
+    if (!hook || hook.userId !== userId) {
       return NextResponse.json(
         { error: { code: "NOT_FOUND", message: "Webhook não encontrado." } },
         { status: 404 },
@@ -65,10 +66,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 }
 
 // DELETE — remove webhook
-export async function DELETE(_req: NextRequest, { params }: Params) {
+// Aceita Bearer JWT (app mobile) via resolveUserId — além de cookie NextAuth.
+export async function DELETE(req: NextRequest, { params }: Params) {
   try {
-    const session = await auth()
-    if (!session) {
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 },
@@ -81,7 +83,7 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
       select: { userId: true },
     })
 
-    if (!hook || hook.userId !== session.user.id) {
+    if (!hook || hook.userId !== userId) {
       return NextResponse.json(
         { error: { code: "NOT_FOUND", message: "Webhook não encontrado." } },
         { status: 404 },

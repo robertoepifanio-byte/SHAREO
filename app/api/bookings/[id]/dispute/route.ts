@@ -4,11 +4,13 @@
  * Muda o status para DISPUTED e registra o motivo e descrição.
  */
 
-import { NextResponse, after, type NextRequest } from "next/server"
+import { NextResponse, type NextRequest } from "next/server"
 import { z } from "zod"
-import { auth } from "@/lib/auth"
+import { withUser } from "@/lib/withUser"
 import { prisma } from "@/lib/prisma"
 import { isOwnStoragePhotoUrl } from "@/lib/validations/storageUrl"
+import { checkDisputeWindow } from "@/lib/disputeWindow"
+import { openDispute } from "@/lib/openDispute"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -35,13 +37,8 @@ const REASON_LABELS: Record<string, string> = {
 
 export async function POST(req: NextRequest, { params }: Params) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
-        { status: 401 },
-      )
-    }
+    const user = await withUser(req)
+    if (user instanceof NextResponse) return user
 
     const { id } = await params
     const body   = await req.json()
@@ -60,7 +57,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
 
     const { reason, description, photoUrl } = parsed.data
-    const userId = session.user.id
+    const userId = user.id
 
     const booking = await prisma.booking.findUnique({
       where:  { id },
@@ -69,6 +66,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         status:     true,
         borrowerId: true,
         ownerId:    true,
+        returnRequestedAt: true, // janela de 48h do locador — ver checagem abaixo
         item:       { select: { title: true } },
       },
     })
@@ -103,38 +101,34 @@ export async function POST(req: NextRequest, { params }: Params) {
       )
     }
 
-    const reasonLabel = REASON_LABELS[reason] ?? reason
+    // pauta-raimundo-2026-08-22, item 3 — decisão de Raimundo (25/08/2026):
+    // janela assimétrica por quem abre. Regra compartilhada com PATCH
+    // /api/bookings/:id (action=open_dispute) via lib/disputeWindow.ts.
+    const windowCheck = checkDisputeWindow(booking, { isBorrower, isOwner })
+    if (!windowCheck.ok) {
+      return NextResponse.json(
+        { error: { code: "DISPUTE_WINDOW_CLOSED", message: windowCheck.message } },
+        { status: 422 },
+      )
+    }
+
+    const reasonLabel  = REASON_LABELS[reason] ?? reason
     const cancelReason = `[Disputa] ${reasonLabel}: ${description}`
 
-    const updated = await prisma.booking.update({
-      where: { id },
-      data:  {
-        status:       "DISPUTED",
-        cancelReason: cancelReason,
-      },
-      select: { id: true, status: true, updatedAt: true },
+    // Mutação + notificação compartilhadas com PATCH /api/bookings/:id
+    // (action=open_dispute) via lib/openDispute.ts — achado de altitude da
+    // revisão /simplify (pauta-raimundo-2026-08-22 item 3): as duas rotas
+    // tinham cada uma sua própria cópia dessa lógica.
+    const updated = await openDispute({
+      bookingId:    id,
+      cancelReason,
+      isOwner,
+      ownerId:      booking.ownerId,
+      borrowerId:   booking.borrowerId,
+      itemTitle:    booking.item.title,
+      reasonLabel,
+      photoUrl,
     })
-
-    // Notifica a outra parte.
-    //
-    // 🪤 `notifyRole` descrevia QUEM RECEBE, mas o texto usa como QUEM ABRIU —
-    // então o destinatário lia "O locatário abriu uma disputa" quando ele mesmo
-    // era o locatário. Os dois papéis são opostos: quem recebe é o outro lado de
-    // quem agiu. Nomes explícitos para não voltar a confundir.
-    const notifyUserId  = isOwner ? booking.borrowerId : booking.ownerId
-    const papelDeQuemAbriu = isOwner ? "locador" : "locatário"
-
-    after(() =>
-      prisma.notification.create({
-        data: {
-          userId: notifyUserId,
-          type:   "BOOKING_CANCELLED", // reutiliza tipo existente; o body indica disputa
-          title:  "Disputa aberta",
-          body:   `O ${papelDeQuemAbriu} abriu uma disputa em "${booking.item.title}": ${reasonLabel}.`,
-          data:   { bookingId: id, photoUrl: photoUrl ?? null },
-        },
-      }).catch((e) => console.error("[dispute] notification:", e instanceof Error ? e.message : e))
-    )
 
     return NextResponse.json({ data: updated }, { status: 200 })
   } catch (e) {

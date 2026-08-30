@@ -97,24 +97,25 @@ export default async function BookingSuccessPage({ searchParams }: Props) {
             </p>
           </div>
 
-          {/* P1-25 — Próximos passos */}
+          {/*
+            P1-25 — Próximos passos. Não lista "aguardar confirmação do
+            proprietário": pagamento só é permitido com booking.status já
+            CONFIRMED (app/api/payments/checkout/route.ts) — quem chega nesta
+            tela sempre já teve a solicitação aceita antes de pagar. Um passo
+            "aguarde a confirmação" aqui descreveria algo que já aconteceu
+            (achado ao vivo em 29/08/2026, reserva #392-thy).
+          */}
           <div className="mb-6 rounded-xl border border-border bg-surface p-5">
             <p className="mb-3 text-sm font-bold text-foreground">Próximos passos</p>
             <ol className="space-y-3" aria-label="Próximos passos para sua locação">
               <li className="flex items-start gap-3 text-sm">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white" aria-hidden="true">1</span>
                 <span className="text-muted-foreground">
-                  <strong className="text-foreground">Aguarde a confirmação</strong> — o proprietário tem até 12h para aceitar sua solicitação.
-                </span>
-              </li>
-              <li className="flex items-start gap-3 text-sm">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white" aria-hidden="true">2</span>
-                <span className="text-muted-foreground">
                   <strong className="text-foreground">Combine a retirada</strong> — use o chat para acertar o local e horário de entrega com o proprietário.
                 </span>
               </li>
               <li className="flex items-start gap-3 text-sm">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white" aria-hidden="true">3</span>
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-bold text-white" aria-hidden="true">2</span>
                 <span className="text-muted-foreground">
                   <strong className="text-foreground">Aproveite e avalie</strong> — após devolver o item, deixe uma avaliação e ajude a comunidade ShareO.
                 </span>

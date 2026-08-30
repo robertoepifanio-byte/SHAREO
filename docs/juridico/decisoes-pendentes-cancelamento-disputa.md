@@ -2,7 +2,7 @@
 
 **Contexto:** auditoria de pagamento de 21/08/2026 (o relatório completo entra no repositório junto com o PR da Central de Ajuda do app — `docs/auditorias/auditoria-pagamento-stripe-2026-08-21.md`). Das 5 decisões levantadas, três foram resolvidas em 22/08; estas duas dependem de definição com o Raimundo, porque as duas escolhem entre *mudar o texto* e *mudar o código*, em documentos contratuais publicados.
 
-⚠️ **Restrição que afeta a Decisão A:** o código **não emite estorno**. `refunds.create` não existe no repositório — o reembolso é calculado e gravado, mas alguém precisa executá-lo no Dashboard da Stripe. Qualquer decisão sobre percentual de reembolso herda esse gargalo manual.
+✅ **Restrição resolvida em 25/08/2026:** o código agora emite o estorno sozinho. `emitCancellationRefund` (`lib/payments/refund.ts`) chama `stripe.refunds.create` a partir de `PATCH /api/bookings/:id` (action=cancel) sempre que há valor a devolver — decisão de Raimundo no item 1 de `pauta-raimundo-2026-08-22.md`. Isso NÃO resolve a Decisão A abaixo (qual percentual aplicar quando quem cancela é o locador) — só remove o gargalo manual de execução, qualquer que seja o percentual decidido.
 
 ---
 
@@ -45,6 +45,10 @@ A função recebe **quatro** argumentos e **nenhum deles diz quem cancelou**. El
 ### Recomendação
 
 **A1.** A promessa é justa e barata de implementar. O ponto que exige decisão de vocês não é *se* implementa, é **quem arca com a taxa de serviço** quando o locador cancela.
+
+### ✅ Decisão (Raimundo, 25/08/2026)
+
+A1, com resposta ao "quem arca": híbrido por quem cancela. Locador cancela → locatário recebe 100%, a ShareO abre mão da comissão e o locador não recebe repasse. Locatário cancela → mesma coisa, mas ele absorve a taxa REAL da Stripe (não estimada) sobre a cobrança original. `calcRefund` não recebe mais antecedência — recebe `canceledBy`. Implementado em `lib/cancellationPolicy.ts`.
 
 ---
 
@@ -90,6 +94,16 @@ Isso interage com o repasse: o cron ignora reservas em `DISPUTED`, então uma di
 **B1 + B2**, nessa ordem. Primeiro alinhar os documentos (é contradição publicada, corrige rápido), depois implementar a janela.
 
 Sobre o prazo: sugiro **5 dias úteis**, que é o que as Políticas — o documento contratual — já dizem, e é mais realista para o atendimento atual.
+
+### ✅ Decisão (Raimundo, 25/08/2026)
+
+B1: **5 dias úteis**, em ambos os casos — Central de Ajuda precisa corrigir de 3 para 5.
+
+B2: sim, mas a janela é **assimétrica por quem abre**, não uma única regra de 48h:
+- Locador: só entre a devolução (`mark_returned`) e 48h depois.
+- Locatário: só entre a retirada (`mark_active`) e o prazo de devolução — durante a locação ativa.
+
+Pendente de implementação: `TRANSITIONS.open_dispute` em `app/api/bookings/[id]/route.ts` precisa diferenciar a checagem por `isOwner`/`isBorrower`, hoje é uma faixa `ACTIVE|RETURNED` única para os dois lados sem checagem de prazo nenhuma.
 
 ---
 

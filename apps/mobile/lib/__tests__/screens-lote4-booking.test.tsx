@@ -65,6 +65,26 @@ jest.mock("expo-router", () => ({
   useSegments:          () => [],
 }))
 
+// O banner de contrato passou a depender da flag que o guard de mark_active
+// lê (ATOR: a tela prometia "assinatura pendente" num contrato que nada exige).
+// `mockContratoExigido` é mutável para os testes exercitarem os DOIS lados.
+let mockContratoExigido = true
+jest.mock("@/lib/platformConfig", () => {
+  const real = jest.requireActual("@/lib/platformConfig")
+  return {
+    ...real,
+    // Lido DENTRO da função, não na avaliação do factory — senão congelaria o
+    // valor inicial (TDZ/hoisting do jest.mock).
+    usePlatformConfig: () => ({
+      feeRateBps: 1500,
+      payoutWindowDays: 3,
+      checkoutMaxCents: 50_000,
+      ownerHours: 48,
+      rentalContractRequired: mockContratoExigido,
+    }),
+  }
+})
+
 jest.mock("expo-image-picker", () => ({
   requestMediaLibraryPermissionsAsync: jest.fn().mockResolvedValue({ status: "denied", granted: false }),
   requestCameraPermissionsAsync:       jest.fn().mockResolvedValue({ status: "denied", granted: false }),
@@ -237,8 +257,11 @@ describe("Modal de cancelamento — rótulos verbatim (_BookingActions.tsx linha
 // ── ContractBanner — pendente ─────────────────────────────────────────────────
 
 describe("ContractBanner — assinatura pendente (_ContractBanner.tsx linhas 49-68)", () => {
-  // isBorrower + CONFIRMED + contractSignedAt = null
-  beforeEach(() => setApiFetch({ status: "CONFIRMED", contractSignedAt: null }))
+  // isBorrower + CONFIRMED + contractSignedAt = null, COM o contrato exigido
+  beforeEach(() => {
+    mockContratoExigido = true
+    setApiFetch({ status: "CONFIRMED", contractSignedAt: null })
+  })
 
   it("exibe 'Assinatura do contrato pendente' — verbatim linha 1002", async () => {
     wrap(<BookingDetailScreen />)
@@ -271,10 +294,13 @@ describe("ContractBanner — assinatura pendente (_ContractBanner.tsx linhas 49-
 
 describe("ContractBanner — contrato assinado (_ContractBanner.tsx linhas 29-37)", () => {
   // contractSignedAt preenchido → contractSigned = true
-  beforeEach(() => setApiFetch({
-    status:           "CONFIRMED",
-    contractSignedAt: "2026-07-04T10:00:00Z",
-  }))
+  beforeEach(() => {
+    mockContratoExigido = true
+    setApiFetch({
+      status:           "CONFIRMED",
+      contractSignedAt: "2026-07-04T10:00:00Z",
+    })
+  })
 
   it("exibe 'Contrato assinado digitalmente.' — verbatim linha 992", async () => {
     wrap(<BookingDetailScreen />)
@@ -290,6 +316,31 @@ describe("ContractBanner — contrato assinado (_ContractBanner.tsx linhas 29-37
     await waitFor(() =>
       expect(screen.getByText("Ambas as partes estão protegidas.")).toBeTruthy()
     )
+  })
+})
+
+// ── ContractBanner — flag DESLIGADA ──────────────────────────────────────────
+
+describe("🪤 ContractBanner com o contrato NÃO exigido", () => {
+  // O defeito, visto ao vivo em 24/08: uma reserva já paga e com o item já
+  // retirado exibia "Assinatura do contrato pendente". A flag
+  // rentalContractAcceptanceEnabled está OFF (default, gated D4), então o guard
+  // de mark_active deixa retirar sem contrato — e a tela prometia o contrário.
+  beforeEach(() => {
+    mockContratoExigido = false
+    setApiFetch({ status: "CONFIRMED", contractSignedAt: null })
+  })
+
+  it("NÃO exibe 'Assinatura do contrato pendente'", async () => {
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Confirmada")
+    expect(screen.queryByText("Assinatura do contrato pendente")).toBeNull()
+  })
+
+  it("NÃO oferece o botão de assinar", async () => {
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Confirmada")
+    expect(screen.queryByText("📝 Ler e assinar contrato")).toBeNull()
   })
 })
 
