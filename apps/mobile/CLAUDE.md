@@ -7,6 +7,7 @@
 3. PR mobile inclui tabela de auditoria componente/tela → arquivo-fonte na descrição.
 4. Testes RNTL fixam os rótulos exatos (rótulo inventado = CI quebra).
 5. Na dúvida entre "padrão nativo" e "copiar o site mobile": **copiar o site**.
+6. **Todo componente do site com xará em `apps/mobile/components/` é comparado pelo `__tests__/unit/paridade-site-app.test.ts`** — texto visível do site que sumir no app quebra a CI. Divergência deliberada vai em `DIVERGENCIAS_CONHECIDAS` **com motivo escrito**; o teste reprova motivo curto e reprova exceção que já foi resolvida.
 
 Spec visual aprovada: `docs/design/mobile-app-prototipo-v1.html` + `docs/design/mobile-app-handoff.md` (rastreabilidade frame→fonte). Fundação do design system do app: `apps/mobile/lib/theme.tsx` (tokens light/dark transcritos de `app/globals.css`) + `apps/mobile/components/ui|layout/`.
 

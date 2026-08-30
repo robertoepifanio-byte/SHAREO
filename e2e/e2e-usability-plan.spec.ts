@@ -97,20 +97,19 @@ test.describe('Plano E2E Usabilidade — ShareO', () => {
           await expect(emailInput, 'Campo email deve estar visível').toBeVisible({ timeout: 10_000 })
           await expect(senhaInput, 'Campo senha deve estar visível').toBeVisible()
 
-          await emailInput.fill('usuario.invalido@naoexiste.com')
-          await senhaInput.fill('senhaErrada123')
-
-          const [response] = await Promise.all([
-            page.waitForResponse(
-              (r) => r.url().includes('/api/auth/callback/credentials'),
-              { timeout: 20_000 },
-            ),
-            page.getByRole('button', { name: /entrar/i }).click(),
-          ])
-
-          // Aguarda a mensagem de erro aparecer no formulário
+          // 🪤 LoginForm é client component e a página abre com `domcontentloaded`: um clique
+          // antes da hidratação não encontra o onSubmit, então o browser faz o submit NATIVO
+          // do <form> (GET /login?), recarrega a tela com os campos vazios e o signIn nunca
+          // sai — a espera por /api/auth/callback/credentials estourava 20s sem nunca existir.
+          // Refazer preenchimento + clique é idempotente; sincronizar pelo alerta, não pela
+          // resposta HTTP. Mesmo padrão de e2e/e2e-auth-plan.spec.ts.
           const errorAlert = page.locator('form [role="alert"]')
-          await expect(errorAlert).toBeVisible({ timeout: 10_000 })
+          await expect(async () => {
+            await emailInput.fill('usuario.invalido@naoexiste.com')
+            await senhaInput.fill('senhaErrada123')
+            await page.getByRole('button', { name: /entrar/i }).click()
+            await expect(errorAlert).toBeVisible({ timeout: 5_000 })
+          }).toPass({ timeout: 30_000 })
 
           const errorText = (await errorAlert.textContent()) ?? ''
           expect(errorText.trim().length, 'Mensagem de erro deve ter conteúdo').toBeGreaterThan(0)

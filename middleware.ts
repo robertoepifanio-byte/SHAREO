@@ -115,6 +115,16 @@ export async function middleware(req: NextRequest) {
 
   const { pathname } = req.nextUrl
 
+  // SEC-CRIT-E2E: rotas /api/test/* existem apenas para suíte E2E.
+  // Quando E2E_BYPASS_DISABLED=true (injetado só no build de produção — ver
+  // deploy.yml, job "production"), devolvemos 404 antes de qualquer handler.
+  // Sinal escolhido: E2E_BYPASS_DISABLED, não VERCEL_ENV — staging também roda
+  // "vercel build --prod" (VERCEL_ENV="production"), então VERCEL_ENV não
+  // distingue os dois ambientes com segurança.
+  if (pathname.startsWith("/api/test/") && process.env.E2E_BYPASS_DISABLED === "true") {
+    return NextResponse.json({ error: "Not found" }, { status: 404 })
+  }
+
   const isAdminRoute     = ADMIN_PREFIXES.some((p) => pathname.startsWith(p))
   // /perfil is protected but /perfil/[id] (public profile) is public
   const isProtectedRoute = PROTECTED_PREFIXES.some((p) =>

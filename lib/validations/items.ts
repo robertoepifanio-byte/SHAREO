@@ -19,15 +19,16 @@ export const CreateItemSchema = z.object({
   pricePerWeek:  z.number().int().min(0).nullable().optional(),
   pricePerMonth: z.number().int().min(0).nullable().optional(),
   depositAmount:        z.number().int().min(0).nullable().optional(),
-  // Teto da fase inicial, publicado em /ajuda. Só na CRIAÇÃO — ver
-  // UpdateItemSchema abaixo para o porquê de a edição não herdar isto.
+  // Teto da fase inicial, publicado em /ajuda. Obrigatório na CRIAÇÃO desde
+  // 25/08/2026 (pauta-raimundo-2026-08-22, item 4b) — opcional antes disso
+  // deixava o teto contornável por quem simplesmente não preenchia o campo.
+  // Só na CRIAÇÃO — ver UpdateItemSchema abaixo para o porquê de a edição não
+  // herdar isto.
   estimatedRetailPrice: z
     .number()
     .int()
-    .min(0)
-    .max(MAX_ITEM_VALUE_CENTS, `Nesta fase, o valor estimado do item não pode passar de ${formatPriceShort(MAX_ITEM_VALUE_CENTS)}`)
-    .nullable()
-    .optional(),
+    .min(1, "Informe o valor estimado do item")
+    .max(MAX_ITEM_VALUE_CENTS, `Nesta fase, o valor estimado do item não pode passar de ${formatPriceShort(MAX_ITEM_VALUE_CENTS)} — itens de maior valor serão aceitos numa fase futura`),
   address:       z.string().max(200).optional().or(z.literal("")).transform(v => v || undefined),
   city:          z.string().min(2, "Cidade obrigatória").max(100),
   state:         z.enum(BR_STATES, { errorMap: () => ({ message: "Estado inválido" }) }),

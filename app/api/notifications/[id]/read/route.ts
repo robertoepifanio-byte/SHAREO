@@ -1,25 +1,20 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { withUser } from "@/lib/withUser"
 import { prisma } from "@/lib/prisma"
 
 type Params = { params: Promise<{ id: string }> }
 
-export async function PATCH(_req: NextRequest, { params }: Params) {
+export async function PATCH(req: NextRequest, { params }: Params) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
-        { status: 401 },
-      )
-    }
+    const user = await withUser(req)
+    if (user instanceof NextResponse) return user
 
     const { id } = await params
 
     // updateMany com userId no where garante que ninguém marca notificação alheia
     await prisma.notification.updateMany({
-      where: { id, userId: session.user.id, readAt: null },
+      where: { id, userId: user.id, readAt: null },
       data:  { readAt: new Date() },
     })
 

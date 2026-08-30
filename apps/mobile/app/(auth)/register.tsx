@@ -28,10 +28,7 @@ import Svg, { Path, Circle, Polyline } from "react-native-svg"
 import { useAuth } from "@/lib/auth"
 import { useTheme, type Tokens } from "@/lib/theme"
 import { API_URL } from "@/lib/api"
-
-// lib/legal-config.ts (site) — não importável do app mobile (pacote separado)
-const CONSENT_VERSION = "v1.1"
-const DPO_EMAIL = "privacidade@shareo.com.br"
+import { CONSENT_VERSION, DPO_EMAIL } from "@/lib/legalConfig"
 
 interface FormErrors {
   name?: string

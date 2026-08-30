@@ -2,7 +2,7 @@ import fs from 'fs'
 import { test, expect, type Page } from '@playwright/test'
 import { SESSION_PATHS } from './fixtures/test-credentials'
 import { TEST_ITEM_PATH, TEST_BOOKING_PATH, TEST_LIFECYCLE_PATH } from './fixtures/test-paths'
-import { enviarFotoDevolucao } from './_support'
+import { enviarFotoDevolucao, markBookingPaidForTest } from './_support'
 
 const hasLocatarioSession    = fs.existsSync(SESSION_PATHS.locatario)
 const hasProprietarioSession = fs.existsSync(SESSION_PATHS.proprietario)
@@ -167,6 +167,7 @@ test.describe('smoke #6 — ciclo completo PENDING→CONFIRMED→ACTIVE→RETURN
       const pickupToken = detail.pickupToken
       expect(pickupToken).toBeTruthy() // gerado no confirm
 
+      await markBookingPaidForTest(prop.request, bookingId)
       const activeRes = await prop.request.patch(`/api/bookings/${bookingId}`, { data: { action: 'mark_active', pickupToken } })
       if (!activeRes.ok()) console.error(`  [mark_active] ${activeRes.status()}:`, JSON.stringify(await activeRes.json().catch(() => ({}))))
       expect(activeRes.ok()).toBeTruthy()

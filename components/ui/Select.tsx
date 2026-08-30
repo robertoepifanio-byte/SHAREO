@@ -44,6 +44,7 @@ export function Select({
             "h-11 w-full appearance-none rounded-md border bg-surface px-3 pr-10 text-sm text-foreground",
             "cursor-pointer transition-colors duration-fast outline-none",
             "focus:border-ring focus:ring-2 focus:ring-ring/20",
+            "disabled:cursor-not-allowed disabled:opacity-60",
             error
               ? "border-destructive focus:border-destructive focus:ring-destructive/20"
               : "border-input",

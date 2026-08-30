@@ -2,6 +2,14 @@
  * GET /api/items/[id]/availability
  * Retorna array de datas ocupadas ("YYYY-MM-DD") para o item.
  * Considera reservas com status CONFIRMED, ACTIVE, RETURNED ou COMPLETED.
+ *
+ * 🪤 Devolução antecipada: o campo `endDate` é a data PLANEJADA da locação e não
+ * muda quando o locatário devolve antes do prazo — só `returnRequestedAt` (gravado
+ * no mark_returned, quando o item volta fisicamente às mãos do locador) reflete
+ * isso. Sem considerar esse campo, os dias entre a devolução real e o `endDate`
+ * original continuavam marcados como ocupados na agenda, mesmo já estando livres
+ * para nova locação (findOverlappingItem, que decide de verdade, só bloqueia
+ * CONFIRMED/ACTIVE — RETURNED nunca bloqueou a criação, só a exibição mentia).
  */
 
 import { NextResponse, type NextRequest } from "next/server"
@@ -45,7 +53,11 @@ export async function GET(_req: NextRequest, { params }: Params) {
           endDate:   { gte: today },
         },
       },
-      select: { booking: { select: { startDate: true, endDate: true } } },
+      select: {
+        booking: {
+          select: { startDate: true, endDate: true, status: true, returnRequestedAt: true },
+        },
+      },
     })
     const bookings = occupiedRows.map((r) => r.booking)
 
@@ -53,16 +65,25 @@ export async function GET(_req: NextRequest, { params }: Params) {
     const occupied: string[] = []
 
     for (const b of bookings) {
+      // Devolvido (RETURNED/COMPLETED) com devolução antecipada: a ocupação real
+      // termina em returnRequestedAt, não no endDate planejado.
+      const isReturned  = b.status === "RETURNED" || b.status === "COMPLETED"
+      const effectiveEnd = isReturned && b.returnRequestedAt ? b.returnRequestedAt : b.endDate
+
+      // UTC, não local: a chave abaixo vem de toISOString() (sempre UTC). Truncar com
+      // setHours (local) e comparar com uma chave gerada em UTC descasa em qualquer
+      // timezone negativo (ex.: BRT) — um booking podia perder ou ganhar um dia nas
+      // pontas. Mesma classe de bug de feedback-new-date-string-sem-fuso.
       const start = new Date(b.startDate)
-      const end   = new Date(b.endDate)
-      start.setHours(0, 0, 0, 0)
-      end.setHours(0, 0, 0, 0)
+      const end   = new Date(effectiveEnd)
+      start.setUTCHours(0, 0, 0, 0)
+      end.setUTCHours(0, 0, 0, 0)
 
       const cur = new Date(start)
       while (cur <= end) {
         const key = cur.toISOString().slice(0, 10) // "YYYY-MM-DD"
         if (!occupied.includes(key)) occupied.push(key)
-        cur.setDate(cur.getDate() + 1)
+        cur.setUTCDate(cur.getUTCDate() + 1)
       }
     }
 

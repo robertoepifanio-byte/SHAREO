@@ -35,6 +35,7 @@ export function Input({ label, error, helper, suffix, className = "", ...props }
             "placeholder:text-muted-foreground",
             "transition-colors duration-fast outline-none",
             "focus:border-ring focus:ring-2 focus:ring-ring/20",
+            "disabled:cursor-not-allowed disabled:opacity-60",
             error
               ? "border-destructive focus:border-destructive focus:ring-destructive/20"
               : "border-input",

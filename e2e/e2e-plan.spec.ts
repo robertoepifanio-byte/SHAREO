@@ -205,6 +205,7 @@ test('Plano E2E Completo — Registro · Login · CRUD item · Logout', async ({
           categoryId:  categories[0].id,
           condition:   'GOOD',
           pricePerDay: 3000,
+          estimatedRetailPrice: 60_000,
           city:        'Natal',
           state:       'RN',
           latitude:    -5.7945,

@@ -44,6 +44,7 @@ import Svg, { Path, Circle, Line, Rect, Polyline } from "react-native-svg"
 import { apiFetch, API_URL, getTokens } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
 import { useTheme, type Tokens } from "@/lib/theme"
+import { ScreenHeader } from "@/components/layout/ScreenHeader"
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -428,18 +429,7 @@ export default function AnunciarScreen() {
   return (
     <View style={[s.root, { backgroundColor: tokens.bg }]}>
 
-      {/* ── Header ── */}
-      <View style={[s.header, { paddingTop: insets.top + 8, backgroundColor: tokens.surface, borderBottomColor: tokens.border }]}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          accessibilityLabel="Voltar"
-          accessibilityRole="button"
-          style={s.backBtn}
-        >
-          <Text style={[s.backArrow, { color: tokens.muted }]}>‹</Text>
-        </TouchableOpacity>
-        <Text style={[s.headerTitle, { color: tokens.navy }]}>Anunciar item</Text>
-      </View>
+      <ScreenHeader title="Anunciar item" />
 
       <ScrollView style={s.scroll} contentContainerStyle={[s.content, { paddingBottom: 120 }]}>
 
@@ -1024,14 +1014,6 @@ function makeStyles(tokens: Tokens) {
     lockTitle:{ marginTop: 12, fontSize: 16, fontWeight: "600", color: tokens.navy, textAlign: "center" },
     loginBtn: { marginTop: 24, backgroundColor: tokens.green, paddingHorizontal: 32, paddingVertical: 12, borderRadius: 12 },
     loginBtnText: { color: "#FFFFFF", fontWeight: "700", fontSize: 15 },
-
-    header: {
-      flexDirection: "row", alignItems: "center", gap: 12,
-      borderBottomWidth: 1, paddingHorizontal: 16, paddingBottom: 12,
-    },
-    backBtn:     { minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" },
-    backArrow:   { fontSize: 28 },
-    headerTitle: { flex: 1, fontSize: 18, fontWeight: "700" },
 
     scroll:   { flex: 1 },
     content:  { padding: 16, gap: 12 },

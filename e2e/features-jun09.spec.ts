@@ -37,6 +37,7 @@ import fs from 'fs'
 import { test, expect } from '@playwright/test'
 import { SESSION_PATHS } from './fixtures/test-credentials'
 import { TEST_ITEM_PATH } from './fixtures/test-paths'
+import { markBookingPaidForTest } from './_support'
 
 const hasLocatarioSession    = fs.existsSync(SESSION_PATHS.locatario)
 const hasProprietarioSession = fs.existsSync(SESSION_PATHS.proprietario)
@@ -97,12 +98,39 @@ test.describe('token de retirada — mark_active', () => {
     'Requer session-locatario.json, session-proprietario.json e test-item-id.json',
   )
 
+  test('0. mark_active sem pagamento retorna 402 PAYMENT_REQUIRED', async ({ browser }) => {
+    // Cobre o guard adicionado em 2026-08-24: impede retirada sem pagamento confirmado.
+    // Sem este teste, a regressão seria invisível — todos os outros testes chamam
+    // markBookingPaidForTest antes do mark_active.
+    const { itemId } = JSON.parse(fs.readFileSync(TEST_ITEM_PATH, 'utf-8')) as { itemId: string }
+    const locCtx  = await browser.newContext({ storageState: SESSION_PATHS.locatario })
+    const propCtx = await browser.newContext({ storageState: SESSION_PATHS.proprietario })
+    try {
+      const { bookingId, pickupToken } = await createConfirmedBooking(locCtx.request, propCtx.request, itemId)
+      // NÃO chama markBookingPaidForTest — reserva está em PENDING_PAYMENT
+
+      const res = await propCtx.request.patch(`/api/bookings/${bookingId}`, {
+        data: { action: 'mark_active', pickupToken },
+      })
+      expect(res.status(), 'mark_active sem pagamento deve retornar 402').toBe(402)
+      const body = await res.json() as { error: { code: string } }
+      expect(body.error.code).toBe('PAYMENT_REQUIRED')
+
+      // cleanup
+      await locCtx.request.patch(`/api/bookings/${bookingId}`, { data: { action: 'cancel', reason: 'cleanup E2E guard 402' } })
+    } finally {
+      await locCtx.close(); await propCtx.close()
+    }
+  })
+
   test('1. mark_active sem token retorna 400 TOKEN_REQUIRED', async ({ browser }) => {
     const { itemId } = JSON.parse(fs.readFileSync(TEST_ITEM_PATH, 'utf-8')) as { itemId: string }
     const locCtx  = await browser.newContext({ storageState: SESSION_PATHS.locatario })
     const propCtx = await browser.newContext({ storageState: SESSION_PATHS.proprietario })
     try {
       const { bookingId } = await createConfirmedBooking(locCtx.request, propCtx.request, itemId)
+      // Precisa estar PAID para que o guard de pagamento não mascare o erro testado (TOKEN_REQUIRED)
+      await markBookingPaidForTest(propCtx.request, bookingId)
 
       const res = await propCtx.request.patch(`/api/bookings/${bookingId}`, {
         data: { action: 'mark_active' },
@@ -125,6 +153,8 @@ test.describe('token de retirada — mark_active', () => {
     try {
       const { bookingId, pickupToken } = await createConfirmedBooking(locCtx.request, propCtx.request, itemId)
       const wrongToken = pickupToken === '123456' ? '654321' : '123456'
+      // Precisa estar PAID para que o guard de pagamento não mascare o erro testado (TOKEN_INVALID)
+      await markBookingPaidForTest(propCtx.request, bookingId)
 
       const res = await propCtx.request.patch(`/api/bookings/${bookingId}`, {
         data: { action: 'mark_active', pickupToken: wrongToken },
@@ -145,6 +175,7 @@ test.describe('token de retirada — mark_active', () => {
     const propCtx = await browser.newContext({ storageState: SESSION_PATHS.proprietario })
     try {
       const { bookingId, pickupToken } = await createConfirmedBooking(locCtx.request, propCtx.request, itemId)
+      await markBookingPaidForTest(propCtx.request, bookingId)
 
       const before = Date.now()
       const res = await propCtx.request.patch(`/api/bookings/${bookingId}`, {
@@ -171,6 +202,7 @@ test.describe('token de retirada — mark_active', () => {
     const propCtx = await browser.newContext({ storageState: SESSION_PATHS.proprietario })
     try {
       const { bookingId, pickupToken } = await createConfirmedBooking(locCtx.request, propCtx.request, itemId)
+      await markBookingPaidForTest(propCtx.request, bookingId)
 
       // Primeira ativação — deve funcionar
       const first = await propCtx.request.patch(`/api/bookings/${bookingId}`, {
@@ -179,6 +211,8 @@ test.describe('token de retirada — mark_active', () => {
       expect(first.ok()).toBeTruthy()
 
       // Segunda tentativa com o mesmo token
+      // (o booking já está ACTIVE → bate em INVALID_TRANSITION antes de chegar
+      //  no guard de pagamento; não precisa de segundo markBookingPaidForTest)
       const second = await propCtx.request.patch(`/api/bookings/${bookingId}`, {
         data: { action: 'mark_active', pickupToken },
       })
@@ -205,6 +239,8 @@ test.describe('actualTime — validação de horário', () => {
     try {
       const { bookingId, pickupToken } = await createConfirmedBooking(locCtx.request, propCtx.request, itemId)
       const futureTime = new Date(Date.now() + 60 * 60 * 1000).toISOString() // +1h
+      // Precisa estar PAID para que o guard de pagamento não mascare o erro testado (VALIDATION_ERROR de actualTime)
+      await markBookingPaidForTest(propCtx.request, bookingId)
 
       const res = await propCtx.request.patch(`/api/bookings/${bookingId}`, {
         data: { action: 'mark_active', pickupToken, actualTime: futureTime },
@@ -223,7 +259,8 @@ test.describe('actualTime — validação de horário', () => {
     const propCtx = await browser.newContext({ storageState: SESSION_PATHS.proprietario })
     try {
       const { bookingId, pickupToken } = await createConfirmedBooking(locCtx.request, propCtx.request, itemId)
-      // Ativa primeiro
+      // Ativa primeiro (setup para testar mark_returned com futureTime)
+      await markBookingPaidForTest(propCtx.request, bookingId)
       const activeRes = await propCtx.request.patch(`/api/bookings/${bookingId}`, { data: { action: 'mark_active', pickupToken } })
       expect(activeRes.ok(), `mark_active falhou: ${activeRes.status()}`).toBeTruthy()
 
@@ -244,6 +281,7 @@ test.describe('actualTime — validação de horário', () => {
     try {
       const { bookingId, pickupToken } = await createConfirmedBooking(locCtx.request, propCtx.request, itemId)
       const pastTime = new Date(Date.now() - 30 * 60 * 1000).toISOString() // -30min
+      await markBookingPaidForTest(propCtx.request, bookingId)
 
       const res = await propCtx.request.patch(`/api/bookings/${bookingId}`, {
         data: { action: 'mark_active', pickupToken, actualTime: pastTime },

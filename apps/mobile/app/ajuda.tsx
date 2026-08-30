@@ -13,9 +13,9 @@ import {
   Platform,
 } from "react-native"
 import { router, useLocalSearchParams } from "expo-router"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
 import Svg, { Path } from "react-native-svg"
 import { useTheme, type Tokens } from "@/lib/theme"
+import { ScreenHeader } from "@/components/layout/ScreenHeader"
 import { API_URL } from "@/lib/api"
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
@@ -46,12 +46,6 @@ export interface PublicConfig {
   checkoutMaxCents:  number
   ownerHours:        number
   lateFeeMultiplier: number
-  cancel: {
-    fullRefundHours:    number
-    partialRefundHours: number
-    partialPercent:     number
-    latePercent:        number
-  }
 }
 
 /** Defaults idênticos aos de lib/platform-config.ts — valem só até o fetch voltar. */
@@ -61,7 +55,6 @@ export const DEFAULT_CONFIG: PublicConfig = {
   checkoutMaxCents:  50_000,
   ownerHours:        48,
   lateFeeMultiplier: 1.5,
-  cancel: { fullRefundHours: 24, partialRefundHours: 6, partialPercent: 70, latePercent: 50 },
 }
 
 /**
@@ -180,7 +173,7 @@ export function buildLocadorSteps(v: HelpVars): Step[] { return [
   {
     step: 6, icon: "💰", title: "Receber a devolução e o pagamento",
     desc: `No horário combinado (mesmo horário da retirada), receba o item de volta. Use a opção 'Registrar fotos de check-out' e compare com as fotos do check-in. Se tudo estiver ok, confirme a devolução. O valor líquido entra na fila de repasse e fica disponível ${v.payoutLabel} depois. Avalie o locatário após cada devolução.`,
-    example: `Locação: R$ 120/dia × 2 dias = ${brl(24000)}. Taxa de plataforma (${v.feeLabel}) = ${brl(splitExemplo(24000, v.feeRateBps).fee)}. Você recebe ${brl(splitExemplo(24000, v.feeRateBps).net)}, ${v.payoutLabel} após a confirmação da devolução.`,
+    example: `1ª locação: R$ 120/dia × 2 dias = ${brl(24000)}. Taxa de plataforma (${v.feeLabel}) = ${brl(splitExemplo(24000, v.feeRateBps).fee)}. Você recebe ${brl(splitExemplo(24000, v.feeRateBps).net)}, ${v.payoutLabel} após a confirmação da devolução. 2ª locação: mesmo fluxo — ao confirmar o recebimento a reserva é concluída, aquelas datas voltam a ficar livres e o anúncio segue no ar, sem precisar recadastrar nada.`,
     tip: "Quanto mais avaliações positivas você tiver, mais alto o seu anúncio aparece nos resultados de busca.",
   },
   {
@@ -246,17 +239,17 @@ export function buildSections(v: HelpVars): Section[] { return [
       { q: "Como funciona o pagamento?",
         a: "Só é possível pagar depois que o proprietário confirmar a reserva. Quando ele aceitar, você recebe o aviso e pode clicar em 'Pagar agora'. O pagamento é processado pela Stripe, o provedor de pagamentos do ShareO, e nesta versão aceita cartão de crédito à vista (sem parcelamento). O valor pago fica retido e só é repassado ao proprietário depois da confirmação da devolução do item." },
       { q: "Posso cancelar uma reserva?",
-        a: `Sim. Enquanto a reserva estiver 'Aguardando' ou 'Confirmada', você pode cancelar na página da reserva. Cancelando até ${v.cancel.fullRefundHours} horas antes da retirada, o reembolso é integral; entre ${v.cancel.fullRefundHours}h e ${v.cancel.partialRefundHours}h antes, o reembolso é de ${v.cancel.partialPercent}%; com menos de ${v.cancel.partialRefundHours}h, de ${v.cancel.latePercent}%.` },
+        a: "Sim. Enquanto a reserva estiver 'Aguardando' ou 'Confirmada', você pode cancelar na página da reserva. O reembolso é sempre de 100% do que você pagou — se você mesmo cancelar, é descontada apenas a taxa que a Stripe cobrou na cobrança original; se o proprietário cancelar, não há desconto nenhum." },
       { q: "O que acontece na retirada do item?",
         a: "Combine com o proprietário pelo chat do app onde e quando retirar o item. Na entrega, o proprietário registra fotos do estado do item (check-in) e marca a reserva como 'Ativo'. O período de locação começa a contar a partir desse momento — o prazo de devolução é no mesmo horário, N dias depois. Exemplo: retirada em 10/10 às 10h → devolução até 11/10 às 10h (1 dia)." },
       { q: "E se o item não estiver como anunciado?",
-        a: "Se houver algum problema, você pode abrir uma disputa na página da reserva enquanto ela estiver ativa ou em até 48 horas após a devolução. Descreva o que aconteceu e a equipe ShareO vai analisar o caso em até 3 dias úteis. Nosso atendimento é de segunda a sexta, das 09h às 17h." },
+        a: "Se houver algum problema, você pode abrir uma disputa na página da reserva. Como locatário, a janela é enquanto a locação estiver ativa — antes de devolver o item. Como locador, a janela é depois que o locatário devolver, até 48 horas depois. Descreva o que aconteceu e a equipe ShareO vai analisar o caso em até 5 dias úteis. Nosso atendimento é de segunda a sexta, das 09h às 17h." },
       { q: "Como avalio o proprietário?",
         a: "Após devolver o item, a opção de avaliação aparece na página da reserva. Você pode dar uma nota de 1 a 5 estrelas e deixar um comentário. Avaliações ajudam toda a comunidade ShareO." },
       { q: "O proprietário tem um prazo para confirmar minha reserva?",
         a: `Sim. Após você solicitar uma reserva, o proprietário tem até ${v.ownerHours} horas para confirmar ou recusar. Se ele não responder nesse prazo, a reserva é cancelada automaticamente e nenhum valor é cobrado. Você recebe uma notificação assim que isso acontecer e pode buscar outro item disponível.` },
       { q: "Posso pedir para estender o prazo de um aluguel que já está em andamento?",
-        a: "Sim, enquanto a reserva estiver com status 'Ativo' você pode solicitar uma extensão diretamente na página da reserva. O proprietário precisa aceitar a extensão. Se ele confirmar, o novo período e o valor adicional são calculados automaticamente e o pagamento é processado na hora. Só solicite se ainda tiver o item em mãos e com tempo hábil para o proprietário responder." },
+        a: "Sim, enquanto a reserva estiver com status 'Ativo' você pode solicitar uma extensão diretamente na página da reserva. O proprietário precisa aceitar. Se a reserva já estiver paga, aceitar não muda o prazo sozinho: aparece uma cobrança das diárias extras — o preço diário do item pelos dias a mais — e a data de devolução só muda depois que esse pagamento é confirmado. Se a reserva ainda não tiver sido paga, a extensão entra na hora e o valor já vai junto no pagamento da locação. Nos dois casos o pagamento é feito no site. Só solicite se ainda tiver o item em mãos e com tempo hábil para o proprietário responder." },
       { q: "O que acontece se eu devolver o item com atraso?",
         a: `O prazo de devolução é calculado a partir do horário exato de retirada confirmada — se você retirou às 10h, deve devolver até às 10h do último dia. Passado esse prazo, é gerada automaticamente uma taxa de atraso de ${v.lateMultLabel} o preço diário do item por dia de atraso, enviada para o seu e-mail como link de pagamento. Você recebe um aviso no app 24h antes do vencimento. Para evitar cobranças extras, solicite uma extensão antes do prazo vencer — nunca depois.` },
       { q: "Como funciona o chat com o proprietário?",
@@ -348,7 +341,7 @@ export function buildSections(v: HelpVars): Section[] { return [
         // A versão anterior afirmava um bloqueio que não existe.
         a: "Sim. Nesta primeira fase, a plataforma se destina a itens com valor estimado de até R$ 1.000. Esse limite existe para adequar o perfil de risco dos aluguéis enquanto a plataforma está em fase inicial, e anúncios acima dele podem ser removidos na moderação. Itens de maior valor estarão disponíveis em versões futuras." },
       { q: "Existe taxa de cancelamento?",
-        a: `O reembolso depende da antecedência em relação à data de retirada: até ${v.cancel.fullRefundHours}h antes, reembolso integral; entre ${v.cancel.fullRefundHours}h e ${v.cancel.partialRefundHours}h antes, ${v.cancel.partialPercent}% do valor pago; com menos de ${v.cancel.partialRefundHours}h, ${v.cancel.latePercent}%. A retenção cobre custos operacionais já incorridos. Cancelamentos pelo proprietário devolvem o valor integral ao locatário, e quem cancela com frequência pode ter a conta suspensa temporariamente.` },
+        a: "O reembolso é sempre de 100% do valor pago, não importa a antecedência. A única exceção é quando é o próprio locatário quem cancela: nesse caso, é descontada a taxa que a Stripe já tinha cobrado na cobrança original — a ShareO não fica com nada disso, é repassado direto ao provedor de pagamento. Cancelamentos pelo proprietário não têm nenhum desconto, e quem cancela com frequência pode ter a conta suspensa temporariamente." },
       { q: "Recebo comprovante das transações?",
         a: "Sim. O ShareO emite comprovante eletrônico para todas as transações concluídas na plataforma. O comprovante é enviado automaticamente para o email cadastrado após o encerramento da reserva. Você também pode acessar o histórico completo em 'Meu Perfil > Meus repasses'." },
     ],
@@ -359,13 +352,13 @@ export function buildSections(v: HelpVars): Section[] { return [
     icon: "⚖️",
     faqs: [
       { q: "Quando posso abrir uma disputa?",
-        a: "Você pode abrir uma disputa enquanto a reserva estiver com status 'Ativo' ou em até 48 horas após a devolução do item. Após esse prazo, a reserva é encerrada e o pagamento liberado automaticamente. Por isso, inspecione o item imediatamente na devolução e abra a disputa se necessário — não espere." },
+        a: "A janela é diferente para cada lado. Como locatário, você pode abrir enquanto a reserva estiver 'Ativo' — antes de devolver o item; depois de devolvido, não dá mais. Como locador, você só pode abrir depois que o locatário devolver, e tem até 48 horas a partir da devolução. Após esse prazo, o pagamento é liberado automaticamente. Por isso, inspecione o item imediatamente na devolução e abra a disputa se necessário — não espere." },
       { q: "Que documentos preciso para abrir uma disputa?",
         a: "As principais evidências são as fotos de check-in e check-out registradas na plataforma. Você também pode enviar: capturas de tela do chat, fotos adicionais com data e hora visíveis, orçamentos de reparo e qualquer comunicação relevante. Quanto mais evidências você fornecer, mais rápida e precisa será a análise." },
       { q: "Como a equipe ShareO decide em uma disputa?",
-        a: "Nossa equipe analisa todas as evidências fornecidas pelas duas partes: fotos de check-in vs. check-out, conversas no chat, histórico de transações e avaliações anteriores. Respondemos em até 3 dias úteis. A decisão leva em conta o estado documentado do item antes e depois, o comportamento das partes e a política de uso do ShareO." },
+        a: "Nossa equipe analisa todas as evidências fornecidas pelas duas partes: fotos de check-in vs. check-out, conversas no chat, histórico de transações e avaliações anteriores. Respondemos em até 5 dias úteis. A decisão leva em conta o estado documentado do item antes e depois, o comportamento das partes e a política de uso do ShareO." },
       { q: "O que acontece com o repasse em caso de dano?",
-        a: "Se houver dano comprovado, o proprietário abre uma disputa antes de confirmar o recebimento. O repasse fica suspenso automaticamente durante a análise — reservas em disputa não entram na fila. A equipe ShareO avalia as fotos de check-in e check-out e, em até 3 dias úteis, decide se o repasse é liberado, parcialmente retido ou cancelado conforme o prejuízo apurado." },
+        a: "Se houver dano comprovado, o proprietário abre uma disputa antes de confirmar o recebimento. O repasse fica suspenso automaticamente durante a análise — reservas em disputa não entram na fila. A equipe ShareO avalia as fotos de check-in e check-out e, em até 5 dias úteis, decide se o repasse é liberado, parcialmente retido ou cancelado conforme o prejuízo apurado." },
       { q: "O que acontece se meu item for extraviado?",
         a: "Em caso de furto ou extravio durante a locação, abra uma disputa na plataforma e registre um boletim de ocorrência (BO). A equipe ShareO analisa o caso e aciona os mecanismos de proteção disponíveis. Uma solução de proteção dedicada está em desenvolvimento — em breve disponível." },
       { q: "Posso apelar de uma decisão de disputa?",
@@ -380,7 +373,7 @@ export function buildSections(v: HelpVars): Section[] { return [
       { q: "Quais são os canais de atendimento?",
         a: "Você pode nos contatar por: Email (suporte@shareo.com.br) — respondemos em até 8 horas úteis (casos urgentes: até 4 horas úteis); Chat interno do app — disponível em reservas ativas; e, em casos urgentes, pelo botão 'Atendimento emergencial' dentro da reserva com disputa ativa. Nosso horário de atendimento é segunda a sexta, das 09h às 17h." },
       { q: "Qual é o prazo de resposta para cada tipo de solicitação?",
-        a: "Email: até 8 horas úteis (urgente: até 4 horas úteis). Disputas ativas: até 3 dias úteis para decisão. Revisão de disputa (recurso): até 5 dias úteis. Solicitações de exclusão de conta (LGPD): até 15 dias. Denúncias de usuário suspeito: até 24 horas. Os prazos indicados são metas de atendimento em condições normais de operação — segunda a sexta, 09h às 17h — e podem ser impactados em situações extraordinárias de volume ou força maior. Para reservas urgentes em andamento, use sempre o canal de atendimento emergencial dentro do app." },
+        a: "Email: até 8 horas úteis (urgente: até 4 horas úteis). Disputas ativas: até 5 dias úteis para decisão. Revisão de disputa (recurso): até 5 dias úteis. Solicitações de exclusão de conta (LGPD): até 15 dias. Denúncias de usuário suspeito: até 24 horas. Os prazos indicados são metas de atendimento em condições normais de operação — segunda a sexta, 09h às 17h — e podem ser impactados em situações extraordinárias de volume ou força maior. Para reservas urgentes em andamento, use sempre o canal de atendimento emergencial dentro do app." },
       { q: "Como reporto um usuário ou anúncio suspeito?",
         a: "Em qualquer anúncio ou perfil, toque nos três pontinhos (⋯) e selecione 'Reportar'. Descreva o problema com o máximo de detalhes e confirme. Nossa equipe analisa o reporte em até 24 horas e, se necessário, suspende o usuário preventivamente. Reportes são anônimos — o usuário reportado não sabe quem enviou." },
       { q: "Tenho um problema urgente com uma reserva em andamento. O que faço?",
@@ -582,7 +575,6 @@ function FeeTableRow({
 
 export default function AjudaScreen() {
   const { tokens } = useTheme()
-  const insets     = useSafeAreaInsets()
   const { anchor } = useLocalSearchParams<{ anchor?: string }>()
 
   // 🪤 NÃO cravar prazo, teto ou percentual na copy: era assim que esta tela
@@ -598,8 +590,7 @@ export default function AjudaScreen() {
         // Merge, e não substituição: o app instalado no celular pode ser mais
         // velho ou mais novo que a API (ciclo de loja ≠ ciclo de deploy). Campo
         // ausente cai no default em vez de virar `undefined` no meio do texto.
-        // `cancel` é mesclado à parte porque o spread raso o trocaria inteiro.
-        setCfg((atual) => ({ ...atual, ...d, cancel: { ...atual.cancel, ...d.cancel } }))
+        setCfg((atual) => ({ ...atual, ...d }))
       })
       .catch(() => {
         // Sem rede, a Ajuda abre com os defaults. Falhar em silêncio aqui é a
@@ -632,9 +623,8 @@ export default function AjudaScreen() {
     { label: "Valor máximo do bem anunciado",          value: "R$ 1.000 por item",           when: "Regra da fase inicial" },
     { label: "Limite por locação",                     value: `${v.maxLabel} por transação`,   when: "Validado no checkout" },
     { label: "Taxa por atraso na devolução",           value: `${v.lateMultLabel} o preço diário por dia`, when: "Gerada ao detectar o atraso" },
-    { label: `Cancelamento até ${v.cancel.fullRefundHours}h antes da retirada`,                          value: "Reembolso de 100%",                    when: "Sem custo para o locatário" },
-    { label: `Cancelamento entre ${v.cancel.fullRefundHours}h e ${v.cancel.partialRefundHours}h antes`,    value: `Reembolso de ${v.cancel.partialPercent}%`, when: "Descontado do valor pago" },
-    { label: `Cancelamento com menos de ${v.cancel.partialRefundHours}h antes`,                          value: `Reembolso de ${v.cancel.latePercent}%`,   when: "Descontado do valor pago" },
+    { label: "Cancelamento pelo locador",   value: "Reembolso de 100% ao locatário", when: "A ShareO abre mão da comissão; o locador não recebe repasse" },
+    { label: "Cancelamento pelo locatário", value: "Reembolso de 100%, menos a taxa da Stripe", when: "Taxa real da cobrança original, cobrada pela Stripe" },
   ]
 
   // ── Acordeão — guias de primeiros passos ───────────────────────────────────
@@ -673,27 +663,7 @@ export default function AjudaScreen() {
   return (
     <View style={[s.root, { backgroundColor: tokens.bg }]}>
 
-      {/* ── Header ── */}
-      <View
-        style={[
-          s.header,
-          {
-            paddingTop:      insets.top + 8,
-            backgroundColor: tokens.surface,
-            borderColor:     tokens.border,
-          },
-        ]}
-      >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          accessibilityLabel="Voltar"
-          accessibilityRole="button"
-          style={s.backBtn}
-        >
-          <Text style={[s.backArrow, { color: tokens.muted }]}>‹</Text>
-        </TouchableOpacity>
-        <Text style={[s.headerTitle, { color: tokens.navy }]}>Central de Ajuda</Text>
-      </View>
+      <ScreenHeader title="Central de Ajuda" />
 
       <ScrollView
         ref={scrollRef}
@@ -969,24 +939,6 @@ const s = StyleSheet.create({
   root:   { flex: 1 },
   scroll: { flex: 1 },
   content: { paddingBottom: 48 },
-
-  // ── Header ─────────────────────────────────────────────────────────────────
-  header: {
-    flexDirection:     "row",
-    alignItems:        "center",
-    gap:               12,
-    borderBottomWidth: 1,
-    paddingHorizontal: 16,
-    paddingBottom:     12,
-  },
-  backBtn: {
-    minHeight:      44,
-    minWidth:       44,
-    alignItems:     "center",
-    justifyContent: "center",
-  },
-  backArrow:   { fontSize: 28, lineHeight: 32 },
-  headerTitle: { flex: 1, fontSize: 18, fontWeight: "700" },
 
   // ── Hero ───────────────────────────────────────────────────────────────────
   hero: {

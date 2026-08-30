@@ -16,6 +16,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
 import { calcCO2Savings } from "@/lib/co2"
+import { isRegistrationComplete } from "@/lib/registration"
 
 export async function GET(req: NextRequest) {
   try {
@@ -39,6 +40,7 @@ export async function GET(req: NextRequest) {
       recentBookings,
       lastBookingCategories,
       upcomingReturns,
+      userProfile,
     ] = await Promise.all([
       // itens anunciados
       prisma.item.count({ where: { ownerId: uid, deletedAt: null } }),
@@ -107,6 +109,13 @@ export async function GET(req: NextRequest) {
           borrower: { select: { name: true } },
         },
       }).catch(() => []),
+
+      // profileIncomplete — espelha app/dashboard/page.tsx linha 154
+      // Campo retornado para o app mobile verificar se deve exibir o aviso de cadastro incompleto.
+      prisma.user.findUnique({
+        where:  { id: uid },
+        select: { profileCompletedAt: true },
+      }).catch(() => null),
     ])
 
     // ── Sugestões personalizadas — verbatim de app/dashboard/page.tsx linhas 111-130 ──
@@ -175,6 +184,8 @@ export async function GET(req: NextRequest) {
         })),
         co2Kg:           kgCO2,
         treesEquivalent,
+        // Verbatim de app/dashboard/page.tsx linha 154
+        profileIncomplete: !isRegistrationComplete(userProfile),
       },
     })
   } catch (err) {

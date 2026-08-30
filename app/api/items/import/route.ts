@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 import ExcelJS from "exceljs"
-import { auth } from "@/lib/auth"
+import { withUser } from "@/lib/withUser"
 import { prisma } from "@/lib/prisma"
 import type { ItemCondition } from "@prisma/client"
 
@@ -200,15 +200,11 @@ const RowSchema = z.object({
 
 export async function POST(req: Request) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
-        { status: 401 },
-      )
-    }
+    const user = await withUser(req as Parameters<typeof withUser>[0], { select: { userType: true } })
+    if (user instanceof NextResponse) return user
+    const { id: ownerId, userType } = user as { id: string; userType: string }
 
-    if (session.user.userType !== "PJ") {
+    if (userType !== "PJ") {
       return NextResponse.json(
         { error: { code: "FORBIDDEN", message: "Importação em massa é exclusiva para contas PJ." } },
         { status: 403 },
@@ -280,7 +276,6 @@ export async function POST(req: Request) {
     const categories = await prisma.category.findMany({ select: { id: true, name: true } })
     const categoryMap = new Map(categories.map((c) => [c.name.toLowerCase(), c.id]))
 
-    const ownerId = session.user.id
     let created = 0
     let updated = 0
     const errors: { row: number; message: string }[] = []

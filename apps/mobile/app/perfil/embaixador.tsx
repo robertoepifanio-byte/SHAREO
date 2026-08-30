@@ -341,7 +341,7 @@ export default function EmbaixadorScreen() {
               cadastro de quem usar seu convite, conforme nossa{" "}
               <Text
                 style={{ textDecorationLine: "underline", color: tokens.green }}
-                onPress={() => Linking.openURL("https://shareo.com.br/politicas")}
+                onPress={() => router.push("/politicas")}
                 accessibilityRole="link"
               >
                 Política de Privacidade

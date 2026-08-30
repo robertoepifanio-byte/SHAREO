@@ -2,6 +2,8 @@
 // Extraído de app/(tabs)/explorar.tsx pra reuso em favoritos.tsx (regra DRY do
 // projeto — a mesma peça visual não pode ter uma segunda implementação divergente,
 // já aconteceu antes com CategoryChip.tsx).
+// 2026-08-25: hotBadge ("Mais alugado") e showActions ("Editar") transcritos
+// de components/items/ItemCard.tsx do site — fecham divergências de paridade.
 import { useState } from "react"
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native"
 import { router } from "expo-router"
@@ -111,7 +113,19 @@ function FavoriteHeart({ itemId }: { itemId: string }) {
   )
 }
 
-export function ItemCard({ item, onPress }: { item: ItemCardItem; onPress: () => void }) {
+export function ItemCard({
+  item,
+  onPress,
+  hotBadge = false,
+  showActions = false,
+}: {
+  item: ItemCardItem
+  onPress: () => void
+  /** Transcrito de ItemCard.tsx do site — badge "🔥 Mais alugado" quando hotBadge=true. */
+  hotBadge?: boolean
+  /** Transcrito de ItemCard.tsx do site — área de ações do proprietário com "Editar". */
+  showActions?: boolean
+}) {
   const { tokens, mode } = useTheme()
   const thumb = item.images[0]?.url
   const catMap = mode === "dark" ? CAT_COLORS_DARK : CAT_COLORS_LIGHT
@@ -137,7 +151,13 @@ export function ItemCard({ item, onPress }: { item: ItemCardItem; onPress: () =>
             <CategorySvg slug={item.category.slug} stroke={catColors.stroke} />
           </View>
         )}
-        <FavoriteHeart itemId={item.id} />
+        {/* Badge "Mais alugado" — transcrito de ItemCard.tsx do site (hotBadge) */}
+        {hotBadge && (
+          <View style={s.hotBadge}>
+            <Text style={s.hotBadgeText}>🔥 Mais alugado</Text>
+          </View>
+        )}
+        {!showActions && <FavoriteHeart itemId={item.id} />}
         {item.owner.isVerified && (
           <View style={s.verifiedBadge} accessibilityRole="image" accessibilityLabel="Anunciante verificado">
             <Text style={{ color: "#FFFFFF", fontSize: 9, fontWeight: "700" }}>✓</Text>
@@ -163,6 +183,19 @@ export function ItemCard({ item, onPress }: { item: ItemCardItem; onPress: () =>
           </Text>
         </View>
       </View>
+
+      {/* Ações do proprietário — transcrito de ItemCard.tsx do site (showActions) */}
+      {showActions && (
+        <View style={[s.actionsRow, { borderTopColor: tokens.border }]}>
+          <TouchableOpacity
+            onPress={() => router.push(`/itens/${item.id}/editar` as Parameters<typeof router.push>[0])}
+            accessibilityRole="button"
+            style={[s.actionBtn, { borderColor: tokens.border }]}
+          >
+            <Text style={[s.actionBtnText, { color: tokens.text }]}>Editar</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </TouchableOpacity>
   )
 }
@@ -266,5 +299,36 @@ const s = StyleSheet.create({
     fontSize: 10,
     maxWidth: "48%",
     textAlign: "right",
+  },
+  // "absolute bottom-2 left-2 rounded-full bg-orange-cta px-2 py-0.5 text-[10px] font-bold text-white"
+  // — ItemCard.tsx do site (hotBadge)
+  hotBadge: {
+    position:        "absolute",
+    bottom:          6,
+    left:            6,
+    backgroundColor: "#FF6B35",
+    borderRadius:    999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  hotBadgeText: {
+    fontSize:   10,
+    fontWeight: "700",
+    color:      "#FFFFFF",
+  },
+  // "flex flex-col gap-1.5 border-t border-border p-3" — ItemCard.tsx do site (showActions)
+  actionsRow: {
+    borderTopWidth:   1,
+    padding:          10,
+  },
+  actionBtn: {
+    borderWidth:  1,
+    borderRadius: 6,
+    paddingVertical: 6,
+    alignItems:   "center",
+  },
+  actionBtnText: {
+    fontSize:   12,
+    fontWeight: "500",
   },
 })
