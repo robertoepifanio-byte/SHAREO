@@ -339,8 +339,8 @@ importers:
         specifier: ^2.1.0
         version: 2.2.0(react-native@0.81.5(@babel/core@7.29.7)(@types/react@18.3.31)(react@19.1.0))
       '@react-native-community/datetimepicker':
-        specifier: ^8.4.4
-        version: 8.4.4(expo@54.0.36)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@18.3.31)(react@19.1.0))(react@19.1.0)
+        specifier: ^8.6.0
+        version: 8.6.0(expo@54.0.36)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@18.3.31)(react@19.1.0))(react@19.1.0)
       '@react-navigation/drawer':
         specifier: ^7.5.0
         version: 7.12.7(@react-navigation/native@7.3.7(react-native@0.81.5(@babel/core@7.29.7)(@types/react@18.3.31)(react@19.1.0))(react@19.1.0))(react-native-gesture-handler@2.28.0(react-native@0.81.5(@babel/core@7.29.7)(@types/react@18.3.31)(react@19.1.0))(react@19.1.0))(react-native-reanimated@4.1.7(react-native-worklets@0.5.1(@babel/core@7.29.7)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@18.3.31)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@18.3.31)(react@19.1.0))(react@19.1.0))(react-native-safe-area-context@5.6.2(react-native@0.81.5(@babel/core@7.29.7)(@types/react@18.3.31)(react@19.1.0))(react@19.1.0))(react-native-screens@4.27.0(react-native@0.81.5(@babel/core@7.29.7)(@types/react@18.3.31)(react@19.1.0))(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@18.3.31)(react@19.1.0))(react@19.1.0)
@@ -2640,8 +2640,8 @@ packages:
     peerDependencies:
       react-native: ^0.0.0-0 || >=0.65 <1.0
 
-  '@react-native-community/datetimepicker@8.4.4':
-    resolution: {integrity: sha512-bc4ZixEHxZC9/qf5gbdYvIJiLZ5CLmEsC3j+Yhe1D1KC/3QhaIfGDVdUcid0PdlSoGOSEq4VlB93AWyetEyBSQ==}
+  '@react-native-community/datetimepicker@8.6.0':
+    resolution: {integrity: sha512-yxPSqNfxgpGaqHQIpatqe6ykeBdU/1pdsk/G3x01mY2bpTflLpmVTLqFSJYd3MiZzxNZcMs/j1dQakUczSjcYA==}
     peerDependencies:
       expo: '>=52.0.0'
       react: '*'
@@ -11835,7 +11835,7 @@ snapshots:
       merge-options: 3.0.4
       react-native: 0.81.5(@babel/core@7.29.7)(@types/react@18.3.31)(react@19.1.0)
 
-  '@react-native-community/datetimepicker@8.4.4(expo@54.0.36)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@18.3.31)(react@19.1.0))(react@19.1.0)':
+  '@react-native-community/datetimepicker@8.6.0(expo@54.0.36)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@18.3.31)(react@19.1.0))(react@19.1.0)':
     dependencies:
       invariant: 2.2.4
       react: 19.1.0
