@@ -41,6 +41,27 @@ export const BIOMETRIC_CONSENT_VERSION = "biometric-v1.0"
 export const MARKETING_CONSENT_VERSION = "marketing-v1.0"
 
 /**
+ * Todas as versões de consentimento de marketing já aceitas pela plataforma,
+ * em ordem cronológica. Usada para validar `consentVersion` no POST de leads —
+ * somente strings deste conjunto entram no banco (trilha de auditoria LGPD).
+ *
+ * Ao publicar nova versão:
+ *   1. Atualizar MARKETING_CONSENT_VERSION acima.
+ *   2. Adicionar a nova constante a este array (mas NÃO remover as antigas —
+ *      clientes desatualizados podem ainda enviá-las por um período de transição).
+ *
+ * Histórico:
+ *   "v1.1"          — até 2026-08-07, leads gravavam CONSENT_VERSION por engano.
+ *   "marketing-v1.0" — versão vigente (coleta telefone/WhatsApp, texto explícito).
+ */
+export const KNOWN_MARKETING_CONSENT_VERSIONS = [
+  "v1.1",              // legado — leads anteriores a 2026-08-07
+  "marketing-v1.0",   // versão vigente
+] as const
+
+export type MarketingConsentVersion = (typeof KNOWN_MARKETING_CONSENT_VERSIONS)[number]
+
+/**
  * Texto exato do consentimento exibido no formulário de captação. Fonte única:
  * a UI renderiza esta constante, e é ela que MARKETING_CONSENT_VERSION versiona —
  * assim o que foi aceito é reconstituível a partir do valor gravado no lead.

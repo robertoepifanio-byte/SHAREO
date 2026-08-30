@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react"
 import Link from "next/link"
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
+import { parseRetryAfterSeconds } from "@/lib/http"
 
 export function ForgotPasswordForm() {
   const [email,   setEmail]   = useState("")
@@ -17,12 +18,23 @@ export function ForgotPasswordForm() {
     setError(""); setLoading(true)
 
     try {
-      await fetch("/api/auth/forgot-password", {
+      const res = await fetch("/api/auth/forgot-password", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ email: email.trim().toLowerCase() }),
       })
-      // Sempre mostra sucesso — a API não vaza se o e-mail existe ou não
+
+      if (!res.ok) {
+        if (res.status === 429) {
+          const seconds = parseRetryAfterSeconds(res)
+          setError(seconds ? `Muitas tentativas. Aguarde ${seconds}s e tente novamente.` : "Muitas tentativas. Aguarde um momento e tente novamente.")
+        } else {
+          setError("Não foi possível enviar o e-mail agora. Tente novamente mais tarde.")
+        }
+        return
+      }
+
+      // A partir daqui a API SEMPRE responde 200 — ela não vaza se o e-mail existe ou não.
       setSent(true)
     } catch {
       setError("Falha de conexão. Tente novamente.")

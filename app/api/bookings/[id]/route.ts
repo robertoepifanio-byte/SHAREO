@@ -10,11 +10,14 @@ import { dispatchWebhookEvent } from "@/lib/outboundWebhooks"
 import type { WebhookEvent } from "@/lib/outboundWebhooks"
 import { sendBookingConfirmedEmail, sendBookingCancelledEmail, sendReturnInProgressEmail, sendReturnCompletedEmail, bookingItemsLabel } from "@/lib/email"
 import { calcRefund } from "@/lib/cancellationPolicy"
-import { getCancellationConfig, getRentalContractConfig } from "@/lib/platform-config"
+import { getRentalContractConfig } from "@/lib/platform-config"
 import { releaseCouponForBooking } from "@/lib/coupons"
 import { findOverlappingItem } from "@/lib/booking-availability"
 import { hasPickupAddress, redactOwnerAddress } from "@/lib/ownerAddress"
 import { criarPayoutDaReserva } from "@/lib/payout"
+import { checkDisputeWindow } from "@/lib/disputeWindow"
+import { openDispute } from "@/lib/openDispute"
+import { emitCancellationRefund, getChargeFeeCents } from "@/lib/payments/refund"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -189,8 +192,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       select: {
         id: true, status: true, borrowerId: true, ownerId: true,
         itemId: true, startDate: true, endDate: true, totalPrice: true, totalDays: true,
-        paymentStatus: true,
+        paymentStatus: true, stripePaymentIntentId: true,
         contractSignedAt: true, // guard do mark_active — ver abaixo
+        returnRequestedAt: true, // guard do open_dispute — ver abaixo (48h do locador)
         pickupToken: true, pickupTokenUsedAt: true,
         bookingItems: { select: { itemId: true } }, // Story B — revalidar todos os itens no confirm
         item:     { select: { title: true } },
@@ -243,6 +247,22 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       )
     }
 
+    // pauta-raimundo-2026-08-22, item 3 — decisão de Raimundo (25/08/2026): a
+    // janela de abertura de disputa é ASSIMÉTRICA por quem abre, não uma faixa
+    // única de status para os dois lados (TRANSITIONS.requiredStatus continua
+    // ["ACTIVE", "RETURNED"] porque cobre os dois papéis juntos — a checagem
+    // fina de QUAL status vale pra QUAL papel mora em lib/disputeWindow.ts,
+    // compartilhada com a rota dedicada POST /api/bookings/:id/dispute).
+    if (action === "open_dispute") {
+      const windowCheck = checkDisputeWindow(booking, { isBorrower, isOwner })
+      if (!windowCheck.ok) {
+        return NextResponse.json(
+          { error: { code: "DISPUTE_WINDOW_CLOSED", message: windowCheck.message } },
+          { status: 422 },
+        )
+      }
+    }
+
     // Endereço completo é exigência NO MOMENTO EM QUE HÁ UMA LOCAÇÃO, não no
     // cadastro (regra dos fundadores, 22/08/2026). `confirm` é esse momento: o
     // proprietário assume a locação e o locatário passa a precisar saber onde
@@ -266,6 +286,24 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       )
     }
 
+    // open_dispute não passa pelo fluxo genérico de update/e-mail/webhook das
+    // outras ações abaixo — não tem nenhum dos três (só grava status+cancelReason
+    // e notifica o outro lado). A mutação em si mora em lib/openDispute.ts,
+    // compartilhada com a rota dedicada POST /api/bookings/:id/dispute — achado
+    // de altitude da revisão /simplify (pauta-raimundo-2026-08-22 item 3): as
+    // duas rotas tinham cada uma sua própria cópia dessa mutação.
+    if (action === "open_dispute") {
+      const updated = await openDispute({
+        bookingId:    id,
+        cancelReason: reason!,
+        isOwner,
+        ownerId:      booking.ownerId,
+        borrowerId:   booking.borrowerId,
+        itemTitle:    booking.item.title,
+      })
+      return NextResponse.json({ data: updated })
+    }
+
     const now  = new Date()
     const data: Record<string, unknown> = { status: transition.nextStatus }
 
@@ -279,15 +317,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       // Como o estorno hoje é executado à mão no painel da Stripe, esse número
       // ia parar na fila de trabalho de uma pessoa como se fosse real.
       if (booking.paymentStatus === "PAID") {
-        const cancelConfig = await getCancellationConfig()
-        const refund = calcRefund(
-          new Date(booking.startDate),
-          now,
-          booking.totalPrice,
-          cancelConfig,
-        )
-        data.refundAmount  = refund.refundAmount
-        data.refundPercent = refund.refundPercent
+        // pauta-raimundo-2026-08-22, item 2 — decisão de Raimundo (25/08/2026):
+        // não é mais sobre antecedência, é sobre quem cancela. Locatário cancela
+        // → ele absorve a taxa REAL da Stripe (por isso a busca abaixo, só
+        // quando é ele); locador cancela → sem desconto nenhum.
+        const canceledBy = isOwner ? "owner" : "borrower"
+        const stripeFeeCents = canceledBy === "borrower" && booking.stripePaymentIntentId
+          ? await getChargeFeeCents(booking.stripePaymentIntentId)
+          : 0
+        const refund = calcRefund(booking.totalPrice, canceledBy, stripeFeeCents)
+        data.refundAmount   = refund.refundAmount
+        data.refundPercent  = refund.refundPercent
         // O motivo do reembolso é registrado internamente — não é exposto ao usuário via API
         console.warn(
           `[booking.cancel] id=${id} refundPercent=${refund.refundPercent} refundAmount=${refund.refundAmount} reason="${refund.reason}"`,
@@ -296,15 +336,6 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         data.refundAmount  = 0
         data.refundPercent = 0
       }
-    }
-
-    // 🪤 O motivo da disputa era EXIGIDO (TRANSITIONS.requiresReason) e depois
-    // descartado: só o branch de `cancel` gravava `cancelReason`. A disputa
-    // entrava no banco sem justificativa nenhuma, e quem fosse arbitrar abria o
-    // caso sem saber do que se tratava. O campo é o mesmo que a rota dedicada
-    // (bookings/[id]/dispute) já usa.
-    if (action === "open_dispute") {
-      data.cancelReason = reason
     }
 
     // Registra o tempo de resposta do proprietário (para badge de responsividade)
@@ -320,6 +351,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     // Grava horário real de retirada — exige token válido e o consome.
     // Regra: prazo de devolução = mesmo horário da retirada + totalDays.
     if (action === "mark_active") {
+      if (booking.paymentStatus !== "PAID") {
+        return NextResponse.json(
+          {
+            error: {
+              code:    "PAYMENT_REQUIRED",
+              message: "O pagamento da reserva ainda não foi confirmado. Aguarde a confirmação antes de retirar o item.",
+            },
+          },
+          { status: 402 },
+        )
+      }
       if (!pickupToken) {
         return NextResponse.json(
           { error: { code: "TOKEN_REQUIRED", message: "Código de retirada obrigatório." } },
@@ -428,8 +470,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
 
     // Update atômico por ação (S14-A-05/A-06 — evita double-booking e ativação dupla em corrida).
-    const updateSelect = { id: true, status: true, updatedAt: true, ownerNetAmount: true, ownerId: true } as const
-    let updated: { id: string; status: BookingStatus; updatedAt: Date; ownerNetAmount: number | null; ownerId: string }
+    const updateSelect = { id: true, status: true, updatedAt: true, ownerNetAmount: true, ownerId: true, refundAmount: true } as const
+    let updated: { id: string; status: BookingStatus; updatedAt: Date; ownerNetAmount: number | null; ownerId: string; refundAmount: number | null }
 
     if (action === "confirm") {
       // Conflito de datas + update na MESMA transação serializável.
@@ -483,6 +525,21 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (action === "confirm_return") {
       await criarPayoutDaReserva(id, booking.ownerId, updated.ownerNetAmount, "confirm_return")
         .catch((e) => console.error("[FIN-3.3] criarPayoutDaReserva:", e instanceof Error ? e.message : e))
+    }
+
+    // Estorno automático (pauta-raimundo-2026-08-22, item 1 — decisão "automatizar").
+    // `reverseOwnerTransfer` (repasse já feito ao proprietário, se houver) roda via
+    // webhook `charge.refunded`, disparado por este próprio refunds.create.
+    if (action === "cancel" && updated.refundAmount && updated.refundAmount > 0) {
+      if (booking.stripePaymentIntentId) {
+        await emitCancellationRefund({
+          bookingId:       id,
+          paymentIntentId: booking.stripePaymentIntentId,
+          amount:          updated.refundAmount,
+        }).catch((e) => console.error("[booking.cancel] emitCancellationRefund:", e instanceof Error ? e.message : e))
+      } else {
+        console.error(`[booking.cancel] id=${id} refundAmount=${updated.refundAmount} mas sem stripePaymentIntentId — estorno não pôde ser emitido`)
+      }
     }
 
     // E-mails transacionais — após a resposta.
@@ -557,10 +614,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       cancel:         { type: "BOOKING_CANCELLED",  title: "Reserva cancelada",          body: `A reserva de "${booking.item.title}" foi cancelada.` },
       mark_returned:  { type: "BOOKING_RETURNED",   title: "Devolução em andamento",     body: `O locatário iniciou a devolução de "${booking.item.title}". Confira o item e confirme o recebimento.` },
       confirm_return: { type: "BOOKING_RETURNED",   title: "Devolução confirmada!",      body: `O proprietário confirmou a devolução de "${booking.item.title}". A reserva está concluída.` },
-      // Faltava: abrir disputa por esta rota não avisava ninguém. A outra parte
-      // descobria só ao abrir o app. `quemAbriu` é quem AGIU, não quem recebe —
-      // ver o bug espelhado em bookings/[id]/dispute.
-      open_dispute:   { type: "BOOKING_CANCELLED",  title: "Disputa aberta",             body: `O ${isOwner ? "locador" : "locatário"} abriu uma disputa em "${booking.item.title}". A equipe ShareO vai analisar o caso.` },
+      // open_dispute NÃO entra aqui — sai antes, por lib/openDispute.ts (que já
+      // notifica). Ver comentário no bloco de open_dispute acima.
     }
     const notif = notifMap[action]
     if (notif) {

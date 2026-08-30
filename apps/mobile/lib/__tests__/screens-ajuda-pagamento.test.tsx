@@ -65,12 +65,25 @@ describe("Central de Ajuda — o que a copy NÃO pode dizer", () => {
     // proibido é Pix como meio de PAGAMENTO. Uma versão anterior desta regex
     // incluía `Pix,` e reprovava "…na sua chave PIX, se ainda não cadastrou".
     ["não oferece Pix como forma de pagamento",        /além de Pix|aceitamos? Pix|aceita Pix|pagar com Pix|Pix como forma|Pix ou boleto/i],
+    // ATOR-03 (24/08/2026): a extensão deixou de valer na aprovação. A copy
+    // dizia que o pagamento saía "na hora" — e a Ajuda tinha sido alinhada ao
+    // código quatro dias antes, o que mostra que alinhar uma vez não segura.
+    ["não promete que a extensão é cobrada na hora", /processado na hora|cobrado na hora/i],
   ])("%s", (_titulo, proibido) => {
     expect(TEXTO).not.toMatch(proibido)
   })
 
+})
+
+// A metade positiva: proibir a frase errada não garante que a certa exista —
+// apagar a promessa deixaria só silêncio no lugar.
+describe("Central de Ajuda — o que a copy PRECISA dizer", () => {
   it("nomeia a Stripe como provedor de pagamentos", () => {
     expect(TEXTO).toMatch(/Stripe/)
+  })
+
+  it("diz que o prazo da extensão só muda depois do pagamento", () => {
+    expect(TEXTO).toMatch(/só muda depois que esse pagamento é confirmado/)
   })
 })
 
@@ -88,13 +101,11 @@ describe("Central de Ajuda — números vêm da config, não do texto", () => {
       checkoutMaxCents: 80_000,
       ownerHours: 12,
       lateFeeMultiplier: 2,
-      cancel: { fullRefundHours: 48, partialRefundHours: 12, partialPercent: 60, latePercent: 25 },
     })
     expect(outro).toMatch(/7 dias depois/)
     expect(outro).toMatch(/máximo por locação é R\$ 800/)
     expect(outro).toMatch(/até 12 horas para confirmar/)
     expect(outro).toMatch(/2× o preço diário|2× a diária/)
-    expect(outro).toMatch(/60% do valor pago|reembolso é de 60%/)
     expect(outro).not.toMatch(/3 dias depois|máximo por locação é R\$ 500/)
   })
 
@@ -105,7 +116,6 @@ describe("Central de Ajuda — números vêm da config, não do texto", () => {
       ...DEFAULT_CONFIG,
       ownerHours: 96,
       lateFeeMultiplier: 3,
-      cancel: { fullRefundHours: 72, partialRefundHours: 36, partialPercent: 33, latePercent: 11 },
     })
     expect(exotico).not.toMatch(/24 horas para confirmar/)
     expect(exotico).not.toMatch(/taxa de 30%/)
@@ -132,9 +142,9 @@ describe("Central de Ajuda — tabela de taxas renderizada", () => {
 
     expect(visivel).toMatch(/Valor líquido da locação/)
     expect(visivel).toMatch(/3 dias após a confirmação da devolução/)
-    // As faixas vêm da config — a versão antiga cravava "30% do valor".
-    expect(visivel).toMatch(/Reembolso de 70%/)
-    expect(visivel).toMatch(/Reembolso de 50%/)
+    // Política de cancelamento plana (sem faixas de horas).
+    expect(visivel).toMatch(/Reembolso de 100% ao locatário/)
+    expect(visivel).toMatch(/Reembolso de 100%, menos a taxa da Stripe/)
     expect(visivel).toMatch(/1,5× o preço diário/)
   })
 })

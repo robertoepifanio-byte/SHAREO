@@ -30,6 +30,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { apiFetch, API_URL, getTokens } from "@/lib/api"
 import { useAuth } from "@/lib/auth"
 import { useTheme } from "@/lib/theme"
+import { maskPhone, phoneToE164 } from "@/lib/forms"
 
 // ─── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -40,21 +41,9 @@ interface UserProfile {
   avatarUrl: string | null
 }
 
-// ─── Helpers de máscara (verbatim de lib/forms/masks.ts) ────────────────────
-
-/** Formata string de dígitos como telefone brasileiro: (XX) XXXXX-XXXX ou (XX) XXXX-XXXX */
-function maskPhone(v: string): string {
-  const digits = v.replace(/\D/g, "").slice(0, 11)
-  if (digits.length === 0) return ""
-  if (digits.length <= 2)  return `(${digits}`
-  if (digits.length <= 6)  return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
-  if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`
-  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
-}
-
 /**
  * Converte telefone armazenado (E.164 ex.: "+5584999990000") para exibição "(84) 99999-0000".
- * Espelha displayPhone de lib/forms/masks.ts.
+ * Usa maskPhone de @/lib/forms (espelho de lib/forms/masks.ts do site).
  */
 function displayPhone(raw: string | null): string {
   if (!raw) return ""
@@ -151,7 +140,7 @@ export default function EditarPerfilScreen() {
         body:   JSON.stringify({
           name:      name.trim()  || undefined,
           bio:       bio.trim()   || null,
-          phone:     phone.replace(/\D/g, "") ? `+55${phone.replace(/\D/g, "")}` : null,
+          phone:     phoneToE164(phone) ?? null,
           avatarUrl: avatarUrl.trim() || null,
         }),
       }),

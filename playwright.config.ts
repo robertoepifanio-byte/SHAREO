@@ -4,6 +4,9 @@ const isRemote = !!process.env.BASE_URL && process.env.BASE_URL.startsWith('http
 
 export default defineConfig({
   testDir: './e2e',
+  // Mesmo motivo do playwright.staging.config.ts: e2e/visual/ tem config própria e baselines
+  // nomeadas por projeto; sob os projetos daqui não há snapshot correspondente.
+  testIgnore: '**/visual/**',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

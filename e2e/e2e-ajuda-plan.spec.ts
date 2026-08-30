@@ -92,12 +92,13 @@ const LOCADOR_REQUIRED = [
 // Taxas obrigatórias na tabela de transparência
 // ---------------------------------------------------------------------------
 
-const REQUIRED_FEES = [
-  '10%',
-  'Gratuito',
-  'atraso',
-  'caução',
-  'cancelamento',
+// Regex, não string: a taxa é dinâmica (`getPlatformFeeRate` — hardcode de percentual é proibido
+// no projeto) e os rótulos da página variam de caixa. Sem caução: decisão D2, ver abaixo.
+const REQUIRED_FEES: Array<{ label: string; pattern: RegExp }> = [
+  { label: 'taxa de serviço com percentual', pattern: /\d+(,\d+)?%\s+do total/i },
+  { label: 'anunciar gratuito',              pattern: /gratuito/i },
+  { label: 'taxa por atraso',                pattern: /atraso/i },
+  { label: 'cancelamento',                   pattern: /cancelamento/i },
 ]
 
 // ---------------------------------------------------------------------------
@@ -202,9 +203,9 @@ test.describe('Plano E2E Central de Ajuda — ShareO', () => {
           const temTaxaServico = /taxa[\s\S]{0,200}?\d+(,\d+)?%|\d+(,\d+)?%[\s\S]{0,200}?taxa/i.test(bodyText)
           expect(temTaxaServico, 'Taxa de serviço com percentual deve estar mencionada').toBe(true)
 
-          // Verifica que caução com prazo de devolução está explicada
-          const temCaucaoPrazo = /7 dias/.test(bodyText)
-          expect(temCaucaoPrazo, 'Prazo de devolução da caução (7 dias úteis) deve estar mencionado').toBe(true)
+          // D2: sem caução no MVP — a Ajuda tem que dizer isso explicitamente.
+          const temCaucaoExplicada = /cauç[ãa]o[\s\S]{0,120}?não está disponível/i.test(bodyText)
+          expect(temCaucaoExplicada, 'Ajuda deve explicar que a caução não está disponível nesta versão').toBe(true)
 
           // Verifica que o processo de disputa está coberto
           const temDisputa = /disputa/i.test(bodyText)
@@ -218,7 +219,7 @@ test.describe('Plano E2E Central de Ajuda — ShareO', () => {
           }
 
           const covered = LOCATARIO_REQUIRED.map(r => r.step).join(', ')
-          stepFindings = `Todas as etapas cobertas: ${covered} | Exemplo multa ✓ | Taxa 10% ✓ | Caução 7 dias ✓ | Disputa ✓`
+          stepFindings = `Todas as etapas cobertas: ${covered} | Exemplo multa ✓ | Taxa % ✓ | Caução: indisponível no MVP ✓ | Disputa ✓`
           test.info().annotations.push({ type: 'cenario-1-locatario', description: stepFindings })
         })
       )
@@ -287,7 +288,7 @@ test.describe('Plano E2E Central de Ajuda — ShareO', () => {
           const tabelaText = await tabelaTaxas.innerText()
           const feesMissing: string[] = []
           for (const fee of REQUIRED_FEES) {
-            if (!tabelaText.includes(fee)) feesMissing.push(fee)
+            if (!fee.pattern.test(tabelaText)) feesMissing.push(fee.label)
           }
           if (feesMissing.length > 0) {
             throw new Error(`Taxas ausentes na tabela: ${feesMissing.join(', ')}`)
@@ -302,17 +303,20 @@ test.describe('Plano E2E Central de Ajuda — ShareO', () => {
           const secaoDisputas = page.locator('#disputas')
           await expect(secaoDisputas, 'Seção de Disputas deve existir no FAQ').toBeVisible()
 
-          const disputasText = await secaoDisputas.innerText()
+          // textContent(): as respostas ficam em <details> fechados e innerText não as devolve.
+          const disputasText = await secaoDisputas.textContent() ?? ''
           // Prazo para abertura de disputa (48 horas)
           expect(/48 hora/i.test(disputasText), 'Prazo de 48h para disputa deve estar mencionado').toBe(true)
-          // Prazo de resposta da equipe (3 dias úteis)
-          expect(/3 dia/i.test(disputasText), 'Prazo de resposta de 3 dias deve estar mencionado').toBe(true)
+          // 5 dias úteis, literal: diferente de feeLabel/payoutLabel (dinâmicos), este prazo é
+          // hardcoded na Ajuda e não tem config. Regex genérica (/\d+ dias úte/) aceitaria
+          // "3 dias úteis" — justamente a divergência que o #387 unificou.
+          expect(/5 dias [úu]teis/i.test(disputasText), 'Prazo de resposta de 5 dias úteis deve estar mencionado').toBe(true)
 
           // ── Seção de suporte no FAQ ─────────────────────────────────────────
           const secaoSuporte = page.locator('#suporte')
           await expect(secaoSuporte, 'Seção de Suporte deve existir no FAQ').toBeVisible()
 
-          const suporteText = await secaoSuporte.innerText()
+          const suporteText = await secaoSuporte.textContent() ?? ''
           // Email de suporte
           expect(/suporte@shareo\.com\.br/i.test(suporteText), 'Email de suporte deve estar visível').toBe(true)
           // Prazo de resposta por email
@@ -325,7 +329,7 @@ test.describe('Plano E2E Central de Ajuda — ShareO', () => {
           const contatoEmail = contatoSection.getByRole('link', { name: /suporte@shareo/i })
           await expect(contatoEmail, 'Link de email de suporte deve estar no contato').toBeVisible()
 
-          stepFindings = `Tabela: ${rowCount} linhas, ${REQUIRED_FEES.join('/')} ✓ | Disputas: 48h + 3 dias ✓ | Suporte: email + 4h ✓ | Contato visível ✓`
+          stepFindings = `Tabela: ${rowCount} linhas, ${REQUIRED_FEES.map((f) => f.label).join('/')} ✓ | Disputas: 48h + prazo em dias úteis ✓ | Suporte: email + 4h ✓ | Contato visível ✓`
           test.info().annotations.push({ type: 'taxas-disputas-suporte', description: stepFindings })
         })
       )
@@ -359,8 +363,11 @@ test.describe('Plano E2E Central de Ajuda — ShareO', () => {
           await searchInput.fill('zzzzinexistentezzz')
           await page.waitForTimeout(300)
 
-          // O estado vazio deve mostrar CTA para limpar
-          const emptyState = page.getByRole('button', { name: /ver todas|limpar/i })
+          // O estado vazio deve mostrar CTA para limpar.
+          // 🪤 `/ver todas|limpar/i` casava com DOIS botões — o "×" do campo
+          // (aria-label="Limpar busca", visível sempre que há texto) e este CTA — e o locator
+          // ambíguo derrubava a asserção. Mirar o CTA do estado vazio pelo nome exato.
+          const emptyState = page.getByRole('button', { name: 'Ver todas as perguntas' })
           await expect(emptyState, 'Estado vazio deve ter botão de limpar').toBeVisible({ timeout: 5_000 })
 
           // ── Limpar busca restaura todos os FAQs ────────────────────────────

@@ -23,9 +23,11 @@ const mockCategoryFindMany = jest.fn()
 const mockItemFindFirst    = jest.fn()
 const mockItemCreate       = jest.fn()
 const mockItemUpdate       = jest.fn()
+const mockUserFindUnique   = jest.fn()
 
 jest.mock("@/lib/prisma", () => ({
   prisma: {
+    user: { findUnique: (...a: unknown[]) => mockUserFindUnique(...a) },
     category: { findMany: (...a: unknown[]) => mockCategoryFindMany(...a) },
     item: {
       findFirst: (...a: unknown[]) => mockItemFindFirst(...a),
@@ -79,6 +81,9 @@ async function makeImportRequest(buffer: ArrayBuffer): Promise<Request> {
 beforeEach(() => {
   jest.clearAllMocks()
   mockAuth.mockResolvedValue(makePJSession())
+  // withUser(req, { select: { userType } }) — busca id+userType no banco após
+  // resolver o userId via auth(). O mock retorna o mesmo usuário PJ.
+  mockUserFindUnique.mockResolvedValue({ id: OWNER_ID, userType: "PJ" })
   mockCategoryFindMany.mockResolvedValue([{ id: "cat-ferramentas", name: "Ferramentas" }])
   mockItemFindFirst.mockResolvedValue(null) // sempre "novo"
   mockItemCreate.mockImplementation(() => Promise.resolve({ id: "new-item" }))

@@ -15,7 +15,7 @@ import {
   bookingItemsLabel,
 } from "@/lib/email"
 import { getStripe } from "@/lib/stripe"
-import { getLateFeeMultiplier, calcLateFee } from "@/lib/platform-config"
+import { getLateFeeMultiplier, calcLateFee, STRIPE_CHARGE_EXPIRES_SECONDS } from "@/lib/platform-config"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
@@ -184,7 +184,11 @@ export async function GET(req: NextRequest) {
           metadata: { bookingId: b.id, type: "late_fee" },
           success_url: `${appUrl}/reservas/${b.id}?late_fee=paid`,
           cancel_url:  `${appUrl}/reservas/${b.id}`,
-          expires_at:  Math.floor(Date.now() / 1000) + 72 * 3600, // 72h
+          // 🪤 Era `72 * 3600` aqui, e a Stripe recusa: o teto de `expires_at` é
+          // 24h. Esta cobrança nunca foi exercitada, então o defeito ficou
+          // latente até a mesma fórmula ser copiada para a cobrança de extensão
+          // e falhar ao vivo (24/08/2026).
+          expires_at:  Math.floor(Date.now() / 1000) + STRIPE_CHARGE_EXPIRES_SECONDS,
         })
 
         await sendLateFeeEmail(

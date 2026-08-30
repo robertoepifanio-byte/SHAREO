@@ -13,7 +13,7 @@ import { Gallery } from "./_Gallery"
 import { PriceCalc } from "./_PriceCalc"
 import { AddToRentalButton } from "@/components/cart/AddToRentalButton"
 import { StickyBookingCTA } from "./_StickyBookingCTA"
-import { CANCELLATION_POLICY_LINES } from "@/lib/cancellationPolicy"
+import { getCancellationPolicyLines } from "@/lib/cancellationPolicy"
 import { getPlatformFeeRate, CHECKOUT_MAX_CENTS, getRentalContractConfig } from "@/lib/platform-config"
 import { RENTAL_CONTRACT_TEXT } from "@/lib/rental-contract"
 import { ItemCard } from "@/components/items/ItemCard"
@@ -622,7 +622,7 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
                 <p className="mb-3 text-xs font-bold text-brand">🔒 Sua locação está protegida</p>
                 <ul className="space-y-2">
                   {[
-                    "Cancelamento gratuito até 24h antes",
+                    "Reembolso integral se você cancelar",
                     "Item protegido durante a locação",
                     "Suporte ShareO disponível 7 dias por semana",
                   ].map((item) => (
@@ -642,7 +642,7 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
                   Política de cancelamento
                 </p>
                 <ul className="space-y-2" aria-label="Regras de cancelamento e reembolso">
-                  {CANCELLATION_POLICY_LINES.map((line) => (
+                  {getCancellationPolicyLines().map((line) => (
                     <li key={line.label} className="flex items-start gap-2 text-xs text-foreground">
                       <svg
                         width="13"

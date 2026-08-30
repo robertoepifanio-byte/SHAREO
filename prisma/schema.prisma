@@ -104,6 +104,13 @@ enum NotificationType {
   AMBASSADOR_COMMISSION // ADR-022 — comissão gerada por locação de indicado
   AMBASSADOR_TIER_UP // ADR-022 — embaixador subiu de tier
   COUPON_EARNED // P3-20 — cupom de desconto ganho por avaliar
+  // Extensão de prazo (ATOR-04). As três notificações de extensão saíam como
+  // BOOKING_CONFIRMED — "reserva confirmada" para um evento que não é isso.
+  // O tipo é o que um filtro por categoria, um deep-link ou uma preferência de
+  // e-mail vão ler; rotular errado hoje custa caro quando isso existir.
+  EXTENSION_REQUESTED // locatário pediu mais prazo (notifica o proprietário)
+  EXTENSION_APPROVED // proprietário aceitou
+  EXTENSION_REJECTED // proprietário recusou
 }
 
 enum CheckPhase {
@@ -533,9 +540,27 @@ model Booking {
 
   // P1-27 — Extensão de prazo
   extensionRequestedEndDate DateTime? // nova data de devolução solicitada pelo locatário
-  extensionStatus           String? // "PENDING" | "APPROVED" | "REJECTED"
+  // "PENDING" | "AWAITING_PAYMENT" | "APPROVED" | "REJECTED"
+  //
+  // AWAITING_PAYMENT (ATOR-03): o proprietário já aceitou, mas a extensão ainda
+  // NÃO vale — `endDate` só se move quando as diárias extras são pagas. Decisão
+  // do fundador (24/08): nunca existe item emprestado a mais sem dinheiro
+  // correspondente. Só ocorre quando a reserva já estava PAID; se ainda não
+  // estava, a aprovação recalcula os totais e o checkout normal cobra tudo junto.
+  extensionStatus           String?
   extensionRequestedAt      DateTime? // quando a solicitação foi feita
   extensionRespondedAt      DateTime? // quando o proprietário respondeu
+  // Diárias extras da extensão, em centavos (dailyPrice × dias acrescentados).
+  // Gravado na aprovação e cobrado numa Checkout Session própria — o checkout
+  // comum cobra `totalPrice` INTEIRO, então reusá-lo cobraria a locação de novo.
+  // Mantido depois de aplicada: é o registro de quanto foi cobrado pela
+  // extensão, e o que permite separar, no repasse, a parte que veio da cobrança
+  // original da que veio da cobrança extra.
+  extensionAmountCents      Int?
+  // PaymentIntent das diárias extras. É a cobrança de onde sai o Transfer do
+  // proprietário referente à extensão — não dá para usar o da locação, que não
+  // tem esse dinheiro.
+  extensionPaymentIntentId  String?
 
   // Financeiro — FIN-1.1
   platformFeeRate   Int?
@@ -931,6 +956,15 @@ model Payout {
   bookingId             String
   booking               Booking             @relation(fields: [bookingId], references: [id])
   amount                Int
+  // Cobrança que FINANCIA esta transferência. `null` = a cobrança original da
+  // locação (`booking.stripePaymentIntentId`) — comportamento de todo repasse
+  // anterior. Preenchido quando o repasse vem de uma cobrança adicional, como
+  // as diárias extras de uma extensão (ATOR-03).
+  //
+  // 🪤 A Stripe EXIGE `source_transaction` em transferência envolvendo o Brasil,
+  // e ele liga a transferência a UMA cobrança. Dinheiro de duas cobranças não
+  // cabe numa transferência só — daí um Payout por cobrança.
+  sourcePaymentIntentId String?
   status                PayoutStatus        @default(PENDING)
   eligibleAfter         DateTime
   processedAt           DateTime?

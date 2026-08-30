@@ -113,7 +113,8 @@ test.describe('proprietário — conta PIX e repasses', () => {
   test('6. acessa /perfil/recebimentos sem erro', async ({ page }) => {
     await page.goto('/perfil/recebimentos')
     await expect(page).toHaveURL(/\/recebimentos/, { timeout: 15000 })
-    await expect(page.locator('h1')).toContainText('Conta de Recebimento PIX')
+    // Renomeado em #351: a tela deixou de ser exclusiva de PIX quando o Stripe Connect entrou.
+    await expect(page.locator('h1')).toContainText('Como você recebe')
   })
 
   test('7. formulário PIX exibe erro para CPF inválido', async ({ page }) => {
@@ -471,10 +472,17 @@ test.describe('admin — APIs financeiras protegidas', () => {
     expect(res.status()).toBe(200)
     const body = await res.json() as { configs: { key: string; value: string }[] }
     expect(Array.isArray(body.configs)).toBe(true)
-    // Taxa padrão deve estar configurada
-    const feeConfig = body.configs.find((c) => c.key === 'platformFeeRate')
-    expect(feeConfig).toBeTruthy()
-    expect(feeConfig?.value).toBe('1500')
+    // A taxa EFETIVA não sai desta rota: o GET é um findMany cru e `platformFeeRate` só vira linha
+    // no banco depois que um SUPERADMIN salva em /admin/financeiro — sem linha,
+    // getPlatformFeeRate() cai em DEFAULT_FEE_RATE. Condicionar a asserção à existência da linha
+    // deixaria o teste sem cobrir taxa nenhuma no estado normal (que é a linha ausente), então
+    // quem responde por ela é /api/platform-config/public, que sempre devolve o valor resolvido.
+    const publicRes = await page.request.get('/api/platform-config/public')
+    expect(publicRes.status(), 'GET /api/platform-config/public deve responder 200').toBe(200)
+    const { data: publicCfg } = await publicRes.json() as { data: { feeRateBps: number } }
+    expect(Number.isInteger(publicCfg.feeRateBps), `feeRateBps deve ser inteiro, veio ${publicCfg.feeRateBps}`).toBe(true)
+    expect(publicCfg.feeRateBps, 'taxa efetiva em basis points').toBeGreaterThan(0)
+    expect(publicCfg.feeRateBps, 'taxa efetiva em basis points').toBeLessThanOrEqual(10000)
   })
 
   test('PATCH /api/admin/payouts/[id] retorna 404 para ID inexistente', async ({ page }) => {

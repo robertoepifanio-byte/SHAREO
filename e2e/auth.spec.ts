@@ -11,7 +11,6 @@ interface RegisterData {
   email: string
   senha: string
   userType: 'PF' | 'PJ'
-  cpf: string
   cidade: string
   estado: string
 }
@@ -33,7 +32,7 @@ async function fillRegisterForm(page: Page, data: RegisterData) {
     await pfRadio.check()
   }
 
-  await page.getByLabel(/CPF/i).fill(data.cpf)
+  // Sem CPF: o cadastro progressivo (#26) moveu o documento para /cadastro/completar.
   // getByRole usa ARIA accessible name (exclui aria-hidden *) — evita "Cidade*" vs "Cidade"
   await page.getByRole('textbox', { name: /^Cidade/i }).fill(data.cidade)
 
@@ -57,20 +56,11 @@ async function login(page: Page, email: string, password: string) {
 // Dados de teste
 // ---------------------------------------------------------------------------
 
-function randomCpf(): string {
-  const n = Array.from({ length: 9 }, () => Math.floor(Math.random() * 10))
-  const d1 = (n.reduce((s, v, i) => s + v * (10 - i), 0) * 10) % 11 % 10
-  const d2 = ([...n, d1].reduce((s, v, i) => s + v * (11 - i), 0) * 10) % 11 % 10
-  const f = [...n, d1, d2]
-  return `${f.slice(0,3).join('')}.${f.slice(3,6).join('')}.${f.slice(6,9).join('')}-${f.slice(9).join('')}`
-}
-
 const VALID_USER = {
   nome: 'Ana Teste',
   email: `ana.teste+${Date.now()}@shareo.test`,
   senha: 'Shareo@2026!',
   userType: 'PF' as const,
-  cpf: randomCpf(),
   cidade: 'São Paulo',
   estado: 'SP',
 }
