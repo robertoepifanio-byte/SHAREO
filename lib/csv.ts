@@ -43,3 +43,8 @@ export function toCsv(rows: Record<string, unknown>[]): string {
  * como "SÃ£o Paulo". Prefixar no corpo da resposta, não no header.
  */
 export const CSV_BOM = "﻿"
+
+/** Centavos → decimal simples ("1234.56"), sem símbolo de moeda — pra célula numérica de planilha. */
+export function centsToCsvDecimal(cents: number | null | undefined): string {
+  return cents == null ? "" : (cents / 100).toFixed(2)
+}
