@@ -344,8 +344,8 @@ test.describe('FIN-8 — exportação financeira CSV', () => {
     expect(res.status()).toBe(200)
     expect(res.headers()['content-type']).toContain('text/csv')
     const body = await res.text()
-    // Deve ter cabeçalho CSV
-    expect(body).toContain('id,data,status')
+    // Deve ter cabeçalho CSV com as colunas pedidas pelo fundador (auditoria de repasse)
+    expect(body).toContain('data,cod locação,descrição,valor pago,tx Stripe,Comissão Shareo,Valor proprietário')
   })
 
   test('22. POST /api/admin/export retorna 202 para período > 90 dias', async ({ page }) => {

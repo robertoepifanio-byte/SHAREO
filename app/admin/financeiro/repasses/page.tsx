@@ -5,27 +5,10 @@ import { requireAdminPage } from "@/lib/auth/require-admin"
 import { PayoutActions } from "../_PayoutActions"
 import { formatPrice, formatDateTime } from "@/utils/format"
 import { StatusBadge } from "@/components/ui/StatusBadge"
-import type { PayoutStatus } from "@prisma/client"
+import { PAYOUT_STATUS_LABEL as STATUS_LABEL, PAYOUT_STATUS_VARIANT as STATUS_VARIANT } from "@/lib/payout-status"
+import { parsePayoutFilters, PAYOUT_STATUS_OPTIONS as STATUS_OPTIONS } from "@/lib/payout-filters"
 
 export const metadata: Metadata = { title: "Admin — Repasses" }
-
-const STATUS_OPTIONS: PayoutStatus[] = ["PENDING", "PROCESSING", "COMPLETED", "FAILED", "BLOCKED"]
-
-const STATUS_LABEL: Record<PayoutStatus, string> = {
-  PENDING:    "Pendente",
-  PROCESSING: "Processando",
-  COMPLETED:  "Concluído",
-  FAILED:     "Falhou",
-  BLOCKED:    "Bloqueado",
-}
-
-const STATUS_VARIANT: Record<PayoutStatus, "warning" | "info" | "success" | "danger"> = {
-  PENDING:    "warning",
-  PROCESSING: "info",
-  COMPLETED:  "success",
-  FAILED:     "danger",
-  BLOCKED:    "danger",
-}
 
 // Repasses aqui não têm o ID do Transfer da Stripe — só amount/status/eligibleAfter/
 // processedAt (ver lib/payout.ts). Conferir se o dinheiro chegou de verdade exige o
@@ -39,36 +22,14 @@ type Props = {
 export default async function AdminRepassesPage({ searchParams }: Props) {
   await requireAdminPage("ADMIN_SUPERADMIN", "ADMIN_FINANCEIRO")
 
-  const params = await searchParams
-  const q      = params.q?.trim() ?? ""
-  const status = STATUS_OPTIONS.includes(params.status as PayoutStatus) ? (params.status as PayoutStatus) : undefined
-  // Data pura (YYYY-MM-DD) do <input type="date"> — sem componente de hora, então
-  // "from" e "to" já cobrem o dia inteiro sem precisar de +1 dia no "to" (lt do dia
-  // seguinte seria necessário só se comparássemos contra hora; aqui basta lte no fim
-  // do dia informado).
-  const from = params.from ? new Date(`${params.from}T00:00:00`) : undefined
-  const to   = params.to   ? new Date(`${params.to}T23:59:59.999`) : undefined
+  const rawParams = await searchParams
+  const { q, status, from, to, where } = parsePayoutFilters(rawParams)
 
   // take:200 corta silenciosamente o resto — essencial pra reconciliação com a
   // Stripe (o objetivo desta tela) poder restringir por período em vez de só
   // torcer pra reserva/repasse que se procura estar entre os 200 mais recentes.
   const payouts = await prisma.payout.findMany({
-    where: {
-      ...(status ? { status } : {}),
-      ...(from || to ? { createdAt: { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) } } : {}),
-      ...(q
-        ? {
-            OR: [
-              { booking: { item: { title: { contains: q, mode: "insensitive" } } } },
-              { ownerPaymentAccount: { user: { name:  { contains: q, mode: "insensitive" } } } },
-              { ownerPaymentAccount: { user: { email: { contains: q, mode: "insensitive" } } } },
-              // Só casa com o ID EXATO da reserva (é um cuid, não dá pra busca parcial) —
-              // útil quando se cola o ID vindo da URL de /admin/reservas/[id].
-              { bookingId: { equals: q } },
-            ],
-          }
-        : {}),
-    },
+    where,
     orderBy: { createdAt: "desc" },
     take:    200,
     select: {
@@ -102,12 +63,25 @@ export default async function AdminRepassesPage({ searchParams }: Props) {
             ({payouts.length}{payouts.length === 200 ? "+" : ""}{q || status || from || to ? " encontrados" : " total"})
           </span>
         </h1>
-        <Link
-          href="/admin/financeiro"
-          className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold text-foreground hover:border-primary hover:text-primary transition-colors"
-        >
-          ← Financeiro
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href={`/api/admin/export/repasses?${new URLSearchParams({
+              ...(q ? { q } : {}),
+              ...(status ? { status } : {}),
+              ...(from ? { from } : {}),
+              ...(to ? { to } : {}),
+            }).toString()}`}
+            className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold text-foreground hover:border-primary hover:text-primary transition-colors"
+          >
+            ↓ Exportar CSV
+          </Link>
+          <Link
+            href="/admin/financeiro"
+            className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold text-foreground hover:border-primary hover:text-primary transition-colors"
+          >
+            ← Financeiro
+          </Link>
+        </div>
       </div>
 
       <form method="GET" className="mb-4 flex flex-wrap items-center gap-2">
@@ -135,7 +109,7 @@ export default async function AdminRepassesPage({ searchParams }: Props) {
           <input
             type="date"
             name="from"
-            defaultValue={params.from ?? ""}
+            defaultValue={from}
             aria-label="Criado a partir de"
             className="min-h-11 rounded-lg border border-border bg-surface px-2 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
           />
@@ -145,7 +119,7 @@ export default async function AdminRepassesPage({ searchParams }: Props) {
           <input
             type="date"
             name="to"
-            defaultValue={params.to ?? ""}
+            defaultValue={to}
             aria-label="Criado até"
             className="min-h-11 rounded-lg border border-border bg-surface px-2 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
           />
@@ -156,7 +130,7 @@ export default async function AdminRepassesPage({ searchParams }: Props) {
         >
           Buscar
         </button>
-        {(q || status || params.from || params.to) && (
+        {(q || status || from || to) && (
           <Link
             href="/admin/financeiro/repasses"
             className="min-h-11 flex items-center rounded-lg border border-border bg-surface px-4 py-2 text-sm font-semibold text-foreground hover:border-primary hover:text-primary transition-colors"

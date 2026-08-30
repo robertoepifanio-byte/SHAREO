@@ -20,15 +20,28 @@ import { sendExportReadyEmail } from "@/lib/email"
 // toCsv vivia aqui como função local; foi extraído para lib/csv.ts quando a
 // exportação de interessados da campanha passou a precisar do mesmo escape
 // (incluindo a proteção contra formula injection, S14-SEC-06).
-import { toCsv } from "@/lib/csv"
+import { toCsv, centsToCsvDecimal, CSV_BOM } from "@/lib/csv"
+import { PAYOUT_STATUS_LABEL } from "@/lib/payout-status"
+import type { PayoutStatus } from "@prisma/client"
 
 export const runtime = "nodejs"
 
 const MAX_DAYS_SYNC  = 90
 const MAX_DAYS_TOTAL = 5 * 365 // ADR-017: 5 anos
 
-function fmtBrl(cents: number | null | undefined) {
-  return cents == null ? "" : (cents / 100).toFixed(2)
+/**
+ * Resumo do(s) `Payout` de uma reserva — normalmente 1, mas pode ser 2 quando
+ * há extensão de prazo paga à parte (ATOR-03, um Payout por cobrança). Sem
+ * essa junção o CSV mostrava o valor CALCULADO do repasse, nunca se ele
+ * realmente saiu — pedido do fundador para auditoria de verdade.
+ */
+function resumoRepasse(payouts: { status: PayoutStatus; processedAt: Date | null }[]): string {
+  if (payouts.length === 0) return "—"
+  if (payouts.every((p) => p.status === "COMPLETED")) return PAYOUT_STATUS_LABEL.COMPLETED
+  if (payouts.some((p) => p.status === "FAILED" || p.status === "BLOCKED")) {
+    return payouts.map((p) => PAYOUT_STATUS_LABEL[p.status]).join(" + ")
+  }
+  return PAYOUT_STATUS_LABEL[payouts[0].status]
 }
 
 async function fetchRows(start: Date, end: Date) {
@@ -52,25 +65,27 @@ async function fetchRows(start: Date, end: Date) {
       item:             { select: { title: true } },
       owner:            { select: { name: true, email: true } },
       borrower:         { select: { name: true, email: true } },
+      payouts:          { select: { status: true, processedAt: true } },
     },
   })
 
   return bookings.map((b) => ({
-    id:                b.id,
-    data:              b.createdAt.toISOString().slice(0, 10),
-    status:            b.status,
-    pagamento:         b.paymentStatus,
-    item:              b.item.title,
-    proprietario:      b.owner.name ?? "",
-    email_proprietario: b.owner.email,
-    locatario:         b.borrower.name ?? "",
-    email_locatario:   b.borrower.email,
-    total_brl:         fmtBrl(b.totalPrice),
-    taxa_plataforma_brl: fmtBrl(b.platformFeeAmount),
-    repasse_liquido_brl: fmtBrl(b.ownerNetAmount),
-    stripe_fee_brl:    fmtBrl(b.stripeFee),
-    taxa_pct:          b.platformFeeRate != null ? (b.platformFeeRate / 100).toFixed(2) + "%" : "",
-    dispute_id:        b.stripeDisputeId ?? "",
+    "data":                b.createdAt.toISOString().slice(0, 10),
+    "cod locação":         b.id,
+    "descrição":           b.item.title,
+    "valor pago":          centsToCsvDecimal(b.totalPrice),
+    "tx Stripe":           centsToCsvDecimal(b.stripeFee),
+    "Comissão Shareo":     centsToCsvDecimal(b.platformFeeAmount),
+    "Valor proprietário":  centsToCsvDecimal(b.ownerNetAmount),
+    status:                b.status,
+    pagamento:             b.paymentStatus,
+    proprietario:          b.owner.name ?? "",
+    email_proprietario:    b.owner.email,
+    locatario:             b.borrower.name ?? "",
+    email_locatario:       b.borrower.email,
+    taxa_pct:              b.platformFeeRate != null ? (b.platformFeeRate / 100).toFixed(2) + "%" : "",
+    status_repasse:        resumoRepasse(b.payouts),
+    dispute_id:            b.stripeDisputeId ?? "",
   }))
 }
 
@@ -115,7 +130,8 @@ export async function POST(req: NextRequest) {
   // ── Síncrono: ≤ 90 dias ──────────────────────────────────────────────────
   if (diffDays <= MAX_DAYS_SYNC) {
     const rows = await fetchRows(start, end)
-    const csv  = toCsv(rows)
+    // BOM: sem ele o Excel pt-BR abre em ANSI e "descrição"/"Comissão" viram lixo.
+    const csv  = CSV_BOM + toCsv(rows)
 
     const filename = `shareo-financeiro-${startStr}-${endStr}.csv`
 
@@ -168,7 +184,7 @@ async function processExportJobAsync(
 
   try {
     const rows = await fetchRows(start, end)
-    const csv  = toCsv(rows)
+    const csv  = CSV_BOM + toCsv(rows)
 
     // MVP: salva como data URL base64 (sem Supabase Storage configurado para exports)
     // V1+: upload para Supabase Storage + URL assinada por 48h
