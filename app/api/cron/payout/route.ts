@@ -46,6 +46,7 @@ export async function GET(req: NextRequest) {
     select: {
       id:     true,
       amount: true,
+      sourcePaymentIntentId: true,
       booking: {
         select: { id: true, stripePaymentIntentId: true },
       },
@@ -68,7 +69,9 @@ export async function GET(req: NextRequest) {
     }
 
     const account   = payout.ownerPaymentAccount
-    const intentId  = payout.booking.stripePaymentIntentId
+    // A cobrança que financia ESTE repasse: a da extensão, quando o Payout
+    // aponta para uma; senão a da locação (todos os repasses até 24/08/2026).
+    const intentId  = payout.sourcePaymentIntentId ?? payout.booking.stripePaymentIntentId
 
     try {
       if (account.stripeAccountId && account.stripeConnectStatus === "ACTIVE" && intentId) {

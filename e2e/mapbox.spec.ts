@@ -22,6 +22,13 @@ import { SESSION_PATHS } from './fixtures/test-credentials'
 
 const hasProprietarioSession = fs.existsSync(SESSION_PATHS.proprietario)
 
+// 🪤 `extraHTTPHeaders: {}` anula o `x-e2e-token` global das configs do Playwright. Um header
+// customizado no contexto vale para TODA requisição da página — inclusive os GETs que o Mapbox GL
+// faz para api.mapbox.com. Header custom transforma GET simples em requisição non-simple → o
+// Chromium dispara preflight → a Mapbox não devolve `Access-Control-Allow-Headers: x-e2e-token`
+// → tile bloqueado por CORS e o mapa não carrega. NÃO remover pensando que é redundante.
+const MAPBOX_CONTEXT = { storageState: SESSION_PATHS.proprietario, extraHTTPHeaders: {} } as const
+
 // JPEG mínimo válido (1×1px) — mesmo buffer usado no smoke #9
 const MINIMAL_JPEG = Buffer.from(
   'ffd8ffe000104a46494600010100000100010000ffdb004300080606070605080707' +
@@ -37,7 +44,7 @@ test.describe('smoke #12 — Mapbox GL (/itens?view=map)', () => {
     !hasProprietarioSession,
     'Requer session-proprietario.json — rode: pnpm tsx scripts/create-staging-fixtures.ts',
   )
-  test.use({ storageState: SESSION_PATHS.proprietario })
+  test.use(MAPBOX_CONTEXT)
 
   test('token configurado: canvas renderiza, fallback ausente, tiles sem 401/403', async ({ page }) => {
     // Mapbox carrega tiles continuamente — networkidle nunca dispara; usa 'load' + waits explícitos
@@ -77,6 +84,7 @@ test.describe('smoke #12 — Mapbox GL (/itens?view=map)', () => {
         categoryId,
         condition:   'GOOD',
         pricePerDay: 5000,
+        estimatedRetailPrice: 100_000,
         city:        'Natal',
         state:       'RN',
         latitude:    -5.7945,   // Natal/RN — onde os seed items estão
@@ -181,7 +189,7 @@ test.describe('smoke #12b — Mapbox GL pins e navegação', () => {
     !hasProprietarioSession,
     'Requer session-proprietario.json — rode: pnpm tsx scripts/create-staging-fixtures.ts',
   )
-  test.use({ storageState: SESSION_PATHS.proprietario })
+  test.use(MAPBOX_CONTEXT)
 
   test('pins de itens aparecem no mapa; clique em marcador navega para /itens/{id}', async ({ page }) => {
     test.setTimeout(90000)
@@ -207,6 +215,7 @@ test.describe('smoke #12b — Mapbox GL pins e navegação', () => {
         categoryId,
         condition:   'GOOD',
         pricePerDay: 3000,
+        estimatedRetailPrice: 60_000,
         city:        'Natal',
         state:       'RN',
         latitude:    -5.7945,
@@ -258,36 +267,56 @@ test.describe('smoke #12b — Mapbox GL pins e navegação', () => {
       if (markerCount > 0) {
         console.log(`  ${markerCount} marcador(es) HTML encontrado(s) no mapa ✅`)
 
-        // ── Clique no primeiro marcador → navegação ────────────────────
-        const firstMarker = markers.first()
-        const isClickable = await firstMarker.isVisible().catch(() => false)
+        // ── Clique num marcador clicável → navegação ───────────────────
+        // 🪤 DUAS coisas cobrem um pin e fazem o Playwright abortar o clique:
+        //   1) `app/itens/page.tsx:493` arredonda lat/lng para 3 casas (~110m, SEC-MIN-06) —
+        //      vários itens de Natal caem na MESMA coordenada e os `.mapboxgl-marker` se
+        //      empilham. O `<img>` do marcador de cima intercepta o clique no de baixo.
+        //   2) O header é `sticky top-0 z-[200]`: pin na faixa dele é coberto pelo link
+        //      "Explorar". Nenhum dos dois é bug de produto (pin sobreposto/rolado para fora
+        //      também não é clicável para o usuário) — o teste é que precisa escolher o alvo.
+        // Filtrar só por "abaixo do header" não bastava: não trata o empilhamento (1).
+        // Aqui perguntamos ao próprio DOM quem está por cima no ponto de clique.
+        await page.locator('.mapboxgl-map').first().scrollIntoViewIfNeeded()
+        await page.waitForTimeout(500)  // mapa reposiciona os markers após o scroll
 
-        if (isClickable) {
-          const [navResponse] = await Promise.all([
-            page.waitForURL(/\/itens\//, { timeout: 8000 }).catch(() => null),
-            firstMarker.click({ timeout: 5000 }),
-          ])
-
-          const currentUrl = page.url()
-          if (currentUrl.includes('/itens/')) {
-            console.log(`  Clique no pin → navegação para ${currentUrl} ✅`)
-          } else {
-            // Pode abrir popup/bottomsheet em vez de navegar direto
-            const popup = page
-              .locator('[class*="popup"], [class*="marker-popup"], [role="dialog"]')
-              .or(page.getByRole('link', { name: /ver\s+item|ver\s+detalhes|alugar/i }))
-              .first()
-            const hasPopup = await popup.isVisible({ timeout: 3000 }).catch(() => false)
-            if (hasPopup) {
-              console.log('  Clique no pin → popup/card abriu ✅')
-            } else {
-              test.info().annotations.push({
-                type: 'info',
-                description: `Clique no pin não navegou para /itens/ nem abriu popup — URL atual: ${currentUrl}`,
-              })
-            }
+        const clickableIndex = await page.evaluate(() => {
+          const els = Array.from(document.querySelectorAll('.mapboxgl-marker'))
+          // De trás para frente: o último no DOM é o pintado por cima.
+          for (let i = els.length - 1; i >= 0; i--) {
+            const el = els[i] as HTMLElement
+            const r  = el.getBoundingClientRect()
+            if (r.width === 0 || r.height === 0) continue
+            const x = r.left + r.width / 2
+            const y = r.top  + r.height / 2
+            if (x < 0 || y < 0 || x > window.innerWidth || y > window.innerHeight) continue
+            const hit = document.elementFromPoint(x, y)
+            if (hit && el.contains(hit)) return i
           }
-        }
+          return -1
+        })
+
+        expect(
+          clickableIndex,
+          'Nenhum dos marcadores está clicável (todos cobertos por outro pin, pelo header ou fora da viewport)',
+        ).toBeGreaterThanOrEqual(0)
+        console.log(`  marcador clicável: índice ${clickableIndex} de ${markerCount}`)
+
+        // O `clickableIndex` já provou, pelo DOM, que este marcador recebe o clique —
+        // reconfirmar com isVisible() só reabriria o caminho de falso-verde.
+        await markers.nth(clickableIndex).click({ timeout: 5000 })
+
+        // Clicar no pin NÃO navega: `ItemsMap.tsx:128` faz setPopup(item) e abre um <Popup>.
+        // 🪤 Ancorar em `.mapboxgl-popup`: `[class*="popup"], [role="dialog"]` casava o
+        // bottom-sheet "Filtros" (oculto, mais cedo no DOM) e o teste nunca provava nada.
+        const popup = page.locator('.mapboxgl-popup')
+        await expect(popup, 'Clique no pin deve abrir o popup do mapa').toBeVisible({ timeout: 5000 })
+        console.log('  Clique no pin → popup do mapa abriu ✅')
+
+        // O popup carrega o link do item — é ele que cumpre a navegação do título do teste
+        await popup.getByRole('link').first().click()
+        await page.waitForURL(/\/itens\/[^/?#]+/, { timeout: 15000 })
+        console.log(`  Popup → navegação para ${page.url()} ✅`)
       } else {
         // Pins podem ser GeoJSON (canvas) — não detectáveis via DOM
         // Verifica indirectamente: API deve ter itens com coordenadas

@@ -1,6 +1,7 @@
 // Fonte: components/layout/AppHeader.tsx
 // Transcrição de AppHeader.tsx do site para React Native.
-// Estrutura: barra navy, card branco c/ logo, sino c/ badge, hambúrguer.
+// Estrutura: barra navy, card branco c/ logo, sino c/ badge (logado)
+//            ou botão "Entrar" (deslogado), hambúrguer.
 
 import React from "react"
 import {
@@ -11,6 +12,7 @@ import {
   StyleSheet,
   Platform,
 } from "react-native"
+import { router } from "expo-router"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import Svg, { Path, Line, Circle } from "react-native-svg"
 
@@ -45,12 +47,14 @@ function BellIcon() {
 }
 
 interface AppHeaderProps {
-  menuOpen:         boolean
-  onToggleMenu:     () => void
+  menuOpen:           boolean
+  onToggleMenu:       () => void
   notificationCount?: number
+  /** Transcrito de AppHeader.tsx do site: mostra sino quando logado, "Entrar" quando não. */
+  isLoggedIn?:        boolean
 }
 
-export function AppHeader({ menuOpen, onToggleMenu, notificationCount = 0 }: AppHeaderProps) {
+export function AppHeader({ menuOpen, onToggleMenu, notificationCount = 0, isLoggedIn = true }: AppHeaderProps) {
   const insets = useSafeAreaInsets()
 
   return (
@@ -74,26 +78,38 @@ export function AppHeader({ menuOpen, onToggleMenu, notificationCount = 0 }: App
       {/* Espaçador */}
       <View style={{ flex: 1 }} />
 
-      {/* Sino de notificações */}
-      <Pressable
-        onPress={() => { /* navegar para /notificacoes quando existir */ }}
-        accessibilityRole="button"
-        accessibilityLabel={
-          notificationCount > 0
-            ? `${notificationCount} notificações`
-            : "Notificações"
-        }
-        style={styles.iconBtn}
-      >
-        <BellIcon />
-        {notificationCount > 0 && (
-          <View style={styles.badge} accessibilityElementsHidden>
-            <Text style={styles.badgeText}>
-              {notificationCount > 9 ? "9+" : notificationCount}
-            </Text>
-          </View>
-        )}
-      </Pressable>
+      {/* Auth area — transcrito de AppHeader.tsx do site:
+          logado → sino; deslogado → botão "Entrar" */}
+      {isLoggedIn ? (
+        <Pressable
+          onPress={() => { /* navegar para /notificacoes quando existir */ }}
+          accessibilityRole="button"
+          accessibilityLabel={
+            notificationCount > 0
+              ? `${notificationCount} notificações`
+              : "Notificações"
+          }
+          style={styles.iconBtn}
+        >
+          <BellIcon />
+          {notificationCount > 0 && (
+            <View style={styles.badge} accessibilityElementsHidden>
+              <Text style={styles.badgeText}>
+                {notificationCount > 9 ? "9+" : notificationCount}
+              </Text>
+            </View>
+          )}
+        </Pressable>
+      ) : (
+        <Pressable
+          onPress={() => router.push("/(auth)/login")}
+          accessibilityRole="button"
+          accessibilityLabel="Entrar"
+          style={styles.entrarBtn}
+        >
+          <Text style={styles.entrarText}>Entrar</Text>
+        </Pressable>
+      )}
 
       {/* Hambúrguer — "md:hidden" no site, aqui sempre visível (app mobile-only) */}
       <Pressable
@@ -168,5 +184,20 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color:      "#FFFFFF",
     lineHeight: 13,
+  },
+  // "inline-flex h-11 items-center px-4 ... border border-white/30 text-white" — AppHeader.tsx do site
+  entrarBtn: {
+    height:            44,
+    alignItems:        "center",
+    justifyContent:    "center",
+    paddingHorizontal: 16,
+    borderRadius:      8,
+    borderWidth:       1,
+    borderColor:       "rgba(255,255,255,0.3)",
+  },
+  entrarText: {
+    fontSize:   14,
+    fontWeight: "600",
+    color:      "#FFFFFF",
   },
 })

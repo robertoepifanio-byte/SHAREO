@@ -2,8 +2,8 @@ import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import crypto from "crypto"
 import { z } from "zod"
-import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { resolveUserId } from "@/lib/resolveUserId"
 import { WEBHOOK_EVENTS } from "@/lib/outboundWebhooks"
 import { isUrlSafeForWebhook } from "@/lib/ssrfGuard"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
@@ -22,17 +22,19 @@ const CreateSchema = z.object({
 })
 
 // GET — lista webhooks do usuário
-export async function GET() {
+// Aceita Bearer JWT (app mobile) via resolveUserId — além de cookie NextAuth.
+export async function GET(req: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 },
       )
     }
 
-    if (session.user.userType !== "PJ") {
+    const actor = await prisma.user.findUnique({ where: { id: userId }, select: { userType: true } })
+    if (actor?.userType !== "PJ") {
       return NextResponse.json(
         { error: { code: "FORBIDDEN", message: "Recurso exclusivo para contas PJ." } },
         { status: 403 },
@@ -40,7 +42,7 @@ export async function GET() {
     }
 
     const webhooks = await prisma.outboundWebhook.findMany({
-      where:   { userId: session.user.id },
+      where:   { userId },
       orderBy: { createdAt: "desc" },
       select: {
         id:             true,
@@ -66,24 +68,26 @@ export async function GET() {
 }
 
 // POST — cria um novo webhook
+// Aceita Bearer JWT (app mobile) via resolveUserId — além de cookie NextAuth.
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
+    const userId = await resolveUserId(req)
+    if (!userId) {
       return NextResponse.json(
         { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
         { status: 401 },
       )
     }
 
-    if (session.user.userType !== "PJ") {
+    const actor = await prisma.user.findUnique({ where: { id: userId }, select: { userType: true } })
+    if (actor?.userType !== "PJ") {
       return NextResponse.json(
         { error: { code: "FORBIDDEN", message: "Recurso exclusivo para contas PJ." } },
         { status: 403 },
       )
     }
 
-    const rl = await checkRateLimit(`pj-webhooks:${session.user.id}`, RATE_LIMITS.pjWebhooks.limit, RATE_LIMITS.pjWebhooks.windowMs)
+    const rl = await checkRateLimit(`pj-webhooks:${userId}`, RATE_LIMITS.pjWebhooks.limit, RATE_LIMITS.pjWebhooks.windowMs)
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const body   = await req.json()
@@ -110,7 +114,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Limite de webhooks por usuário
-    const count = await prisma.outboundWebhook.count({ where: { userId: session.user.id } })
+    const count = await prisma.outboundWebhook.count({ where: { userId } })
     if (count >= MAX_WEBHOOKS_PER_USER) {
       return NextResponse.json(
         { error: { code: "LIMIT_REACHED", message: `Máximo de ${MAX_WEBHOOKS_PER_USER} webhooks por conta.` } },
@@ -123,7 +127,7 @@ export async function POST(req: NextRequest) {
 
     const webhook = await prisma.outboundWebhook.create({
       data: {
-        userId: session.user.id,
+        userId,
         url:    parsed.data.url,
         events: parsed.data.events,
         secret,

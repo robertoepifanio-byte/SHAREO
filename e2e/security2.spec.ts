@@ -14,7 +14,7 @@ import fs from 'fs'
 import { test, expect } from '@playwright/test'
 import { SESSION_PATHS, FIXTURE_LOCATARIO, FIXTURE_PROPRIETARIO } from './fixtures/test-credentials'
 import { TEST_ITEM_PATH } from './fixtures/test-paths'
-import { enviarFotoDevolucao } from './_support'
+import { enviarFotoDevolucao, markBookingPaidForTest } from './_support'
 
 const hasSessions =
   fs.existsSync(SESSION_PATHS.locatario) &&
@@ -233,6 +233,7 @@ test.describe('smoke #21 — Review flow: avaliações após booking COMPLETED',
       // pickupToken é gerado no confirm e visível apenas para o borrower (locatário) — obrigatório no mark_active
       const detailRes = await loc.request.get(`/api/bookings/${bookingId}`)
       const { data: detail } = await detailRes.json() as { data: { pickupToken: string | null } }
+      await markBookingPaidForTest(prop.request, bookingId)
       const activeRes = await prop.request.patch(`/api/bookings/${bookingId}`, {
         data: { action: 'mark_active', pickupToken: detail.pickupToken },
       })

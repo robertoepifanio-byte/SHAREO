@@ -1,20 +1,15 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { withUser } from "@/lib/withUser"
 import { prisma } from "@/lib/prisma"
 
-export async function PATCH(_req: NextRequest) {
+export async function PATCH(req: NextRequest) {
   try {
-    const session = await auth()
-    if (!session) {
-      return NextResponse.json(
-        { error: { code: "UNAUTHORIZED", message: "Autenticação necessária." } },
-        { status: 401 },
-      )
-    }
+    const user = await withUser(req)
+    if (user instanceof NextResponse) return user
 
     await prisma.notification.updateMany({
-      where: { userId: session.user.id, readAt: null },
+      where: { userId: user.id, readAt: null },
       data:  { readAt: new Date() },
     })
 

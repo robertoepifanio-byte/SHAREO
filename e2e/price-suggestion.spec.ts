@@ -35,9 +35,14 @@ test.describe('price-suggestion API (GAP-06)', () => {
     const res = await request.get(`${BASE}/api/items/price-suggestion?value=100000&city=${encodeURIComponent(city)}&categoryId=${categoryId}`)
     expect(res.status(), 'sugestão com params válidos deve ser 200').toBe(200)
 
-    const body = await res.json() as Record<string, unknown>
-    // contrato real: { data: <sugestão por comparáveis | null>, count: <nº de comparáveis> }
-    expect(body, 'resposta deve ter o envelope { data, count }').toHaveProperty('count')
+    const body = await res.json() as { data?: { count?: number } | null; count?: number }
+    // Contrato real (app/api/items/price-suggestion/route.ts): `count` muda de lugar conforme a
+    // amostra — com <3 comparáveis vem `{ data: null, count }`; com 3+ vem dentro de
+    // `{ data: { avgCents, rangeMinCents, rangeMaxCents, count } }`. O ambiente decide o ramo,
+    // então o teste aceita os dois e exige que o número exista em um deles.
+    expect(body, 'resposta deve trazer o envelope { data }').toHaveProperty('data')
+    const comparaveis = body.data?.count ?? body.count
+    expect(typeof comparaveis, 'nº de comparáveis deve vir no topo ou dentro de data').toBe('number')
     console.log(`  sugestão 200 → ${JSON.stringify(body).slice(0, 120)} ✅`)
   })
 })

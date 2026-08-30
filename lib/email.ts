@@ -1,4 +1,5 @@
 import { Resend } from "resend"
+import type { CreateEmailOptions, CreateEmailResponse } from "resend"
 import { APP_URL } from "@/lib/app-url"
 import { unsubscribeUrl } from "@/lib/founders-unsubscribe"
 import { formatPrice, formatDateLong } from "@/utils/format"
@@ -8,11 +9,38 @@ const hasResendKey =
   typeof process.env.RESEND_API_KEY === "string" &&
   process.env.RESEND_API_KEY.length > 0
 
-// Inicialização lazy: evita erro de build quando RESEND_API_KEY não está no ambiente de CI
+/** `to` do payload da Resend só é destino de teste se TODO destinatário for `@shareo.test`. */
+function isTestRecipient(to: CreateEmailOptions["to"]): boolean {
+  const list = Array.isArray(to) ? to : [to]
+  return list.length > 0 && list.every((addr) => addr.toLowerCase().endsWith("@shareo.test"))
+}
+
+/**
+ * Inicialização lazy: evita erro de build quando RESEND_API_KEY não está no ambiente de CI.
+ *
+ * `emails.send` é interceptado aqui — único ponto por onde toda função deste
+ * arquivo obtém o cliente — para pular o envio real a `@shareo.test`. A suíte
+ * E2E cria dezenas de contas de teste por rodada, cada uma disparando e-mail
+ * de verificação/reset; nenhum spec lê a caixa de entrada, então a entrega
+ * real não tem valor nenhum — só consome a cota diária do Resend e derruba a
+ * fila de retry para e-mails de usuário de verdade (achado ao vivo em 28/08,
+ * cota estourada travando o `email-retry` cron).
+ */
 let _resend: Resend | null = null
 function getResend(): Resend | null {
   if (!hasResendKey) return null
-  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY)
+  if (_resend) return _resend
+
+  const client      = new Resend(process.env.RESEND_API_KEY)
+  const realSend     = client.emails.send.bind(client.emails)
+  client.emails.send = ((payload: CreateEmailOptions, options?: Parameters<typeof realSend>[1]): Promise<CreateEmailResponse> => {
+    if (isTestRecipient(payload.to)) {
+      return Promise.resolve({ data: { id: "skipped-test-recipient" }, error: null })
+    }
+    return realSend(payload, options)
+  }) as typeof client.emails.send
+
+  _resend = client
   return _resend
 }
 
@@ -328,7 +356,11 @@ export async function sendVerificationEmail(
   if (!resend) return
 
   const firstName  = name.split(" ")[0]
-  const verifyUrl  = `${APP_URL}/verify-email?token=${token}`
+  // Aponta pra rota de API que PROCESSA o token (grava emailVerified e redireciona
+  // pra /verify-email?success=1|error=...) — não pra própria página /verify-email,
+  // que só LÊ success/error da querystring e ignora token, redirecionando pra "/"
+  // em silêncio. O link nunca verificava nada; achado ao vivo em 28/08/2026.
+  const verifyUrl  = `${APP_URL}/api/auth/verify-email?token=${token}`
 
   const html = baseLayout(`
     <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">

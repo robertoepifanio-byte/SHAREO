@@ -70,7 +70,7 @@ export function SimuladorRenda() {
       <View style={s.table}>
         <View style={[s.tableHeadRow, { borderBottomColor: tokens.border }]}>
           <Text style={[s.tableHeadCell, { color: tokens.muted }]}>ITEM</Text>
-          <Text style={[s.tableHeadCell, { color: tokens.muted, textAlign: "right" }]}>RENDA MENSAL ESTIMADA</Text>
+          <Text style={[s.tableHeadCell, { color: tokens.muted, textAlign: "right" }]}>Renda Mensal Estimada</Text>
         </View>
         {TABLE_ROWS.map((row) => (
           <View
@@ -159,7 +159,7 @@ export function SimuladorRenda() {
       </View>
 
       <TouchableOpacity style={s.cta} onPress={() => router.push("/itens/novo")} accessibilityRole="button">
-        <Text style={s.ctaText}>CADASTRAR MEU ITEM AGORA</Text>
+        <Text style={s.ctaText}>Cadastrar meu item agora</Text>
       </TouchableOpacity>
     </View>
   )
@@ -198,5 +198,5 @@ const s = StyleSheet.create({
   outputEmptyText: { fontSize: 13, color: "#64748B", textAlign: "center" },
   outputIdle: { paddingVertical: 24, alignItems: "center" },
   cta: { marginTop: 20, backgroundColor: "#007B3C", borderRadius: 8, minHeight: 48, alignItems: "center", justifyContent: "center" },
-  ctaText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700", letterSpacing: 0.4 },
+  ctaText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700", letterSpacing: 0.4, textTransform: "uppercase" },
 })
