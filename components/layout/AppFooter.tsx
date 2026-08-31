@@ -35,7 +35,14 @@ export function AppFooter() {
             </p>
             <p className="mt-5 text-[11px] text-white/90">
               Desenvolvido por{" "}
-              <span className="font-semibold text-white">Pratika IA</span>
+              <a
+                href="https://www.pratika.ia.br"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-white hover:underline"
+              >
+                Pratika IA
+              </a>
             </p>
           </div>
 

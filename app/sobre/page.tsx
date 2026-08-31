@@ -268,14 +268,22 @@ export default async function SobrePage() {
                 <Image
                   src="/logos/pratika-ia-sobre.png"
                   alt="Pratika-IA"
-                  width={480}
-                  height={166}
+                  width={709}
+                  height={303}
                   className="h-auto w-full max-w-sm"
                 />
                 <p className="max-w-sm text-sm text-muted-foreground leading-relaxed">
                   Responsável pelo desenvolvimento completo da plataforma ShareO — da arquitetura
                   ao produto final, com foco em experiência do usuário, segurança e escalabilidade.
                 </p>
+                <a
+                  href="https://www.pratika.ia.br"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm font-semibold text-brand hover:underline"
+                >
+                  www.pratika.ia.br
+                </a>
               </div>
             </div>
           </div>
