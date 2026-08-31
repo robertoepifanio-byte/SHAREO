@@ -13,13 +13,17 @@ describe("founderWelcomeHtml — saudação", () => {
   const url = "https://www.shareo.com.br/api/founders/unsubscribe?email=a&token=b"
 
   it("usa o nome quando o lead informou", () => {
-    expect(founderWelcomeHtml("Roberto", 1, url)).toContain("Você está na lista, Roberto!")
+    const html = founderWelcomeHtml("Roberto", 1, url)
+    expect(html).toContain("Olá, Roberto!")
+    expect(html).toContain("Você está na lista!")
   })
 
   it("OMITE o nome quando não há — não inventa", () => {
     const html = founderWelcomeHtml("", 4, url)
+    expect(html).toContain("Olá!")
+    expect(html).not.toContain("Olá, !")
+    // A comemoração é para todo mundo; o que some é o nome, não a mensagem.
     expect(html).toContain("Você está na lista!")
-    expect(html).not.toContain("lista, !")
   })
 
   it("mantém a posição na fila nos dois casos", () => {
@@ -47,7 +51,7 @@ describe("founderWelcomeHtml — promessa de abertura", () => {
 
   it("diz que a abertura é por cidade", () => {
     expect(html).toContain("por cidade")
-    expect(html).toContain("abrir na sua cidade")
+    expect(html).toContain("abrirem na sua cidade")
   })
 
   it("explica o critério da ordem — é o que dá à pessoa motivo para convidar amigos", () => {
