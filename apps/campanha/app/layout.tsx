@@ -4,6 +4,7 @@ import { Providers } from "@/components/Providers"
 import { PreLaunchFooter } from "@/components/PreLaunchFooter"
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics"
 import { MetaPixel } from "@/components/analytics/MetaPixel"
+import { BASE_URL, NOINDEX_ENABLED } from "@/lib/seo"
 import "./globals.css"
 
 const montserrat = Montserrat({
@@ -20,23 +21,11 @@ const inter = Inter({
   display:  "swap",
 })
 
-const BASE = process.env.NEXT_PUBLIC_CAMPANHA_URL ?? "http://localhost:3007"
-
-/**
- * `NEXT_PUBLIC_NOINDEX` fica LIGADA enquanto a campanha roda em subdomínio
- * provisório. Duas landings de captação indexadas ao mesmo tempo (esta e a que
- * ainda sai pelo gate do app principal) racham autoridade entre si e confundem
- * o Google sobre qual é a página canônica da marca.
- *
- * Desligar só quando esta assumir shareo.com.br — e isso depende do D4.
- */
-const NOINDEX = process.env.NEXT_PUBLIC_NOINDEX === "true"
-
 export const metadata: Metadata = {
   title: "ShareO — Use Mais. Possua Menos.",
   description:
     "Entre na lista de pré-lançamento do ShareO: o marketplace local para anunciar e alugar itens com segurança e praticidade.",
-  metadataBase: new URL(BASE),
+  metadataBase: new URL(BASE_URL),
   openGraph: {
     type:     "website",
     locale:   "pt_BR",
@@ -55,7 +44,7 @@ export const metadata: Metadata = {
     site:   "@shareo_br",
     images: ["/logos/og-image-v5.webp"],
   },
-  robots: { index: !NOINDEX, follow: !NOINDEX },
+  robots: { index: !NOINDEX_ENABLED, follow: !NOINDEX_ENABLED },
   icons:  { apple: "/icons/shareo-logo.png" },
 }
 
