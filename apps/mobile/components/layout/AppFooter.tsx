@@ -153,7 +153,12 @@ export function AppFooter() {
           </Text>
           <Text style={s.desenvolvido}>
             {"Desenvolvido por "}
-            <Text style={s.desenvolvidoBold}>Pratika IA</Text>
+            <Text
+              style={s.desenvolvidoBold}
+              onPress={() => Linking.openURL("https://www.pratika.ia.br")}
+            >
+              Pratika IA
+            </Text>
           </Text>
         </View>
 
