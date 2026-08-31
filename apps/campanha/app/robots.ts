@@ -1,21 +1,23 @@
 import type { MetadataRoute } from "next"
-
-const BASE    = process.env.NEXT_PUBLIC_CAMPANHA_URL ?? "http://localhost:3007"
-const NOINDEX = process.env.NEXT_PUBLIC_NOINDEX === "true"
+import { BASE_URL, NOINDEX_ENABLED } from "@/lib/seo"
 
 /**
- * Enquanto a campanha vive em subdomínio provisório, ela fica FORA do índice.
+ * Enquanto `NEXT_PUBLIC_NOINDEX` estiver ligada, a landing fica FORA do índice.
  *
- * Duas landings de captação indexadas ao mesmo tempo — esta e a que ainda sai
- * pelo gate do app principal — competem entre si pela mesma marca. Liberar só
- * quando esta assumir shareo.com.br, o que depende do D4.
+ * O motivo original era o subdomínio provisório: duas landings de captação
+ * indexadas ao mesmo tempo — esta e a que saía pelo gate do app principal —
+ * competiriam entre si pela mesma marca. Ao assumir shareo.com.br a flag sai e
+ * esta passa a ser a página canônica da marca.
+ *
+ * A URL anunciada aqui é respondida por `app/sitemap.ts`, que lê a MESMA
+ * origem — ver `lib/seo.ts`.
  */
 export default function robots(): MetadataRoute.Robots {
-  if (NOINDEX) {
+  if (NOINDEX_ENABLED) {
     return { rules: [{ userAgent: "*", disallow: "/" }] }
   }
   return {
     rules:   [{ userAgent: "*", allow: "/" }],
-    sitemap: `${BASE}/sitemap.xml`,
+    sitemap: `${BASE_URL}/sitemap.xml`,
   }
 }
