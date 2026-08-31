@@ -64,6 +64,22 @@ export function PreLaunchFooter() {
         <p className="mt-6 border-t border-white/20 pt-5 text-center text-xs text-white">
           © {year} ShareO · Marketplace de aluguel entre pessoas
         </p>
+
+        {/* Mesma redação e mesma URL do rodapé do site (components/layout/AppFooter.tsx)
+            — duas grafias da mesma assinatura envelheceriam em direções diferentes.
+            `text-white` opaco pelo mesmo motivo do © acima: em texto pequeno sobre
+            este fundo, opacidade reduzida era a única violação de contraste da landing. */}
+        <p className="mt-2 text-center text-[11px] text-white">
+          Desenvolvido por{" "}
+          <a
+            href="https://www.pratika.ia.br"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-white hover:underline"
+          >
+            Pratika IA
+          </a>
+        </p>
       </div>
     </footer>
   )
