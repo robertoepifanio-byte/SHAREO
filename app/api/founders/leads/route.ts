@@ -229,7 +229,7 @@ async function handlePost(req: NextRequest) {
       // descadastrava e voltava não recebia nada, ficava sem confirmação e
       // concluía que o envio tinha falhado — logo depois de reconquistarmos a
       // pessoa, que é o pior momento para o silêncio.
-      const reactivatedName = name?.trim() || email.split("@")[0]
+      const reactivatedName = name?.trim() ?? ""
       after(() => sendFounderWelcomeEmail(emailLower, reactivatedName, lead.queuePosition).catch(() => {}))
 
       return NextResponse.json(
@@ -295,7 +295,17 @@ async function handlePost(req: NextRequest) {
 
     revalidateTag("founders")
 
-    const displayName = name?.trim() || email.split("@")[0]
+    // Sem nome, a saudação OMITE o nome em vez de inventar um.
+    //
+    // Antes caía em `email.split("@")[0]`, tratando o trecho antes do @ como se
+    // fosse o nome da pessoa: "Você está na lista, joao.silva92!" ou
+    // "Você está na lista, contato!". O campo Nome é OPCIONAL no formulário,
+    // então isso não é caso raro — é o padrão de quem não preenche.
+    //
+    // Este é o primeiro contato da marca com cada Fundador, num programa cujo
+    // crescimento depende de a pessoa ENCAMINHAR esse e-mail. E-mail sem nome é
+    // neutro; e-mail com o nome errado é constrangedor.
+    const displayName = name?.trim() ?? ""
     after(() => sendFounderWelcomeEmail(emailLower, displayName, lead.queuePosition).catch(() => {}))
 
     return NextResponse.json(
