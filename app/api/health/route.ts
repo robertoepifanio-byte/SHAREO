@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { NOINDEX_ENABLED } from "@/lib/seo-flags"
+import { isEmailProviderConfigured } from "@/lib/email"
 
 export const runtime    = "nodejs"
 export const dynamic    = "force-dynamic"
@@ -137,7 +138,17 @@ export async function GET() {
       // Vercel, ela chega vazia no build do staging (que usa `vercel pull`) e o
       // ambiente passa a ser indexável em silêncio. Não é dado sensível: é
       // observável no próprio robots.txt.
-      flags: { noindex: NOINDEX_ENABLED },
+      // `email` NÃO entra em `checks` de propósito: o passo de health do deploy
+      // aborta o deploy quando o status não é 200, e derrubar deploys por causa
+      // de e-mail — que não está no caminho de nenhuma requisição — trocaria uma
+      // falha silenciosa por outra pior. Promover a `checks` quando os dois
+      // ambientes estiverem verdes.
+      //
+      // Diz só se a chave CHEGOU ao runtime, sem validá-la com o provedor: é a
+      // pergunta que ficou sem resposta por horas em 31/08/2026, quando a
+      // variável estava certa no painel da Vercel e mesmo assim nenhum e-mail
+      // saía. Nenhuma tela disponível respondia isso.
+      flags: { noindex: NOINDEX_ENABLED, email: isEmailProviderConfigured() ? "ok" : "sem-chave" },
       // Só quando o banco falha — é diagnóstico, não telemetria de rotina.
       ...(checks.db === "error" && { dbUrl: await digitalDaUrl() }),
       // Códigos são seguros em produção (não identificam infra); a mensagem crua

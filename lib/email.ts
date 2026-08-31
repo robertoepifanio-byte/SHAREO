@@ -5,9 +5,19 @@ import { unsubscribeUrl } from "@/lib/founders-unsubscribe"
 import { formatPrice, formatDateLong } from "@/utils/format"
 import { prisma } from "@/lib/prisma"
 
-const hasResendKey =
-  typeof process.env.RESEND_API_KEY === "string" &&
-  process.env.RESEND_API_KEY.length > 0
+/**
+ * Lida a CADA chamada, não uma vez na carga do módulo.
+ *
+ * Como constante de módulo, o valor congelava na primeira vez que a função
+ * serverless subia: uma instância iniciada sem a variável seguia achando que
+ * não havia chave pelo resto da vida, mesmo depois de a variável ser
+ * corrigida. Combinado com a ausência de log, isso não aparecia em lugar
+ * nenhum. Ler na hora custa um acesso a `process.env`.
+ */
+export function isEmailProviderConfigured(): boolean {
+  const k = process.env.RESEND_API_KEY
+  return typeof k === "string" && k.trim().length > 0
+}
 
 /**
  * Domínios usados exclusivamente por teste automatizado. Nenhum deles recebe
@@ -49,7 +59,14 @@ export function isTestRecipient(to: CreateEmailOptions["to"]): boolean {
  */
 let _resend: Resend | null = null
 function getResend(): Resend | null {
-  if (!hasResendKey) return null
+  if (!isEmailProviderConfigured()) {
+    // Todas as 15 funções deste arquivo desistem em silêncio quando o cliente
+    // é nulo. Sem este log, uma campanha paga captaria leads sem ninguém
+    // receber nada e sem um único sinal — foi o que aconteceu em 31/08/2026,
+    // descoberto só porque alguém conferiu a caixa de entrada na mão.
+    console.error("[email] RESEND_API_KEY ausente ou vazia no runtime — NENHUM e-mail será enviado")
+    return null
+  }
   if (_resend) return _resend
 
   const client      = new Resend(process.env.RESEND_API_KEY)
