@@ -12,6 +12,7 @@
 
 import { useState, useRef, useCallback, type ChangeEvent, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
+import { compressImageIfNeeded } from "@/lib/compressImage"
 
 const PROBLEM_REASONS = [
   { value: "NAO_FUNCIONA",       label: "Não funciona" },
@@ -41,13 +42,18 @@ export function ReportProblemForm({ bookingId, onSuccess }: Props) {
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handlePhotoChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = useCallback(async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null
-    setPhotoFile(file)
     if (file) {
-      const url = URL.createObjectURL(file)
+      // Comprime antes de subir — mesmo motivo de ReturnChecklist.tsx: foto de
+      // câmera de celular passa fácil do limite de plataforma do Vercel
+      // (~4.5 MB), abaixo do maxUploadSizeMB que a API valida.
+      const compressed = await compressImageIfNeeded(file)
+      setPhotoFile(compressed)
+      const url = URL.createObjectURL(compressed)
       setPreviewUrl(url)
     } else {
+      setPhotoFile(null)
       setPreviewUrl(null)
     }
   }, [])
