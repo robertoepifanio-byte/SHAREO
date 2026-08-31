@@ -9,17 +9,38 @@ const hasResendKey =
   typeof process.env.RESEND_API_KEY === "string" &&
   process.env.RESEND_API_KEY.length > 0
 
-/** `to` do payload da Resend só é destino de teste se TODO destinatário for `@shareo.test`. */
-function isTestRecipient(to: CreateEmailOptions["to"]): boolean {
+/**
+ * Domínios usados exclusivamente por teste automatizado. Nenhum deles recebe
+ * e-mail lido por gente, então a entrega real só queima cota.
+ *
+ * ⚠️ Casar por DOMÍNIO, não por sufixo da string inteira. A versão anterior
+ * fazia `endsWith("@shareo.test")` e cobria 9 dos 197 endereços de teste do
+ * repositório: deixava passar `@shareo-test.com` (24, fixtures da suíte E2E) e
+ * `@daily-sim.shareo.test` (164, robô de validação diária — subdomínio, então
+ * o sufixo nunca casava). Os dois enviavam de verdade, todo dia, e foi assim
+ * que a cota da Resend estourou.
+ */
+const TEST_EMAIL_DOMAINS = ["shareo.test", "shareo-test.com"] as const
+
+function isTestDomain(address: string): boolean {
+  const at = address.lastIndexOf("@")
+  if (at < 0) return false
+  const domain = address.slice(at + 1).toLowerCase()
+  // `d` cobre o domínio exato; `.${d}` cobre qualquer subdomínio dele.
+  return TEST_EMAIL_DOMAINS.some((d) => domain === d || domain.endsWith(`.${d}`))
+}
+
+/** `to` do payload da Resend só é destino de teste se TODO destinatário for de domínio de teste. */
+export function isTestRecipient(to: CreateEmailOptions["to"]): boolean {
   const list = Array.isArray(to) ? to : [to]
-  return list.length > 0 && list.every((addr) => addr.toLowerCase().endsWith("@shareo.test"))
+  return list.length > 0 && list.every(isTestDomain)
 }
 
 /**
  * Inicialização lazy: evita erro de build quando RESEND_API_KEY não está no ambiente de CI.
  *
  * `emails.send` é interceptado aqui — único ponto por onde toda função deste
- * arquivo obtém o cliente — para pular o envio real a `@shareo.test`. A suíte
+ * arquivo obtém o cliente — para pular o envio real a domínio de teste. A suíte
  * E2E cria dezenas de contas de teste por rodada, cada uma disparando e-mail
  * de verificação/reset; nenhum spec lê a caixa de entrada, então a entrega
  * real não tem valor nenhum — só consome a cota diária do Resend e derruba a
