@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { compressImageIfNeeded } from "@/lib/compressImage"
 import { BIOMETRIC_CONSENT_VERSION } from "@/lib/legal-config"
 import {
   BIOMETRIC_CONSENT_TITLE,
@@ -98,38 +99,6 @@ export function IdVerification({ status: initialStatus, rejectionReason, biometr
 
   const info = STATUS_INFO[status]
 
-  async function compressImage(file: File, maxSizeMB = 4): Promise<Blob> {
-    return new Promise((resolve, reject) => {
-      const url = URL.createObjectURL(file)
-      const img = new Image()
-      img.onload = () => {
-        URL.revokeObjectURL(url)
-        const canvas = document.createElement("canvas")
-        const MAX_PX = 1920
-        let { width, height } = img
-        if (width > MAX_PX || height > MAX_PX) {
-          if (width > height) { height = Math.round(height * MAX_PX / width); width = MAX_PX }
-          else                { width  = Math.round(width  * MAX_PX / height); height = MAX_PX }
-        }
-        canvas.width = width; canvas.height = height
-        canvas.getContext("2d")!.drawImage(img, 0, 0, width, height)
-
-        let quality = 0.85
-        const tryCompress = () => {
-          canvas.toBlob((blob) => {
-            if (!blob) { reject(new Error("Falha ao compactar imagem")); return }
-            if (blob.size <= maxSizeMB * 1024 * 1024 || quality <= 0.3) { resolve(blob); return }
-            quality -= 0.1
-            tryCompress()
-          }, "image/jpeg", quality)
-        }
-        tryCompress()
-      }
-      img.onerror = () => reject(new Error("Imagem inválida"))
-      img.src = url
-    })
-  }
-
   async function submit() {
     const doc    = docRef.current?.files?.[0] ?? docCamRef.current?.files?.[0]
     const selfie = selfieRef.current?.files?.[0] ?? selfieCamRef.current?.files?.[0]
@@ -142,8 +111,8 @@ export function IdVerification({ status: initialStatus, rejectionReason, biometr
     setLoading(true); setError("")
     try {
       const [docBlob, selfieBlob] = await Promise.all([
-        compressImage(doc),
-        compressImage(selfie),
+        compressImageIfNeeded(doc),
+        compressImageIfNeeded(selfie),
       ])
       const fd = new FormData()
       fd.append("document", docBlob, "document.jpg")

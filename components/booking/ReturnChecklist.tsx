@@ -9,6 +9,7 @@
 
 import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
+import { compressImageIfNeeded } from "@/lib/compressImage"
 
 interface Props {
   bookingId: string
@@ -64,14 +65,22 @@ export function ReturnChecklist({ bookingId }: Props) {
     })
   }
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
     // Foto nova = upload novo; sem isto, trocar a imagem depois de uma falha
     // mandaria o mark_returned com a foto ANTIGA no bucket.
     photoUploadedRef.current = false
-    setPhotoFile(file)
-    const url = URL.createObjectURL(file)
+    // Comprime ANTES de subir — foto de câmera de celular passa fácil de
+    // 4.5 MB, limite de plataforma do Vercel (bem abaixo do maxUploadSizeMB=10
+    // que a API valida). Sem isso a requisição nem chega no nosso código: o
+    // Vercel recusa com 413 "FUNCTION_PAYLOAD_TOO_LARGE" em texto puro, o
+    // catch de handleConfirm não consegue nem fazer .json() da resposta, e o
+    // usuário só via "Erro ao enviar foto." sem explicação nenhuma (achado
+    // ao vivo, relato do Thiago, 29/08/2026 — reproduzido com 413 real).
+    const compressed = await compressImageIfNeeded(file)
+    setPhotoFile(compressed)
+    const url = URL.createObjectURL(compressed)
     setPhotoPreview(url)
   }
 
@@ -96,6 +105,13 @@ export function ReturnChecklist({ bookingId }: Props) {
           body:    formData,
         })
         if (!uploadRes.ok) {
+          // A compressão evita a maioria dos casos, mas HEIC (fora do Safari) passa
+          // direto sem comprimir — se ainda assim estourar o limite de plataforma do
+          // Vercel, a resposta vem em texto puro (não JSON), e .json() rejeita. Sem
+          // isso o usuário via "Erro ao enviar foto." sem pista nenhuma do porquê.
+          if (uploadRes.status === 413) {
+            throw new Error("Foto muito grande para enviar. Tente outra foto ou tire com menos resolução.")
+          }
           const json = await uploadRes.json().catch(() => ({}))
           throw new Error(json?.error?.message ?? "Erro ao enviar foto.")
         }
