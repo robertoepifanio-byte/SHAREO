@@ -452,7 +452,22 @@ jobs:
           # SEC-CRIT-02/03 kill-switch: garante que o bypass de rate limit (SKIP_RATE_LIMIT/
           # E2E_SECRET) fica inerte em produção mesmo que um valor vaze por cópia de env.
           E2E_BYPASS_DISABLED: "true"
-          NEXT_PUBLIC_NOINDEX: "false"
+          # LIGADA de propósito enquanto a campanha de pré-lançamento roda.
+          #
+          # A partir de 31/08/2026 a landing de captação assume shareo.com.br e passa
+          # a ser a página canônica da marca. A produção precisa seguir PÚBLICA — o
+          # POST de captação sai do navegador do visitante para /api/founders/leads
+          # daqui, porque é do x-forwarded-for que sai o consentIp da trilha LGPD —
+          # mas não deve ser DESCOBERTA: indexada, ela competiria com shareo.com.br
+          # pela própria marca, e exporia cadastro e anúncio (Etapas 2 e 3 do plano
+          # de 90 dias) um mês antes da hora.
+          #
+          # ⚠️ Não adianta configurar isto no painel da Vercel: a produção é
+          # construída AQUI e enviada pronta (`vercel build --prod`), então é este
+          # valor que é inlinado no bundle, não o do painel.
+          #
+          # Desligar quando a operação abrir ao público de fato (Etapa 4).
+          NEXT_PUBLIC_NOINDEX: "true"
 
       - name: Deploy to production
         id: deploy
