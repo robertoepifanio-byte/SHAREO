@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Platform,
+  Linking,
 } from "react-native"
 import { router } from "expo-router"
 import { Image } from "expo-image"
@@ -358,6 +359,12 @@ export default function SobreScreen() {
               Responsável pelo desenvolvimento completo da plataforma ShareO — da arquitetura
               ao produto final, com foco em experiência do usuário, segurança e escalabilidade.
             </Text>
+            <Text
+              style={[s.devLink, { color: tokens.green }]}
+              onPress={() => Linking.openURL("https://www.pratika.ia.br")}
+            >
+              www.pratika.ia.br
+            </Text>
           </View>
         </View>
 
@@ -527,8 +534,9 @@ const s = StyleSheet.create({
       android: { elevation: 1 },
     }),
   },
-  devLogo:     { width: 240, height: 83, alignSelf: "center" },
+  devLogo:     { width: 240, height: 103, alignSelf: "center" },
   devCardDesc: { fontSize: 13, lineHeight: 18, textAlign: "center" },
+  devLink:     { fontSize: 13, fontWeight: "600" },
 
   // ── CTA ──────────────────────────────────────────────────────────────────────
   ctaSection: {
