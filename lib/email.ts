@@ -200,6 +200,9 @@ function baseLayout(content: string) {
                 © 2026 ShareO · Brasil
                 <br/>
                 <a href="${APP_URL}" style="color:#94A3B8;">shareo.com.br</a>
+                <br/>
+                Desenvolvido por
+                <a href="https://www.pratika.ia.br" style="color:#94A3B8;">Pratika IA</a>
               </p>
             </td>
           </tr>
@@ -664,14 +667,16 @@ export function founderWelcomeHtml(firstName: string, queuePosition: number, uns
       ${firstName ? `Você está na lista, ${firstName}!` : "Você está na lista!"}
     </h1>
     <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
-      Você é o <strong>#${queuePosition}°</strong> na lista de fundadores do ShareO.
-      Avisaremos você em primeira mão quando abrirmos — antes de qualquer anúncio público.
+      Você é o <strong>#${queuePosition}°</strong> interessado a entrar na lista de fundadores.
+      A abertura é feita <strong>por cidade</strong>: as regiões com mais interessados entram
+      primeiro, e avisamos você em primeira mão quando chegar a sua — antes de qualquer
+      anúncio público.
     </p>
 
     <div style="margin-bottom:24px;padding:16px 20px;background:#F0FDF4;border-radius:8px;border:1px solid #BBF7D0;">
       <p style="margin:0;font-size:14px;color:#15803D;line-height:1.5;">
-        <strong>O que esperar:</strong> Um e-mail com link de acesso exclusivo assim que o ShareO
-        abrir. Nenhum spam até lá.
+        <strong>O que esperar:</strong> Um e-mail com link de acesso exclusivo quando o ShareO
+        abrir na sua cidade. Nenhum spam até lá.
       </p>
     </div>
 

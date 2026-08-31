@@ -31,3 +31,38 @@ describe("founderWelcomeHtml — saudação", () => {
     expect(founderWelcomeHtml("", 1, url)).toContain(url)
   })
 })
+
+/**
+ * A promessa do e-mail tem que descrever o rollout REAL, que é por cidade.
+ *
+ * A redação original ("avisaremos quando abrirmos", "assim que o ShareO abrir")
+ * foi escrita antes da estratégia de pilotos e descrevia um lançamento nacional
+ * simultâneo. Com abertura cidade a cidade, quem não está na primeira região
+ * não conclui "é por etapas" — conclui que foi esquecido. E essa é justamente a
+ * pessoa de quem o programa depende para ENCAMINHAR o e-mail.
+ */
+describe("founderWelcomeHtml — promessa de abertura", () => {
+  const url  = "https://www.shareo.com.br/api/founders/unsubscribe?email=a&token=b"
+  const html = founderWelcomeHtml("Roberto", 2, url)
+
+  it("diz que a abertura é por cidade", () => {
+    expect(html).toContain("por cidade")
+    expect(html).toContain("abrir na sua cidade")
+  })
+
+  it("explica o critério da ordem — é o que dá à pessoa motivo para convidar amigos", () => {
+    expect(html).toContain("as regiões com mais interessados entram")
+  })
+
+  it("não promete abertura única nacional", () => {
+    expect(html).not.toContain("quando abrirmos —")
+    expect(html).not.toContain("assim que o ShareO")
+  })
+
+  it("posiciona o número como ordem de ENTRADA na lista, não de acesso ao produto", () => {
+    // A ordem de convite é definida pela cidade escolhida: um #2 nacional pode
+    // ser chamado depois de um #300 da cidade-piloto. O número só é honesto se
+    // descrever quando a pessoa entrou.
+    expect(html).toContain("interessado a entrar na lista")
+  })
+})
