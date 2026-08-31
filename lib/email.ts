@@ -324,7 +324,8 @@ export async function sendPasswordResetEmail(
   const resend = getResend()
   if (!resend) return
 
-  const firstName = name.split(" ")[0]
+  // Vazio quando o lead não informou nome — o template omite a saudação.
+  const firstName = name.trim().split(" ")[0]
   const resetUrl  = `${APP_URL}/esqueci-senha/${token}`
 
   const { error } = await sendWithRetry(resend, {
@@ -352,7 +353,8 @@ export async function sendExportReadyEmail(
   const resend = getResend()
   if (!resend) return
 
-  const firstName = name.split(" ")[0]
+  // Vazio quando o lead não informou nome — o template omite a saudação.
+  const firstName = name.trim().split(" ")[0]
   const url       = `${APP_URL}/admin/financeiro/exportar`
 
   const html = baseLayout(`
@@ -630,7 +632,8 @@ function idRejectedHtml(firstName: string, reason: string) {
 export async function sendIdVerifiedEmail(to: string, name: string): Promise<void> {
   const resend = getResend()
   if (!resend) return
-  const firstName = name.split(" ")[0]
+  // Vazio quando o lead não informou nome — o template omite a saudação.
+  const firstName = name.trim().split(" ")[0]
   const { error } = await resend.emails.send({
     from:    `ShareO <${FROM}>`,
     to,
@@ -643,7 +646,8 @@ export async function sendIdVerifiedEmail(to: string, name: string): Promise<voi
 export async function sendIdRejectedEmail(to: string, name: string, reason: string): Promise<void> {
   const resend = getResend()
   if (!resend) return
-  const firstName = name.split(" ")[0]
+  // Vazio quando o lead não informou nome — o template omite a saudação.
+  const firstName = name.trim().split(" ")[0]
   const { error } = await resend.emails.send({
     from:    `ShareO <${FROM}>`,
     to,
@@ -653,10 +657,11 @@ export async function sendIdRejectedEmail(to: string, name: string, reason: stri
   if (error) throw new Error(`Resend error: ${error.message}`)
 }
 
-function founderWelcomeHtml(firstName: string, queuePosition: number, unsubUrl: string) {
+/** Exportado para teste: a saudação é a primeira frase que o Fundador lê. */
+export function founderWelcomeHtml(firstName: string, queuePosition: number, unsubUrl: string) {
   return baseLayout(`
     <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
-      Você está na lista, ${firstName}!
+      ${firstName ? `Você está na lista, ${firstName}!` : "Você está na lista!"}
     </h1>
     <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
       Você é o <strong>#${queuePosition}°</strong> na lista de fundadores do ShareO.
@@ -687,7 +692,8 @@ export async function sendFounderWelcomeEmail(
   const resend = getResend()
   if (!resend) return
 
-  const firstName = name.split(" ")[0]
+  // Vazio quando o lead não informou nome — o template omite a saudação.
+  const firstName = name.trim().split(" ")[0]
   const unsubUrl  = unsubscribeUrl(APP_URL, to)
   const { error } = await resend.emails.send({
     from:    `ShareO <${FROM}>`,
