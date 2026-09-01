@@ -45,7 +45,12 @@ Agravante de ordem de escrita: o `lateFeeAmount` era gravado ANTES de a sessão 
 
 **Corrigido:** `lib/lateFee.ts` separa "multa devida" de "cobrança emitida" (campos novos `lateFeeSessionId` / `lateFeeSessionExpiresAt`), grava só depois de a sessão existir, e o cron reemite enquanto houver multa em aberto — inclusive para reservas já devolvidas, que saíam do radar do cron ao deixar `ACTIVE`.
 
-⚠️ **Divergência conhecida, não corrigida:** a multa é calculada uma única vez, com os dias de atraso da PRIMEIRA detecção, e a reemissão mantém esse valor. O texto publicado diz "1,5× o preço diário **por dia de atraso**", o que implica crescimento. Um atraso de 5 dias cobra 1 dia. Corrigir significa **cobrar mais** do usuário do que o primeiro e-mail dizia — decisão de negócio, não de código.
+✅ **Multa recalculada diariamente (decisão de Roberto, 01/09).** A multa cresce com os dias de atraso, como o texto publicado promete ("1,5× o preço diário por dia de atraso"). Antes era calculada uma única vez, na primeira detecção: um atraso de 5 dias cobrava 1 dia.
+
+   Duas consequências que a decisão obriga, ambas implementadas:
+
+   - **Reprecificar invalida a cobrança anterior.** Sem expirar a sessão velha, ficariam dois links vivos por valores diferentes e o locatário pagaria o menor — escolhendo a própria dívida.
+   - **A multa PARA de crescer na devolução.** A referência de cálculo é `returnRequestedAt`, não "hoje". Usar hoje faria a dívida de uma locação já concluída aumentar todo dia, para sempre, enquanto não fosse paga.
 
 ---
 

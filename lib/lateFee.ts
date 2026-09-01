@@ -26,9 +26,26 @@ export type BookingParaCobranca = {
   id: string
   lateFeeAmount: number | null
   lateFeePaymentIntentId: string | null
+  lateFeeSessionId: string | null
   lateFeeSessionExpiresAt: Date | null
   borrower: { email: string; name: string }
   item: { images: { url: string }[] }
+}
+
+/**
+ * Dias de atraso — inteiro, mínimo 1.
+ *
+ * 🪤 `referencia` é o que faz a multa PARAR de crescer: enquanto o item não
+ * voltou, é hoje (e a dívida cresce a cada dia, como o texto publicado
+ * promete); depois da devolução, é o instante em que o locatário devolveu.
+ * Usar "hoje" numa reserva já devolvida faria a multa crescer para sempre,
+ * inclusive depois de a locação estar concluída.
+ */
+export function diasDeAtraso(endDate: Date, referencia: Date): number {
+  const dia = 86_400_000
+  const d0  = Date.UTC(endDate.getUTCFullYear(), endDate.getUTCMonth(), endDate.getUTCDate())
+  const d1  = Date.UTC(referencia.getUTCFullYear(), referencia.getUTCMonth(), referencia.getUTCDate())
+  return Math.max(1, Math.ceil((d1 - d0) / dia))
 }
 
 /**
@@ -50,43 +67,72 @@ export function temCobrancaViva(
   return b.lateFeeSessionExpiresAt != null && b.lateFeeSessionExpiresAt > agora
 }
 
-/** Precisa emitir (primeira vez) ou reemitir (a anterior expirou)? */
-export function precisaCobrar(b: BookingParaCobranca, agora: Date = new Date()): boolean {
+/**
+ * Precisa emitir, reemitir ou REPRECIFICAR a cobrança?
+ *
+ * 🪤 O terceiro caso é o que a decisão de 01/09 acrescenta: a multa é
+ * recalculada todo dia enquanto o item não volta, então uma cobrança viva pelo
+ * valor de ontem está DESATUALIZADA e precisa ser substituída. Sem isso o
+ * locatário pagaria 1 diária num atraso de 5 dias — o que o texto publicado
+ * ("1,5× o preço diário por dia de atraso") não sustenta.
+ */
+export function precisaCobrar(
+  b: BookingParaCobranca,
+  valorAtual: number,
+  agora: Date = new Date(),
+): boolean {
   if (taxaDeAtrasoQuitada(b)) return false
-  return !temCobrancaViva(b, agora)
+  if (!temCobrancaViva(b, agora)) return true
+  return b.lateFeeAmount !== valorAtual
 }
 
 export type ResultadoCobranca =
-  | { emitida: true;  reemissao: boolean; valor: number }
-  | { emitida: false; motivo: "JA_QUITADA" | "COBRANCA_VIVA" | "SEM_VALOR" }
+  | { emitida: true;  reemissao: boolean; valor: number; anterior: number | null }
+  | { emitida: false; motivo: "JA_QUITADA" | "COBRANCA_ATUAL_VIVA" | "SEM_VALOR" }
 
 /**
- * Cria a Checkout Session da multa, grava o vínculo e avisa o locatário.
+ * Cria a Checkout Session da multa pelo valor ATUAL, grava o vínculo e avisa o
+ * locatário.
  *
- * `valorSePrimeira` só é usado quando ainda não há multa registrada. Na
- * reemissão o valor **não é recalculado**: cobrar mais do que o valor já
- * comunicado ao locatário no primeiro e-mail seria mudar a dívida sem aviso.
- * (Que a multa não cresça com os dias de atraso é uma divergência conhecida em
- * relação ao texto publicado — está registrada no backlog e é decisão de
- * negócio, não deste módulo.)
+ * Decisão de Roberto (01/09/2026): **a multa é recalculada diariamente.** Ela
+ * cresce com os dias de atraso, como o texto publicado promete. Quem devolve
+ * com 5 dias de atraso deve 5 diárias, não 1.
+ *
+ * 🪤 Recalcular obriga a INVALIDAR a cobrança anterior. Sem isso ficariam dois
+ * links vivos por valores diferentes, e o locatário pagaria o menor —
+ * escolhendo a própria dívida.
  */
 export async function emitirCobrancaTaxaAtraso(
   b:                BookingParaCobranca,
   itemsLabel:       string,
-  valorSePrimeira:  number,
+  valorAtual:       number,
   descricaoAtraso:  string,
 ): Promise<ResultadoCobranca> {
   const agora = new Date()
 
-  if (taxaDeAtrasoQuitada(b))  return { emitida: false, motivo: "JA_QUITADA" }
-  if (temCobrancaViva(b, agora)) return { emitida: false, motivo: "COBRANCA_VIVA" }
+  if (taxaDeAtrasoQuitada(b)) return { emitida: false, motivo: "JA_QUITADA" }
 
-  const valor = b.lateFeeAmount ?? valorSePrimeira
+  const valor = valorAtual
   if (!valor || valor <= 0) return { emitida: false, motivo: "SEM_VALOR" }
 
-  const reemissao = b.lateFeeAmount != null
+  // Cobrança viva E pelo valor certo: nada a fazer. Reemitir aqui só trocaria
+  // o link do locatário por outro idêntico, e mandaria e-mail repetido.
+  if (temCobrancaViva(b, agora) && b.lateFeeAmount === valor) {
+    return { emitida: false, motivo: "COBRANCA_ATUAL_VIVA" }
+  }
 
-  const stripe  = getStripe()
+  const reemissao = b.lateFeeAmount != null
+  const stripe    = getStripe()
+
+  // Expira a cobrança desatualizada ANTES de criar a nova. Falha aqui não
+  // impede a emissão — a sessão velha morre sozinha em 24h de qualquer forma,
+  // e ficar sem cobrança nenhuma é pior que ter duas por algumas horas.
+  if (b.lateFeeSessionId && temCobrancaViva(b, agora)) {
+    await stripe.checkout.sessions.expire(b.lateFeeSessionId).catch((e: unknown) =>
+      console.error(`[lateFee] falha ao expirar sessão ${b.lateFeeSessionId}:`, e instanceof Error ? e.message : e)
+    )
+  }
+
   const session = await stripe.checkout.sessions.create({
     mode:                 "payment",
     payment_method_types: ["card"],
@@ -126,5 +172,5 @@ export async function emitirCobrancaTaxaAtraso(
     valor, session.url!,
   )
 
-  return { emitida: true, reemissao, valor }
+  return { emitida: true, reemissao, valor, anterior: b.lateFeeAmount }
 }

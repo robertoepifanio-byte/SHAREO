@@ -13,7 +13,7 @@ import {
   bookingItemsLabel,
 } from "@/lib/email"
 import { getLateFeeMultiplier, calcLateFee } from "@/lib/platform-config"
-import { emitirCobrancaTaxaAtraso, precisaCobrar } from "@/lib/lateFee"
+import { emitirCobrancaTaxaAtraso, precisaCobrar, diasDeAtraso } from "@/lib/lateFee"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
@@ -101,7 +101,8 @@ export async function GET(req: NextRequest) {
       },
       select: {
         id: true, startDate: true, endDate: true, dailyPrice: true,
-        lateFeeAmount: true, lateFeePaymentIntentId: true, lateFeeSessionExpiresAt: true,
+        lateFeeAmount: true, lateFeePaymentIntentId: true,
+        lateFeeSessionId: true, lateFeeSessionExpiresAt: true,
         item:     { select: { title: true, images: { select: { url: true }, orderBy: { order: "asc" }, take: 1 } } },
         borrower: { select: { email: true, name: true } },
         owner:    { select: { email: true, name: true } },
@@ -131,7 +132,10 @@ export async function GET(req: NextRequest) {
       },
       select: {
         id: true, endDate: true, dailyPrice: true,
-        lateFeeAmount: true, lateFeePaymentIntentId: true, lateFeeSessionExpiresAt: true,
+        // 🪤 Quando o item voltou: e a data em que a multa PAROU de crescer.
+        returnRequestedAt: true, returnedAt: true,
+        lateFeeAmount: true, lateFeePaymentIntentId: true,
+        lateFeeSessionId: true, lateFeeSessionExpiresAt: true,
         item:     { select: { title: true, images: { select: { url: true }, orderBy: { order: "asc" }, take: 1 } } },
         borrower: { select: { email: true, name: true } },
         _count:   { select: { bookingItems: true } },
@@ -174,9 +178,8 @@ export async function GET(req: NextRequest) {
   })
 
   const overdueStats = await processInBatches(overdueBookings, BATCH_SIZE, async (b) => {
-    const daysLate = Math.ceil(
-      (startOfDay(today).getTime() - startOfDay(b.endDate).getTime()) / 86_400_000
-    )
+    // Item ainda não voltou: o atraso corre até hoje.
+    const daysLate = diasDeAtraso(b.endDate, today)
     const itemsLabel = bookingItemsLabel(b.item.title, b._count.bookingItems || 1)
 
     // Cobrança da multa: primeira emissão OU reemissão, quando a anterior
@@ -188,12 +191,17 @@ export async function GET(req: NextRequest) {
     // ficava sem forma de pagar para sempre, e seguia recebendo o lembrete
     // diário de atraso sem link. Os 5 casos cobrados no staging expiraram
     // todos assim.
-    if (precisaCobrar(b)) {
+    //
+    // O item ainda não voltou, então a multa cresce: o valor é recalculado com
+    // os dias de atraso de HOJE (decisão de Roberto, 01/09).
+    const valorHoje = calcLateFee(b.dailyPrice, lateFeeMultiplier, daysLate)
+
+    if (precisaCobrar(b, valorHoje)) {
       try {
         const r = await emitirCobrancaTaxaAtraso(
           b,
           itemsLabel,
-          calcLateFee(b.dailyPrice, lateFeeMultiplier, daysLate),
+          valorHoje,
           `${daysLate} dia${daysLate > 1 ? "s" : ""} em atraso`,
         )
         if (r.emitida) sent.push(`late_fee${r.reemissao ? ":reemitida" : ""}:${b.id}`)
@@ -226,17 +234,18 @@ export async function GET(req: NextRequest) {
   // Reemissão para reservas já devolvidas — só a cobrança, sem lembrete de
   // atraso: o item já voltou, cobrar atraso agora seria desinformação.
   const reemissaoStats = await processInBatches(multasEmAberto, BATCH_SIZE, async (b) => {
-    const diasAtraso = Math.max(1, Math.ceil(
-      (startOfDay(today).getTime() - startOfDay(b.endDate).getTime()) / 86_400_000
-    ))
+    // 🪤 Aqui o item JÁ VOLTOU, então a multa parou de crescer. A referência é
+    // a devolução, não hoje — usar `today` faria a dívida de uma locação
+    // concluída aumentar todo dia, para sempre, enquanto não fosse paga.
+    // `returnRequestedAt` é quando o locatário devolveu; `returnedAt`, quando o
+    // locador confirmou. O atraso termina no primeiro.
+    const fimDoAtraso = b.returnRequestedAt ?? b.returnedAt ?? today
+    const diasAtraso  = diasDeAtraso(b.endDate, fimDoAtraso)
     try {
       const r = await emitirCobrancaTaxaAtraso(
         b,
         bookingItemsLabel(b.item.title, b._count.bookingItems || 1),
-        // Nunca usado: estas reservas já têm `lateFeeAmount` — é o filtro da
-        // consulta. Passado só porque a assinatura exige um valor de primeira
-        // emissão, que aqui não existe.
-        b.lateFeeAmount ?? 0,
+        calcLateFee(b.dailyPrice, lateFeeMultiplier, diasAtraso),
         `${diasAtraso} dia${diasAtraso > 1 ? "s" : ""} em atraso`,
       )
       if (r.emitida) sent.push(`late_fee:reemitida:${b.id}`)
