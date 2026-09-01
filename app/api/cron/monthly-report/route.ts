@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
     }),
     // Disputas abertas no mês
     prisma.booking.count({
-      where: { status: "DISPUTED", updatedAt: { gte: firstDay, lte: lastDay } },
+      where: { disputeStatus: "OPEN", disputeOpenedAt: { gte: firstDay, lte: lastDay } },
     }),
     // Novas contas PIX cadastradas
     prisma.ownerPaymentAccount.count({

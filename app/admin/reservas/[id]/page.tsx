@@ -29,6 +29,7 @@ export default async function AdminReservaPage({ params }: Props) {
     select: {
       id:                true,
       status:            true,
+      disputeStatus:     true,
       paymentStatus:     true,
       paidAt:            true,
       startDate:         true,
@@ -89,7 +90,7 @@ export default async function AdminReservaPage({ params }: Props) {
             Criada em {formatDateTime(booking.createdAt)}
           </p>
         </div>
-        <BookingStatusBadge status={booking.status} />
+        <BookingStatusBadge status={booking.status} disputeStatus={booking.disputeStatus} />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">

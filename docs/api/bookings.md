@@ -8,7 +8,7 @@
 
 ```
 PENDING → CONFIRMED → ACTIVE → RETURNED → COMPLETED
-       ↘ CANCELLED             ↘ DISPUTED
+       ↘ CANCELLED
 ```
 
 Transições permitidas por ator:
@@ -21,7 +21,30 @@ Transições permitidas por ator:
 | → ACTIVE | Sistema (automático na `startDate`) ou Owner |
 | → RETURNED | Borrower |
 | → COMPLETED | Sistema (automático 7 dias após RETURNED) |
-| → DISPUTED | Owner ou Borrower (de ACTIVE ou RETURNED) |
+
+### Disputa — estado paralelo, não um status
+
+`DISPUTED` **não é mais um valor de `status`**. Desde 01/09/2026 a disputa vive
+em `disputeStatus` (`NONE | OPEN | RESOLVED_OWNER | RESOLVED_BORROWER |
+DISMISSED`), acompanhado de `disputeOpenedAt`, `disputeOpenedById` e
+`disputeResolvedAt`.
+
+Enquanto era um status, abrir disputa sobrescrevia o `ACTIVE`/`RETURNED` da
+reserva e o destruía: a locação ficava sem nenhuma transição possível, o
+locatário não conseguia devolver o item e encerrar a disputa exigia cancelar a
+reserva junto.
+
+Consequências do contrato atual:
+
+- `action=open_dispute` liga `disputeStatus=OPEN` e **não altera `status`**.
+- Uma reserva em disputa continua ACTIVE ou RETURNED e segue devolvível.
+- Segunda abertura na mesma reserva → `422 DISPUTE_ALREADY_OPEN`.
+- O cron de repasse retém o pagamento enquanto `disputeStatus=OPEN` — e volta a
+  liberar assim que a disputa é encerrada, qualquer que seja o desfecho.
+- Chargeback do Stripe (`charge.dispute.created`) usa o mesmo campo.
+
+O valor `DISPUTED` segue no enum `BookingStatus` porque o Postgres não remove
+valor de enum, mas nenhum caminho o grava.
 
 ---
 

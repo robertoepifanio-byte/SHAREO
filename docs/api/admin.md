@@ -230,7 +230,7 @@ Todas as ações de escrita geram uma entrada em `admin_logs`.
 
 ## POST /api/admin/bookings/:id/resolve
 
-**Resolve uma disputa.** Só pode ser executado em bookings com status `DISPUTED`.
+**Resolve uma disputa.** Só pode ser executado em reservas com `disputeStatus = OPEN` (a disputa deixou de ser um valor de `status` em 01/09/2026 — ver `docs/api/bookings.md`).
 
 ### Request body
 

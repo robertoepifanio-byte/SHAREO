@@ -67,6 +67,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         borrowerId: true,
         ownerId:    true,
         returnRequestedAt: true, // janela de 48h do locador — ver checagem abaixo
+        disputeStatus:     true, // trava de disputa duplicada — ver checagem abaixo
         item:       { select: { title: true } },
       },
     })
@@ -85,6 +86,16 @@ export async function POST(req: NextRequest, { params }: Params) {
       return NextResponse.json(
         { error: { code: "FORBIDDEN", message: "Acesso negado." } },
         { status: 403 },
+      )
+    }
+
+    // 🪤 Trava de disputa duplicada — antes era implícita no status DISPUTED,
+    // que tirava a reserva da faixa ACTIVE|RETURNED. Com a disputa em paralelo
+    // ao ciclo de vida, o status não muda mais e a trava tem de ser explícita.
+    if (booking.disputeStatus === "OPEN") {
+      return NextResponse.json(
+        { error: { code: "DISPUTE_ALREADY_OPEN", message: "Já existe uma disputa aberta nesta reserva." } },
+        { status: 422 },
       )
     }
 
@@ -123,6 +134,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       bookingId:    id,
       cancelReason,
       isOwner,
+      openedById:   userId,
       ownerId:      booking.ownerId,
       borrowerId:   booking.borrowerId,
       itemTitle:    booking.item.title,

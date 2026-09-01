@@ -67,7 +67,24 @@ enum BookingStatus {
   RETURNED // Item devolvido, aguardando avaliação
   COMPLETED // Concluído (avaliações feitas ou 7 dias após devolução)
   CANCELLED // Cancelado por qualquer parte
-  DISPUTED // Disputa aberta
+  // 🪤 DEPRECADO — não escrever mais. Disputa deixou de ser um status da reserva
+  // e virou estado paralelo (`Booking.disputeStatus`). Enquanto DISPUTED ocupava
+  // `status`, abrir disputa DESTRUÍA o ciclo de vida: o ACTIVE/RETURNED anterior
+  // era sobrescrito e não havia para onde voltar — por isso a reserva ficava sem
+  // nenhuma ação disponível na tela e o admin não conseguia encerrar a disputa
+  // sem cancelar a locação (relatos do Thiago, QA 01/09). O valor continua no
+  // enum só porque migração não apaga histórico; nenhum caminho novo o grava.
+  DISPUTED // @deprecated — ver Booking.disputeStatus
+}
+
+/// Estado da disputa, PARALELO ao ciclo de vida da reserva (`BookingStatus`).
+/// Uma reserva em disputa continua ACTIVE ou RETURNED e segue devolvível.
+enum DisputeStatus {
+  NONE // sem disputa (padrão)
+  OPEN // aberta, aguardando mediação
+  RESOLVED_OWNER // admin deu ganho de causa ao proprietário (reserva concluída)
+  RESOLVED_BORROWER // admin deu ganho de causa ao locatário (reserva cancelada + estorno)
+  DISMISSED // encerrada sem desfecho financeiro — pela parte que abriu ou pelo admin
 }
 
 enum PaymentStatus {
@@ -535,6 +552,15 @@ model Booking {
   returnedAt        DateTime? // quando o locador confirmou o recebimento (confirm_return)
   lateFeeAmount     Int? // cents — calculado se returnedAt > endDate
 
+  // Disputa — estado PARALELO ao `status`, não um valor dele.
+  // A reserva em disputa continua ACTIVE/RETURNED e segue devolvível; encerrar
+  // a disputa não decide nada sobre a locação. Quem gate-ia repasse, badge e
+  // fila do admin é `disputeStatus`, não `status`.
+  disputeStatus     DisputeStatus @default(NONE)
+  disputeOpenedAt   DateTime?
+  disputeOpenedById String? // quem abriu — só essa pessoa pode cancelar a própria disputa
+  disputeResolvedAt DateTime?
+
   // Contrato digital
   contractSignedAt DateTime?
 
@@ -595,6 +621,7 @@ model Booking {
   @@index([itemId])
   @@index([status])
   @@index([deletedAt])
+  @@index([disputeStatus]) // fila do /admin/disputas
   @@index([itemId, status, startDate, endDate])
   @@index([ownerId, paymentStatus, paidAt])
   @@map("bookings")

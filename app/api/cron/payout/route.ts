@@ -38,7 +38,11 @@ export async function GET(req: NextRequest) {
       status:        "PENDING",
       eligibleAfter: { lte: now },
       booking: {
-        status: { not: "DISPUTED" },
+        // Segura o repasse só ENQUANTO a disputa está aberta. Antes isto lia
+        // `status != DISPUTED`; agora a disputa é paralela ao ciclo de vida, e
+        // uma disputa já encerrada (DISMISSED/RESOLVED_*) não pode continuar
+        // travando dinheiro que tem dono.
+        disputeStatus: { not: "OPEN" },
       },
     },
     take:    BATCH_SIZE,

@@ -37,6 +37,8 @@ export async function GET(req: NextRequest, { params }: Params) {
       select: {
         id:            true,
         status:        true,
+        disputeStatus: true,
+        disputeOpenedById: true,
         paymentStatus: true,
         startDate:     true,
         endDate:       true,
@@ -147,14 +149,23 @@ export async function GET(req: NextRequest, { params }: Params) {
 // Transições permitidas por status atual e ação
 const TRANSITIONS: Record<
   string,
-  { requiredStatus: BookingStatus[]; allowedRole: "owner" | "borrower" | "both"; nextStatus: BookingStatus; requiresReason?: boolean }
+  {
+    requiredStatus: BookingStatus[]
+    allowedRole: "owner" | "borrower" | "both"
+    /** Ausente quando a ação não move o ciclo de vida da reserva (ex.: open_dispute). */
+    nextStatus?: BookingStatus
+    requiresReason?: boolean
+  }
 > = {
   confirm:       { requiredStatus: ["PENDING"],              allowedRole: "owner",    nextStatus: "CONFIRMED" },
   cancel:        { requiredStatus: ["PENDING", "CONFIRMED"], allowedRole: "both",     nextStatus: "CANCELLED", requiresReason: true },
   mark_active:   { requiredStatus: ["CONFIRMED"],            allowedRole: "owner",    nextStatus: "ACTIVE" },
   mark_returned:  { requiredStatus: ["ACTIVE"],               allowedRole: "borrower", nextStatus: "RETURNED"  },
   confirm_return: { requiredStatus: ["RETURNED"],             allowedRole: "owner",    nextStatus: "COMPLETED" },
-  open_dispute:   { requiredStatus: ["ACTIVE", "RETURNED"],  allowedRole: "both",     nextStatus: "DISPUTED",  requiresReason: true },
+  // Sem `nextStatus`: abrir disputa NÃO move o ciclo de vida da reserva —
+  // só liga `disputeStatus = OPEN` (lib/openDispute.ts). A reserva segue
+  // ACTIVE ou RETURNED e continua devolvível.
+  open_dispute:   { requiredStatus: ["ACTIVE", "RETURNED"],  allowedRole: "both",                              requiresReason: true },
 }
 
 export async function PATCH(req: NextRequest, { params }: Params) {
@@ -195,6 +206,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         paymentStatus: true, stripePaymentIntentId: true,
         contractSignedAt: true, // guard do mark_active — ver abaixo
         returnRequestedAt: true, // guard do open_dispute — ver abaixo (48h do locador)
+        disputeStatus: true, // guard de disputa já aberta — ver abaixo
         pickupToken: true, pickupTokenUsedAt: true,
         bookingItems: { select: { itemId: true } }, // Story B — revalidar todos os itens no confirm
         item:     { select: { title: true } },
@@ -254,6 +266,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     // fina de QUAL status vale pra QUAL papel mora em lib/disputeWindow.ts,
     // compartilhada com a rota dedicada POST /api/bookings/:id/dispute).
     if (action === "open_dispute") {
+      // 🪤 Trava de disputa duplicada. Enquanto DISPUTED era um `status`, esta
+      // checagem era implícita: a reserva saía de ACTIVE/RETURNED e o
+      // `requiredStatus` barrava a segunda abertura. Com a disputa em paralelo
+      // o status não muda mais, então a trava precisa ser explícita — sem ela,
+      // dois cliques abrem duas disputas e a segunda apaga o autor da primeira.
+      if (booking.disputeStatus === "OPEN") {
+        return NextResponse.json(
+          { error: { code: "DISPUTE_ALREADY_OPEN", message: "Já existe uma disputa aberta nesta reserva." } },
+          { status: 422 },
+        )
+      }
       const windowCheck = checkDisputeWindow(booking, { isBorrower, isOwner })
       if (!windowCheck.ok) {
         return NextResponse.json(
@@ -297,6 +320,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         bookingId:    id,
         cancelReason: reason!,
         isOwner,
+        openedById:   userId,
         ownerId:      booking.ownerId,
         borrowerId:   booking.borrowerId,
         itemTitle:    booking.item.title,

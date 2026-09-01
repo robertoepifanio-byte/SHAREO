@@ -22,6 +22,8 @@ import { usePlatformConfig } from "@/lib/platformConfig"
 interface BookingDetail {
   id:            string
   status:        string
+  disputeStatus: string
+  disputeOpenedById: string | null
   paymentStatus: string | null
   startDate:     string
   endDate:       string
@@ -337,6 +339,9 @@ export default function BookingDetailScreen() {
   }
 
   const st         = getStatusLabel(booking.status, mode)
+  // Cores do selo de disputa — reusa a entrada DISPUTED das tabelas acima,
+  // que deixou de ser alcançável por `status` e agora serve ao selo próprio.
+  const disputa    = getStatusLabel("DISPUTED", mode)
   const isOwner    = user.id === booking.owner.id
   const isBorrower = user.id === booking.borrower.id
   // Site: PENDING ou CONFIRMED, AMBOS os papéis — fonte: _BookingActions.tsx linha 241-242
@@ -640,6 +645,18 @@ export default function BookingDetailScreen() {
             Criada em {fmtDate(booking.createdAt)}
           </Text>
         </View>
+
+        {/* Selo de disputa — fonte: components/ui/BookingStatusBadge.tsx (selo
+            separado do status). Disputa é paralela ao ciclo de vida: a reserva
+            continua "Em andamento"/"Devolução em andamento" e o selo aparece ao
+            lado, em vez de substituir o status como fazia até 01/09/2026. */}
+        {booking.disputeStatus === "OPEN" && (
+          <View
+            style={[s.statusBadge, { backgroundColor: disputa.bgColor, borderColor: disputa.borderColor }]}
+          >
+            <Text style={[s.statusLabel, { color: disputa.textColor }]}>{disputa.label}</Text>
+          </View>
+        )}
 
         {/* Histórico de eventos — fonte: app/reservas/[id]/page.tsx linhas 184-207 + BookingHistory.tsx */}
         {historyEvents.length > 0 && (
@@ -966,7 +983,7 @@ export default function BookingDetailScreen() {
           <View style={[s.alertBox, { borderColor: mode === "dark" ? "#F08C8466" : "#FECACA", backgroundColor: mode === "dark" ? "#2A0A0A" : "#FEF2F2" }]}>
             <View style={{ flex: 1 }}>
               <Text style={[s.alertTitle, { color: mode === "dark" ? "#F08C84" : "#991B1B" }]}>
-                {booking.status === "DISPUTED" ? "Motivo da disputa" : "Motivo do cancelamento"}
+                {booking.disputeStatus !== "NONE" ? "Motivo da disputa" : "Motivo do cancelamento"}
               </Text>
               <Text style={[s.alertDesc, { color: tokens.error }]}>{booking.cancelReason}</Text>
             </View>

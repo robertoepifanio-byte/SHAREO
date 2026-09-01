@@ -51,6 +51,7 @@ export async function GET(req: NextRequest) {
         select: {
           id:         true,
           status:     true,
+          disputeStatus: true,
           startDate:  true,
           endDate:    true,
           totalDays:  true,
@@ -306,6 +307,7 @@ export async function POST(req: NextRequest) {
         select: {
           id:            true,
           status:        true,
+          disputeStatus: true,
           startDate:     true,
           endDate:       true,
           totalDays:     true,
