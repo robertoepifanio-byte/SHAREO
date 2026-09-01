@@ -38,9 +38,12 @@ type State =
   | "error-network"
   | "error-duplicate"
 
+/** `null` = não respondeu. Não existe intenção-padrão: antes o conjunto vazio
+ *  virava "proprietario" e poluía o ranking que escolhe a cidade-piloto. */
 function resolveIntent(
   selected: Set<IntentOption>,
-): "proprietario" | "locatario" | "ambos" {
+): "proprietario" | "locatario" | "ambos" | null {
+  if (selected.size === 0) return null
   if (selected.has("proprietario") && selected.has("locatario")) return "ambos"
   if (selected.has("locatario")) return "locatario"
   return "proprietario"
@@ -133,9 +136,7 @@ export function FounderCaptureForm({
   const [state, setState] = useState<State>(
     startExpanded ? "expanded" : "collapsed",
   )
-  const [selected, setSelected] = useState<Set<IntentOption>>(
-    new Set(["proprietario"]),
-  )
+  const [selected, setSelected] = useState<Set<IntentOption>>(new Set())
   const [name, setName]               = useState("")
   const [email, setEmail]             = useState("")
   const [phone, setPhone]             = useState("")
@@ -213,8 +214,7 @@ export function FounderCaptureForm({
     setSelected((prev) => {
       const next = new Set(prev)
       if (next.has(opt)) {
-        if (next.size === 1) return prev // pelo menos uma opção sempre selecionada
-        next.delete(opt)
+        next.delete(opt) // quem barra o envio sem intenção é o isSubmitDisabled
       } else {
         next.add(opt)
       }
@@ -223,6 +223,8 @@ export function FounderCaptureForm({
   }
 
   async function handleSubmit() {
+    const intent = resolveIntent(selected)
+    if (!intent) return
     setState("loading")
     try {
       const cepDigits = cepVal.replace(/\D/g, "")
@@ -234,7 +236,7 @@ export function FounderCaptureForm({
           email:            email.trim().toLowerCase(),
           name:             name.trim() || undefined,
           phone:            phoneToE164(phone),
-          intent:           resolveIntent(selected),
+          intent,
           marketingConsent: lgpdConsent,
           consentVersion:   MARKETING_CONSENT_VERSION,
           // Mobile não tem URL params de atribuição — usa VIP_LANDING como default
@@ -270,6 +272,7 @@ export function FounderCaptureForm({
 
   const isSubmitDisabled =
     state === "loading" ||
+    selected.size === 0 ||
     !email.trim() ||
     !city.trim() ||
     uf.trim().length !== 2 ||
@@ -356,8 +359,15 @@ export function FounderCaptureForm({
               accessibilityState={{ checked: isChecked }}
               accessibilityLabel={opt === "proprietario" ? "Quero anunciar" : "Quero alugar"}
             >
+              {/* Caixa desenhada: o "✓ " colado no texto sumia por completo quando
+                  desmarcado, e sem pré-seleção os dois botões viravam rótulos.
+                  Mesmo checkbox do consentimento LGPD, 200 linhas abaixo — o ✓ é
+                  SVG, não glifo de texto, então não depende de lineHeight fixo
+                  (que no Android não acompanha o fontScale). */}
+              <View style={[s.checkbox, s.intentBox, isChecked && s.checkboxChecked]}>
+                {isChecked ? <CheckmarkIcon /> : null}
+              </View>
               <Text style={[s.intentBtnText, isChecked && s.intentBtnTextChecked]}>
-                {isChecked ? "✓ " : "  "}
                 {opt === "proprietario" ? "Quero anunciar" : "Quero alugar"}
               </Text>
             </TouchableOpacity>
@@ -655,13 +665,16 @@ const s = StyleSheet.create({
   intentBtn: {
     flex: 1, minHeight: 44, borderRadius: 8,
     borderWidth: 1, borderColor: "rgba(255,255,255,0.20)",
-    alignItems: "center", justifyContent: "center",
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
     paddingHorizontal: 8,
   },
   intentBtnChecked: {
     borderColor: "#59C686",
     backgroundColor: "rgba(89,198,134,0.20)",
   },
+  // Só corrige o alinhamento: `checkbox` traz marginTop 2 para casar com a
+  // primeira linha do rótulo do LGPD, que aqui é centralizado.
+  intentBox: { marginTop: 0 },
   intentBtnText: { fontSize: 13, fontWeight: "600", color: "rgba(255,255,255,0.70)" },
   intentBtnTextChecked: { color: "#FFFFFF" },
 

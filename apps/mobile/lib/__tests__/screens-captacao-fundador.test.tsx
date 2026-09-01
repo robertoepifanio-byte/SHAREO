@@ -49,6 +49,22 @@ afterEach(() => {
   jest.clearAllMocks()
 })
 
+/** Preenche e-mail + CEP e espera o ViaCEP resolver. Terceira copia deste bloco
+ *  no arquivo antes de virar helper — os placeholders sao fixados de proposito
+ *  (regra de transcricao), entao renomear um quebrava tres lugares. */
+async function preencherMinimo(email = "joana@exemplo.com") {
+  fireEvent.changeText(screen.getByPlaceholderText("Seu melhor e-mail *"), email)
+  fireEvent.changeText(screen.getByPlaceholderText("00000-000"), "05424150")
+  await waitFor(() => expect(screen.getByText("Pinheiros")).toBeTruthy())
+}
+
+/** A partir daqui o fetch responde como a API de leads, nao mais como o ViaCEP. */
+function mockLeadsOk() {
+  global.fetch = jest.fn().mockResolvedValue({
+    ok: true, status: 200, json: async () => ({ data: { queuePosition: 7 } }),
+  }) as unknown as typeof fetch
+}
+
 describe("campos transcritos do site", () => {
   beforeEach(() => mockViaCep({ erro: true }))
 
@@ -177,18 +193,14 @@ describe("envio", () => {
     mockViaCep(VIACEP_OK)
     render(<FounderCaptureForm startExpanded />)
 
-    fireEvent.changeText(screen.getByPlaceholderText("Seu melhor e-mail *"), "joana@exemplo.com")
     fireEvent.changeText(screen.getByPlaceholderText("WhatsApp (opcional)"), "84999990000")
-    fireEvent.changeText(screen.getByPlaceholderText("00000-000"), "05424150")
-
-    await waitFor(() => expect(screen.getByText("Pinheiros")).toBeTruthy())
-
-    // A partir daqui o fetch responde como a API de leads.
-    global.fetch = jest.fn().mockResolvedValue({
-      ok: true, status: 200, json: async () => ({ data: { queuePosition: 7 } }),
-    }) as unknown as typeof fetch
+    await preencherMinimo()
+    mockLeadsOk()
 
     fireEvent.press(screen.getByText("Concordo em receber comunicações", { exact: false }))
+    // Intenção passou a ser obrigatória e não vem pré-marcada — sem isto o
+    // envio nem sai.
+    fireEvent.press(screen.getByLabelText("Quero anunciar"))
     await act(async () => {
       fireEvent.press(screen.getByLabelText("Garantir minha vaga"))
     })
@@ -201,5 +213,68 @@ describe("envio", () => {
     expect(enviado.neighborhood).toBe("Pinheiros")
     expect(enviado.addressSource).toBe("CEP")
     expect(enviado.consentVersion).toBe("marketing-v1.0")
+  })
+})
+
+/**
+ * Contrato da intenção — transcrito de components/home/FounderCaptureForm.tsx.
+ *
+ * O app posta na MESMA rota `/api/founders/leads` que o site, então a
+ * pré-seleção de "Quero anunciar" poluía o mesmo ranking de cidade-piloto. A
+ * correção no site (31/08) não alcançava o APK; estes testes existem para que
+ * a divergência não volte em silêncio.
+ */
+describe("intenção", () => {
+  const anunciar = () => screen.getByLabelText("Quero anunciar")
+  const alugar   = () => screen.getByLabelText("Quero alugar")
+
+  it("não nasce com nenhuma opção pré-selecionada", () => {
+    render(<FounderCaptureForm startExpanded />)
+    expect(anunciar().props.accessibilityState.checked).toBe(false)
+    expect(alugar().props.accessibilityState.checked).toBe(false)
+  })
+
+  it("permite desmarcar a última opção", () => {
+    render(<FounderCaptureForm startExpanded />)
+    fireEvent.press(anunciar())
+    expect(anunciar().props.accessibilityState.checked).toBe(true)
+    fireEvent.press(anunciar())
+    expect(anunciar().props.accessibilityState.checked).toBe(false)
+  })
+
+  it("não chama a API enquanto não houver intenção", async () => {
+    mockViaCep(VIACEP_OK)
+    render(<FounderCaptureForm startExpanded />)
+    await preencherMinimo()
+
+    global.fetch = jest.fn() as unknown as typeof fetch
+    fireEvent.press(screen.getByText("Concordo em receber comunicações", { exact: false }))
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText("Garantir minha vaga"))
+    })
+    // O que importa não é o botão estar cinza — é o lead não nascer sem intenção.
+    expect(global.fetch).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    [["Quero anunciar"],                    "proprietario"],
+    [["Quero alugar"],                      "locatario"],
+    [["Quero anunciar", "Quero alugar"],    "ambos"],
+  ])("marcar %s envia intent %s", async (rotulos, esperado) => {
+    mockViaCep(VIACEP_OK)
+    render(<FounderCaptureForm startExpanded />)
+    await preencherMinimo()
+    mockLeadsOk()
+
+    fireEvent.press(screen.getByText("Concordo em receber comunicações", { exact: false }))
+    for (const r of rotulos) fireEvent.press(screen.getByLabelText(r))
+
+    await act(async () => {
+      fireEvent.press(screen.getByLabelText("Garantir minha vaga"))
+    })
+
+    const [, init] = (global.fetch as jest.Mock).mock.calls[0]
+    expect(JSON.parse(init.body).intent).toBe(esperado)
   })
 })

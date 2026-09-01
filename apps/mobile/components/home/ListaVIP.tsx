@@ -127,7 +127,7 @@ const BENEFIT_CARDS = [
     key:   "acesso",
     icon:  <ActivityIcon />,
     title: "Acesso antecipado",
-    desc:  "Você será avisado antes de todo mundo quando Shareo abrir na sua cidade",
+    desc:  "Você é avisado dois dias antes de os cadastros abrirem na sua cidade",
   },
   {
     key:   "primeiro",
@@ -173,7 +173,7 @@ export function ListaVIP() {
 
         {/* Subtítulo */}
         <Text style={s.subtitle}>
-          Seja avisado em primeira mão quando lançarmos e conheça as condições especiais que planejamos oferecer aos primeiros anunciantes.
+          A abertura é feita por cidade, e as regiões com mais interessados entram primeiro. Você é avisado dois dias antes de os cadastros abrirem na sua cidade, com as condições especiais que planejamos oferecer aos primeiros anunciantes.
         </Text>
 
         {/* 4 Cards de benefícios — role="list" no site */}

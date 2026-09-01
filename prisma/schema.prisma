@@ -1044,7 +1044,7 @@ model FounderLead {
   id            String       @id @default(cuid())
   email         String       @unique
   name          String?
-  intent        String       @default("proprietario") // "proprietario" | "locatario"
+  intent        String       // "proprietario" | "locatario" | "ambos" — sem default: ver route.ts
   queuePosition Int          @unique @default(autoincrement())
   wave          FounderWave  @default(WAVE_1) // atualizado pela API após create
   status        LeadStatus   @default(PENDING)

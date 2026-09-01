@@ -35,7 +35,9 @@ CREATE TABLE "founder_leads" (
   "id"                 TEXT         NOT NULL,
   "email"              TEXT         NOT NULL,
   "name"               TEXT,
-  "intent"             TEXT         NOT NULL DEFAULT 'proprietario',
+  -- Sem DEFAULT desde 31/08/2026: 'proprietario' tornava indistinguivel quem
+  -- escolheu anunciar de quem nao respondeu. Ver 20260831230000_founder_lead_intent_sem_default.
+  "intent"             TEXT         NOT NULL,
   "queuePosition"      SERIAL       NOT NULL,
   "wave"               "FounderWave" NOT NULL DEFAULT 'WAVE_1',
   "status"             "LeadStatus"  NOT NULL DEFAULT 'PENDING',
