@@ -3,19 +3,20 @@
  * Executado diariamente às 08:00 BRT (11:00 UTC) via Vercel Cron.
  * Envia lembretes automáticos de reservas ao proprietário e locatário.
  */
-import { NextResponse, type NextRequest } from "next/server"
+import { NextResponse, after, type NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { APP_URL } from "@/lib/app-url"
 import { assertCronAuth } from "@/lib/auth/cron-guard"
 import {
   sendReminderStartTomorrow,
   sendReminderReturnTomorrow,
   sendReminderOverdue,
-  sendLateFeeEmail,
   bookingItemsLabel,
 } from "@/lib/email"
-import { getStripe } from "@/lib/stripe"
-import { getLateFeeMultiplier, calcLateFee, STRIPE_CHARGE_EXPIRES_SECONDS } from "@/lib/platform-config"
+import { getLateFeeMultiplier, calcLateFee } from "@/lib/platform-config"
+import {
+  emitirCobrancaTaxaAtraso, precisaCobrar, diasDeAtraso, diasParaCalculo,
+  TETO_DIAS_CALCULO_AUTOMATICO,
+} from "@/lib/lateFee"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
@@ -61,7 +62,7 @@ export async function GET(req: NextRequest) {
   const today    = new Date()
   const tomorrow = new Date(today); tomorrow.setUTCDate(today.getUTCDate() + 1)
 
-  const [startReminders, returnReminders, overdueBookings] = await Promise.all([
+  const [startReminders, returnReminders, overdueBookings, multasEmAberto] = await Promise.all([
     // Reservas que começam amanhã (CONFIRMED ou ACTIVE)
     prisma.booking.findMany({
       where: {
@@ -102,10 +103,45 @@ export async function GET(req: NextRequest) {
         deletedAt: null,
       },
       select: {
-        id: true, startDate: true, endDate: true, dailyPrice: true, lateFeeAmount: true,
+        id: true, startDate: true, endDate: true, dailyPrice: true,
+        lateFeeAmount: true, lateFeePaymentIntentId: true,
+        lateFeeSessionId: true, lateFeeSessionExpiresAt: true,
+        borrowerId: true, ownerId: true, // aviso do teto da multa
         item:     { select: { title: true, images: { select: { url: true }, orderBy: { order: "asc" }, take: 1 } } },
         borrower: { select: { email: true, name: true } },
         owner:    { select: { email: true, name: true } },
+        _count:   { select: { bookingItems: true } },
+      },
+    }),
+
+    // 🪤 Multa em aberto numa reserva que JÁ SAIU de ACTIVE.
+    //
+    // A devolução tira a reserva da consulta acima, mas não quita nada: o caso
+    // real do staging (01/09) é exatamente este — item devolvido, locação
+    // concluída, multa de R$ 7,50 nunca paga e a cobrança expirada. Sem esta
+    // segunda consulta a dívida ficaria fora do alcance do cron para sempre.
+    //
+    // CANCELLED fica de fora de propósito: reserva cancelada não gera multa a
+    // cobrar. Aqui NÃO sai lembrete de atraso — só a cobrança é reemitida.
+    prisma.booking.findMany({
+      where: {
+        status:                  { in: ["RETURNED", "COMPLETED"] },
+        lateFeeAmount:           { gt: 0 },
+        lateFeePaymentIntentId:  null,
+        deletedAt:               null,
+        OR: [
+          { lateFeeSessionExpiresAt: null },
+          { lateFeeSessionExpiresAt: { lt: today } },
+        ],
+      },
+      select: {
+        id: true, endDate: true, dailyPrice: true,
+        // 🪤 Quando o item voltou: e a data em que a multa PAROU de crescer.
+        returnRequestedAt: true, returnedAt: true,
+        lateFeeAmount: true, lateFeePaymentIntentId: true,
+        lateFeeSessionId: true, lateFeeSessionExpiresAt: true,
+        item:     { select: { title: true, images: { select: { url: true }, orderBy: { order: "asc" }, take: 1 } } },
+        borrower: { select: { email: true, name: true } },
         _count:   { select: { bookingItems: true } },
       },
     }),
@@ -145,62 +181,61 @@ export async function GET(req: NextRequest) {
     }
   })
 
-  const appUrl = APP_URL
-
   const overdueStats = await processInBatches(overdueBookings, BATCH_SIZE, async (b) => {
-    const daysLate = Math.ceil(
-      (startOfDay(today).getTime() - startOfDay(b.endDate).getTime()) / 86_400_000
-    )
+    // Item ainda não voltou: o atraso corre até hoje.
+    const daysLate = diasDeAtraso(b.endDate, today)
     const itemsLabel = bookingItemsLabel(b.item.title, b._count.bookingItems || 1)
 
-    // Primeira detecção de atraso: grava lateFeeAmount + cria cobrança Stripe.
-    // Ordem dentro de uma mesma reserva é intencional — não paralelizar.
-    if (b.lateFeeAmount == null) {
-      const lateFeeAmount = calcLateFee(b.dailyPrice, lateFeeMultiplier, daysLate)
+    // Cobrança da multa: primeira emissão OU reemissão, quando a anterior
+    // expirou sem pagamento. Ordem dentro de uma mesma reserva é intencional —
+    // não paralelizar.
+    //
+    // 🪤 Antes a condição era `if (b.lateFeeAmount == null)` — cobrava UMA vez
+    // na vida. Como a sessão da Stripe vale 24h, quem não pagasse nesse prazo
+    // ficava sem forma de pagar para sempre, e seguia recebendo o lembrete
+    // diário de atraso sem link. Os 5 casos cobrados no staging expiraram
+    // todos assim.
+    //
+    // O item ainda não voltou, então a multa cresce: o valor é recalculado com
+    // os dias de atraso de HOJE — até o teto de 30 dias (decisão de Roberto,
+    // 01/09). Passado o teto o valor congela no do 30º dia e só o admin move.
+    const diasCobrados = diasParaCalculo(daysLate)
+    const valorHoje    = calcLateFee(b.dailyPrice, lateFeeMultiplier, diasCobrados)
 
+    // Aviso único, no dia em que o teto é atingido: as duas partes precisam
+    // saber que o caso saiu do automático e passou a ser extravio, não atraso.
+    if (daysLate === TETO_DIAS_CALCULO_AUTOMATICO + 1) {
+      after(() =>
+        prisma.notification.createMany({
+          data: [b.borrower, b.owner].map((_, i) => ({
+            userId: i === 0 ? b.borrowerId : b.ownerId,
+            type:   "LATE_FEE_APPLIED" as never,
+            title:  "Taxa de atraso deixou de crescer",
+            body:   `"${itemsLabel}" está há mais de ${TETO_DIAS_CALCULO_AUTOMATICO} dias sem devolução. ` +
+                    `A taxa parou de aumentar e o caso deve seguir como extravio — abra uma disputa na reserva.`,
+            data:   { bookingId: b.id },
+          })),
+        }).catch((e) => console.error("[cron] aviso de teto da multa:", e instanceof Error ? e.message : e))
+      )
+    }
+
+    if (precisaCobrar(b, valorHoje)) {
       try {
-        await prisma.booking.update({
-          where: { id: b.id },
-          data:  { lateFeeAmount },
-        })
-
-        const stripe = getStripe()
-        const session = await stripe.checkout.sessions.create({
-          mode:                 "payment",
-          payment_method_types: ["card"],
-          customer_email:       b.borrower.email,
-          line_items: [{
-            quantity: 1,
-            price_data: {
-              currency:     "brl",
-              unit_amount:  lateFeeAmount,
-              product_data: {
-                name:        `Taxa de atraso — ${itemsLabel}`,
-                description: `${daysLate} dia${daysLate > 1 ? "s" : ""} em atraso`,
-                ...(b.item.images[0]?.url && { images: [b.item.images[0].url] }),
-              },
-            },
-          }],
-          metadata: { bookingId: b.id, type: "late_fee" },
-          success_url: `${appUrl}/reservas/${b.id}?late_fee=paid`,
-          cancel_url:  `${appUrl}/reservas/${b.id}`,
-          // 🪤 Era `72 * 3600` aqui, e a Stripe recusa: o teto de `expires_at` é
-          // 24h. Esta cobrança nunca foi exercitada, então o defeito ficou
-          // latente até a mesma fórmula ser copiada para a cobrança de extensão
-          // e falhar ao vivo (24/08/2026).
-          expires_at:  Math.floor(Date.now() / 1000) + STRIPE_CHARGE_EXPIRES_SECONDS,
-        })
-
-        await sendLateFeeEmail(
-          b.borrower.email, b.borrower.name,
-          itemsLabel, b.id,
-          lateFeeAmount, session.url!,
+        const r = await emitirCobrancaTaxaAtraso(
+          b,
+          itemsLabel,
+          valorHoje,
+          diasCobrados,
+          // Contado ate hoje: o item ainda nao voltou.
+          today,
         )
-        sent.push(`late_fee:${b.id}`)
+        if (r.emitida) sent.push(`late_fee${r.reemissao ? ":reemitida" : ""}:${b.id}`)
       } catch (e) {
         console.error("[cron] late fee charge", b.id, e instanceof Error ? e.message : e)
         failed.push(`late_fee:${b.id}`)
-        // Não propaga — o lembrete diário de atraso continua mesmo se a cobrança falhar
+        // Não propaga — o lembrete diário de atraso continua mesmo se a cobrança falhar.
+        // E, ao contrário de antes, a falha não queima a única chance: sem
+        // sessão viva gravada, o cron de amanhã tenta de novo.
       }
     }
 
@@ -221,10 +256,38 @@ export async function GET(req: NextRequest) {
     }
   })
 
+  // Reemissão para reservas já devolvidas — só a cobrança, sem lembrete de
+  // atraso: o item já voltou, cobrar atraso agora seria desinformação.
+  const reemissaoStats = await processInBatches(multasEmAberto, BATCH_SIZE, async (b) => {
+    // 🪤 Aqui o item JÁ VOLTOU, então a multa parou de crescer. A referência é
+    // a devolução, não hoje — usar `today` faria a dívida de uma locação
+    // concluída aumentar todo dia, para sempre, enquanto não fosse paga.
+    // `returnRequestedAt` é quando o locatário devolveu; `returnedAt`, quando o
+    // locador confirmou. O atraso termina no primeiro.
+    const fimDoAtraso = b.returnRequestedAt ?? b.returnedAt ?? today
+    const diasAtraso  = diasDeAtraso(b.endDate, fimDoAtraso)
+    try {
+      const r = await emitirCobrancaTaxaAtraso(
+        b,
+        bookingItemsLabel(b.item.title, b._count.bookingItems || 1),
+        calcLateFee(b.dailyPrice, lateFeeMultiplier, diasAtraso),
+        diasAtraso,
+        // Contado ate a devolucao: o atraso terminou quando o item voltou.
+        fimDoAtraso,
+      )
+      if (r.emitida) sent.push(`late_fee:reemitida:${b.id}`)
+    } catch (e) {
+      console.error("[cron] reemissão de multa", b.id, e instanceof Error ? e.message : e)
+      failed.push(`late_fee:reemissao:${b.id}`)
+      throw e
+    }
+  })
+
   console.warn(
     `[cron/reminders] start=${startStats.ok}ok/${startStats.failed}fail` +
     ` return=${returnStats.ok}ok/${returnStats.failed}fail` +
-    ` overdue=${overdueStats.ok}ok/${overdueStats.failed}fail`,
+    ` overdue=${overdueStats.ok}ok/${overdueStats.failed}fail` +
+    ` reemissao=${reemissaoStats.ok}ok/${reemissaoStats.failed}fail`,
     { sent, failed },
   )
 

@@ -68,6 +68,7 @@ export async function GET(req: NextRequest, { params }: Params) {
         extensionStatus:           true,
         extensionRequestedEndDate: true,
         lateFeeAmount:             true,
+        lateFeeCalculatedUntil:    true,
         pickupTokenUsedAt:         true,
         photos: { select: { id: true, url: true, phase: true, createdAt: true }, orderBy: { createdAt: "asc" } },
         item: {

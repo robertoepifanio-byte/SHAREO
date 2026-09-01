@@ -82,6 +82,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
       extensionRequestedAt: true,
       extensionRespondedAt: true,
       lateFeeAmount: true,
+      lateFeeCalculatedUntil: true,
       photos:        { select: { id: true, url: true, phase: true, createdAt: true }, orderBy: { createdAt: "asc" } },
       item: {
         select: {
@@ -562,6 +563,12 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                 <p className="text-xs text-red-700">
                   Item devolvido após o prazo. Taxa adicional:{" "}
                   <strong>{formatPrice(booking.lateFeeAmount)}</strong>
+                  {/* Sem a data, o valor não diz a que período se refere — o
+                      cálculo automático para no 30º dia e o admin pode atualizar
+                      a dívida depois. */}
+                  {booking.lateFeeCalculatedUntil && (
+                    <> — atraso calculado até {formatDate(booking.lateFeeCalculatedUntil)}</>
+                  )}
                 </p>
                 {/* A multa segue o mesmo split da locação (decisão de 01/09/2026).
                     Sem esta linha, o proprietário via a multa cobrada e continuava

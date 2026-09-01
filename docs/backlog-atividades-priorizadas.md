@@ -26,11 +26,39 @@
 
    **Ainda não exercitado ponta a ponta** — a cobrança da taxa de atraso nunca rodou de verdade (ver nota de risco abaixo).
 
-2. **🟠 Concluir a locação não fecha a cobrança.** A reserva foi a `COMPLETED` com a taxa pendente. Nada cancela a Checkout Session, nada persegue o não-pagamento, e o e-mail de "Devolução confirmada" diz que a locação está concluída **sem mencionar a taxa em aberto**. Um locatário que simplesmente ignora o e-mail não sofre consequência nenhuma.
+2. **🟠 Concluir a locação não fecha a cobrança.** A reserva foi a `COMPLETED` com a taxa pendente, e o e-mail de "Devolução confirmada" diz que a locação está concluída **sem mencionar a taxa em aberto**.
+
+   ✅ **Parcialmente resolvido em 01/09:** a cobrança agora é reemitida diariamente enquanto a multa não for paga, inclusive depois da devolução — o locatário deixa de ficar sem forma de pagar. **Continua aberto:** o e-mail de devolução confirmada segue sem mencionar a dívida, e nada limita para sempre o número de reemissões nem escala a cobrança.
 
 3. **🟡 A taxa não aparece no extrato financeiro.** Só na tela da reserva e em `/admin/reservas/[id]` ("Multa por atraso"). Não entra no resumo financeiro do proprietário nem no export.
 
-**Nota de risco (link com o D4):** a Checkout Session da taxa nasce com `expires_at` de 24h — o teto da Stripe. Se o locatário não pagar em 24h, o link morre e **não há reemissão**. A cobrança da taxa nunca foi exercitada ponta a ponta (o mesmo defeito de `expires_at` já esteve latente aqui e só apareceu quando a fórmula foi copiada para a extensão, em 24/08).
+### ✅ Diagnóstico e correção da reemissão (01/09/2026)
+
+Investigação das 10 multas do staging que nunca foram pagas:
+
+- **5 nunca foram cobradas:** são as `demo_pf_*`, com `lateFeeAmount` gravado direto pelos scripts de seed (`seed-staging-demo.ts`, `topup-staging-demo.ts`, fórmula `pricePerDay * 0.5`). Como o cron só agia com o campo vazio, nunca as tocou.
+- **5 foram cobradas de verdade e TODAS expiraram** (`checkout.session.expired`, `unpaid`) — confirmado na `StripeEventQueue`. O mecanismo funcionava; ninguém pagou em 24h.
+
+**O defeito real:** a cobrança era emitida UMA vez na vida. A Checkout Session vale 24h (teto da Stripe para `expires_at`) e nada a reemitia, porque o cron só cobrava com `lateFeeAmount` vazio — e ele próprio acabara de preencher esse campo. Passadas 24h a dívida virava incobrável, **enquanto o lembrete diário de atraso continuava saindo, sem link de pagamento**.
+
+Agravante de ordem de escrita: o `lateFeeAmount` era gravado ANTES de a sessão existir, então qualquer falha depois disso (chave da Stripe, indisponibilidade, e-mail) também queimava a única chance.
+
+**Corrigido:** `lib/lateFee.ts` separa "multa devida" de "cobrança emitida" (campos novos `lateFeeSessionId` / `lateFeeSessionExpiresAt`), grava só depois de a sessão existir, e o cron reemite enquanto houver multa em aberto — inclusive para reservas já devolvidas, que saíam do radar do cron ao deixar `ACTIVE`.
+
+✅ **Multa recalculada diariamente (decisão de Roberto, 01/09).** A multa cresce com os dias de atraso, como o texto publicado promete ("1,5× o preço diário por dia de atraso"). Antes era calculada uma única vez, na primeira detecção: um atraso de 5 dias cobrava 1 dia.
+
+   Duas consequências que a decisão obriga, ambas implementadas:
+
+   - **Reprecificar invalida a cobrança anterior.** Sem expirar a sessão velha, ficariam dois links vivos por valores diferentes e o locatário pagaria o menor — escolhendo a própria dívida.
+   - **A multa PARA de crescer na devolução.** A referência de cálculo é `returnRequestedAt`, não "hoje". Usar hoje faria a dívida de uma locação já concluída aumentar todo dia, para sempre, enquanto não fosse paga.
+
+✅ **Teto de 30 dias no cálculo automático (decisão de Roberto, 01/09).** Depois de 30 dias o problema deixou de ser atraso: item que não volta há um mês é extravio, e extravio tem outro caminho (disputa + BO). O cron congela o valor no do 30º dia, mantém a cobrança viva e pagável, e **notifica as duas partes uma única vez** de que o caso saiu do automático.
+
+   Passado o teto, o valor só muda por **recálculo do admin** (`PATCH /api/admin/bookings/:id/late-fee`, botão em `/admin/reservas/[id]`), com justificativa obrigatória e registro no `adminLog`. **Não existe equivalente para o proprietário, de propósito:** seria uma parte da locação aumentando unilateralmente a dívida da outra, sem mediação, num contrato de adesão.
+
+✅ **Sem pendência de texto.** O teto de 30 dias limita o *recálculo automático*, não a dívida: o admin atualiza o valor quando for o caso, então "1,5× o preço diário por dia de atraso" continua verdadeiro (esclarecimento de Roberto, 01/09 — eu havia registrado uma divergência com o CDC que não existe).
+
+   O que o teto exige é **transparência da data**, não do limite: toda cobrança passa a dizer **"atraso calculado até dd/mm/aaaa"** — na descrição da cobrança Stripe, no e-mail ao locatário, na tela da reserva (site e app) e no painel admin. Campo `Booking.lateFeeCalculatedUntil`. Sem a data, o mesmo valor pode se referir a 3 ou a 30 dias, conforme quando foi calculado.
 
 ---
 
