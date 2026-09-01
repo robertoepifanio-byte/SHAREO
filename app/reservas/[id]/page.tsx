@@ -17,7 +17,7 @@ import { BookingHistory }     from "@/components/booking/BookingHistory"
 import { ReturnCountdown }    from "@/components/booking/ReturnCountdown"
 import { ReturnChecklist }    from "@/components/booking/ReturnChecklist"
 import { ReturnConditionForm } from "@/components/booking/ReturnConditionForm"
-import { getPlatformFeeRate, calcSplitComDesconto, getRentalContractConfig } from "@/lib/platform-config"
+import { getPlatformFeeRate, calcSplit, calcSplitComDesconto, getRentalContractConfig } from "@/lib/platform-config"
 import { deriveBookingHistory } from "@/lib/bookingHistory"
 import { BookingStatusBadge } from "@/components/ui/BookingStatusBadge"
 import { formatPrice, formatDate, formatDateLong } from "@/utils/format"
@@ -563,6 +563,17 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                   Item devolvido após o prazo. Taxa adicional:{" "}
                   <strong>{formatPrice(booking.lateFeeAmount)}</strong>
                 </p>
+                {/* A multa segue o mesmo split da locação (decisão de 01/09/2026).
+                    Sem esta linha, o proprietário via a multa cobrada e continuava
+                    lendo só o líquido do aluguel em "Você recebe" — parecia que a
+                    multa não era dele. */}
+                {isOwner && (
+                  <p className="mt-1 text-xs text-red-700">
+                    Do valor da taxa você recebe{" "}
+                    <strong>{formatPrice(calcSplit(booking.lateFeeAmount, feeRateBps).ownerNetAmount)}</strong>,
+                    já descontada a taxa da plataforma de {feeRateLabel}%.
+                  </p>
+                )}
               </div>
             </div>
           )}

@@ -551,6 +551,12 @@ model Booking {
   returnRequestedAt DateTime? // quando o locatário iniciou a devolução (mark_returned)
   returnedAt        DateTime? // quando o locador confirmou o recebimento (confirm_return)
   lateFeeAmount     Int? // cents — calculado se returnedAt > endDate
+  // PaymentIntent da cobrança AVULSA da taxa de atraso. Mesma razão do
+  // `extensionPaymentIntentId`: a multa é cobrada numa Checkout Session
+  // própria, e a Stripe exige `source_transaction` no Brasil — o Transfer da
+  // parte do proprietário tem de sair DESTA cobrança, não da locação, que não
+  // tem esse dinheiro.
+  lateFeePaymentIntentId String?
 
   // Disputa — estado PARALELO ao `status`, não um valor dele.
   // A reserva em disputa continua ACTIVE/RETURNED e segue devolvível; encerrar
