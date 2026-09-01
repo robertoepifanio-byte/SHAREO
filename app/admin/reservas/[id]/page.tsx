@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma"
 import { getPlatformFeeRate, calcSplit } from "@/lib/platform-config"
 import { formatPrice, formatDate, formatDateTime } from "@/utils/format"
 import { BookingStatusBadge } from "@/components/ui/BookingStatusBadge"
+import { RecalcularTaxaAtraso } from "./_RecalcularTaxaAtraso"
 
 export const metadata: Metadata = { title: "Admin — Detalhe da reserva" }
 
@@ -40,6 +41,7 @@ export default async function AdminReservaPage({ params }: Props) {
       discountCents:     true,
       depositAmount:     true,
       lateFeeAmount:     true,
+      lateFeePaymentIntentId: true,
       platformFeeAmount: true,
       ownerNetAmount:    true,
       borrowerNote:      true,
@@ -138,6 +140,12 @@ export default async function AdminReservaPage({ params }: Props) {
           <Row label={`Taxa ShareO (${feeRateBps / 100}%, retida do repasse)`} value={`− ${formatPrice(platformFee)}`} />
           <Row label="Repasse ao proprietário" value={formatPrice(ownerNet)} strong />
           {booking.lateFeeAmount ? <Row label="Multa por atraso" value={formatPrice(booking.lateFeeAmount)} /> : null}
+          {booking.lateFeeAmount && !booking.lateFeePaymentIntentId ? (
+            <div className="mt-2">
+              {/* Sai do automatico no 30o dia; daqui em diante o valor so muda aqui. */}
+              <RecalcularTaxaAtraso bookingId={booking.id} />
+            </div>
+          ) : null}
           {booking.depositAmount ? <Row label="Caução" value={formatPrice(booking.depositAmount)} /> : null}
           <div className="mt-2 border-t border-border pt-2">
             <Row label="Status do pagamento" value={booking.paymentStatus} />

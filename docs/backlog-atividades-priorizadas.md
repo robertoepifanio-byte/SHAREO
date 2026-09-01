@@ -52,6 +52,12 @@ Agravante de ordem de escrita: o `lateFeeAmount` era gravado ANTES de a sessão 
    - **Reprecificar invalida a cobrança anterior.** Sem expirar a sessão velha, ficariam dois links vivos por valores diferentes e o locatário pagaria o menor — escolhendo a própria dívida.
    - **A multa PARA de crescer na devolução.** A referência de cálculo é `returnRequestedAt`, não "hoje". Usar hoje faria a dívida de uma locação já concluída aumentar todo dia, para sempre, enquanto não fosse paga.
 
+✅ **Teto de 30 dias no cálculo automático (decisão de Roberto, 01/09).** Depois de 30 dias o problema deixou de ser atraso: item que não volta há um mês é extravio, e extravio tem outro caminho (disputa + BO). O cron congela o valor no do 30º dia, mantém a cobrança viva e pagável, e **notifica as duas partes uma única vez** de que o caso saiu do automático.
+
+   Passado o teto, o valor só muda por **recálculo do admin** (`PATCH /api/admin/bookings/:id/late-fee`, botão em `/admin/reservas/[id]`), com justificativa obrigatória e registro no `adminLog`. **Não existe equivalente para o proprietário, de propósito:** seria uma parte da locação aumentando unilateralmente a dívida da outra, sem mediação, num contrato de adesão.
+
+🔴 **Pendência de texto que o teto cria (perimetro D4).** Políticas e Central de Ajuda dizem "1,5× o preço diário por dia de atraso", **sem teto**. Um limite de 30 dias precisa estar publicado para valer — senão prometemos crescimento ilimitado e aplicamos outro (CDC art. 30). Some-se aos 5 pontos de `docs/juridico/pauta-disputa-2026-09-01.md`.
+
 ---
 
 ## ⚖️ Disputa — pendências abertas pelo refactor de 01/09 (fazer DEPOIS do 85/15 da taxa de atraso)

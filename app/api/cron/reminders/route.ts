@@ -3,7 +3,7 @@
  * Executado diariamente às 08:00 BRT (11:00 UTC) via Vercel Cron.
  * Envia lembretes automáticos de reservas ao proprietário e locatário.
  */
-import { NextResponse, type NextRequest } from "next/server"
+import { NextResponse, after, type NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { assertCronAuth } from "@/lib/auth/cron-guard"
 import {
@@ -13,7 +13,10 @@ import {
   bookingItemsLabel,
 } from "@/lib/email"
 import { getLateFeeMultiplier, calcLateFee } from "@/lib/platform-config"
-import { emitirCobrancaTaxaAtraso, precisaCobrar, diasDeAtraso } from "@/lib/lateFee"
+import {
+  emitirCobrancaTaxaAtraso, precisaCobrar, diasDeAtraso, diasParaCalculo,
+  TETO_DIAS_CALCULO_AUTOMATICO,
+} from "@/lib/lateFee"
 
 export const runtime = "nodejs"
 export const maxDuration = 60
@@ -103,6 +106,7 @@ export async function GET(req: NextRequest) {
         id: true, startDate: true, endDate: true, dailyPrice: true,
         lateFeeAmount: true, lateFeePaymentIntentId: true,
         lateFeeSessionId: true, lateFeeSessionExpiresAt: true,
+        borrowerId: true, ownerId: true, // aviso do teto da multa
         item:     { select: { title: true, images: { select: { url: true }, orderBy: { order: "asc" }, take: 1 } } },
         borrower: { select: { email: true, name: true } },
         owner:    { select: { email: true, name: true } },
@@ -193,8 +197,27 @@ export async function GET(req: NextRequest) {
     // todos assim.
     //
     // O item ainda não voltou, então a multa cresce: o valor é recalculado com
-    // os dias de atraso de HOJE (decisão de Roberto, 01/09).
-    const valorHoje = calcLateFee(b.dailyPrice, lateFeeMultiplier, daysLate)
+    // os dias de atraso de HOJE — até o teto de 30 dias (decisão de Roberto,
+    // 01/09). Passado o teto o valor congela no do 30º dia e só o admin move.
+    const diasCobrados = diasParaCalculo(daysLate)
+    const valorHoje    = calcLateFee(b.dailyPrice, lateFeeMultiplier, diasCobrados)
+
+    // Aviso único, no dia em que o teto é atingido: as duas partes precisam
+    // saber que o caso saiu do automático e passou a ser extravio, não atraso.
+    if (daysLate === TETO_DIAS_CALCULO_AUTOMATICO + 1) {
+      after(() =>
+        prisma.notification.createMany({
+          data: [b.borrower, b.owner].map((_, i) => ({
+            userId: i === 0 ? b.borrowerId : b.ownerId,
+            type:   "LATE_FEE_APPLIED" as never,
+            title:  "Taxa de atraso deixou de crescer",
+            body:   `"${itemsLabel}" está há mais de ${TETO_DIAS_CALCULO_AUTOMATICO} dias sem devolução. ` +
+                    `A taxa parou de aumentar e o caso deve seguir como extravio — abra uma disputa na reserva.`,
+            data:   { bookingId: b.id },
+          })),
+        }).catch((e) => console.error("[cron] aviso de teto da multa:", e instanceof Error ? e.message : e))
+      )
+    }
 
     if (precisaCobrar(b, valorHoje)) {
       try {
@@ -202,7 +225,7 @@ export async function GET(req: NextRequest) {
           b,
           itemsLabel,
           valorHoje,
-          `${daysLate} dia${daysLate > 1 ? "s" : ""} em atraso`,
+          `${diasCobrados} dia${diasCobrados > 1 ? "s" : ""} em atraso`,
         )
         if (r.emitida) sent.push(`late_fee${r.reemissao ? ":reemitida" : ""}:${b.id}`)
       } catch (e) {

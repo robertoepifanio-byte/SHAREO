@@ -33,6 +33,22 @@ export type BookingParaCobranca = {
 }
 
 /**
+ * Teto do cálculo AUTOMÁTICO da multa, em dias (decisão de Roberto, 01/09/2026).
+ *
+ * Depois de 30 dias o problema deixou de ser atraso: um item que não volta há
+ * um mês é extravio, e extravio tem outro caminho (disputa + boletim de
+ * ocorrência). Continuar somando diária sobre diária finge que ainda existe uma
+ * locação em curso, e produz uma dívida que ninguém paga nem executa — além de
+ * um e-mail de cobrança por dia, com valor sempre maior.
+ *
+ * Passado o teto, o valor só muda por ação do ADMIN (`recalcular_taxa_atraso`),
+ * que é decisão de mediação e fica registrada no adminLog. Deliberadamente NÃO
+ * é um botão do proprietário: seria uma parte aumentando a dívida da outra sem
+ * mediação.
+ */
+export const TETO_DIAS_CALCULO_AUTOMATICO = 30
+
+/**
  * Dias de atraso — inteiro, mínimo 1.
  *
  * 🪤 `referencia` é o que faz a multa PARAR de crescer: enquanto o item não
@@ -84,6 +100,25 @@ export function precisaCobrar(
   if (taxaDeAtrasoQuitada(b)) return false
   if (!temCobrancaViva(b, agora)) return true
   return b.lateFeeAmount !== valorAtual
+}
+
+/**
+ * O cálculo automático ainda vale, ou o caso já passou do teto?
+ *
+ * Depois do teto o valor congela: a cobrança continua viva e pagável pelo valor
+ * do 30º dia, mas o cron para de reprecificar. Só o admin move dali.
+ */
+export function dentroDoCalculoAutomatico(dias: number): boolean {
+  return dias <= TETO_DIAS_CALCULO_AUTOMATICO
+}
+
+/**
+ * Dias que o cálculo deve usar: os reais, ou o teto, o que for menor.
+ * Manter o valor do 30º dia (em vez de congelar o que estivesse gravado) evita
+ * que uma falha de cron num dia qualquer determine para sempre o valor da multa.
+ */
+export function diasParaCalculo(diasReais: number): number {
+  return Math.min(diasReais, TETO_DIAS_CALCULO_AUTOMATICO)
 }
 
 export type ResultadoCobranca =

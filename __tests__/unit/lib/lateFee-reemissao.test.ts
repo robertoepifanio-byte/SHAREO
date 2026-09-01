@@ -8,7 +8,10 @@
  * preencher esse campo. A dívida virava incobrável, e o lembrete diário de
  * atraso continuava saindo sem link de pagamento.
  */
-import { emitirCobrancaTaxaAtraso, precisaCobrar, temCobrancaViva, taxaDeAtrasoQuitada, diasDeAtraso } from "@/lib/lateFee"
+import {
+  emitirCobrancaTaxaAtraso, precisaCobrar, temCobrancaViva, taxaDeAtrasoQuitada,
+  diasDeAtraso, diasParaCalculo, dentroDoCalculoAutomatico, TETO_DIAS_CALCULO_AUTOMATICO,
+} from "@/lib/lateFee"
 
 const mockBookingUpdate = jest.fn()
 const mockSessionCreate = jest.fn()
@@ -208,5 +211,35 @@ describe("diasDeAtraso — quando a multa PARA de crescer", () => {
     // 2 dias, e continua 2 daqui a um mês: passar `hoje` aqui faria a multa
     // de uma locação CONCLUÍDA crescer para sempre enquanto não fosse paga.
     expect(diasDeAtraso(fim, devolvido)).toBe(2)
+  })
+})
+
+describe("teto de 30 dias do cálculo automático", () => {
+  it("o teto é 30 dias", () => {
+    expect(TETO_DIAS_CALCULO_AUTOMATICO).toBe(30)
+  })
+
+  it("abaixo do teto, cobra os dias reais", () => {
+    expect(diasParaCalculo(1)).toBe(1)
+    expect(diasParaCalculo(29)).toBe(29)
+    expect(diasParaCalculo(30)).toBe(30)
+  })
+
+  it("acima do teto, congela no 30º dia — a dívida para de crescer sozinha", () => {
+    expect(diasParaCalculo(31)).toBe(30)
+    expect(diasParaCalculo(400)).toBe(30)
+  })
+
+  it("dentroDoCalculoAutomatico marca onde o cron para", () => {
+    expect(dentroDoCalculoAutomatico(30)).toBe(true)
+    expect(dentroDoCalculoAutomatico(31)).toBe(false)
+  })
+
+  it("o módulo não aplica o teto sozinho — quem decide é o chamador", async () => {
+    // O recálculo do ADMIN passa por aqui e IGNORA o teto de propósito: é o
+    // único caminho que pode mover o valor depois do 30º dia.
+    const b = makeBooking({ lateFeeAmount: 4500, lateFeeSessionExpiresAt: ONTEM })
+    const r = await emitirCobrancaTaxaAtraso(b, "Furadeira", 90000, "120 dias em atraso")
+    expect(r).toMatchObject({ emitida: true, valor: 90000 })
   })
 })
