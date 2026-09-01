@@ -72,6 +72,27 @@ export function diasDeAtraso(endDate: Date, referencia: Date): number {
 }
 
 /**
+ * Houve atraso de fato?
+ *
+ * 🪤 `diasDeAtraso` tem piso de 1 dia, então sozinho ele NUNCA diz "não houve
+ * atraso" — devolver antes do prazo devolve 1. Isso apareceu ao vivo no
+ * staging em 01/09: cinco reservas com prazo até 02/07 e devolução em 27/06
+ * (devolvidas ANTES do vencimento) receberam cobrança de 1 dia, porque o
+ * caminho de reemissão confiava no `lateFeeAmount` gravado e nunca perguntava
+ * se o atraso ainda existia. Eram dados de seed, mas qualquer valor ruim que
+ * entre vira cobrança real.
+ *
+ * O piso continua certo para quem atrasou: passou do dia, deve pelo menos um.
+ * O que faltava era esta pergunta antes dele.
+ */
+export function houveAtraso(endDate: Date, referencia: Date): boolean {
+  const dia = 86_400_000
+  const d0  = Date.UTC(endDate.getUTCFullYear(), endDate.getUTCMonth(), endDate.getUTCDate())
+  const d1  = Date.UTC(referencia.getUTCFullYear(), referencia.getUTCMonth(), referencia.getUTCDate())
+  return d1 - d0 >= dia
+}
+
+/**
  * A multa já foi paga? `lateFeePaymentIntentId` só é gravado pelo webhook,
  * quando o dinheiro entra — é o sinal de quitação, não a existência do valor.
  */
