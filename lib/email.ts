@@ -699,9 +699,9 @@ export function founderWelcomeHtml(firstName: string, queuePosition: number, uns
 
     <p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">
       A abertura é feita <strong>por cidade</strong>: as regiões com mais interessados entram
-      primeiro. <strong>Dois dias antes</strong> de os cadastros abrirem na sua cidade, você
-      recebe um e-mail exclusivo para garantir sua entrada antecipada — antes de qualquer
-      anúncio público.
+      primeiro. <strong>Antes da abertura dos cadastros na sua cidade</strong>, você recebe um
+      e-mail exclusivo para garantir sua entrada antecipada — antes de qualquer anúncio
+      público.
     </p>
 
     <div style="margin-bottom:24px;padding:16px 20px;background:#F0FDF4;border-radius:8px;border:1px solid #BBF7D0;">

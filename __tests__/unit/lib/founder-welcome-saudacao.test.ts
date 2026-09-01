@@ -51,11 +51,18 @@ describe("founderWelcomeHtml — promessa de abertura", () => {
 
   it("diz que a abertura é por cidade", () => {
     expect(html).toContain("por cidade")
-    expect(html).toContain("abrirem na sua cidade")
+    expect(html).toContain("abertura dos cadastros na sua cidade")
   })
 
   it("explica o critério da ordem — é o que dá à pessoa motivo para convidar amigos", () => {
     expect(html).toContain("as regiões com mais interessados entram")
+  })
+
+  it("não publica prazo — SLA em copy vira oferta vinculante (CDC art. 30)", () => {
+    // O aviso previo existe como promessa, mas o job que o dispara ainda nao
+    // foi construido. Numero em e-mail e pior que em pagina: fica guardado na
+    // caixa de entrada como prova do que foi prometido.
+    expect(html).not.toMatch(/dois dias|48\s*h|48 horas|\d+\s*dias antes/i)
   })
 
   it("não promete abertura única nacional", () => {
