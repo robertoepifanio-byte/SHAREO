@@ -166,6 +166,11 @@ const TRANSITIONS: Record<
   // só liga `disputeStatus = OPEN` (lib/openDispute.ts). A reserva segue
   // ACTIVE ou RETURNED e continua devolvível.
   open_dispute:   { requiredStatus: ["ACTIVE", "RETURNED"],  allowedRole: "both",                              requiresReason: true },
+  // Idem: encerrar a disputa não decide nada sobre a locação. Aceita qualquer
+  // status porque a reserva pode ter avançado (devolvida, concluída) enquanto a
+  // disputa corria — travar por status recriaria o beco sem saída que este
+  // refactor desfez. Quem pode cancelar é checado por AUTORIA, abaixo.
+  cancel_dispute: { requiredStatus: ["ACTIVE", "RETURNED", "COMPLETED"], allowedRole: "both" },
 }
 
 export async function PATCH(req: NextRequest, { params }: Params) {
@@ -207,6 +212,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         contractSignedAt: true, // guard do mark_active — ver abaixo
         returnRequestedAt: true, // guard do open_dispute — ver abaixo (48h do locador)
         disputeStatus: true, // guard de disputa já aberta — ver abaixo
+        disputeOpenedById: true, // só quem abriu pode cancelar a própria disputa
         pickupToken: true, pickupTokenUsedAt: true,
         bookingItems: { select: { itemId: true } }, // Story B — revalidar todos os itens no confirm
         item:     { select: { title: true } },
@@ -325,6 +331,48 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         borrowerId:   booking.borrowerId,
         itemTitle:    booking.item.title,
       })
+      return NextResponse.json({ data: updated })
+    }
+
+    // Cancelar a PRÓPRIA disputa (Thiago, QA 01/09). Só quem abriu, e só
+    // enquanto ninguém decidiu: depois de o admin resolver, o desfecho é dele.
+    if (action === "cancel_dispute") {
+      if (booking.disputeStatus !== "OPEN") {
+        return NextResponse.json(
+          { error: { code: "NO_OPEN_DISPUTE", message: "Não há disputa aberta nesta reserva." } },
+          { status: 422 },
+        )
+      }
+      // 🪤 `disputeOpenedById` é NULL nas disputas anteriores a 01/09/2026 — o
+      // autor não era registrado. Comparar com `userId` daria falso para todo
+      // mundo, e é isso que queremos: ninguém cancela uma disputa cuja autoria
+      // não dá para provar. Nesses casos o admin resolve pelo painel.
+      if (booking.disputeOpenedById !== userId) {
+        return NextResponse.json(
+          { error: { code: "FORBIDDEN", message: "Apenas quem abriu a disputa pode cancelá-la." } },
+          { status: 403 },
+        )
+      }
+
+      const updated = await prisma.booking.update({
+        where:  { id },
+        data:   { disputeStatus: "DISMISSED", disputeResolvedAt: new Date() },
+        select: { id: true, status: true, disputeStatus: true, updatedAt: true },
+      })
+
+      const outroLado = isOwner ? booking.borrowerId : booking.ownerId
+      after(() =>
+        prisma.notification.create({
+          data: {
+            userId: outroLado,
+            type:   "BOOKING_CANCELLED", // reutiliza tipo existente; o body indica disputa
+            title:  "Disputa cancelada",
+            body:   `O ${isOwner ? "locador" : "locatário"} cancelou a disputa em "${booking.item.title}". A locação segue normalmente.`,
+            data:   { bookingId: id },
+          },
+        }).catch((e) => console.error("[cancel_dispute] notification:", e instanceof Error ? e.message : e))
+      )
+
       return NextResponse.json({ data: updated })
     }
 

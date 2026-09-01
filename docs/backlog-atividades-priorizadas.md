@@ -8,6 +8,26 @@
 
 ---
 
+## 💸 Taxa de atraso — o dinheiro nunca chega ao proprietário (aberto em 2026-09-01)
+
+**Origem:** locação real do Thiago no staging (`cmtegn8bg0001l904l2ejrthy`, mouse, R$ 5/dia). Devolução com 1 dia de atraso, taxa de R$ 7,50 aplicada e exibida na tela. Roberto perguntou o que acontece a seguir com essa taxa. A resposta, rastreada no código:
+
+**O que funciona.** `GET /api/cron/reminders` (08h BRT) detecta o atraso, grava `lateFeeAmount` e cria uma Checkout Session Stripe própria, cobrada do locatário por e-mail (`sendLateFeeEmail`). Pago, o webhook (`handleLateFeePaid`) confirma o valor e notifica as duas partes.
+
+**O que não existe — três lacunas encadeadas:**
+
+1. **🔴 A taxa nunca vira repasse.** `criarPayoutDaReserva` (`lib/payout.ts`) monta o repasse a partir de `ownerNetAmount`, que cobre a locação e a extensão — **e só**. A taxa de atraso não entra em nenhuma das fatias e não gera `Payout` próprio. Consequência: os R$ 7,50 ficam **integralmente com a plataforma**, enquanto a tela do proprietário mostra "Você recebe R$ 4,25".
+
+   ✅ **Decisão (Roberto, 2026-09-01):** a multa segue **o mesmo processo da locação normal — 85% proprietário / 15% plataforma**. Implementação pendente, e não é só somar ao `ownerNetAmount`: a taxa é cobrada numa **Checkout Session própria**, então o Transfer precisa do `source_transaction` daquela cobrança — a mesma restrição da Stripe BR que obrigou um `Payout` por cobrança na extensão (ver memória `project-extensao-cobranca-ator03`). O split tem de usar `getPlatformFeeRate()`, nunca 15% cravado.
+
+2. **🟠 Concluir a locação não fecha a cobrança.** A reserva foi a `COMPLETED` com a taxa pendente. Nada cancela a Checkout Session, nada persegue o não-pagamento, e o e-mail de "Devolução confirmada" diz que a locação está concluída **sem mencionar a taxa em aberto**. Um locatário que simplesmente ignora o e-mail não sofre consequência nenhuma.
+
+3. **🟡 A taxa não aparece no extrato financeiro.** Só na tela da reserva e em `/admin/reservas/[id]` ("Multa por atraso"). Não entra no resumo financeiro do proprietário nem no export.
+
+**Nota de risco (link com o D4):** a Checkout Session da taxa nasce com `expires_at` de 24h — o teto da Stripe. Se o locatário não pagar em 24h, o link morre e **não há reemissão**. A cobrança da taxa nunca foi exercitada ponta a ponta (o mesmo defeito de `expires_at` já esteve latente aqui e só apareceu quando a fórmula foi copiada para a extensão, em 24/08).
+
+---
+
 ## 🔎 Painel de dois atores — achados da sessão de 2026-08-23 (locação viva no staging)
 
 > Origem: o fundador percorreu o ciclo completo de locação no staging como locador (Carlos) e locatária (Joana). Cada item abaixo foi **verificado no código E no banco**, não inferido.

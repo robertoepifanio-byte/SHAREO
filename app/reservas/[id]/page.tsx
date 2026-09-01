@@ -615,6 +615,9 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
             isOwner={isOwner}
             isBorrower={isBorrower}
             conversationId={booking.conversation?.id}
+            disputeStatus={booking.disputeStatus}
+            disputeOpenedById={booking.disputeOpenedById}
+            currentUserId={userId}
             extensionStatus={booking.extensionStatus ?? null}
             extensionRequestedEndDate={booking.extensionRequestedEndDate?.toISOString() ?? null}
             endDate={booking.endDate.toISOString()}
