@@ -13,13 +13,17 @@ describe("founderWelcomeHtml — saudação", () => {
   const url = "https://www.shareo.com.br/api/founders/unsubscribe?email=a&token=b"
 
   it("usa o nome quando o lead informou", () => {
-    expect(founderWelcomeHtml("Roberto", 1, url)).toContain("Você está na lista, Roberto!")
+    const html = founderWelcomeHtml("Roberto", 1, url)
+    expect(html).toContain("Olá, Roberto!")
+    expect(html).toContain("Você está na lista!")
   })
 
   it("OMITE o nome quando não há — não inventa", () => {
     const html = founderWelcomeHtml("", 4, url)
+    expect(html).toContain("Olá!")
+    expect(html).not.toContain("Olá, !")
+    // A comemoração é para todo mundo; o que some é o nome, não a mensagem.
     expect(html).toContain("Você está na lista!")
-    expect(html).not.toContain("lista, !")
   })
 
   it("mantém a posição na fila nos dois casos", () => {
@@ -46,12 +50,25 @@ describe("founderWelcomeHtml — promessa de abertura", () => {
   const html = founderWelcomeHtml("Roberto", 2, url)
 
   it("diz que a abertura é por cidade", () => {
-    expect(html).toContain("por cidade")
-    expect(html).toContain("abrir na sua cidade")
+    // Checa o SENTIDO, nao a redacao: que a abertura e faseada e que o aviso e
+    // sobre a cidade DA PESSOA. A frase ja mudou tres vezes num dia; fixar o
+    // literal so avisaria que o texto mudou, nunca que a promessa mudou.
+    // O <strong> fica NO MEIO da frase, entao a substring contigua nao casa —
+    // comparar sobre o texto sem tags evita um teste que depende da marcacao.
+    const texto = html.replace(/<[^>]+>/g, "")
+    expect(texto).toContain("As cidades abrem por etapas")
+    expect(texto).toContain("na sua cidade")
   })
 
   it("explica o critério da ordem — é o que dá à pessoa motivo para convidar amigos", () => {
     expect(html).toContain("as regiões com mais interessados entram")
+  })
+
+  it("não publica prazo — SLA em copy vira oferta vinculante (CDC art. 30)", () => {
+    // O aviso previo existe como promessa, mas o job que o dispara ainda nao
+    // foi construido. Numero em e-mail e pior que em pagina: fica guardado na
+    // caixa de entrada como prova do que foi prometido.
+    expect(html).not.toMatch(/dois dias|48\s*h|48 horas|\d+\s*dias antes/i)
   })
 
   it("não promete abertura única nacional", () => {

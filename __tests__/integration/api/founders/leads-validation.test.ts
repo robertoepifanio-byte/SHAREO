@@ -1,8 +1,11 @@
 /** @jest-environment node */
 /**
- * Testes de integração — validação de consentVersion em POST /api/founders/leads
+ * Testes de integração — validação de entrada em POST /api/founders/leads
  *
- * Foco exclusivo no trade-off de whitelist de versões de consentimento LGPD:
+ * Dois contratos, os dois sobre campos que não dá para conferir depois:
+ * `consentVersion` (trilha LGPD) e `intent` (ranking da cidade-piloto).
+ *
+ * Whitelist de versões de consentimento LGPD:
  *   - Versão vigente ("marketing-v1.0") → 201
  *   - Versão legada ("v1.1")            → 201 + console.warn
  *   - Campo ausente                     → 201 (usa o default "marketing-v1.0")
@@ -80,6 +83,7 @@ const BASE_PAYLOAD = {
   marketingConsent: true,
   city:             "São Paulo",
   state:            "SP",
+  intent:           "proprietario", // obrigatorio desde 31/08 — ver route.ts
 } as const
 
 function makeRequest(body: Record<string, unknown>): NextRequest {
@@ -177,5 +181,34 @@ describe("POST /api/founders/leads — consentVersion", () => {
     const body = await res.text()
     expect(body).not.toContain("<script>")
     warnSpy.mockRestore()
+  })
+})
+
+/** Impede o `.default("proprietario")` de voltar pela porta dos fundos — o
+ *  motivo esta em app/api/founders/leads/route.ts. */
+describe("POST /api/founders/leads — intent", () => {
+  it("recusa o lead quando `intent` nao vem, em vez de assumir 'proprietario'", async () => {
+    mockLeadCreated()
+    const { intent: _omitido, ...semIntent } = BASE_PAYLOAD
+    const res = await POST(makeRequest(semIntent))
+
+    expect(res.status).toBe(400) // 400 = falha de schema; 422 e so consentVersion
+    // O ponto nao e o status: e que nenhum lead torto foi gravado.
+    expect(mockCreate).not.toHaveBeenCalled()
+  })
+
+  it.each(["proprietario", "locatario", "ambos"])("grava intent %s como veio", async (intent) => {
+    mockLeadCreated()
+    const res = await POST(makeRequest({ ...BASE_PAYLOAD, intent }))
+
+    expect(res.status).toBe(201)
+    expect(mockCreate.mock.calls[0][0].data.intent).toBe(intent)
+  })
+
+  it("recusa valor fora do enum", async () => {
+    mockLeadCreated()
+    const res = await POST(makeRequest({ ...BASE_PAYLOAD, intent: "curioso" }))
+    expect(res.status).toBe(400)
+    expect(mockCreate).not.toHaveBeenCalled()
   })
 })

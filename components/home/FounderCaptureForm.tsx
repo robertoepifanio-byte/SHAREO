@@ -19,7 +19,10 @@ type State  = "collapsed" | "expanded" | "loading" | "success" | "error-network"
  */
 type CepState = "idle" | "loading" | "ok" | "notfound" | "error"
 
-function resolveIntent(selected: Set<IntentOption>): "proprietario" | "locatario" | "ambos" {
+/** `null` = não respondeu. Não existe intenção-padrão: antes o conjunto vazio
+ *  virava "proprietario" e poluía o ranking que escolhe a cidade-piloto. */
+function resolveIntent(selected: Set<IntentOption>): "proprietario" | "locatario" | "ambos" | null {
+  if (selected.size === 0) return null
   if (selected.has("proprietario") && selected.has("locatario")) return "ambos"
   if (selected.has("locatario")) return "locatario"
   return "proprietario"
@@ -38,7 +41,7 @@ type Props = {
 
 export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpanded }: Props = {}) {
   const [state, setState]         = useState<State>(startExpanded ? "expanded" : "collapsed")
-  const [selected, setSelected]   = useState<Set<IntentOption>>(new Set(["proprietario"]))
+  const [selected, setSelected]   = useState<Set<IntentOption>>(new Set())
   const [name, setName]           = useState("")
   const [email, setEmail]         = useState("")
   const [phone, setPhone]         = useState("")
@@ -71,8 +74,7 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
     setSelected((prev) => {
       const next = new Set(prev)
       if (next.has(opt)) {
-        if (next.size === 1) return prev // pelo menos uma opção sempre selecionada
-        next.delete(opt)
+        next.delete(opt) // quem barra o envio sem intenção é o canSubmit
       } else {
         next.add(opt)
       }
@@ -134,6 +136,10 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
+    // O botão fica `disabled` sem intenção, mas Enter num campo de texto é o
+    // outro caminho até aqui — e `resolveIntent` não tem mais o que inventar.
+    const intent = resolveIntent(selected)
+    if (!intent) return
     setState("loading")
     try {
       const cepDigits = cepVal.replace(/\D/g, "")
@@ -149,7 +155,7 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
           email:            email.trim().toLowerCase(),
           name:             name.trim() || undefined,
           phone:            phoneE164,
-          intent:           resolveIntent(selected),
+          intent,
           marketingConsent: lgpdConsent,
           consentVersion:   MARKETING_CONSENT_VERSION,
           source:           attribution.source,
@@ -316,7 +322,12 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
   // O CEP é atalho, nunca requisito: ViaCEP fora do ar não pode zerar a captação
   // de uma campanha paga.
   const canSubmit =
-    !isLoading && !!email.trim() && !!city.trim() && uf.trim().length === 2 && lgpdConsent
+    !isLoading &&
+    selected.size > 0 &&
+    !!email.trim() &&
+    !!city.trim() &&
+    uf.trim().length === 2 &&
+    lgpdConsent
 
   return (
     <form
@@ -344,8 +355,19 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
                 isLoading ? "opacity-60" : "",
               ].join(" ")}
             >
-              <span className="flex items-center justify-center gap-1.5">
-                <span aria-hidden="true" className={isChecked ? "opacity-100" : "opacity-0"}>✓</span>
+              {/* Caixa desenhada, sempre visível (antes era um ✓ com opacity-0 quando
+                  desmarcado: sem nenhuma opção pré-marcada, os dois botões ficariam
+                  visualmente idênticos a rótulos, sem pista de que há escolha a fazer). */}
+              <span className="flex items-center justify-center gap-2">
+                <span
+                  aria-hidden="true"
+                  className={[
+                    "flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border text-[11px] leading-none",
+                    isChecked ? "border-accent bg-accent text-accent-foreground" : "border-white/50 bg-transparent",
+                  ].join(" ")}
+                >
+                  {isChecked && "✓"}
+                </span>
                 {opt === "proprietario" ? "Quero anunciar" : "Quero alugar"}
               </span>
             </button>

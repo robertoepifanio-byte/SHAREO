@@ -661,22 +661,54 @@ export async function sendIdRejectedEmail(to: string, name: string, reason: stri
 }
 
 /** Exportado para teste: a saudação é a primeira frase que o Fundador lê. */
+/**
+ * O número da fila ganha bloco próprio e corpo grande de propósito: é a única
+ * parte do e-mail que é sobre ESTA pessoa, e é o que faz o #37 ou o #846 sentir
+ * que chegou cedo. Diluído no meio do parágrafo, vira detalhe.
+ *
+ * O racional mora aqui, e não num comentário dentro do HTML retornado: comentário
+ * em template de e-mail viaja no source da mensagem e fica legível para o
+ * destinatário.
+ */
 export function founderWelcomeHtml(firstName: string, queuePosition: number, unsubUrl: string) {
   return baseLayout(`
     <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
-      ${firstName ? `Você está na lista, ${firstName}!` : "Você está na lista!"}
+      ${firstName ? `Olá, ${firstName}!` : "Olá!"}
     </h1>
-    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
-      Você é o <strong>#${queuePosition}°</strong> interessado a entrar na lista de fundadores.
-      A abertura é feita <strong>por cidade</strong>: as regiões com mais interessados entram
-      primeiro, e avisamos você em primeira mão quando chegar a sua — antes de qualquer
-      anúncio público.
+    <p style="margin:0 0 16px;font-size:18px;font-weight:700;color:#003366;">
+      Você está na lista! 🎉
+    </p>
+
+    <div style="margin:0 0 20px;padding:18px 20px;background:#F8FAFC;border-radius:10px;border:1px solid #E2E8F0;text-align:center;">
+      <p style="margin:0 0 4px;font-size:13px;color:#475569;">
+        Você é o
+      </p>
+      <p style="margin:0;font-size:40px;line-height:1.1;font-weight:800;color:#007B3C;">
+        #${queuePosition}
+      </p>
+      <p style="margin:4px 0 0;font-size:13px;color:#475569;">
+        interessado a entrar na lista de Fundadores do ShareO
+      </p>
+    </div>
+
+    <p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">
+      Isso significa que você estará entre os primeiros a fazer parte de uma nova forma de
+      <strong>gerar renda com o que já possui</strong> e
+      <strong>economizar alugando o que precisa</strong>.
+    </p>
+
+    <p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">
+      As cidades abrem <strong>por etapas</strong>: as regiões com mais interessados entram
+      primeiro. <strong>Antes da abertura dos cadastros na sua cidade</strong>, você recebe um
+      e-mail exclusivo para garantir sua entrada antecipada — antes de qualquer anúncio
+      público.
     </p>
 
     <div style="margin-bottom:24px;padding:16px 20px;background:#F0FDF4;border-radius:8px;border:1px solid #BBF7D0;">
       <p style="margin:0;font-size:14px;color:#15803D;line-height:1.5;">
-        <strong>O que esperar:</strong> Um e-mail com link de acesso exclusivo quando o ShareO
-        abrir na sua cidade. Nenhum spam até lá.
+        Quando receber, basta fazer seu cadastro e confirmar seu
+        <strong>Selo de FUNDADOR ShareO</strong>. A partir daí, é hora de colocar seus itens
+        para trabalhar por você. Nenhum spam até lá.
       </p>
     </div>
 
@@ -703,7 +735,7 @@ export async function sendFounderWelcomeEmail(
   const { error } = await resend.emails.send({
     from:    `ShareO <${FROM}>`,
     to,
-    subject: `Você é o #${queuePosition}° na lista de fundadores do ShareO!`,
+    subject: `Você está entre os primeiros Fundadores do ShareO!`,
     html:    founderWelcomeHtml(firstName, queuePosition, unsubUrl),
     // RFC 8058 — descadastro em um clique. Exigido pelas regras de bulk sender
     // do Gmail/Yahoo para remetentes de volume, que é o caso da campanha nacional.

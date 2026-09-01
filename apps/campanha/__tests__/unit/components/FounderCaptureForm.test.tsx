@@ -69,6 +69,11 @@ async function fillAndSubmit() {
   // começa com "Concordo…" — distinto dos botões role="checkbox" de intenção.
   fireEvent.click(screen.getByRole("checkbox", { name: /concordo/i }))
 
+  // Intenção passou a ser obrigatória: nenhuma opção vem pré-marcada, e o
+  // botão de envio fica `disabled` até haver uma. Sem este clique, TODOS os
+  // testes deste arquivo param no submit.
+  fireEvent.click(screen.getByRole("checkbox", { name: /quero anunciar/i }))
+
   // Submete dentro de act para que os setState assíncronos do handleSubmit
   // (chamados após a resolução do fetch mockado) não gerem o aviso
   // "not wrapped in act" no output do teste.
@@ -223,5 +228,80 @@ describe("FounderCaptureForm — erro de rede", () => {
 
     const alert = await screen.findByRole("alert")
     expect(alert).toHaveTextContent(/erro de conexão/i)
+  })
+})
+
+/**
+ * Contrato da intenção ("Quero anunciar" / "Quero alugar").
+ *
+ * Esta é a cópia que está no ar em shareo.com.br, atrás da mídia paga — e o
+ * campo `intent` é o que alimenta o ranking de cidade-piloto. Antes,
+ * "anunciar" vinha pré-marcado E `resolveIntent` devolvia "proprietario" para
+ * conjunto vazio: quem nunca tocasse nos botões era contado como anunciante.
+ */
+describe("FounderCaptureForm — intenção", () => {
+  const anunciar = () => screen.getByRole("checkbox", { name: /quero anunciar/i })
+  const alugar   = () => screen.getByRole("checkbox", { name: /quero alugar/i })
+
+  it("não nasce com nenhuma opção pré-selecionada", () => {
+    render(<FounderCaptureForm startExpanded />)
+    expect(anunciar()).toHaveAttribute("aria-checked", "false")
+    expect(alugar()).toHaveAttribute("aria-checked", "false")
+  })
+
+  it("permite desmarcar a última opção", () => {
+    render(<FounderCaptureForm startExpanded />)
+    fireEvent.click(anunciar())
+    expect(anunciar()).toHaveAttribute("aria-checked", "true")
+    fireEvent.click(anunciar())
+    expect(anunciar()).toHaveAttribute("aria-checked", "false")
+  })
+
+  it("não envia — nem chama a API — enquanto não houver intenção", async () => {
+    render(<FounderCaptureForm startExpanded />)
+
+    fireEvent.click(screen.getByRole("button", { name: /prefiro informar/i }))
+    fireEvent.change(screen.getByPlaceholderText(/seu melhor e-mail/i), {
+      target: { value: "teste@example.com" },
+    })
+    fireEvent.change(screen.getByLabelText(/cidade/i), { target: { value: "Recife" } })
+    fireEvent.change(screen.getByLabelText(/^uf \*/i), { target: { value: "PE" } })
+    fireEvent.click(screen.getByRole("checkbox", { name: /concordo/i }))
+
+    const enviar = screen.getByRole("button", { name: /garantir/i })
+    expect(enviar).toBeDisabled()
+
+    await act(async () => { fireEvent.click(enviar) })
+    // O que importa não é o botão estar cinza, é o lead não nascer sem intenção.
+    expect(global.fetch).not.toHaveBeenCalled()
+
+    fireEvent.click(anunciar())
+    expect(enviar).toBeEnabled()
+  })
+
+  /** Preenche o mínimo e submete, marcando exatamente as intenções pedidas. */
+  async function enviarCom(escolhas: Array<"anunciar" | "alugar">) {
+    fireEvent.click(screen.getByRole("button", { name: /prefiro informar/i }))
+    fireEvent.change(screen.getByPlaceholderText(/seu melhor e-mail/i), {
+      target: { value: "teste@example.com" },
+    })
+    fireEvent.change(screen.getByLabelText(/cidade/i), { target: { value: "Recife" } })
+    fireEvent.change(screen.getByLabelText(/^uf \*/i), { target: { value: "PE" } })
+    fireEvent.click(screen.getByRole("checkbox", { name: /concordo/i }))
+    for (const e of escolhas) fireEvent.click(e === "anunciar" ? anunciar() : alugar())
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /garantir/i }))
+    })
+    return JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body)
+  }
+
+  it.each([
+    [["anunciar"] as const,           "proprietario"],
+    [["alugar"] as const,             "locatario"],
+    [["anunciar", "alugar"] as const, "ambos"],
+  ])("marcar %s envia intent %s", async (escolhas, esperado) => {
+    render(<FounderCaptureForm startExpanded />)
+    const body = await enviarCom([...escolhas])
+    expect(body.intent).toBe(esperado)
   })
 })

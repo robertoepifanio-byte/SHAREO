@@ -16,7 +16,13 @@ type SourceValue = (typeof SOURCE_VALUES)[number]
 const Schema = z.object({
   email:            z.string().email({ message: "E-mail inválido" }),
   name:             z.string().min(2).max(100).optional(),
-  intent:           z.enum(["proprietario", "locatario", "ambos"]).default("proprietario"),
+  // Sem `.default`: um POST sem `intent` e um POST de quem escolheu "anunciar"
+  // eram indistinguiveis, e o campo alimenta o ranking que escolhe a cidade-piloto
+  // e a segmentacao da midia paga. Os tres formularios (site, campanha, app) exigem
+  // a escolha antes de enviar, entao a ausencia aqui e cliente quebrado — melhor um
+  // 400 visivel que dado torto. O DEFAULT tambem saiu da coluna (migracao
+  // 20260831230000_founder_lead_intent_sem_default).
+  intent:           z.enum(["proprietario", "locatario", "ambos"]),
   marketingConsent: z.literal(true, { errorMap: () => ({ message: "Consentimento obrigatório" }) }),
   // Aceita apenas versões conhecidas — strings arbitrárias invalidariam a
   // trilha de auditoria LGPD (não há como provar qual texto o usuário viu).

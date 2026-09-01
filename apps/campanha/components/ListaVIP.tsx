@@ -80,8 +80,10 @@ export async function ListaVIP({ as = "h2", hideBadge = false }: Props = {}) {
         </Heading>
 
         <p className="mx-auto mb-9 max-w-[520px] text-[15px] leading-relaxed text-white/85">
-          Seja avisado em primeira mão quando lançarmos e conheça as condições
-          especiais que planejamos oferecer aos primeiros anunciantes.
+          As cidades abrem por etapas, e as regiões com mais interessados entram
+          primeiro. Você é avisado antes da abertura dos cadastros na sua cidade,
+          com as condições especiais que planejamos oferecer aos primeiros
+          anunciantes.
         </p>
 
         <div
@@ -127,7 +129,7 @@ export async function ListaVIP({ as = "h2", hideBadge = false }: Props = {}) {
             <div>
               <div className="mb-1 text-sm font-bold text-white">Acesso antecipado</div>
               <div className="text-xs leading-snug text-white/70">
-                Você será avisado antes de todo mundo quando Shareo abrir na sua cidade
+                Você é avisado antes da abertura dos cadastros na sua cidade
               </div>
             </div>
           </div>
