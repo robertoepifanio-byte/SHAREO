@@ -28,6 +28,38 @@
 
 ---
 
+## ⚖️ Disputa — pendências abertas pelo refactor de 01/09 (fazer DEPOIS do 85/15 da taxa de atraso)
+
+**Ordem definida por Roberto (01/09/2026):** primeiro o repasse 85/15 da taxa de atraso (item acima), estes dois depois.
+
+**Contexto:** as 4 correções do Thiago foram entregues nos PRs [#425](https://github.com/robertoepifanio-byte/SHAREO/pull/425), [#428](https://github.com/robertoepifanio-byte/SHAREO/pull/428) e [#427](https://github.com/robertoepifanio-byte/SHAREO/pull/427). A disputa virou estado paralelo (`Booking.disputeStatus`), a reserva em disputa segue devolvível, quem abriu pode cancelar, e o admin ganhou o desfecho `dismiss_dispute`. Sobraram duas frentes.
+
+### 1. 🟠 Paridade mobile — o app não acompanhou o fluxo novo
+
+O app recebeu **só** o selo "Em disputa" (`apps/mobile/app/reservas/[id].tsx`). Não tem:
+
+- o **passo de contato** antes de abrir a reclamação (C1);
+- o botão **"Cancelar disputa"** para quem abriu (C3);
+- o **aviso "Disputa em análise"** sobre os botões de ação (C2).
+
+Não é regressão — nenhum desses existia antes. Mas o locatário que abre disputa pelo app fica sem como cancelá-la por ali.
+
+**Como fazer:** vale a regra de transcrição literal do fundador. Fonte a transcrever: `app/reservas/[id]/_BookingActions.tsx` (painel `report_contact`, botão `cancel_dispute`, banner de disputa aberta). Usar `/shareo-transcrever-tela`. A API já devolve `disputeStatus` e `disputeOpenedById` no `GET /api/bookings/:id`, e a ação `cancel_dispute` já aceita Bearer — não falta backend.
+
+### 2. 🔴 Texto publicado desalinhado do código — perímetro D4
+
+Central de Ajuda (`app/ajuda/page.tsx`) e Políticas (`app/politicas/page.tsx`) descrevem o fluxo de disputa **sem mencionar** nada do que passou a existir:
+
+- que se espera contato com a outra parte antes de abrir reclamação;
+- que a parte que abriu pode cancelar a própria disputa;
+- que a ShareO pode **encerrar a disputa sem desfecho financeiro** (`dismiss_dispute`), mantendo a locação — hoje os documentos só preveem "concluída" ou "cancelada".
+
+O terceiro é o mais sensível: é um poder da plataforma sobre um contrato de adesão que o texto contratual não prevê.
+
+**Bloqueio:** alterar texto contratual entra no perímetro do **D4**. A redação não foi escrita nem publicada. Ver `docs/juridico/decisoes-pendentes-cancelamento-disputa.md`, seção "Atualização de 01/09/2026".
+
+---
+
 ## 🔎 Painel de dois atores — achados da sessão de 2026-08-23 (locação viva no staging)
 
 > Origem: o fundador percorreu o ciclo completo de locação no staging como locador (Carlos) e locatária (Joana). Cada item abaixo foi **verificado no código E no banco**, não inferido.
