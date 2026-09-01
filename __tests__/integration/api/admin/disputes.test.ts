@@ -191,4 +191,65 @@ describe("PATCH /api/admin/disputes/[id]", () => {
     expect(res.status).toBe(403)
     expect(mockBookingUpdate).not.toHaveBeenCalled()
   })
+
+  describe("dismiss_dispute — encerrar a disputa sem cancelar a locação", () => {
+    it("encerra a disputa e deixa a reserva EXATAMENTE onde estava", async () => {
+      mockBookingFindUnique.mockResolvedValue(makeBooking())
+      mockBookingUpdate.mockResolvedValue({
+        id: BOOKING_ID, status: "RETURNED", disputeStatus: "DISMISSED", updatedAt: new Date(),
+      })
+
+      const res = await PATCH(
+        makeReq({ action: "dismiss_dispute", adminNote: "Partes se entenderam pelo chat." }),
+        makeParams(),
+      )
+      expect(res.status).toBe(200)
+
+      const [[arg]] = mockBookingUpdate.mock.calls as [[{ data: Record<string, unknown> }]]
+      expect(arg.data.disputeStatus).toBe("DISMISSED")
+      // A correcao 4 do Thiago, ponto a ponto: nem status, nem cancelamento,
+      // nem estorno. A locacao segue.
+      expect(arg.data).not.toHaveProperty("status")
+      expect(arg.data).not.toHaveProperty("cancelledAt")
+      expect(arg.data).not.toHaveProperty("cancelledById")
+      expect(arg.data).not.toHaveProperty("refundAmount")
+      expect(arg.data).not.toHaveProperty("refundPercent")
+      // ...e nao gera repasse: nenhum lado ganhou a disputa.
+      expect(mockPayoutCreate).not.toHaveBeenCalled()
+    })
+
+    it("exige justificativa — e o admin vê qual foi o erro", async () => {
+      mockBookingFindUnique.mockResolvedValue(makeBooking())
+
+      const res  = await PATCH(makeReq({ action: "dismiss_dispute" }), makeParams())
+      const body = await res.json() as { error: { code: string; message: string } }
+
+      expect(res.status).toBe(400)
+      expect(body.error.code).toBe("VALIDATION_ERROR")
+      // A mensagem generica "Acao invalida" nao dizia o que corrigir.
+      expect(body.error.message).toContain("Explique por que")
+      expect(mockBookingUpdate).not.toHaveBeenCalled()
+    })
+
+    it("avisa as partes que a locação segue — e não que foi cancelada", async () => {
+      mockBookingFindUnique.mockResolvedValue(makeBooking())
+      mockBookingUpdate.mockResolvedValue({
+        id: BOOKING_ID, status: "RETURNED", disputeStatus: "DISMISSED", updatedAt: new Date(),
+      })
+
+      await PATCH(
+        makeReq({ action: "dismiss_dispute", adminNote: "Sem elementos para mediar." }),
+        makeParams(),
+      )
+
+      const corpos = mockNotificationCreate.mock.calls.map(
+        (c) => (c[0] as { data: { body: string } }).data.body,
+      )
+      expect(corpos).toHaveLength(2)
+      for (const corpo of corpos) {
+        expect(corpo).toContain("segue normalmente")
+        expect(corpo).not.toContain("cancelada")
+      }
+    })
+  })
 })

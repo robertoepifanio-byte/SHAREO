@@ -8,9 +8,16 @@ import { z } from "zod"
 type Params = { params: Promise<{ id: string }> }
 
 const PatchSchema = z.object({
-  action:   z.enum(["resolve_completed", "resolve_cancelled"]),
+  action:   z.enum(["resolve_completed", "resolve_cancelled", "dismiss_dispute"]),
   adminNote: z.string().max(500).optional(),
-})
+}).refine(
+  // 🪤 `dismiss_dispute` é o único desfecho SEM consequência financeira: não
+  // conclui, não cancela, não estorna, não repassa. Sem justificativa obrigatória
+  // ele vira caixa-preta — meses depois ninguém sabe por que a mediação parou.
+  // Os outros dois deixam rastro no dinheiro; este só deixa no que o admin escrever.
+  (d) => d.action !== "dismiss_dispute" || !!d.adminNote?.trim(),
+  { message: "Explique por que a disputa está sendo encerrada.", path: ["adminNote"] },
+)
 
 export async function PATCH(req: NextRequest, { params }: Params) {
   try {
@@ -27,7 +34,15 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const parsed = PatchSchema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json(
-        { error: { code: "VALIDATION_ERROR", message: "Ação inválida." } },
+        {
+          error: {
+            code:    "VALIDATION_ERROR",
+            // A mensagem do campo que falhou — o generico "Ação inválida"
+            // escondia a nota obrigatória do dismiss_dispute e o admin nao
+            // tinha como saber o que corrigir.
+            message: parsed.error.issues[0]?.message ?? "Ação inválida.",
+          },
+        },
         { status: 400 },
       )
     }
@@ -60,9 +75,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     // Um desfecho, duas consequências: onde a RESERVA para e como a DISPUTA
     // fecha. Ficam na mesma tabela para não poderem divergir — dois ternários
     // sobre `action` são duas chances de alguém corrigir só um deles.
+    //
+    // `nextStatus: null` em dismiss_dispute é a correção 4 do Thiago: encerrar
+    // a disputa NÃO decide nada sobre a locação, que segue seu curso.
     const OUTCOME = {
       resolve_completed: { nextStatus: "COMPLETED" as const, disputeStatus: "RESOLVED_OWNER"    as const },
       resolve_cancelled: { nextStatus: "CANCELLED" as const, disputeStatus: "RESOLVED_BORROWER" as const },
+      dismiss_dispute:   { nextStatus: null,                 disputeStatus: "DISMISSED"         as const },
     }
     const { nextStatus, disputeStatus } = OUTCOME[action]
     const adminId = session.user.id
@@ -70,7 +89,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const updated = await prisma.booking.update({
       where: { id },
       data:  {
-        status: nextStatus,
+        // Só grava `status` quando o desfecho de fato move a locação. Em
+        // dismiss_dispute a reserva fica exatamente onde estava.
+        ...(nextStatus && { status: nextStatus }),
         // A disputa é encerrada junto com o desfecho. Campo separado do
         // `status` desde 01/09/2026: quem lê a fila do admin, o gate do
         // repasse e o selo da tela olham `disputeStatus`, não `status`.
@@ -99,7 +120,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           ownerNote: adminNote,
         }),
       },
-      select: { id: true, status: true, updatedAt: true },
+      select: { id: true, status: true, disputeStatus: true, updatedAt: true },
     })
 
     // 🪤 Desfecho FINANCEIRO da disputa — não existia.
@@ -133,7 +154,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     )
 
     // Notificar ambas as partes — após a resposta
-    const resolution = nextStatus === "COMPLETED" ? "concluída" : "cancelada"
+    // 🪤 O corpo antigo era um ternário sobre `nextStatus` e só sabia dizer
+    // "concluída" ou "cancelada". Em dismiss_dispute nenhuma das duas é
+    // verdade: a reserva não mudou de estado, e avisar as partes de um
+    // cancelamento que não houve seria pior que não avisar nada.
+    const corpoDaResolucao = nextStatus === null
+      ? `A disputa de "${booking.item.title}" foi encerrada pela equipe ShareO. A locação segue normalmente.`
+      : `A reserva de "${booking.item.title}" foi ${nextStatus === "COMPLETED" ? "concluída" : "cancelada"} pelo administrador.`
     after(() =>
       Promise.allSettled(
         [booking.borrowerId, booking.ownerId].map((userId) =>
@@ -141,8 +168,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
             data: {
               userId,
               type:  "BOOKING_CANCELLED",
-              title: "Disputa resolvida",
-              body:  `A reserva de "${booking.item.title}" foi ${resolution} pelo administrador.`,
+              title: nextStatus === null ? "Disputa encerrada" : "Disputa resolvida",
+              body:  corpoDaResolucao,
               data:  { bookingId: id },
             },
           }).catch((e) => console.error("[notification dispute resolved]", e instanceof Error ? e.message : e))

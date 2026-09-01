@@ -103,7 +103,17 @@ B2: sim, mas a janela é **assimétrica por quem abre**, não uma única regra d
 - Locador: só entre a devolução (`mark_returned`) e 48h depois.
 - Locatário: só entre a retirada (`mark_active`) e o prazo de devolução — durante a locação ativa.
 
-Pendente de implementação: `TRANSITIONS.open_dispute` em `app/api/bookings/[id]/route.ts` precisa diferenciar a checagem por `isOwner`/`isBorrower`, hoje é uma faixa `ACTIVE|RETURNED` única para os dois lados sem checagem de prazo nenhuma.
+~~Pendente de implementação~~ ✅ **Implementado** em `lib/disputeWindow.ts` (`checkDisputeWindow`), compartilhado pelas duas rotas que abrem disputa. O documento seguiu listando como pendente até 01/09/2026.
+
+### 🔄 Atualização de 01/09/2026 — disputa deixou de ser um status
+
+A partir das 4 correções do Thiago (QA), a disputa virou **estado paralelo** (`Booking.disputeStatus`) em vez de um valor de `BookingStatus`. Isso muda o pano de fundo desta decisão:
+
+- Uma reserva em disputa **continua `ACTIVE` ou `RETURNED`** e segue devolvível. Antes, abrir disputa destruía o status anterior e a locação ficava sem nenhuma ação possível.
+- Quem abriu pode **cancelar a própria disputa** (`cancel_dispute`) enquanto ninguém decidiu.
+- O admin ganhou um terceiro desfecho, `dismiss_dispute`: encerra a mediação **sem** cancelar a reserva nem estornar.
+
+**Consequência para o texto publicado — a fazer:** a Central de Ajuda e as Políticas descrevem o fluxo de disputa sem mencionar contato prévio com a outra parte, cancelamento pela própria parte, nem o encerramento sem desfecho financeiro. Alterar texto contratual entra no perímetro do D4; a redação não foi publicada.
 
 ---
 

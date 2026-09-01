@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 
+type Desfecho = "resolve_completed" | "resolve_cancelled" | "dismiss_dispute"
+
 interface Props {
   bookingId: string
 }
@@ -15,7 +17,7 @@ export function DisputeActions({ bookingId }: Props) {
   const [note,    setNote]    = useState("")
   const [open,    setOpen]    = useState(false)
 
-  async function resolve(action: "resolve_completed" | "resolve_cancelled") {
+  async function resolve(action: Desfecho) {
     setError(""); setLoading(action)
     try {
       const res  = await fetch(`/api/admin/disputes/${bookingId}`, {
@@ -50,7 +52,7 @@ export function DisputeActions({ bookingId }: Props) {
         onChange={(e) => setNote(e.target.value)}
         rows={2}
         maxLength={500}
-        placeholder="Nota do administrador (opcional)…"
+        placeholder="Nota do administrador (obrigatória para encerrar a disputa)…"
         className="w-full resize-none rounded border border-input bg-background px-2 py-1 text-xs outline-none focus:border-brand"
       />
       {error && <p className="text-red-600">{error}</p>}
@@ -65,9 +67,21 @@ export function DisputeActions({ bookingId }: Props) {
         <button
           onClick={() => resolve("resolve_cancelled")}
           disabled={!!loading}
+          title="Dá ganho de causa ao locatário: cancela a reserva e estorna 100%."
           className="rounded bg-red-50 px-2 py-1 font-semibold text-red-600 hover:bg-red-100 disabled:opacity-50"
         >
-          {loading === "resolve_cancelled" ? "…" : "Cancelar"}
+          {loading === "resolve_cancelled" ? "…" : "Cancelar reserva e estornar"}
+        </button>
+        {/* Terceiro desfecho (Thiago, QA 01/09): encerrar a disputa sem decidir
+            nada sobre a locação. O botão ao lado dizia só "Cancelar" e lia-se
+            como "cancelar a disputa" — mas cancelava a RESERVA e estornava. */}
+        <button
+          onClick={() => resolve("dismiss_dispute")}
+          disabled={!!loading || !note.trim()}
+          title="Encerra a disputa e mantém a locação em curso. Exige justificativa."
+          className="rounded bg-muted px-2 py-1 font-semibold text-foreground hover:bg-border disabled:opacity-50"
+        >
+          {loading === "dismiss_dispute" ? "…" : "Encerrar disputa"}
         </button>
         <button
           onClick={() => setOpen(false)}
