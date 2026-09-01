@@ -172,7 +172,7 @@ it("falha ao reverter propaga 500 para a Stripe retentar — dinheiro não fica 
   }))
 })
 
-it("charge.dispute.created marca DISPUTED e avisa os admins financeiros", async () => {
+it("charge.dispute.created abre a disputa sem parar a locação e avisa os admins financeiros", async () => {
   mockBookingUpdateMany.mockResolvedValue({ count: 1 })
   mockUserFindMany.mockResolvedValue([{ id: "admin-1" }, { id: "admin-2" }])
 
@@ -182,12 +182,15 @@ it("charge.dispute.created marca DISPUTED e avisa os admins financeiros", async 
   }))
 
   expect(res.status).toBe(200)
-  expect(mockBookingUpdateMany).toHaveBeenCalledWith({
-    where: { stripePaymentIntentId: "pi_1" },
-    data:  { status: "DISPUTED", stripeDisputeId: "dp_1" },
-  })
+  const [[argChargeback]] = mockBookingUpdateMany.mock.calls as [[{ data: Record<string, unknown> }]]
+  expect(argChargeback.data.disputeStatus).toBe("OPEN")
+  expect(argChargeback.data.stripeDisputeId).toBe("dp_1")
+  // 🪤 Chargeback também não pode sequestrar o `status`: a reserva pode estar em
+  // plena locação quando o banco contesta a cobrança. Antes de 01/09/2026 esta
+  // linha gravava DISPUTED e destruía o ciclo de vida.
+  expect(argChargeback.data).not.toHaveProperty("status")
   // Uma chamada só para os dois admins — o repasse fica retido enquanto
-  // a reserva estiver DISPUTED (o cron de payout exclui DISPUTED).
+  // `disputeStatus` for OPEN (o cron de payout filtra por ele).
   expect(mockNotificationCreateMany).toHaveBeenCalledTimes(1)
   expect(mockNotificationCreateMany.mock.calls[0][0].data).toHaveLength(2)
 })
@@ -199,7 +202,7 @@ it("disputa PERDIDA cancela a reserva e devolve o repasse (o outro caminho do es
   }))
 
   expect(mockBookingUpdateManyAndReturn).toHaveBeenCalledWith(expect.objectContaining({
-    data: { status: "CANCELLED" },
+    data: expect.objectContaining({ status: "CANCELLED", disputeStatus: "RESOLVED_BORROWER" }),
   }))
   expect(mockReverseTransfer).toHaveBeenCalledWith(expect.objectContaining({
     bookingId: "booking-1", clawbackAmount: 10000, chargedAmount: 10000,
@@ -213,7 +216,7 @@ it("disputa GANHA volta a reserva para COMPLETED e não mexe no repasse", async 
   }))
 
   expect(mockBookingUpdateManyAndReturn).toHaveBeenCalledWith(expect.objectContaining({
-    data: { status: "COMPLETED" },
+    data: expect.objectContaining({ status: "COMPLETED", disputeStatus: "RESOLVED_OWNER" }),
   }))
   expect(mockReverseTransfer).not.toHaveBeenCalled()
 })

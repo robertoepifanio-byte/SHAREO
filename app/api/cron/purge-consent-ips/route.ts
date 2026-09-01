@@ -74,7 +74,11 @@ export async function GET(req: NextRequest) {
       booking: {
         endDate: { lt: fiveYearsAgo },
         // So expurga de reservas ja encerradas (nao PENDING/CONFIRMED/ACTIVE)
-        status: { in: ["COMPLETED", "CANCELLED", "RETURNED", "DISPUTED"] },
+        status: { in: ["COMPLETED", "CANCELLED", "RETURNED"] },
+        // ...e nunca com disputa em aberto: o IP do aceite e prova no
+        // caso em mediacao. DISPUTED saiu da lista acima porque disputa
+        // deixou de ser status; a protecao virou explicita.
+        disputeStatus: { not: "OPEN" },
       },
     },
     data: {

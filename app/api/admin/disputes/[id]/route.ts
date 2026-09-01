@@ -35,7 +35,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const booking = await prisma.booking.findUnique({
       where:  { id },
       select: {
-        id: true, status: true, borrowerId: true, ownerId: true,
+        id: true, status: true, disputeStatus: true, borrowerId: true, ownerId: true,
         // Necessários para o desfecho financeiro da disputa — ver abaixo.
         ownerNetAmount: true, totalPrice: true, paymentStatus: true,
         item: { select: { title: true } },
@@ -49,7 +49,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       )
     }
 
-    if (booking.status !== "DISPUTED") {
+    if (booking.disputeStatus !== "OPEN") {
       return NextResponse.json(
         { error: { code: "INVALID_STATUS", message: "Reserva não está em disputa." } },
         { status: 422 },
@@ -57,13 +57,25 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
 
     const { action, adminNote } = parsed.data
-    const nextStatus = action === "resolve_completed" ? "COMPLETED" : "CANCELLED"
-    const adminId    = session.user.id
+    // Um desfecho, duas consequências: onde a RESERVA para e como a DISPUTA
+    // fecha. Ficam na mesma tabela para não poderem divergir — dois ternários
+    // sobre `action` são duas chances de alguém corrigir só um deles.
+    const OUTCOME = {
+      resolve_completed: { nextStatus: "COMPLETED" as const, disputeStatus: "RESOLVED_OWNER"    as const },
+      resolve_cancelled: { nextStatus: "CANCELLED" as const, disputeStatus: "RESOLVED_BORROWER" as const },
+    }
+    const { nextStatus, disputeStatus } = OUTCOME[action]
+    const adminId = session.user.id
 
     const updated = await prisma.booking.update({
       where: { id },
       data:  {
         status: nextStatus,
+        // A disputa é encerrada junto com o desfecho. Campo separado do
+        // `status` desde 01/09/2026: quem lê a fila do admin, o gate do
+        // repasse e o selo da tela olham `disputeStatus`, não `status`.
+        disputeStatus,
+        disputeResolvedAt: new Date(),
         ...(nextStatus === "CANCELLED" && {
           cancelledAt:   new Date(),
           cancelledById: adminId,

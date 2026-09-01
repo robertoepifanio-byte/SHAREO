@@ -22,6 +22,7 @@ export async function openDispute({
   bookingId,
   cancelReason,
   isOwner,
+  openedById,
   ownerId,
   borrowerId,
   itemTitle,
@@ -31,17 +32,28 @@ export async function openDispute({
   bookingId:    string
   cancelReason: string
   isOwner:      boolean
+  /** Quem abriu. Só essa pessoa pode cancelar a própria disputa depois. */
+  openedById:   string
   ownerId:      string
   borrowerId:   string
   itemTitle:    string
   /** Quando presente, entra no corpo da notificação (rota dedicada com motivo estruturado). */
   reasonLabel?: string
   photoUrl?:    string | null
-}): Promise<{ id: string; status: string; updatedAt: Date }> {
+}): Promise<{ id: string; status: string; disputeStatus: string; updatedAt: Date }> {
+  // 🪤 `status` NÃO é tocado. Abrir disputa não interrompe a locação: a reserva
+  // segue ACTIVE ou RETURNED e continua devolvível. Até 01/09/2026 esta linha
+  // gravava `status: "DISPUTED"`, o que sobrescrevia — e destruía — o ciclo de
+  // vida, deixando a reserva sem nenhuma ação possível para as duas partes.
   const updated = await prisma.booking.update({
     where:  { id: bookingId },
-    data:   { status: "DISPUTED", cancelReason },
-    select: { id: true, status: true, updatedAt: true },
+    data:   {
+      disputeStatus:     "OPEN",
+      disputeOpenedAt:   new Date(),
+      disputeOpenedById: openedById,
+      cancelReason,
+    },
+    select: { id: true, status: true, disputeStatus: true, updatedAt: true },
   })
 
   // 🪤 `papelDeQuemAbriu` descreve QUEM ABRIU, não quem recebe — os dois papéis

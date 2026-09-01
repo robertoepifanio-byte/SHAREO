@@ -12,7 +12,7 @@ export default async function AdminDisputasPage() {
   await requireAdminPage()
 
   const disputes = await prisma.booking.findMany({
-    where:   { status: "DISPUTED" },
+    where:   { disputeStatus: "OPEN" },
     orderBy: { updatedAt: "desc" },
     select: {
       id:           true,

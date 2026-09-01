@@ -219,7 +219,12 @@ export async function POST(req: Request) {
 
         const updated = await prisma.booking.updateMany({
           where: { stripePaymentIntentId: intentId },
-          data:  { status: "DISPUTED", stripeDisputeId: dispute.id },
+          // Chargeback é outra espécie de disputa (contestação no banco, não
+          // problema relatado na plataforma), mas trava as mesmas coisas — por
+          // isso usa o mesmo campo. `status` não é tocado: até 01/09/2026 esta
+          // linha gravava `status: "DISPUTED"` e destruía o ciclo de vida da
+          // reserva, que podia estar em plena locação.
+          data:  { disputeStatus: "OPEN", disputeOpenedAt: new Date(), stripeDisputeId: dispute.id },
         })
 
         if (updated.count > 0) {
@@ -259,8 +264,13 @@ export async function POST(req: Request) {
         const newStatus = isLost ? "CANCELLED" : "COMPLETED"
 
         const affected = await prisma.booking.updateManyAndReturn({
-          where:  { stripePaymentIntentId: intentId, status: "DISPUTED" },
-          data:   { status: newStatus },
+          where:  { stripePaymentIntentId: intentId, disputeStatus: "OPEN" },
+          data:   {
+            status: newStatus,
+            // Desfecho do chargeback: perdido = o dinheiro voltou ao locatário.
+            disputeStatus:     isLost ? "RESOLVED_BORROWER" : "RESOLVED_OWNER",
+            disputeResolvedAt: new Date(),
+          },
           select: { id: true, totalPrice: true },
         })
 

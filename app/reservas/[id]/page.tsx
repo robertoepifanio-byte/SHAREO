@@ -57,6 +57,8 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
     select: {
       id:            true,
       status:        true,
+      disputeStatus: true,
+      disputeOpenedById: true,
       paymentStatus: true,
       startDate:     true,
       endDate:       true,
@@ -208,7 +210,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                 <span className="font-medium text-foreground">{counterpart.name}</span>
               </p>
             </div>
-            <BookingStatusBadge status={booking.status} size="md" />
+            <BookingStatusBadge status={booking.status} disputeStatus={booking.disputeStatus} size="md" />
           </div>
 
           {/* Story B — itens desta locação (só quando há mais de um) */}
@@ -317,7 +319,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
               {booking.cancelReason && (
                 <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm">
                   <p className="mb-1 font-semibold text-red-700">
-                    {booking.status === "DISPUTED" ? "Motivo da disputa:" : "Motivo do cancelamento:"}
+                    {booking.disputeStatus !== "NONE" ? "Motivo da disputa:" : "Motivo do cancelamento:"}
                   </p>
                   <p className="text-red-600">{booking.cancelReason}</p>
                 </div>

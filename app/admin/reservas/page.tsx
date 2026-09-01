@@ -38,6 +38,7 @@ export default async function AdminReservasPage() {
         owner:    { select: { name: true } },
         borrower: { select: { name: true } },
         status:   true,
+        disputeStatus: true,
       },
     }),
   ])
@@ -130,7 +131,7 @@ export default async function AdminReservasPage() {
                         {formatPrice(b.totalPrice)}
                       </td>
                       <td className="px-3 py-3">
-                        <BookingStatusBadge status={b.status as Parameters<typeof BookingStatusBadge>[0]["status"]} />
+                        <BookingStatusBadge status={b.status as Parameters<typeof BookingStatusBadge>[0]["status"]} disputeStatus={b.disputeStatus} />
                       </td>
                     </tr>
                   )

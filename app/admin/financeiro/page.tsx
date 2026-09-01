@@ -71,7 +71,7 @@ export default async function AdminFinanceiroPage() {
     }),
     // Reservas com disputa aberta no Stripe
     prisma.booking.findMany({
-      where:   { status: "DISPUTED" },
+      where:   { disputeStatus: "OPEN" },
       take:    20,
       orderBy: { updatedAt: "desc" },
       select: {

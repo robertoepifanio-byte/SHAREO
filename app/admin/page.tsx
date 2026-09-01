@@ -28,7 +28,7 @@ export default async function AdminOverviewPage() {
       by:    ["status"],
       _count: { _all: true },
     }),
-    prisma.booking.count({ where: { status: "DISPUTED" } }),
+    prisma.booking.count({ where: { disputeStatus: "OPEN" } }),
     prisma.booking.aggregate({
       where: { status: "COMPLETED" },
       _sum:  { totalPrice: true },

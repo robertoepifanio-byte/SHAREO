@@ -55,10 +55,12 @@ function session(userId: string) {
 function makeBooking(overrides: {
   status: string
   returnRequestedAt?: Date | null
+  disputeStatus?: string
 }) {
   return {
-    id:         BOOKING_ID,
-    status:     overrides.status,
+    id:            BOOKING_ID,
+    status:        overrides.status,
+    disputeStatus: overrides.disputeStatus ?? "NONE",
     ownerId:    OWNER_ID,
     borrowerId: BORROWER_ID,
     returnRequestedAt: overrides.returnRequestedAt === undefined
@@ -72,7 +74,37 @@ const VALID_BODY = { reason: "NAO_FUNCIONA", description: "O item não liga de j
 
 beforeEach(() => {
   jest.clearAllMocks()
-  mockBookingUpdate.mockResolvedValue({ id: BOOKING_ID, status: "DISPUTED", updatedAt: new Date() })
+  mockBookingUpdate.mockResolvedValue({ id: BOOKING_ID, status: "ACTIVE", disputeStatus: "OPEN", updatedAt: new Date() })
+})
+
+describe("disputa nao interrompe a locacao", () => {
+  it("liga disputeStatus=OPEN, registra quem abriu e NAO toca no status da reserva", async () => {
+    mockAuth.mockResolvedValue(session(BORROWER_ID))
+    mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "ACTIVE" }))
+
+    const res = await POST(req(VALID_BODY), params())
+    expect(res.status).toBe(200)
+
+    const [[arg]] = mockBookingUpdate.mock.calls as [[{ data: Record<string, unknown> }]]
+    expect(arg.data.disputeStatus).toBe("OPEN")
+    expect(arg.data.disputeOpenedById).toBe(BORROWER_ID)
+    // 🪤 O ponto do refactor de 01/09/2026: gravar `status` aqui destruiria o
+    // ciclo de vida da reserva e deixaria as duas partes sem nenhuma acao
+    // possivel — o defeito que o Thiago relatou. Se alguem reintroduzir a
+    // escrita de status, este teste tem de reprovar.
+    expect(arg.data).not.toHaveProperty("status")
+  })
+
+  it("recusa uma segunda disputa na mesma reserva", async () => {
+    mockAuth.mockResolvedValue(session(BORROWER_ID))
+    mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "ACTIVE", disputeStatus: "OPEN" }))
+
+    const res  = await POST(req(VALID_BODY), params())
+    const body = await res.json() as { error: { code: string } }
+    expect(res.status).toBe(422)
+    expect(body.error.code).toBe("DISPUTE_ALREADY_OPEN")
+    expect(mockBookingUpdate).not.toHaveBeenCalled()
+  })
 })
 
 describe("janela de disputa — locatário", () => {

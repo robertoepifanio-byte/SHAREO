@@ -63,7 +63,10 @@ const makeParams = () => ({ params: Promise.resolve({ id: BOOKING_ID }) })
 function makeBooking(over: { ownerNetAmount?: number | null } = {}) {
   return {
     id:             BOOKING_ID,
-    status:         "DISPUTED",
+    // A reserva em disputa NÃO fica num status próprio — segue seu ciclo de
+    // vida normal. Quem diz que há disputa é `disputeStatus` (01/09/2026).
+    status:         "RETURNED",
+    disputeStatus:  "OPEN",
     borrowerId:     BORROWER_ID,
     ownerId:        OWNER_ID,
     ownerNetAmount: over.ownerNetAmount === undefined ? 8500 : over.ownerNetAmount,
@@ -168,7 +171,9 @@ describe("PATCH /api/admin/disputes/[id]", () => {
   })
 
   it("reserva fora de disputa → 422", async () => {
-    mockBookingFindUnique.mockResolvedValue({ ...makeBooking(), status: "ACTIVE" })
+    // "Fora de disputa" passou a significar `disputeStatus: NONE` — o `status`
+    // da reserva não decide mais nada sobre isso.
+    mockBookingFindUnique.mockResolvedValue({ ...makeBooking(), status: "ACTIVE", disputeStatus: "NONE" })
 
     const res  = await PATCH(makeReq({ action: "resolve_completed" }), makeParams())
     const body = await res.json() as { error: { code: string } }

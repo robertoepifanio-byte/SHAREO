@@ -36,6 +36,7 @@ export default async function ReservasPage({ searchParams }: Props) {
     select: {
       id:         true,
       status:     true,
+      disputeStatus: true,
       startDate:  true,
       endDate:    true,
       totalDays:  true,
@@ -156,7 +157,7 @@ export default async function ReservasPage({ searchParams }: Props) {
                             <span className="ml-1 font-normal text-muted-foreground">+ {b._count.bookingItems - 1} {b._count.bookingItems - 1 === 1 ? "item" : "itens"}</span>
                           )}
                         </Link>
-                        <BookingStatusBadge status={b.status} />
+                        <BookingStatusBadge status={b.status} disputeStatus={b.disputeStatus} />
                       </div>
 
                       <p className="mb-2 text-xs text-muted-foreground">

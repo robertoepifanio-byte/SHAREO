@@ -47,7 +47,13 @@ function resumoRepasse(payouts: { status: PayoutStatus; processedAt: Date | null
 async function fetchRows(start: Date, end: Date) {
   const bookings = await prisma.booking.findMany({
     where: {
-      status:    { in: ["COMPLETED", "CANCELLED", "DISPUTED"] },
+      // Reserva em disputa nao fica mais num status proprio: ela segue
+      // ACTIVE/RETURNED. Entra no export pelo `disputeStatus`, senao
+      // sumiria justamente do relatorio que existe para acompanha-la.
+      OR: [
+        { status: { in: ["COMPLETED", "CANCELLED"] } },
+        { disputeStatus: { not: "NONE" } },
+      ],
       createdAt: { gte: start, lte: end },
     },
     orderBy: { createdAt: "asc" },
