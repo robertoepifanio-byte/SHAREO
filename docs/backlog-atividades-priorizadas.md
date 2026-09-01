@@ -26,11 +26,26 @@
 
    **Ainda não exercitado ponta a ponta** — a cobrança da taxa de atraso nunca rodou de verdade (ver nota de risco abaixo).
 
-2. **🟠 Concluir a locação não fecha a cobrança.** A reserva foi a `COMPLETED` com a taxa pendente. Nada cancela a Checkout Session, nada persegue o não-pagamento, e o e-mail de "Devolução confirmada" diz que a locação está concluída **sem mencionar a taxa em aberto**. Um locatário que simplesmente ignora o e-mail não sofre consequência nenhuma.
+2. **🟠 Concluir a locação não fecha a cobrança.** A reserva foi a `COMPLETED` com a taxa pendente, e o e-mail de "Devolução confirmada" diz que a locação está concluída **sem mencionar a taxa em aberto**.
+
+   ✅ **Parcialmente resolvido em 01/09:** a cobrança agora é reemitida diariamente enquanto a multa não for paga, inclusive depois da devolução — o locatário deixa de ficar sem forma de pagar. **Continua aberto:** o e-mail de devolução confirmada segue sem mencionar a dívida, e nada limita para sempre o número de reemissões nem escala a cobrança.
 
 3. **🟡 A taxa não aparece no extrato financeiro.** Só na tela da reserva e em `/admin/reservas/[id]` ("Multa por atraso"). Não entra no resumo financeiro do proprietário nem no export.
 
-**Nota de risco (link com o D4):** a Checkout Session da taxa nasce com `expires_at` de 24h — o teto da Stripe. Se o locatário não pagar em 24h, o link morre e **não há reemissão**. A cobrança da taxa nunca foi exercitada ponta a ponta (o mesmo defeito de `expires_at` já esteve latente aqui e só apareceu quando a fórmula foi copiada para a extensão, em 24/08).
+### ✅ Diagnóstico e correção da reemissão (01/09/2026)
+
+Investigação das 10 multas do staging que nunca foram pagas:
+
+- **5 nunca foram cobradas:** são as `demo_pf_*`, com `lateFeeAmount` gravado direto pelos scripts de seed (`seed-staging-demo.ts`, `topup-staging-demo.ts`, fórmula `pricePerDay * 0.5`). Como o cron só agia com o campo vazio, nunca as tocou.
+- **5 foram cobradas de verdade e TODAS expiraram** (`checkout.session.expired`, `unpaid`) — confirmado na `StripeEventQueue`. O mecanismo funcionava; ninguém pagou em 24h.
+
+**O defeito real:** a cobrança era emitida UMA vez na vida. A Checkout Session vale 24h (teto da Stripe para `expires_at`) e nada a reemitia, porque o cron só cobrava com `lateFeeAmount` vazio — e ele próprio acabara de preencher esse campo. Passadas 24h a dívida virava incobrável, **enquanto o lembrete diário de atraso continuava saindo, sem link de pagamento**.
+
+Agravante de ordem de escrita: o `lateFeeAmount` era gravado ANTES de a sessão existir, então qualquer falha depois disso (chave da Stripe, indisponibilidade, e-mail) também queimava a única chance.
+
+**Corrigido:** `lib/lateFee.ts` separa "multa devida" de "cobrança emitida" (campos novos `lateFeeSessionId` / `lateFeeSessionExpiresAt`), grava só depois de a sessão existir, e o cron reemite enquanto houver multa em aberto — inclusive para reservas já devolvidas, que saíam do radar do cron ao deixar `ACTIVE`.
+
+⚠️ **Divergência conhecida, não corrigida:** a multa é calculada uma única vez, com os dias de atraso da PRIMEIRA detecção, e a reemissão mantém esse valor. O texto publicado diz "1,5× o preço diário **por dia de atraso**", o que implica crescimento. Um atraso de 5 dias cobra 1 dia. Corrigir significa **cobrar mais** do usuário do que o primeiro e-mail dizia — decisão de negócio, não de código.
 
 ---
 

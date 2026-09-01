@@ -557,6 +557,13 @@ model Booking {
   // parte do proprietário tem de sair DESTA cobrança, não da locação, que não
   // tem esse dinheiro.
   lateFeePaymentIntentId String?
+  // Cobranca VIVA da taxa de atraso. A Checkout Session da Stripe expira em 24h
+  // (teto da plataforma) e, sem estes campos, uma multa nao paga nesse prazo
+  // ficava para sempre sem forma de pagar: o cron so cobrava quando
+  // `lateFeeAmount` estava vazio, e ele acabara de ser preenchido. O locatario
+  // seguia recebendo o lembrete diario de atraso, sem link nenhum.
+  lateFeeSessionId        String?
+  lateFeeSessionExpiresAt DateTime?
 
   // Disputa — estado PARALELO ao `status`, não um valor dele.
   // A reserva em disputa continua ACTIVE/RETURNED e segue devolvível; encerrar
