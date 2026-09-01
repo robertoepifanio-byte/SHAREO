@@ -165,12 +165,18 @@ function makeBooking(overrides: {
    * timestamp (dado legado); default é "agora há pouco", dentro da janela.
    */
   returnRequestedAt?: Date | null
+  /** Estado da disputa — paralelo ao status desde 01/09/2026. */
+  disputeStatus?: string
+  /** Quem abriu a disputa; é quem pode cancelá-la. */
+  disputeOpenedById?: string | null
   /** `null` simula reserva paga fora do fluxo Stripe (não deveria acontecer, mas é defendido). */
   stripePaymentIntentId?: string | null
 }) {
   return {
     id:          BOOKING_ID,
     status:      overrides.status      ?? "PENDING",
+    disputeStatus:     overrides.disputeStatus     ?? "NONE",
+    disputeOpenedById: overrides.disputeOpenedById ?? null,
     ownerId:     overrides.ownerId     ?? OWNER_ID,
     borrowerId:  overrides.borrowerId  ?? BORROWER_ID,
     startDate:   new Date("2026-06-10T00:00:00Z"),
@@ -906,6 +912,77 @@ describe("PATCH /api/bookings/[id]", () => {
 
       expect(res.status).toBe(401)
       expect(body.error.code).toBe("UNAUTHORIZED")
+    })
+  })
+
+  describe("cancel_dispute — quem abriu desiste da disputa", () => {
+    it("encerra a disputa e NAO mexe no status da reserva", async () => {
+      mockAuth.mockResolvedValue(makeSession(BORROWER_ID))
+      mockBookingFindUnique.mockResolvedValue(makeBooking({
+        status: "ACTIVE", disputeStatus: "OPEN", disputeOpenedById: BORROWER_ID,
+      }))
+      mockBookingUpdate.mockResolvedValue({
+        id: BOOKING_ID, status: "ACTIVE", disputeStatus: "DISMISSED", updatedAt: new Date(),
+      })
+
+      const res = await PATCH(makeReq({ action: "cancel_dispute" }), makeParams())
+      expect(res.status).toBe(200)
+
+      const [[arg]] = mockBookingUpdate.mock.calls as [[{ data: Record<string, unknown> }]]
+      expect(arg.data.disputeStatus).toBe("DISMISSED")
+      // O ponto da correcao 4 do Thiago: encerrar a disputa nao pode cancelar
+      // a locacao nem mexer em estorno.
+      expect(arg.data).not.toHaveProperty("status")
+      expect(arg.data).not.toHaveProperty("cancelledAt")
+      expect(arg.data).not.toHaveProperty("refundAmount")
+    })
+
+    it("a OUTRA parte nao pode cancelar a disputa que nao abriu", async () => {
+      mockAuth.mockResolvedValue(makeSession(OWNER_ID))
+      mockBookingFindUnique.mockResolvedValue(makeBooking({
+        status: "ACTIVE", disputeStatus: "OPEN", disputeOpenedById: BORROWER_ID,
+      }))
+
+      const res  = await PATCH(makeReq({ action: "cancel_dispute" }), makeParams())
+      const body = await res.json() as { error: { code: string } }
+      expect(res.status).toBe(403)
+      expect(body.error.code).toBe("FORBIDDEN")
+      expect(mockBookingUpdate).not.toHaveBeenCalled()
+    })
+
+    it("sem disputa aberta → 422", async () => {
+      mockAuth.mockResolvedValue(makeSession(BORROWER_ID))
+      mockBookingFindUnique.mockResolvedValue(makeBooking({ status: "ACTIVE" }))
+
+      const res  = await PATCH(makeReq({ action: "cancel_dispute" }), makeParams())
+      const body = await res.json() as { error: { code: string } }
+      expect(res.status).toBe(422)
+      expect(body.error.code).toBe("NO_OPEN_DISPUTE")
+    })
+
+    it("disputa legada (sem autor registrado) nao pode ser cancelada por ninguem", async () => {
+      mockAuth.mockResolvedValue(makeSession(BORROWER_ID))
+      mockBookingFindUnique.mockResolvedValue(makeBooking({
+        status: "ACTIVE", disputeStatus: "OPEN", disputeOpenedById: null,
+      }))
+
+      const res = await PATCH(makeReq({ action: "cancel_dispute" }), makeParams())
+      expect(res.status).toBe(403)
+      expect(mockBookingUpdate).not.toHaveBeenCalled()
+    })
+  })
+
+  describe("devolucao com disputa aberta", () => {
+    it("mark_returned continua permitido — disputa nao trava a locacao", async () => {
+      mockAuth.mockResolvedValue(makeSession(BORROWER_ID))
+      mockBookingFindUnique.mockResolvedValue(makeBooking({
+        status: "ACTIVE", paymentStatus: "PAID", disputeStatus: "OPEN", disputeOpenedById: BORROWER_ID,
+      }))
+      mockBookingPhotoCount.mockResolvedValue(1)
+      mockBookingUpdate.mockResolvedValue(makeUpdatedBooking("RETURNED"))
+
+      const res = await PATCH(makeReq({ action: "mark_returned" }), makeParams())
+      expect(res.status).toBe(200)
     })
   })
 })
