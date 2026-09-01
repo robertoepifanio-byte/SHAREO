@@ -12,7 +12,7 @@ Cada ponto mostra o que está publicado hoje, o que o sistema realmente faz, e a
 
 | | Assunto | Natureza | Urgência |
 |---|---|---|---|
-| **A** | A plataforma passou a poder encerrar uma disputa sem decidir o mérito — e o contrato não prevê isso | **Poder contratual não descrito** | Antes do go-live |
+| **A** | A plataforma passou a poder encerrar uma disputa sem decidir o mérito — e o contrato não prevê isso | **Poder contratual não descrito** | Roberto aprovou a redação — **falta sua validação** |
 | **B** | Prometemos direito de recurso que não existe | Promessa de procedimento não cumprida | **Bloqueia go-live** |
 | **C** | Prometemos um canal de atendimento que não existe | Promessa menor, mesma página | Rápido |
 
@@ -43,6 +43,16 @@ Quem aceitou esse contrato leu que a análise termina em uma de duas decisões, 
 Acrescentar ao final da seção 3.3:
 
 > O ShareO poderá encerrar a análise sem alteração financeira quando as partes compuserem-se diretamente, quando a parte que abriu a disputa desistir, ou quando não houver elementos suficientes para decidir o mérito. Nessa hipótese, a locação segue seu curso normal, sem reembolso ou retenção adicional, e o encerramento é registrado com a respectiva justificativa.
+
+### Posição de Roberto (01/09/2026) — de acordo com a redação
+
+Roberto aprovou o texto abaixo como está, para acréscimo ao final da seção 3.3 das Políticas de Uso. **Isto não dispensa sua análise** — é a posição do negócio, e o ponto continua aberto para você aprovar, ajustar ou recusar:
+
+> O ShareO poderá encerrar a análise sem alteração financeira quando as partes compuserem-se diretamente, quando a parte que abriu a disputa desistir, ou quando não houver elementos suficientes para decidir o mérito. Nessa hipótese, a locação segue seu curso normal, sem reembolso ou retenção adicional, e o encerramento é registrado com a respectiva justificativa.
+
+A versão restrita (só com desistência ou concordância das duas partes) foi descartada por engessar demais a operação.
+
+⏳ **Nada publicado.** A cláusula entra no site junto com os pontos B e C, depois do seu retorno.
 
 ### Salvaguarda já construída
 
@@ -129,7 +139,7 @@ Registro para você não gastar tempo:
 
 ## O que peço
 
-1. **Ponto A** — aprovar a cláusula, ajustar a redação, ou optar pela versão restrita.
+1. **Ponto A** — validar a cláusula que Roberto aprovou, ajustar a redação, ou optar pela versão restrita.
 2. **Ponto B** — aprovar a nova redação, ou determinar que o recurso seja construído.
 3. **Ponto C** — confirmar a remoção da menção.
 

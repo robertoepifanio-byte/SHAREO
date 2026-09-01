@@ -190,6 +190,16 @@ A ShareO pode encerrar unilateralmente uma mediação sem decidir o mérito. Iss
 
 **Recomendação: A**, aproveitando que a justificativa obrigatória já existe. A B só se você achar que a redação não basta.
 
+### Posição de Roberto (01/09/2026) — de acordo com a redação, validação jurídica pendente
+
+A redação proposta foi aprovada como está, para acréscimo ao final da seção 3.3 das Políticas de Uso:
+
+> O ShareO poderá encerrar a análise sem alteração financeira quando as partes compuserem-se diretamente, quando a parte que abriu a disputa desistir, ou quando não houver elementos suficientes para decidir o mérito. Nessa hipótese, a locação segue seu curso normal, sem reembolso ou retenção adicional, e o encerramento é registrado com a respectiva justificativa.
+
+A versão restrita (só com desistência ou concordância das duas partes) foi descartada.
+
+⏳ **Publicação pendente:** alterar `app/politicas/page.tsx` continua no perímetro do D4.
+
 ---
 
 ## Resumo
@@ -200,7 +210,7 @@ A ShareO pode encerrar unilateralmente uma mediação sem decidir o mérito. Iss
 | 2 | Reembolso parcial prometido, sistema é tudo-ou-nada | Vocês dois | **Sim** — está nas Políticas |
 | 3 | Botão de atendimento emergencial inexistente | Roberto | Não, mas é rápido |
 | 4 | Desistir da própria reclamação (novo) | Roberto | Não |
-| 5 | Encerrar análise sem decidir (novo) | **Raimundo** | Não, mas é poder contratual |
+| 5 | Encerrar análise sem decidir (novo) | **Raimundo** | Redação aprovada por Roberto — falta validar e publicar |
 
 **Nada aqui bloqueia o trabalho em andamento.** Os itens 1 e 2 estão em documentos que vinculam e precisam estar resolvidos antes do go-live — pela correção do texto ou pela construção da funcionalidade, tanto faz para o risco, muda só o esforço.
 
