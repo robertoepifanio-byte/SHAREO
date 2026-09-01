@@ -6,6 +6,7 @@ import { criarPayoutDaReserva } from "@/lib/payout"
 import { emitCancellationRefund } from "@/lib/payments/refund"
 import { getPlatformFeeRate, calcSplit } from "@/lib/platform-config"
 import { formatPrice } from "@/utils/format"
+import { prazoParaContestar } from "@/lib/prazoContestacao"
 import { z } from "zod"
 
 type Params = { params: Promise<{ id: string }> }
@@ -243,6 +244,13 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     // "concluída" ou "cancelada". Em dismiss_dispute nenhuma das duas é
     // verdade: a reserva não mudou de estado, e avisar as partes de um
     // cancelamento que não houve seria pior que não avisar nada.
+    // O prazo de contestação (5 dias úteis) estava só no texto publicado; sem
+    // a data na notificação, o usuário teria de descobrir sozinho quando vence.
+    const prazoContestacao = prazoParaContestar(new Date())
+    const ateQuando = new Intl.DateTimeFormat("pt-BR", {
+      day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Fortaleza",
+    }).format(prazoContestacao)
+
     const corpoDaResolucao = action === "resolve_partial"
       ? `A disputa de "${booking.item.title}" foi resolvida com acordo parcial: ${formatPrice(refundAmount!)} devolvidos ao locatário e o restante repassado ao proprietário.`
       : nextStatus === null
@@ -256,7 +264,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
               userId,
               type:  "BOOKING_CANCELLED",
               title: nextStatus === null ? "Disputa encerrada" : "Disputa resolvida",
-              body:  corpoDaResolucao,
+              // O prazo entra em TODO desfecho: qualquer decisão pode ser
+              // contestada, inclusive o encerramento sem efeito financeiro.
+              body:  `${corpoDaResolucao} Se discordar, escreva para suporte@shareo.com.br até ${ateQuando}.`,
               data:  { bookingId: id },
             },
           }).catch((e) => console.error("[notification dispute resolved]", e instanceof Error ? e.message : e))

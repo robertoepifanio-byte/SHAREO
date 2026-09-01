@@ -7,6 +7,7 @@ import { getPlatformFeeRate, calcSplit } from "@/lib/platform-config"
 import { formatPrice, formatDate, formatDateTime } from "@/utils/format"
 import { BookingStatusBadge } from "@/components/ui/BookingStatusBadge"
 import { RecalcularTaxaAtraso } from "./_RecalcularTaxaAtraso"
+import { prazoParaContestar, podeContestar } from "@/lib/prazoContestacao"
 
 export const metadata: Metadata = { title: "Admin — Detalhe da reserva" }
 
@@ -43,6 +44,7 @@ export default async function AdminReservaPage({ params }: Props) {
       lateFeeAmount:     true,
       lateFeePaymentIntentId: true,
       lateFeeCalculatedUntil: true,
+      disputeResolvedAt: true,
       platformFeeAmount: true,
       ownerNetAmount:    true,
       borrowerNote:      true,
@@ -140,6 +142,18 @@ export default async function AdminReservaPage({ params }: Props) {
           {discountCents > 0 && <Row label="Cupom/desconto" value={`− ${formatPrice(discountCents)}`} />}
           <Row label={`Taxa ShareO (${feeRateBps / 100}%, retida do repasse)`} value={`− ${formatPrice(platformFee)}`} />
           <Row label="Repasse ao proprietário" value={formatPrice(ownerNet)} strong />
+          {/* Janela de contestacao: a equipe precisa saber se um pedido que
+              chegou por e-mail esta dentro dos 5 dias uteis prometidos. */}
+          {booking.disputeResolvedAt ? (
+            <Row
+              label="Contestação da disputa"
+              value={
+                podeContestar(booking.disputeResolvedAt)
+                  ? `aberta até ${formatDate(prazoParaContestar(booking.disputeResolvedAt))}`
+                  : `encerrada em ${formatDate(prazoParaContestar(booking.disputeResolvedAt))}`
+              }
+            />
+          ) : null}
           {booking.lateFeeAmount ? (
             <Row
               label="Multa por atraso"

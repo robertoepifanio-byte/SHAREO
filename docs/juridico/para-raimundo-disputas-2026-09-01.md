@@ -6,6 +6,8 @@ O sistema de disputas do ShareO mudou hoje. A maior parte já está resolvida e 
 
 Cada ponto mostra o que está publicado hoje, o que o sistema realmente faz, e a redação proposta. Nada foi alterado no site — sua aprovação é o que libera.
 
+<p class="legenda-ajuste">Os blocos <strong>em vermelho</strong> são as posições que Roberto definiu em 01/09, depois da primeira leitura. São o que mudou desde então — o resto do documento é diagnóstico.</p>
+
 ---
 
 ## Resumo
@@ -13,7 +15,7 @@ Cada ponto mostra o que está publicado hoje, o que o sistema realmente faz, e a
 | | Assunto | Natureza | Urgência |
 |---|---|---|---|
 | **A** | A plataforma passou a poder encerrar uma disputa sem decidir o mérito — e o contrato não prevê isso | **Poder contratual não descrito** | Roberto aprovou a redação — **falta sua validação** |
-| **B** | Prometemos direito de recurso que não existe | Promessa de procedimento não cumprida | **Bloqueia go-live** |
+| **B** | Prometemos direito de recurso que não existe | Promessa de procedimento não cumprida | **Bloqueia go-live** — redação definida 01/09 |
 | **C** | Prometemos um canal de atendimento que não existe | Promessa menor, mesma página | Rápido |
 
 ---
@@ -44,15 +46,12 @@ Acrescentar ao final da seção 3.3:
 
 > O ShareO poderá encerrar a análise sem alteração financeira quando as partes compuserem-se diretamente, quando a parte que abriu a disputa desistir, ou quando não houver elementos suficientes para decidir o mérito. Nessa hipótese, a locação segue seu curso normal, sem reembolso ou retenção adicional, e o encerramento é registrado com a respectiva justificativa.
 
-### Posição de Roberto (01/09/2026) — de acordo com a redação
-
-Roberto aprovou o texto abaixo como está, para acréscimo ao final da seção 3.3 das Políticas de Uso. **Isto não dispensa sua análise** — é a posição do negócio, e o ponto continua aberto para você aprovar, ajustar ou recusar:
-
-> O ShareO poderá encerrar a análise sem alteração financeira quando as partes compuserem-se diretamente, quando a parte que abriu a disputa desistir, ou quando não houver elementos suficientes para decidir o mérito. Nessa hipótese, a locação segue seu curso normal, sem reembolso ou retenção adicional, e o encerramento é registrado com a respectiva justificativa.
-
-A versão restrita (só com desistência ou concordância das duas partes) foi descartada por engessar demais a operação.
-
-⏳ **Nada publicado.** A cláusula entra no site junto com os pontos B e C, depois do seu retorno.
+<div class="ajuste">
+<p class="ajuste-titulo">Posição de Roberto — 01/09/2026</p>
+<p>Roberto está de acordo com a redação proposta, <strong>como está</strong>. A versão restrita (só com desistência ou concordância das duas partes) foi descartada por engessar demais a operação.</p>
+<p><strong>Isto não dispensa sua análise.</strong> É a posição do negócio; o ponto segue aberto para você aprovar, ajustar ou recusar — é o único dos três que amplia um poder da plataforma.</p>
+<p class="ajuste-nota">Nada publicado. A cláusula entra no site junto com os pontos B e C, depois do seu retorno.</p>
+</div>
 
 ### Salvaguarda já construída
 
@@ -86,16 +85,25 @@ E o "time diferente" descreve uma estrutura que a ShareO não tem: hoje quem ana
 
 > Sim. Se você discordar da decisão, escreva para **suporte@shareo.com.br** explicando o motivo e anexando evidências que ainda não tenham sido analisadas. A equipe reavalia o caso quando há elemento novo. Caso o problema persista, você pode acionar os canais de defesa do consumidor (Procon) ou o e-Consumidor.
 
+<div class="ajuste">
+<p class="ajuste-titulo">Decisão de Roberto — 01/09/2026</p>
+<p>Usar a redação proposta, <strong>mantendo o prazo de 5 dias úteis</strong> para o usuário contestar. Texto final:</p>
+<p class="ajuste-texto">Sim. Se você discordar da decisão, escreva para <strong>suporte@shareo.com.br</strong> <strong>em até 5 dias úteis contados da comunicação da decisão</strong>, explicando o motivo e anexando evidências que ainda não tenham sido analisadas. A equipe reavalia o caso quando há elemento novo. Caso o problema persista, você pode acionar os canais de defesa do consumidor (Procon) ou o e-Consumidor.</p>
+<p><strong>O sistema passou a apurar esse prazo.</strong> Antes ele existia só no texto: ninguém sabia quando vencia. Agora, ao decidir uma disputa, o sistema calcula os 5 dias úteis, informa a data na notificação às duas partes ("escreva até 14/09"), mostra na tela da reserva e indica à equipe se um pedido chegou dentro ou fora da janela.</p>
+<p><strong>Dois limites, para você decidir com o dado à vista:</strong> o prazo limita o <em>usuário</em>, não a plataforma — e, como a contestação chega por e-mail, o sistema <em>informa</em> a data, mas não barra um pedido fora dela; quem decide é a equipe. E a contagem considera apenas fins de semana, não feriados: sem calendário de feriados no projeto, uma lista incompleta encurtaria o prazo do usuário, que é o erro pior.</p>
+<p>Se entender que um prazo de decadência dessa natureza é frágil num contrato de adesão, o caminho é retirá-lo — já era assim no texto atual, então a mudança não cria a restrição, apenas a mantém.</p>
+</div>
+
 ### O que muda
 
 | | Hoje | Proposta |
 |---|---|---|
 | Existe caminho para contestar? | sim | **sim** — o suporte, que funciona |
-| Prazo prometido | 5 dias úteis | nenhum |
+| Prazo | 5 dias úteis para o usuário pedir | **5 dias úteis, mantido** |
 | Quem reavalia | "um time diferente" | a equipe |
 | Condição | novas evidências | novas evidências *(mantida)* |
 
-A proposta **não retira o direito de contestar**. Retira a promessa de um procedimento formal que não existe. É a diferença entre prometer menos e prometer o que não se cumpre.
+A proposta **não retira o direito de contestar** nem o prazo. Retira a promessa de um procedimento formal que não existe — a revisão por "um time diferente". É a diferença entre prometer menos e prometer o que não se cumpre.
 
 **Se preferir manter a promessa,** o caminho é construir o recurso: reabertura do caso, prazo controlado e registro da segunda decisão. É viável. O "time diferente", porém, não é questão de sistema — é estrutura de atendimento, e não pode ser prometido enquanto uma pessoa só analisar tudo.
 
@@ -140,7 +148,7 @@ Registro para você não gastar tempo:
 ## O que peço
 
 1. **Ponto A** — validar a cláusula que Roberto aprovou, ajustar a redação, ou optar pela versão restrita.
-2. **Ponto B** — aprovar a nova redação, ou determinar que o recurso seja construído.
+2. **Ponto B** — validar a nova redação com o prazo de 5 dias úteis, ou determinar que o recurso seja construído.
 3. **Ponto C** — confirmar a remoção da menção.
 
 Nenhuma página foi alterada. Nada será publicado antes do seu retorno.

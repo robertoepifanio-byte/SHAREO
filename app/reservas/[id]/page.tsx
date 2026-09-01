@@ -21,6 +21,7 @@ import { getPlatformFeeRate, calcSplit, calcSplitComDesconto, getRentalContractC
 import { deriveBookingHistory } from "@/lib/bookingHistory"
 import { BookingStatusBadge } from "@/components/ui/BookingStatusBadge"
 import { formatPrice, formatDate, formatDateLong } from "@/utils/format"
+import { prazoParaContestar, podeContestar } from "@/lib/prazoContestacao"
 
 // Data+hora no fuso do Brasil (BRT) e por extenso — o servidor roda em UTC,
 // então o timeZone explícito é obrigatório para não exibir a hora 3h adiantada.
@@ -59,6 +60,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
       status:        true,
       disputeStatus: true,
       disputeOpenedById: true,
+      disputeResolvedAt: true,
       paymentStatus: true,
       startDate:     true,
       endDate:       true,
@@ -551,6 +553,28 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                 existingPhotos={booking.photos.filter((p) => p.phase === "CHECKOUT").map((p) => ({ ...p, createdAt: p.createdAt.toISOString() }))}
                 canUpload={isOwner && (booking.status === "RETURNED" || booking.status === "COMPLETED")}
               />
+            </div>
+          )}
+
+          {/* ── Decisão de disputa: prazo para contestar ──
+              O prazo de 5 dias úteis estava só na Central de Ajuda. Sem a data
+              aqui, quem recebeu a decisão teria de contar os dias sozinho. */}
+          {booking.disputeResolvedAt && booking.disputeStatus !== "DISMISSED" && (
+            <div className="mb-6 rounded-xl border border-border bg-surface px-4 py-4">
+              <p className="text-sm font-semibold text-foreground">Decisão da disputa</p>
+              {podeContestar(booking.disputeResolvedAt) ? (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Se você discordar, escreva para{" "}
+                  <a href="mailto:suporte@shareo.com.br" className="text-brand underline">suporte@shareo.com.br</a>{" "}
+                  até <strong>{formatDate(prazoParaContestar(booking.disputeResolvedAt))}</strong>,
+                  anexando evidências que ainda não tenham sido analisadas.
+                </p>
+              ) : (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  O prazo para contestar terminou em{" "}
+                  {formatDate(prazoParaContestar(booking.disputeResolvedAt))}.
+                </p>
+              )}
             </div>
           )}
 
