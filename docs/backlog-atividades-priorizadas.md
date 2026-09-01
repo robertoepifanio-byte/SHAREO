@@ -56,7 +56,9 @@ Agravante de ordem de escrita: o `lateFeeAmount` era gravado ANTES de a sessão 
 
    Passado o teto, o valor só muda por **recálculo do admin** (`PATCH /api/admin/bookings/:id/late-fee`, botão em `/admin/reservas/[id]`), com justificativa obrigatória e registro no `adminLog`. **Não existe equivalente para o proprietário, de propósito:** seria uma parte da locação aumentando unilateralmente a dívida da outra, sem mediação, num contrato de adesão.
 
-🔴 **Pendência de texto que o teto cria (perimetro D4).** Políticas e Central de Ajuda dizem "1,5× o preço diário por dia de atraso", **sem teto**. Um limite de 30 dias precisa estar publicado para valer — senão prometemos crescimento ilimitado e aplicamos outro (CDC art. 30). Some-se aos 5 pontos de `docs/juridico/pauta-disputa-2026-09-01.md`.
+✅ **Sem pendência de texto.** O teto de 30 dias limita o *recálculo automático*, não a dívida: o admin atualiza o valor quando for o caso, então "1,5× o preço diário por dia de atraso" continua verdadeiro (esclarecimento de Roberto, 01/09 — eu havia registrado uma divergência com o CDC que não existe).
+
+   O que o teto exige é **transparência da data**, não do limite: toda cobrança passa a dizer **"atraso calculado até dd/mm/aaaa"** — na descrição da cobrança Stripe, no e-mail ao locatário, na tela da reserva (site e app) e no painel admin. Campo `Booking.lateFeeCalculatedUntil`. Sem a data, o mesmo valor pode se referir a 3 ou a 30 dias, conforme quando foi calculado.
 
 ---
 

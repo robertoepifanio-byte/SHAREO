@@ -80,7 +80,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       booking,
       booking.item.title,
       valor,
-      `${dias} dia${dias > 1 ? "s" : ""} em atraso`,
+      dias,
+      fimDoAtraso,
     )
 
     after(() =>
@@ -105,6 +106,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       data: {
         dias,
         valor,
+        calculadoAte: fimDoAtraso.toISOString(),
         emitida:  r.emitida,
         // Quando não emite, o motivo importa: "a cobrança viva já está pelo
         // valor certo" é sucesso, não falha — o admin precisa distinguir.

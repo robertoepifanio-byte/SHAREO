@@ -225,7 +225,9 @@ export async function GET(req: NextRequest) {
           b,
           itemsLabel,
           valorHoje,
-          `${diasCobrados} dia${diasCobrados > 1 ? "s" : ""} em atraso`,
+          diasCobrados,
+          // Contado ate hoje: o item ainda nao voltou.
+          today,
         )
         if (r.emitida) sent.push(`late_fee${r.reemissao ? ":reemitida" : ""}:${b.id}`)
       } catch (e) {
@@ -269,7 +271,9 @@ export async function GET(req: NextRequest) {
         b,
         bookingItemsLabel(b.item.title, b._count.bookingItems || 1),
         calcLateFee(b.dailyPrice, lateFeeMultiplier, diasAtraso),
-        `${diasAtraso} dia${diasAtraso > 1 ? "s" : ""} em atraso`,
+        diasAtraso,
+        // Contado ate a devolucao: o atraso terminou quando o item voltou.
+        fimDoAtraso,
       )
       if (r.emitida) sent.push(`late_fee:reemitida:${b.id}`)
     } catch (e) {

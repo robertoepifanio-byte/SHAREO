@@ -299,15 +299,19 @@ function bookingCancelledHtml(firstName: string, itemTitle: string, role: "borro
   `)
 }
 
-function lateFeeHtml(firstName: string, itemTitle: string, lateFeeFormatted: string, paymentUrl: string, bookingUrl: string) {
+function lateFeeHtml(firstName: string, itemTitle: string, lateFeeFormatted: string, paymentUrl: string, bookingUrl: string, calculadoAte?: string) {
   return baseLayout(`
     <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#B91C1C;">
       🚨 Taxa de atraso — pagamento necessário
     </h1>
     <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
       Olá, ${firstName}! O prazo de devolução de <strong>${itemTitle}</strong> foi ultrapassado.
-      Uma taxa de atraso de <strong>${lateFeeFormatted}</strong> foi gerada.
+      Uma taxa de atraso de <strong>${lateFeeFormatted}</strong> foi gerada${calculadoAte ? `, com o atraso calculado até <strong>${calculadoAte}</strong>` : ""}.
     </p>
+    ${calculadoAte ? `<p style="margin:0 0 20px;font-size:13px;color:#94A3B8;line-height:1.6;">
+      Enquanto o item não for devolvido, o valor é recalculado e você recebe um novo link.
+      O link abaixo vale por 24 horas.
+    </p>` : ""}
     <div style="text-align:center;">${ctaButton(paymentUrl, `Pagar taxa de atraso — ${lateFeeFormatted}`)}</div>
     <p style="margin:20px 0 0;font-size:12px;color:#94A3B8;">
       Após o pagamento, a reserva será encerrada e o item poderá ser devolvido.
@@ -560,6 +564,8 @@ export async function sendLateFeeEmail(
   itemTitle: string, bookingId: string,
   lateFeeAmountCents: number, paymentUrl: string,
   allowQueue = true,
+  /** Data até a qual o atraso foi contado (dd/mm/aaaa). */
+  calculadoAte?: string,
 ): Promise<void> {
   const resend = getResend()
   if (!resend) return
@@ -570,11 +576,11 @@ export async function sendLateFeeEmail(
     from:    `ShareO <${FROM}>`,
     to,
     subject: `🚨 Taxa de atraso — ${itemTitle} — ShareO`,
-    html:    lateFeeHtml(firstName, itemTitle, lateFeeFormatted, paymentUrl, bookingUrl),
+    html:    lateFeeHtml(firstName, itemTitle, lateFeeFormatted, paymentUrl, bookingUrl, calculadoAte),
   }, "late-fee")
   if (error) {
     if (allowQueue) {
-      await enqueueEmail(to, "late-fee", { to, name, itemTitle, bookingId, lateFeeAmountCents, paymentUrl })
+      await enqueueEmail(to, "late-fee", { to, name, itemTitle, bookingId, lateFeeAmountCents, paymentUrl, calculadoAte: calculadoAte ?? null })
         .catch((e) => console.error(`[email-queue] falha ao enfileirar late-fee: ${e}`))
     }
     throw new Error(`Resend error: ${error.message}`)

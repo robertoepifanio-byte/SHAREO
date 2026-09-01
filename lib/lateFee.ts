@@ -22,6 +22,13 @@ import { APP_URL } from "@/lib/app-url"
 import { sendLateFeeEmail } from "@/lib/email"
 import { STRIPE_CHARGE_EXPIRES_SECONDS } from "@/lib/platform-config"
 
+/** Data por extenso curta no fuso do Brasil — o servidor roda em UTC. */
+export function fmtData(d: Date): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit", month: "2-digit", year: "numeric", timeZone: "America/Fortaleza",
+  }).format(d)
+}
+
 export type BookingParaCobranca = {
   id: string
   lateFeeAmount: number | null
@@ -141,7 +148,14 @@ export async function emitirCobrancaTaxaAtraso(
   b:                BookingParaCobranca,
   itemsLabel:       string,
   valorAtual:       number,
-  descricaoAtraso:  string,
+  /** Dias de atraso cobrados AGORA — já com o teto aplicado, se for o caso. */
+  diasCobrados:     number,
+  /**
+   * Até quando o atraso foi contado. Vai para a descrição da cobrança e fica
+   * gravado: sem esta data o valor não diz a que período se refere, e a mesma
+   * multa pode ser de 3 ou de 30 dias conforme quando foi calculada.
+   */
+  calculadoAte:     Date,
 ): Promise<ResultadoCobranca> {
   const agora = new Date()
 
@@ -179,7 +193,7 @@ export async function emitirCobrancaTaxaAtraso(
         unit_amount:  valor,
         product_data: {
           name:        `Taxa de atraso — ${itemsLabel}`,
-          description: descricaoAtraso,
+          description: `${diasCobrados} dia${diasCobrados > 1 ? "s" : ""} em atraso — calculado até ${fmtData(calculadoAte)}`,
           ...(b.item.images[0]?.url && { images: [b.item.images[0].url] }),
         },
       },
@@ -198,6 +212,7 @@ export async function emitirCobrancaTaxaAtraso(
       lateFeeAmount:           valor,
       lateFeeSessionId:        session.id,
       lateFeeSessionExpiresAt: new Date(agora.getTime() + STRIPE_CHARGE_EXPIRES_SECONDS * 1000),
+      lateFeeCalculatedUntil:  calculadoAte,
     },
   })
 
@@ -205,6 +220,7 @@ export async function emitirCobrancaTaxaAtraso(
     b.borrower.email, b.borrower.name,
     itemsLabel, b.id,
     valor, session.url!,
+    true, fmtData(calculadoAte),
   )
 
   return { emitida: true, reemissao, valor, anterior: b.lateFeeAmount }

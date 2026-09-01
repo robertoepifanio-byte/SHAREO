@@ -42,6 +42,7 @@ export default async function AdminReservaPage({ params }: Props) {
       depositAmount:     true,
       lateFeeAmount:     true,
       lateFeePaymentIntentId: true,
+      lateFeeCalculatedUntil: true,
       platformFeeAmount: true,
       ownerNetAmount:    true,
       borrowerNote:      true,
@@ -139,7 +140,16 @@ export default async function AdminReservaPage({ params }: Props) {
           {discountCents > 0 && <Row label="Cupom/desconto" value={`− ${formatPrice(discountCents)}`} />}
           <Row label={`Taxa ShareO (${feeRateBps / 100}%, retida do repasse)`} value={`− ${formatPrice(platformFee)}`} />
           <Row label="Repasse ao proprietário" value={formatPrice(ownerNet)} strong />
-          {booking.lateFeeAmount ? <Row label="Multa por atraso" value={formatPrice(booking.lateFeeAmount)} /> : null}
+          {booking.lateFeeAmount ? (
+            <Row
+              label="Multa por atraso"
+              value={
+                booking.lateFeeCalculatedUntil
+                  ? `${formatPrice(booking.lateFeeAmount)} — calculado até ${formatDate(booking.lateFeeCalculatedUntil)}`
+                  : formatPrice(booking.lateFeeAmount)
+              }
+            />
+          ) : null}
           {booking.lateFeeAmount && !booking.lateFeePaymentIntentId ? (
             <div className="mt-2">
               {/* Sai do automatico no 30o dia; daqui em diante o valor so muda aqui. */}

@@ -35,6 +35,7 @@ interface BookingDetail {
   borrowerNote:  string | null
   cancelReason:  string | null
   lateFeeAmount: number | null
+  lateFeeCalculatedUntil: string | null
   // timestamps de histórico — fonte: app/reservas/[id]/page.tsx linhas 83-96
   createdAt:            string
   respondedAt:          string | null
@@ -893,6 +894,7 @@ export default function BookingDetailScreen() {
               <Text style={[s.alertTitle, { color: mode === "dark" ? "#F08C84" : "#991B1B" }]}>Taxa de atraso aplicada</Text>
               <Text style={[s.alertDesc, { color: tokens.error }]}>
                 Item devolvido após o prazo. Taxa adicional: <Text style={{ fontWeight: "700" }}>{fmt(booking.lateFeeAmount)}</Text>
+                {booking.lateFeeCalculatedUntil ? ` — atraso calculado até ${fmtDate(booking.lateFeeCalculatedUntil)}` : ""}
               </Text>
             </View>
           </View>

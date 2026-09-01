@@ -74,6 +74,7 @@ export async function GET(req: NextRequest) {
             p.lateFeeAmountCents as number,
             p.paymentUrl as string,
             false,
+            (p.calculadoAte as string | null) ?? undefined,
           )
           break
 
