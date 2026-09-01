@@ -622,7 +622,7 @@ export default function AjudaScreen() {
     // que o limite é verificado automaticamente enquanto isso não existir.
     { label: "Valor máximo do bem anunciado",          value: "R$ 1.000 por item",           when: "Regra da fase inicial" },
     { label: "Limite por locação",                     value: `${v.maxLabel} por transação`,   when: "Validado no checkout" },
-    { label: "Taxa por atraso na devolução",           value: `${v.lateMultLabel} o preço diário por dia`, when: "Gerada ao detectar o atraso" },
+    { label: "Taxa por atraso na devolução",           value: `${v.lateMultLabel} o preço diário por dia de atraso`, when: "Gerada ao detectar o atraso" },
     { label: "Cancelamento pelo locador",   value: "Reembolso de 100% ao locatário", when: "A ShareO abre mão da comissão; o locador não recebe repasse" },
     { label: "Cancelamento pelo locatário", value: "Reembolso de 100%, menos a taxa da Stripe", when: "Taxa real da cobrança original, cobrada pela Stripe" },
   ]

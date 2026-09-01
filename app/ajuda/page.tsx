@@ -143,7 +143,7 @@ function buildFeeTable(v: HelpVars) { return [
   // "sempre".
   { label: "Valor máximo do bem anunciado",          value: `${formatPriceShort(MAX_ITEM_VALUE_CENTS)} por item`, when: "Validado ao publicar o anúncio" },
   { label: "Limite por locação",                     value: `${v.maxLabel} por transação`,   when: "Validado no checkout" },
-  { label: "Taxa por atraso na devolução",           value: `${v.lateMultLabel} o preço diário por dia`, when: "Gerada ao detectar o atraso" },
+  { label: "Taxa por atraso na devolução",           value: `${v.lateMultLabel} o preço diário por dia de atraso`, when: "Gerada ao detectar o atraso" },
   { label: "Cancelamento pelo locador",   value: "Reembolso de 100% ao locatário", when: "A ShareO abre mão da comissão; o locador não recebe repasse" },
   { label: "Cancelamento pelo locatário", value: "Reembolso de 100%, menos a taxa da Stripe", when: "Taxa real da cobrança original, cobrada pela Stripe" },
 ] }
