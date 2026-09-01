@@ -114,9 +114,16 @@ SQL de manutenção/migration para staging → sempre usar `zythygwvmrwrqmnrdufq
 | `ADMIN_FINANCEIRO` | Financeiro + Disputas + Usuários |
 | `ADMIN_OPERACIONAL` | Itens + Usuários + Disputas + Verificações |
 
-Admins em staging:
-- `admin@shareo.com.br` (`ADMIN_SUPERADMIN`) — vem do **seed** (`prisma/seed.ts`), senha **`Admin@shareo2026`**.
-- `financeiro@shareo.com.br`, `operacional@shareo.com.br` — criados via **UI** `/admin/usuarios/admins` (commit `d9b763a`), **não** estão no seed; senha definida na criação (não hardcoded — fixtures E2E leem de `FIXTURE_FINANCEIRO_PASSWORD`/`FIXTURE_OPERACIONAL_PASSWORD`).
+Admins em staging (conferido no banco em 2026-09-01):
+- `roberto.epifanio@gmail.com` — **`ADMIN_SUPERADMIN`**. É a conta para validar o painel completo.
+- `admin.fixture@shareo-test.com` — `ADMIN_SUPERADMIN`, usada pelas fixtures E2E.
+- `admin@shareo.com.br` — **`ADMIN_FINANCEIRO` hoje**, senha `Admin@shareo2026`. 🪤 O seed **cria** essa conta como `ADMIN_SUPERADMIN`, mas o upsert tem `update: {}` — num usuário que já existe ele não altera nada. A conta foi rebaixada depois (provavelmente pela UI) e **rodar o seed de novo NÃO restaura o papel**. Quem usar esta conta esperando superadmin leva 403 nas telas de gestão de admins e acha que é bug de permissão.
+- `raimundo1965@gmail.com`, `financeiro@shareo.com.br` — `ADMIN_FINANCEIRO`.
+- `thiagogarbuio10@gmail.com`, `operacional@shareo.com.br` — `ADMIN_OPERACIONAL`.
+
+`financeiro@shareo.com.br` e `operacional@shareo.com.br` foram criados via **UI** `/admin/usuarios/admins` (commit `d9b763a`), **não** estão no seed; senha definida na criação (não hardcoded — fixtures E2E leem de `FIXTURE_FINANCEIRO_PASSWORD`/`FIXTURE_OPERACIONAL_PASSWORD`).
+
+🪤 **A suíte E2E cria admins e nunca os remove.** Em 01/09 havia 5 contas `admin.e2e.<timestamp>@shareo-test.com` acumuladas desde 27/08, todas `ADMIN_OPERACIONAL` — removidas na mesma data. Elas voltam a cada rodada da suíte: se a lista de admins encher de novo, é isso, não invasão.
 
 ## CSP — regra importante
 
