@@ -3,11 +3,29 @@ import crypto from "crypto"
 const ALGORITHM = "aes-256-gcm"
 const IV_LENGTH = 12
 
+/**
+ * Decodifica uma chave hex de 32 bytes. `null` = ausente ou tamanho errado.
+ *
+ * Fonte única do "32": antes a regra estava escrita em `getKey`, `getHmacKey` e
+ * na sondagem de configuração, e as três podiam divergir — a sondagem chegou a
+ * tratar "   " como ausente enquanto `getKey` o aceitava como presente e
+ * reclamava do tamanho, ou seja, o /api/health respondia pergunta diferente do
+ * código que ele existe para instrumentar.
+ *
+ * `Buffer.from(_, "hex")` trunca em caractere não-hex em vez de lançar, então o
+ * teste de tamanho também pega valor mal colado.
+ */
+function parseHexKey(v: string | undefined): Buffer | null {
+  if (!v || v.trim().length === 0) return null
+  const buf = Buffer.from(v, "hex")
+  return buf.length === 32 ? buf : null
+}
+
 function getKey(): Buffer {
   const key = process.env.ENCRYPTION_KEY
-  if (!key) throw new Error("ENCRYPTION_KEY não definida")
-  const buf = Buffer.from(key, "hex")
-  if (buf.length !== 32) throw new Error("ENCRYPTION_KEY deve ter 32 bytes (64 hex chars)")
+  if (!key || key.trim().length === 0) throw new Error("ENCRYPTION_KEY não definida")
+  const buf = parseHexKey(key)
+  if (!buf) throw new Error("ENCRYPTION_KEY deve ter 32 bytes (64 hex chars)")
   return buf
 }
 
@@ -29,10 +47,46 @@ function getHmacKey(): Buffer {
   // deve cair em ENCRYPTION_KEY. Com `??`, string vazia não dispara o fallback
   // e quebraria todo hash de CPF/CNPJ ("ENCRYPTION_KEY não definida").
   const key = process.env.HMAC_KEY || process.env.ENCRYPTION_KEY
-  if (!key) throw new Error("ENCRYPTION_KEY não definida")
-  const buf = Buffer.from(key, "hex")
-  if (buf.length !== 32) throw new Error("HMAC_KEY/ENCRYPTION_KEY deve ter 32 bytes (64 hex chars)")
+  if (!key || key.trim().length === 0) throw new Error("ENCRYPTION_KEY não definida")
+  const buf = parseHexKey(key)
+  if (!buf) throw new Error("HMAC_KEY/ENCRYPTION_KEY deve ter 32 bytes (64 hex chars)")
   return buf
+}
+
+export type KeyStatus = "ok" | "ausente" | "tamanho-invalido" | "igual-a-encryption"
+
+function avaliaChave(v: string | undefined): Exclude<KeyStatus, "igual-a-encryption"> {
+  if (!v || v.trim().length === 0) return "ausente"
+  return parseHexKey(v) ? "ok" : "tamanho-invalido"
+}
+
+/**
+ * Diz se as chaves de criptografia chegaram ao RUNTIME, sem revelar valor.
+ *
+ * Existe pela mesma razão que `isEmailProviderConfigured`: em 31/08/2026 a
+ * `AUTH_SECRET` ficou 25 dias ausente da produção e o único sintoma foi um
+ * e-mail que não chegava — nenhuma tela respondia "a variável chegou ao
+ * runtime?". Aqui o sintoma seria pior e mais tardio: completar cadastro com
+ * CPF/CNPJ lança, e isso só aparece quando alguém tenta.
+ *
+ * `hmac: "igual-a-encryption"` NÃO é erro em dev/staging (o fallback é
+ * documentado e intencional), mas em produção com banco novo é a configuração
+ * que o .env.example manda evitar — vazar a chave AES comprometeria também o
+ * índice de unicidade de documento.
+ */
+export function cryptoKeyStatus(): { encryption: KeyStatus; hmac: KeyStatus } {
+  const enc  = process.env.ENCRYPTION_KEY
+  const hmac = process.env.HMAC_KEY
+  const encryption = avaliaChave(enc)
+
+  // Vazia cai no fallback de getHmacKey() — só é "igual" se houver o que herdar.
+  if (!hmac || hmac.trim().length === 0) {
+    return { encryption, hmac: encryption === "ok" ? "igual-a-encryption" : "ausente" }
+  }
+
+  const h = avaliaChave(hmac)
+  if (h !== "ok") return { encryption, hmac: h }
+  return { encryption, hmac: hmac === enc ? "igual-a-encryption" : "ok" }
 }
 
 // HMAC-SHA256 determinístico — permite lookup por unicidade no banco.

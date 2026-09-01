@@ -3,56 +3,12 @@ import { prisma } from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { NOINDEX_ENABLED } from "@/lib/seo-flags"
 import { isEmailProviderConfigured } from "@/lib/email"
+import { cryptoKeyStatus } from "@/lib/crypto"
+import { codigoDeFalha, codigoDeFalhaStorage } from "@/lib/health/failure-codes"
 
 export const runtime    = "nodejs"
 export const dynamic    = "force-dynamic"
 export const revalidate = 0
-
-/**
- * Código curto e estável da falha, seguro para expor em produção.
- *
- * A mensagem crua do Prisma carrega hostname/driver e fica restrita a dev
- * (S14-MIN-07), mas o CÓDIGO não identifica infraestrutura nenhuma — e é ele
- * que diz o que consertar:
- *   P1013 → connection string malformada (sobrou `VAR=` ou aspas no valor)
- *   P1000 → senha incorreta
- *   P1001 → não alcançou o servidor (host/porta)
- *   P2021 → tabela não existe (migrations não rodaram)
- *   NO_DATABASE_URL → variável vazia no runtime (escopo errado / Sensitive)
- *
- * Sem isso, um `db: "error"` obriga a adivinhar entre cinco causas distintas —
- * o que já custou horas de diagnóstico em dois ambientes.
- */
-function codigoDeFalha(e: unknown): string {
-  const err = e as { name?: string; code?: string; errorCode?: string; message?: string }
-  const msg = err?.message ?? String(e)
-  if (msg.includes("DATABASE_URL not configured")) return "NO_DATABASE_URL"
-  const code = err?.code ?? err?.errorCode
-  if (typeof code === "string" && code.length > 0) return code
-  const m = msg.match(/\bP\d{4}\b/)
-  if (m) return m[0]
-
-  // Sem código conhecido: devolve tipo + as linhas ÚTEIS da mensagem, com
-  // credencial removida. O Prisma abre com um cabeçalho genérico
-  // ("Invalid `prisma.x()` invocation:") e só depois diz a causa — pegar a
-  // primeira linha não ajudava.
-  const util = msg
-    .split("\n")
-    .map((l) => l.trim())
-    .filter((l) =>
-      l.length > 0 &&
-      !/^Invalid `.*` invocation/.test(l) &&
-      !l.startsWith("-->") &&
-      !/^\d+\s*\|/.test(l),
-    )
-    .join(" · ")
-    // Remove só a parte de credencial (user:senha@). NÃO substituir a menção
-    // literal a "postgresql://" — a mensagem mais útil do Prisma é justamente
-    // "the URL must start with the protocol `postgresql://`", e escrubá-la
-    // esconderia a causa que se quer diagnosticar.
-    .replace(/\/\/[^@\s/]*:[^@\s/]*@/g, "//***:***@")
-  return `${err?.name ?? "Error"}: ${util.slice(0, 240)}`
-}
 
 /**
  * Impressão digital da connection string que o RUNTIME recebeu.
@@ -105,6 +61,7 @@ export async function GET() {
   } catch (e) {
     checks.storage = "error"
     errors.storage = e instanceof Error ? e.message : String(e)
+    codes.storage  = codigoDeFalhaStorage(e)
   }
 
   // ── 3. Bucket id-docs (privado) ──────────────────────────────────────────
@@ -118,6 +75,7 @@ export async function GET() {
   } catch (e) {
     checks.storage_private = "error"
     errors.storage_private = e instanceof Error ? e.message : String(e)
+    codes.storage_private  = codigoDeFalhaStorage(e)
   }
 
   const allOk  = Object.values(checks).every((v) => v === "ok")
@@ -148,7 +106,12 @@ export async function GET() {
       // pergunta que ficou sem resposta por horas em 31/08/2026, quando a
       // variável estava certa no painel da Vercel e mesmo assim nenhum e-mail
       // saía. Nenhuma tela disponível respondia isso.
-      flags: { noindex: NOINDEX_ENABLED, email: isEmailProviderConfigured() ? "ok" : "sem-chave" },
+      // `crypto` fica fora de `checks` pela mesma razão do `email`, acima.
+      flags: {
+        noindex: NOINDEX_ENABLED,
+        email:   isEmailProviderConfigured() ? "ok" : "sem-chave",
+        crypto:  cryptoKeyStatus(),
+      },
       // Só quando o banco falha — é diagnóstico, não telemetria de rotina.
       ...(checks.db === "error" && { dbUrl: await digitalDaUrl() }),
       // Códigos são seguros em produção (não identificam infra); a mensagem crua
