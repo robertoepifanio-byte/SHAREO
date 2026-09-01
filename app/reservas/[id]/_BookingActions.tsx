@@ -13,6 +13,12 @@ interface Props {
   isOwner:                    boolean
   isBorrower:                 boolean
   conversationId?:            string
+  /** Estado da disputa — PARALELO ao status. "OPEN" nao impede devolver. */
+  disputeStatus?:             string
+  /** Quem abriu a disputa; so essa pessoa pode cancela-la. */
+  disputeOpenedById?:         string | null
+  /** Usuario logado — para comparar com disputeOpenedById. */
+  currentUserId?:             string
   extensionStatus:            string | null
   extensionRequestedEndDate:  string | null
   /** Fim atual da locação (ISO) — piso do seletor de extensão. */
@@ -21,8 +27,8 @@ interface Props {
   hideReturnActions?:         boolean
 }
 
-type CoreAction = "confirm" | "cancel" | "mark_active" | "mark_returned" | "confirm_return" | "open_dispute"
-type Panel = "cancel" | "dispute" | "extend_request" | "extend_respond" | "report" | "pickup_time" | "return_time"
+type CoreAction = "confirm" | "cancel" | "mark_active" | "mark_returned" | "confirm_return" | "open_dispute" | "cancel_dispute"
+type Panel = "cancel" | "dispute" | "extend_request" | "extend_respond" | "report" | "report_contact" | "pickup_time" | "return_time"
 
 const REPORT_CATEGORIES = [
   { value: "NOT_WORKING",  label: "Item não funciona" },
@@ -51,7 +57,8 @@ const fmtDate = (iso: string) =>
 
 export function BookingActions({
   bookingId, status, isOwner, isBorrower,
-  conversationId, extensionStatus, extensionRequestedEndDate, endDate,
+  conversationId, disputeStatus, disputeOpenedById, currentUserId,
+  extensionStatus, extensionRequestedEndDate, endDate,
   hideReturnActions,
 }: Props) {
   const router = useRouter()
@@ -260,8 +267,26 @@ export function BookingActions({
   }
   if (status === "PENDING" || status === "CONFIRMED")
     buttons.push({ label: "Cancelar reserva", variant: "danger", onClick: () => setPanel("cancel") })
-  if (status === "ACTIVE" || status === "RETURNED")
-    buttons.push({ emoji: "⚠️", label: "Reportar problema", variant: "ghost", onClick: () => setPanel("report") })
+  // 🪤 Disputa aberta NÃO tira botão nenhum da tela. Enquanto DISPUTED era um
+  // `status`, esta lista inteira ficava vazia numa reserva em disputa — sem
+  // devolver, sem reportar, sem nada (relato do Thiago, QA 01/09).
+  const disputaAberta = disputeStatus === "OPEN"
+
+  if ((status === "ACTIVE" || status === "RETURNED") && !disputaAberta)
+    buttons.push({
+      emoji: "⚠️",
+      label: "Reportar problema",
+      variant: "ghost",
+      // Passo de contato antes da reclamação: falar com a outra parte resolve a
+      // maioria dos casos e evita abrir mediação por mal-entendido. Sem chat
+      // disponível o passo não existe — não vale um beco sem saída.
+      onClick: () => setPanel(conversationId ? "report_contact" : "report"),
+    })
+
+  // Só quem abriu cancela — mesma regra do servidor, para o botão não oferecer
+  // o que a API vai recusar com 403.
+  if (disputaAberta && currentUserId && disputeOpenedById === currentUserId)
+    buttons.push({ emoji: "✖️", label: "Cancelar disputa", variant: "ghost", onClick: () => execCore("cancel_dispute") })
 
   // Extensão pendente — proprietário responde
   const showExtendRespond = isOwner && extensionStatus === "PENDING"
@@ -278,6 +303,19 @@ export function BookingActions({
     <div className="flex flex-col gap-3">
       {error && (
         <p role="alert" className="rounded-lg bg-destructive/10 px-4 py-2 text-sm text-destructive">{error}</p>
+      )}
+
+      {/* Disputa em curso — a locação continua, e os botões abaixo continuam
+          valendo. O aviso existe para que "Devolver" com disputa aberta não
+          pareça um estado inconsistente da tela. */}
+      {disputaAberta && (
+        <div className="rounded-lg border border-orange-light bg-orange-light/30 px-4 py-3 text-sm">
+          <p className="font-semibold text-orange-link">Disputa em análise</p>
+          <p className="mt-0.5 text-xs text-foreground/70">
+            A equipe ShareO está analisando o caso. A locação segue normalmente — você pode
+            continuar usando as ações abaixo.
+          </p>
+        </div>
       )}
 
       {/* ── Painel: Cancelar ── */}
@@ -437,6 +475,41 @@ export function BookingActions({
       )}
 
       {/* ── Painel: Reportar problema ── */}
+      {/* ── Painel: fale primeiro com a outra parte (antes de abrir a reclamação) ── */}
+      {panel === "report_contact" && (
+        <div className="rounded-xl border border-border bg-surface p-4">
+          <p className="mb-2 text-sm font-semibold text-foreground">
+            Antes de abrir uma reclamação
+          </p>
+          <p className="mb-4 text-xs text-muted-foreground">
+            A maior parte dos problemas se resolve conversando direto com {isOwner ? "o locatário" : "o proprietário"}.
+            Abrir uma reclamação leva o caso à mediação da equipe ShareO, o que costuma demorar mais.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href={`/mensagens/${conversationId}`}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 min-h-11 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
+            >
+              Falar com {isOwner ? "o locatário" : "o proprietário"}
+            </Link>
+            <button
+              type="button"
+              onClick={() => setPanel("report")}
+              className="rounded-lg border border-border px-4 py-2 min-h-11 text-sm text-foreground hover:bg-background transition-colors"
+            >
+              Continuar
+            </button>
+            <button
+              type="button"
+              onClick={reset}
+              className="rounded-lg px-4 py-2 min-h-11 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Voltar
+            </button>
+          </div>
+        </div>
+      )}
+
       {panel === "report" && (
         <div className="rounded-xl border border-border bg-surface p-4">
           <p className="mb-3 text-sm font-semibold text-foreground">Reportar problema com o item</p>
