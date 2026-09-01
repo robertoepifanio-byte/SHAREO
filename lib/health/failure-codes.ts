@@ -81,7 +81,10 @@ export function codigoDeFalhaStorage(e: unknown): StorageCode | `DESCONHECIDO: $
   if (/supabaseUrl is required/i.test(msg))                    return "NO_SUPABASE_URL"
   if (/supabaseKey is required/i.test(msg))                    return "NO_SERVICE_ROLE_KEY"
   if (/bucket not found/i.test(msg))                           return "BUCKET_NOT_FOUND"
-  if (/invalid (api )?key|jwt|unauthorized|signature/i.test(msg)) return "BAD_SERVICE_ROLE_KEY"
+  // "Compact JWS" e a redacao real do supabase-js quando a chave nao e um JWT
+  // (ex.: colaram a publishable, ou um valor truncado). Observado na producao
+  // em 01/09/2026 — o regex cobria "JWT" e passou ao largo por uma letra.
+  if (/invalid (api )?key|jw[ts]|compact|unauthorized|signature/i.test(msg)) return "BAD_SERVICE_ROLE_KEY"
   if (/fetch failed|ENOTFOUND|ECONNREFUSED|timeout/i.test(msg)) return "UNREACHABLE"
   // Sem correspondencia, devolve a MENSAGEM sem identificador de infra.
   //

@@ -10,6 +10,9 @@ describe("codigoDeFalhaStorage", () => {
     ["Bucket not found",                                 "BUCKET_NOT_FOUND"],
     ["Invalid API key",                                  "BAD_SERVICE_ROLE_KEY"],
     ["invalid JWT: unable to parse or verify signature", "BAD_SERVICE_ROLE_KEY"],
+    // Redacao REAL observada na producao em 01/09/2026. O regex cobria "JWT" e
+    // passou ao largo por uma letra, entregando DESCONHECIDO.
+    ["Invalid Compact JWS",                             "BAD_SERVICE_ROLE_KEY"],
     ["fetch failed",                                     "UNREACHABLE"],
     ["getaddrinfo ENOTFOUND abc.supabase.co",            "UNREACHABLE"],
   ])("classifica %s", (msg, esperado) => {
