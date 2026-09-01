@@ -13,9 +13,10 @@ import {
   bookingItemsLabel,
 } from "@/lib/email"
 import { getLateFeeMultiplier, calcLateFee } from "@/lib/platform-config"
+import { getStripe } from "@/lib/stripe"
 import {
   emitirCobrancaTaxaAtraso, precisaCobrar, diasDeAtraso, diasParaCalculo,
-  TETO_DIAS_CALCULO_AUTOMATICO,
+  houveAtraso, TETO_DIAS_CALCULO_AUTOMATICO,
 } from "@/lib/lateFee"
 
 export const runtime = "nodejs"
@@ -265,7 +266,42 @@ export async function GET(req: NextRequest) {
     // `returnRequestedAt` é quando o locatário devolveu; `returnedAt`, quando o
     // locador confirmou. O atraso termina no primeiro.
     const fimDoAtraso = b.returnRequestedAt ?? b.returnedAt ?? today
-    const diasAtraso  = diasDeAtraso(b.endDate, fimDoAtraso)
+
+    // 🪤 A multa gravada pode não corresponder a atraso nenhum. Este caminho
+    // confiava no `lateFeeAmount` e nunca perguntava se o atraso existia — em
+    // 01/09, cinco reservas devolvidas ANTES do prazo receberam cobrança de 1
+    // dia (piso do cálculo). Eram dados de seed, mas qualquer valor ruim que
+    // entre vira cobrança real, com e-mail e link de pagamento.
+    //
+    // Zerar, e não só deixar de cobrar: a multa segue aparecendo na tela do
+    // proprietário e do locatário enquanto o campo tiver valor.
+    if (!houveAtraso(b.endDate, fimDoAtraso)) {
+      // 🪤 Zerar o valor sem matar a cobrança deixaria um link VIVO e pagável
+      // de uma multa que a plataforma acabou de reconhecer como indevida —
+      // dinheiro entrando por engano, com estorno manual depois.
+      if (b.lateFeeSessionId && b.lateFeeSessionExpiresAt && b.lateFeeSessionExpiresAt > today) {
+        await getStripe().checkout.sessions.expire(b.lateFeeSessionId).catch((e: unknown) =>
+          console.error(`[cron] falha ao expirar cobrança indevida ${b.lateFeeSessionId}:`, e instanceof Error ? e.message : e)
+        )
+      }
+      await prisma.booking.update({
+        where: { id: b.id },
+        data:  {
+          lateFeeAmount:           null,
+          lateFeeCalculatedUntil:  null,
+          lateFeeSessionId:        null,
+          lateFeeSessionExpiresAt: null,
+        },
+      })
+      console.warn(
+        `[cron] multa ZERADA em ${b.id}: item devolvido em ${fimDoAtraso.toISOString().slice(0, 10)}, ` +
+        `dentro do prazo (${b.endDate.toISOString().slice(0, 10)}) — não havia atraso`,
+      )
+      sent.push(`late_fee:zerada:${b.id}`)
+      return
+    }
+
+    const diasAtraso = diasDeAtraso(b.endDate, fimDoAtraso)
     try {
       const r = await emitirCobrancaTaxaAtraso(
         b,

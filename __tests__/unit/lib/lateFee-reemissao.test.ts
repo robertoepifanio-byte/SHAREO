@@ -10,7 +10,7 @@
  */
 import {
   emitirCobrancaTaxaAtraso, precisaCobrar, temCobrancaViva, taxaDeAtrasoQuitada,
-  diasDeAtraso, diasParaCalculo, dentroDoCalculoAutomatico, TETO_DIAS_CALCULO_AUTOMATICO,
+  diasDeAtraso, diasParaCalculo, dentroDoCalculoAutomatico, houveAtraso, TETO_DIAS_CALCULO_AUTOMATICO,
 } from "@/lib/lateFee"
 
 const mockBookingUpdate = jest.fn()
@@ -274,5 +274,27 @@ describe("até quando o atraso foi contado", () => {
     }
     expect(args.line_items[0].price_data.product_data.description)
       .toBe("1 dia em atraso — calculado até 31/08/2026")
+  })
+})
+
+describe("houveAtraso — a pergunta que o piso de 1 dia escondia", () => {
+  const prazo = new Date("2026-07-02T11:32:00Z")
+
+  it("devolvido DEPOIS do prazo: houve atraso", () => {
+    expect(houveAtraso(prazo, new Date("2026-07-03T09:00:00Z"))).toBe(true)
+    expect(houveAtraso(prazo, new Date("2026-07-20T09:00:00Z"))).toBe(true)
+  })
+
+  it("devolvido no MESMO dia do prazo: sem atraso", () => {
+    expect(houveAtraso(prazo, new Date("2026-07-02T23:59:00Z"))).toBe(false)
+  })
+
+  it("devolvido ANTES do prazo: sem atraso — o caso real do staging", () => {
+    // Cinco reservas com prazo ate 02/07 e devolucao em 27/06 receberam
+    // cobranca de 1 dia em 01/09, porque `diasDeAtraso` tem piso de 1 e o
+    // caminho de reemissao nunca perguntava se o atraso existia.
+    expect(houveAtraso(prazo, new Date("2026-06-27T04:31:00Z"))).toBe(false)
+    // ...enquanto o calculo sozinho continua devolvendo 1:
+    expect(diasDeAtraso(prazo, new Date("2026-06-27T04:31:00Z"))).toBe(1)
   })
 })
