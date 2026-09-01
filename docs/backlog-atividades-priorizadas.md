@@ -18,7 +18,13 @@
 
 1. **🔴 A taxa nunca vira repasse.** `criarPayoutDaReserva` (`lib/payout.ts`) monta o repasse a partir de `ownerNetAmount`, que cobre a locação e a extensão — **e só**. A taxa de atraso não entra em nenhuma das fatias e não gera `Payout` próprio. Consequência: os R$ 7,50 ficam **integralmente com a plataforma**, enquanto a tela do proprietário mostra "Você recebe R$ 4,25".
 
-   ✅ **Decisão (Roberto, 2026-09-01):** a multa segue **o mesmo processo da locação normal — 85% proprietário / 15% plataforma**. Implementação pendente, e não é só somar ao `ownerNetAmount`: a taxa é cobrada numa **Checkout Session própria**, então o Transfer precisa do `source_transaction` daquela cobrança — a mesma restrição da Stripe BR que obrigou um `Payout` por cobrança na extensão (ver memória `project-extensao-cobranca-ator03`). O split tem de usar `getPlatformFeeRate()`, nunca 15% cravado.
+   ✅ **Decisão (Roberto, 2026-09-01):** a multa segue **o mesmo processo da locação normal — 85% proprietário / 15% plataforma**.
+
+   ✅ **Implementado em 01/09/2026.** `criarPayoutDaTaxaDeAtraso` (`lib/payout.ts`), chamada pelo webhook quando a multa é paga. Como previsto, não deu para somar ao `ownerNetAmount`: a multa vive numa Checkout Session própria e a Stripe exige `source_transaction` no Brasil, então ela gera um `Payout` próprio, sacando da cobrança da multa (campo novo `Booking.lateFeePaymentIntentId`). O split usa `getPlatformFeeRate()`.
+
+   🪤 **Defeito encontrado ao implementar:** `criarPayoutDaReserva` checava duplicidade só por `bookingId`. Como a multa costuma ser paga **antes** do `confirm_return`, o repasse da multa faria o repasse da **locação inteira** ser recusado como "já existe" — o proprietário perderia o aluguel para ganhar a multa. A checagem passou a filtrar `sourcePaymentIntentId: null`. Coberto por teste.
+
+   **Ainda não exercitado ponta a ponta** — a cobrança da taxa de atraso nunca rodou de verdade (ver nota de risco abaixo).
 
 2. **🟠 Concluir a locação não fecha a cobrança.** A reserva foi a `COMPLETED` com a taxa pendente. Nada cancela a Checkout Session, nada persegue o não-pagamento, e o e-mail de "Devolução confirmada" diz que a locação está concluída **sem mencionar a taxa em aberto**. Um locatário que simplesmente ignora o e-mail não sofre consequência nenhuma.
 

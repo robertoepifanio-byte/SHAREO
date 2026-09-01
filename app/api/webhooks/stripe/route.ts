@@ -8,19 +8,42 @@ import { markRentalPaid } from "@/lib/payments/mark-booking-paid"
 import { aplicarExtensao } from "@/lib/payments/extension"
 import { reverseOwnerTransfer } from "@/lib/payments/owner-transfer"
 import { withStripeEventQueue } from "@/lib/payments/stripe-event-queue"
+import { criarPayoutDaTaxaDeAtraso } from "@/lib/payout"
+import { formatPrice } from "@/utils/format"
 
 // App Router já entrega o body raw via req.text() — não há bodyParser para desabilitar
 // (o `export const config = { api: { bodyParser } }` do Pages Router é ignorado aqui).
 
 const LOG = "[stripe webhook]"
 
-/** Taxa de atraso paga — registra o valor e avisa as duas partes. */
+/**
+ * Taxa de atraso paga — registra o valor, REPASSA a parte do proprietário e
+ * avisa as duas partes.
+ *
+ * 🪤 O repasse não existia. A multa era cobrada do locatário e ficava inteira
+ * com a plataforma, enquanto a tela do proprietário mostrava só o líquido da
+ * locação. Decisão de Roberto (01/09/2026): a multa segue o mesmo split.
+ */
 async function handleLateFeePaid(session: Stripe.Checkout.Session, bookingId: string): Promise<void> {
+  const lateFeeAmount          = session.amount_total ?? undefined
+  const lateFeePaymentIntentId = idOf(session.payment_intent)
+
   const booking = await prisma.booking.update({
     where:  { id: bookingId },
-    data:   { lateFeeAmount: session.amount_total ?? undefined },
+    // O PaymentIntent fica gravado porque é dele que sai o Transfer da parte do
+    // proprietário — a cobrança da locação não tem esse dinheiro.
+    data:   { lateFeeAmount, lateFeePaymentIntentId },
     select: { ownerId: true, borrowerId: true, item: { select: { title: true } } },
   })
+
+  const r = await criarPayoutDaTaxaDeAtraso(bookingId, booking.ownerId, lateFeeAmount, lateFeePaymentIntentId)
+    .catch((e) => {
+      console.error(`${LOG} criarPayoutDaTaxaDeAtraso:`, e instanceof Error ? e.message : e)
+      return null
+    })
+  if (r && !r.criado) {
+    console.warn(`${LOG} late_fee ${bookingId} paga SEM repasse ao proprietário — motivo=${r.motivo}`)
+  }
 
   after(() =>
     prisma.notification.createMany({
@@ -29,7 +52,11 @@ async function handleLateFeePaid(session: Stripe.Checkout.Session, bookingId: st
           userId: booking.ownerId,
           type:   "LATE_FEE_APPLIED" as never,
           title:  "Taxa de atraso recebida",
-          body:   `A taxa de atraso de "${booking.item.title}" foi paga.`,
+          // Diz o valor LÍQUIDO quando o repasse foi criado: "foi paga" sozinho
+          // deixava o proprietário sem saber se, e quanto, ele receberia.
+          body:   r?.criado
+            ? `A taxa de atraso de "${booking.item.title}" foi paga. Você recebe ${formatPrice(r.amount)}, já descontada a taxa da plataforma.`
+            : `A taxa de atraso de "${booking.item.title}" foi paga.`,
           data:   { bookingId },
         },
         {
