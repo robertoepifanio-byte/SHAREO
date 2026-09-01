@@ -16,14 +16,30 @@ describe("codigoDeFalhaStorage", () => {
     expect(codigoDeFalhaStorage(new Error(msg))).toBe(esperado)
   })
 
-  it("devolve DESCONHECIDO em vez da mensagem crua", () => {
-    // O texto do supabase-js pode carregar a URL do projeto, e este código é
-    // exposto em PRODUÇÃO — cair para a mensagem seria vazar infra.
+  it("sem correspondência, entrega a mensagem SEM identificador de infra", () => {
+    // A 1ª versão devolvia só "DESCONHECIDO" — e foi isso que a produção
+    // respondeu em 01/09/2026: um rótulo tão pouco informativo quanto o
+    // `storage: "error"` que ele existia para explicar. Esconder a mensagem
+    // não protegia nada; o que precisa sair é o identificador de infra.
     const code = codigoDeFalhaStorage(
-      new Error("algo estranho em https://jdxdndrhjxtkaifbpagr.supabase.co/storage/v1"),
+      new Error("algo estranho em https://jdxdndrhjxtkaifbpagr.supabase.co/storage/v1 para admin@shareo.com.br"),
     )
-    expect(code).toBe("DESCONHECIDO")
+    expect(code).toContain("DESCONHECIDO")
+    expect(code).toContain("algo estranho")
+    expect(code).not.toContain("jdxdndrhjxtkaifbpagr")
     expect(code).not.toContain("supabase.co")
+    expect(code).not.toContain("admin@shareo.com.br")
+  })
+
+  it("remove o host mesmo quando aparece sem URL completa", () => {
+    const code = codigoDeFalhaStorage(new Error("erro em jdxdndrhjxtkaifbpagr.supabase.co"))
+    expect(code).not.toContain("jdxdndrhjxtkaifbpagr")
+    expect(code).toContain("[host]")
+  })
+
+  it("corta mensagem longa para não inflar a resposta pública", () => {
+    const code = codigoDeFalhaStorage(new Error("x".repeat(500)))
+    expect(code.length).toBeLessThanOrEqual("DESCONHECIDO: ".length + 200)
   })
 
   it("aceita valor lançado que não é Error", () => {
