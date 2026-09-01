@@ -228,30 +228,47 @@ Todas as ações de escrita geram uma entrada em `admin_logs`.
 
 ---
 
-## POST /api/admin/bookings/:id/resolve
+## PATCH /api/admin/disputes/:id
 
-**Resolve uma disputa.** Só pode ser executado em reservas com `disputeStatus = OPEN` (a disputa deixou de ser um valor de `status` em 01/09/2026 — ver `docs/api/bookings.md`).
+**Resolve uma disputa.** Só pode ser executado em reservas com `disputeStatus = OPEN`
+(a disputa deixou de ser um valor de `status` em 01/09/2026 — ver `docs/api/bookings.md`).
+
+> Esta seção documentava `POST /api/admin/bookings/:id/resolve`, com um corpo
+> (`resolution`/`notes`/`newStatus`) que **o código nunca aceitou**. A rota não
+> existe. Corrigido em 01/09/2026 para o contrato real.
 
 ### Request body
 
 ```typescript
 {
-  resolution: "favor_borrower" | "favor_owner" | "split"
-  notes:      string  // obrigatório, min 10 chars — registrado no admin_log
-  newStatus:  "COMPLETED" | "CANCELLED"
+  action:    "resolve_completed" | "resolve_cancelled" | "dismiss_dispute"
+  adminNote?: string  // max 500 — OBRIGATÓRIO em dismiss_dispute
 }
 ```
 
+### Os três desfechos
+
+| `action` | `booking.status` | `disputeStatus` | Dinheiro |
+|---|---|---|---|
+| `resolve_completed` | → `COMPLETED` | `RESOLVED_OWNER` | cria o repasse ao proprietário |
+| `resolve_cancelled` | → `CANCELLED` | `RESOLVED_BORROWER` | estorno **integral** (100%, sem a escada de `calcRefund`) se a reserva foi paga |
+| `dismiss_dispute` | **inalterado** | `DISMISSED` | nenhum |
+
+`dismiss_dispute` encerra a mediação sem decidir nada sobre a locação: a reserva
+fica exatamente onde estava e segue seu curso. É o único desfecho sem
+consequência financeira — por isso `adminNote` é obrigatório ali, senão a
+decisão não deixa rastro nenhum.
+
 ### Regras de negócio
 
-- Atualiza `booking.status` para `newStatus`
-- Registra a resolução em `admin_logs` com `metadata: { resolution, notes }`
-- Cria notificação para ambos os participantes
+- Registra em `admin_logs` com `metadata: { adminNote }`
+- Notifica **ambas** as partes. Em `dismiss_dispute` o texto diz que a locação
+  segue — anunciar cancelamento que não houve seria pior que não avisar.
 
 ### Response `200`
 
 ```typescript
-{ data: { id, status, updatedAt } }
+{ data: { id, status, disputeStatus, updatedAt } }
 ```
 
 ---
