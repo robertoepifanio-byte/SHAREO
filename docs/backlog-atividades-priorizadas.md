@@ -80,17 +80,27 @@ Não é regressão — nenhum desses existia antes. Mas o locatário que abre di
 
 **Como fazer:** vale a regra de transcrição literal do fundador. Fonte a transcrever: `app/reservas/[id]/_BookingActions.tsx` (painel `report_contact`, botão `cancel_dispute`, banner de disputa aberta). Usar `/shareo-transcrever-tela`. A API já devolve `disputeStatus` e `disputeOpenedById` no `GET /api/bookings/:id`, e a ação `cancel_dispute` já aceita Bearer — não falta backend.
 
-### 2. 🔴 Texto publicado desalinhado do código — perímetro D4
+### 2. ✅ Texto publicado desalinhado do código — RESOLVIDO em 02/09/2026
 
-Central de Ajuda (`app/ajuda/page.tsx`) e Políticas (`app/politicas/page.tsx`) descrevem o fluxo de disputa **sem mencionar** nada do que passou a existir:
+Central de Ajuda e Políticas descreviam o fluxo de disputa sem mencionar o
+contato prévio, a desistência da própria reclamação e o encerramento sem
+desfecho financeiro — este último um poder da plataforma sobre contrato de
+adesão que o texto não previa.
 
-- que se espera contato com a outra parte antes de abrir reclamação;
-- que a parte que abriu pode cancelar a própria disputa;
-- que a ShareO pode **encerrar a disputa sem desfecho financeiro** (`dismiss_dispute`), mantendo a locação — hoje os documentos só preveem "concluída" ou "cancelada".
+Raimundo aprovou os três pontos em 02/09. Aplicados em
+[#446](https://github.com/robertoepifanio-byte/SHAREO/pull/446):
+cláusula nova em Políticas 3.3, recurso pelo suporte com o prazo de 5 dias
+úteis mantido (e agora apurado pelo sistema), e remoção do botão "Atendimento
+emergencial".
 
-O terceiro é o mais sensível: é um poder da plataforma sobre um contrato de adesão que o texto contratual não prevê.
+🪤 O documento enviado a ele dizia que esse botão aparecia em **dois** lugares.
+Eram **quatro** — a busca usou a frase exata e não pegou as duas que descrevem
+o mesmo canal inexistente com outras palavras ("Precisa de ajuda?",
+"Solicitar intervenção ShareO"). Removidas junto; registrado para ele
+confirmar ou reverter.
 
-**Bloqueio:** alterar texto contratual entra no perímetro do **D4**. A redação não foi escrita nem publicada. Ver `docs/juridico/decisoes-pendentes-cancelamento-disputa.md`, seção "Atualização de 01/09/2026".
+**Fica aberto:** item 4 da pauta de 02/09 (proteção/seguro), aguardando o texto
+do Raimundo. Ver `docs/juridico/pauta-promessas-remanescentes-2026-09-02.md`.
 
 ---
 
