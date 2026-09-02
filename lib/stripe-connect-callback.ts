@@ -21,6 +21,7 @@
  * terceiro escolha o `acct_` de outra pessoa.
  */
 import crypto from "crypto"
+import { timingSafeStringEqual } from "@/lib/timingSafe"
 
 const PURPOSE = "stripe-connect-callback-v1"
 
@@ -57,8 +58,5 @@ export function verifyConnectCallbackSig(
     // silenciosamente sem chave uma vez (ver lib/crypto.ts).
     return false
   }
-  const a = Buffer.from(esperada, "utf8")
-  const b = Buffer.from(sig, "utf8")
-  if (a.length !== b.length) return false
-  return crypto.timingSafeEqual(a, b)
+  return timingSafeStringEqual(esperada, sig)
 }

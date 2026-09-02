@@ -1,3 +1,4 @@
+/** @jest-environment node */
 /**
  * Assinatura dos callbacks de onboarding do Stripe Connect.
  *

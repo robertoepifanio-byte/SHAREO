@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { isStripeConnectActive, createOnboardingLink, stripeConnectFinalRedirect } from "@/lib/stripe-connect"
-import { verifyConnectCallbackSig } from "@/lib/stripe-connect-callback"
+import { lerCallbackDoConnect } from "@/lib/stripe-connect-callback-guard"
 
 /**
  * O link de onboarding do Stripe (`account_onboarding`) expira depois de um
@@ -24,23 +24,9 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  const { searchParams } = new URL(req.url)
-  const accountId = searchParams.get("account")
-  const client    = searchParams.get("client")
-  const sig       = searchParams.get("sig")
-
-  if (!accountId || !accountId.startsWith("acct_")) {
-    return NextResponse.redirect(stripeConnectFinalRedirect(client, "sem_conta"))
-  }
-
-  // A conta so vale se vier com a assinatura que ESTA aplicacao emitiu: sem
-  // isso, qualquer acct_ digitado na barra de enderecos era aceito. Mesmo
-  // desfecho de "conta ausente" de proposito — nao confirma a um terceiro que
-  // o id existe. Ver lib/stripe-connect-callback.ts.
-  if (!verifyConnectCallbackSig(accountId, client, sig)) {
-    console.warn("[connect callback] assinatura invalida", { path: req.nextUrl.pathname })
-    return NextResponse.redirect(stripeConnectFinalRedirect(client, "sem_conta"))
-  }
+  // Sem sessao aqui: a assinatura da URL e a autenticacao.
+  const { accountId, client, error } = lerCallbackDoConnect(req, stripeConnectFinalRedirect)
+  if (error) return error
 
   try {
     const url = await createOnboardingLink(accountId, client === "mobile" ? "mobile" : "web")

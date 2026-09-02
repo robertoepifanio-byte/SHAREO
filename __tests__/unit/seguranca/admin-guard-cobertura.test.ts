@@ -52,9 +52,12 @@ describe("guard das rotas de admin", () => {
     expect(rotas.length).toBeGreaterThanOrEqual(15)
   })
 
-  it.each(rotas.map((r) => r.nome))("%s checa o papel do admin", (nome) => {
-    const rota = rotas.find((r) => r.nome === nome)!
-    expect(rota.fonte).toMatch(/hasAdminRole|requireAdminRole|requireAdminApi/)
+  // Os tres nomes sao os tres helpers que hoje convivem no repo. Isto NAO diz
+  // que sao equivalentes: `requireAdminRole` lanca, `requireAdminApi` devolve a
+  // resposta pronta e `hasAdminRole` e para quem precisa da sessao antes do
+  // guard. A lista existe para nao reprovar rota que ja esta correta.
+  it.each(rotas)("$nome checa o papel do admin", ({ fonte }) => {
+    expect(fonte).toMatch(/hasAdminRole|requireAdminRole|requireAdminApi/)
   })
 
   it("nenhuma rota para no `role !== \"ADMIN\"` sem checar o papel", () => {
@@ -66,16 +69,14 @@ describe("guard das rotas de admin", () => {
     expect(infratoras).toEqual([])
   })
 
-  it("🪤 as duas rotas que movem dinheiro exigem papel explícito", () => {
-    // Guarda nomeada: se alguém afrouxar de volta para o guard genérico
-    // justamente aqui, o teste diz qual rota e por quê.
-    const dinheiro = ["disputes/[id]/route.ts", "bookings/[id]/late-fee/route.ts"]
-    for (const nome of dinheiro) {
-      const rota = rotas.find((r) => r.nome === nome)
-      // Se a rota foi renomeada, o nome entra na mensagem — sem isso o teste
-      // falharia com "cannot read fonte of undefined" e ninguem saberia qual.
-      expect(rota ? nome : `${nome} NAO ENCONTRADA`).toBe(nome)
-      expect(rota!.fonte).toMatch(/requireAdminApi\(\s*[\s\S]*?ADMIN_SUPERADMIN/)
-    }
-  })
+  // Guarda nomeada: se alguem afrouxar de volta para o guard generico
+  // justamente nas duas rotas que mexem em dinheiro, o teste diz qual e por que.
+  it.each(["disputes/[id]/route.ts", "bookings/[id]/late-fee/route.ts"])(
+    "🪤 %s exige papel explícito",
+    (nome) => {
+      expect(rotas.map((r) => r.nome)).toContain(nome)
+      const rota = rotas.find((r) => r.nome === nome)!
+      expect(rota.fonte).toMatch(/requireAdminApi\(\s*[\s\S]*?ADMIN_SUPERADMIN/)
+    },
+  )
 })
