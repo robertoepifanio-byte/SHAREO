@@ -40,6 +40,11 @@ jest.mock("@/lib/prisma", () => ({
 const mockAuth = jest.fn()
 jest.mock("@/lib/auth", () => ({ auth: () => mockAuth() }))
 
+const mockRefund = jest.fn()
+jest.mock("@/lib/payments/refund", () => ({
+  emitCancellationRefund: (...a: unknown[]) => mockRefund(...a),
+}))
+
 jest.mock("@/lib/platform-config", () => ({
   ...jest.requireActual("@/lib/platform-config"),
   getPayoutWindowDays: async () => 7,
@@ -72,6 +77,8 @@ function makeBooking(over: { ownerNetAmount?: number | null } = {}) {
     ownerNetAmount: over.ownerNetAmount === undefined ? 8500 : over.ownerNetAmount,
     totalPrice:     10000,
     paymentStatus:  "PAID",
+    stripePaymentIntentId: "pi_locacao",
+    discountCents:  null,
     item:           { title: "Furadeira Bosch" },
   }
 }
@@ -86,6 +93,7 @@ beforeEach(() => {
   mockOwnerAccountFind.mockResolvedValue({ id: CONTA_ID })
   mockAdminLogCreate.mockResolvedValue({})
   mockNotificationCreate.mockResolvedValue({})
+  mockRefund.mockResolvedValue({ id: "re_1" })
 })
 
 describe("PATCH /api/admin/disputes/[id]", () => {
@@ -249,6 +257,100 @@ describe("PATCH /api/admin/disputes/[id]", () => {
       for (const corpo of corpos) {
         expect(corpo).toContain("segue normalmente")
         expect(corpo).not.toContain("cancelada")
+      }
+    })
+  })
+
+  describe("resolve_partial — desfecho proporcional", () => {
+    it("estorna o valor pedido e repassa o líquido do QUE FICOU", async () => {
+      mockBookingUpdate.mockResolvedValue({
+        id: BOOKING_ID, status: "COMPLETED", disputeStatus: "RESOLVED_PARTIAL", updatedAt: new Date(),
+      })
+
+      const res = await PATCH(
+        makeReq({ action: "resolve_partial", refundAmount: 4000, adminNote: "Item riscado, uso parcial." }),
+        makeParams(),
+      )
+      expect(res.status).toBe(200)
+
+      // Estorno ao locatário, na cobrança da locação.
+      expect(mockRefund).toHaveBeenCalledWith(expect.objectContaining({
+        paymentIntentId: "pi_locacao",
+        amount:          4000,
+        motivo:          "dispute-partial",
+      }))
+
+      // 🪤 O repasse NAO e o ownerNetAmount gravado (8500): parte do dinheiro
+      // voltou. Sobre o que ficou (10000-4000=6000) incide a taxa de 15% →
+      // 5100 ao proprietario.
+      expect(mockPayoutCreate).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ amount: 5100 }),
+      }))
+
+      const [[arg]] = mockBookingUpdate.mock.calls as [[{ data: Record<string, unknown> }]]
+      expect(arg.data.disputeStatus).toBe("RESOLVED_PARTIAL")
+      expect(arg.data.status).toBe("COMPLETED")
+      expect(arg.data.refundAmount).toBe(4000)
+      expect(arg.data.refundPercent).toBe(40)
+    })
+
+    it("recusa valor igual ou maior que o total — isso e cancelamento", async () => {
+      const res  = await PATCH(
+        makeReq({ action: "resolve_partial", refundAmount: 10000, adminNote: "Devolver tudo." }),
+        makeParams(),
+      )
+      const body = await res.json() as { error: { code: string } }
+
+      expect(res.status).toBe(422)
+      expect(body.error.code).toBe("VALOR_INVALIDO")
+      expect(mockBookingUpdate).not.toHaveBeenCalled()
+      expect(mockRefund).not.toHaveBeenCalled()
+    })
+
+    it("recusa em reserva nao paga — nao ha o que estornar", async () => {
+      mockBookingFindUnique.mockResolvedValue({ ...makeBooking(), paymentStatus: "PENDING" })
+
+      const res  = await PATCH(
+        makeReq({ action: "resolve_partial", refundAmount: 4000, adminNote: "Acordo parcial." }),
+        makeParams(),
+      )
+      const body = await res.json() as { error: { code: string } }
+
+      expect(res.status).toBe(422)
+      expect(body.error.code).toBe("NAO_PAGA")
+      // 🪤 As guardas rodam ANTES de qualquer escrita: marcar a disputa como
+      // resolvida e so depois falhar o estorno deixaria o banco dizendo que o
+      // locatario recebeu dinheiro que nunca saiu.
+      expect(mockBookingUpdate).not.toHaveBeenCalled()
+    })
+
+    it("exige valor e justificativa", async () => {
+      const semValor = await PATCH(makeReq({ action: "resolve_partial", adminNote: "Acordo parcial." }), makeParams())
+      expect(semValor.status).toBe(400)
+
+      const semNota = await PATCH(makeReq({ action: "resolve_partial", refundAmount: 4000 }), makeParams())
+      expect(semNota.status).toBe(400)
+
+      expect(mockBookingUpdate).not.toHaveBeenCalled()
+    })
+
+    it("avisa as partes do acordo, com o valor devolvido", async () => {
+      mockBookingUpdate.mockResolvedValue({
+        id: BOOKING_ID, status: "COMPLETED", disputeStatus: "RESOLVED_PARTIAL", updatedAt: new Date(),
+      })
+
+      await PATCH(
+        makeReq({ action: "resolve_partial", refundAmount: 4000, adminNote: "Item riscado." }),
+        makeParams(),
+      )
+
+      const corpos = mockNotificationCreate.mock.calls.map(
+        (c) => (c[0] as { data: { body: string } }).data.body,
+      )
+      expect(corpos).toHaveLength(2)
+      for (const corpo of corpos) {
+        expect(corpo).toContain("acordo parcial")
+        expect(corpo).toMatch(/R\$\s?40,00/)
       }
     })
   })

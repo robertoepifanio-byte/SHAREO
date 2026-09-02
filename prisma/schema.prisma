@@ -84,6 +84,7 @@ enum DisputeStatus {
   OPEN // aberta, aguardando mediação
   RESOLVED_OWNER // admin deu ganho de causa ao proprietário (reserva concluída)
   RESOLVED_BORROWER // admin deu ganho de causa ao locatário (reserva cancelada + estorno)
+  RESOLVED_PARTIAL // admin dividiu: estorno parcial ao locatário, resto repassado ao proprietário
   DISMISSED // encerrada sem desfecho financeiro — pela parte que abriu ou pelo admin
 }
 

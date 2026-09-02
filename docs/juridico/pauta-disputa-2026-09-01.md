@@ -44,6 +44,10 @@ E o "time diferente" descreve uma estrutura que a ShareO não tem: hoje quem ana
 
 **Recomendação: B agora, A no roadmap.** A promessa atual não é sustentável nem no texto nem na operação. Mas tirar qualquer forma de contestação seria pior — a redação da B mantém a porta aberta sem inventar estrutura.
 
+### ✅ Decisão (Roberto, 01/09/2026) — aguardando Raimundo
+
+Opção B: corrigir o texto. A redação proposta está em `docs/juridico/redacao-proposta-disputa-2026-09-01.md`, junto com a do item 3. **Nada foi publicado** — alterar Ajuda e Políticas segue no perímetro do D4.
+
 ---
 
 ## 2. Prometemos retenção parcial do valor — o sistema é tudo ou nada
@@ -82,7 +86,17 @@ Na prática, uma mediação com dano parcial — o item voltou funcionando mas r
 - Esforço: quase zero.
 - Custo: perde-se a ferramenta mais adequada ao caso mais comum. E o texto passa a descrever uma mediação mais crua do que seria desejável.
 
-**Recomendação: A**, mas sem pressa — é a única desta pauta em que o texto está **melhor** que o sistema. A promessa é boa; falta cumpri-la. Enquanto não for construída, o texto precisa parar de prometê-la.
+**Recomendação: A**, mas sem pressa — é a única desta pauta em que o texto está **melhor** que o sistema. A promessa é boa; falta cumpri-la.
+
+### ✅ Decisão (Roberto, 01/09/2026) — IMPLEMENTADO
+
+Opção A: construir. A equipe passou a ter um terceiro desfecho, **"Dividir"**, que estorna ao locatário o valor informado e repassa o restante ao proprietário.
+
+A divisão segue a mesma regra do checkout, aplicada ao que **ficou**: sobre `totalPrice − valor devolvido` incidem a taxa da plataforma e o líquido do proprietário. Isso mantém os extremos coerentes (devolver tudo → repasse zero; devolver nada → repasse cheio) e faz a plataforma abrir mão da comissão sobre a parte devolvida — mesmo critério do estorno integral (decisão de 23/08).
+
+Exige justificativa do admin, registra no `adminLog` e recusa valor igual ou maior que o total (isso é cancelamento, não divisão). Novo estado `RESOLVED_PARTIAL`.
+
+**As Políticas 3.3 não precisam mais mudar neste ponto** — elas já descreviam o que o sistema agora faz.
 
 ---
 
@@ -176,6 +190,16 @@ A ShareO pode encerrar unilateralmente uma mediação sem decidir o mérito. Iss
 
 **Recomendação: A**, aproveitando que a justificativa obrigatória já existe. A B só se você achar que a redação não basta.
 
+### Posição de Roberto (01/09/2026) — de acordo com a redação, validação jurídica pendente
+
+A redação proposta foi aprovada como está, para acréscimo ao final da seção 3.3 das Políticas de Uso:
+
+> O ShareO poderá encerrar a análise sem alteração financeira quando as partes compuserem-se diretamente, quando a parte que abriu a disputa desistir, ou quando não houver elementos suficientes para decidir o mérito. Nessa hipótese, a locação segue seu curso normal, sem reembolso ou retenção adicional, e o encerramento é registrado com a respectiva justificativa.
+
+A versão restrita (só com desistência ou concordância das duas partes) foi descartada.
+
+⏳ **Publicação pendente:** alterar `app/politicas/page.tsx` continua no perímetro do D4.
+
 ---
 
 ## Resumo
@@ -186,7 +210,7 @@ A ShareO pode encerrar unilateralmente uma mediação sem decidir o mérito. Iss
 | 2 | Reembolso parcial prometido, sistema é tudo-ou-nada | Vocês dois | **Sim** — está nas Políticas |
 | 3 | Botão de atendimento emergencial inexistente | Roberto | Não, mas é rápido |
 | 4 | Desistir da própria reclamação (novo) | Roberto | Não |
-| 5 | Encerrar análise sem decidir (novo) | **Raimundo** | Não, mas é poder contratual |
+| 5 | Encerrar análise sem decidir (novo) | **Raimundo** | Redação aprovada por Roberto — falta validar e publicar |
 
 **Nada aqui bloqueia o trabalho em andamento.** Os itens 1 e 2 estão em documentos que vinculam e precisam estar resolvidos antes do go-live — pela correção do texto ou pela construção da funcionalidade, tanto faz para o risco, muda só o esforço.
 

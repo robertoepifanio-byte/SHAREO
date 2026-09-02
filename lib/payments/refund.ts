@@ -46,9 +46,14 @@ export async function getChargeFeeCents(paymentIntentId: string): Promise<number
  * Emite o estorno ao cartão do locatário e registra em PlatformTransaction
  * para auditoria — devolve o Refund criado.
  *
- * `idempotencyKey` por `bookingId`: se a rota de cancelamento reprocessar por
- * timeout de rede DEPOIS do Refund já ter sido criado na Stripe, a segunda
- * chamada devolve o Refund original em vez de estornar duas vezes.
+ * `idempotencyKey` por `bookingId` + `motivo`: se a rota reprocessar por timeout
+ * de rede DEPOIS do Refund já ter sido criado na Stripe, a segunda chamada
+ * devolve o Refund original em vez de estornar duas vezes.
+ *
+ * 🪤 O `motivo` entra na chave de propósito. Com a chave só por `bookingId`,
+ * uma reserva estornada parcialmente numa disputa NUNCA mais poderia receber
+ * outro estorno — a Stripe devolveria o Refund antigo, no valor antigo, e o
+ * segundo estorno sumiria em silêncio parecendo sucesso.
  *
  * NÃO engolir o erro do lado de fora: se a Stripe recusar, quem chama decide
  * (hoje: loga e segue — o cancelamento já foi gravado, e o valor a devolver
@@ -58,16 +63,19 @@ export async function emitCancellationRefund({
   bookingId,
   paymentIntentId,
   amount,
+  motivo = "cancellation",
 }: {
   bookingId:       string
   paymentIntentId: string
   amount:          number
+  /** Origem do estorno — separa a chave de idempotência e o registro contábil. */
+  motivo?:         "cancellation" | "dispute-partial"
 }) {
   const stripe = getStripe()
 
   const refund = await stripe.refunds.create(
     { payment_intent: paymentIntentId, amount },
-    { idempotencyKey: `cancellation-refund-${bookingId}` },
+    { idempotencyKey: `${motivo}-refund-${bookingId}` },
   )
 
   await prisma.platformTransaction.create({
@@ -75,7 +83,9 @@ export async function emitCancellationRefund({
       bookingId,
       type:        "REFUND",
       amount,
-      description: "Estorno automático por cancelamento",
+      description: motivo === "dispute-partial"
+        ? "Estorno parcial por decisão de disputa"
+        : "Estorno automático por cancelamento",
       metadata:    { stripeRefundId: refund.id },
     },
   })
