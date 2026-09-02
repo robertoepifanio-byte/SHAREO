@@ -59,6 +59,9 @@ e2e-plan-report.json
 e2e-auth-plan-report.json
 e2e-share-plan-report.json
 e2e-suite-report.json
+# Resultados por plano da suite E2E — gravados em disco porque o worker
+# reinicia depois de uma falha e leva o acumulador em memoria junto.
+.e2e-planos/
 e2e-a11y-report.json
 e2e-crossbrowser-report.json
 e2e-performance-report.json

@@ -54,8 +54,49 @@ class SkipStep extends Error {
 }
 
 // ---------------------------------------------------------------------------
-// Estado de suíte — compartilhado entre describe blocks (mesmo worker)
+// Estado de suíte
 // ---------------------------------------------------------------------------
+//
+// 🪤 O acumulador em memória NÃO sobrevive a uma falha. O Playwright
+// REINICIA o worker depois de um teste falhar, e `suitePlanResults` é estado de
+// módulo — zera junto. O efeito, verificado no relatório de 02/09/2026: o
+// Plano 1 falhou, sumiu do JSON, e o arquivo declarou `verdict: OK` com
+// `total: 3, failed: 0`. Na prática, o relatório só conseguia conter planos
+// que PASSARAM — exatamente o oposto do que um relatório serve para mostrar.
+//
+// Por isso cada plano também grava seu resultado em disco assim que termina:
+// disco atravessa o reinício do worker, memória não.
+
+const PLANOS_ESPERADOS = [
+  { plan: 1, name: 'Autenticação' },
+  { plan: 2, name: 'Compartilhamento' },
+  { plan: 3, name: 'Administração' },
+  { plan: 4, name: 'Geral' },
+] as const
+
+const PLANOS_DIR = path.resolve('.e2e-planos')
+
+function gravarPlanoEmDisco(resumo: PlanSummary) {
+  try {
+    fs.mkdirSync(PLANOS_DIR, { recursive: true })
+    // Um arquivo por plano: a retentativa sobrescreve o resultado anterior,
+    // que é o desejado — vale o último desfecho.
+    fs.writeFileSync(path.join(PLANOS_DIR, `plano-${resumo.plan}.json`), JSON.stringify(resumo))
+  } catch (e) {
+    console.error('[e2e] falha ao gravar resultado do plano:', e instanceof Error ? e.message : e)
+  }
+}
+
+function lerPlanosDoDisco(): PlanSummary[] {
+  try {
+    return fs.readdirSync(PLANOS_DIR)
+      .filter((f) => f.endsWith('.json'))
+      .map((f) => JSON.parse(fs.readFileSync(path.join(PLANOS_DIR, f), 'utf8')) as PlanSummary)
+      .sort((a, b) => a.plan - b.plan)
+  } catch {
+    return []
+  }
+}
 
 let   suiteShouldAbort = false
 const suitePlanResults: PlanSummary[] = []
@@ -173,7 +214,9 @@ function pushPlanResult(
 ) {
   const failed  = results.filter((r) => r.status === 'failed').length
   const verdict: PlanVerdict = abortError ? 'ABORTADO' : failed > 0 ? 'PARCIAL' : 'OK'
-  suitePlanResults.push({ plan: planNum, name, priority, onFail, verdict, steps: results, totalMs })
+  const resumo: PlanSummary = { plan: planNum, name, priority, onFail, verdict, steps: results, totalMs }
+  suitePlanResults.push(resumo)
+  gravarPlanoEmDisco(resumo)
   return verdict
 }
 
@@ -218,10 +261,30 @@ test.describe.serial('Plano 1 — Autenticação', () => {
         await expect(page.getByRole('heading', { name: /recuperar senha/i })).toBeVisible()
         await page.getByLabel(/e-?mail/i).fill(user.email)
         // aguarda fetch completar antes de checar o estado de sucesso
-        await Promise.all([
+        const [resposta] = await Promise.all([
           page.waitForResponse((r) => r.url().includes('/api/auth/forgot-password'), { timeout: 15_000 }),
           page.getByRole('button', { name: /enviar link/i }).click(),
         ])
+
+        // 🪤 A rota SEMPRE responde 200 — falha de e-mail e erro interno sao
+        // engolidos de proposito, para nao vazar se o e-mail existe. Sobra UMA
+        // causa possivel de nao-200: 429, rate limit (3/min por IP).
+        //
+        // Cinco specs batem neste endpoint, todos do mesmo IP do runner. Existe
+        // bypass por header `x-e2e-token` (playwright.config.ts), que so vale se
+        // o E2E_SECRET do runner for IGUAL ao do servidor de staging — trocar um
+        // sem o outro derruba o bypass sem nenhum aviso.
+        //
+        // Sem esta checagem, o sintoma virava "elemento nao visivel", que nao
+        // aponta para lugar nenhum. Foi o que aconteceu em 01 e 02/09.
+        expect(
+          resposta.status(),
+          resposta.status() === 429
+            ? 'Rate limit (429) em /api/auth/forgot-password: o bypass de E2E nao foi aplicado. '
+              + 'Conferir se E2E_SECRET do runner bate com o do staging (trocar exige redeploy na Vercel).'
+            : `POST /api/auth/forgot-password respondeu ${resposta.status()}`,
+        ).toBe(200)
+
         await expect(page.getByRole('heading', { name: /verifique seu e-?mail/i })).toBeVisible({ timeout: 15_000 })
         await expect(page.getByText(user.email)).toBeVisible({ timeout: 5_000 })
       })
@@ -496,13 +559,32 @@ test.describe.serial('Plano 4 — Geral', () => {
 
 test.describe('Suite — Relatório Consolidado', () => {
   test('gerar relatório consolidado da suíte E2E', () => {
-    const totalMs      = Date.now() - SUITE_START
-    const plansOk      = suitePlanResults.filter((p) => p.verdict === 'OK').length
-    const plansFailed  = suitePlanResults.filter((p) => p.verdict !== 'OK' && p.verdict !== 'SKIPPED').length
-    const plansSkipped = suitePlanResults.filter((p) => p.verdict === 'SKIPPED').length
-    const allSteps     = suitePlanResults.flatMap((p) => p.steps)
-    const suiteVerdict: PlanVerdict =
-      suiteShouldAbort ? 'ABORTADO' : plansFailed > 0 ? 'PARCIAL' : 'OK'
+    const totalMs = Date.now() - SUITE_START
+
+    // Disco primeiro: sobrevive ao reinício do worker que uma falha provoca.
+    // A memória entra só como rede de segurança para planos que rodaram neste
+    // mesmo processo e ainda não chegaram ao disco.
+    const doDisco   = lerPlanosDoDisco()
+    const porNumero = new Map<number, PlanSummary>()
+    for (const p of [...suitePlanResults, ...doDisco]) porNumero.set(p.plan, p)
+    const planos = [...porNumero.values()].sort((a, b) => a.plan - b.plan)
+
+    // 🪤 Plano que não reportou é AUSÊNCIA DE SINAL, não sucesso. Sem esta
+    // checagem o relatório de 02/09 declarou `verdict: OK` com `total: 3` —
+    // o Plano 1 tinha falhado e sumido, e nada no arquivo denunciava a falta.
+    const faltando = PLANOS_ESPERADOS
+      .filter((esperado) => !porNumero.has(esperado.plan))
+      .map((esperado) => `Plano ${esperado.plan} (${esperado.name})`)
+
+    const plansOk      = planos.filter((p) => p.verdict === 'OK').length
+    const plansFailed  = planos.filter((p) => p.verdict !== 'OK' && p.verdict !== 'SKIPPED').length
+    const plansSkipped = planos.filter((p) => p.verdict === 'SKIPPED').length
+    const allSteps     = planos.flatMap((p) => p.steps)
+    const suiteVerdict: PlanVerdict | 'INCOMPLETO' =
+      suiteShouldAbort            ? 'ABORTADO'
+      : faltando.length > 0       ? 'INCOMPLETO'
+      : plansFailed > 0           ? 'PARCIAL'
+      :                             'OK'
 
     const report = {
       meta: {
@@ -514,7 +596,10 @@ test.describe('Suite — Relatório Consolidado', () => {
         verdict:     suiteVerdict,
       },
       summary: {
-        plans: { ok: plansOk, failed: plansFailed, skipped: plansSkipped, total: suitePlanResults.length },
+        plans: {
+          ok: plansOk, failed: plansFailed, skipped: plansSkipped,
+          total: planos.length, esperados: PLANOS_ESPERADOS.length, faltando,
+        },
         steps: {
           passed:  allSteps.filter((s) => s.status === 'passed').length,
           failed:  allSteps.filter((s) => s.status === 'failed').length,
@@ -522,13 +607,13 @@ test.describe('Suite — Relatório Consolidado', () => {
           total:   allSteps.length,
         },
       },
-      plans: suitePlanResults,
+      plans: planos,
     }
 
     const reportPath = path.resolve('e2e-suite-report.json')
     fs.writeFileSync(reportPath, JSON.stringify(report, null, 2))
 
-    const planLines = suitePlanResults.map((p) => {
+    const planLines = planos.map((p) => {
       const icon = p.verdict === 'OK' ? '✓' : p.verdict === 'SKIPPED' ? '⊘' : '✗'
       return `  ${icon} Plano ${p.plan} [${p.priority.toUpperCase()} / ${p.onFail}] "${p.name}" — ${p.verdict} (${p.totalMs}ms, ${p.steps.length} steps)`
     })
@@ -542,7 +627,16 @@ test.describe('Suite — Relatório Consolidado', () => {
         planLines.join('\n'),
     })
 
-    expect(suiteVerdict, `Suíte terminou com verdict ${suiteVerdict}`).not.toBe('ABORTADO')
+    // 🪤 Antes: `.not.toBe('ABORTADO')`. Um verdict PARCIAL passava aqui, e o
+    // relatório — o artefato que as pessoas leem — podia afirmar sucesso com
+    // planos falhando. Agora só OK passa, e a mensagem diz o que faltou.
+    expect(
+      suiteVerdict,
+      faltando.length > 0
+        ? `Relatório INCOMPLETO — nao reportaram: ${faltando.join(', ')}. ` +
+          'Plano ausente e falha nao registrada, nao sucesso.'
+        : `Suíte terminou com verdict ${suiteVerdict}`,
+    ).toBe('OK')
   })
 })
 
