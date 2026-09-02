@@ -10,6 +10,11 @@ describe("codigoDeFalhaStorage", () => {
     ["Bucket not found",                                 "BUCKET_NOT_FOUND"],
     ["Invalid API key",                                  "BAD_SERVICE_ROLE_KEY"],
     ["invalid JWT: unable to parse or verify signature", "BAD_SERVICE_ROLE_KEY"],
+    // 🪤 Mensagem LITERAL que a producao devolveu em 01/09/2026. Caia no
+    // fallback DESCONHECIDO porque o regex tinha `jwt` e nao `jws` — uma letra.
+    // O sintoma real: chave no formato novo (`sb_secret_...`) onde o codigo
+    // espera a legacy (`eyJ...`).
+    ["Invalid Compact JWS",                              "BAD_SERVICE_ROLE_KEY"],
     ["fetch failed",                                     "UNREACHABLE"],
     ["getaddrinfo ENOTFOUND abc.supabase.co",            "UNREACHABLE"],
   ])("classifica %s", (msg, esperado) => {
