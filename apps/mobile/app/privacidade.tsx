@@ -233,7 +233,7 @@ export default function PrivacidadeScreen() {
         <View style={[s.section, { borderColor: tokens.border }]}>
           <Text style={[s.sectionTitle, { color: tokens.navy }]}>8. Retenção de Dados</Text>
           <Text style={[s.paragraph, { color: tokens.muted }]}>
-            Mantemos seus dados enquanto sua conta estiver ativa ou pelo período necessário para cumprir obrigações legais. Após a exclusão da conta, os dados são anonimizados ou apagados em até 90 dias, exceto onde a lei exige retenção por período maior.
+            Mantemos seus dados enquanto sua conta estiver ativa ou pelo período necessário para cumprir obrigações legais. A exclusão da conta é processada imediatamente: seus dados de identificação, localização, documentos e textos escritos por você são anonimizados ou apagados no momento da solicitação. Registros de transações concluídas são preservados de forma anonimizada pelo prazo exigido pela legislação fiscal (5 anos), sem identificar você. Cópias de segurança operacionais, por sua natureza, são substituídas pelo ciclo de rotação do provedor de infraestrutura.
           </Text>
         </View>
 

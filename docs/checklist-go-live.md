@@ -71,6 +71,10 @@
 - ⬜ **Replicar o fix da Data API** do Supabase em produção (remover `public` dos *Exposed schemas* — senão a `anon key` lê/edita tudo).
 - ⬜ Seed mínimo de produção (categorias + admin SUPERADMIN + `PlatformConfig`).
 - ⬜ **Backups/PITR** + política de retenção + runbook de restauração.
+  - 🔗 Bloqueia fechar o texto de retenção na Política de Privacidade: a frase
+    sobre cópias de segurança ficou SEM prazo (aprovado por Raimundo em 02/09)
+    porque a rotação ainda não está configurada. Definido o prazo aqui, o número
+    entra na frase — ver `docs/juridico/redacao-lgpd-retencao-2026-09-02.md`.
 
 ---
 
