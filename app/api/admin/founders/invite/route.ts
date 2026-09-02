@@ -36,8 +36,10 @@ const Schema = z.object({
 
 export async function POST(req: NextRequest) {
   const session = await auth()
+  // 403, não 401: quem chegou aqui autenticado e sem permissão não resolve
+  // nada fazendo login de novo. Mesma regra de lib/auth/require-admin.ts.
   if (!hasAdminRole(session, "ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL")) {
-    return NextResponse.json({ error: { code: "UNAUTHORIZED", message: "Acesso restrito." } }, { status: 401 })
+    return NextResponse.json({ error: { code: "FORBIDDEN", message: "Acesso restrito." } }, { status: 403 })
   }
 
   const body   = await req.json().catch(() => ({}))

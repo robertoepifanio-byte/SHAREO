@@ -21,31 +21,11 @@
  * reprova se uma rota admin nova nascer com o guard grosso, que é exatamente
  * como as duas anteriores passaram.
  */
-import fs   from "node:fs"
-import path from "node:path"
+import { lerRotas, dirDaApp } from "@/test-utils/rotas"
 
-const DIR = path.join(process.cwd(), "app", "api", "admin")
-
-function rotasAdmin(): { nome: string; fonte: string }[] {
-  const achadas: { nome: string; fonte: string }[] = []
-  const andar = (dir: string) => {
-    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-      const cheio = path.join(dir, e.name)
-      if (e.isDirectory()) andar(cheio)
-      else if (e.name === "route.ts") {
-        achadas.push({
-          nome:  path.relative(DIR, cheio).replace(/\\/g, "/"),
-          fonte: fs.readFileSync(cheio, "utf8"),
-        })
-      }
-    }
-  }
-  andar(DIR)
-  return achadas
-}
+const rotas = lerRotas(dirDaApp("app", "api", "admin"))
 
 describe("guard das rotas de admin", () => {
-  const rotas = rotasAdmin()
 
   it("existem rotas admin para verificar", () => {
     // Sem isto, um erro de caminho faria o teste passar varrendo nada.
@@ -57,14 +37,14 @@ describe("guard das rotas de admin", () => {
   // resposta pronta e `hasAdminRole` e para quem precisa da sessao antes do
   // guard. A lista existe para nao reprovar rota que ja esta correta.
   it.each(rotas)("$nome checa o papel do admin", ({ fonte }) => {
-    expect(fonte).toMatch(/hasAdminRole|requireAdminRole|requireAdminApi/)
+    expect(fonte).toMatch(/(?:hasAdminRole|requireAdminRole|requireAdminApi)\s*\(/)
   })
 
   it("nenhuma rota para no `role !== \"ADMIN\"` sem checar o papel", () => {
     const grosso = /session\.user\.role\s*!==\s*["']ADMIN["']/
     const infratoras = rotas
       .filter((r) => grosso.test(r.fonte))
-      .filter((r) => !/hasAdminRole|requireAdminRole|requireAdminApi/.test(r.fonte))
+      .filter((r) => !/(?:hasAdminRole|requireAdminRole|requireAdminApi)\s*\(/.test(r.fonte))
       .map((r) => r.nome)
     expect(infratoras).toEqual([])
   })

@@ -100,7 +100,7 @@ describe("precisaCobrar", () => {
 
 describe("emitirCobrancaTaxaAtraso", () => {
   it("primeira emissão grava valor, sessão e validade", async () => {
-    const r = await emitirCobrancaTaxaAtraso(makeBooking(), "Furadeira", 750, 1, AGORA)
+    const r = await emitirCobrancaTaxaAtraso(makeBooking(), "Furadeira", 750, 1, AGORA, AGORA)
 
     expect(r).toMatchObject({ emitida: true, reemissao: false, valor: 750 })
     const { data } = mockBookingUpdate.mock.calls[0][0] as { data: Record<string, unknown> }
@@ -127,7 +127,7 @@ describe("emitirCobrancaTaxaAtraso", () => {
     const b = makeBooking({ lateFeeAmount: 750, lateFeeSessionExpiresAt: ONTEM })
 
     // 7 dias de atraso: a dívida cresceu desde a primeira cobrança.
-    const r = await emitirCobrancaTaxaAtraso(b, "Furadeira", 5250, 7, AGORA)
+    const r = await emitirCobrancaTaxaAtraso(b, "Furadeira", 5250, 7, AGORA, AGORA)
 
     expect(r).toMatchObject({ emitida: true, reemissao: true, valor: 5250, anterior: 750 })
     const args = mockSessionCreate.mock.calls[0][0] as { line_items: { price_data: { unit_amount: number } }[] }
@@ -141,7 +141,7 @@ describe("emitirCobrancaTaxaAtraso", () => {
       lateFeeAmount: 750, lateFeeSessionId: "cs_antigo", lateFeeSessionExpiresAt: AMANHA,
     })
 
-    await emitirCobrancaTaxaAtraso(b, "Furadeira", 1500, 2, AGORA)
+    await emitirCobrancaTaxaAtraso(b, "Furadeira", 1500, 2, AGORA, AGORA)
 
     expect(mockSessionExpire).toHaveBeenCalledWith("cs_antigo")
     // ...e a expiração vem ANTES da criação da nova.
@@ -158,7 +158,7 @@ describe("emitirCobrancaTaxaAtraso", () => {
 
     // Ficar sem cobrança nenhuma é pior que ter duas por algumas horas —
     // a antiga morre sozinha em 24h de qualquer forma.
-    const r = await emitirCobrancaTaxaAtraso(b, "Furadeira", 1500, 2, AGORA)
+    const r = await emitirCobrancaTaxaAtraso(b, "Furadeira", 1500, 2, AGORA, AGORA)
 
     expect(r).toMatchObject({ emitida: true, valor: 1500 })
     erro.mockRestore()
@@ -167,7 +167,7 @@ describe("emitirCobrancaTaxaAtraso", () => {
   it("não emite se já quitada", async () => {
     const b = makeBooking({ lateFeeAmount: 750, lateFeePaymentIntentId: "pi_multa" })
 
-    const r = await emitirCobrancaTaxaAtraso(b, "Furadeira", 750, 1, AGORA)
+    const r = await emitirCobrancaTaxaAtraso(b, "Furadeira", 750, 1, AGORA, AGORA)
 
     expect(r).toEqual({ emitida: false, motivo: "JA_QUITADA" })
     expect(mockSessionCreate).not.toHaveBeenCalled()
@@ -176,7 +176,7 @@ describe("emitirCobrancaTaxaAtraso", () => {
   it("não emite quando a cobrança viva já está pelo valor certo", async () => {
     const b = makeBooking({ lateFeeAmount: 750, lateFeeSessionExpiresAt: new Date(Date.now() + 3600_000) })
 
-    const r = await emitirCobrancaTaxaAtraso(b, "Furadeira", 750, 1, AGORA)
+    const r = await emitirCobrancaTaxaAtraso(b, "Furadeira", 750, 1, AGORA, AGORA)
 
     expect(r).toEqual({ emitida: false, motivo: "COBRANCA_ATUAL_VIVA" })
     expect(mockSessionCreate).not.toHaveBeenCalled()
@@ -184,10 +184,12 @@ describe("emitirCobrancaTaxaAtraso", () => {
   })
 
   it("a sessão expira em 24h — teto da Stripe", async () => {
-    await emitirCobrancaTaxaAtraso(makeBooking(), "Furadeira", 750, 1, AGORA)
+    await emitirCobrancaTaxaAtraso(makeBooking(), "Furadeira", 750, 1, AGORA, AGORA)
 
     const args = mockSessionCreate.mock.calls[0][0] as { expires_at: number }
-    const horas = (args.expires_at * 1000 - Date.now()) / 3_600_000
+    // Contra AGORA, o relógio injetado — não contra Date.now(), que faria a
+    // asserção depender de quando a suíte roda.
+    const horas = (args.expires_at * 1000 - AGORA.getTime()) / 3_600_000
     expect(horas).toBeGreaterThan(23.9)
     expect(horas).toBeLessThanOrEqual(24)
   })
@@ -239,7 +241,7 @@ describe("teto de 30 dias do cálculo automático", () => {
     // O recálculo do ADMIN passa por aqui e IGNORA o teto de propósito: é o
     // único caminho que pode mover o valor depois do 30º dia.
     const b = makeBooking({ lateFeeAmount: 4500, lateFeeSessionExpiresAt: ONTEM })
-    const r = await emitirCobrancaTaxaAtraso(b, "Furadeira", 90000, 120, AGORA)
+    const r = await emitirCobrancaTaxaAtraso(b, "Furadeira", 90000, 120, AGORA, AGORA)
     expect(r).toMatchObject({ emitida: true, valor: 90000 })
   })
 })
