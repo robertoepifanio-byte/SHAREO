@@ -32,8 +32,15 @@ import { assertCronAuth } from "@/lib/auth/cron-guard"
 export const runtime     = "nodejs"
 export const maxDuration = 60
 
-/** Mesmo prazo do scrub de exclusão e das outras rotinas (CTN art. 173). */
-export const RETENTION_YEARS = 5
+/**
+ * Mesmo prazo do scrub de exclusão e das outras rotinas (CTN art. 173).
+ *
+ * 🪤 SEM `export`: arquivo de rota do Next aceita só um conjunto fechado de
+ * exports (handlers, runtime, maxDuration…). Um `export const` a mais reprova
+ * com "does not match the required types of a Next.js Route" — e `tsc --noEmit`
+ * NÃO pega, porque a checagem é do next build.
+ */
+const RETENTION_YEARS = 5
 
 export async function GET(req: NextRequest) {
   const denied = assertCronAuth(req)
