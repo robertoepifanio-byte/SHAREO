@@ -121,6 +121,16 @@ jobs:
       - run: pnpm prisma migrate deploy
       - run: pnpm test --passWithNoTests --ci
 
+      # 🕓 Mesma suite, relogio adiantado. Em 02/09/2026 um teste da taxa de
+      # atraso ficou vermelho SOZINHO as 12:00 UTC: a funcao lia new Date() por
+      # dentro e o teste tinha datas fixas. O CI so descobriu porque alguem
+      # rodou a suite naquele dia — sem este passo, a proxima bomba dessas
+      # explode num PR que nao tem nada a ver com ela.
+      # Custo: ~10s. Nao bloqueia o merge; o objetivo e avisar cedo.
+      - name: Testes com o relogio adiantado (caca-bomba-relogio)
+        continue-on-error: true
+        run: pnpm test:futuro --passWithNoTests --ci
+
   test-mobile:
     name: Mobile Tests (jest-expo)
     runs-on: ubuntu-latest
