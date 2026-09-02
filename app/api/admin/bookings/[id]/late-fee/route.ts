@@ -11,7 +11,7 @@
 import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
 import { z } from "zod"
-import { auth } from "@/lib/auth"
+import { requireAdminApi } from "@/lib/auth/require-admin"
 import { prisma } from "@/lib/prisma"
 import { getLateFeeMultiplier, calcLateFee } from "@/lib/platform-config"
 import { diasDeAtraso, emitirCobrancaTaxaAtraso, taxaDeAtrasoQuitada, houveAtraso } from "@/lib/lateFee"
@@ -26,13 +26,12 @@ const PatchSchema = z.object({
 
 export async function PATCH(req: NextRequest, { params }: Params) {
   try {
-    const session = await auth()
-    if (!session || session.user.role !== "ADMIN") {
-      return NextResponse.json(
-        { error: { code: "FORBIDDEN", message: "Acesso restrito a administradores." } },
-        { status: 403 },
-      )
-    }
+    // Recalcular multa e reemitir cobranca e ato FINANCEIRO (matriz de papeis
+    // no CLAUDE.md). Antes bastava `role === "ADMIN"`, o que admitia tambem o
+    // OPERACIONAL — e as contas admin.e2e que a suite cria nascem justamente
+    // com esse papel.
+    const { session, error } = await requireAdminApi("ADMIN_SUPERADMIN", "ADMIN_FINANCEIRO")
+    if (error) return error
 
     const { id } = await params
     const parsed = PatchSchema.safeParse(await req.json())

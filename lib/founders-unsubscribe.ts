@@ -12,6 +12,7 @@
  * baixo impacto e reversível reinscrevendo-se), nunca ler dado.
  */
 import crypto from "crypto"
+import { timingSafeStringEqual } from "@/lib/timingSafe"
 
 const PURPOSE = "founder-unsubscribe-v1"
 
@@ -38,10 +39,7 @@ export function verifyUnsubscribeToken(email: string, token: string): boolean {
   } catch {
     return false
   }
-  const a = Buffer.from(expected, "utf8")
-  const b = Buffer.from(token, "utf8")
-  if (a.length !== b.length) return false
-  return crypto.timingSafeEqual(a, b)
+  return timingSafeStringEqual(expected, token)
 }
 
 /** URL absoluta do link que vai no rodapé dos e-mails. */

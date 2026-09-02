@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { isStripeConnectActive, createOnboardingLink, stripeConnectFinalRedirect } from "@/lib/stripe-connect"
+import { lerCallbackDoConnect } from "@/lib/stripe-connect-callback-guard"
 
 /**
  * O link de onboarding do Stripe (`account_onboarding`) expira depois de um
@@ -10,7 +11,8 @@ import { isStripeConnectActive, createOnboardingLink, stripeConnectFinalRedirect
  *
  * SEM sessão, mesmo motivo de app/api/stripe/connect/return/route.ts: a
  * conta é identificada pelo `stripeAccountId` que viaja na URL, não por
- * cookie/Bearer.
+ * cookie/Bearer. Para que isso não vire uma capability URL, o id vem ASSINADO
+ * (`sig`) — só uma URL emitida por nós é aceita.
  *
  * Gating: flag stripeConnectEnabled + STRIPE_SECRET_KEY. Sem isso, 404.
  */
@@ -22,13 +24,9 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  const { searchParams } = new URL(req.url)
-  const accountId = searchParams.get("account")
-  const client    = searchParams.get("client")
-
-  if (!accountId || !accountId.startsWith("acct_")) {
-    return NextResponse.redirect(stripeConnectFinalRedirect(client, "sem_conta"))
-  }
+  // Sem sessao aqui: a assinatura da URL e a autenticacao.
+  const { accountId, client, error } = lerCallbackDoConnect(req, stripeConnectFinalRedirect)
+  if (error) return error
 
   try {
     const url = await createOnboardingLink(accountId, client === "mobile" ? "mobile" : "web")

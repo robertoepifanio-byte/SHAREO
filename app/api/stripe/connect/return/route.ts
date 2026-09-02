@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { isStripeConnectActive, fetchAndSyncConnectAccount, stripeConnectFinalRedirect } from "@/lib/stripe-connect"
+import { lerCallbackDoConnect } from "@/lib/stripe-connect-callback-guard"
 
 /**
  * Retorno do onboarding Express (Stripe Connect — ADR-028). A Stripe manda o
@@ -14,6 +15,8 @@ import { isStripeConnectActive, fetchAndSyncConnectAccount, stripeConnectFinalRe
  * do app — não dá pra usar auth()/resolveUserId aqui. A conta é identificada
  * só pelo `stripeAccountId` que viaja na própria URL (ver createOnboardingLink
  * em lib/stripe-connect.ts) — mesmo padrão que o webhook account.updated usa.
+ * O id vem ASSINADO (`sig`): sem sessão para autenticar, a assinatura é o que
+ * impede um terceiro de escolher a conta alheia.
  *
  * Gating: flag stripeConnectEnabled + STRIPE_SECRET_KEY. Sem isso, 404.
  */
@@ -25,13 +28,9 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  const { searchParams } = new URL(req.url)
-  const accountId = searchParams.get("account")
-  const client    = searchParams.get("client")
-
-  if (!accountId || !accountId.startsWith("acct_")) {
-    return NextResponse.redirect(stripeConnectFinalRedirect(client, "sem_conta"))
-  }
+  // Sem sessao aqui: a assinatura da URL e a autenticacao.
+  const { accountId, client, error } = lerCallbackDoConnect(req, stripeConnectFinalRedirect)
+  if (error) return error
 
   try {
     const stripeAccount = await fetchAndSyncConnectAccount(accountId)
