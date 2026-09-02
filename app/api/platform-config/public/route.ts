@@ -6,6 +6,7 @@ import {
   getAutoCancelConfig,
   getRentalContractConfig,
   CHECKOUT_MAX_CENTS,
+  MAX_ITEM_VALUE_CENTS,
 } from "@/lib/platform-config"
 
 /**
@@ -48,6 +49,10 @@ export async function GET() {
         feeRateBps,
         payoutWindowDays,
         checkoutMaxCents: CHECKOUT_MAX_CENTS,
+        // Teto do valor do bem anunciado. Estava cravado como "R$ 1.000" no
+        // texto do app enquanto o site interpolava a constante — a mesma
+        // deriva que este endpoint existe para acabar.
+        maxItemValueCents: MAX_ITEM_VALUE_CENTS,
         lateFeeMultiplier,
         ownerHours: autoCancel.ownerHours,
         // O app precisa saber para não exibir "assinatura pendente" de um

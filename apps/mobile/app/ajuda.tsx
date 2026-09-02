@@ -44,6 +44,7 @@ export interface PublicConfig {
   feeRateBps:        number
   payoutWindowDays:  number
   checkoutMaxCents:  number
+  maxItemValueCents: number
   ownerHours:        number
   lateFeeMultiplier: number
 }
@@ -53,6 +54,7 @@ export const DEFAULT_CONFIG: PublicConfig = {
   feeRateBps:        1500,
   payoutWindowDays:  3,
   checkoutMaxCents:  50_000,
+  maxItemValueCents: 100_000,
   ownerHours:        48,
   lateFeeMultiplier: 1.5,
 }
@@ -68,6 +70,7 @@ export const DEFAULT_CONFIG: PublicConfig = {
 interface HelpVars extends PublicConfig {
   feeLabel:      string // "15%"
   maxLabel:      string // "R$ 500"
+  bemMaxLabel:   string // "R$ 1.000"
   payoutLabel:   string // "3 dias"
   lateMultLabel: string // "1,5×"
 }
@@ -78,6 +81,8 @@ export function toHelpVars(cfg: PublicConfig): HelpVars {
     ...cfg,
     feeLabel:      `${pct % 1 === 0 ? pct.toFixed(0) : String(pct)}%`,
     maxLabel:      `R$ ${Math.round(cfg.checkoutMaxCents / 100)}`,
+    // Com separador de milhar, como o formatPriceShort do site: 100_000 → "R$ 1.000".
+    bemMaxLabel:   `R$ ${(cfg.maxItemValueCents / 100).toLocaleString("pt-BR")}`,
     payoutLabel:   cfg.payoutWindowDays === 1 ? "1 dia" : `${cfg.payoutWindowDays} dias`,
     lateMultLabel: `${String(cfg.lateFeeMultiplier).replace(".", ",")}×`,
   }
@@ -139,7 +144,7 @@ export function buildLocatarioSteps(v: HelpVars): Step[] { return [
   },
   {
     step: 8, icon: "✅", title: "Confirme a devolução",
-    desc: "Quando devolver o item, toque em 'Confirmar devolução'. Isso avisa o proprietário que o item foi entregue.",
+    desc: "Quando devolver o item, toque em 'Devolver'. Isso avisa o proprietário que o item foi entregue.",
     tip: "Confirme apenas quando o item já estiver nas mãos do proprietário.",
   },
 ] }
@@ -336,10 +341,12 @@ export function buildSections(v: HelpVars): Section[] { return [
       { q: "Como funciona a multa por atraso na devolução?",
         a: `Passado o prazo combinado, o app gera automaticamente uma cobrança de ${v.lateMultLabel} o preço diário do item por dia de atraso, enviada ao locatário por e-mail como link de pagamento. Exemplo: se o aluguel é R$ 50/dia e o atraso foi de 2 dias, a taxa é de ${brl(Math.round(5000 * v.lateFeeMultiplier * 2))}. Você recebe uma notificação de aviso 1 dia antes do prazo vencer. Para evitar a taxa, solicite uma extensão antes do prazo — e não depois.` },
       { q: "Existe limite no valor do bem anunciado?",
-        // ⚠️ O site é deliberadamente mais fraco aqui: o limite NÃO é validado em
-        // código (lib/validations/items.ts só exige estimatedRetailPrice >= 0).
-        // A versão anterior afirmava um bloqueio que não existe.
-        a: "Sim. Nesta primeira fase, a plataforma se destina a itens com valor estimado de até R$ 1.000. Esse limite existe para adequar o perfil de risco dos aluguéis enquanto a plataforma está em fase inicial, e anúncios acima dele podem ser removidos na moderação. Itens de maior valor estarão disponíveis em versões futuras." },
+        // O comentário anterior aqui dizia que o limite NÃO era validado em
+        // código, e por isso o texto do app era mais fraco que o do site. Isso
+        // deixou de ser verdade em 22/08/2026: lib/validations/items.ts:31 e
+        // app/api/items/[id]/route.ts:245 recusam acima do teto. O valor vem do
+        // /api/platform-config/public — cravá-lo foi o que criou a divergência.
+        a: `Sim. Nesta primeira fase, a plataforma se destina a itens com valor estimado de até ${v.bemMaxLabel}. O limite é verificado ao publicar o anúncio e existe para adequar o perfil de risco dos aluguéis enquanto a plataforma está em fase inicial. Anúncios anteriores acima dele podem ser removidos na moderação. Itens de maior valor estarão disponíveis em versões futuras.` },
       { q: "Existe taxa de cancelamento?",
         a: "O reembolso é sempre de 100% do valor pago, não importa a antecedência. A única exceção é quando é o próprio locatário quem cancela: nesse caso, é descontada a taxa que a Stripe já tinha cobrado na cobrança original — a ShareO não fica com nada disso, é repassado direto ao provedor de pagamento. Cancelamentos pelo proprietário não têm nenhum desconto, e quem cancela com frequência pode ter a conta suspensa temporariamente." },
       { q: "Recebo comprovante das transações?",
@@ -361,8 +368,12 @@ export function buildSections(v: HelpVars): Section[] { return [
         a: "Se houver dano comprovado, o proprietário abre uma disputa antes de confirmar o recebimento. O repasse fica suspenso automaticamente durante a análise — reservas em disputa não entram na fila. A equipe ShareO avalia as fotos de check-in e check-out e, em até 5 dias úteis, decide se o repasse é liberado, parcialmente retido ou cancelado conforme o prejuízo apurado." },
       { q: "O que acontece se meu item for extraviado?",
         a: "Em caso de furto ou extravio durante a locação, abra uma disputa na plataforma e registre um boletim de ocorrência (BO). A equipe ShareO analisa o caso e aciona os mecanismos de proteção disponíveis. Uma solução de proteção dedicada está em desenvolvimento — em breve disponível." },
+      { q: "Abri uma disputa e me entendi com a outra parte. Posso desistir?",
+        a: "Pode, enquanto a equipe ainda não tiver decidido — e só quem abriu a disputa pode desistir dela. Por enquanto isso é feito pelo site (shareo.com.br), na página da reserva: o aplicativo ainda não tem esse botão. A locação volta a seguir seu curso normal: ninguém é reembolsado e o repasse ao proprietário volta para a fila." },
+      { q: "Preciso falar com a outra parte antes de abrir uma disputa?",
+        a: "Não é obrigatório, mas a maioria dos problemas se resolve numa conversa — use o chat da reserva antes de abrir a reclamação. Se preferir seguir direto com a disputa, é só continuar." },
       { q: "Posso apelar de uma decisão de disputa?",
-        a: "Sim. Se você discordar da decisão, tem até 5 dias úteis para solicitar uma revisão. Envie novas evidências que não foram analisadas anteriormente e explique o motivo do recurso. A revisão é feita por um time diferente do que tomou a decisão original. Caso o problema persista, você pode acionar os canais de defesa do consumidor (Procon) ou o e-Consumidor." },
+        a: "Sim. Se você discordar da decisão, escreva para suporte@shareo.com.br em até 5 dias úteis contados da comunicação da decisão, explicando o motivo e anexando evidências que ainda não tenham sido analisadas. A equipe reavalia o caso quando há elemento novo. Caso o problema persista, você pode acionar os canais de defesa do consumidor (Procon) ou o e-Consumidor." },
     ],
   },
   {
@@ -371,13 +382,13 @@ export function buildSections(v: HelpVars): Section[] { return [
     icon: "🎧",
     faqs: [
       { q: "Quais são os canais de atendimento?",
-        a: "Você pode nos contatar por: Email (suporte@shareo.com.br) — respondemos em até 8 horas úteis (casos urgentes: até 4 horas úteis); Chat interno do app — disponível em reservas ativas; e, em casos urgentes, pelo botão 'Atendimento emergencial' dentro da reserva com disputa ativa. Nosso horário de atendimento é segunda a sexta, das 09h às 17h." },
+        a: "Você pode nos contatar por: Email (suporte@shareo.com.br) — respondemos em até 8 horas úteis (casos urgentes: até 4 horas úteis); e pelo chat interno, disponível nas reservas ativas. Nosso horário de atendimento é segunda a sexta, das 09h às 17h." },
       { q: "Qual é o prazo de resposta para cada tipo de solicitação?",
-        a: "Email: até 8 horas úteis (urgente: até 4 horas úteis). Disputas ativas: até 5 dias úteis para decisão. Revisão de disputa (recurso): até 5 dias úteis. Solicitações de exclusão de conta (LGPD): até 15 dias. Denúncias de usuário suspeito: até 24 horas. Os prazos indicados são metas de atendimento em condições normais de operação — segunda a sexta, 09h às 17h — e podem ser impactados em situações extraordinárias de volume ou força maior. Para reservas urgentes em andamento, use sempre o canal de atendimento emergencial dentro do app." },
+        a: "Email: até 8 horas úteis (urgente: até 4 horas úteis). Disputas ativas: até 5 dias úteis para decisão. Solicitações de exclusão de conta (LGPD): até 15 dias. Denúncias de usuário suspeito: até 24 horas. Os prazos indicados são metas de atendimento em condições normais de operação — segunda a sexta, 09h às 17h — e podem ser impactados em situações extraordinárias de volume ou força maior. Para reservas urgentes em andamento, use o chat da própria reserva." },
       { q: "Como reporto um usuário ou anúncio suspeito?",
         a: "Em qualquer anúncio ou perfil, toque nos três pontinhos (⋯) e selecione 'Reportar'. Descreva o problema com o máximo de detalhes e confirme. Nossa equipe analisa o reporte em até 24 horas e, se necessário, suspende o usuário preventivamente. Reportes são anônimos — o usuário reportado não sabe quem enviou." },
       { q: "Tenho um problema urgente com uma reserva em andamento. O que faço?",
-        a: "Acesse a página da reserva e toque em 'Precisa de ajuda?'. Isso abre um canal prioritário com nossa equipe. Para situações críticas — item não entregue no dia, proprietário sem contato, suspeita de golpe — use 'Solicitar intervenção ShareO'. Casos urgentes são tratados com meta de resposta de até 4 horas úteis (segunda a sexta, 09h–17h)." },
+        a: "Use o chat da própria reserva para falar com a outra parte — é o caminho mais rápido, e a maioria dos problemas se resolve ali. Se não resolver, ou em situações críticas (item não entregue no dia, sem contato com a outra parte, suspeita de golpe), escreva para suporte@shareo.com.br com o número da reserva: casos urgentes têm meta de resposta de até 4 horas úteis (segunda a sexta, 09h–17h). Havendo dano na devolução, o proprietário abre a disputa pelo próprio check-out do item; nos demais casos, a abertura é feita pelo site (shareo.com.br), na página da reserva." },
       { q: "O app tem notificações automáticas?",
         a: "Sim. Você recebe notificações para: nova solicitação de reserva recebida, confirmação ou recusa de reserva, mensagem no chat, pagamento recebido, aviso 24h antes do prazo de devolução, atraso registrado e resultado de disputa. Ative as notificações do app nas configurações do celular para não perder nenhum alerta." },
     ],

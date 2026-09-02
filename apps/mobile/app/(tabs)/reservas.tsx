@@ -26,6 +26,7 @@ type Tab = "borrower" | "owner"
 interface Booking {
   id:         string
   status:     string
+  paymentStatus: string
   startDate:  string
   endDate:    string
   totalDays:  number
@@ -193,7 +194,10 @@ export default function ReservasScreen() {
           if (isBorrower && b.status === "ACTIVE")    primaryLabel = "📦 Devolver"
           else if (isOwner && b.status === "PENDING") primaryLabel = "✅ Aprovar solicitação"
           else if (isOwner && b.status === "RETURNED") primaryLabel = "📦 Confirmar recebimento"
-          else if (b.status === "CONFIRMED")          primaryLabel = "💳 Ver pagamento"
+          else if (b.status === "CONFIRMED" && b.paymentStatus !== "PAID") primaryLabel = "💳 Ver pagamento"
+          // 🪤 Pago e confirmado, o verde continuava "Ver pagamento" e levava a
+          // uma tela sem acao. O que falta ao locatario e o codigo de retirada.
+          else if (b.status === "CONFIRMED" && isBorrower) primaryLabel = "🔑 Ver código de retirada"
           // CTA "Avaliar" — fonte: app/reservas/page.tsx linha 196
           const canReview = (b.status === "RETURNED" || b.status === "COMPLETED") && b._count.reviews === 0
           const extraItems = b._count.bookingItems - 1

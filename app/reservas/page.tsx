@@ -36,6 +36,9 @@ export default async function ReservasPage({ searchParams }: Props) {
     select: {
       id:         true,
       status:     true,
+      // Sem isto o CTA nao distingue pago de nao pago: `status` continua
+      // CONFIRMED depois do pagamento, ate a retirada (mark_active).
+      paymentStatus: true,
       disputeStatus: true,
       startDate:  true,
       endDate:    true,
@@ -189,8 +192,16 @@ export default async function ReservasPage({ searchParams }: Props) {
                     } else if (isOwner && b.status === "RETURNED") {
                       primaryLabel = "📦 Confirmar recebimento"
                       primaryStyle = "bg-brand text-white hover:opacity-90"
-                    } else if (b.status === "CONFIRMED") {
+                    } else if (b.status === "CONFIRMED" && b.paymentStatus !== "PAID") {
                       primaryLabel = "💳 Ver pagamento"
+                      primaryStyle = "bg-brand text-white hover:opacity-90"
+                    } else if (b.status === "CONFIRMED" && isBorrower) {
+                      // 🪤 Relato do Raimundo (02/09/2026): pago e confirmado, e o
+                      // botao verde continuava "Ver pagamento" — mandava o locatario
+                      // para uma tela sem nada a fazer. O que ele precisa agora e o
+                      // codigo de 6 digitos que o proprietario vai pedir na entrega
+                      // (pickupToken, exibido em /reservas/[id]).
+                      primaryLabel = "🔑 Ver código de retirada"
                       primaryStyle = "bg-brand text-white hover:opacity-90"
                     }
                     // CTA "Avaliar": aparece para RETURNED/COMPLETED sem avaliação do usuário

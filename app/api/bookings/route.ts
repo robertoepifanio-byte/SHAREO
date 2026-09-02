@@ -51,6 +51,10 @@ export async function GET(req: NextRequest) {
         select: {
           id:         true,
           status:     true,
+          // O app decide o CTA por isto: `status` segue CONFIRMED depois do
+          // pagamento, ate a retirada, e sem este campo o botao verde manda
+          // o locatario para um pagamento ja feito (relato do Raimundo, 02/09).
+          paymentStatus: true,
           disputeStatus: true,
           startDate:  true,
           endDate:    true,
