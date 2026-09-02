@@ -81,7 +81,15 @@ export function codigoDeFalhaStorage(e: unknown): StorageCode | `DESCONHECIDO: $
   if (/supabaseUrl is required/i.test(msg))                    return "NO_SUPABASE_URL"
   if (/supabaseKey is required/i.test(msg))                    return "NO_SERVICE_ROLE_KEY"
   if (/bucket not found/i.test(msg))                           return "BUCKET_NOT_FOUND"
-  if (/invalid (api )?key|jwt|unauthorized|signature/i.test(msg)) return "BAD_SERVICE_ROLE_KEY"
+  // 🪤 `jws` alem de `jwt`: a producao respondeu "Invalid Compact JWS" em
+  // 01/09/2026 e caiu no fallback DESCONHECIDO — o regex errava por UMA letra.
+  // JWS (assinatura) e JWT (token) sao siglas vizinhas e a biblioteca usa as
+  // duas: quem le a mensagem de erro nao escolhe qual vem.
+  //
+  // O caso real por tras dela: chave do formato NOVO do Supabase
+  // (`sb_secret_...`) onde o codigo espera a legacy (`eyJ...`, um JWT). A
+  // biblioteca tenta decodificar, nao consegue, e reclama da assinatura.
+  if (/invalid (api )?key|jwt|jws|unauthorized|signature/i.test(msg)) return "BAD_SERVICE_ROLE_KEY"
   if (/fetch failed|ENOTFOUND|ECONNREFUSED|timeout/i.test(msg)) return "UNREACHABLE"
   // Sem correspondencia, devolve a MENSAGEM sem identificador de infra.
   //
