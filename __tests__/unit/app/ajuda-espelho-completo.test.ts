@@ -34,6 +34,9 @@ const DIVERGENCIA_PERMITIDA: Record<string, string> = {
   "Preciso falar com a outra parte antes de abrir uma disputa?":
     "O painel 'report_contact' que oferece o link do chat só existe no site " +
     "(app/reservas/[id]/_BookingActions.tsx). O app recomenda o chat sem citar o painel.",
+  "Como reporto um usuário ou anúncio suspeito?":
+    "O botão 'Reportar problema' da reserva existe só no site; no app a única " +
+    "abertura de disputa é a do locador, pelo check-out com dano.",
   "Tenho um problema urgente com uma reserva em andamento. O que faço?":
     "A abertura de disputa pelo locatário existe só no site; no app apenas o " +
     "locador abre, pelo check-out com dano.",
