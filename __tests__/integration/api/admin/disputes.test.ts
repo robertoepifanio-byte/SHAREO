@@ -191,13 +191,22 @@ describe("PATCH /api/admin/disputes/[id]", () => {
     expect(mockPayoutCreate).not.toHaveBeenCalled()
   })
 
-  it("não-admin → 401", async () => {
+  it("não-admin → 403", async () => {
     mockAuth.mockResolvedValue({ user: { id: "user-1", role: "USER" } })
 
     const res = await PATCH(makeReq({ action: "resolve_completed" }), makeParams())
 
-    // requireAdminApi separa os dois casos: quem não é admin nenhum leva 401
-    // (nem deveria estar aqui); quem é admin do papel errado leva 403.
+    // Autenticado e sem permissão é 403; 401 fica só para quem não tem sessão.
+    // A regra mora em lib/auth/require-admin.ts.
+    expect(res.status).toBe(403)
+    expect(mockBookingUpdate).not.toHaveBeenCalled()
+  })
+
+  it("sem sessão nenhuma → 401", async () => {
+    mockAuth.mockResolvedValue(null)
+
+    const res = await PATCH(makeReq({ action: "resolve_completed" }), makeParams())
+
     expect(res.status).toBe(401)
     expect(mockBookingUpdate).not.toHaveBeenCalled()
   })

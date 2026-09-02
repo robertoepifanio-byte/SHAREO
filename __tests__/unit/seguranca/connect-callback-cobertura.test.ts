@@ -11,32 +11,14 @@
  * callback pode nascer lendo `?account=` sem validar nada, e o CI passaria
  * verde. Aqui ela reprova.
  */
-import fs   from "node:fs"
-import path from "node:path"
+import { lerRotas, dirDaApp } from "@/test-utils/rotas"
 
-const DIR = path.join(process.cwd(), "app", "api", "stripe")
-
-function rotasDeCallback(): { nome: string; fonte: string }[] {
-  const achadas: { nome: string; fonte: string }[] = []
-  const andar = (dir: string) => {
-    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-      const cheio = path.join(dir, e.name)
-      if (e.isDirectory()) andar(cheio)
-      else if (e.name === "route.ts") {
-        achadas.push({
-          nome:  path.relative(DIR, cheio).replace(/\\/g, "/"),
-          fonte: fs.readFileSync(cheio, "utf8"),
-        })
-      }
-    }
-  }
-  andar(DIR)
-  // Só interessa quem identifica a conta pela URL — é aí que mora o risco.
-  return achadas.filter((r) => /searchParams\.get\(\s*["']account["']\s*\)|lerCallbackDoConnect/.test(r.fonte))
-}
+// So interessa quem identifica a conta pela URL — e ai que mora o risco.
+const rotas = lerRotas(dirDaApp("app", "api", "stripe")).filter((r) =>
+  /searchParams\.get\(\s*["']account["']\s*\)|lerCallbackDoConnect/.test(r.fonte),
+)
 
 describe("callbacks do Stripe Connect", () => {
-  const rotas = rotasDeCallback()
 
   it("as duas rotas de callback conhecidas continuam sendo varridas", () => {
     // Sem esta âncora, renomear os diretórios faria o teste passar varrendo
@@ -48,7 +30,7 @@ describe("callbacks do Stripe Connect", () => {
   })
 
   it.each(rotas)("$nome valida a assinatura da URL", ({ fonte }) => {
-    expect(fonte).toMatch(/lerCallbackDoConnect|verifyConnectCallbackSig/)
+    expect(fonte).toMatch(/(?:lerCallbackDoConnect|verifyConnectCallbackSig)\s*\(/)
   })
 
   it.each(rotas)("$nome não lê a conta crua do query string", ({ fonte }) => {

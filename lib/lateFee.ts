@@ -177,8 +177,15 @@ export async function emitirCobrancaTaxaAtraso(
    * multa pode ser de 3 ou de 30 dias conforme quando foi calculada.
    */
   calculadoAte:     Date,
+  /**
+   * Relógio injetável. Existe porque sem ele esta função lia `new Date()` e os
+   * testes só passavam enquanto a data real estivesse do lado certo das datas
+   * fixas do arquivo — o de reemissão virou vermelho sozinho às 12:00 UTC de
+   * 02/09/2026, sem ninguém tocar no código. O resto do módulo já recebia
+   * `agora` (ver precisaCobrar); esta era a exceção.
+   */
+  agora:            Date = new Date(),
 ): Promise<ResultadoCobranca> {
-  const agora = new Date()
 
   if (taxaDeAtrasoQuitada(b)) return { emitida: false, motivo: "JA_QUITADA" }
 

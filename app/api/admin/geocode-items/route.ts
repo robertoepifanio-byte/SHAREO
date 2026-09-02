@@ -4,8 +4,8 @@
  * Protegido por CRON_SECRET ou sessão de admin.
  */
 import { NextResponse, type NextRequest } from "next/server"
-import { auth } from "@/lib/auth"
-import { hasAdminRole } from "@/lib/auth/admin-guards"
+import { requireAdminApi } from "@/lib/auth/require-admin"
+import { assertCronAuth } from "@/lib/auth/cron-guard"
 import { prisma } from "@/lib/prisma"
 
 export const runtime   = "nodejs"
@@ -26,17 +26,17 @@ async function geocode(query: string, token: string): Promise<{ lat: number; lng
 }
 
 export async function POST(req: NextRequest) {
-  // Aceita CRON_SECRET ou sessão admin
-  const auth_header = req.headers.get("authorization")
-  const secret      = process.env.CRON_SECRET
-  const isSecret    = secret && auth_header === `Bearer ${secret}`
-
-  if (!isSecret) {
-    const session = await auth()
-    // S14-M-14: geocode de itens é domínio Operacional (+Superadmin)
-    if (!hasAdminRole(session, "ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+  // Aceita CRON_SECRET (guard com comparação em tempo constante) ou sessão
+  // admin. O guard devolve a resposta 401 quando NÃO é chamada de cron — aqui
+  // ela é descartada de propósito, porque falta de cron não é recusa: cai no
+  // caminho da sessão.
+  const semCron = assertCronAuth(req)
+  if (semCron) {
+    // S14-M-14: geocode de itens é domínio Operacional (+Superadmin).
+    // Pelo requireAdminApi para herdar a regra de status: 401 só sem sessão,
+    // 403 para papel errado — antes esta rota devolvia 401 nos dois casos.
+    const { error } = await requireAdminApi("ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL")
+    if (error) return error
   }
 
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
