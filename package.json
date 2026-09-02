@@ -12,6 +12,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
     "test": "jest",
     "test:coverage": "jest --coverage",
+    "test:futuro": "jest --setupFilesAfterEnv \"<rootDir>/jest.setup.ts\" --setupFilesAfterEnv \"<rootDir>/jest.relogio-adiantado.ts\"",
     "test:watch": "jest --watch",
     "test:mobile": "pnpm --filter @shareo/mobile test",
     "test:e2e": "playwright test",
