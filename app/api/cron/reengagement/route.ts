@@ -9,6 +9,7 @@
  */
 
 import { NextResponse } from "next/server"
+import { assertCronAuth } from "@/lib/auth/cron-guard"
 import { prisma } from "@/lib/prisma"
 import { sendAppEmail } from "@/lib/email"
 import { APP_URL } from "@/lib/app-url"
@@ -157,10 +158,18 @@ async function sendFavoriteAvailableReminders() {
 // ─── Handler ─────────────────────────────────────────────────────────────────
 
 export async function GET(req: Request) {
-  const secret = new URL(req.url).searchParams.get("secret")
-  if (secret !== process.env.CRON_SECRET) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  // 🪤 Esta rota era a ÚNICA das 15 de cron a autenticar por QUERY STRING
+  // (`?secret=`), com comparação `!==` simples. Três problemas somados:
+  //
+  // 1. O Vercel Cron autentica por header `Authorization: Bearer`, e a
+  //    `vercel.json` chama este caminho SEM query string — ou seja, toda
+  //    execução agendada respondia 401. O job nunca rodou.
+  // 2. Segredo em URL vai para log (access log da Vercel, histórico, referrer).
+  //    E é o MESMO `CRON_SECRET` das outras 14 rotas: vazando aqui, cai junto o
+  //    cron de repasse, o de expurgo e o de cobrança.
+  // 3. `!==` compara em tempo variável; `assertCronAuth` usa `timingSafeEqual`.
+  const denied = assertCronAuth(req)
+  if (denied) return denied
 
   try {
     const [err1d, err7d, err30d] = await Promise.all([
