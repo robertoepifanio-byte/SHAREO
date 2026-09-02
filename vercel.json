@@ -42,6 +42,10 @@
       "schedule": "0 2 1 * *"
     },
     {
+      "path": "/api/cron/purge-fiscal-records",
+      "schedule": "0 3 1 * *"
+    },
+    {
       "path": "/api/cron/purge-consent-ips",
       "schedule": "0 3 1 * *"
     },

@@ -384,7 +384,7 @@ export function buildSections(v: HelpVars): Section[] { return [
       { q: "Quais são os canais de atendimento?",
         a: "Você pode nos contatar por: Email (suporte@shareo.com.br) — respondemos em até 8 horas úteis (casos urgentes: até 4 horas úteis); e pelo chat interno, disponível nas reservas ativas. Nosso horário de atendimento é segunda a sexta, das 09h às 17h." },
       { q: "Qual é o prazo de resposta para cada tipo de solicitação?",
-        a: "Email: até 8 horas úteis (urgente: até 4 horas úteis). Disputas ativas: até 5 dias úteis para decisão. Solicitações de exclusão de conta (LGPD): até 15 dias. Denúncias enviadas por e-mail seguem o prazo do e-mail. Os prazos indicados são metas de atendimento em condições normais de operação — segunda a sexta, 09h às 17h — e podem ser impactados em situações extraordinárias de volume ou força maior. Para reservas urgentes em andamento, use o chat da própria reserva." },
+        a: "Email: até 8 horas úteis (urgente: até 4 horas úteis). Disputas ativas: até 5 dias úteis para decisão. Denúncias enviadas por e-mail seguem o prazo do e-mail. Os prazos indicados são metas de atendimento em condições normais de operação — segunda a sexta, 09h às 17h — e podem ser impactados em situações extraordinárias de volume ou força maior. Para reservas urgentes em andamento, use o chat da própria reserva." },
       { q: "Como reporto um usuário ou anúncio suspeito?",
         a: "Escreva para suporte@shareo.com.br com o link do anúncio ou do perfil e a descrição do problema. Anexe o que ajudar a entender o caso — capturas de tela do chat, fotos, o número da reserva. A equipe analisa e, quando é o caso, suspende o anúncio ou a conta. Se o problema for dentro de uma locação sua, a abertura de disputa fica na página da reserva — no aplicativo, pelo check-out do item; nos demais casos, pelo site (shareo.com.br)." },
       { q: "Tenho um problema urgente com uma reserva em andamento. O que faço?",
@@ -409,7 +409,7 @@ export function buildSections(v: HelpVars): Section[] { return [
       { q: "Como funciona o Programa de Indicação?",
         a: "Você gera seu link em 'Meu Perfil > Indicações' — isso já funciona hoje. Quem se cadastrar por ele fica registrado como seu indicado, e você acumula comissão sobre as locações dessas pessoas. A comissão é um percentual que aumenta conforme o número de indicados ativos (Bronze, Prata e Ouro); o percentual de cada faixa aparece na própria página. O pagamento das comissões acumuladas começa com o lançamento da plataforma — até lá o valor fica registrado e visível para você, mas não é sacado." },
       { q: "Como excluo minha conta?",
-        a: "Acesse 'Meu Perfil > Privacidade e dados > Excluir conta'. A exclusão remove todos os seus dados pessoais em até 15 dias (conforme a LGPD). Reservas em andamento precisam ser finalizadas antes da exclusão. O histórico de transações pode ser retido por até 5 anos para fins legais e fiscais." },
+        a: "Acesse 'Meu Perfil > Privacidade e dados > Excluir conta'. A exclusão remove seus dados pessoais na hora — nome, e-mail, telefone, endereço, documentos e textos que você escreveu. Reservas em andamento precisam ser finalizadas antes da exclusão. O histórico de transações é mantido de forma anonimizada por até 5 anos para fins legais e fiscais." },
     ],
   },
   {
