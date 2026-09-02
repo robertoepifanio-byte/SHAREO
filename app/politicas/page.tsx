@@ -293,7 +293,12 @@ export default async function PoliticasPage() {
                   48 horas a partir da devolução. O ShareO analisará as evidências apresentadas
                   e emitirá uma decisão em até 5 dias úteis, que poderá incluir reembolso parcial ou
                   total ao Locatário ou liberação do valor ao Locador. A decisão do ShareO é vinculante
-                  para efeitos do repasse do valor retido na plataforma.
+                  para efeitos do repasse do valor retido na plataforma. O ShareO poderá encerrar a
+                  análise sem alteração financeira quando as partes compuserem-se diretamente, quando
+                  a parte que abriu a disputa desistir, ou quando não houver elementos suficientes
+                  para decidir o mérito. Nessa hipótese, a locação segue seu curso normal, sem
+                  reembolso ou retenção adicional, e o encerramento é registrado com a respectiva
+                  justificativa.
                 </PolicyBlock>
 
                 <PolicyBlock title="3.4 Indenização">
