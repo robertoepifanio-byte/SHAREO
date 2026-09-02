@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
-import { auth } from "@/lib/auth"
+import { requireAdminApi } from "@/lib/auth/require-admin"
 import { prisma } from "@/lib/prisma"
 import { criarPayoutDaReserva } from "@/lib/payout"
 import { emitCancellationRefund } from "@/lib/payments/refund"
@@ -35,13 +35,14 @@ const PatchSchema = z.object({
 
 export async function PATCH(req: NextRequest, { params }: Params) {
   try {
-    const session = await auth()
-    if (!session || session.user.role !== "ADMIN") {
-      return NextResponse.json(
-        { error: { code: "FORBIDDEN", message: "Acesso restrito a administradores." } },
-        { status: 403 },
-      )
-    }
+    // Disputas pertencem a FINANCEIRO e a OPERACIONAL (matriz de papeis no
+    // CLAUDE.md), nunca a um "admin" generico: `role === "ADMIN"` sozinho
+    // aceitava qualquer papel presente ou futuro, inclusive um criado sem que
+    // ninguem revisasse esta rota.
+    const { session, error } = await requireAdminApi(
+      "ADMIN_SUPERADMIN", "ADMIN_FINANCEIRO", "ADMIN_OPERACIONAL",
+    )
+    if (error) return error
 
     const { id } = await params
     const body   = await req.json()

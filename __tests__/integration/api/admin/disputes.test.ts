@@ -85,7 +85,7 @@ function makeBooking(over: { ownerNetAmount?: number | null } = {}) {
 
 beforeEach(() => {
   jest.clearAllMocks()
-  mockAuth.mockResolvedValue({ user: { id: "admin-999", role: "ADMIN" } })
+  mockAuth.mockResolvedValue({ user: { id: "admin-999", role: "ADMIN", adminRole: "ADMIN_FINANCEIRO" } })
   mockBookingFindUnique.mockResolvedValue(makeBooking())
   mockBookingUpdate.mockResolvedValue({ id: BOOKING_ID, status: "COMPLETED", updatedAt: new Date() })
   mockPayoutFindFirst.mockResolvedValue(null)
@@ -191,8 +191,22 @@ describe("PATCH /api/admin/disputes/[id]", () => {
     expect(mockPayoutCreate).not.toHaveBeenCalled()
   })
 
-  it("não-admin → 403", async () => {
+  it("não-admin → 401", async () => {
     mockAuth.mockResolvedValue({ user: { id: "user-1", role: "USER" } })
+
+    const res = await PATCH(makeReq({ action: "resolve_completed" }), makeParams())
+
+    // requireAdminApi separa os dois casos: quem não é admin nenhum leva 401
+    // (nem deveria estar aqui); quem é admin do papel errado leva 403.
+    expect(res.status).toBe(401)
+    expect(mockBookingUpdate).not.toHaveBeenCalled()
+  })
+
+  it("🪤 admin SEM papel definido → 403", async () => {
+    // O guard antigo parava em `role === "ADMIN"` e deixava passar: qualquer
+    // conta admin decidia disputa, inclusive as admin.e2e que a suíte cria e
+    // nunca remove. Papel ausente agora é recusa, não permissão.
+    mockAuth.mockResolvedValue({ user: { id: "admin-sem-papel", role: "ADMIN" } })
 
     const res = await PATCH(makeReq({ action: "resolve_completed" }), makeParams())
 

@@ -52,6 +52,7 @@ import { prisma } from "@/lib/prisma"
 import { APP_URL } from "@/lib/app-url"
 import { getStripeConnectConfig } from "@/lib/platform-config"
 import { STRIPE_CONNECT_ACCOUNT_INCLUDES } from "@/lib/stripe-connect-events"
+import { connectCallbackSig } from "@/lib/stripe-connect-callback"
 
 export const STRIPE_CONNECT_RETURN_PATH  = "/api/stripe/connect/return"
 export const STRIPE_CONNECT_REFRESH_PATH = "/api/stripe/connect/refresh"
@@ -151,7 +152,9 @@ export async function getOrCreateConnectedAccount(userId: string): Promise<strin
  */
 export async function createOnboardingLink(accountId: string, client: "web" | "mobile" = "web"): Promise<string> {
   const stripe = getStripe()
-  const qs = `account=${accountId}&client=${client}`
+  // `sig` amarra a conta a esta URL: sem ela o refresh_url emitiria link de
+  // onboarding para qualquer acct_ que chegasse. Ver lib/stripe-connect-callback.ts.
+  const qs = `account=${accountId}&client=${client}&sig=${connectCallbackSig(accountId, client)}`
   const link = await stripe.v2.core.accountLinks.create({
     account: accountId,
     use_case: {
