@@ -131,3 +131,6 @@ Certificado_Digital*
 # Este repositorio e PUBLICO e o backup contem dump do banco e o bucket
 # id-docs, ou seja documentos de identidade de usuarios reais.
 backups/
+
+# Lixo da CLI do Supabase (npx supabase ... cria isto)
+supabase/.temp/
