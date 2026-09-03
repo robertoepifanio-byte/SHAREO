@@ -5,7 +5,13 @@
 **Origem:** parecer jurídico **FORMAL** do D4 (revisado com Mercado Pago como PSP) — itens **C2** (DPAs / transferência internacional) e **C3** (RIPD + DPO formal) da pauta de decisões jurídicas.
 **Status geral:** 🟡 **em análise** — únicas pendências de LGPD que faltam para fechar o checklist de conformidade (além de B3 tributarista).
 
-> ⚠️ **Gated D4.** Nada aqui é atividade de produção. São entregas de **governança/documentação** que podem — e devem — avançar em paralelo enquanto o contrato com o Mercado Pago (bloqueador B1) é assinado. **Publicação da Política revisada só ocorre no go-live.**
+> ⚠️ **Gated D4.** Nada aqui é atividade de produção. São entregas de **governança/documentação**.
+> **Publicação da Política revisada só ocorre no go-live.**
+>
+> 🕓 **Este arquivo é de 01/07/2026 e envelheceu por fora.** O Mercado Pago citado abaixo foi
+> **descartado em 24/08** (B1 fechado, PSP é a **Stripe**), **B3 fechou em 03/09** (Simples Nacional),
+> e a seção **C2 foi reenquadrada em 03/09** — ver `dpa-apuracao-2026-09-03.md`. O inventário da
+> tabela 2.1 e os textos de §1 ainda descrevem o mundo anterior; leia-os com essa ressalva.
 
 ---
 
@@ -44,9 +50,11 @@ Nenhum desses itens depende do texto final do parecer nem de código novo — de
 | # | Atividade | Responsável | Entregável | Dependência |
 |---|---|---|---|---|
 | C2.1 | Validar/atualizar o inventário de subprocessadores acima | DPO + Dev | Inventário assinado | — |
-| C2.2 | Coletar os **DPAs/adendos LGPD** de cada fornecedor (a maioria oferece modelo público) | Fundador/DPO | DPAs arquivados | C2.1 |
-| C2.3 | Assinar **cláusulas contratuais padrão** (art. 33, II) para os fornecedores nos **EUA** | Advogada + Fundador | Cláusulas assinadas | C2.2 |
-| C2.4 | Confirmar a base legal da transferência (art. 33 — cláusulas-padrão × garantias equivalentes) | Advogada | Parecer/nota | C2.3 |
+| C2.2 | ✅ **Feito em 03/09/2026** para Stripe, Vercel, Supabase, Resend, Sentry e Mapbox — ver `dpa-apuracao-2026-09-03.md`. **Falta medir Upstash e Google (GA4)** | Técnico | Apuração por fornecedor | C2.1 |
+| C2.3 | Decidir o que fazer onde **não há CPC da ANPD** (Vercel, Resend, Sentry): trocar fornecedor, negociar adendo, ou outra hipótese do art. 33. E definir se **Supabase** em sa-east-1 configura transferência | **Advogada** | Decisão por fornecedor | C2.2 |
+| C2.4 | Adotar as **CPC da ANPD** conforme a decisão de C2.3 — na íntegra, sem modificação (Res. 19/2024; prazo vencido em 23/08/2025) | Advogada + Fundador | CPC adotadas | C2.3 |
+| **C2.7** | 🔨 **Publicar o documento da Cláusula 14** — rascunho pronto em `clausula-14-transparencia-transferencia.md`. **Não depende de terceiro nenhum**: é a única linha de C2 que pode andar hoje | Dev + DPO | Página publicada (gated D4) | — |
+| **C2.8** | Formalizar o atendimento da **Cláusula 15** (direitos do titular) e da **Cláusula 16** (comunicação de incidente) — no Módulo 2 as duas são obrigação do **exportador**, não da Stripe | DPO | Procedimento escrito | — |
 | C2.5 | Refletir o resultado na **Política de Privacidade** (seção de subprocessadores/transferência) | Dev (draft) | Texto revisado (gated go-live) | C2.4 |
 | C2.6 | Preferência estrutural: manter dados sensíveis (CPF, KYC, financeiro) **em sa-east-1** sempre que possível (minimizar transferência) | Arquiteto | Nota de arquitetura | — |
 
