@@ -2,6 +2,13 @@
 
 **Atualizado:** 2026-09-03 · **Fonte:** **parecer jurídico FORMAL** do D4 ([`parecer-juridico-revisado-mp.md`](parecer-juridico-revisado-mp.md)) — ⚠️ escrito com o **Mercado Pago** como PSP, ver a ressalva — + dossiê [`briefing-juridico-d4.md`](briefing-juridico-d4.md) + revisão da Central de Ajuda (s41).
 
+> 📌 **Em curso desde 03/09/2026 — as duas consultas foram acionadas:**
+> **(a)** chamado aberto na **Contabilizei** sobre o tratamento dos 85% no Simples Nacional
+> (roteiro: [`roteiro-contabilizei-simples-nacional-2026-09-03.md`](roteiro-contabilizei-simples-nacional-2026-09-03.md));
+> **(b)** Raimundo está com o roteiro para falar com a **advogada** sobre a custódia do valor e a Lei 12.865
+> ([`roteiro-advogada-lei-12865-2026-09-03.md`](roteiro-advogada-lei-12865-2026-09-03.md)).
+> Nenhuma das duas tem resposta ainda. **Enquanto isso, nada de produção muda.**
+
 > ✅ **Parecer FORMAL recebido** (condição 1 das 4 de go-live cumprida). ⚠️ **Go-live ainda NÃO liberado.** Das quatro condições, três estão cumpridas (parecer, PSP + conta PJ, conteúdo de Termos/Política aprovado); falta o **checklist 100%** — hoje **C2 (DPA)** e **C3 (RIPD/DPO)**. 🔴 **Some-se a ressalva do PSP:** o parecer analisou o **Mercado Pago**, e o PSP é a **Stripe** desde 24/08 — ver [`ressalva-psp-stripe-2026-09-03.md`](ressalva-psp-stripe-2026-09-03.md). Até o sign-off, **nenhuma atividade de produção** (regra absoluta). Este checklist **rastreia** os ajustes exigidos; não os declara cumpridos juridicamente.
 
 > Legenda: ✅ **pronto** (no produto/código) · 🟡 **parcial / verificar** · 🔨 **trabalho novo** · 🔵 **decisão de negócio/jurídico** (fora do código)
