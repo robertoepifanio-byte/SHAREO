@@ -25,7 +25,7 @@ prova contra nós. Ver [`dpa-apuracao-2026-09-03.md`](dpa-apuracao-2026-09-03.md
 |---|---|---|
 | 1 | **Retenção no Sentry** — §4 está com "(a confirmar)" à vista, de propósito | Técnico |
 | 2 | **Razão social de Resend e Mapbox** — usamos o nome comercial; Stripe, Vercel e Sentry vieram do adendo | Técnico |
-| 3 | **Upstash e Google (GA4)** — §3 os declara, mas nunca foram medidos quanto a CPC | Técnico |
+| 3 | **Google (GA4)** — se os fundadores decidirem desligá-lo (C2.9), sai da tabela §3 antes da publicação | Fundadores |
 | 4 | Preencher a data de "última atualização" e espelhar no app (`apps/mobile/`) | Dev |
 
 **Rastreabilidade 14.1:** a→§3+§4 · b→§3 · c→§1 · d→§5 · e→§6 · f→§8 · g→§7

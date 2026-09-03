@@ -8,8 +8,9 @@
 > 1. **A pendência da Stripe não existe.** O adendo dela já adota as Cláusulas-Padrão Contratuais da
 >    ANPD; não há nada a assinar.
 > 2. **No lugar dela apareceu algo pior.** As CPC são obrigatórias desde a Resolução 19/2024 e o
->    prazo venceu em **23/08/2025**. **Vercel, Resend e Sentry não as publicam** — e três outros
->    fornecedores nunca foram medidos. Estamos fora do prazo há mais de um ano.
+>    prazo venceu em **23/08/2025**. Medidos os sete fornecedores, **a Stripe é a única que as
+>    adota**: Vercel, Resend, Sentry, Mapbox, Upstash e Google Analytics **não publicam CPC**, e o
+>    Supabase depende de definir se há transferência. Estamos fora do prazo há mais de um ano.
 > 3. **Há uma obrigação nossa, que não depende de ninguém:** publicar o documento da **Cláusula 14**.
 >    Rascunho pronto em
 >    [`clausula-14-transparencia-transferencia.md`](clausula-14-transparencia-transferencia.md).
@@ -101,22 +102,33 @@ separar *cláusula ausente* de *página que não carregou*, contamos no mesmo te
 **têm** de aparecer num DPA ("standard contractual" e "processor"). Se o controle vem alto e o alvo
 vem zero, a ausência é real.
 
-| Fornecedor | URL consultada | Controle | "Brazil" / "ANPD" | Leitura |
+| Fornecedor | Fonte consultada | Controle | "Brazil" / "ANPD" | Leitura |
 |---|---|---|:---:|---|
 | Vercel | vercel.com/legal/dpa | 15 / 34 | 0 / 0 | DPA presente, **sem cláusula brasileira** |
 | Supabase | supabase.com/legal/dpa | 14 / 19 | 0 / 0 | idem |
 | Resend | resend.com/legal/dpa | 9 / 17 | 0 / 0 | idem |
 | Sentry | sentry.io/legal/dpa | 8 / 24 | 0 / 0 | idem |
-| Mapbox | mapbox.com/legal/dpa | 1 / 1 | 1 / 0 | **inconclusivo** — controle baixo demais; a URL devolveu página institucional, não o contrato |
+| **Mapbox** | **PDF do Customer DPA, abril/2025** (a página `/legal/dpa` é só invólucro; o contrato é PDF) | **32 / 45** | **0 / 0** | **sem cláusula brasileira** — usa a SCC europeia (Decisão 2021/914, Módulo 2) |
+| **Upstash** | **PDF do DPA** (`upstash.com/static/trust/dpa.pdf`) | ⚠️ ver nota | 0 / 0 | **sem cláusula brasileira** — só SCC da UE, IDTA do Reino Unido e Data Privacy Framework |
+| **Google (GA4)** | `business.safety.google/adsdatatransfers` e `/adsprocessorterms` | 101 (processor) | 1 / 0 | **sem cláusula brasileira** — as transferências cobrem só EEA, Reino Unido e Suíça; "Brazil" aparece só na *definição* de LGPD |
+
+⚠️ **Upstash — evidência de fonte única.** O texto do PDF foi lido na conversão automática, que
+respondeu de forma específica (SCC da UE, IDTA, DPF). O segundo método de extração **não
+corroborou** (o controle veio zero, sinal de que a extração produziu ruído, não texto). Confiança
+menor que a dos demais; vale reconfirmar.
+
+📌 **Google tem CPC brasileiras — mas em outro produto.** O Google Cloud publica as CPC da ANPD em
+`cloud.google.com/sccs/br-c2p`. O Analytics não corre sob esses termos, e sim sob os do Ads, que não
+as trazem. Não confundir os dois na conversa com a advogada.
 
 ⚠️ **Isto é a leitura de páginas públicas, não do contrato assinado.** Serve para orientar a
 decisão e para saber onde olhar — **não substitui** a análise contratual da advogada, e não deve ser
 citado como prova em parecer.
 
-⚠️ **A apuração cobriu 5 dos fornecedores; o inventário interno conhece mais.** **Upstash**
-(rate limiting) e **Google Analytics 4** constam de `atividades-dpa-ripd-dpo.md` como transferência
-para os EUA e **não foram medidos**. O GA4 agrava: já está **declarado ao público** em `/politicas`.
-Logo, "três fornecedores irregulares" é **piso, não total**.
+✅ **Cobertura fechada em 03/09/2026.** A primeira rodada mediu 5 fornecedores e deixou de fora
+**Upstash** e **Google Analytics**, que constavam do inventário de `atividades-dpa-ripd-dpo.md`, além
+de dar o **Mapbox** como inconclusivo. Os três foram medidos na mesma data — e nenhum deles tem CPC.
+O número deixou de ser piso: **dos sete, só a Stripe está regular.**
 
 **Supabase tem uma particularidade:** os dados ficam em repouso em `sa-east-1` (São Paulo). A
 questão não é onde o dado mora, e sim se o acesso lógico pela matriz nos EUA configura
@@ -128,11 +140,11 @@ transferência. É pergunta para a advogada.
 
 | # | Questão | Quem decide | Gatilho |
 |---|---|---|---|
-| 1 | Vercel, Resend e Sentry não oferecem CPC. Trocar de fornecedor, negociar adendo, ou enquadrar em outra hipótese do art. 33? | Advogada | Já cabe na conversa da Lei 12.865 que o Raimundo levou |
+| 1 | **Seis fornecedores sem CPC** (Vercel, Resend, Sentry, Mapbox, Upstash, GA4). Trocar de fornecedor, negociar adendo, ou enquadrar em outra hipótese do art. 33? | Advogada | Já cabe na conversa da Lei 12.865 que o Raimundo levou |
 | 2 | Supabase em sa-east-1 com matriz nos EUA — há transferência internacional? | Advogada | Mesma conversa |
-| 3 | Mapbox — confirmar o contrato real | Técnico, depois advogada | Pode andar já |
-| 4 | Upstash e GA4 — medir | Técnico | Pode andar já |
-| 5 | Publicar o documento da Cláusula 14 (rascunho pronto) | DPO + advogada | Pode andar já |
+| 3 | **GA4 é o mais fácil de resolver sem advogada:** é o único não essencial da lista. Desligar elimina a transferência em vez de regularizá-la | Fundadores | Decisão de produto |
+| 4 | Publicar o documento da Cláusula 14 (rascunho pronto) | DPO + advogada | Pode andar já |
+| 5 | Reconfirmar o Upstash — evidência de fonte única | Técnico | Pode andar já |
 
 ---
 
