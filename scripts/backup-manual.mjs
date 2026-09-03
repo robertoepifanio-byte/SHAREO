@@ -109,5 +109,8 @@ for (const bucket of BUCKETS) {
   console.log(`  ${bucket.padEnd(16)} ${n} arquivo(s)`)
 }
 console.log(`\n✅ Backup em ${destino}`)
-console.log("\n⚠️  Ainda na mesma máquina do original. Copie para fora (disco")
-console.log("    externo ou nuvem) — senão protege contra engano, não contra desastre.")
+console.log("\n⚠️  Esta pasta contém DADOS PESSOAIS: documentos de identidade")
+console.log("    (id-docs) e o dump do banco com e-mails, telefones e endereços.")
+console.log("    Não deixe em nuvem pessoal; apague quando não precisar mais.")
+console.log("\n⚠️  É uma cópia só, num equipamento só. Se ele morrer, o backup")
+console.log("    morre junto — vale duplicar em outro lugar.")

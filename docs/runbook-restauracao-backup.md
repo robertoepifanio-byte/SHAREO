@@ -67,9 +67,18 @@ Ele **exige** dizer `staging` ou `prod`, de propósito: os dois refs se parecem
 público e a pasta contém dump do banco e o bucket `id-docs` — documentos de
 identidade de usuários reais.
 
-⚠️ **A cópia fica na mesma máquina do original.** Isso protege contra engano
-(alguém apagou algo), não contra desastre. Levar para disco externo ou nuvem é
-parte do procedimento, não um extra.
+⚠️ **O backup cria uma cópia de dados pessoais fora do ambiente controlado.**
+A pasta contém `id-docs` — documentos de identidade e selfies de usuários
+reais — e o dump do banco, com e-mails, telefones, endereços e CPF cifrado.
+Pela LGPD o ShareO segue sendo o controlador desses dados onde quer que eles
+estejam, inclusive numa pasta de Downloads. Portanto: não deixar em pasta
+sincronizada com nuvem pessoal, guardar em disco cifrado se for reter, e apagar
+quando não precisar mais.
+
+⚠️ **Uma cópia só, num equipamento só, é frágil.** Não pelo motivo genérico de
+"não guardar junto do original" — o original está no Supabase e a cópia no seu
+computador, já estão separados. É porque se aquele equipamento morrer, o backup
+morre junto. O que resolve é redundância da cópia, não distância do original.
 
 **Estado:** o script nunca foi executado ponta a ponta — falta credencial de
 quem tem acesso ao painel. Verificado até onde dá sem ela: a CLI aceita a forma
