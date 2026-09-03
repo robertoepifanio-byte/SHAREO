@@ -26,6 +26,12 @@ import { spawnSync } from "node:child_process"
 import fs   from "node:fs"
 import path from "node:path"
 
+// Suprime o DEP0190 do `shell: true` logo abaixo — o risco que ele aponta foi
+// auditado e não se aplica (ver o comentário em `supabase()`). Fica aqui, e não
+// num `--no-deprecation` na linha de comando, para que quem roda o script não
+// precise saber disso. Escopo: só este processo.
+process.noDeprecation = true
+
 // Os dois refs se parecem e já houve confusão entre ambientes nesta base — por
 // isso o script exige que você diga qual, em vez de assumir um default.
 const PROJETOS = {
@@ -62,7 +68,16 @@ fs.mkdirSync(`${destino}/storage`, { recursive: true })
 
 function supabase(args, rotulo) {
   console.log(rotulo)
-  // shell: true porque no Windows o npx é um .cmd, não um executável.
+  // 🪤 `shell: true` é OBRIGATÓRIO no Windows, não preferência: o npx é um
+  // `.cmd` e o Node se recusa a executá-lo direto (EINVAL — mitigação de
+  // CVE-2024-27980). Tentei trocar por `npx.cmd` sem shell e as três cópias
+  // falharam.
+  //
+  // O Node avisa (DEP0190) que assim os argumentos vão concatenados e sem
+  // escape. Aqui isso é seguro e foi conferido: TODO argumento é literal deste
+  // arquivo, e o único valor variável é o `ref`, que vem da tabela PROJETOS —
+  // não há entrada externa chegando à linha de comando. Se algum dia um
+  // argumento passar a vir de fora, este comentário deixa de valer.
   const r = spawnSync("npx", ["supabase", ...args], {
     stdio: ["inherit", "pipe", "pipe"], shell: true, encoding: "utf8",
   })
