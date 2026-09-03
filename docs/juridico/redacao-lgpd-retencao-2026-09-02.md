@@ -98,3 +98,29 @@ Como a plataforma tem menos de um ano, nada venceu ainda — o prazo prático pa
 3. Escolher entre (a) e (b) no ponto do expurgo dos 5 anos.
 
 Nada foi alterado nas páginas. A alteração entra depois do seu retorno, junto com o item 4 (proteção/seguro), que também está com você.
+
+---
+
+## Adendo de 02/09/2026 — a retenção de backup foi medida, e o número existe
+
+Quando este documento foi escrito, a frase sobre cópias de segurança ficou **sem prazo** porque a retenção não estava configurada. Fomos verificar no painel do provedor e a premissa estava errada: **não havia nada a configurar, havia a verificar.**
+
+**Medido no painel do projeto de produção, em 02/09/2026:** sete backups diários, de 27/08 a 02/09, já incluídos no plano contratado. **A retenção é de 7 dias.**
+
+Isso é mais curto que os 90 dias que estavam publicados antes — ou seja, a informação nova é **melhor para o titular**, não pior.
+
+### Uma correção de substância, não só o número
+
+O painel avisa que **os arquivos não entram no backup do banco**: fotos e documentos guardados no armazenamento ficam fora, e o provedor não oferece backup deles. Na prática isso significa que documentos de identidade e fotos apagados na exclusão da conta **não sobrevivem em cópia nenhuma** — somem de vez, no ato.
+
+É uma afirmação mais forte do que a que estava proposta, e verdadeira. Por isso trago a frase de volta para você, em vez de só preencher a lacuna.
+
+### Frase proposta — Política de Privacidade, seção 8
+
+> Mantemos seus dados enquanto sua conta estiver ativa ou pelo período necessário para cumprir obrigações legais. A exclusão da conta é processada **imediatamente**: seus dados de identificação, localização, documentos e textos escritos por você são anonimizados ou apagados no momento da solicitação. **Documentos e imagens são removidos definitivamente, sem cópia em backup.** Registros de transações concluídas são preservados de forma anonimizada pelo prazo exigido pela legislação fiscal (5 anos), sem identificar você. **Cópias de segurança do banco de dados são substituídas em até 7 dias.**
+
+O que mudou em relação à versão que você aprovou: entrou o **7 dias** no lugar da frase genérica, e entrou a informação de que documentos e imagens não têm backup.
+
+### O que peço
+
+Confirmar a frase acima, ou ajustar. É a última pendência do item 2 — o resto já está publicado desde 02/09.

@@ -70,11 +70,22 @@
 - ✅ Integridade das migrations validada (`migrate deploy` 34/34 em banco vazio = zero drift — ARQ-ALTO-15).
 - ⬜ **Replicar o fix da Data API** do Supabase em produção (remover `public` dos *Exposed schemas* — senão a `anon key` lê/edita tudo).
 - ⬜ Seed mínimo de produção (categorias + admin SUPERADMIN + `PlatformConfig`).
-- ⬜ **Backups/PITR** + política de retenção + runbook de restauração.
-  - 🔗 Bloqueia fechar o texto de retenção na Política de Privacidade: a frase
-    sobre cópias de segurança ficou SEM prazo (aprovado por Raimundo em 02/09)
-    porque a rotação ainda não está configurada. Definido o prazo aqui, o número
-    entra na frase — ver `docs/juridico/redacao-lgpd-retencao-2026-09-02.md`.
+- 🟡 **Backups/PITR** + política de retenção + runbook de restauração — **parcial (02/09/2026)**.
+  - ✅ **Retenção confirmada: 7 dias**, backups diários físicos, já incluídos no
+    plano Pro — não havia nada a configurar, havia a verificar. Conferido no
+    painel do `shareo-prod`. RPO de até 24h.
+  - ✅ Runbook escrito: `docs/runbook-restauracao-backup.md`.
+  - ⬜ **Nunca foi testada uma restauração.** Fazer em staging antes de precisar —
+    o runbook tem campos esperando esse resultado.
+  - ⬜ **Storage não tem backup nenhum.** O Supabase não inclui objetos do Storage
+    no backup do banco e não oferece alternativa nativa. `booking-photos` é a
+    base de prova das disputas — decidir entre cópia periódica externa ou aceitar
+    o risco por escrito, antes do go-live.
+  - ⬜ **PITR não contratado** (~US$ 100/mês + compute Small). Recomendação:
+    contratar só na produção, no go-live, quando houver dinheiro real circulando.
+  - 🔗 Destrava o texto de retenção na Política de Privacidade: a frase ficou sem
+    prazo em 02/09 e agora tem número — ver
+    `docs/juridico/redacao-lgpd-retencao-2026-09-02.md`.
 
 ---
 
