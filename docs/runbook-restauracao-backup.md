@@ -44,10 +44,15 @@ Três buckets, com consequências bem diferentes:
 ## Backup manual — o que cobre o buraco do Storage
 
 ```bash
-bash scripts/backup-manual.sh prod
+node scripts/backup-manual.mjs prod
 ```
 
-Uma vez por máquina, antes: `npx supabase login`.
+Uma vez por máquina, antes: `npx supabase login` (abre o navegador).
+
+🪤 **Node, não shell.** No Windows, `bash` resolve para o WSL
+(`C:/Windows/system32/bash.exe`), que nesta máquina **não tem distribuição
+instalada** — um script `.sh` falharia com uma mensagem sobre a Microsoft Store.
+O `.mjs` roda igual no PowerShell e no Git Bash.
 
 O script baixa, numa pasta datada em `backups/`:
 
