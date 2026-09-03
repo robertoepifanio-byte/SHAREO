@@ -181,6 +181,36 @@ export default function PrivacidadeScreen() {
           </Text>
         </View>
 
+        {/* ── Seção 4.1 — Transferência Internacional ── */}
+        {/* Fonte: app/privacidade/page.tsx, seção 4.1 */}
+        <View style={[s.section, { borderColor: tokens.border }]}>
+          <Text style={[s.sectionTitle, { color: tokens.navy }]}>4.1. Transferência Internacional de Dados</Text>
+          <Text style={[s.paragraph, { color: tokens.muted }]}>
+            Parte dos nossos prestadores de serviço está sediada fora do Brasil, principalmente nos Estados Unidos. Isso significa que alguns dos seus dados são transferidos e processados no exterior. Informamos abaixo quem são, o que recebem e para quê:
+          </Text>
+          <Text style={[s.paragraph, { color: tokens.muted }]}>
+            Stripe — processamento dos pagamentos. Recebe os dados necessários à cobrança e, no caso de quem anuncia, os dados bancários e de verificação de identidade exigidos para receber os repasses.
+          </Text>
+          <Text style={[s.paragraph, { color: tokens.muted }]}>
+            Vercel — hospedagem e execução da aplicação. Processa os dados das requisições enquanto você usa a plataforma.
+          </Text>
+          <Text style={[s.paragraph, { color: tokens.muted }]}>
+            Resend — envio dos e-mails da plataforma. Recebe seu nome, e-mail e o conteúdo da mensagem enviada.
+          </Text>
+          <Text style={[s.paragraph, { color: tokens.muted }]}>
+            Sentry — monitoramento de erros. Recebe informações técnicas da falha, com filtro que remove dados pessoais.
+          </Text>
+          <Text style={[s.paragraph, { color: tokens.muted }]}>
+            Mapbox — conversão de endereços em coordenadas. Recebe o endereço informado, sem seu nome ou identificação.
+          </Text>
+          <Text style={[s.paragraph, { color: tokens.muted }]}>
+            O que permanece no Brasil: o banco de dados, os documentos e fotos que você envia e as mensagens do chat ficam armazenados em servidores na região de São Paulo.
+          </Text>
+          <Text style={[s.paragraph, { color: tokens.muted }]}>
+            Você pode solicitar informações sobre essas transferências, incluindo as garantias adotadas, pelo e-mail privacidade@shareo.com.br.
+          </Text>
+        </View>
+
         {/* ── Seção 5 — Armazenamento e Segurança ── */}
         <View style={[s.section, { borderColor: tokens.border }]}>
           <Text style={[s.sectionTitle, { color: tokens.navy }]}>5. Armazenamento e Segurança</Text>
