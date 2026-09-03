@@ -1,6 +1,13 @@
 # Promessas publicadas sem contrapartida — o que sobrou
 
-**Para: Raimundo** · 2 de setembro de 2026
+**Para: Raimundo** · 2 de setembro de 2026 · **✅ TODOS OS ITENS RESOLVIDOS em 03/09/2026**
+
+> **Fechamento (03/09):** Raimundo aprovou os cinco pontos. Itens 1 e 3 foram
+> aplicados em 02/09; os itens 2 (LGPD), 4 (proteção/seguro) e 5 (remoção do
+> canal inexistente) foram aplicados em 03/09. O texto de proteção passou a
+> dizer o que existe — **não há seguro contratado**, e é por isso que o
+> cadastro é limitado a bens de até o teto configurado. Em paralelo, Raimundo
+> iniciou o contato com seguradoras; quando houver cobertura, o texto muda.
 
 Os três pontos que você aprovou (A, B e C de 01/09) foram aplicados hoje ao site e ao aplicativo. Ao conferir se não havia sobrado nada da mesma família, apareceram **mais cinco**. Nenhum foi alterado — este documento é para você decidir.
 

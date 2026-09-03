@@ -127,7 +127,7 @@ export default function PrivacidadePage() {
           <section>
             <h2 className="text-lg font-bold text-primary">8. Retenção de Dados</h2>
             <p className="text-muted-foreground leading-relaxed">
-              Mantemos seus dados enquanto sua conta estiver ativa ou pelo período necessário para cumprir obrigações legais. A exclusão da conta é processada imediatamente: seus dados de identificação, localização, documentos e textos escritos por você são anonimizados ou apagados no momento da solicitação. Registros de transações concluídas são preservados de forma anonimizada pelo prazo exigido pela legislação fiscal (5 anos), sem identificar você. Cópias de segurança operacionais, por sua natureza, são substituídas pelo ciclo de rotação do provedor de infraestrutura.
+              Mantemos seus dados enquanto sua conta estiver ativa ou pelo período necessário para cumprir obrigações legais. A exclusão da conta é processada imediatamente: seus dados de identificação, localização, documentos e textos escritos por você são anonimizados ou apagados no momento da solicitação. Documentos e imagens são removidos definitivamente, sem cópia em backup. Registros de transações concluídas são preservados de forma anonimizada pelo prazo exigido pela legislação fiscal (5 anos), sem identificar você. Cópias de segurança do banco de dados são substituídas em até 7 dias.
             </p>
           </section>
 
