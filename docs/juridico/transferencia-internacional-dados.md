@@ -4,7 +4,14 @@
 > **RASCUNHO — pendente de revisão do DPO/advogada (D4); nao e documento final.**
 > Este rascunho foi elaborado pela equipe de produto/tecnologia como insumo para o parecer juridico (D4). Nao substitui a formalizacao legal das transferencias internacionais. A versao final deve ser validada e assinada pela Encarregada (DPO) e pela assessoria juridica responsavel.
 
-**Versao do rascunho:** 2026-06-28
+> ⚠️ **REVISADO EM 2026-09-03 — a classificação anterior estava INVERTIDA.** O
+> inventário descrevia a Stripe como "código preservado, oculto na UI", risco
+> "Baixa (inativo)", e o Mercado Pago como "em avaliação". Desde 24/08/2026 o
+> Mercado Pago foi **descartado e removido do código**, e a **Stripe é o PSP
+> ativo** — o subprocessador que recebe os dados mais sensíveis da plataforma.
+> Ver [`ressalva-psp-stripe-2026-09-03.md`](ressalva-psp-stripe-2026-09-03.md).
+
+**Versao do rascunho:** 2026-06-28 · **revisao do PSP:** 2026-09-03
 **Preparado por:** Equipe de Produto — ShareO
 **Base legal de referencia:** LGPD art. 33 (transferencia internacional de dados pessoais)
 
@@ -34,13 +41,12 @@ A LGPD (art. 33) permite a transferencia internacional de dados pessoais apenas 
 | **Resend** | Envio de e-mails transacionais (confirmacoes de reserva, notificacoes, recuperacao de senha) | EUA | Nome e e-mail dos destinatarios; assunto e corpo do e-mail (pode conter dados da reserva) | Essencial para comunicacao com usuarios | DPA disponivel em resend.com; clausulas SCCs; assinar e arquivar |
 | **Sentry** | Monitoramento de erros e excecoes da aplicacao | EUA (San Francisco) | Stacktraces, contexto da requisicao (com filtro de PII ativo — nenhum dado pessoal identificavel deveria constar) | Importante — qualidade e confiabilidade | DPA disponivel em sentry.io/legal/dpa; clausulas SCCs; assinar e arquivar; manter e auditar filtro de PII |
 | **Mapbox** | Geocoding de enderecos (conversao de CEP/logradouro em coordenadas lat/lng) | EUA (San Francisco) | Texto do endereco informado pelo usuario (sem identificadores pessoais diretamente vinculados na requisicao) | Essencial para funcao de busca por proximidade | Termos de Servico Mapbox incluem clausulas de processamento de dados; verificar disponibilidade de DPA especifico; avaliar minimizacao (geocoding pode ser feito com CEP apenas) |
+| **Stripe** | **PSP — processamento de pagamentos, split e repasse aos proprietarios** | EUA (San Francisco) | Identificacao das duas partes da locacao, valores e datas; no onboarding de quem anuncia, **dados bancarios e verificacao de identidade** coletados dentro da propria Stripe | Essencial — nao ha pagamento sem PSP | **DPA + mecanismo do art. 33 — A FORMALIZAR (critico)** |
 
 ### 2.2 Subprocessadores em avaliacao ou planejados
 
 | Subprocessador | Funcao prevista | Regiao | Status | Observacao |
 |---|---|---|---|---|
-| **Mercado Pago** | PSP para pagamentos (substituira PIX manual) | Brasil | Em avaliacao — aguarda decisao dos fundadores | Processamento predominantemente no Brasil; verificar clausulas de subcontratacao do MP |
-| **Stripe** | Processamento de cartao de credito (codigo preservado, oculto na UI ate dez/2026) | EUA | Inativo na UI | Assinar DPA antes de reativar |
 | **Zenvia** | Envio de SMS para verificacao de celular (OTP) | Brasil | Planejado (primeira reserva) | Verificar se ha transferencia internacional nos servicos de SMS |
 
 ---
@@ -94,8 +100,8 @@ A tabela abaixo consolida as acoes prioritarias por subprocessador:
 | Resend | Assinar DPA Resend | Alta | Pendente |
 | Sentry | Assinar DPA Sentry + auditar filtro de PII | Alta | Pendente |
 | Mapbox | Verificar DPA ou clausulas nos ToS; avaliar minimizacao via CEP-only | Media | Pendente |
-| Mercado Pago | Verificar clausulas de processamento de dados e subcontratacao | Media | Aguarda decisao de negocio |
-| Stripe | Assinar DPA Stripe antes de reativar na UI | Baixa (inativo) | Pendente |
+| **Stripe** | **Assinar o DPA e documentar o mecanismo do art. 33.** É o PSP ativo e o subprocessador com os dados mais sensíveis: identificação das duas partes, valores, e — no onboarding de quem anuncia — dados bancários e verificação de identidade. | **CRITICA** | Pendente — bloqueia go-live |
+| ~~Mercado Pago~~ | ~~Verificar clausulas~~ — **descartado em 24/08/2026**, removido do código. Sai do inventário. | — | Encerrado |
 
 ---
 
@@ -117,14 +123,14 @@ Next.js App [Vercel — EUA/edge]
     |
     +---> Chat real-time ------------> [Supabase Realtime — sa-east-1, Brasil]
     |
-    +---> Pagamentos (MVP) ----------> PIX manual (sem terceiro externo no fluxo atual)
-    |
-    +---> Pagamentos (producao) -----> [Mercado Pago — Brasil] (a confirmar)
+    +---> Pagamentos ----------------> [Stripe — EUA] (cobranca, split e repasse)
 ```
 
-**Fluxo de dados que PERMANECE NO BRASIL:** banco de dados, storage (incluindo `id-docs`), Realtime (chat), pagamentos PIX (MVP) e Mercado Pago (producao, se confirmado).
+**Fluxo de dados que PERMANECE NO BRASIL:** banco de dados, storage (incluindo os documentos de identidade em `id-docs`) e Realtime (chat) — todos em `sa-east-1`.
 
-**Fluxo que SAI DO BRASIL:** processamento em runtime (Vercel), geocoding (Mapbox), e-mail (Resend), erros (Sentry).
+**Fluxo que SAI DO BRASIL:** **pagamentos (Stripe)**, processamento em runtime (Vercel), geocoding (Mapbox), e-mail (Resend) e erros (Sentry).
+
+⚠️ **A linha de pagamentos mudou de lado.** No desenho anterior, com o Mercado Pago, os pagamentos permaneciam no Brasil. Com a Stripe eles passaram a sair — e levam junto os dados mais sensiveis do fluxo. Foi essa mudanca que reabriu o art. 33.
 
 ---
 

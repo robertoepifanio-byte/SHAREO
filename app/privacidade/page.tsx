@@ -92,6 +92,29 @@ export default function PrivacidadePage() {
           </section>
 
           <section>
+            <h2 className="text-lg font-bold text-primary">4.1. Transferência Internacional de Dados</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              Parte dos nossos prestadores de serviço está sediada fora do Brasil, principalmente nos Estados Unidos. Isso significa que alguns dos seus dados são transferidos e processados no exterior. Informamos abaixo quem são, o que recebem e para quê:
+            </p>
+            <ul className="mt-3 space-y-2 text-muted-foreground leading-relaxed">
+              <li><strong>Stripe</strong> — processamento dos pagamentos. Recebe os dados necessários à cobrança e, no caso de quem anuncia, os dados bancários e de verificação de identidade exigidos para receber os repasses.</li>
+              <li><strong>Vercel</strong> — hospedagem e execução da aplicação. Processa os dados das requisições enquanto você usa a plataforma.</li>
+              <li><strong>Resend</strong> — envio dos e-mails da plataforma. Recebe seu nome, e-mail e o conteúdo da mensagem enviada.</li>
+              <li><strong>Sentry</strong> — monitoramento de erros. Recebe informações técnicas da falha, com filtro que remove dados pessoais.</li>
+              <li><strong>Mapbox</strong> — conversão de endereços em coordenadas. Recebe o endereço informado, sem seu nome ou identificação.</li>
+            </ul>
+            <p className="mt-3 text-muted-foreground leading-relaxed">
+              <strong>O que permanece no Brasil:</strong> o banco de dados, os documentos e fotos que você envia e as mensagens do chat ficam armazenados em servidores na região de São Paulo.
+            </p>
+            <p className="mt-3 text-muted-foreground leading-relaxed">
+              Você pode solicitar informações sobre essas transferências, incluindo as garantias adotadas, pelo e-mail{" "}
+              <a href="mailto:privacidade@shareo.com.br" className="text-brand hover:underline">
+                privacidade@shareo.com.br
+              </a>.
+            </p>
+          </section>
+
+          <section>
             <h2 className="text-lg font-bold text-primary">5. Armazenamento e Segurança</h2>
             <p className="text-muted-foreground leading-relaxed">
               Seus dados são armazenados em servidores seguros com criptografia em trânsito (TLS) e em repouso. Documentos sensíveis (CPF/CNPJ) são armazenados com criptografia adicional. Adotamos controles de acesso rigorosos e monitoramento de segurança contínuo.

@@ -175,3 +175,34 @@ A decisão nº 6 deste ADR preservou OAuth, checkout e webhook do MP atrás da f
 🪤 **Consequência para o app:** o botão "Pagar reserva" chamava a rota do MP e virou um atalho para pagar no site. Na prática nada regrediu — com a flag desligada ele já só produzia "pagamento indisponível".
 
 E o caminho de pagamento do app **já estava quebrado na volta antes desta remoção**: a rota do MP mandava `back_urls` para `shareo://pagamento/sucesso`, mas não existe rota `pagamento` em `apps/mobile/app/` nem nenhum listener de deep-link no app inteiro — o retorno cairia no not-found. Portar o checkout Stripe (PSP-03) tem, portanto, uma perna barata (trocar `auth()` por `resolveUserId`, padrão já pronto em `/api/payments/stripe/connect`) e uma cara, que é o retorno — `success_url` da Stripe é http(s) e não aceita scheme customizado, então precisa de página-ponte no site ou `openAuthSessionAsync`. Isso é trabalho novo, não paridade.
+
+---
+
+## Atualização — 2026-09-03: os reflexos jurídicos da troca de PSP
+
+A decisão foi registrada como técnica e de produto. Faltava o outro lado: **trocar de PSP mudou premissas do parecer jurídico D4**, e isso não estava escrito em lugar nenhum da ADR.
+
+### O que a troca mexeu, ponto a ponto
+
+**1. Custódia do valor (Lei 12.865/2013) — o mais pesado.** O parecer afastou o enquadramento como instituição de pagamento sobre a premissa de que *"a ShareO não retém nem custodia"*. A implementação escolhida aqui — **separate charges and transfers**, adotada em 19/08 no lugar do destination charge para preservar a retenção contra disputa — faz o valor cheio **ficar na conta da ShareO na Stripe por 3 dias após a devolução** (`DEFAULT_PAYOUT_WINDOW_DAYS`). É factualmente outro desenho.
+
+> 🪤 Esta consequência estava implícita na escolha técnica e ninguém a levou ao jurídico. A escolha foi certa pelo motivo de produto; o que faltou foi notar que ela reabria uma pergunta já respondida.
+
+**2. Transferência internacional (LGPD art. 33).** O Mercado Pago é brasileiro; a Stripe não. Os pagamentos **mudaram de lado** no inventário — passaram a sair do Brasil, levando os dados mais sensíveis do fluxo (identificação das duas partes, valores, e dados bancários de quem anuncia). Aplicado em 03/09: a Política de Privacidade ganhou a **seção 4.1**, declarando o fato ao titular. **Não declara mecanismo do art. 33** — o DPA não foi firmado, e afirmar garantia inexistente é o defeito que estamos eliminando.
+
+**3. PLD/FT.** A resposta B4 concluiu que a ShareO não é sujeito obrigado *porque o PSP assume KYC/KYB*. Isso continua verdade na prática — a verificação roda inteira dentro do Connect —, mas **a conclusão pode depender de o PSP ser autorizado pelo BACEN**, condição que o MP cumpria de forma direta.
+
+**4. Fiscal.** A decisão B2 (15% receita / 85% em trânsito) foi tomada antes de duas coisas: o valor passar pela conta da plataforma e o regime ser definido como **Simples Nacional** (03/09), onde a apuração parte da receita bruta.
+
+### O que foi feito e o que ficou
+
+| | |
+|---|---|
+| Inventário de transferência internacional | ✅ corrigido — a Stripe estava classificada como "inativa, risco baixo" |
+| Política de Privacidade | ✅ seção 4.1 publicada (site e app) |
+| Onde o KYC acontece | ✅ documentado no checklist |
+| DPA com a Stripe + mecanismo do art. 33 | ⬜ **pendente — bloqueia go-live** |
+| Custódia / Lei 12.865 | ⬜ **pendente com a advogada** — é o único que pode mexer no produto |
+| Tratamento dos 85% no Simples | ⬜ pendente com a Contabilizei |
+
+Documentos: [`ressalva-psp-stripe-2026-09-03.md`](../juridico/ressalva-psp-stripe-2026-09-03.md) · [`roteiro-advogada-lei-12865-2026-09-03.md`](../juridico/roteiro-advogada-lei-12865-2026-09-03.md) · [`roteiro-contabilizei-simples-nacional-2026-09-03.md`](../juridico/roteiro-contabilizei-simples-nacional-2026-09-03.md)
