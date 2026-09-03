@@ -8,6 +8,22 @@
 
 ---
 
+## 🔧 Ambiente de produção (`shareo-prod`) — pendências de uso interno (registrado em 2026-09-03)
+
+**Contexto:** Roberto quer testar o painel admin em `https://shareo-prod.vercel.app` (uso interno, atrás de Vercel Deployment Protection — exceção autorizada pelo fundador em 04/08, ver `project-d4-juridico`). Levantamento do estado atual, confirmado no código:
+
+1. **🔴 Nenhum superadmin existe em produção.** O job `production` do `.github/workflows/deploy.yml` (linha ~481) só roda `pnpm prisma generate && pnpm db:migrate:deploy` — sem seed. `admin@shareo.com.br` (que existe em staging via `prisma/seed.ts`) nunca foi criado lá.
+
+   **Caminho preparado, não executado:** script novo [`scripts/promote-admin-by-email.ts`](../scripts/promote-admin-by-email.ts) — recebe um e-mail por argumento e promove a `ADMIN_SUPERADMIN` via Prisma direto (só mexe em `role`/`adminRole`, não toca senha). Falta: (a) Roberto criar uma conta normal em `shareo-prod.vercel.app`, (b) rodar o script localmente com `DATABASE_URL_PROD` (nunca fica em `.env` do repo, só GitHub Secret) — passo a passo completo na conversa da sessão 2026-09-03.
+
+2. **🟡 Chave `anon` da produção segue no formato legado** (JWT `eyJ...`, não `sb_publishable_...`). `service_role` já está no formato novo. Não bloqueia teste do painel; o Supabase descontinua chaves legadas até o fim de 2026 — resolver antes do go-live público (`docs/STATUS.md:9-11`).
+
+3. **🟡 Restauração de backup nunca foi testada** em nenhum ambiente — risco aberto em produção, não específico do painel admin (`docs/STATUS.md:29`).
+
+**Não bloqueia nada disso:** D4 (jurídico) segue travando go-live público/pagamento real, mas o teste interno do painel admin já está autorizado independentemente do D4 (exceção de 04/08).
+
+---
+
 ## 💸 Taxa de atraso — o dinheiro nunca chega ao proprietário (aberto em 2026-09-01)
 
 **Origem:** locação real do Thiago no staging (`cmtegn8bg0001l904l2ejrthy`, mouse, R$ 5/dia). Devolução com 1 dia de atraso, taxa de R$ 7,50 aplicada e exibida na tela. Roberto perguntou o que acontece a seguir com essa taxa. A resposta, rastreada no código:
