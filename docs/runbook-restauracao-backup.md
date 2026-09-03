@@ -101,6 +101,13 @@ script errava:
    buckets se misturam e ninguém percebe, porque o total de arquivos continua
    parecendo certo.
 
+🪤 **Zero arquivos não é erro.** Rodando em `prod`, o script devolve zero nos
+três buckets — e está certo: a produção é interna, nunca recebeu upload, e os
+buckets existem vazios. A primeira versão tratava zero como falha e mandava
+refazer um login que já estava feito, escondendo a resposta correta atrás de um
+erro inventado. Hoje o que decide o desfecho é se algum `cp` **falhou**, não a
+contagem.
+
 **O banco NÃO entra por padrão** (`--com-banco` para incluir): o `db dump` roda
 o pg_dump dentro de um container **Docker**, e sem o Docker Desktop ligado ele
 falha. Como o banco já tem 7 dias de backup automático, isso não é perda — quem

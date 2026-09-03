@@ -78,6 +78,8 @@ function supabase(args, rotulo) {
 console.log("Storage — a parte que o backup automático NÃO cobre\n")
 let totalArquivos = 0
 
+const falhas = []
+
 for (const bucket of BUCKETS) {
   // `--experimental` é exigido pelos comandos de storage da CLI.
   // O destino é a pasta `storage`: a própria CLI cria a subpasta do bucket.
@@ -86,7 +88,10 @@ for (const bucket of BUCKETS) {
      "--project-ref", ref, `ss:///${bucket}`, `${destino}/storage`],
     `  → ${bucket}`,
   )
-  if (!r.ok) console.error(`     ⚠️  falhou em ${bucket} — os demais continuam`)
+  if (!r.ok) {
+    falhas.push(bucket)
+    console.error(`     ⚠️  falhou em ${bucket} — os demais continuam`)
+  }
 }
 
 // ─── Banco (opcional) ────────────────────────────────────────────────────────
@@ -124,10 +129,24 @@ for (const bucket of BUCKETS) {
   console.log(`  ${bucket.padEnd(16)} ${n} arquivo(s)`)
 }
 
-if (totalArquivos === 0) {
-  console.error("\n❌ Nenhum arquivo baixado. Se a mensagem acima fala em access")
-  console.error("   token, rode `npx supabase login` e tente de novo.")
+// 🪤 Zero arquivos NÃO é erro por si só. A produção é interna e nunca recebeu
+// upload — os três buckets existem e estão vazios, e "0" é o resultado correto.
+// A primeira versão deste script tratava zero como falha e mandava o usuário
+// refazer o login que já estava feito, escondendo a resposta certa atrás de um
+// erro inventado. O que decide é se algum `cp` FALHOU, não a contagem.
+if (falhas.length > 0) {
+  console.error(`\n❌ Falhou em: ${falhas.join(", ")}`)
+  console.error("   Se a mensagem acima fala em access token, rode")
+  console.error("   `npx supabase login` e tente de novo.")
   process.exit(1)
+}
+
+if (totalArquivos === 0) {
+  console.log(`\n✅ Nada a copiar — os buckets de '${ambiente}' estão vazios.`)
+  console.log("   Não é erro: significa que esse ambiente ainda não recebeu")
+  console.log("   nenhum upload. Backup vazio é backup fiel.")
+  fs.rmSync(destino, { recursive: true, force: true })
+  process.exit(0)
 }
 
 console.log(`\n✅ Backup em ${destino}`)
