@@ -2,10 +2,13 @@
 
 **Criado em:** 02/09/2026 · Fecha o item "Backups/PITR + política de retenção + runbook de restauração" do `docs/checklist-go-live.md`.
 
-> ⚠️ **Este procedimento nunca foi executado.** Um runbook não testado é uma hipótese
-> escrita em prosa. O primeiro item da seção "Antes de precisar" existe para
-> mudar isso, e deve ser feito **em staging**, com calma, antes de qualquer
-> incidente.
+> ✅ O **backup manual** foi executado e verificado no staging em 02/09/2026 —
+> ver a seção correspondente, com os números reais e os três defeitos que só
+> apareceram rodando.
+>
+> ⚠️ A **restauração**, não. Nenhum backup foi restaurado até hoje, e um runbook
+> não testado é hipótese escrita em prosa. O primeiro item de "Antes de precisar"
+> existe para mudar isso — em staging, com calma, antes de qualquer incidente.
 
 ---
 
@@ -54,11 +57,12 @@ Uma vez por máquina, antes: `npx supabase login` (abre o navegador).
 instalada** — um script `.sh` falharia com uma mensagem sobre a Microsoft Store.
 O `.mjs` roda igual no PowerShell e no Git Bash.
 
-O script baixa, numa pasta datada em `backups/`:
+O script baixa **os três buckets do Storage** — a parte que o backup automático
+não cobre — numa pasta datada em `backups/`, cada bucket na sua subpasta.
 
-1. **Schema do banco** (`schema.sql`) — o que recria a estrutura num banco vazio
-2. **Dados do banco** (`dados.sql`, com `COPY` em vez de `INSERT`)
-3. **Os três buckets** do Storage — a parte que o backup automático **não** cobre
+Para incluir também o dump do banco (schema + dados), rode com `--com-banco`.
+Isso exige **Docker Desktop ligado** e normalmente é desnecessário: o banco já
+tem 7 dias de backup automático.
 
 Ele **exige** dizer `staging` ou `prod`, de propósito: os dois refs se parecem
 (`zythy…` e `jdxd…`) e já houve confusão entre ambientes.
@@ -80,10 +84,27 @@ quando não precisar mais.
 computador, já estão separados. É porque se aquele equipamento morrer, o backup
 morre junto. O que resolve é redundância da cópia, não distância do original.
 
-**Estado:** o script nunca foi executado ponta a ponta — falta credencial de
-quem tem acesso ao painel. Verificado até onde dá sem ela: a CLI aceita a forma
-dos comandos e para na autenticação. Na primeira execução, anotar aqui quanto
-tempo levou e o tamanho gerado.
+**Estado: EXECUTADO E VERIFICADO no staging em 02/09/2026.** Baixou 559
+arquivos, 27 MB, em ~1 min: `booking-photos` 153, `id-docs` 2, `item-images`
+404, cada um na sua subpasta. O backup de teste foi apagado depois — não faz
+sentido deixar PII de teste na máquina.
+
+Três coisas que só apareceram rodando de verdade, e que a primeira versão do
+script errava:
+
+1. Os comandos de `storage` exigem `--experimental`. Sem ele, a CLI recusa.
+2. O destino precisa ser caminho **relativo com `/`**. Caminho absoluto do
+   Windows faz a CLI interpretar o `C:` como esquema de URI e responder
+   *"Unsupported operation"*.
+3. 🪤 A pasta de destino precisa **existir antes**. Se não existir, a CLI
+   despeja o conteúdo solto nela em vez de criar a subpasta do bucket — os três
+   buckets se misturam e ninguém percebe, porque o total de arquivos continua
+   parecendo certo.
+
+**O banco NÃO entra por padrão** (`--com-banco` para incluir): o `db dump` roda
+o pg_dump dentro de um container **Docker**, e sem o Docker Desktop ligado ele
+falha. Como o banco já tem 7 dias de backup automático, isso não é perda — quem
+não tem backup nenhum é o Storage, e é isso que o script resolve.
 
 ---
 

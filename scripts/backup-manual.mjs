@@ -1,20 +1,26 @@
 /**
- * Backup manual do ShareO — banco + Storage, numa pasta datada.
+ * Backup manual do ShareO — os arquivos do Storage, que o Supabase NÃO cobre.
  *
  *   node scripts/backup-manual.mjs prod
  *   node scripts/backup-manual.mjs staging
+ *   node scripts/backup-manual.mjs prod --com-banco    (exige Docker; ver abaixo)
  *
  * Pré-requisito, uma vez por máquina:  npx supabase login
  *
- * 🪤 Por que existe: o Supabase faz 7 dias de backup diário DO BANCO, mas NÃO
- * faz backup do Storage e não oferece alternativa nativa (o banco guarda só o
- * caminho do arquivo). `booking-photos` são as fotos de check-in e check-out —
- * a base de prova das disputas. Sem isto, não existe cópia nenhuma delas.
+ * 🪤 Por que existe: o Supabase mantém 7 dias de backup diário DO BANCO, mas
+ * NÃO faz backup do Storage e não oferece alternativa nativa — o banco guarda
+ * só o caminho do arquivo. `booking-photos` são as fotos de check-in e
+ * check-out, ou seja a base de prova das disputas. Sem isto, não existe cópia
+ * nenhuma delas.
+ *
+ * 🪤 Por isso o banco NÃO entra por padrão: ele já tem backup automático, e o
+ * `supabase db dump` roda o pg_dump dentro de um container DOCKER — numa
+ * máquina sem Docker Desktop ligado, ele falha e levava o script junto. Se
+ * quiser mesmo o dump, use --com-banco com o Docker rodando.
  *
  * 🪤 Por que Node e não shell: no Windows, `bash` resolve para o WSL
- * (C:\Windows\system32\bash.exe), que nesta máquina não tem distribuição
- * instalada — o script shell falhava com uma mensagem sobre a Microsoft Store,
- * que não ajuda ninguém. Node roda igual no PowerShell e no Git Bash.
+ * (C:/Windows/system32/bash.exe), que nesta máquina não tem distribuição
+ * instalada. Node roda igual no PowerShell e no Git Bash.
  */
 import { spawnSync } from "node:child_process"
 import fs   from "node:fs"
@@ -29,71 +35,79 @@ const PROJETOS = {
 
 const BUCKETS = ["booking-photos", "id-docs", "item-images"]
 
-const ambiente = process.argv[2]
-const ref = PROJETOS[ambiente]
+const ambiente  = process.argv[2]
+const comBanco  = process.argv.includes("--com-banco")
+const ref       = PROJETOS[ambiente]
 
 if (!ref) {
-  console.error("uso: node scripts/backup-manual.mjs <staging|prod>\n")
+  console.error("uso: node scripts/backup-manual.mjs <staging|prod> [--com-banco]\n")
   console.error("Dizer o ambiente é obrigatório de propósito: os dois refs se")
   console.error("parecem (staging=zythy… prod=jdxd…) e já houve confusão.")
   process.exit(1)
 }
 
 const carimbo = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-")
-const destino = path.join("backups", `${ambiente}_${carimbo}`)
+// Caminho RELATIVO e com "/": a CLI recusa caminho absoluto do Windows —
+// interpreta o "C:" como esquema de URI e responde "Unsupported operation".
+const destino = `backups/${ambiente}_${carimbo}`
 
 console.log(`Ambiente: ${ambiente}  (ref ${ref})`)
 console.log(`Destino:  ${destino}\n`)
 
-fs.mkdirSync(destino, { recursive: true })
+// 🪤 A pasta `storage` precisa EXISTIR antes do cp. Se o destino não existe, a
+// CLI trata o caminho como a própria pasta do bucket e despeja o conteúdo solto
+// nela — os três buckets se misturam e a separação por bucket se perde. Com a
+// pasta criada antes, ela aninha `storage/<bucket>/…` como esperado.
+fs.mkdirSync(`${destino}/storage`, { recursive: true })
 
-/** `shell: true` porque no Windows o npx é um .cmd e não é executável direto. */
 function supabase(args, rotulo) {
   console.log(rotulo)
-  const r = spawnSync("npx", ["supabase", ...args], { stdio: "inherit", shell: true })
+  // shell: true porque no Windows o npx é um .cmd, não um executável.
+  const r = spawnSync("npx", ["supabase", ...args], {
+    stdio: ["inherit", "pipe", "pipe"], shell: true, encoding: "utf8",
+  })
+  const saida = `${r.stdout ?? ""}${r.stderr ?? ""}`
   if (r.status !== 0) {
-    console.error(`  ⚠️  falhou (código ${r.status})`)
-    return false
+    console.error(saida.split("\n").filter((l) => !l.startsWith("npm warn")).join("\n"))
+    return { ok: false, saida }
   }
-  return true
+  return { ok: true, saida }
 }
 
-// ─── Banco ───────────────────────────────────────────────────────────────────
-// Schema e dados separados: restaurar o schema num banco vazio é o caminho
-// normal, e ter os dados à parte permite conferir sem reler um arquivo enorme.
-const okSchema = supabase(
-  ["db", "dump", "--project-ref", ref, "-f", path.join(destino, "schema.sql")],
-  "[1/3] Schema do banco…",
-)
+// ─── Storage — a razão de este script existir ────────────────────────────────
+console.log("Storage — a parte que o backup automático NÃO cobre\n")
+let totalArquivos = 0
 
-// Sem credencial, TUDO falha igual — avisar uma vez e parar vale mais do que
-// repetir o mesmo erro cinco vezes.
-if (!okSchema) {
-  // Sai sem deixar pasta vazia para trás — lixo de tentativa falha confunde
-  // quem depois procura "o backup de ontem".
-  fs.rmSync(destino, { recursive: true, force: true })
-  console.error("\n❌ O primeiro passo falhou. Se a mensagem fala em access token,")
-  console.error("   rode `npx supabase login` e tente de novo.")
-  process.exit(1)
-}
-
-supabase(
-  ["db", "dump", "--project-ref", ref, "--data-only", "--use-copy",
-   "-f", path.join(destino, "dados.sql")],
-  "[2/3] Dados do banco…",
-)
-
-// ─── Storage ─────────────────────────────────────────────────────────────────
-// É a parte que o backup automático NÃO cobre — a razão de este script existir.
-console.log("[3/3] Storage (os 3 buckets)…")
 for (const bucket of BUCKETS) {
-  const pasta = path.join(destino, "storage", bucket)
-  fs.mkdirSync(pasta, { recursive: true })
-  // -j 4: paralelismo modesto; subir muito arrisca 429 do Storage API.
-  supabase(
-    ["storage", "cp", "-r", "-j", "4", "--project-ref", ref, `ss:///${bucket}`, pasta],
+  // `--experimental` é exigido pelos comandos de storage da CLI.
+  // O destino é a pasta `storage`: a própria CLI cria a subpasta do bucket.
+  const r = supabase(
+    ["storage", "cp", "-r", "-j", "4", "--experimental",
+     "--project-ref", ref, `ss:///${bucket}`, `${destino}/storage`],
     `  → ${bucket}`,
   )
+  if (!r.ok) console.error(`     ⚠️  falhou em ${bucket} — os demais continuam`)
+}
+
+// ─── Banco (opcional) ────────────────────────────────────────────────────────
+if (comBanco) {
+  console.log("\nBanco (--com-banco)")
+  const r = supabase(
+    ["db", "dump", "--project-ref", ref, "-f", `${destino}/schema.sql`],
+    "  → schema",
+  )
+  if (!r.ok && /docker/i.test(r.saida)) {
+    console.error("\n  ⚠️  O `db dump` roda o pg_dump dentro de um container Docker.")
+    console.error("      Ligue o Docker Desktop e rode de novo, OU deixe pra lá: o")
+    console.error("      banco já tem 7 dias de backup automático no Supabase —")
+    console.error("      quem não tem backup nenhum é o Storage, e esse já foi feito.")
+  } else if (r.ok) {
+    supabase(
+      ["db", "dump", "--project-ref", ref, "--data-only", "--use-copy",
+       "-f", `${destino}/dados.sql`],
+      "  → dados",
+    )
+  }
 }
 
 // ─── Resumo ──────────────────────────────────────────────────────────────────
@@ -106,11 +120,19 @@ function contarArquivos(dir) {
 console.log("\n─────────────────────────────────────────────")
 for (const bucket of BUCKETS) {
   const n = contarArquivos(path.join(destino, "storage", bucket))
+  totalArquivos += n
   console.log(`  ${bucket.padEnd(16)} ${n} arquivo(s)`)
 }
+
+if (totalArquivos === 0) {
+  console.error("\n❌ Nenhum arquivo baixado. Se a mensagem acima fala em access")
+  console.error("   token, rode `npx supabase login` e tente de novo.")
+  process.exit(1)
+}
+
 console.log(`\n✅ Backup em ${destino}`)
 console.log("\n⚠️  Esta pasta contém DADOS PESSOAIS: documentos de identidade")
-console.log("    (id-docs) e o dump do banco com e-mails, telefones e endereços.")
+console.log("    (id-docs) e fotos de reservas de usuários reais.")
 console.log("    Não deixe em nuvem pessoal; apague quando não precisar mais.")
 console.log("\n⚠️  É uma cópia só, num equipamento só. Se ele morrer, o backup")
 console.log("    morre junto — vale duplicar em outro lugar.")
