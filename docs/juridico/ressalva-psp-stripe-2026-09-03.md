@@ -8,21 +8,37 @@ Isso não invalida o parecer, mas **uma parte dele não se transporta** — e é
 
 ---
 
-## O que continua valendo
+## ⚠️ O ponto mais pesado: o dinheiro **transita pela conta da ShareO**
 
-O raciocínio central do parecer não dependia de *qual* PSP:
+Este é o item que mudamos de opinião ao verificar o código, e por isso vem primeiro.
+
+O parecer afastou a Lei 12.865/2013 sobre a premissa de que **a ShareO não retém nem custodia** o valor: o pagamento entraria no PSP, que faria o split e repassaria ao locador, sem passar pela plataforma.
+
+**A implementação com a Stripe não funciona assim.** Ela usa *separate charges and transfers*, e está escrito no próprio código (`lib/payments/owner-transfer.ts`):
+
+> *"A cobrança fica na conta da plataforma; o Transfer sai depois, quando o repasse fica elegível (N dias após a devolução)."*
+
+Ou seja: o valor cheio da locação **entra no saldo da ShareO na Stripe** e permanece lá por dias, até o repasse. A taxa de 15% não é cobrada por `application_fee` — transfere-se apenas os 85%, e o restante simplesmente fica.
+
+**Não é acidente:** é o que preserva a retenção do valor enquanto uma disputa pode ser aberta, comportamento que o produto já tinha e que a mediação depende. Mas **é factualmente diferente do desenho que o parecer validou.**
+
+A pergunta, então, não é a mesma que foi respondida em 30/06: *com o valor transitando pela conta da plataforma, ainda se afasta o enquadramento como instituição de pagamento?* O parecer respondeu "sim" para um arranjo em que isso não acontecia.
+
+---
+
+## O que continua valendo
 
 > *"Os fundadores decidiram terceirizar o arranjo de pagamentos, contratando um PSP licenciado, responsável pelo fluxo financeiro."*
 
-A ShareO **não é *merchant of record***. O pagamento não passa por conta da plataforma: entra no PSP, que faz o split e repassa ao locador. Isso afasta a exigência de autorização do BACEN pela Lei 12.865/2013, e vale igual com a Stripe.
+A terceirização em si continua: quem opera o arranjo, guarda o dinheiro e faz o KYC é a Stripe — a ShareO não movimenta conta bancária própria nem custodia fora do PSP. O que mudou é **onde**, dentro do PSP, o valor descansa antes do repasse.
 
-Os quatro pilares que sustentavam a resposta seguem de pé: terceirização do arranjo, taxa de 15% explícita, ausência de caução, retenção fiscal de 5 anos.
+Seguem de pé, sem depender do PSP: taxa de 15% explícita na UI e nos Termos, ausência de caução, retenção fiscal de 5 anos, teto de R$ 500 por transação.
 
 ---
 
 ## O que **não** se transporta
 
-### 1. Transferência internacional (LGPD art. 33) — o ponto central
+### 1. Transferência internacional (LGPD art. 33)
 
 O Mercado Pago é entidade **brasileira**. A Stripe é **estrangeira**. O parecer não analisou transferência internacional para o fluxo de pagamentos porque, no desenho dele, não havia.
 
@@ -68,10 +84,13 @@ Na prática isso continua: a Stripe faz a verificação de identidade dos locado
 
 ## O que peço
 
-1. **Transferência internacional:** qual mecanismo do art. 33 se aplica ao fluxo de pagamentos com a Stripe, e o que a Política precisa dizer ao titular. É o único ponto que consideramos bloqueante.
-2. **Fiscal:** a separação 15% receita / 85% em trânsito se mantém sob o Simples Nacional?
-3. **PLD/FT:** a conclusão de que a ShareO não é sujeito obrigado depende de o PSP ser autorizado pelo BACEN?
-4. **Confirmação geral:** o restante do parecer se aplica ao desenho com a Stripe, ou algum outro ponto precisa ser revisitado?
+1. **Lei 12.865 / custódia** — com o valor transitando pelo saldo da ShareO na Stripe por alguns dias antes do repasse, a conclusão de 30/06 se mantém? **É o ponto mais pesado**, e o único em que uma resposta negativa mexeria no produto, não só no texto.
+2. **Transferência internacional** — qual mecanismo do art. 33 se aplica ao fluxo de pagamentos com a Stripe, e o que a Política precisa dizer ao titular.
+3. **Fiscal** — a separação 15% receita / 85% em trânsito se mantém sob o Simples Nacional? A pergunta ganha peso porque o valor cheio agora passa pela conta da plataforma.
+4. **PLD/FT** — a conclusão de que a ShareO não é sujeito obrigado depende de o PSP ser autorizado pelo BACEN?
+5. **Confirmação geral** — o restante do parecer se aplica ao desenho com a Stripe, ou algum outro ponto precisa ser revisitado?
+
+> **Nota de honestidade sobre este documento.** A primeira versão afirmava que *"o pagamento não passa por conta da plataforma"*, repetindo a premissa do parecer sem conferir a implementação. Ao verificar o código antes de enviar, encontramos o oposto — e o item 1 acima nasceu dessa correção. O registro fica aqui porque a diferença entre os dois desenhos é justamente o que precisa da sua análise.
 
 ---
 
