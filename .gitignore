@@ -126,3 +126,8 @@ public/em-breve/
 *.crt
 *.key
 Certificado_Digital*
+
+# Backups manuais (scripts/backup-manual.sh) — NUNCA versionar.
+# Este repositorio e PUBLICO e o backup contem dump do banco e o bucket
+# id-docs, ou seja documentos de identidade de usuarios reais.
+backups/

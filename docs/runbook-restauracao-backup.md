@@ -41,6 +41,38 @@ Três buckets, com consequências bem diferentes:
 
 ---
 
+## Backup manual — o que cobre o buraco do Storage
+
+```bash
+bash scripts/backup-manual.sh prod
+```
+
+Uma vez por máquina, antes: `npx supabase login`.
+
+O script baixa, numa pasta datada em `backups/`:
+
+1. **Schema do banco** (`schema.sql`) — o que recria a estrutura num banco vazio
+2. **Dados do banco** (`dados.sql`, com `COPY` em vez de `INSERT`)
+3. **Os três buckets** do Storage — a parte que o backup automático **não** cobre
+
+Ele **exige** dizer `staging` ou `prod`, de propósito: os dois refs se parecem
+(`zythy…` e `jdxd…`) e já houve confusão entre ambientes.
+
+⚠️ **`backups/` está no `.gitignore`, e precisa continuar.** O repositório é
+público e a pasta contém dump do banco e o bucket `id-docs` — documentos de
+identidade de usuários reais.
+
+⚠️ **A cópia fica na mesma máquina do original.** Isso protege contra engano
+(alguém apagou algo), não contra desastre. Levar para disco externo ou nuvem é
+parte do procedimento, não um extra.
+
+**Estado:** o script nunca foi executado ponta a ponta — falta credencial de
+quem tem acesso ao painel. Verificado até onde dá sem ela: a CLI aceita a forma
+dos comandos e para na autenticação. Na primeira execução, anotar aqui quanto
+tempo levou e o tamanho gerado.
+
+---
+
 ## Antes de precisar (fazer agora, não no incidente)
 
 1. **Testar uma restauração no staging.** Escolher um backup, restaurar, e anotar aqui: quanto tempo levou, se o projeto ficou indisponível, e o que a tela pediu de confirmação. **Sem isso, os passos abaixo são suposição.**
