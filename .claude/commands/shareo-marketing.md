@@ -78,7 +78,7 @@ Depois de aprovada a arquitetura, gere os ativos em sequência — sempre no mes
 - Programa Embaixadores/Fundadores é a alavanca de retenção+indicação de longo prazo, mas **payout e benefícios estão gated pelo D4** — trate hoje como programa de reconhecimento/prioridade de acesso, não de recompensa monetária.
 
 **Automação e integração com ferramentas de análise:**
-- **GA4 + Search Console** já configurados (ver `seo-shareo`) — use como fonte de verdade para tráfego orgânico e Core Web Vitals; tráfego pago via UTM consistente (`utm_source/medium/campaign`) para não poluir o orgânico.
+- ⚠️ **NÃO existe analytics.** O GA4 nunca foi ligado (apurado 04/09/2026) e está travado no código. **Não há fonte de dados de tráfego** — nem orgânico, nem de campanha. Qualquer número de audiência precisa ser pedido a quem opera a mídia, não inventado nem "consultado no GA4" e Core Web Vitals; tráfego pago via UTM consistente (`utm_source/medium/campaign`) para não poluir o orgânico.
 - Prefira **planilhas (Google Sheets/CSV)** como formato de troca com a IA — pedir para "compilar tudo em uma planilha" facilita revisão e reuso semana a semana.
 - Mantenha os prompts de cada análise **salvos e reaproveitáveis** (mesma conversa/projeto por cliente ou por praça) em vez de reescrever toda semana.
 - Para relatório executivo a fundadores/investidores, uma versão condensada do relatório de desempenho semanal serve de insumo direto (ver também `gestor-projeto-shareo` para o template de status).

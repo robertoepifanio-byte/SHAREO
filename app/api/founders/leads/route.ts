@@ -10,7 +10,7 @@ import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { normalizePlace } from "@/lib/geo/normalize-place"
 import { comCors, respostaPreflight } from "@/lib/cors-campanha"
 
-const SOURCE_VALUES = ["ORGANIC", "VIP_LANDING", "REFERRAL", "GOOGLE_ADS", "META_ADS"] as const
+const SOURCE_VALUES = ["ORGANIC", "VIP_LANDING", "REFERRAL", "GOOGLE_ADS", "META_ADS", "YOUTUBE_ADS", "LINKEDIN_ADS"] as const
 type SourceValue = (typeof SOURCE_VALUES)[number]
 
 const Schema = z.object({

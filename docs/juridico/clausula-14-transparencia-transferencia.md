@@ -25,7 +25,7 @@ prova contra nós. Ver [`dpa-apuracao-2026-09-03.md`](dpa-apuracao-2026-09-03.md
 |---|---|---|
 | 1 | **Retenção no Sentry** — §4 está com "(a confirmar)" à vista, de propósito | Técnico |
 | 2 | **Razão social de Resend e Mapbox** — usamos o nome comercial; Stripe, Vercel e Sentry vieram do adendo | Técnico |
-| 3 | **Google (GA4)** — se os fundadores decidirem desligá-lo (C2.9), sai da tabela §3 antes da publicação | Fundadores |
+| 3 | ✅ **Fechada em 04/09/2026** — o Google Analytics saiu da tabela §3: nunca esteve ligado, e agora está travado no código | — |
 | 4 | Preencher a data de "última atualização" e espelhar no app (`apps/mobile/`) | Dev |
 
 **Rastreabilidade 14.1:** a→§3+§4 · b→§3 · c→§1 · d→§5 · e→§6 · f→§8 · g→§7
@@ -75,7 +75,6 @@ Tudo isso fica armazenado em servidores na região de São Paulo.
 | **Functional Software, Inc. (Sentry)** | Estados Unidos | Monitorar falhas técnicas | Informações técnicas do erro, com filtro que remove dados pessoais |
 | **Mapbox, Inc.** | Estados Unidos | Converter endereços em coordenadas no mapa | O endereço informado, sem o seu nome |
 | **Upstash** | Estados Unidos | Proteger a plataforma contra uso abusivo | Seu endereço IP e um identificador da sessão |
-| **Google (Analytics)** | Estados Unidos | Entender como a plataforma é usada | Dados de navegação, sem o seu nome |
 
 **Como acontece:** de forma automática, por conexão criptografada, no momento em que você usa cada
 recurso. Enviamos só o necessário, e nunca entregamos nossa base de dados a ninguém.
@@ -90,7 +89,7 @@ Cada empresa fica com o dado só pelo tempo necessário:
 - **Hospedagem:** apenas durante o processamento da sua requisição.
 - **E-mails:** no momento do envio.
 - **Monitoramento de falhas:** _(prazo a confirmar antes da publicação)_.
-- **Mapas, proteção contra abuso e analytics:** no momento da consulta.
+- **Mapas e proteção contra abuso:** no momento da consulta.
 
 Se você excluir sua conta, seus dados de identificação e os textos escritos por você são apagados
 ou anonimizados imediatamente. **Documentos e imagens são removidos definitivamente, sem cópia em

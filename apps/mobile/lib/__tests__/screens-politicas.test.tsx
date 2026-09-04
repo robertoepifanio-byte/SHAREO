@@ -8,8 +8,7 @@
 //    com string exata — usar regex para buscar substring dentro do nó concatenado.
 
 import React from "react"
-import { render, screen, fireEvent } from "@testing-library/react-native"
-import { Linking } from "react-native"
+import { render, screen } from "@testing-library/react-native"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
@@ -83,7 +82,7 @@ describe("PoliticasScreen — rótulos verbatim (transcrição de app/politicas/
   it("exibe o título principal e a data de atualização", () => {
     wrap(<PoliticasScreen />)
     expect(screen.getAllByText("Políticas do ShareO").length).toBeGreaterThan(0)
-    expect(screen.getByText(/Última atualização: 20 de agosto de 2026/)).toBeTruthy()
+    expect(screen.getByText(/Última atualização: 4 de setembro de 2026/)).toBeTruthy()
   })
 
   it("exibe o parágrafo de introdução verbatim", () => {
@@ -149,7 +148,7 @@ describe("PoliticasScreen — rótulos verbatim (transcrição de app/politicas/
   it("exibe os títulos dos 2 sub-blocos da seção 5", () => {
     wrap(<PoliticasScreen />)
     expect(screen.getByText("5.1 Cookies Funcionais")).toBeTruthy()
-    expect(screen.getByText("5.2 Analytics (Google Analytics 4)")).toBeTruthy()
+    expect(screen.getByText("5.2 Analytics")).toBeTruthy()
   })
 
   it("exibe os 3 e-mails de contato na seção 6 verbatim", () => {
@@ -258,25 +257,23 @@ describe("PoliticasScreen — valores dinâmicos vêm de usePlatformConfig()", (
   })
 })
 
-describe("direito de opt-out do Analytics", () => {
-  // A primeira transcrição suprimiu o link e acrescentou "em seu navegador",
-  // texto que o site não tem. Num documento de privacidade o link não é
-  // enfeite: é o MEIO de exercer o direito descrito no parágrafo.
-  it("mantém o texto do site, sem acréscimo", () => {
+describe("seção 5.2 — a tela não pode declarar analytics que não existe", () => {
+  // 🪤 Este bloco testava o LINK DE OPT-OUT do Google Analytics, e estava certo
+  // enquanto o GA4 existisse: num documento de privacidade o link não é enfeite,
+  // é o MEIO de exercer o direito descrito no parágrafo.
+  //
+  // Em 04/09/2026 apurou-se que o GA4 **nunca esteve ligado** — variável ausente
+  // em GitHub Secrets e na Vercel, zero `gtag` nos dois sites no ar. A tela
+  // declarava ao titular um compartilhamento internacional que não acontecia.
+  //
+  // A trava inverteu de sentido: em vez de garantir que o opt-out esteja lá,
+  // garante que nada de analytics seja declarado enquanto não houver analytics.
+  // Se o GA4 voltar, `GA4_LIBERADO` volta a `true`, o texto do site é reescrito,
+  // este bloco volta ao que era — e o teste do site
+  // (`__tests__/unit/app/analytics-declaracao.test.ts`) reprova quem esquecer.
+  it("renderiza a negativa, sem menção ao Google Analytics nem opt-out", () => {
     wrap(<PoliticasScreen />)
-
-    expect(screen.getByText(/instalando o/)).toBeTruthy()
-    expect(screen.getByText("complemento de desativação do Google Analytics")).toBeTruthy()
-    expect(screen.queryByText(/em seu navegador/)).toBeNull()
-  })
-
-  it("o complemento é tocável e abre o opt-out do Google", () => {
-    const abrir = jest.spyOn(Linking, "openURL").mockResolvedValue(true)
-    wrap(<PoliticasScreen />)
-
-    fireEvent.press(screen.getByText("complemento de desativação do Google Analytics"))
-
-    expect(abrir).toHaveBeenCalledWith("https://tools.google.com/dlpage/gaoptout")
-    abrir.mockRestore()
+    expect(screen.getByText(/não utiliza ferramentas de analytics/)).toBeTruthy()
+    expect(screen.queryByText(/Google Analytics/)).toBeNull()
   })
 })

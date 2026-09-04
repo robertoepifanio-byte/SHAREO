@@ -21,7 +21,7 @@ import {
 import { IdentificacaoPrestador } from "@/components/legal/IdentificacaoPrestador"
 
 // Verbatim de app/politicas/page.tsx linha 23
-const LAST_UPDATED = "20 de agosto de 2026"
+const LAST_UPDATED = "4 de setembro de 2026"
 
 // ── Componentes internos ───────────────────────────────────────────────────────
 
@@ -277,7 +277,8 @@ export default function PoliticasScreen() {
             <Text style={s.bold}>Resend</Text> (envio de e-mails transacionais);{" "}
             <Text style={s.bold}>Sentry</Text> (monitoramento de erros — dados de sessão anonimizados);{" "}
             <Text style={s.bold}>Mapbox</Text> (mapas e geocodificação — coordenadas aproximadas);{" "}
-            <Text style={s.bold}>Google Analytics 4</Text> (métricas de uso anonimizadas). Não vendemos dados pessoais a terceiros.
+            <Text style={s.bold}>Vercel</Text> (hospedagem e execução da plataforma — dados das requisições enquanto você usa o site ou o app); e{" "}
+            <Text style={s.bold}>Upstash</Text> (proteção contra uso abusivo, contagem de visualizações e cache das consultas de CNPJ — endereço IP, o identificador da sua conta, o e-mail usado no login e, no cadastro de empresa, os dados públicos do CNPJ consultado). Não vendemos dados pessoais a terceiros.
           </Text>
         </PolicyBlock>
 
@@ -403,21 +404,15 @@ export default function PoliticasScreen() {
           </Text>
         </PolicyBlock>
 
-        <PolicyBlock title="5.2 Analytics (Google Analytics 4)" tokens={tokens}>
+        <PolicyBlock title="5.2 Analytics" tokens={tokens}>
           {/*
-            O link do opt-out é o MEIO de exercer o direito — num documento de
-            privacidade ele não é enfeite. A primeira transcrição o suprimiu e
-            acrescentou "em seu navegador", texto que o site não tem.
+            O link de opt-out do GA saiu junto com a declaração: sem ferramenta de
+            analytics não há do que optar por sair, e manter o link sugeriria que
+            existe medição. Se o analytics voltar, o link volta com ele — era o MEIO
+            de exercer o direito, não enfeite.
           */}
           <Text style={[s.body, { color: tokens.muted }]}>
-            Utilizamos o Google Analytics 4 para compreender como os usuários navegam na plataforma. Os dados coletados são anonimizados (sem identificação individual) e incluem páginas visitadas, tempo de sessão e origem do tráfego. Você pode optar por não participar instalando o{" "}
-            <Text
-              style={[s.link, { color: tokens.green }]}
-              onPress={() => Linking.openURL("https://tools.google.com/dlpage/gaoptout")}
-              accessibilityRole="link"
-            >
-              complemento de desativação do Google Analytics
-            </Text>.
+            A plataforma <Text style={s.bold}>não utiliza ferramentas de analytics de terceiros</Text>: não usamos cookies analíticos e não enviamos seus dados de navegação a terceiros para essa finalidade. Contamos <Text style={s.bold}>visualizações por anúncio</Text>, de forma agregada, para mostrar o desempenho a quem anuncia — esse número não identifica quem visitou.
           </Text>
         </PolicyBlock>
 

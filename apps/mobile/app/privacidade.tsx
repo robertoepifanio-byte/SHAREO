@@ -177,7 +177,7 @@ export default function PrivacidadeScreen() {
         <View style={[s.section, { borderColor: tokens.border }]}>
           <Text style={[s.sectionTitle, { color: tokens.navy }]}>4. Compartilhamento de Dados</Text>
           <Text style={[s.paragraph, { color: tokens.muted }]}>
-            Não vendemos seus dados a terceiros. Podemos compartilhá-los com: parceiros de processamento de pagamento (para finalizar transações); autoridades públicas (quando exigido por lei); prestadores de serviço de infraestrutura tecnológica (hospedagem, e-mail, analytics), sempre sob acordo de confidencialidade.
+            Não vendemos seus dados a terceiros. Podemos compartilhá-los com: parceiros de processamento de pagamento (para finalizar transações); autoridades públicas (quando exigido por lei); prestadores de serviço de infraestrutura tecnológica (hospedagem, e-mail, monitoramento de falhas), sempre sob acordo de confidencialidade.
           </Text>
         </View>
 
@@ -255,7 +255,7 @@ export default function PrivacidadeScreen() {
         <View style={[s.section, { borderColor: tokens.border }]}>
           <Text style={[s.sectionTitle, { color: tokens.navy }]}>7. Cookies</Text>
           <Text style={[s.paragraph, { color: tokens.muted }]}>
-            Utilizamos cookies essenciais para o funcionamento da plataforma (autenticação, preferências) e cookies analíticos (com seu consentimento) para entender como você usa o ShareO e melhorar a experiência.
+            Utilizamos apenas cookies essenciais ao funcionamento da plataforma (autenticação e preferências). Não usamos cookies analíticos nem de publicidade.
           </Text>
         </View>
 

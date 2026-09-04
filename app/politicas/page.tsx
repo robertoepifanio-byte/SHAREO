@@ -19,7 +19,9 @@ export const metadata: Metadata = {
 // para alterações substanciais, e a revisão de 2026-08-20 (ADR-028: PSP passa a ser
 // Stripe) altera as seções de pagamento, compartilhamento de dados e reembolso.
 // Avaliar junto com a advogada se exige bump de CONSENT_VERSION (lib/legal-config.ts).
-const LAST_UPDATED = "20 de agosto de 2026"
+// 04/09/2026: §2.3 (Vercel e Upstash entram, Google Analytics sai) e §5.2
+// (analytics de terceiros não existe; contagem agregada de visualizações existe).
+const LAST_UPDATED = "4 de setembro de 2026"
 
 export default async function PoliticasPage() {
   const [feeRateBps, payoutWindowDays] = await Promise.all([
@@ -204,8 +206,12 @@ export default async function PoliticasPage() {
                   servidores na região sa-east-1, Brasil); <strong>Resend</strong> (envio de
                   e-mails transacionais); <strong>Sentry</strong> (monitoramento de erros — dados
                   de sessão anonimizados); <strong>Mapbox</strong> (mapas e geocodificação —
-                  coordenadas aproximadas); <strong>Google Analytics 4</strong> (métricas de uso
-                  anonimizadas). Não vendemos dados pessoais a terceiros.
+                  coordenadas aproximadas); <strong>Vercel</strong> (hospedagem e execução da
+                  plataforma — dados das requisições enquanto você usa o site ou o app); e{" "}
+                  <strong>Upstash</strong> (proteção contra uso abusivo, contagem de visualizações e
+                  cache das consultas de CNPJ — endereço IP, o identificador da sua conta, o e-mail
+                  usado no login e, no cadastro de empresa, os dados públicos do CNPJ consultado).
+                  Não vendemos dados pessoais a terceiros.
                 </PolicyBlock>
 
                 <PolicyBlock title="2.4 Retenção de Dados">
@@ -364,19 +370,12 @@ export default async function PoliticasPage() {
                   Esses cookies não podem ser desativados sem comprometer o uso do serviço.
                 </PolicyBlock>
 
-                <PolicyBlock title="5.2 Analytics (Google Analytics 4)">
-                  Utilizamos o Google Analytics 4 para compreender como os usuários navegam na
-                  plataforma. Os dados coletados são anonimizados (sem identificação individual) e
-                  incluem páginas visitadas, tempo de sessão e origem do tráfego. Você pode optar por
-                  não participar instalando o{" "}
-                  <a
-                    href="https://tools.google.com/dlpage/gaoptout"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-brand hover:underline"
-                  >
-                    complemento de desativação do Google Analytics
-                  </a>.
+                <PolicyBlock title="5.2 Analytics">
+                  A plataforma <strong>não utiliza ferramentas de analytics de terceiros</strong>:
+                  não usamos cookies analíticos e não enviamos seus dados de navegação a terceiros
+                  para essa finalidade. Contamos <strong>visualizações por anúncio</strong>, de forma
+                  agregada, para mostrar o desempenho a quem anuncia — esse número não identifica
+                  quem visitou.
                 </PolicyBlock>
               </div>
             </section>

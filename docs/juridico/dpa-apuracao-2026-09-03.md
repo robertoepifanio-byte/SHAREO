@@ -9,8 +9,10 @@
 >    ANPD; não há nada a assinar.
 > 2. **No lugar dela apareceu algo pior.** As CPC são obrigatórias desde a Resolução 19/2024 e o
 >    prazo venceu em **23/08/2025**. Medidos os sete fornecedores, **a Stripe é a única que as
->    adota**: Vercel, Resend, Sentry, Mapbox, Upstash e Google Analytics **não publicam CPC**, e o
->    Supabase depende de definir se há transferência. Estamos fora do prazo há mais de um ano.
+>    adota**: Vercel, Resend, Sentry, Mapbox e Upstash **não publicam CPC**, e o Supabase depende de
+>    definir se há transferência. Estamos fora do prazo há mais de um ano.
+>    **(Atualizado em 04/09: eram seis. O Google Analytics saiu da conta — apurou-se que nunca
+>    esteve ligado. Ver §3.1.)**
 > 3. **Há uma obrigação nossa, que não depende de ninguém:** publicar o documento da **Cláusula 14**.
 >    Rascunho pronto em
 >    [`clausula-14-transparencia-transferencia.md`](clausula-14-transparencia-transferencia.md).
@@ -110,7 +112,7 @@ vem zero, a ausência é real.
 | Sentry | sentry.io/legal/dpa | 8 / 24 | 0 / 0 | idem |
 | **Mapbox** | **PDF do Customer DPA, abril/2025** (a página `/legal/dpa` é só invólucro; o contrato é PDF) | **32 / 45** | **0 / 0** | **sem cláusula brasileira** — usa a SCC europeia (Decisão 2021/914, Módulo 2) |
 | **Upstash** | **PDF do DPA** (`upstash.com/static/trust/dpa.pdf`) | ⚠️ ver nota | 0 / 0 | **sem cláusula brasileira** — só SCC da UE, IDTA do Reino Unido e Data Privacy Framework |
-| **Google (GA4)** | `business.safety.google/adsdatatransfers` e `/adsprocessorterms` | 101 (processor) | 1 / 0 | **sem cláusula brasileira** — as transferências cobrem só EEA, Reino Unido e Suíça; "Brazil" aparece só na *definição* de LGPD |
+| ~~Google (GA4)~~ | `business.safety.google/adsdatatransfers` e `/adsprocessorterms` | 101 (processor) | 1 / 0 | sem cláusula brasileira — **mas irrelevante: não há transferência.** Ver §3.1 |
 
 ⚠️ **Upstash — evidência de fonte única.** O texto do PDF foi lido na conversão automática, que
 respondeu de forma específica (SCC da UE, IDTA, DPF). O segundo método de extração **não
@@ -130,6 +132,34 @@ citado como prova em parecer.
 de dar o **Mapbox** como inconclusivo. Os três foram medidos na mesma data — e nenhum deles tem CPC.
 O número deixou de ser piso: **dos sete, só a Stripe está regular.**
 
+### 3.1 Google Analytics — a terceira pendência que não existia
+
+**Apurado em 04/09/2026, ao executar a decisão C2.9 ("desligar o GA4"): ele nunca esteve ligado.**
+
+| Verificação | Resultado |
+|---|---|
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` em GitHub Secrets | ausente |
+| A mesma variável na Vercel | ausente |
+| `shareo.com.br` (campanha) — 27 tags `<script>` | **0** ocorrências de `gtag` / `googletagmanager` / `dataLayer` |
+| `shareo-rouge.vercel.app` (staging) — 57 tags `<script>` | **0** idem |
+
+O componente sempre teve `if (!GA_ID) return null`. Sem a variável, nada carrega.
+
+**Mas `/politicas` declarava o GA4 como subprocessador ativo**, com link de opt-out — informando ao
+titular um compartilhamento internacional que não ocorria. Corrigido no site e no app.
+
+**O defeito de fundo era o guard depender de variável de ambiente:** ligar o GA era mudar algo fora
+do repositório, e a Política virava falsa sem nenhum commit mostrar isso. Agora há a trava
+`GA4_LIBERADO = false` no código e o teste `__tests__/unit/app/analytics-declaracao.test.ts`, que
+reprova quem religar o GA sem reescrever a seção 5.2. Provado por mutação: 3 testes falham.
+
+✅ **A medição da campanha foi resolvida sem reabrir o art. 33.** Não há analytics de terceiro —
+nem GA, nem Plausible, nem Vercel Analytics. Em vez de instalar um, passamos a gravar a **origem do
+lead no próprio banco** (`SignupSource`, que ganhou YouTube e LinkedIn em 04/09; a persistência de
+primeiro toque já existia). Isso responde "qual canal traz cadastro" sem transferência
+internacional, sem cookie e sem depender da advogada. O que não temos é o detalhe fino de
+navegação — decisão consciente, não esquecimento.
+
 **Supabase tem uma particularidade:** os dados ficam em repouso em `sa-east-1` (São Paulo). A
 questão não é onde o dado mora, e sim se o acesso lógico pela matriz nos EUA configura
 transferência. É pergunta para a advogada.
@@ -140,9 +170,10 @@ transferência. É pergunta para a advogada.
 
 | # | Questão | Quem decide | Gatilho |
 |---|---|---|---|
-| 1 | **Seis fornecedores sem CPC** (Vercel, Resend, Sentry, Mapbox, Upstash, GA4). Trocar de fornecedor, negociar adendo, ou enquadrar em outra hipótese do art. 33? | Advogada | Já cabe na conversa da Lei 12.865 que o Raimundo levou |
+| 1 | **Cinco fornecedores sem CPC** (Vercel, Resend, Sentry, Mapbox, Upstash). Trocar de fornecedor, negociar adendo, ou enquadrar em outra hipótese do art. 33? | Advogada | Já cabe na conversa da Lei 12.865 que o Raimundo levou |
 | 2 | Supabase em sa-east-1 com matriz nos EUA — há transferência internacional? | Advogada | Mesma conversa |
-| 3 | **GA4 é o mais fácil de resolver sem advogada:** é o único não essencial da lista. Desligar elimina a transferência em vez de regularizá-la | Fundadores | Decisão de produto |
+| 3 | ✅ **GA4 — fechado em 04/09.** Não precisou ser desligado: nunca esteve ligado. A Política foi corrigida e o código travado (§3.1) | — | Feito |
+| 3-bis | 🔴 **A campanha não tem medição alguma, com mídia paga rodando.** Medir exige ferramenta; ferramenta estrangeira reabre o art. 33 | Fundadores | Urgente — há dinheiro sendo gasto |
 | 4 | Publicar o documento da Cláusula 14 (rascunho pronto) | DPO + advogada | Pode andar já |
 | 5 | Reconfirmar o Upstash — evidência de fonte única | Técnico | Pode andar já |
 
