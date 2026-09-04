@@ -26,7 +26,12 @@ A LGPD (art. 33) permite a transferencia internacional de dados pessoais apenas 
 - o controlador adota garantias suficientes, como **clausulas contratuais padrao** ou **normas corporativas globais** aprovadas pela ANPD (art. 33 II); ou
 - uma das hipoteses excepcionais do art. 33 III a IX se aplica.
 
-> **Nota para o DPO:** a ANPD ainda nao publicou lista de paises adequados nem aprovou clausulas contratuais padrao proprias. O mecanismo mais pratico disponivel hoje e a adocao de **DPAs (Data Processing Agreements)** nos modelos das proprias empresas receptoras (alinhados com clausulas padrao internacionais — ex.: SCCs da UE adaptadas), combinado com a hipotese do art. 33 II c (contratos com clausulas especificas de protecao). A advogada deve confirmar o mecanismo mais robusto disponivel no cenario regulatorio atual da ANPD.
+> **Nota para o DPO — atualizada em 03/09/2026.** A **Resolução CD/ANPD nº 19, de 23/08/2024**
+> aprovou as **Cláusulas-Padrão Contratuais (CPC)** brasileiras, de adoção **integral e sem
+> modificação**, e o prazo de adequação **encerrou em 23/08/2025**. Desde então, cláusula contratual
+> só ampara o art. 33 se for a CPC da ANPD ou cláusula específica previamente aprovada por ela —
+> **SCC da União Europeia sozinha não basta**. Não há decisão de adequação para os EUA.
+> Apuração por fornecedor: [`dpa-apuracao-2026-09-03.md`](dpa-apuracao-2026-09-03.md).
 
 ---
 
@@ -36,12 +41,14 @@ A LGPD (art. 33) permite a transferencia internacional de dados pessoais apenas 
 
 | Subprocessador | Funcao na plataforma | Regiao / Sede | Dados pessoais transmitidos | Necessidade | Mecanismo de adequacao a formalizar |
 |---|---|---|---|---|---|
-| **Supabase** | Banco de dados PostgreSQL + Supabase Storage (buckets de imagens e documentos) + Supabase Realtime (chat) | **Brasil (sa-east-1)** — sede EUA (San Francisco) | Todos os dados pessoais da plataforma (cadastro, transacoes, mensagens, documentos) | Essencial — infraestrutura central | Dados **em repouso no Brasil** (sa-east-1); verificar se a sede EUA implica transferencia internacional para fins de LGPD; assinar DPA disponivel em supabase.com/privacy |
-| **Vercel** | Hospedagem e execucao do codigo da aplicacao (Next.js API Routes, renderizacao SSR) | EUA (San Francisco) — edge global | Dados de requisicoes processados em runtime (incluindo dados pessoais em transito entre cliente e API) | Essencial — infraestrutura de hosting | DPA disponivel em vercel.com/legal/dpa; clausulas SCCs da UE incluidas; assinar e arquivar |
-| **Resend** | Envio de e-mails transacionais (confirmacoes de reserva, notificacoes, recuperacao de senha) | EUA | Nome e e-mail dos destinatarios; assunto e corpo do e-mail (pode conter dados da reserva) | Essencial para comunicacao com usuarios | DPA disponivel em resend.com; clausulas SCCs; assinar e arquivar |
-| **Sentry** | Monitoramento de erros e excecoes da aplicacao | EUA (San Francisco) | Stacktraces, contexto da requisicao (com filtro de PII ativo — nenhum dado pessoal identificavel deveria constar) | Importante — qualidade e confiabilidade | DPA disponivel em sentry.io/legal/dpa; clausulas SCCs; assinar e arquivar; manter e auditar filtro de PII |
-| **Mapbox** | Geocoding de enderecos (conversao de CEP/logradouro em coordenadas lat/lng) | EUA (San Francisco) | Texto do endereco informado pelo usuario (sem identificadores pessoais diretamente vinculados na requisicao) | Essencial para funcao de busca por proximidade | Termos de Servico Mapbox incluem clausulas de processamento de dados; verificar disponibilidade de DPA especifico; avaliar minimizacao (geocoding pode ser feito com CEP apenas) |
-| **Stripe** | **PSP — processamento de pagamentos, split e repasse aos proprietarios** | EUA (San Francisco) | Identificacao das duas partes da locacao, valores e datas; no onboarding de quem anuncia, **dados bancarios e verificacao de identidade** coletados dentro da propria Stripe | Essencial — nao ha pagamento sem PSP | **DPA + mecanismo do art. 33 — A FORMALIZAR (critico)** |
+| **Supabase** | Banco de dados PostgreSQL + Supabase Storage (buckets de imagens e documentos) + Supabase Realtime (chat) | **Brasil (sa-east-1)** — sede EUA (San Francisco) | Todos os dados pessoais da plataforma (cadastro, transacoes, mensagens, documentos) | Essencial — infraestrutura central | Dados **em repouso no Brasil** (sa-east-1). Questão em aberto: a sede nos EUA configura transferência? Se sim, **não há CPC da ANPD publicada** (apurado 03/09/2026) |
+| **Vercel** | Hospedagem e execucao do codigo da aplicacao (Next.js API Routes, renderizacao SSR) | EUA (San Francisco) — edge global | Dados de requisicoes processados em runtime (incluindo dados pessoais em transito entre cliente e API) | Essencial — infraestrutura de hosting | ❌ **Sem CPC da ANPD** — o DPA traz só SCC da UE, insuficiente desde 23/08/2025 (apurado 03/09/2026) |
+| **Resend** | Envio de e-mails transacionais (confirmacoes de reserva, notificacoes, recuperacao de senha) | EUA | Nome e e-mail dos destinatarios; assunto e corpo do e-mail (pode conter dados da reserva) | Essencial para comunicacao com usuarios | ❌ **Sem CPC da ANPD** — só SCC da UE (apurado 03/09/2026) |
+| **Sentry** | Monitoramento de erros e excecoes da aplicacao | EUA (San Francisco) | Stacktraces, contexto da requisicao (com filtro de PII ativo — nenhum dado pessoal identificavel deveria constar) | Importante — qualidade e confiabilidade | ❌ **Sem CPC da ANPD** — só SCC da UE (apurado 03/09/2026); manter e auditar o filtro de PII |
+| **Mapbox** | Geocoding de enderecos (conversao de CEP/logradouro em coordenadas lat/lng) | EUA (San Francisco) | Texto do endereco informado pelo usuario (sem identificadores pessoais diretamente vinculados na requisicao) | Essencial para funcao de busca por proximidade | ❌ **Sem CPC da ANPD** — o Customer DPA de abril/2025 usa a SCC europeia (Decisão 2021/914, Módulo 2), apurado 03/09/2026. Avaliar minimizacao (geocoding por CEP apenas) |
+| **Stripe** | **PSP — processamento de pagamentos, split e repasse aos proprietarios** | EUA (San Francisco) | Identificacao das duas partes da locacao, valores e datas; no onboarding de quem anuncia, **dados bancarios e verificacao de identidade** coletados dentro da propria Stripe | Essencial — nao ha pagamento sem PSP | ✅ **RESOLVIDO (apurado em 03/09/2026).** A Stripe adota as **CPC da ANPD** (Módulos 1 e 2) no adendo de transferência, incorporado por referência ao contrato — **nada a assinar**. Resta a obrigação da **Cláusula 14**, que é nossa |
+| **Upstash** | Rate limiting (middleware e rotas administrativas) | EUA (global) | Endereco IP / identificador de sessao | Importante — protecao contra abuso | ❌ **Sem CPC da ANPD** — só SCC da UE, IDTA do Reino Unido e Data Privacy Framework (apurado 03/09/2026; evidência de fonte única, reconfirmar) |
+| **Google (Analytics 4)** | Analytics de uso | EUA | Dados de navegacao e uso da plataforma | **Nao essencial** — mediacao de produto | ❌ **Sem CPC da ANPD** — as transferências do Ads/Analytics cobrem só EEA, Reino Unido e Suíça (apurado 03/09/2026). O Google Cloud publica CPC brasileiras, mas o Analytics **não corre sob esses termos**. 💡 Por ser o único **não essencial** da lista, desligá-lo elimina a transferência em vez de regularizá-la |
 
 ### 2.2 Subprocessadores em avaliacao ou planejados
 
@@ -59,25 +66,25 @@ A LGPD (art. 33) permite a transferencia internacional de dados pessoais apenas 
 
 **Dados em transito e acesso logico:** a sede da Supabase Inc. e nos EUA, o que pode implicar acesso logico a dados por pessoal ou sistemas fora do Brasil (ex.: suporte, operacoes). Verificar com a advogada se o acesso logico pela empresa controladora estrangeira configura "transferencia" nos termos da LGPD.
 
-**Acao necessaria:** assinar o DPA da Supabase (disponivel em supabase.com/privacy) e registrar no RIPD.
+**Acao necessaria (revista em 03/09/2026):** primeiro **definir com a advogada se há transferência** — os dados estão em repouso no Brasil. Se houver, o DPA da Supabase **não** traz as CPC da ANPD (apurado 03/09), e a decisão é a mesma da Vercel. Registrar o desfecho no RIPD.
 
 ### 3.2 Vercel
 
 **Modelo de processamento:** o codigo da aplicacao (Next.js) e executado na infraestrutura da Vercel, que utiliza servidores edge globalmente distribuidos. Dados pessoais em transito (ex.: corpo de requisicoes API) podem ser processados fora do Brasil.
 
-**Acao necessaria:** assinar o DPA da Vercel (vercel.com/legal/dpa), que inclui SCCs da UE como mecanismo de transferencia. Avaliar com a advogada se as SCCs da UE sao aceitaveis como garantia para fins da LGPD art. 33 II c, na ausencia de clausulas brasileiras aprovadas pela ANPD.
+**Acao necessaria (revista em 03/09/2026):** o DPA da Vercel traz **SCC da UE, não as CPC da ANPD** — e SCC europeia deixou de bastar em 23/08/2025. Assiná-lo não regulariza a transferência. **Decisão da advogada:** trocar fornecedor, negociar adendo com as CPC, ou enquadrar em outra hipótese do art. 33.
 
 ### 3.3 Resend
 
 **Dados transmitidos:** nome e endereço de e-mail do destinatario; conteudo do e-mail transacional (que pode incluir nome da locacao, valores e datas). O volume de PII e limitado ao minimo necessario para a entrega do e-mail.
 
-**Acao necessaria:** assinar o DPA da Resend. Revisar os templates de e-mail para garantir minimizacao: incluir apenas os dados estritamente necessarios para a comunicacao (ex.: evitar incluir CPF ou dados financeiros sensiveis no corpo do e-mail).
+**Acao necessaria (revista em 03/09/2026):** a Resend também **não publica as CPC da ANPD** — mesma decisão pendente da Vercel. Independentemente disso, revisar os templates de e-mail para garantir minimizacao: incluir apenas os dados estritamente necessarios para a comunicacao (ex.: evitar incluir CPF ou dados financeiros sensiveis no corpo do e-mail).
 
 ### 3.4 Sentry
 
 **Dados transmitidos:** por design, nenhum dado pessoal identificavel deveria ser incluido nos eventos enviados ao Sentry (filtro de PII ativo). Na pratica, o risco existe se um erro ocorrer em um contexto que contenha dados de usuario (ex.: mensagem de erro com e-mail ou ID de usuario).
 
-**Acao necessaria:** assinar o DPA da Sentry. Auditar regularmente os eventos recentes no painel Sentry para verificar que o filtro esta funcionando. Considerar habilitar o "scrubbing" automatico de PII nas configuracoes do projeto Sentry.
+**Acao necessaria (revista em 03/09/2026):** o Sentry também **não publica as CPC da ANPD** — mesma decisão pendente da Vercel. Independentemente disso, auditar regularmente os eventos recentes no painel Sentry para verificar que o filtro esta funcionando. Considerar habilitar o "scrubbing" automatico de PII nas configuracoes do projeto Sentry.
 
 ### 3.5 Mapbox
 
@@ -95,12 +102,14 @@ A tabela abaixo consolida as acoes prioritarias por subprocessador:
 
 | Subprocessador | Mecanismo sugerido | Prioridade | Status atual |
 |---|---|---|---|
-| Supabase | Assinar DPA Supabase + verificar implicacoes do acesso logico pela sede EUA | Alta | Pendente |
-| Vercel | Assinar DPA Vercel (inclui SCCs da UE) | Alta | Pendente |
-| Resend | Assinar DPA Resend | Alta | Pendente |
-| Sentry | Assinar DPA Sentry + auditar filtro de PII | Alta | Pendente |
-| Mapbox | Verificar DPA ou clausulas nos ToS; avaliar minimizacao via CEP-only | Media | Pendente |
-| **Stripe** | **Assinar o DPA e documentar o mecanismo do art. 33.** É o PSP ativo e o subprocessador com os dados mais sensíveis: identificação das duas partes, valores, e — no onboarding de quem anuncia — dados bancários e verificação de identidade. | **CRITICA** | Pendente — bloqueia go-live |
+| Supabase | Definir com a advogada se dados em repouso no Brasil (sa-east-1) com sede nos EUA configuram transferência. **Se configurarem, não há CPC da ANPD publicada** | Alta | Pendente — questão em aberto |
+| Vercel | ❌ **Não publica CPC da ANPD** (só SCC da UE, insuficiente desde 23/08/2025). Decidir: trocar fornecedor, negociar adendo ou outra hipótese do art. 33 | **CRÍTICA** | Pendente — fora do prazo legal |
+| Resend | ❌ **Não publica CPC da ANPD** — mesma decisão | **CRÍTICA** | Pendente — fora do prazo legal |
+| Sentry | ❌ **Não publica CPC da ANPD** — mesma decisão. Manter e auditar o filtro de PII | **CRÍTICA** | Pendente — fora do prazo legal |
+| Mapbox | ❌ **Não publica CPC da ANPD** (Customer DPA abril/2025, SCC europeia) — mesma decisão. Avaliar minimização via CEP-only, que reduz a PII transmitida | **CRÍTICA** | Pendente — fora do prazo legal |
+| **Upstash** | ❌ **Não publica CPC da ANPD** — mesma decisão. ⚠️ Evidência de fonte única, reconfirmar | **CRÍTICA** | Pendente — fora do prazo legal |
+| **Google (GA4)** | ❌ **Não publica CPC da ANPD** para Ads/Analytics. 💡 **É o único não essencial da lista** — desligar resolve sem depender da advogada | Alta | **Decisão de produto** |
+| **Stripe** | ✅ **Nada a assinar.** As CPC da ANPD já estão no adendo, incorporadas por referência. O que sobra é **nosso**: publicar o documento da **Cláusula 14** ([`clausula-14-transparencia-transferencia.md`](clausula-14-transparencia-transferencia.md)), responder titulares (Cl. 15) e comunicar incidentes (Cl. 16) | — | **Resolvido em 03/09/2026** |
 | ~~Mercado Pago~~ | ~~Verificar clausulas~~ — **descartado em 24/08/2026**, removido do código. Sai do inventário. | — | Encerrado |
 
 ---
@@ -138,7 +147,9 @@ Next.js App [Vercel — EUA/edge]
 
 ### 6.1 Acoes imediatas (antes do go-live)
 
-1. **Assinar DPAs** com Vercel, Resend e Sentry — estes sao os subprocessadores com maior volume de PII transmitida ao exterior. Os DPAs estao disponiveis nos sites das empresas e podem ser aceitos eletronicamente.
+1. **Decidir o que fazer com os seis fornecedores sem CPC** — Vercel, Resend, Sentry, Mapbox, Upstash e Google Analytics. Assinar o DPA deles (que traz SCC da UE) **não resolve** desde 23/08/2025. As opções são trocar de fornecedor, negociar adendo com as CPC, ou enquadrar em outra hipótese do art. 33. **Decisão da advogada.**
+
+1-bis. **Desligar o Google Analytics é decisão de produto, não jurídica** — é o único **não essencial** da lista, e desligá-lo elimina a transferência em vez de exigir mecanismo para ela. Reduz o problema de seis para cinco sem depender de terceiro.
 
 2. **Verificar implicacoes do acesso logico da Supabase** — confirmar com a advogada se o fato de os dados estarem hospedados em sa-east-1 (Brasil) elimina a necessidade de clausulas adicionais ou se o acesso logico pela sede EUA configura transferencia para fins da LGPD.
 
@@ -148,12 +159,14 @@ Next.js App [Vercel — EUA/edge]
 
 ### 6.2 Acoes de medio prazo
 
-5. **Acompanhar publicacoes da ANPD** sobre:
-   - Lista de paises com nivel de protecao adequado (art. 33 I).
-   - Clausulas contratuais padrao proprias (art. 33 II b).
-   - Normas corporativas globais reconhecidas (art. 33 II c).
-   
-   Quando disponivel, migrar para o mecanismo brasileiro em vez de depender de SCCs da UE.
+5. **Acompanhar publicacoes da ANPD** sobre a **lista de países com nível de proteção adequado**
+   (art. 33 I) — ainda não existe, e uma decisão de adequação para os EUA dispensaria a discussão
+   de cláusulas.
+
+   ⛔ **O resto deste item foi removido em 03/09/2026.** Ele mandava "acompanhar a ANPD sobre
+   cláusulas contratuais padrão próprias e, quando disponível, migrar" — as CPC saíram em
+   **23/08/2024** e o prazo venceu em **23/08/2025**. Isso não é ação de médio prazo: está
+   **vencido**, e migrou para o item 1 das ações imediatas.
 
 6. **Incluir os subprocessadores na Politica de Privacidade** da plataforma (`/privacidade`), com descricao da funcao de cada um e dos mecanismos de protecao adotados (exigencia de transparencia — art. 9 LGPD).
 
@@ -175,7 +188,8 @@ Next.js App [Vercel — EUA/edge]
 - LGPD art. 48 — Comunicacao de incidentes
 - Marco Civil da Internet (Lei 12.965/2014), art. 15 — Retencao de registros de acesso
 - Resolucao CD/ANPD no 02/2022 — Hipoteses de aplicacao da LGPD
-- SCCs da Uniao Europeia (Commission Implementing Decision 2021/914) — referencia para clausulas de transferencia internacional enquanto ANPD nao publica as proprias
+- **Resolucao CD/ANPD no 19, de 23/08/2024** — Regulamento de Transferencia Internacional e **Clausulas-Padrao Contratuais (CPC)**. Adocao integral, sem modificacao; prazo de adequacao encerrado em **23/08/2025**. É a norma que rege este documento
+- SCCs da Uniao Europeia (Commission Implementing Decision 2021/914) — referencia **estrangeira**; não satisfaz o art. 33 por si só desde 23/08/2025
 
 ---
 

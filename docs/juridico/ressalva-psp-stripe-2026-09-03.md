@@ -50,7 +50,16 @@ Hoje há, e com os dados mais sensíveis da plataforma: identificação das duas
 
 **(b) O inventário de transferência internacional está desatualizado.** O rascunho [`transferencia-internacional-dados.md`](transferencia-internacional-dados.md) ainda descreve a Stripe como *"código preservado, oculto na UI"*, risco **"Baixa (inativo)"**, e o Mercado Pago como *"em avaliação"*. É o inverso da realidade: a Stripe é o PSP ativo e processa pagamentos reais no staging desde agosto. Dos seis subprocessadores listados, ela passou a ser **o mais sensível**, e está classificada como o menos.
 
-**(c) O DPA da Stripe consta como pendente** no mesmo rascunho, com prioridade baixa pela mesma razão desatualizada.
+**(c) ~~O DPA da Stripe consta como pendente~~ — APURADO E RESOLVIDO em 03/09/2026, depois de este documento ser escrito.** O adendo de transferência da Stripe (`stripe.com/en-br/legal/dta`, seção 11, atualizado em 18/11/2025) **adota as Cláusulas-Padrão Contratuais da ANPD**, Módulos 1 e 2, incorporadas por referência ao contrato de serviço. **Não há DPA a assinar com a Stripe.**
+
+> ⚠️ **O que a apuração encontrou no lugar** — e que muda a pergunta para a advogada:
+> a **Resolução CD/ANPD nº 19/2024** tornou as CPC obrigatórias, com prazo vencido em **23/08/2025**.
+> medidos os sete fornecedores, **a Stripe é a única regular**: Vercel, Resend, Sentry, Mapbox,
+> Upstash e Google Analytics **não publicam CPC** (só SCC da UE, que não basta sozinha), e o
+> Supabase depende de definir se dados em repouso no Brasil configuram transferência. Além disso,
+> o Módulo 2 atribui ao **exportador (ShareO)** as obrigações das Cláusulas 14, 15 e 16.
+> Detalhamento e evidências: [`dpa-apuracao-2026-09-03.md`](dpa-apuracao-2026-09-03.md).
+> Rascunho do documento da Cláusula 14: [`clausula-14-transparencia-transferencia.md`](clausula-14-transparencia-transferencia.md).
 
 ### 2. Fiscal (questão #2) — agora com o regime definido
 

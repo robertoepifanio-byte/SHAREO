@@ -251,7 +251,7 @@ Transmissao para terceiros:
 | F-03 | Exposicao de PII em logs ou relatorios de erro | Baixa | Medio | Filtro Sentry; PII nao gravada em logs | Auditar periodicamente a efetividade do filtro; testar com dados sinteticos |
 | F-04 | Uso de dados para finalidade diversa da declarada | Baixa | Alto | Consentimento versionado; finalidades declaradas na Politica | Nao ampliar finalidades sem nova coleta de consentimento especifico |
 | F-05 | Dificuldade do titular em exercer direitos (art. 18) | Medio | Medio | `DELETE /api/users/me`; `GET /api/users/me/export` implementados | Publicar canal de atendimento destacado na Politica; definir SLA de resposta (15 dias — ANPD) |
-| F-06 | Transferencia internacional sem adequacao formal | Medio | Alto | Dados persistidos em sa-east-1 (Brasil); subprocessadores EUA para funcoes auxiliares limitadas | Formalizar DPAs e/ou clausulas contratuais padrao com Resend, Sentry, Mapbox e Vercel (ver `docs/juridico/transferencia-internacional-dados.md`) |
+| F-06 | Transferencia internacional sem adequacao formal | Medio | Alto | Dados persistidos em sa-east-1 (Brasil); subprocessadores EUA para funcoes auxiliares limitadas | **Revisto em 03/09/2026 — a mitigacao anterior nao satisfaz a norma vigente.** As **CPC da ANPD** (Res. CD/ANPD 19/2024) sao obrigatorias e o prazo venceu em **23/08/2025**; DPA com SCC da UE nao basta. Situacao real, medidos os sete em 03/09: **so a Stripe adota as CPC**; **Vercel, Resend, Sentry, Mapbox, Upstash e Google Analytics nao publicam** (decisao pendente da advogada); **Supabase** depende de definir se ha transferencia. Pendencia adicional: publicar o **documento da Clausula 14** (obrigacao do exportador). Ver `docs/juridico/dpa-apuracao-2026-09-03.md` |
 | F-07 | Retencao excessiva de dados apos prazo legal | Baixo | Medio | Politica de retencao definida (5 anos fiscal; demais na exclusao de conta) | Implementar processo automatizado de eliminacao pos-prazo |
 | F-08 | Acesso interno injustificado a mensagens privadas | Baixo | Alto | Acesso restrito a roles ADMIN_SUPERADMIN e ADMIN_OPERACIONAL (disputas) | Formalizar politica interna de acesso a conversas; garantir log em `admin_logs` de todo acesso |
 | F-09 | Imagens de selfie classificadas como dado biometrico | Medio | Alto | Bucket privado; acesso restrito server-side | Confirmar com DPO/advogada se exige base legal art. 11 LGPD (dado sensivel) em vez de art. 7 IX |
@@ -299,7 +299,7 @@ A LGPD (arts. 17 a 22) garante ao titular os seguintes direitos, todos operacion
 
 1. **Revisao e validacao pelo DPO/advogada** — este rascunho deve ser revisado, complementado (CNPJ/endereco do controlador) e assinado antes de ter valor formal.
 2. **Confirmar base legal para selfies/dados biometricos** (Secao C.3, risco F-09) — verificar se exige art. 11 LGPD.
-3. **Formalizar DPAs com subprocessadores internacionais** (ver `docs/juridico/transferencia-internacional-dados.md`).
+3. **Adotar as CPC da ANPD por subprocessador** (Res. 19/2024 — nao e "assinar DPA"; prazo vencido em 23/08/2025) e **publicar o documento da Clausula 14**. Ver `docs/juridico/dpa-apuracao-2026-09-03.md`.
 4. **Publicar canal de atendimento a titulares** de forma destacada na Politica de Privacidade (`/privacidade`).
 5. **Definir SLA de resposta** a requisicoes de titulares (art. 18) — recomendado 15 dias.
 6. **Elaborar plano de resposta a incidentes** com procedimento de notificacao a ANPD e titulares (art. 48 — 72h).
