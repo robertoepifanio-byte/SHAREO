@@ -60,7 +60,17 @@ const config: Config = {
   // Aumentar gradualmente conforme novos módulos forem cobertos — meta H1: 70% global.
   // Os três módulos de domínio cobertos pelos testes P0 têm threshold individual de 70%.
   coverageThreshold: {
-    global: { lines: 1, functions: 11, branches: 23, statements: 1 },
+    // 🪤 Isto era `lines: 1` — um portão que deixava a cobertura cair de 34%
+    // para 2% sem a CI reclamar, ou seja, nenhum portão. Os números abaixo são
+    // uma CATRACA: ficam abaixo do medido em 04/09/2026 (linhas 34,14%,
+    // branches 73,54%, funções entre 42,54% e 44,19%). Não são meta — são o piso
+    // que já conquistamos e não queremos devolver. A meta de 70% do H1 se
+    // alcança subindo estes números aos poucos; nunca o contrário.
+    //
+    // 🪤 A folga de funções é maior de propósito: duas execuções seguidas deram
+    // 44,19% e 42,54%. Portão colado na medição reprova sozinho e ensina o time
+    // a ignorar o vermelho — que é pior do que não ter portão.
+    global: { lines: 33, functions: 41, branches: 72, statements: 33 },
     "./lib/pricing.ts":              { lines: 70, functions: 70, branches: 70, statements: 70 },
     "./lib/crypto.ts":               { lines: 70, functions: 70, branches: 70, statements: 70 },
     "./lib/validations/bookings.ts": { lines: 70, functions: 70, branches: 70, statements: 70 },

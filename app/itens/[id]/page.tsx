@@ -622,7 +622,7 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
                 <p className="mb-3 text-xs font-bold text-brand">🔒 Sua locação está protegida</p>
                 <ul className="space-y-2">
                   {[
-                    "Reembolso integral se você cancelar",
+                    "Cancelamento com reembolso de 100% — menos a taxa do pagamento, se você cancelar",
                     "Item protegido durante a locação",
                     "Suporte ShareO disponível 7 dias por semana",
                   ].map((item) => (

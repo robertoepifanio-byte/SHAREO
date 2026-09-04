@@ -169,7 +169,7 @@ export default async function BookingSuccessPage({ searchParams }: Props) {
             <p className="mb-2 text-xs font-bold text-brand">🔒 Sua locação está protegida</p>
             <ul className="space-y-1.5 text-xs text-foreground">
               {[
-                "Cancelamento gratuito até 24h antes da data de retirada",
+                "Cancelamento com reembolso de 100% — menos a taxa do pagamento, se você cancelar",
                 "Suporte ShareO disponível 7 dias por semana",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-2">

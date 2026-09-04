@@ -367,7 +367,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
             <Link
               href={buildUrl({ categoryId: undefined, page: 1 })}
               role="listitem"
-              className={`inline-flex flex-shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all ${
+              className={`inline-flex min-h-11 flex-shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all ${
                 !categoryId
                   ? "border-brand bg-brand/10 text-brand"
                   : "border-border bg-surface text-muted-foreground hover:border-brand/40 hover:text-foreground"
@@ -384,7 +384,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
                 key={cat.id}
                 href={buildUrl({ categoryId: cat.id, page: 1 })}
                 role="listitem"
-                className={`inline-flex flex-shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all ${
+                className={`inline-flex min-h-11 flex-shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-all ${
                   categoryId === cat.id
                     ? "border-brand bg-brand/10 text-brand"
                     : "border-border bg-surface text-muted-foreground hover:border-brand/40 hover:text-foreground"

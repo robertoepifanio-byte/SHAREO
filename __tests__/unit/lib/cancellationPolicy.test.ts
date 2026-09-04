@@ -79,3 +79,31 @@ describe("getCancellationPolicyLines", () => {
     expect(locatario.detail).toMatch(/Stripe/)
   })
 })
+
+/**
+ * 🪤 A política mudou em 25/08/2026 — a antecedência deixou de importar — mas
+ * duas telas continuaram prometendo a regra antiga por mais de uma semana:
+ * `/reservas/sucesso` dizia "Cancelamento gratuito até 24h antes da data de
+ * retirada", e a página do item prometia "Reembolso integral se você cancelar",
+ * omitindo a taxa da Stripe que o locatário absorve.
+ *
+ * O código estava certo e a `/ajuda` também; só as caixas de confiança ficaram
+ * para trás. Nenhum teste olhava para elas, porque são texto solto num array.
+ */
+describe("as caixas de confiança não podem prometer a política abolida", () => {
+  const TELAS = ["app/reservas/sucesso/page.tsx", "app/itens/[id]/page.tsx"]
+
+  it.each(TELAS)("%s não ressuscita a regra por antecedência", (rel) => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const fs = require("node:fs") as typeof import("node:fs")
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const path = require("node:path") as typeof import("node:path")
+    const texto = fs.readFileSync(path.resolve(__dirname, "../../..", rel), "utf8")
+
+    expect(texto).not.toMatch(/antes da data de retirada/)
+    expect(texto).not.toMatch(/[Cc]ancelamento gratuito/)
+    // "integral" sem a ressalva da taxa promete mais do que calcRefund entrega
+    // quando quem cancela é o locatário.
+    expect(texto).not.toMatch(/[Rr]eembolso integral se você cancelar/)
+  })
+})
