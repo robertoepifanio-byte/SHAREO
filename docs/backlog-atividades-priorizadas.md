@@ -8,6 +8,21 @@
 
 ---
 
+## 💾 Backup e restauração — o que ficou aberto depois do teste de 04/09/2026
+
+Contexto: em 04/09 a restauração do **Storage** passou a existir e foi **testada ponta a ponta** (599 arquivos no backup; 3 arquivos com checksums distintos restaurados, baixados de volta e conferidos — os três md5 bateram). Detalhes e armadilhas da CLI em [`runbook-restauracao-backup.md`](runbook-restauracao-backup.md). Restam duas coisas.
+
+| # | Item | Por que importa | Esforço |
+|---|---|---|---|
+| **BKP-01** 🟠 | **O backup do Storage é manual.** Se ninguém rodar `scripts/backup-manual.mjs`, não há o que restaurar. O que for enviado entre o último backup e o incidente não volta. | A Supabase **não faz backup nenhum do Storage** — só do banco. Fotos de reserva e documentos de identidade dependem exclusivamente de alguém lembrar de rodar o script. | Médio — precisa decidir **onde** a cópia vai parar (a máquina do fundador não serve como destino único) antes de automatizar |
+| **BKP-02** 🟠 | **A restauração do BANCO nunca foi ensaiada.** O runbook manda usar o botão *Restore* do painel da Supabase — operação destrutiva no projeto real, que não dá para testar em staging sem estragar o staging. | Um procedimento nunca executado tem passos errados que só aparecem no pior momento. Não sabemos quanto tempo leva nem o que a tela pede. | Baixo se houver projeto descartável; **precisa de um projeto Supabase temporário** (~$10/mês enquanto existir) |
+
+**BKP-02 tem um caminho barato:** criar o projeto descartável, restaurar, cronometrar, anotar no runbook e **apagar o projeto no mesmo dia**. O custo vira centavos.
+
+⚠️ **A pasta `backups/` contém documentos de identidade de usuários reais.** Está no `.gitignore` (conferido), mas continua sendo PII em máquina pessoal — o que reforça o BKP-01: decidir o destino é parte do problema, não detalhe.
+
+---
+
 ## 🔧 Ambiente de produção (`shareo-prod`) — pendências de uso interno (registrado em 2026-09-03)
 
 **Contexto:** Roberto quer testar o painel admin em `https://shareo-prod.vercel.app` (uso interno, atrás de Vercel Deployment Protection — exceção autorizada pelo fundador em 04/08, ver `project-d4-juridico`). Levantamento do estado atual, confirmado no código:
