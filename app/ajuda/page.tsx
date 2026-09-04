@@ -263,7 +263,7 @@ function buildSections(v: HelpVars) { return [
     iconBg: "bg-emerald-100 dark:bg-emerald-500/20",
     faqs: [
       { q: "Qual é a taxa de serviço do ShareO?",
-        a: `O ShareO cobra ${v.feeLabel} sobre o valor total da locação — cobrado do locatário. Essa taxa cobre o sistema de pagamento seguro, suporte ao cliente, proteção financeira da plataforma e manutenção do serviço. O valor exato aparece no resumo de pagamento antes de você confirmar. Sem surpresas.` },
+        a: `O ShareO retém ${v.feeLabel} sobre o valor total da locação e repassa o restante ao proprietário. Na prática: o locatário paga o preço anunciado, e o proprietário recebe o valor da locação menos a taxa. Os dois veem essa conta detalhada na página da reserva, antes e depois de confirmar. A taxa cobre o pagamento seguro, o suporte, a mediação de disputas e a manutenção da plataforma.` },
       { q: "Existe algum custo para anunciar?",
         a: "Não. Anunciar no ShareO é 100% gratuito. Você não paga nada para criar anúncios, receber reservas ou usar o chat. O ShareO só cobra a taxa de serviço (do locatário) quando uma locação é concluída com sucesso. Se a reserva for cancelada antes da entrega, nenhuma taxa é cobrada." },
       { q: "Como funciona a taxa por atraso na devolução?",
@@ -296,7 +296,7 @@ function buildSections(v: HelpVars) { return [
       { q: "Abri uma disputa e me entendi com a outra parte. Posso desistir?",
         a: "Pode, enquanto a equipe ainda não tiver decidido. Na página da reserva, use 'Cancelar disputa'. A locação volta a seguir seu curso normal: ninguém é reembolsado e o repasse ao proprietário volta para a fila. Só quem abriu a disputa pode desistir dela." },
       { q: "Preciso falar com a outra parte antes de abrir uma disputa?",
-        a: "Não é obrigatório, mas a maioria dos problemas se resolve numa conversa. Por isso, antes de abrir a reclamação, o ShareO oferece o link do chat da reserva. Se preferir seguir direto com a disputa, é só continuar." },
+        a: "Não é obrigatório, mas a maioria dos problemas se resolve numa conversa. Se você já tem uma conversa aberta com a outra parte, o ShareO mostra o link do chat antes de abrir a reclamação — e você decide se conversa ou se segue direto. Se ainda não conversaram, a reclamação abre direto; nesse caso, vale mandar uma mensagem pelo chat da reserva antes." },
       { q: "Posso apelar de uma decisão de disputa?",
         a: "Sim. Se você discordar da decisão, escreva para suporte@shareo.com.br em até 5 dias úteis contados da comunicação da decisão, explicando o motivo e anexando evidências que ainda não tenham sido analisadas. A equipe reavalia o caso quando há elemento novo. Caso o problema persista, você pode acionar os canais de defesa do consumidor (Procon) ou o e-Consumidor." },
     ],

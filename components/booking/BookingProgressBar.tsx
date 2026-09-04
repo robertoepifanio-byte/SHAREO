@@ -31,11 +31,23 @@ const STEPS: Step[] = [
   { id: 6, label: "Concluída" },
 ]
 
-/** Retorna qual etapa está "ativa" dado o status do booking */
+/**
+ * Retorna qual etapa está ATIVA — a que ainda vai acontecer, não a que já
+ * aconteceu.
+ *
+ * 🪤 O ramo `CONFIRMED` estava deslocado em uma casa nos DOIS sentidos, e o
+ * efeito só aparecia em tela: uma reserva paga exibia "ETAPA 3 DE 6 —
+ * PAGAMENTO" logo acima de um "Pago com sucesso". Encontrado testando o
+ * staging com personas em 03/09/2026, e é a mesma confusão que o botão "Ver
+ * pagamento" causava depois de pago.
+ *
+ *   confirmada e NÃO paga → o que falta é pagar          → etapa 3
+ *   confirmada e paga     → o que falta é retirar o item → etapa 4
+ */
 function statusToStep(status: BookingStatus, isPaid: boolean): number {
   switch (status) {
     case "PENDING":   return 1
-    case "CONFIRMED": return isPaid ? 3 : 2
+    case "CONFIRMED": return isPaid ? 4 : 3
     case "ACTIVE":    return 4
     case "RETURNED":  return 5 // Devolução em andamento — aguardando confirmação do locador
     case "COMPLETED": return 6
@@ -53,7 +65,11 @@ export function BookingProgressBar({ status, paymentStatus }: Props) {
 
   const isPaid       = paymentStatus === "PAID"
   const currentStep  = statusToStep(status, isPaid)
-  const currentLabel = STEPS[currentStep - 1]?.label
+  // Paga mas ainda não retirada cai na etapa 4, cujo rótulo é "Em uso" — que
+  // ainda não é verdade. Nomear o que de fato falta evita trocar um rótulo
+  // errado por outro.
+  const aguardandoRetirada = status === "CONFIRMED" && isPaid
+  const currentLabel = aguardandoRetirada ? "Aguardando retirada" : STEPS[currentStep - 1]?.label
   const fillWidth    = `${((currentStep - 1) / (STEPS.length - 1)) * 100}%`
 
   return (
