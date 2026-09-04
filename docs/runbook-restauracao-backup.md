@@ -136,9 +136,36 @@ não tem backup nenhum é o Storage, e é isso que o script resolve.
 
 ## Se for perda de arquivos do Storage
 
-Não há restauração. Os arquivos não estão em backup nenhum.
+**✅ Há restauração desde 04/09/2026, e ela foi testada ponta a ponta.**
 
-O que dá para fazer: identificar as reservas afetadas (`BookingPhoto`, `Booking.disputeStatus`) e pedir reenvio às partes enquanto a locação estiver viva. Depois de encerrada, a prova está perdida — e é exatamente por isso que o item de backup de Storage está em aberto acima.
+```bash
+node scripts/restore-storage.mjs backups/<pasta> staging --bucket item-images
+```
+
+O script exige dizer o ambiente (os refs `zythy…` e `jdxd…` se parecem, e já houve confusão) e recusa escrever na raiz de um bucket de **produção** sem `--sim-eu-quero` — porque ali sobrescrever apaga arquivo de usuário real.
+
+**Para ensaiar sem tocar no que está lá:** `--prefixo _restore-test` grava numa subpasta.
+
+### O teste de 04/09/2026 — o que foi provado
+
+1. Backup do staging: **599 arquivos** (173 booking-photos, 2 id-docs, 424 item-images).
+2. Três arquivos com **checksums distintos** restaurados em `item-images/_restore-test/`.
+3. Baixados de volta e comparados: **os três md5 bateram exatamente**.
+4. Prefixo apagado; conferido com listagem que a raiz do bucket ainda lista o conteúdo real (controle positivo) e o prefixo volta vazio.
+
+### 🪤 Armadilhas da CLI que custaram tempo no teste
+
+| | |
+|---|---|
+| `cp` usa **duas** barras: `ss://bucket/...` | `rm` e `ls` usam **três**: `ss:///bucket/...` |
+| `ls` sem barra no fim lista o **bucket**, não o conteúdo | `ss:///item-images/` (com barra) lista os arquivos |
+| Caminho absoluto do Windows é recusado | usar caminho **relativo** ao repositório |
+
+⚠️ **A pior delas:** `ls` num caminho mal formado responde `{"paths":[]}` — que parece "não tem nada aqui, já apagou". Sempre conferir com um **controle positivo** (listar a raiz do bucket e ver conteúdo real) antes de concluir que a limpeza funcionou.
+
+### O que a restauração ainda NÃO resolve
+
+O backup é **manual**. Se ninguém rodar, não há o que restaurar — e o arquivo perdido entre o último backup e o incidente não volta. Automatizar continua em aberto.
 
 ---
 

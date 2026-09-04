@@ -189,25 +189,37 @@ export default function PrivacidadeScreen() {
             Parte dos nossos prestadores de serviço está sediada fora do Brasil, principalmente nos Estados Unidos. Isso significa que alguns dos seus dados são transferidos e processados no exterior. Informamos abaixo quem são, o que recebem e para quê:
           </Text>
           <Text style={[s.paragraph, { color: tokens.muted }]}>
-            Stripe — processamento dos pagamentos. Recebe os dados necessários à cobrança e, no caso de quem anuncia, os dados bancários e de verificação de identidade exigidos para receber os repasses.
+            Stripe, LLC (Estados Unidos) — processamento dos pagamentos. Recebe os dados necessários à cobrança e, no caso de quem anuncia, os dados bancários e de verificação de identidade exigidos para receber os repasses. Os dados seguem em uso enquanto a locação estiver em curso e durante o repasse; depois, o registro da transação é guardado por 5 anos, como exige a lei fiscal, sem o seu nome.
           </Text>
           <Text style={[s.paragraph, { color: tokens.muted }]}>
-            Vercel — hospedagem e execução da aplicação. Processa os dados das requisições enquanto você usa a plataforma.
+            Vercel Inc. (Estados Unidos) — hospedagem e execução da aplicação. Processa os dados das requisições apenas durante o tempo em que cada tela funciona.
           </Text>
           <Text style={[s.paragraph, { color: tokens.muted }]}>
-            Resend — envio dos e-mails da plataforma. Recebe seu nome, e-mail e o conteúdo da mensagem enviada.
+            Plus Five Five, Inc. (Resend) (Estados Unidos) — envio dos e-mails da plataforma. Recebe seu nome, e-mail e o conteúdo da mensagem, no momento do envio.
           </Text>
           <Text style={[s.paragraph, { color: tokens.muted }]}>
-            Sentry — monitoramento de erros. Recebe informações técnicas da falha, com filtro que remove dados pessoais.
+            Functional Software, Inc. (Sentry) (Estados Unidos) — monitoramento de erros. Recebe informações técnicas da falha, com filtro que remove dados pessoais, mantidas por 30 dias.
           </Text>
           <Text style={[s.paragraph, { color: tokens.muted }]}>
-            Mapbox — conversão de endereços em coordenadas. Recebe o endereço informado, sem seu nome ou identificação.
+            Mapbox, Inc. (Estados Unidos) — conversão de endereços em coordenadas. Recebe o endereço informado, sem seu nome, no momento da consulta.
+          </Text>
+          <Text style={[s.paragraph, { color: tokens.muted }]}>
+            Upstash (Estados Unidos) — proteção contra uso abusivo, contagem de visualizações e cache das consultas de CNPJ. Recebe seu endereço IP, o identificador da sua conta, o e-mail usado no login e, no cadastro de empresa, os dados públicos do CNPJ consultado.
           </Text>
           <Text style={[s.paragraph, { color: tokens.muted }]}>
             O que permanece no Brasil: o banco de dados, os documentos e fotos que você envia e as mensagens do chat ficam armazenados em servidores na região de São Paulo.
           </Text>
           <Text style={[s.paragraph, { color: tokens.muted }]}>
-            Você pode solicitar informações sobre essas transferências, incluindo as garantias adotadas, pelo e-mail privacidade@shareo.com.br.
+            De quem é a responsabilidade: nós decidimos o que é tratado e para quê, respondemos aos seus pedidos e comunicamos incidentes de segurança. As empresas acima tratam os dados apenas conforme as nossas instruções e o contrato. Se um prestador falhar, quem responde a você somos nós.
+          </Text>
+          <Text style={[s.paragraph, { color: tokens.muted }]}>
+            Repasses a outros fornecedores: essas empresas podem usar fornecedores próprios — por exemplo, servidores em nuvem — sempre para a mesma finalidade descrita acima e com o mesmo dever de proteger seus dados. Nos pagamentos, a Stripe também precisa informar bancos e órgãos reguladores, por exigência legal.
+          </Text>
+          <Text style={[s.paragraph, { color: tokens.muted }]}>
+            Você pode solicitar informações sobre essas transferências, incluindo as garantias adotadas e uma cópia das cláusulas contratuais, pelo e-mail privacidade@shareo.com.br. Respondemos em até 15 dias.
+          </Text>
+          <Text style={[s.paragraph, { color: tokens.muted }]}>
+            Se não concordar com a nossa resposta — ou se preferir não falar conosco — você pode reclamar de nós diretamente à ANPD (Autoridade Nacional de Proteção de Dados), pelos canais oficiais em gov.br/anpd.
           </Text>
         </View>
 
