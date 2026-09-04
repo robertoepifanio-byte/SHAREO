@@ -72,7 +72,10 @@ export const MARKETING_CONSENT_TEXT =
   "todo e-mail nosso traz um link de cancelamento em um clique."
 
 /** Data da última atualização dos documentos (exibição amigável). */
-export const POLICY_UPDATED_AT = "junho de 2026"
+// 🪤 Estava em "junho de 2026" enquanto a Política mudou de substância três vezes
+// (02/09 retenção, 03/09 transferência internacional, 04/09 cookies e analytics).
+// Carimbo de data que não acompanha o texto faz o leitor pular a versão nova.
+export const POLICY_UPDATED_AT = "setembro de 2026"
 
 /** Canal do Encarregado de Dados (DPO) — LGPD art. 41. */
 export const DPO_EMAIL = "privacidade@shareo.com.br"

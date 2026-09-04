@@ -249,6 +249,10 @@ enum SignupSource {
   REFERRAL // Indicação de outro usuário
   GOOGLE_ADS
   META_ADS
+  // Canais da campanha de 01/09: sem estes, um lead vindo do YouTube ou do
+  // LinkedIn caía em VIP_LANDING e o relatório creditava o anúncio ao site.
+  YOUTUBE_ADS
+  LINKEDIN_ADS
 }
 
 // ─── Models ──────────────────────────────────────────────

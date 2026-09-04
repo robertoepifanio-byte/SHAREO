@@ -48,7 +48,7 @@ A LGPD (art. 33) permite a transferencia internacional de dados pessoais apenas 
 | **Mapbox** | Geocoding de enderecos (conversao de CEP/logradouro em coordenadas lat/lng) | EUA (San Francisco) | Texto do endereco informado pelo usuario (sem identificadores pessoais diretamente vinculados na requisicao) | Essencial para funcao de busca por proximidade | ❌ **Sem CPC da ANPD** — o Customer DPA de abril/2025 usa a SCC europeia (Decisão 2021/914, Módulo 2), apurado 03/09/2026. Avaliar minimizacao (geocoding por CEP apenas) |
 | **Stripe** | **PSP — processamento de pagamentos, split e repasse aos proprietarios** | EUA (San Francisco) | Identificacao das duas partes da locacao, valores e datas; no onboarding de quem anuncia, **dados bancarios e verificacao de identidade** coletados dentro da propria Stripe | Essencial — nao ha pagamento sem PSP | ✅ **RESOLVIDO (apurado em 03/09/2026).** A Stripe adota as **CPC da ANPD** (Módulos 1 e 2) no adendo de transferência, incorporado por referência ao contrato — **nada a assinar**. Resta a obrigação da **Cláusula 14**, que é nossa |
 | **Upstash** | Rate limiting (middleware e rotas administrativas) | EUA (global) | Endereco IP / identificador de sessao | Importante — protecao contra abuso | ❌ **Sem CPC da ANPD** — só SCC da UE, IDTA do Reino Unido e Data Privacy Framework (apurado 03/09/2026; evidência de fonte única, reconfirmar) |
-| **Google (Analytics 4)** | Analytics de uso | EUA | Dados de navegacao e uso da plataforma | **Nao essencial** — mediacao de produto | ❌ **Sem CPC da ANPD** — as transferências do Ads/Analytics cobrem só EEA, Reino Unido e Suíça (apurado 03/09/2026). O Google Cloud publica CPC brasileiras, mas o Analytics **não corre sob esses termos**. 💡 Por ser o único **não essencial** da lista, desligá-lo elimina a transferência em vez de regularizá-la |
+| ~~**Google (Analytics 4)**~~ | ~~Analytics de uso~~ | — | **Nenhum** | — | ✅ **Fora do inventário desde 04/09/2026.** Apurou-se que **nunca esteve ligado**: variável ausente em GitHub Secrets e Vercel, zero `gtag` nos dois sites no ar. A Política parou de declará-lo, e o código ganhou trava `GA4_LIBERADO = false` + teste que reprova quem religar sem reescrever a seção 5.2 |
 
 ### 2.2 Subprocessadores em avaliacao ou planejados
 
@@ -108,7 +108,7 @@ A tabela abaixo consolida as acoes prioritarias por subprocessador:
 | Sentry | ❌ **Não publica CPC da ANPD** — mesma decisão. Manter e auditar o filtro de PII | **CRÍTICA** | Pendente — fora do prazo legal |
 | Mapbox | ❌ **Não publica CPC da ANPD** (Customer DPA abril/2025, SCC europeia) — mesma decisão. Avaliar minimização via CEP-only, que reduz a PII transmitida | **CRÍTICA** | Pendente — fora do prazo legal |
 | **Upstash** | ❌ **Não publica CPC da ANPD** — mesma decisão. ⚠️ Evidência de fonte única, reconfirmar | **CRÍTICA** | Pendente — fora do prazo legal |
-| **Google (GA4)** | ❌ **Não publica CPC da ANPD** para Ads/Analytics. 💡 **É o único não essencial da lista** — desligar resolve sem depender da advogada | Alta | **Decisão de produto** |
+| ~~Google (GA4)~~ | ✅ **Fora do inventário desde 04/09/2026** — apurou-se que **nunca esteve ligado** (variável ausente, zero `gtag` nos dois sites). A Política parou de declará-lo e o código ganhou trava (`GA4_LIBERADO = false`) + teste | — | **Encerrado** |
 | **Stripe** | ✅ **Nada a assinar.** As CPC da ANPD já estão no adendo, incorporadas por referência. O que sobra é **nosso**: publicar o documento da **Cláusula 14** ([`clausula-14-transparencia-transferencia.md`](clausula-14-transparencia-transferencia.md)), responder titulares (Cl. 15) e comunicar incidentes (Cl. 16) | — | **Resolvido em 03/09/2026** |
 | ~~Mercado Pago~~ | ~~Verificar clausulas~~ — **descartado em 24/08/2026**, removido do código. Sai do inventário. | — | Encerrado |
 
@@ -147,9 +147,9 @@ Next.js App [Vercel — EUA/edge]
 
 ### 6.1 Acoes imediatas (antes do go-live)
 
-1. **Decidir o que fazer com os seis fornecedores sem CPC** — Vercel, Resend, Sentry, Mapbox, Upstash e Google Analytics. Assinar o DPA deles (que traz SCC da UE) **não resolve** desde 23/08/2025. As opções são trocar de fornecedor, negociar adendo com as CPC, ou enquadrar em outra hipótese do art. 33. **Decisão da advogada.**
+1. **Decidir o que fazer com os cinco fornecedores sem CPC** — Vercel, Resend, Sentry, Mapbox e Upstash. Assinar o DPA deles (que traz SCC da UE) **não resolve** desde 23/08/2025. As opções são trocar de fornecedor, negociar adendo com as CPC, ou enquadrar em outra hipótese do art. 33. **Decisão da advogada.**
 
-1-bis. **Desligar o Google Analytics é decisão de produto, não jurídica** — é o único **não essencial** da lista, e desligá-lo elimina a transferência em vez de exigir mecanismo para ela. Reduz o problema de seis para cinco sem depender de terceiro.
+1-bis. ✅ **Google Analytics — encerrado em 04/09/2026.** Não foi preciso desligar: nunca esteve ligado. O que existia era uma **declaração falsa** em `/politicas`, corrigida no site e no app, mais um guard que dependia de env var — agora travado no código e coberto por teste.
 
 2. **Verificar implicacoes do acesso logico da Supabase** — confirmar com a advogada se o fato de os dados estarem hospedados em sa-east-1 (Brasil) elimina a necessidade de clausulas adicionais ou se o acesso logico pela sede EUA configura transferencia para fins da LGPD.
 

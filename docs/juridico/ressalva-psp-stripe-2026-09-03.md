@@ -54,8 +54,8 @@ Hoje há, e com os dados mais sensíveis da plataforma: identificação das duas
 
 > ⚠️ **O que a apuração encontrou no lugar** — e que muda a pergunta para a advogada:
 > a **Resolução CD/ANPD nº 19/2024** tornou as CPC obrigatórias, com prazo vencido em **23/08/2025**.
-> medidos os sete fornecedores, **a Stripe é a única regular**: Vercel, Resend, Sentry, Mapbox,
-> Upstash e Google Analytics **não publicam CPC** (só SCC da UE, que não basta sozinha), e o
+> medidos os fornecedores, **a Stripe é a única regular**: Vercel, Resend, Sentry, Mapbox
+> e Upstash **não publicam CPC** (só SCC da UE, que não basta sozinha), e o
 > Supabase depende de definir se dados em repouso no Brasil configuram transferência. Além disso,
 > o Módulo 2 atribui ao **exportador (ShareO)** as obrigações das Cláusulas 14, 15 e 16.
 > Detalhamento e evidências: [`dpa-apuracao-2026-09-03.md`](dpa-apuracao-2026-09-03.md).

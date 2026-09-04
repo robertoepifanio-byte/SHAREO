@@ -125,7 +125,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <BottomNav />
           <ThemedToaster />
           <ServiceWorkerRegister />
-          {/* P3-82: GA4 — carregado apenas quando NEXT_PUBLIC_GA_MEASUREMENT_ID definido */}
+          {/* GA4 — INERTE: travado por `GA4_LIBERADO = false` no componente.
+              Definir NEXT_PUBLIC_GA_MEASUREMENT_ID não liga nada. */}
           <GoogleAnalytics nonce={nonce} />
           {/* Meta Pixel — inerte sem NEXT_PUBLIC_META_PIXEL_ID.
               ⚠️ Ligar exige parecer jurídico antes: compartilha dados com terceiro

@@ -42,7 +42,8 @@ Nenhum desses itens depende do texto final do parecer nem de código novo — de
 | **Sentry** | Monitoramento de erros | Metadados (PII mascarada) | 🇺🇸 EUA | **Cláusulas-padrão (art. 33)** |
 | **Mapbox** | Mapas / geocoding | Endereço aproximado / coords | 🇺🇸 EUA | **Cláusulas-padrão (art. 33)** |
 | **Upstash** | Rate limiting | IP / identificador de sessão | 🇺🇸 EUA (Global) | **Cláusulas-padrão (art. 33)** — confirmar região |
-| **Google** (Sheets API / Analytics) | Importação PJ / analytics | Dados de anúncio / uso | 🇺🇸 EUA | **Cláusulas-padrão (art. 33)** + confirmar GA4 |
+| ~~**Google** (Analytics)~~ | ~~analytics~~ | — | — | ✅ **Fora do inventário (04/09/2026)** — nunca esteve ligado; travado no código |
+| **Google** (Sheets API) | Importação de itens PJ por planilha | Dados do anúncio | 🇺🇸 EUA | ⚠️ **Não medido** quanto a CPC — só o Analytics foi apurado em 04/09 |
 | **Zenvia** | SMS OTP (verificação de celular) | Telefone | 🇧🇷 Brasil | DPA nacional |
 
 ### 2.2 Atividades
@@ -50,9 +51,10 @@ Nenhum desses itens depende do texto final do parecer nem de código novo — de
 | # | Atividade | Responsável | Entregável | Dependência |
 |---|---|---|---|---|
 | C2.1 | Validar/atualizar o inventário de subprocessadores acima | DPO + Dev | Inventário assinado | — |
-| C2.2 | ✅ **Feito em 03/09/2026** — os sete fornecedores medidos (Stripe, Vercel, Supabase, Resend, Sentry, Mapbox, Upstash, GA4). Só a Stripe adota as CPC. Ver `dpa-apuracao-2026-09-03.md` | Técnico | Apuração por fornecedor | C2.1 |
-| C2.3 | Decidir o que fazer nos **seis sem CPC** (Vercel, Resend, Sentry, Mapbox, Upstash, GA4): trocar fornecedor, negociar adendo, ou outra hipótese do art. 33. E definir se **Supabase** em sa-east-1 configura transferência | **Advogada** | Decisão por fornecedor | C2.2 |
-| **C2.9** | 💡 **Decidir se o Google Analytics continua.** É o único **não essencial** da lista — desligá-lo elimina a transferência em vez de exigir mecanismo, e reduz o problema de seis para cinco **sem depender da advogada** | Fundadores | Decisão registrada | C2.2 |
+| C2.2 | ✅ **Feito em 03–04/09/2026** — medidos Stripe, Vercel, Supabase, Resend, Sentry, Mapbox e Upstash: **só a Stripe adota as CPC**. O GA4 foi medido e **saiu do inventário** (nunca esteve ligado). Ver `dpa-apuracao-2026-09-03.md` | Técnico | Apuração por fornecedor | C2.1 |
+| C2.3 | Decidir o que fazer nos **cinco sem CPC** (Vercel, Resend, Sentry, Mapbox, Upstash): trocar fornecedor, negociar adendo, ou outra hipótese do art. 33. E definir se **Supabase** em sa-east-1 configura transferência | **Advogada** | Decisão por fornecedor | C2.2 |
+| **C2.9** | ✅ **Fechado em 04/09/2026.** Não precisou desligar: o GA4 **nunca esteve ligado**. O que existia era `/politicas` declarando-o como subprocessador ativo — corrigido no site e no app — e um guard que dependia de env var, agora travado no código (`GA4_LIBERADO`) e coberto por teste | Técnico | Feito | C2.2 |
+| **C2.10** | ✅ **Resolvido em 04/09/2026 sem ferramenta estrangeira.** A campanha não tem analytics de terceiro; a origem do lead passou a ser gravada no próprio banco (`SignupSource`, agora com YouTube e LinkedIn). Responde "qual canal traz cadastro" sem transferência internacional, sem cookie e sem depender da advogada | Técnico | Feito | C2.9 |
 | C2.4 | Adotar as **CPC da ANPD** conforme a decisão de C2.3 — na íntegra, sem modificação (Res. 19/2024; prazo vencido em 23/08/2025) | Advogada + Fundador | CPC adotadas | C2.3 |
 | **C2.7** | 🔨 **Publicar o documento da Cláusula 14** — rascunho pronto em `clausula-14-transparencia-transferencia.md`. **Não depende de terceiro nenhum**: é a única linha de C2 que pode andar hoje | Dev + DPO | Página publicada (gated D4) | — |
 | **C2.8** | Formalizar o atendimento da **Cláusula 15** (direitos do titular) e da **Cláusula 16** (comunicação de incidente) — no Módulo 2 as duas são obrigação do **exportador**, não da Stripe | DPO | Procedimento escrito | — |

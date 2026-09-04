@@ -9,7 +9,9 @@
  * exercitada em teste puro.
  */
 
-export type SourceValue = "ORGANIC" | "VIP_LANDING" | "REFERRAL" | "GOOGLE_ADS" | "META_ADS"
+export type SourceValue =
+  | "ORGANIC" | "VIP_LANDING" | "REFERRAL"
+  | "GOOGLE_ADS" | "META_ADS" | "YOUTUBE_ADS" | "LINKEDIN_ADS"
 
 export type Attribution = {
   source:       SourceValue
@@ -41,6 +43,12 @@ export const ATTRIBUTION_KEY = "shareo:attribution"
 export function deriveSource(utmSource: string | null, ref: string | null): SourceValue {
   if (ref) return "REFERRAL"
   const s = utmSource?.toLowerCase() ?? ""
+  // ⚠️ O canal é lido SÓ do `utm_source` — o `utm_medium` não chega aqui. Os
+  // anúncios da campanha precisam ser etiquetados `utm_source=youtube` e
+  // `utm_source=linkedin`. Se vierem como `utm_source=google&utm_medium=youtube`,
+  // o lead é creditado ao Google Ads e a separação de canal se perde.
+  if (s.includes("youtube")  || s === "yt") return "YOUTUBE_ADS"
+  if (s.includes("linkedin") || s === "li") return "LINKEDIN_ADS"
   if (s.includes("meta") || s.includes("facebook") || s.includes("instagram") || s === "fb" || s === "ig") return "META_ADS"
   if (s.includes("google") || s === "adwords") return "GOOGLE_ADS"
   return "VIP_LANDING"

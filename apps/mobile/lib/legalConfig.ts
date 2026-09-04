@@ -47,7 +47,7 @@ export const MARKETING_CONSENT_TEXT =
   "Concordo em receber comunicações sobre o lançamento do Shareo por e-mail e, se eu informar meu telefone, por WhatsApp. Posso cancelar quando quiser — todo e-mail nosso traz um link de cancelamento em um clique."
 
 /** Espelha POLICY_UPDATED_AT de lib/legal-config.ts. */
-export const POLICY_UPDATED_AT = "junho de 2026"
+export const POLICY_UPDATED_AT = "setembro de 2026"
 
 /**
  * Espelha PJ_DECLARATION_TEXT de lib/legal-config.ts.

@@ -1,20 +1,24 @@
 /**
- * P3-82 — Google Analytics 4 para instrumentação de KPIs.
- *
- * KPIs monitorados:
- *   - Pageviews e bounce rate (automático pelo GA4)
- *   - item_view: CTR de cards → detalhe
- *   - booking_started: conversão busca → checkout
- *   - booking_completed: reserva confirmada
- *   - review_submitted: avaliação enviada
+ * Google Analytics 4 — PREPARADO E DESLIGADO (P3-82).
+ * Cópia de `components/analytics/GoogleAnalytics.tsx` do site: os dois apps não
+ * compartilham pacote, só a fronteira HTTP.
  */
 
 import Script from "next/script"
 
+/**
+ * 🔒 Trava — igual à do site. Ver `components/analytics/GoogleAnalytics.tsx`.
+ *
+ * ⚠️ A campanha **não tem medição de terceiro** — anterior a esta trava. A origem
+ * do lead é gravada no nosso banco (`SignupSource`), que é o caminho escolhido
+ * em 04/09: ferramenta estrangeira reabriria o art. 33.
+ */
+export const GA4_LIBERADO = false
+
 const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
 
 export function GoogleAnalytics({ nonce }: { nonce?: string }) {
-  if (!GA_ID) return null
+  if (!GA4_LIBERADO || !GA_ID) return null
 
   return (
     <>

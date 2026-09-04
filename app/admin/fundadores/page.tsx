@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import type { SignupSource } from "@prisma/client"
 import Link from "next/link"
 import { prisma } from "@/lib/prisma"
 import { requireAdminPage } from "@/lib/auth/require-admin"
@@ -50,12 +51,17 @@ const PERIODS = [
   { key: "7",   label: "7 dias",  days: 7 },
 ] as const
 
-const SOURCE_LABELS: Record<string, string> = {
+// `Record<SignupSource, …>` e não `Record<string, …>`: acrescentar valor ao enum
+// sem o rótulo aqui passa a ser erro de build. Antes era invisível — a tabela cai
+// no `?? c.source` e mostraria `LINKEDIN_ADS` cru, sem ninguém reclamar.
+const SOURCE_LABELS: Record<SignupSource, string> = {
   ORGANIC:     "Orgânico",
   VIP_LANDING: "Landing VIP",
   REFERRAL:    "Indicação",
-  GOOGLE_ADS:  "Google Ads",
-  META_ADS:    "Meta Ads",
+  GOOGLE_ADS:   "Google Ads",
+  META_ADS:     "Meta Ads",
+  YOUTUBE_ADS:  "YouTube",
+  LINKEDIN_ADS: "LinkedIn",
 }
 
 type RawGroup = {

@@ -87,7 +87,7 @@ export default function PrivacidadePage() {
           <section>
             <h2 className="text-lg font-bold text-primary">4. Compartilhamento de Dados</h2>
             <p className="text-muted-foreground leading-relaxed">
-              Não vendemos seus dados a terceiros. Podemos compartilhá-los com: parceiros de processamento de pagamento (para finalizar transações); autoridades públicas (quando exigido por lei); prestadores de serviço de infraestrutura tecnológica (hospedagem, e-mail, analytics), sempre sob acordo de confidencialidade.
+              Não vendemos seus dados a terceiros. Podemos compartilhá-los com: parceiros de processamento de pagamento (para finalizar transações); autoridades públicas (quando exigido por lei); prestadores de serviço de infraestrutura tecnológica (hospedagem, e-mail, monitoramento de falhas), sempre sob acordo de confidencialidade.
             </p>
           </section>
 
@@ -143,7 +143,7 @@ export default function PrivacidadePage() {
           <section>
             <h2 className="text-lg font-bold text-primary">7. Cookies</h2>
             <p className="text-muted-foreground leading-relaxed">
-              Utilizamos cookies essenciais para o funcionamento da plataforma (autenticação, preferências) e cookies analíticos (com seu consentimento) para entender como você usa o ShareO e melhorar a experiência.
+              Utilizamos apenas cookies essenciais ao funcionamento da plataforma (autenticação e preferências). Não usamos cookies analíticos nem de publicidade.
             </p>
           </section>
 

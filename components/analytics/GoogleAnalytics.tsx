@@ -1,20 +1,28 @@
 /**
- * P3-82 — Google Analytics 4 para instrumentação de KPIs.
+ * Google Analytics 4 — PREPARADO E DESLIGADO (P3-82).
  *
- * KPIs monitorados:
- *   - Pageviews e bounce rate (automático pelo GA4)
- *   - item_view: CTR de cards → detalhe
- *   - booking_started: conversão busca → checkout
- *   - booking_completed: reserva confirmada
- *   - review_submitted: avaliação enviada
+ * Eventos previstos: ver o union `GA4Event` abaixo. Todos inativos enquanto
+ * `GA4_LIBERADO` for `false`.
  */
 
 import Script from "next/script"
 
+/**
+ * 🔒 Trava do art. 33 — decisão C2.9 dos fundadores, 2026-09-04.
+ *
+ * Com `false`, o GA4 não carrega **nem com `NEXT_PUBLIC_GA_MEASUREMENT_ID`
+ * definida** — a decisão mora aqui, não no painel da Vercel.
+ *
+ * Religar exige DUAS coisas: (1) a decisão do art. 33 e (2) reescrever a §5.2 de
+ * `/politicas` e o espelho do app. `__tests__/unit/app/analytics-declaracao.test.ts`
+ * reprova quem esquecer a (2). Contexto: `docs/juridico/dpa-apuracao-2026-09-03.md`.
+ */
+export const GA4_LIBERADO = false
+
 const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
 
 export function GoogleAnalytics({ nonce }: { nonce?: string }) {
-  if (!GA_ID) return null
+  if (!GA4_LIBERADO || !GA_ID) return null
 
   return (
     <>

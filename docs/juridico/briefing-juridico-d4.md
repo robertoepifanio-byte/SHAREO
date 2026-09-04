@@ -44,7 +44,11 @@ Dados tratados, por categoria (detalhe técnico no Anexo, §8):
 - **Documentos:** **CPF** (PF) e **CNPJ** + dados do responsável legal (PJ) — armazenados **criptografados (AES-256-GCM)** com índice de unicidade por **HMAC-SHA256** (não há CPF/CNPJ em claro no banco).
 - **Documentos de imagem:** bucket **privado** `id-docs` (verificação de identidade).
 - **Transacionais/comportamentais:** reservas, avaliações (reviews), chat in-app.
-- **Navegação/medição:** **Google Analytics 4** de primeira parte, com **IP anonimizado**, já em uso. **Não há banner de consentimento de cookies.** Para a campanha de divulgação pretende-se instalar o **Meta Pixel** — que, diferentemente do GA4, **compartilha dados de navegação com um terceiro (Meta) para uso publicitário do próprio terceiro**. O código já existe no repositório e está **inerte** (não carrega sem a variável de ambiente correspondente). Ver questão **#8** no §5.
+- **Navegação/medição:** ⛔ **CORRIGIDO EM 04/09/2026 — este briefing afirmava um fato falso.** O
+  **GA4 nunca esteve em uso**: a variável de configuração não existe em ambiente nenhum e os sites
+  no ar não carregam o script (evidências em [`dpa-apuracao-2026-09-03.md`](dpa-apuracao-2026-09-03.md) §3.1).
+  Hoje **não há ferramenta de analytics**; existe apenas contagem agregada de visualizações por
+  anúncio, dentro da própria plataforma. ~~Google Analytics 4 de primeira parte, com IP anonimizado, já em uso.~~ **Não há banner de consentimento de cookies.** Para a campanha de divulgação pretende-se instalar o **Meta Pixel** — que, diferentemente do GA4, **compartilha dados de navegação com um terceiro (Meta) para uso publicitário do próprio terceiro**. O código já existe no repositório e está **inerte** (não carrega sem a variável de ambiente correspondente). Ver questão **#8** no §5.
 
 > **Pergunta central:** o tratamento atende à **minimização** e às bases legais adequadas? Há obrigação adicional além do que já fizemos (Encarregado designado, consentimento versionado, exclusão art. 18, portabilidade art. 20)? Há **transferência internacional** relevante a formalizar (banco em sa-east-1, mas subprocessadores de e-mail/erro/mapas nos EUA — ver Anexo)?
 

@@ -1,12 +1,32 @@
 /**
  * @jest-environment jsdom
  */
+import fs   from "node:fs"
+import path from "node:path"
 import {
   deriveSource,
   parseAttribution,
   readAttribution,
   ATTRIBUTION_KEY,
 } from "@/lib/founders-attribution"
+
+/**
+ * 🪤 O app da campanha tem uma CÓPIA deste arquivo, sincronizada à mão — os dois
+ * apps não compartilham pacote, só a fronteira HTTP. A cópia não é exercitada
+ * por teste nenhum (o formulário da campanha mocka `readAttribution`), e
+ * `apps/campanha/` nem roda em CI. Uma guarda escrita lá dentro não travaria
+ * nada; por isso ela mora aqui, na suíte que é gate.
+ *
+ * Sem isto, a lógica que decide de onde veio cada lead — e portanto para onde
+ * vai a verba de mídia — poderia passar a existir em duas versões diferentes
+ * sem ninguém perceber.
+ */
+it("a cópia da campanha é idêntica a esta", () => {
+  const raiz = path.resolve(__dirname, "../../..")
+  const site     = fs.readFileSync(path.join(raiz, "lib/founders-attribution.ts"), "utf8")
+  const campanha = fs.readFileSync(path.join(raiz, "apps/campanha/lib/founders-attribution.ts"), "utf8")
+  expect(campanha).toBe(site)
+})
 
 describe("deriveSource", () => {
   it("indicação vence qualquer utm_source", () => {
@@ -25,8 +45,23 @@ describe("deriveSource", () => {
     ["google", "GOOGLE_ADS"],
     ["adwords", "GOOGLE_ADS"],
     ["GOOGLE", "GOOGLE_ADS"],
+    // Canais da campanha de 01/09. Antes de 04/09/2026 os dois caíam em
+    // VIP_LANDING, e o relatório creditava ao site o lead que veio do anúncio.
+    ["youtube", "YOUTUBE_ADS"],
+    ["yt", "YOUTUBE_ADS"],
+    ["YouTube_Ads", "YOUTUBE_ADS"],
+    ["linkedin", "LINKEDIN_ADS"],
+    ["li", "LINKEDIN_ADS"],
+    ["LinkedIn", "LINKEDIN_ADS"],
   ])("utm_source=%s → %s", (src, expected) => {
     expect(deriveSource(src, null)).toBe(expected)
+  })
+
+  it("🪤 o canal vem só do utm_source — medium não é lido", () => {
+    // Documenta o limite real: anúncio de YouTube comprado no Google Ads e
+    // etiquetado `utm_source=google&utm_medium=youtube` é creditado ao Google.
+    // Por isso a campanha precisa etiquetar `utm_source=youtube`.
+    expect(deriveSource("google", null)).toBe("GOOGLE_ADS")
   })
 
   it("sem utm nem ref cai em VIP_LANDING", () => {
