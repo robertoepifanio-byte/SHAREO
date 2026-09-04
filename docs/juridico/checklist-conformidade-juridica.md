@@ -1,16 +1,23 @@
 # Checklist de Conformidade Jurídica — ShareO
 
-**Atualizado:** 2026-06-30 (s41) · **Fonte:** **parecer jurídico FORMAL** do D4 (revisado com a contratação do Mercado Pago como PSP — [`parecer-juridico-revisado-mp.md`](parecer-juridico-revisado-mp.md)) + dossiê [`briefing-juridico-d4.md`](briefing-juridico-d4.md) + revisão da Central de Ajuda (s41).
+**Atualizado:** 2026-09-03 · **Fonte:** **parecer jurídico FORMAL** do D4 ([`parecer-juridico-revisado-mp.md`](parecer-juridico-revisado-mp.md)) — ⚠️ escrito com o **Mercado Pago** como PSP, ver a ressalva — + dossiê [`briefing-juridico-d4.md`](briefing-juridico-d4.md) + revisão da Central de Ajuda (s41).
 
-> ✅ **Parecer FORMAL recebido** (condição 1 das 4 de go-live cumprida). ⚠️ **Go-live ainda NÃO liberado:** faltam **contrato com o Mercado Pago assinado + conta PJ ativa**, **Termos/Política revisados e publicados** e **checklist 100%**. Até lá, **nenhuma atividade de produção** (regra absoluta). Este checklist **rastreia** os ajustes exigidos; não os declara cumpridos juridicamente.
+> 📌 **Em curso desde 03/09/2026 — as duas consultas foram acionadas:**
+> **(a)** chamado aberto na **Contabilizei** sobre o tratamento dos 85% no Simples Nacional
+> (roteiro: [`roteiro-contabilizei-simples-nacional-2026-09-03.md`](roteiro-contabilizei-simples-nacional-2026-09-03.md));
+> **(b)** Raimundo está com o roteiro para falar com a **advogada** sobre a custódia do valor e a Lei 12.865
+> ([`roteiro-advogada-lei-12865-2026-09-03.md`](roteiro-advogada-lei-12865-2026-09-03.md)).
+> Nenhuma das duas tem resposta ainda. **Enquanto isso, nada de produção muda.**
+
+> ✅ **Parecer FORMAL recebido** (condição 1 das 4 de go-live cumprida). ⚠️ **Go-live ainda NÃO liberado.** Das quatro condições, três estão cumpridas (parecer, PSP + conta PJ, conteúdo de Termos/Política aprovado); falta o **checklist 100%** — hoje **C2 (DPA)** e **C3 (RIPD/DPO)**. 🔴 **Some-se a ressalva do PSP:** o parecer analisou o **Mercado Pago**, e o PSP é a **Stripe** desde 24/08 — ver [`ressalva-psp-stripe-2026-09-03.md`](ressalva-psp-stripe-2026-09-03.md). Até o sign-off, **nenhuma atividade de produção** (regra absoluta). Este checklist **rastreia** os ajustes exigidos; não os declara cumpridos juridicamente.
 
 > Legenda: ✅ **pronto** (no produto/código) · 🟡 **parcial / verificar** · 🔨 **trabalho novo** · 🔵 **decisão de negócio/jurídico** (fora do código)
 
 ---
 
 ## 1. Pagamentos (Lei 12.865/2013 · BACEN)
-- 🔵🔨 Migrar recebimento para **PSP licenciado** — **DECIDIDO + CONFIRMADO no parecer FORMAL: Mercado Pago** (ShareO **deixa de ser *merchant of record***; risco da Lei 12.865 reduzido substancialmente) ([[project-mercadopago-migration]]). Hoje o staging usa PIX manual em **chave pessoal de sócio** (temporário). Ciclo E2E de split validado em sandbox.
-- 🔵 Formalizar **contrato com o PSP** (Mercado Pago) — fundadores/jurídico. **Condição 2 de go-live.**
+- ✅ Migrar recebimento para **PSP licenciado** — **o PSP é a STRIPE desde 24/08/2026** ([ADR-028](../adr/ADR-028-reversao-stripe-connect.md)); o Mercado Pago foi descartado e removido do código. ⚠️ O parecer FORMAL validou o desenho do **Mercado Pag
+- ✅ Formalizar **contrato com o PSP** — **CUMPRIDA em 24/08/2026** com a Stripe. **Condição 2 de go-live.**
 - 🔨 Garantir fluxo **split/escrow** para afastar enquadramento como instituição de pagamento (aponta para o "Modelo B" da migração MP).
 - 🔵 **Conta de recebimento = PJ da ShareO** (nunca pessoal) — societário.
 
@@ -22,7 +29,7 @@
 
 ## 3. LGPD (Lei 13.709/2018)
 - ✅ **DPO/Encarregado** designado + canal (`privacidade@shareo.com.br`, `lib/legal-config.ts`).
-- 🔨 **Mercado Pago como operador de dados financeiros** (exigência do parecer revisado) — incluir no **RIPD** (Seções B/D.2/C.6) e na **Política de Privacidade** (`/privacidade`, nova subseção 4.1). Rascunhos em [`draft-clausulas-mp-termos-privacidade.md`](draft-clausulas-mp-termos-privacidade.md).
+- 🟡 **Stripe como operador de dados financeiros** — **a Política já a nomeia, e ganhou a seção 4.1 de transferência internacional em 03/09** (o titular passou a ser informado de que os dados vão ao exterior). Falta o DPA e o mecanismo do art. 33. Substituiu o Mercado Pago, que constava no **RIP
 - 🟡 **RIPD** (Relatório de Impacto) — **rascunho elaborado** (#116, [`rascunho-ripd.md`](rascunho-ripd.md)); falta validação do DPO/jurídico + arquivamento formal.
 - 🟡 **Formalizar transferência internacional** (Resend/Sentry/Mapbox/Vercel — EUA) — **rascunho** (#116, [`transferencia-internacional-dados.md`](transferencia-internacional-dados.md)); falta assinar cláusulas-padrão (art. 33).
 - 🔨 **Expurgo de dados** (minimização/retenção) — crons `purge-admin-logs` / `purge-consent-ips` / `purge-access-logs` implementados (#118, flag-safe); **prazos (5a / 180d) a confirmar com jurídico** antes de ativar em produção.
@@ -38,10 +45,11 @@
 - 🔨 Cláusula de **limitação de responsabilidade** da plataforma (sem excluir obrigações do CDC).
 
 ## 5. PLD/FT (Lei 9.613/1998 · COAF)
-- 🔵 Definir se a ShareO é **sujeito obrigado** (depende da estrutura de pagamentos; com PSP, parte recai no PSP).
-- 🟡 **KYC/KYB mínimo** — KYB leve de PJ já iniciado (CNPJ na Receita + declaração).
-- 🔨 Política de **monitoramento de transações suspeitas**.
-- 🔨 Procedimento de **comunicação ao COAF** (se aplicável).
+- 🟡 Definir se a ShareO é **sujeito obrigado** — resposta **B4 (30/06)**: **não é**, porque *"o PSP assume KYC/KYB/monitoramento"*. ⚠️ **A confirmar com a advogada:** a conclusão dependia de o PSP ser **instituição autorizada pelo BACEN**, o que o Mercado Pago cumpria de forma direta. A Stripe é estrangeira — ver [`ressalva-psp-stripe-2026-09-03.md`](ressalva-psp-stripe-2026-09-03.md), pergunta 4.
+- ✅ **Onde o KYC acontece, documentado (03/09/2026):** a verificação de identidade de quem recebe repasse é feita **integralmente dentro da Stripe**, no onboarding hospedado do Connect (`lib/stripe-connect.ts` — `createOnboardingLink` com `configurations: ["recipient","merchant"]`). Documento, selfie e dados bancários são coletados **pela Stripe**, e a plataforma só lê o **status** (`stripeConnectStatus`, `requirements`) — nunca os documentos. **Sem `charges_enabled`/`payouts_enabled` não há repasse.**
+- 🟡 **KYC/KYB próprio da ShareO** — existe e é complementar, não substituto: verificação de identidade do usuário comum (`idVerificationStatus`, bucket privado `id-docs`) e **KYB leve de PJ** (CNPJ na Receita + declaração, `lib/pjVerification.ts`).
+- 🔨 Política de **monitoramento de transações suspeitas** — hoje inexistente. Item 4 da lista de 03/09: avaliar política interna mínima **de reforço**, mesmo não sendo sujeito obrigado. Teto de R$ 500 por transação limita a exposição no MVP.
+- 🔨 Procedimento de **comunicação ao COAF** (se aplicável — depende da resposta acima).
 
 ## 6. Civil / Contratos (CC, locação de coisas)
 - 🟡 **Contrato de locação aceito eletronicamente** por locador e locatário — **implementado atrás de flag** `rentalContractAcceptanceEnabled` (OFF) (#117, [`lib/rental-contract.ts`](../lib/rental-contract.ts) + `contractVersion`/`contractTextHash`); ligar pós-parecer, com o texto contratual aprovado.
@@ -64,7 +72,7 @@
 > 🔄 **Atualização 2026-08-20 (ADR-028):** com a reversão do PSP para **Stripe Connect**, a copy de pagamento de `/ajuda` e `/politicas` foi reescrita e alinhada ao que o código executa. O pacote de validação para a advogada é [`copy-pagamento-stripe-connect.md`](copy-pagamento-stripe-connect.md) — que **substitui** [`copy-pagamento-validacao-juridica.md`](copy-pagamento-validacao-juridica.md) (escrito para o Mercado Pago). O ponto de maior peso: a implementação *separate charges and transfers* faz o valor **transitar pela conta ShareO na Stripe**, o que não é o desenho que o parecer D4 validou para o MP ("a ShareO não retém nem custodia"). Segue **gated D4 — não publicar antes do sign-off**.
 
 Revisão read-only por product-owner + designer + segurança. Relatório consolidado: [`../auditorias/ajuda-revisao-especialistas-s41.md`](../auditorias/ajuda-revisao-especialistas-s41.md). Itens a levar à advogada (gated D4 — **não publicar antes do sign-off**):
-- 🔨 **Conteúdo de pagamento cita "Stripe"** em 7 trechos — reescrever para **Mercado Pago** (cruza item 1). Risco de **propaganda enganosa** (CDC art. 30/37); a FAQ "regulamentado pelo Banco Central via Stripe" toca a Lei 12.865 → **validar redação com a advogada**.
+- ✅ ~~**Conteúdo de pagamento cita "Stripe"** — reescrever para **Mercado Pago**~~ — **INVERTIDO em 24/08:** a Stripe é o PSP, e a copy foi alinhada a ela. (cruzava item 1)
 - 🔨 **"Dinheiro retido na plataforma"** (6×) contradiz o Modelo B/split (custódia é do PSP) — reescrever (cruza itens 1/3).
 - 🔨 **"Exclusão em 15 dias conforme a LGPD"** — impreciso (art. 18 §3º; 15 dias é do art. 19) — alinhar com #3 e o RIPD.
 - 🔨 **"Nunca compartilhamos com terceiros"** — falso (subprocessadores + MP, transferência internacional) — alinhar com #3.

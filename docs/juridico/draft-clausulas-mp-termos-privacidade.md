@@ -1,4 +1,10 @@
-> ⚫ **DOCUMENTO HISTÓRICO — 2026-08-24.** O fundador decidiu que o **Mercado Pago não será utilizado**; o PSP é a Stripe ([`ADR-028`](../adr/ADR-028-reversao-stripe-connect.md)). Nada aqui é procedimento vigente. Preservado como registro do desenho avaliado.
+> ⚫ **DOCUMENTO HISTÓRICO — não usar como está.** Foi escrito com o **Mercado Pago** como PSP. Em 24/08/2026 o MP foi descartado e removido do código; o PSP é a **Stripe** ([`ADR-028`](../adr/ADR-028-reversao-stripe-connect.md)).
+>
+> **O que já foi resolvido sem este rascunho (03/09/2026):** as páginas publicadas **já nomeiam a Stripe** e ganharam a **seção 4.1 — Transferência Internacional de Dados**, que informa ao titular que parte dos dados vai para o exterior, quem recebe e para quê. Nenhum texto publicado menciona o Mercado Pago.
+>
+> **O que este rascunho ainda precisaria virar, e por que não virou:** as cláusulas sobre o PSP dependem de duas respostas que estão com a advogada — o **mecanismo do art. 33** (a Política hoje declara o fato da transferência, mas não afirma mecanismo que não foi firmado) e a **custódia do valor** na conta da plataforma. Reescrevê-las antes disso produziria texto para refazer. Ver [`ressalva-psp-stripe-2026-09-03.md`](ressalva-psp-stripe-2026-09-03.md).
+>
+> As menções ao Mercado Pago abaixo ficam **de propósito**: o documento registra o desenho anterior, e apagá-las tornaria impossível comparar o que mudou.
 
 # RASCUNHO — Clausulas de Termos de Uso e Politica de Privacidade (terceirizacao do pagamento ao Mercado Pago)
 
