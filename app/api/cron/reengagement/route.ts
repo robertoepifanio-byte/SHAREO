@@ -6,10 +6,10 @@
  *   7d       → sugestão de itens similares
  *   mensal   → digest dos favoritos ativos
  *
- * Este arquivo só monta consultas e copy. As duas garantias que faltavam — não
- * reenviar e teto de 1 e-mail por usuário a cada 7 dias — vivem em
- * `lib/engagement-email.ts`, e valem para qualquer gerador que use
- * `sendEngagementEmail`, inclusive os que ainda não existem.
+ * Este arquivo só monta consultas e copy. As três garantias que faltavam — não
+ * reenviar, teto de 1 e-mail por usuário a cada 7 dias e respeito ao
+ * descadastro — vivem em `lib/engagement-email.ts`, e valem para qualquer
+ * gerador que use `sendEngagementEmail`, inclusive os que ainda não existem.
  *
  * 🪤 Os geradores rodam EM SEQUÊNCIA, via a lista `GENERATORS`. Com teto
  * compartilhado, paralelo faria os três consultarem o estado antes de qualquer
@@ -108,7 +108,7 @@ async function sendReviewReminders(): Promise<EngagementTally> {
       {
         to:      b.borrower.email,
         subject: `Como foi alugar "${b.item.title}"? Deixe sua avaliação`,
-        html: `
+        bodyHtml: `
           <p>Olá, ${firstName(b.borrower.name)}!</p>
           <p>Sua locação de <strong>${b.item.title}</strong> foi concluída.</p>
           <p>Avaliações ajudam a comunidade — leva menos de 1 minuto!</p>
@@ -155,7 +155,7 @@ async function sendSimilarItemSuggestions(): Promise<EngagementTally> {
       {
         to:      b.borrower.email,
         subject: `Você pode gostar: itens similares ao "${b.item.title}"`,
-        html: `
+        bodyHtml: `
           <p>Olá, ${firstName(b.borrower.name)}!</p>
           <p>Com base na sua última locação, selecionamos alguns itens em <strong>${b.item.city}</strong>:</p>
           <ul>${itemLinks}</ul>
@@ -174,10 +174,10 @@ async function sendSimilarItemSuggestions(): Promise<EngagementTally> {
  * pessoa, com todos os favoritos ainda disponíveis.
  *
  * A seleção parte do usuário — e não dos favoritos — para poder excluir no
- * próprio `where` quem já recebeu o digest do mês E quem está bloqueado pelo
- * teto da semana. Sem os dois filtros, as 200 vagas do lote seriam gastas com
- * gente que `sendEngagementEmail` vai recusar de qualquer forma, e quem tinha
- * direito ficaria para o dia seguinte.
+ * próprio `where` os três casos que `sendEngagementEmail` recusaria de qualquer
+ * forma: quem já recebeu o digest do mês, quem está bloqueado pelo teto da
+ * semana e quem se descadastrou. Sem esses filtros as 200 vagas do lote seriam
+ * gastas com gente inelegível, e quem tinha direito ficaria para o dia seguinte.
  */
 async function sendFavoriteDigest(): Promise<EngagementTally> {
   const dedupeKey = monthlyDedupeKey()
@@ -186,6 +186,12 @@ async function sendFavoriteDigest(): Promise<EngagementTally> {
   const users = await prisma.user.findMany({
     where: {
       favorites: { some: { item: { status: "AVAILABLE" } } },
+      engagementEmailsOptOut: false,
+      // Endereço nunca confirmado é a maior fonte de hard bounce, e bounce pesa
+      // mais nas regras de bulk sender do Gmail que a ausência de
+      // List-Unsubscribe. Mandar propaganda para caixa não verificada é a outra
+      // metade do problema de reputação que este PR existe para resolver.
+      emailVerified: { not: null },
       AND: [
         { engagementEmails: { none: { kind: "FAVORITE_DIGEST", dedupeKey } } },
         { engagementEmails: { none: { sentAt: { gte: cappedSince } } } },
@@ -229,7 +235,7 @@ async function sendFavoriteDigest(): Promise<EngagementTally> {
       {
         to:      u.email,
         subject: copy.subject,
-        html: `
+        bodyHtml: `
           <p>Olá, ${firstName(u.name)}!</p>
           <p>${copy.lead}</p>
           <ul>${rows}</ul>

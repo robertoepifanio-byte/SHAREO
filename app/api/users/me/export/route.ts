@@ -52,6 +52,9 @@ export async function GET(req: NextRequest) {
           userType:        true,
           isVerified:      true,
           consentAt:       true,
+          // Preferência de comunicação opcional — o titular tem direito de ver
+          // o que declarou (LGPD art. 18, I e II), não só os consentimentos que deu.
+          engagementEmailsOptOut: true,
           consentVersion:  true,
           // KYC básico (status — URLs de docs não exportadas por segurança)
           idVerificationStatus: true,

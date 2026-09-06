@@ -10,8 +10,10 @@
  *   2. TETO GLOBAL — no máximo um e-mail de reengajamento por usuário a cada 7
  *      dias, somando TODOS os tipos. Sem isso os geradores do cron podiam cair
  *      na mesma caixa no mesmo minuto, cada um se achando comedido.
+ *   3. DESCADASTRO — quem marcou `engagementEmailsOptOut` não recebe. Cadência
+ *      não substitui consentimento: "1 por semana" é volume, não base legal.
  *
- * `sendEngagementEmail` é a ÚNICA forma de enviar respeitando as duas. Ela mora
+ * `sendEngagementEmail` é a ÚNICA forma de enviar respeitando as três. Ela mora
  * aqui, e não na rota, de propósito: o gerador que alguém escrever no ano que
  * vem importa esta função e ganha as garantias de graça. Se o controle vivesse
  * dentro do handler, o próximo remetente precisaria lembrar que ele existe — e
@@ -24,7 +26,7 @@
 import crypto from "crypto"
 import type { EngagementEmailKind } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
-import { sendAppEmail } from "@/lib/email"
+import { sendMarketingEmail } from "@/lib/email"
 
 /** Janela do teto global: um e-mail de reengajamento a cada 7 dias. */
 export const ENGAGEMENT_CAP_DAYS = 7
@@ -47,7 +49,7 @@ export type EngagementOutcome = "sent" | "skipped"
 export type EngagementTally = {
   /** E-mails efetivamente aceitos pelo provedor. */
   sent: number
-  /** Recusados pela reserva — já enviados antes, ou teto da semana atingido. */
+  /** Recusados pela reserva: já enviados, teto da semana, ou descadastro. */
   skipped: number
   /** Falhas de envio; a reserva foi devolvida e o cron tenta de novo amanhã. */
   errors: number
@@ -77,10 +79,15 @@ export function monthlyDedupeKey(now = new Date()): string {
 /**
  * Reserva o direito de enviar, em UMA instrução.
  *
- * O `WHERE NOT EXISTS` aplica o teto e o `ON CONFLICT` aplica o dedupe, os dois
- * dentro do mesmo `INSERT`. A versão anterior fazia `count` e depois `create`:
- * dois round-trips e uma janela entre eles em que dois envios do mesmo lote
- * passavam pela contagem antes de qualquer um gravar.
+ * Os dois `WHERE NOT EXISTS` aplicam o teto e o descadastro, e o `ON CONFLICT`
+ * aplica o dedupe — as três regras dentro do mesmo `INSERT`. A versão anterior
+ * fazia `count` e depois `create`: dois round-trips e uma janela entre eles em
+ * que dois envios do mesmo lote passavam pela contagem antes de qualquer um
+ * gravar.
+ *
+ * O descadastro entra AQUI, e não numa checagem separada no chamador, pelo
+ * mesmo motivo que o teto: é a única forma de um gerador novo não conseguir
+ * esquecer dele. Custo zero — a condição entra na instrução que já ia rodar.
  *
  * 🪤 Ainda NÃO é exclusão mútua perfeita: em READ COMMITTED, duas transações
  * simultâneas podem avaliar o `NOT EXISTS` antes de qualquer commit e ambas
@@ -101,6 +108,10 @@ async function claim(c: EngagementClaim): Promise<boolean> {
     WHERE NOT EXISTS (
       SELECT 1 FROM "engagement_emails"
       WHERE "userId" = ${c.userId} AND "sentAt" >= ${since}
+    )
+    AND NOT EXISTS (
+      SELECT 1 FROM "users"
+      WHERE "id" = ${c.userId} AND "engagementEmailsOptOut" = true
     )
     ON CONFLICT ("userId", "kind", "dedupeKey") DO NOTHING
   `
@@ -140,11 +151,24 @@ async function release(c: EngagementClaim): Promise<void> {
  */
 export async function sendEngagementEmail(
   c: EngagementClaim,
-  payload: { to: string; subject: string; html: string },
+  payload: { to: string; subject: string; bodyHtml: string },
 ): Promise<EngagementOutcome> {
   if (!(await claim(c))) return "skipped"
 
-  const { error } = await sendAppEmail(payload)
+  // 🪤 O `try` cobre EXCEÇÃO, não só o `{ error }` devolvido. `sendMarketingEmail`
+  // monta a URL de descadastro antes de enviar, e isso LANÇA quando AUTH_SECRET
+  // está ausente — que já aconteceu por 25 dias em produção. Sem o catch, a
+  // reserva ficaria gravada sem envio nenhum e, como a chave de dedupe é
+  // estável, aquele e-mail estaria perdido para sempre: o lembrete de avaliação
+  // daquela locação nunca mais sairia.
+  let error: { message: string } | null
+  try {
+    ;({ error } = await sendMarketingEmail(payload))
+  } catch (e) {
+    await release(c)
+    throw e
+  }
+
   if (error) {
     await release(c)
     throw new Error(error.message)

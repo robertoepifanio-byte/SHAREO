@@ -282,6 +282,14 @@ model User {
   avatarUrl String?
   bio       String? @db.Text
 
+  /// Descadastro dos e-mails de REENGAJAMENTO (digest de favoritos, lembrete de
+  /// avaliação, sugestão de similares). NÃO afeta e-mail transacional —
+  /// verificação de conta, reset de senha, confirmação de reserva e cobrança
+  /// continuam saindo: são execução do contrato, não comunicação opcional.
+  /// Marcado pelo próprio titular em /perfil/notificacoes ou pelo link de
+  /// descadastro no rodapé do e-mail (LGPD art. 18, revogação).
+  engagementEmailsOptOut Boolean @default(false)
+
   // Localização (base do usuário — para geo-search de proximidade)
   cep          String? @db.Char(8) // somente dígitos, ex.: "59114270"
   street       String? // logradouro preenchido via ViaCEP
