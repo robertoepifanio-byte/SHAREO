@@ -2,13 +2,50 @@ import { z } from "zod"
 import { validateCPF } from "@/utils/cpf"
 import { validateCNPJ } from "@/utils/cnpj"
 
+/**
+ * E-mail normalizado na FRONTEIRA do servidor.
+ *
+ * 🪤 Sem isto, gravação e leitura discordavam: o cadastro guardava o endereço
+ * como veio (`app/api/auth/register/route.ts` → `email: d.email`) enquanto o
+ * `authorize()` do NextAuth busca com `.toLowerCase()` (`lib/auth.ts`). Uma
+ * conta criada como `Roberto@Gmail.com` nunca seria encontrada no login — a
+ * pessoa receberia "credencial inválida" para uma senha correta.
+ *
+ * Hoje nenhum usuário real cai nisso porque os dois clientes normalizam antes
+ * de enviar (`app/(auth)/cadastro/RegisterForm.tsx` e
+ * `apps/mobile/app/(auth)/register.tsx`). Mas a garantia estava do lado errado:
+ * dependia de todo cliente lembrar. Qualquer integração, script ou tela nova
+ * que esquecesse criaria uma conta na qual não se consegue entrar, sem erro
+ * nenhum no caminho.
+ *
+ * 🪤 Isso vale para linhas NOVAS. `users.email` é `String @unique` — índice
+ * btree case-sensitive, sem `citext` — e este PR não faz backfill. Se houver
+ * uma linha legada `A@x.com`, a checagem de unicidade do cadastro procura só a
+ * forma minúscula, não acha, e cria a SEGUNDA linha. Medir antes de afirmar que
+ * não há duplicata: `SELECT id, email FROM users WHERE email <> lower(email)`.
+ *
+ * Exportado de propósito: é a fronteira, e toda rota que aceita e-mail deve
+ * usá-la. Deixá-la privada recriaria a dependência de "todo mundo lembrar" que
+ * ela existe para eliminar.
+ */
+export const emailField = () =>
+  z
+    .string()
+    // 🪤 `.trim()` ANTES do `.email()`: os checks do zod correm na ordem da
+    // cadeia, e " a@b.com " com espaços REPROVA na validação de formato. Com o
+    // trim depois, um e-mail colado do gerenciador de senhas seria recusado em
+    // vez de normalizado — pego pelo teste, não por leitura.
+    .trim()
+    .email("E-mail inválido")
+    .toLowerCase()
+
 export const RegisterSchema = z
   .object({
     name: z
       .string()
       .min(3, "Nome precisa de ao menos 3 caracteres")
       .max(100, "Nome muito longo"),
-    email: z.string().email("E-mail inválido"),
+    email: emailField(),
     password: z
       .string()
       .min(8, "Mínimo 8 caracteres")
@@ -58,7 +95,7 @@ export const RegisterMinimalSchema = z.object({
     .string()
     .min(3, "Nome precisa de ao menos 3 caracteres")
     .max(100, "Nome muito longo"),
-  email: z.string().email("E-mail inválido"),
+  email: emailField(),
   password: z
     .string()
     .min(8, "Mínimo 8 caracteres")
@@ -148,6 +185,6 @@ export const UpgradePjSchema = z.object({
 export type UpgradePjInput = z.infer<typeof UpgradePjSchema>
 
 export const LoginSchema = z.object({
-  email: z.string().email(),
+  email: emailField(),
   password: z.string().min(1),
 })
