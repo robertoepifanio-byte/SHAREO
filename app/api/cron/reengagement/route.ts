@@ -1,171 +1,252 @@
 /**
- * P3-75 — Cron de reengajamento pós-aluguel via Resend.
+ * P3-75 — Cron de reengajamento via Resend.
  *
- * Roda diariamente às 10h (vercel.json).
- * Envia até 3 emails por locação concluída:
- *   1d  → lembrete de avaliação
- *   7d  → sugestão de itens similares
- *   30d → aviso de item favoritado disponível
+ * Roda diariamente às 10h UTC (07h BRT — ver vercel.json). Três e-mails:
+ *   1d       → lembrete de avaliação da locação concluída
+ *   7d       → sugestão de itens similares
+ *   mensal   → digest dos favoritos ativos
+ *
+ * Este arquivo só monta consultas e copy. As duas garantias que faltavam — não
+ * reenviar e teto de 1 e-mail por usuário a cada 7 dias — vivem em
+ * `lib/engagement-email.ts`, e valem para qualquer gerador que use
+ * `sendEngagementEmail`, inclusive os que ainda não existem.
+ *
+ * 🪤 Os geradores rodam EM SEQUÊNCIA, via a lista `GENERATORS`. Com teto
+ * compartilhado, paralelo faria os três consultarem o estado antes de qualquer
+ * um gravar. A lista existe para que acrescentar um quarto gerador seja
+ * acrescentar um item — e não lembrar de uma regra. A ordem é a de prioridade:
+ * o lembrete de avaliação nasce de uma transação real e vale mais que o digest,
+ * então gasta a cota primeiro.
  */
 
 import { NextResponse } from "next/server"
 import { assertCronAuth } from "@/lib/auth/cron-guard"
 import { prisma } from "@/lib/prisma"
-import { sendAppEmail } from "@/lib/email"
 import { APP_URL } from "@/lib/app-url"
+import { formatPrice } from "@/utils/format"
+import {
+  sendEngagementEmail,
+  runEngagementBatch,
+  bookingDedupeKey,
+  monthlyDedupeKey,
+  ENGAGEMENT_CAP_DAYS,
+  type EngagementTally,
+} from "@/lib/engagement-email"
 
 export const dynamic = "force-dynamic"
 
-// Único ponto de integração com o provedor fica em lib/email.ts (sendAppEmail).
-// `send` lança em erro para preservar a contagem via Promise.allSettled abaixo.
-async function send(payload: { to: string; subject: string; html: string }) {
-  const { error } = await sendAppEmail(payload)
-  if (error) throw new Error(error.message)
-}
+// Três geradores em sequência, cada um com seu lote e suas chamadas ao Resend,
+// não cabem no default da plataforma. Mesmo valor dos crons irmãos.
+export const maxDuration = 60
 
+/** Quantos destinatários um único tipo atende por execução. */
+const BATCH = 200
+
+/** Itens listados no digest — o resto fica atrás do link "ver todos". */
+const DIGEST_MAX_ITEMS = 8
+
+/**
+ * Janelas de dia em UTC.
+ *
+ * 🪤 Usavam `setHours` (hora LOCAL). Na Vercel o processo roda em UTC, então o
+ * resultado era o mesmo por acidente — mas o repositório já foi mordido 4× por
+ * data ancorada em fuso implícito, e o cron irmão `reminders` usa `setUTCHours`.
+ * Fuso explícito no servidor, sempre.
+ */
 function daysAgo(n: number) {
   const d = new Date()
-  d.setDate(d.getDate() - n)
-  d.setHours(0, 0, 0, 0)
+  d.setUTCDate(d.getUTCDate() - n)
+  d.setUTCHours(0, 0, 0, 0)
   return d
 }
 
 function daysAgoEnd(n: number) {
   const d = new Date()
-  d.setDate(d.getDate() - n)
-  d.setHours(23, 59, 59, 999)
+  d.setUTCDate(d.getUTCDate() - n)
+  d.setUTCHours(23, 59, 59, 999)
   return d
+}
+
+/** Locação concluída no dia `n` — o gatilho dos dois primeiros geradores. */
+function completedOn(n: number) {
+  return { status: "COMPLETED" as const, updatedAt: { gte: daysAgo(n), lte: daysAgoEnd(n) } }
+}
+
+function firstName(name: string | null): string {
+  return name?.trim().split(" ")[0] ?? ""
+}
+
+/**
+ * 🪤 Link pelo ID, nunca pelo slug. `app/itens/[id]/page.tsx` consulta
+ * `where: { id }` e não resolve slug em lugar nenhum — o `slug ?? id` que
+ * estava aqui gerava 404 para todo item que tivesse slug. O e-mail de itens
+ * similares mandava esses links desde sempre.
+ */
+function itemUrl(item: { id: string }): string {
+  return `${APP_URL}/itens/${item.id}`
 }
 
 // ─── Email 1d: lembrete de avaliação ────────────────────────────────────────
 
-async function sendReviewReminders() {
+async function sendReviewReminders(): Promise<EngagementTally> {
   const bookings = await prisma.booking.findMany({
-    where: {
-      status:    "COMPLETED",
-      updatedAt: { gte: daysAgo(1), lte: daysAgoEnd(1) },
-    },
+    where:  completedOn(1),
     select: {
-      id:       true,
-      borrower: { select: { email: true, name: true } },
-      item:     { select: { title: true } },
+      id:         true,
+      borrowerId: true,
+      borrower:   { select: { email: true, name: true } },
+      item:       { select: { title: true } },
     },
+    take: BATCH,
   })
 
-  const results = await Promise.allSettled(
-    bookings.map(async (b) => {
-      if (!b.borrower.email) return
-      await send({
+  return runEngagementBatch(bookings, async (b) => {
+    if (!b.borrower.email) return "skipped"
+
+    return sendEngagementEmail(
+      { userId: b.borrowerId, kind: "REVIEW_REMINDER", dedupeKey: bookingDedupeKey(b.id) },
+      {
         to:      b.borrower.email,
         subject: `Como foi alugar "${b.item.title}"? Deixe sua avaliação`,
         html: `
-          <p>Olá, ${b.borrower.name?.split(" ")[0] ?? ""}!</p>
+          <p>Olá, ${firstName(b.borrower.name)}!</p>
           <p>Sua locação de <strong>${b.item.title}</strong> foi concluída.</p>
           <p>Avaliações ajudam a comunidade — leva menos de 1 minuto!</p>
           <p><a href="${APP_URL}/reservas/${b.id}">Avaliar agora →</a></p>
           <p>Obrigado por usar o ShareO!</p>
         `,
-      })
-    }),
-  )
-
-  return results.filter((r) => r.status === "rejected").length
+      },
+    )
+  })
 }
 
 // ─── Email 7d: sugestão de itens similares ───────────────────────────────────
 
-async function sendSimilarItemSuggestions() {
+async function sendSimilarItemSuggestions(): Promise<EngagementTally> {
   const bookings = await prisma.booking.findMany({
-    where: {
-      status:    "COMPLETED",
-      updatedAt: { gte: daysAgo(7), lte: daysAgoEnd(7) },
-    },
+    where:  completedOn(7),
     select: {
-      borrower: { select: { email: true, name: true } },
-      item:     { select: { title: true, categoryId: true, city: true } },
+      id:         true,
+      borrowerId: true,
+      borrower:   { select: { email: true, name: true } },
+      item:       { select: { title: true, categoryId: true, city: true } },
     },
+    take: BATCH,
   })
 
-  const results = await Promise.allSettled(
-    bookings.map(async (b) => {
-      if (!b.borrower.email) return
+  return runEngagementBatch(bookings, async (b) => {
+    if (!b.borrower.email) return "skipped"
 
-      const similar = await prisma.item.findMany({
-        where:   { categoryId: b.item.categoryId, city: b.item.city, status: "AVAILABLE" },
-        take:    3,
-        select:  { id: true, title: true, pricePerDay: true, slug: true },
-        orderBy: { viewCount: "desc" },
-      })
+    const similar = await prisma.item.findMany({
+      where:   { categoryId: b.item.categoryId, city: b.item.city, status: "AVAILABLE" },
+      take:    3,
+      select:  { id: true, title: true, pricePerDay: true },
+      orderBy: { viewCount: "desc" },
+    })
 
-      if (similar.length === 0) return
+    if (similar.length === 0) return "skipped"
 
-      const itemLinks = similar
-        .map((i) => `<li><a href="${APP_URL}/itens/${i.slug ?? i.id}">${i.title} — R$ ${(i.pricePerDay / 100).toFixed(2)}/dia</a></li>`)
-        .join("")
+    const itemLinks = similar
+      .map((i) => `<li><a href="${itemUrl(i)}">${i.title} — ${formatPrice(i.pricePerDay)}/dia</a></li>`)
+      .join("")
 
-      await send({
+    return sendEngagementEmail(
+      { userId: b.borrowerId, kind: "SIMILAR_ITEMS", dedupeKey: bookingDedupeKey(b.id) },
+      {
         to:      b.borrower.email,
         subject: `Você pode gostar: itens similares ao "${b.item.title}"`,
         html: `
-          <p>Olá, ${b.borrower.name?.split(" ")[0] ?? ""}!</p>
+          <p>Olá, ${firstName(b.borrower.name)}!</p>
           <p>Com base na sua última locação, selecionamos alguns itens em <strong>${b.item.city}</strong>:</p>
           <ul>${itemLinks}</ul>
           <p><a href="${APP_URL}/itens">Ver mais →</a></p>
         `,
-      })
-    }),
-  )
-
-  return results.filter((r) => r.status === "rejected").length
+      },
+    )
+  })
 }
 
-// ─── Email 30d: item favorito disponível ────────────────────────────────────
+// ─── Digest mensal dos favoritos ─────────────────────────────────────────────
 
-async function sendFavoriteAvailableReminders() {
-  // 🪤 Era `createdAt: { lte: daysAgo(30) }` — "todo favorito com mais de 30
-  // dias", não "no 30º dia". Sem registro de envio, o cron reenviava o mesmo
-  // aviso a cada execução diária, para sempre, um e-mail POR FAVORITO. Quem
-  // tinha 3 favoritos recebia 3 e-mails por dia indefinidamente.
-  //
-  // A janela de um dia alinha esta função às outras duas (1d e 7d) e faz o
-  // aviso sair uma única vez. Se uma execução do cron falhar, a coorte daquele
-  // dia não recebe — falha fechada, que é o lado certo de errar aqui.
-  //
-  // Isto é contenção, não o desenho final: o correto é digest por usuário
-  // (não por item), tabela de supressão, List-Unsubscribe e teto global de
-  // reengajamento. Ver proposta separada.
-  const favorites = await prisma.favorite.findMany({
+/**
+ * Substitui o antigo "item favoritado disponível", que saía POR ITEM: quem
+ * tinha 12 favoritos recebia 12 e-mails no mesmo minuto. Agora é UM e-mail por
+ * pessoa, com todos os favoritos ainda disponíveis.
+ *
+ * A seleção parte do usuário — e não dos favoritos — para poder excluir no
+ * próprio `where` quem já recebeu o digest do mês E quem está bloqueado pelo
+ * teto da semana. Sem os dois filtros, as 200 vagas do lote seriam gastas com
+ * gente que `sendEngagementEmail` vai recusar de qualquer forma, e quem tinha
+ * direito ficaria para o dia seguinte.
+ */
+async function sendFavoriteDigest(): Promise<EngagementTally> {
+  const dedupeKey = monthlyDedupeKey()
+  const cappedSince = new Date(Date.now() - ENGAGEMENT_CAP_DAYS * 24 * 60 * 60 * 1000)
+
+  const users = await prisma.user.findMany({
     where: {
-      createdAt: { gte: daysAgo(30), lte: daysAgoEnd(30) },
-      item:      { status: "AVAILABLE" },
+      favorites: { some: { item: { status: "AVAILABLE" } } },
+      AND: [
+        { engagementEmails: { none: { kind: "FAVORITE_DIGEST", dedupeKey } } },
+        { engagementEmails: { none: { sentAt: { gte: cappedSince } } } },
+      ],
     },
     select: {
-      user: { select: { email: true, name: true } },
-      item: { select: { id: true, title: true, pricePerDay: true, slug: true } },
+      id:    true,
+      email: true,
+      name:  true,
+      favorites: {
+        where:   { item: { status: "AVAILABLE" } },
+        orderBy: { createdAt: "desc" },
+        take:    DIGEST_MAX_ITEMS,
+        select:  { item: { select: { id: true, title: true, pricePerDay: true } } },
+      },
     },
-    take: 200,
+    take: BATCH,
   })
 
-  const results = await Promise.allSettled(
-    favorites.map(async (f) => {
-      if (!f.user.email) return
-      await send({
-        to:      f.user.email,
-        subject: `"${f.item.title}" que você salvou está disponível!`,
-        html: `
-          <p>Olá, ${f.user.name?.split(" ")[0] ?? ""}!</p>
-          <p>O item <strong>${f.item.title}</strong> que você adicionou aos favoritos está disponível por
-             <strong>R$ ${(f.item.pricePerDay / 100).toFixed(2)}/dia</strong>.</p>
-          <p><a href="${APP_URL}/itens/${f.item.slug ?? f.item.id}">Ver item →</a></p>
-        `,
-      })
-    }),
-  )
+  return runEngagementBatch(users, async (u) => {
+    if (!u.email || u.favorites.length === 0) return "skipped"
 
-  return results.filter((r) => r.status === "rejected").length
+    const rows = u.favorites
+      .map((f) => `<li><a href="${itemUrl(f.item)}">${f.item.title}</a> — ${formatPrice(f.item.pricePerDay)}/dia</li>`)
+      .join("")
+
+    // Uma decisão de plural, não três espalhadas pelo template.
+    const copy =
+      u.favorites.length > 1
+        ? {
+            subject: `Seus ${u.favorites.length} favoritos continuam disponíveis`,
+            lead:    "Os itens que você salvou seguem disponíveis para alugar:",
+          }
+        : {
+            subject: "Seu favorito continua disponível",
+            lead:    "O item que você salvou segue disponível para alugar:",
+          }
+
+    return sendEngagementEmail(
+      { userId: u.id, kind: "FAVORITE_DIGEST", dedupeKey },
+      {
+        to:      u.email,
+        subject: copy.subject,
+        html: `
+          <p>Olá, ${firstName(u.name)}!</p>
+          <p>${copy.lead}</p>
+          <ul>${rows}</ul>
+          <p><a href="${APP_URL}/favoritos">Ver meus favoritos →</a></p>
+        `,
+      },
+    )
+  })
 }
 
 // ─── Handler ─────────────────────────────────────────────────────────────────
+
+const GENERATORS = [
+  { name: "review", run: sendReviewReminders },
+  { name: "similar", run: sendSimilarItemSuggestions },
+  { name: "digest", run: sendFavoriteDigest },
+] as const
 
 export async function GET(req: Request) {
   // 🪤 Esta rota era a ÚNICA das 15 de cron a autenticar por QUERY STRING
@@ -182,13 +263,10 @@ export async function GET(req: Request) {
   if (denied) return denied
 
   try {
-    const [err1d, err7d, err30d] = await Promise.all([
-      sendReviewReminders(),
-      sendSimilarItemSuggestions(),
-      sendFavoriteAvailableReminders(),
-    ])
+    const report: Record<string, EngagementTally> = {}
+    for (const g of GENERATORS) report[g.name] = await g.run()
 
-    return NextResponse.json({ ok: true, errors: { "1d": err1d, "7d": err7d, "30d": err30d } })
+    return NextResponse.json({ ok: true, report })
   } catch (e) {
     console.error("[cron/reengagement]", e instanceof Error ? e.message : e)
     return NextResponse.json({ error: "Internal error" }, { status: 500 })

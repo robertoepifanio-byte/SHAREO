@@ -388,6 +388,7 @@ model User {
   messages            Message[]
   conversations       ConversationParticipant[]
   notifications       Notification[]
+  engagementEmails    EngagementEmail[]
   adminLogs           AdminLog[]
   exportJobs          ExportJob[]
   outboundWebhooks    OutboundWebhook[]
@@ -743,6 +744,42 @@ model Favorite {
 
   @@unique([userId, itemId])
   @@map("favorites")
+}
+
+/// Tipos de e-mail de reengajamento. NÃO inclui e-mail transacional
+/// (verificação, reset de senha, confirmação de reserva): esses saem sempre,
+/// não respeitam teto nem descadastro.
+enum EngagementEmailKind {
+  REVIEW_REMINDER // 1d após a locação — peça de avaliação
+  SIMILAR_ITEMS // 7d após a locação — sugestão de itens parecidos
+  FAVORITE_DIGEST // resumo mensal dos favoritos ativos
+}
+
+/// Registro de envio de e-mail de reengajamento — a memória que faltava.
+///
+/// Existe por causa de um bug real: o aviso de "item favoritado disponível"
+/// consultava `favorite.createdAt <= 30 dias atrás` e não guardava nada, então
+/// reenviava a cada execução diária do cron, para sempre, um e-mail POR ITEM.
+///
+/// O `@@unique([userId, kind, dedupeKey])` é a peça central: torna o reenvio
+/// impossível pelo banco, não apenas improvável pela query. Qualquer cadência
+/// construída sem isso volta a virar laço na primeira refatoração.
+///
+/// `dedupeKey` é a identidade do envio dentro do tipo — o que responde "este
+/// e-mail específico já saiu?". Ex.: `booking:<id>`, `digest:2026-09`.
+model EngagementEmail {
+  id        String              @id @default(cuid())
+  userId    String
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      EngagementEmailKind
+  dedupeKey String
+  sentAt    DateTime            @default(now())
+
+  @@unique([userId, kind, dedupeKey])
+  // Suporta a consulta do teto global ("quantos envios este usuário recebeu
+  // nos últimos 7 dias?"), executada uma vez por destinatário candidato.
+  @@index([userId, sentAt])
+  @@map("engagement_emails")
 }
 
 model Conversation {
