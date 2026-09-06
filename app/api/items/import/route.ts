@@ -308,7 +308,8 @@ export async function POST(req: Request) {
           select: { id: true },
         })
 
-        const sharedData = {
+        // O que a planilha realmente descreve sobre o item.
+        const sheetData = {
           title:         d.titulo,
           description:   d.descricao,
           categoryId,
@@ -316,19 +317,45 @@ export async function POST(req: Request) {
           pricePerWeek:  parsePriceField(d.preco_semana) ?? undefined,
           pricePerMonth: parsePriceField(d.preco_mes) ?? undefined,
           condition:     d.condicao,
-          city:          d.cidade  || "",
-          state:         d.estado  || "",
-          neighborhood:  d.bairro  || undefined,
-          status:        "DRAFT" as const,
+        }
+
+        // 🪤 Localização só entra no update quando a planilha TRAZ o valor.
+        // `cidade`/`estado`/`bairro` são opcionais com `.default("")` no schema
+        // da linha, então uma planilha sem essas colunas produzia `city: ""` e
+        // APAGAVA a localização de itens já cadastrados — quebrando a busca por
+        // proximidade, que é o principal caminho de descoberta do produto.
+        const location = {
+          ...(d.cidade && { city: d.cidade }),
+          ...(d.estado && { state: d.estado }),
+          ...(d.bairro && { neighborhood: d.bairro }),
         }
 
         if (existing) {
-          await prisma.item.update({ where: { id: existing.id }, data: sharedData })
+          // 🪤 `status` NÃO entra aqui. O objeto compartilhado carregava
+          // `status: "DRAFT"` e era aplicado também no update, então reimportar
+          // a planilha — para corrigir um preço, por exemplo — DESPUBLICAVA em
+          // massa todos os anúncios que estavam no ar, sem aviso, e o dono
+          // precisava republicar um a um. `DRAFT` só faz sentido na criação,
+          // onde significa "ainda sem foto".
+          await prisma.item.update({
+            where: { id: existing.id },
+            data:  { ...sheetData, ...location },
+          })
           items.push({ id: existing.id, title: d.titulo, action: "updated" })
           updated++
         } else {
           const created_ = await prisma.item.create({
-            data:   { ...sharedData, ownerId, latitude: 0, longitude: 0, geocodeStatus: "PENDING" },
+            data: {
+              ...sheetData,
+              city:          d.cidade || "",
+              state:         d.estado || "",
+              neighborhood:  d.bairro || undefined,
+              status:        "DRAFT" as const,
+              ownerId,
+              latitude:      0,
+              longitude:     0,
+              geocodeStatus: "PENDING",
+            },
             select: { id: true },
           })
           items.push({ id: created_.id, title: d.titulo, action: "created" })
