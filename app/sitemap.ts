@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next"
 import { prisma } from "@/lib/prisma"
+import { canonicalItemPath } from "@/lib/item-url"
 import { PILOT_CITIES } from "@/lib/pilot-cities"
 
 export const dynamic = "force-dynamic"
@@ -10,7 +11,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [items, categories, lojas] = await Promise.all([
     prisma.item.findMany({
       where:   { status: "AVAILABLE", isApproved: true, deletedAt: null },
-      select:  { id: true, updatedAt: true },
+      select:  { id: true, slug: true, updatedAt: true },
       orderBy: { updatedAt: "desc" },
       take:    1000,
     }),
@@ -37,7 +38,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }))
 
   const itemRoutes: MetadataRoute.Sitemap = items.map((i) => ({
-    url:             `${BASE}/itens/${i.id}`,
+    // Mesma fonte da forma canônica que a página declara. Mandar o id aqui e o
+    // slug no canonical faria o buscador rastrear uma URL para ser mandado a
+    // outra — trabalho desperdiçado de crawl em cada anúncio.
+    url:             `${BASE}${canonicalItemPath(i)}`,
     lastModified:    i.updatedAt,
     changeFrequency: "weekly" as const,
     priority:        0.8,
