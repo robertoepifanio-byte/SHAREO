@@ -18,6 +18,7 @@ import { POST } from "@/app/api/items/route"
 // ---------------------------------------------------------------------------
 
 const mockItemCreate     = jest.fn()
+const mockItemUpdate     = jest.fn()
 const mockItemFindMany   = jest.fn()
 const mockItemCount      = jest.fn()
 const mockUserFindUnique = jest.fn()
@@ -26,6 +27,7 @@ jest.mock("@/lib/prisma", () => ({
   prisma: {
     item: {
       create:   (...args: unknown[]) => mockItemCreate(...args),
+      update:   (...args: unknown[]) => mockItemUpdate(...args),
       findMany: (...args: unknown[]) => mockItemFindMany(...args),
       count:    (...args: unknown[]) => mockItemCount(...args),
     },
@@ -108,6 +110,10 @@ describe("POST /api/items — regra de status por presença de fotos", () => {
         createdAt:   new Date("2026-06-03T00:00:00Z"),
       }
       mockItemCreate.mockResolvedValue(createdItem)
+      mockItemUpdate.mockImplementation(async ({ data }: { data: { slug: string } }) => ({
+        ...createdItem,
+        ...data,
+      }))
 
       const res  = await POST(makeRequest(BASE_ITEM_PAYLOAD))
       const body = await res.json() as { data: Record<string, unknown> }
@@ -116,12 +122,61 @@ describe("POST /api/items — regra de status por presença de fotos", () => {
       expect(body.data.status).toBe("DRAFT")
     })
 
+    it("grava o slug logo após criar — sem ele a URL canônica não existe", async () => {
+      // 🪤 O campo `slug` ficou NULL em 100% dos anúncios por não ter quem
+      // escrevesse: `buildSlug` existia em utils/geo.ts, com 9 testes, chamado
+      // só pelo próprio teste. O schema documentava "SEO URL" para uma coluna
+      // vazia. Sem esta gravação, o canonical, o sitemap e o og:url caem no
+      // cuid e o slug segue morto.
+      const createdItem = {
+        id:          "item-id-001",
+        title:       "Furadeira Bosch 500W",
+        city:        "Recife",
+        state:       "PE",
+        pricePerDay: 5000,
+        status:      "DRAFT",
+        createdAt:   new Date(),
+      }
+      mockItemCreate.mockResolvedValue(createdItem)
+      mockItemUpdate.mockImplementation(async ({ data }: { data: { slug: string } }) => ({
+        ...createdItem,
+        ...data,
+      }))
+
+      await POST(makeRequest({ ...BASE_ITEM_PAYLOAD, title: "Furadeira Bosch 500W" }))
+
+      const { where, data } = mockItemUpdate.mock.calls[0][0] as {
+        where: { id: string }
+        data:  { slug: string }
+      }
+      expect(where.id).toBe("item-id-001")
+      // O id entra no slug: é ele que dispensa tratamento de colisão entre dois
+      // anúncios de mesmo título na mesma cidade.
+      expect(data.slug).toBe("furadeira-bosch-500w-em-recife-pe-item-id-001")
+    })
+
+    it("sem cidade e estado não inventa slug — o canonical usa o id", async () => {
+      // "titulo-em--" não é URL, é ruído. Item importado sem localização segue
+      // com slug null, e a página continua servindo pelo id.
+      const semLocal = {
+        id: "item-id-002", title: "Serra", city: "", state: "",
+        pricePerDay: 5000, status: "DRAFT", createdAt: new Date(),
+      }
+      mockItemCreate.mockResolvedValue(semLocal)
+
+      const res = await POST(makeRequest(BASE_ITEM_PAYLOAD))
+
+      expect(res.status).toBe(201)
+      expect(mockItemUpdate).not.toHaveBeenCalled()
+    })
+
     it("prisma.item.create é chamado com status=DRAFT independente do payload", async () => {
       mockItemCreate.mockResolvedValue({
         id: "item-id-001", title: BASE_ITEM_PAYLOAD.title,
         city: "Natal", state: "RN", pricePerDay: 5000,
         status: "DRAFT", createdAt: new Date(),
       })
+      mockItemUpdate.mockResolvedValue({ id: "item-id-001", status: "DRAFT" })
 
       await POST(makeRequest(BASE_ITEM_PAYLOAD))
 

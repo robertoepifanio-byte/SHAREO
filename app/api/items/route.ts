@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
 import { resolveUserId } from "@/lib/resolveUserId"
 import { prisma } from "@/lib/prisma"
+import { buildSlug } from "@/utils/geo"
 import { CreateItemSchema, ListItemsQuerySchema } from "@/lib/validations/items"
 import { geocodeItem } from "@/lib/geocodeItem"
 import { userPublicSelect } from "@/lib/prisma/selects"
@@ -151,7 +152,7 @@ export async function POST(req: NextRequest) {
 
     // Items always start as DRAFT — photos are uploaded separately via POST /api/items/[id]/images.
     // The images endpoint promotes DRAFT → AVAILABLE when the first photo is added.
-    const item = await prisma.item.create({
+    const created = await prisma.item.create({
       data: {
         ownerId:       userId,
         categoryId:    d.categoryId,
@@ -184,6 +185,36 @@ export async function POST(req: NextRequest) {
         createdAt:   true,
       },
     })
+
+    // Slug só depois do create, porque `buildSlug` precisa do id — é ele que
+    // garante unicidade sem tratamento de colisão (dois anúncios podem ter o
+    // mesmo título na mesma cidade).
+    //
+    // 🪤 Gerado UMA vez, na criação, e nunca reescrito depois. O slug é a URL
+    // canônica do anúncio: regerá-lo quando o dono edita o título trocaria o
+    // endereço que o buscador já indexou, jogando fora a autoridade acumulada.
+    // Sem cidade ou estado o slug fica sem sentido ("titulo-em--"), então
+    // segue `null` e o canonical usa o id — que continua servindo a página.
+    const slug =
+      created.city && created.state
+        ? buildSlug(created.title, created.city, created.state, created.id)
+        : null
+
+    const item = slug
+      ? await prisma.item.update({
+          where:  { id: created.id },
+          data:   { slug },
+          select: {
+            id:          true,
+            title:       true,
+            city:        true,
+            state:       true,
+            pricePerDay: true,
+            status:      true,
+            createdAt:   true,
+          },
+        })
+      : created
 
     // Geocodifica em background se o formulário não forneceu coords reais
     // after() garante execução mesmo depois da resposta (fire-and-forget puro morre no Vercel)
