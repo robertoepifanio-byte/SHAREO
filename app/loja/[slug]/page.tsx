@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import { Avatar } from "@/components/ui/Avatar"
 import { prisma } from "@/lib/prisma"
+import { byStoreSlugOrId, canonicalStorePath } from "@/lib/store-url"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { ItemCard } from "@/components/items/ItemCard"
 import { EmptyState } from "@/components/shared/EmptyState"
@@ -18,9 +19,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${user.name} — Vitrine`,
     description: user.bio ?? `Confira os itens disponíveis para aluguel de ${user.name} no ShareO.`,
+    // Duas URLs servem esta vitrine (id e slug). Sem canonical isso é conteúdo
+    // duplicado aos olhos do buscador; com ele, os sinais se consolidam na
+    // forma descritiva — a mesma que o sitemap já publica.
+    alternates: { canonical: canonicalStorePath(user) },
     openGraph: {
       title: `${user.name} — Vitrine ShareO`,
       description: user.bio ?? `Alugue itens de ${user.name} no ShareO.`,
+      // 🪤 O Next NÃO deriva `og:url` do canonical — são campos independentes.
+      // Sem esta linha, compartilhar a vitrine no WhatsApp fixaria no preview a
+      // URL que a pessoa visitou, divergindo do canonical.
+      url: canonicalStorePath(user),
       ...(user.avatarUrl && { images: [{ url: user.avatarUrl }] }),
     },
   }
@@ -28,12 +37,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 async function getOwner(slug: string) {
   return prisma.user.findFirst({
-    where: {
-      // slug customizado OU id do usuário (retrocompatível)
-      OR: [{ slug }, { id: slug }],
-      deletedAt: null,
-      isActive:  true,
-    },
+    // slug customizado OU id do usuário (retrocompatível), só vitrine visível
+    where: byStoreSlugOrId(slug),
     select: {
       id:           true,
       name:         true,

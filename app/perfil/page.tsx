@@ -3,6 +3,7 @@ import { Avatar } from "@/components/ui/Avatar"
 import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { canonicalStorePath } from "@/lib/store-url"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { UpgradePjForm } from "./_UpgradePjForm"
 import { displayPhone } from "@/lib/forms/masks"
@@ -151,7 +152,7 @@ export default async function ProfilePage() {
                 user.userType === "PJ" ? (
                   <div className="mt-4 flex items-center gap-3">
                     <Link
-                      href={`/loja/${user.slug ?? user.id}`}
+                      href={canonicalStorePath(user)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-semibold text-foreground hover:bg-background transition-colors"
