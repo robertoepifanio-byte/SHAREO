@@ -122,11 +122,21 @@ async function sendSimilarItemSuggestions() {
 // ─── Email 30d: item favorito disponível ────────────────────────────────────
 
 async function sendFavoriteAvailableReminders() {
-  const cutoff = daysAgo(30)
-
+  // 🪤 Era `createdAt: { lte: daysAgo(30) }` — "todo favorito com mais de 30
+  // dias", não "no 30º dia". Sem registro de envio, o cron reenviava o mesmo
+  // aviso a cada execução diária, para sempre, um e-mail POR FAVORITO. Quem
+  // tinha 3 favoritos recebia 3 e-mails por dia indefinidamente.
+  //
+  // A janela de um dia alinha esta função às outras duas (1d e 7d) e faz o
+  // aviso sair uma única vez. Se uma execução do cron falhar, a coorte daquele
+  // dia não recebe — falha fechada, que é o lado certo de errar aqui.
+  //
+  // Isto é contenção, não o desenho final: o correto é digest por usuário
+  // (não por item), tabela de supressão, List-Unsubscribe e teto global de
+  // reengajamento. Ver proposta separada.
   const favorites = await prisma.favorite.findMany({
     where: {
-      createdAt: { lte: cutoff },
+      createdAt: { gte: daysAgo(30), lte: daysAgoEnd(30) },
       item:      { status: "AVAILABLE" },
     },
     select: {
