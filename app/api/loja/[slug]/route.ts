@@ -6,6 +6,7 @@
 import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { byStoreSlugOrId } from "@/lib/store-url"
 import type { ItemStatus } from "@prisma/client"
 
 export const runtime = "nodejs"
@@ -25,11 +26,7 @@ export async function GET(
   // Select idêntico ao de getOwner() em page.tsx — sem e-mail, CPF, CNPJ,
   // senha, tokens de redefinição ou qualquer campo não exposto na página web.
   const owner = await prisma.user.findFirst({
-    where: {
-      OR: [{ slug }, { id: slug }],
-      deletedAt: null,
-      isActive: true,
-    },
+    where: byStoreSlugOrId(slug),
     select: {
       id:         true,
       name:       true,

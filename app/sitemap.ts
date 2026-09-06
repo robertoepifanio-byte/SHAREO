@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next"
 import { prisma } from "@/lib/prisma"
+import { canonicalStorePath } from "@/lib/store-url"
 import { PILOT_CITIES } from "@/lib/pilot-cities"
 
 export const dynamic = "force-dynamic"
@@ -19,8 +20,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       select: { id: true },
     }),
     prisma.user.findMany({
-      where:   { slug: { not: null }, deletedAt: null },
-      select:  { slug: true, updatedAt: true },
+      // 🪤 O sitemap publicava o que a própria página recusa ou não vale
+      // rastrear. Duas condições faltavam:
+      //   • `isActive` — vitrine de conta desativada devolve 404;
+      //   • `items: { some: … }` — vitrine sem nenhum item renderiza um estado
+      //     vazio de menos de 50 palavras. Thin content em volume corrói o
+      //     orçamento de crawl das páginas que têm conteúdo de verdade.
+      // A condição dos itens é a MESMA que a página usa para montar a grade —
+      // sitemap e página precisam concordar sobre o que é "ter conteúdo".
+      where: {
+        slug:      { not: null },
+        deletedAt: null,
+        isActive:  true,
+        items:     { some: { status: { in: ["AVAILABLE", "PAUSED", "DRAFT"] }, deletedAt: null } },
+      },
+      select:  { id: true, slug: true, updatedAt: true },
     }),
   ])
 
@@ -44,9 +58,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }))
 
   const lojaRoutes: MetadataRoute.Sitemap = lojas
-    .filter((u) => u.slug)
+    
     .map((u) => ({
-      url:             `${BASE}/loja/${u.slug}`,
+      // Mesma fonte da forma canônica que a página declara.
+      url:             `${BASE}${canonicalStorePath(u)}`,
       lastModified:    u.updatedAt,
       changeFrequency: "weekly" as const,
       priority:        0.6,
