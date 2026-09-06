@@ -12,9 +12,9 @@
  *       é o MESMO da confirmação de reserva e do reset de senha
  *       (noreply@shareo.com.br): a reputação queimada derruba os dois.
  *
- * O protocolo (GET humano / POST one-click, HTML autocontido, idempotência)
- * vive em `lib/unsubscribe-route.ts`, compartilhado com a rota de Fundadores.
- * Aqui fica só o efeito no banco e a copy.
+ * O protocolo (GET confirma, POST aplica, HTML autocontido, idempotência) vive
+ * em `lib/unsubscribe-route.ts`, compartilhado com a rota de Fundadores. Aqui
+ * fica só o efeito no banco e a copy.
  *
  * 🪤 NÃO desliga e-mail transacional. Quem se descadastra aqui continua
  * recebendo confirmação de reserva, cobrança e reset de senha — desligar isso
@@ -48,6 +48,10 @@ export const { GET, POST } = makeUnsubscribeHandlers({
   },
 
   copy: {
+    confirmTitle: "Desligar estes avisos?",
+    confirmBody:
+      'Você deixará de receber o resumo de favoritos, sugestões de itens e lembretes de avaliação. <strong>Avisos sobre suas reservas continuam chegando</strong> — confirmação, devolução e pagamento fazem parte da locação.',
+    confirmButton: "Sim, desligar",
     successTitle: "Pronto — avisos desligados",
     successBody:
       'Não enviaremos mais o resumo de favoritos, sugestões de itens nem lembretes de avaliação. <strong>Avisos sobre suas reservas continuam chegando</strong> — confirmação, devolução e pagamento fazem parte da locação. Mudou de ideia? É só religar em <a href="/perfil/notificacoes" style="color:#007B3C">Meu Perfil → Notificações</a>.',

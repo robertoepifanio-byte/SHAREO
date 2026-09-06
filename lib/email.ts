@@ -254,7 +254,7 @@ function unsubscribeFooter(unsubUrl: string) {
     <p style="margin:28px 0 0;padding-top:16px;border-top:1px solid #E2E8F0;font-size:12px;color:#94A3B8;line-height:1.6;">
       Você recebe este e-mail porque tem conta no ShareO.
       <a href="${unsubUrl}" style="color:#007B3C;">Cancelar estes avisos</a>
-      — um clique, sem precisar responder. Avisos sobre suas reservas continuam chegando.
+      — sem precisar responder este e-mail. Avisos sobre suas reservas continuam chegando.
     </p>
   `
 }
@@ -822,7 +822,7 @@ export function founderWelcomeHtml(firstName: string, queuePosition: number, uns
     <p style="margin:0;font-size:12px;color:#94A3B8;line-height:1.6;">
       Não quer mais receber?
       <a href="${unsubUrl}" style="color:#007B3C;">Cancelar inscrição</a>
-      — um clique, sem precisar responder. Dúvidas de privacidade:
+      — sem precisar responder este e-mail. Dúvidas de privacidade:
       <a href="mailto:privacidade@shareo.com.br" style="color:#007B3C;">privacidade@shareo.com.br</a>.
     </p>
   `)

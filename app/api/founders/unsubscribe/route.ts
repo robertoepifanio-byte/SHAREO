@@ -9,9 +9,9 @@
  *   (b) regras de bulk sender de Gmail/Yahoo — exigem List-Unsubscribe com
  *       one-click acima de ~5k destinatários/dia.
  *
- * O protocolo (GET humano / POST one-click, HTML autocontido, idempotência)
- * vive em `lib/unsubscribe-route.ts`, compartilhado com o descadastro dos
- * e-mails de reengajamento. Aqui fica só o efeito no banco e a copy.
+ * O protocolo (GET confirma, POST aplica, HTML autocontido, idempotência) vive
+ * em `lib/unsubscribe-route.ts`, compartilhado com o descadastro dos e-mails de
+ * reengajamento. Aqui fica só o efeito no banco e a copy.
  *
  * Sem sessão de propósito: o clique vem do cliente de e-mail, sem cookie. A
  * autenticação é o HMAC do próprio e-mail (ver lib/unsubscribe-token.ts).
@@ -51,6 +51,10 @@ export const { GET, POST } = makeUnsubscribeHandlers({
   },
 
   copy: {
+    confirmTitle: "Sair da lista do ShareO?",
+    confirmBody:
+      "Você deixará de receber e-mails sobre o lançamento. É só confirmar abaixo.",
+    confirmButton: "Sim, sair da lista",
     successTitle: "Tudo certo — você saiu da lista",
     successBody:
       "Não enviaremos mais e-mails sobre o lançamento do ShareO. Mudou de ideia? É só entrar na lista de novo pelo site.",

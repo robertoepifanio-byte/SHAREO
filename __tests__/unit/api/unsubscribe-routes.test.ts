@@ -2,16 +2,22 @@
 /**
  * Protocolo das duas rotas de descadastro.
  *
- * Existe porque o esqueleto (GET humano / POST one-click / idempotência / não
- * vazar existência de conta) foi extraído para `lib/unsubscribe-route.ts` e
- * passou a ser compartilhado — e a rota de Fundadores, que está em produção
- * desde 01/09/2026, nunca teve teste nenhum. Refatorar código vivo sem rede é
- * como o bug de reenvio nasceu.
+ * Existe porque o esqueleto (GET confirma / POST aplica / one-click RFC 8058 /
+ * idempotência / não vazar existência de conta) foi extraído para
+ * `lib/unsubscribe-route.ts` e passou a ser compartilhado — e a rota de
+ * Fundadores, em produção desde 01/09/2026, nunca teve teste nenhum.
+ * Refatorar código vivo sem rede é como o bug de reenvio nasceu.
  *
- * O caso que dá nome ao arquivo é `descadastro que mente`: com match exato de
- * e-mail, quem se cadastrou como `Roberto@Gmail.com` recebia a página "pronto,
- * descadastrado" enquanto o UPDATE casava zero linhas. A página dizia sim e os
- * e-mails continuavam chegando.
+ * Dois casos dão nome ao arquivo:
+ *
+ * `GET não altera estado` — a URL de descadastro vai no corpo do e-mail E no
+ * header `List-Unsubscribe`. Scanners que abrem links automaticamente
+ * (Defender SafeLinks, antivírus corporativo, prefetch) descadastrariam a
+ * pessoa sem ela clicar em nada, e ela pararia de receber sem saber por quê.
+ *
+ * `descadastro que mente` — com match exato de e-mail, quem se cadastrou como
+ * `Roberto@Gmail.com` recebia a página "pronto, descadastrado" enquanto o
+ * UPDATE casava zero linhas. A página dizia sim e os e-mails continuavam.
  */
 
 process.env.AUTH_SECRET = "segredo-de-teste-nao-usar-em-producao"
@@ -48,11 +54,22 @@ const EMAIL = "roberto@example.com"
 const mockUpdateMany = prisma.user.updateMany as jest.Mock
 const mockLeadFind   = prisma.founderLead.findUnique as jest.Mock
 
-function req(base: string, email: string, token: string) {
-  return new NextRequest(
-    `https://shareo.com.br${base}?email=${encodeURIComponent(email)}&token=${token}`,
-  )
-}
+const url = (base: string, email: string, token: string) =>
+  `https://shareo.com.br${base}?email=${encodeURIComponent(email)}&token=${token}`
+
+const get = (base: string, email: string, token: string) =>
+  new NextRequest(url(base, email, token))
+
+/** POST do formulário humano: sem o corpo da RFC 8058. */
+const submit = (base: string, email: string, token: string) =>
+  new NextRequest(url(base, email, token), { method: "POST", body: "" })
+
+/** POST automático do provedor de e-mail (RFC 8058). */
+const oneClick = (base: string, email: string, token: string) =>
+  new NextRequest(url(base, email, token), {
+    method: "POST",
+    body:   "List-Unsubscribe=One-Click",
+  })
 
 beforeEach(() => {
   jest.clearAllMocks()
@@ -62,16 +79,39 @@ beforeEach(() => {
 
 describe("descadastro de reengajamento", () => {
   const path = "/api/engagement/unsubscribe"
+  const token = () => engagementUnsubscribe.token(EMAIL)
 
-  it("aplica o descadastro com token válido", async () => {
-    const res = await engagement.GET(req(path, EMAIL, engagementUnsubscribe.token(EMAIL)))
+  it("GET só pergunta — não descadastra ninguém", async () => {
+    const res = await engagement.GET(get(path, EMAIL, token()))
 
     expect(res.status).toBe(200)
+    // Este `not` é o teste inteiro: um scanner que abre o link não pode
+    // desligar os e-mails de quem nunca clicou.
+    expect(mockUpdateMany).not.toHaveBeenCalled()
+
+    const html = await res.text()
+    expect(html).toContain('method="post"')
+    expect(html).toContain("Sim, desligar")
+  })
+
+  it("POST do formulário aplica e responde uma página", async () => {
+    const res = await engagement.POST(submit(path, EMAIL, token()))
+
+    expect(res.status).toBe(200)
+    expect(mockUpdateMany).toHaveBeenCalledTimes(1)
+    expect(await res.text()).toContain("Avisos sobre suas reservas continuam chegando")
+  })
+
+  it("POST one-click do provedor aplica e responde 204 sem corpo (RFC 8058)", async () => {
+    const res = await engagement.POST(oneClick(path, EMAIL, token()))
+
+    expect(res.status).toBe(204)
+    expect(await res.text()).toBe("")
     expect(mockUpdateMany).toHaveBeenCalledTimes(1)
   })
 
   it("casa o e-mail sem depender da caixa — senão o descadastro mente", async () => {
-    await engagement.GET(req(path, EMAIL, engagementUnsubscribe.token(EMAIL)))
+    await engagement.POST(submit(path, EMAIL, token()))
 
     // O cadastro grava o e-mail verbatim; o token é assinado sobre a forma
     // minúscula. Sem `insensitive`, `Roberto@Gmail.com` nunca seria encontrado
@@ -81,38 +121,34 @@ describe("descadastro de reengajamento", () => {
   })
 
   it("recusa token de outro e-mail sem tocar no banco", async () => {
-    const res = await engagement.GET(req(path, EMAIL, engagementUnsubscribe.token("outro@x.com")))
+    const res = await engagement.POST(submit(path, EMAIL, engagementUnsubscribe.token("outro@x.com")))
 
     expect(res.status).toBe(400)
     expect(mockUpdateMany).not.toHaveBeenCalled()
   })
 
   it("não vale o token da outra lista", async () => {
-    const res = await engagement.GET(req(path, EMAIL, foundersUnsubscribe.token(EMAIL)))
+    const res = await engagement.POST(submit(path, EMAIL, foundersUnsubscribe.token(EMAIL)))
 
     expect(res.status).toBe(400)
     expect(mockUpdateMany).not.toHaveBeenCalled()
-  })
-
-  it("POST one-click responde 204 sem corpo (RFC 8058)", async () => {
-    const res = await engagement.POST(req(path, EMAIL, engagementUnsubscribe.token(EMAIL)))
-
-    expect(res.status).toBe(204)
-    expect(await res.text()).toBe("")
-  })
-
-  it("promete na página que os avisos de reserva continuam", async () => {
-    const res = await engagement.GET(req(path, EMAIL, engagementUnsubscribe.token(EMAIL)))
-
-    expect(await res.text()).toContain("Avisos sobre suas reservas continuam chegando")
   })
 })
 
 describe("descadastro da campanha de Fundadores", () => {
   const path = "/api/founders/unsubscribe"
+  const token = () => foundersUnsubscribe.token(EMAIL)
 
-  it("marca o lead como UNSUBSCRIBED", async () => {
-    const res = await founders.GET(req(path, EMAIL, foundersUnsubscribe.token(EMAIL)))
+  it("GET só pergunta — não mexe no lead", async () => {
+    const res = await founders.GET(get(path, EMAIL, token()))
+
+    expect(res.status).toBe(200)
+    expect(prisma.founderLead.update).not.toHaveBeenCalled()
+    expect(await res.text()).toContain("Sim, sair da lista")
+  })
+
+  it("POST marca o lead como UNSUBSCRIBED", async () => {
+    const res = await founders.POST(submit(path, EMAIL, token()))
 
     expect(res.status).toBe(200)
     expect(prisma.founderLead.update).toHaveBeenCalledWith(
@@ -123,7 +159,7 @@ describe("descadastro da campanha de Fundadores", () => {
   it("é idempotente — quem já saiu recebe sucesso, não erro", async () => {
     mockLeadFind.mockResolvedValue({ id: "lead-1", status: "UNSUBSCRIBED" })
 
-    const res = await founders.GET(req(path, EMAIL, foundersUnsubscribe.token(EMAIL)))
+    const res = await founders.POST(submit(path, EMAIL, token()))
 
     expect(res.status).toBe(200)
     expect(prisma.founderLead.update).not.toHaveBeenCalled()
@@ -131,15 +167,39 @@ describe("descadastro da campanha de Fundadores", () => {
 
   it("não revela se o e-mail está na base", async () => {
     mockLeadFind.mockResolvedValue(null)
+    const ausente = await founders.POST(submit(path, EMAIL, token()))
 
-    const res = await founders.GET(req(path, EMAIL, foundersUnsubscribe.token(EMAIL)))
-    const existente = await founders.GET(req(path, EMAIL, foundersUnsubscribe.token(EMAIL)))
+    mockLeadFind.mockResolvedValue({ id: "lead-1", status: "PENDING" })
+    const presente = await founders.POST(submit(path, EMAIL, token()))
 
-    expect(res.status).toBe(existente.status)
+    expect(ausente.status).toBe(presente.status)
+    expect(await ausente.text()).toBe(await presente.text())
+  })
+
+  it("falha do banco no clique humano responde uma PÁGINA, não corpo vazio", async () => {
+    // O momento exato da revogação (LGPD art. 18) é o pior lugar para uma tela
+    // branca: a pessoa não sabe se saiu, e a alternativa dela é marcar como
+    // spam — no mesmo remetente que manda reset de senha.
+    mockLeadFind.mockRejectedValue(new Error("banco fora"))
+
+    const res  = await founders.POST(submit(path, EMAIL, token()))
+    const html = await res.text()
+
+    expect(res.status).toBe(500)
+    expect(html).toContain("Tente novamente")
+  })
+
+  it("a mesma falha responde corpo vazio para o one-click da máquina", async () => {
+    mockLeadFind.mockRejectedValue(new Error("banco fora"))
+
+    const res = await founders.POST(oneClick(path, EMAIL, token()))
+
+    expect(res.status).toBe(500)
+    expect(await res.text()).toBe("")
   })
 
   it("token inválido responde 400 sem consultar o lead", async () => {
-    const res = await founders.GET(req(path, EMAIL, "token-forjado"))
+    const res = await founders.POST(submit(path, EMAIL, "token-forjado"))
 
     expect(res.status).toBe(400)
     expect(mockLeadFind).not.toHaveBeenCalled()
