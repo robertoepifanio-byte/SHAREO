@@ -74,6 +74,34 @@ export function monthlyDedupeKey(now = new Date()): string {
   return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`
 }
 
+/**
+ * "Ainda interessado?" — uma vez por item favoritado, nunca repete.
+ *
+ * Prefixo próprio (`nudge:`), como os irmãos `price:` e `back:`. O nome genérico
+ * anterior (`itemDedupeKey` → `item:`) convidava o próximo gerador por item a
+ * reusar a mesma chave sem perceber que estaria compartilhando identidade.
+ */
+export function nudgeDedupeKey(itemId: string): string {
+  return `nudge:${itemId}`
+}
+
+/**
+ * Queda de preço: a chave inclui o preço NOVO, então uma segunda queda no mesmo
+ * item volta a ser notícia. Sem o preço na chave, o item avisaria uma vez e
+ * ficaria mudo para sempre, mesmo caindo de novo pela metade.
+ */
+export function priceDropDedupeKey(itemId: string, newPriceCents: number): string {
+  return `price:${itemId}:${newPriceCents}`
+}
+
+/**
+ * Volta ao catálogo: a chave inclui a data do retorno, então um item que sai e
+ * volta de novo semanas depois avisa outra vez — é evento novo.
+ */
+export function backInStockDedupeKey(itemId: string, availableSince: Date): string {
+  return `back:${itemId}:${availableSince.toISOString().slice(0, 10)}`
+}
+
 // ─── Reserva ─────────────────────────────────────────────────────────────────
 
 /**

@@ -33,6 +33,25 @@ export function isEmailProviderConfigured(): boolean {
  */
 const TEST_EMAIL_DOMAINS = ["shareo.test", "shareo-test.com"] as const
 
+/**
+ * Filtro Prisma que casa e-mail de conta de teste — mesma regra do
+ * `isTestDomain` abaixo, na forma que o `where` entende.
+ *
+ * 🪤 NÃO usar `endsWith: dominio` direto. Isso é sufixo da STRING INTEIRA e
+ * casa `alguem@meushareo-test.com`, excluindo um usuário real das listas sem
+ * sinal nenhum. O casamento tem que ser por domínio (`@dominio`) ou subdomínio
+ * (`.dominio`) — é o mesmo erro que já custou a cota do Resend, documentado em
+ * `isTestDomain`.
+ */
+export function testAccountEmailFilter() {
+  return {
+    OR: TEST_EMAIL_DOMAINS.flatMap((d) => [
+      { email: { endsWith: `@${d}` } },
+      { email: { endsWith: `.${d}` } },
+    ]),
+  }
+}
+
 function isTestDomain(address: string): boolean {
   const at = address.lastIndexOf("@")
   if (at < 0) return false
@@ -297,7 +316,7 @@ function baseLayout(content: string) {
 </html>`
 }
 
-function ctaButton(href: string, label: string) {
+export function ctaButton(href: string, label: string) {
   return `<a href="${href}"
     style="display:inline-block;background:#007B3C;color:#FFFFFF;font-size:15px;
            font-weight:700;text-decoration:none;border-radius:8px;

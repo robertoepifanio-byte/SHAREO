@@ -3,6 +3,8 @@ import { NextResponse, after } from "next/server"
 import { auth } from "@/lib/auth"
 import { hasAdminRole } from "@/lib/auth/admin-guards"
 import { prisma } from "@/lib/prisma"
+import { availabilityPatch } from "@/lib/item-availability"
+import type { ItemStatus } from "@prisma/client"
 import { z } from "zod"
 
 type Params = { params: Promise<{ id: string }> }
@@ -58,6 +60,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       // toggle_active: AVAILABLE ↔ PAUSED
       data = { status: item.status === "AVAILABLE" ? "PAUSED" : "AVAILABLE" }
     }
+
+    // Carimba a volta ao catálogo — ver lib/item-availability.ts.
+    Object.assign(data, availabilityPatch(item.status, data.status as ItemStatus))
 
     const updated = await prisma.item.update({
       where:  { id },

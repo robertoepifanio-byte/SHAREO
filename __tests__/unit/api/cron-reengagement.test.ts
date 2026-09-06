@@ -23,18 +23,28 @@ jest.mock("@/lib/prisma", () => ({
     booking:         { findMany: jest.fn() },
     item:            { findMany: jest.fn() },
     user:            { findMany: jest.fn() },
+    favorite:        { findMany: jest.fn(), update: jest.fn() },
     engagementEmail: { delete: jest.fn() },
     $executeRaw:     jest.fn(),
+    $queryRaw:       jest.fn(),
   },
 }))
 
-jest.mock("@/lib/email", () => ({ sendMarketingEmail: jest.fn() }))
+// Módulo REAL, com só o envio substituído. Mockar `testAccountEmailFilter`
+// faria a asserção sobre o formato do filtro verificar o dublê em vez do
+// código — teste verde que não prova nada. `ctaButton` também vem do real.
+jest.mock("@/lib/email", () => ({
+  ...jest.requireActual("@/lib/email"),
+  sendMarketingEmail: jest.fn(),
+}))
 
 // Cron autenticado — o foco aqui é a cadência de envio, não o guard.
 jest.mock("@/lib/auth/cron-guard", () => ({ assertCronAuth: () => null }))
 
-const mockBookings = prisma.booking.findMany as jest.Mock
-const mockUsers    = prisma.user.findMany as jest.Mock
+const mockBookings  = prisma.booking.findMany as jest.Mock
+const mockUsers     = prisma.user.findMany as jest.Mock
+const mockFavorites = prisma.favorite.findMany as jest.Mock
+const mockPriceDrop = prisma.$queryRaw as unknown as jest.Mock
 const mockClaim    = prisma.$executeRaw as unknown as jest.Mock
 const mockSend     = sendMarketingEmail as jest.Mock
 
@@ -108,6 +118,29 @@ const COMPLETED_BOOKING = {
   item:       { title: "Furadeira Bosch", categoryId: "cat-1", city: "Natal" },
 }
 
+/**
+ * TRÊS geradores consultam `favorite.findMany`: o nudge (por `createdAt`), o
+ * "voltou ao catálogo" (por `item.availableSince`) e a hidratação da queda de
+ * preço (por `OR` de pares vindos do SQL cru). Um mock que devolvesse a mesma
+ * linha para todos faria um teste passar pelo gerador errado — foi exatamente
+ * assim que a asserção do "favoritou depois do retorno" ficou verde por engano,
+ * enquanto quem mandava o e-mail era o nudge.
+ *
+ * Rotear por FORMATO do `where`, e não por ordem de chamada, mantém o teste
+ * imune a mudanças na ordem dos geradores.
+ */
+function favoritesBy({
+  nudge = [],
+  back = [],
+  drops = [],
+}: { nudge?: unknown[]; back?: unknown[]; drops?: unknown[] }) {
+  mockFavorites.mockImplementation(async ({ where }: { where: Record<string, any> }) => {
+    if (where.item?.availableSince) return back
+    if (where.OR) return drops
+    return nudge
+  })
+}
+
 let db: ReturnType<typeof fakeEngagementTable>
 
 beforeEach(() => {
@@ -115,6 +148,8 @@ beforeEach(() => {
   db = fakeEngagementTable()
   mockBookings.mockResolvedValue([])
   mockUsers.mockResolvedValue([FAVORITE_USER])
+  favoritesBy({}) // nenhum favorito em nenhum dos três geradores
+  mockPriceDrop.mockResolvedValue([])
   mockSend.mockResolvedValue({ error: null })
 })
 
@@ -227,5 +262,146 @@ describe("cron de reengajamento — falha de envio", () => {
 
     expect(body.report.digest.errors).toBe(1)
     expect(prisma.engagementEmail.delete).toHaveBeenCalled()
+  })
+})
+
+describe("gatilho: preço caiu", () => {
+  const PAIR = { userId: FAVORITE_USER.id, itemId: "item-1" }
+
+  const dropRow = (pricePerDay: number) => ({
+    userId:         FAVORITE_USER.id,
+    priceReference: 6000,
+    user:           { email: FAVORITE_USER.email, name: FAVORITE_USER.name },
+    item:           { id: "item-1", title: "Bicicleta MTB Aro 29", pricePerDay },
+  })
+
+  it("anuncia a queda com o percentual e os dois preços", async () => {
+    mockUsers.mockResolvedValue([]) // sem digest disputando a cota
+    mockPriceDrop.mockResolvedValue([PAIR])
+    favoritesBy({ drops: [dropRow(4500)] })
+
+    await GET(req())
+
+    const { subject, bodyHtml } = mockSend.mock.calls[0][0]
+    expect(subject).toContain("25% mais barato")
+    expect(bodyHtml).toContain("60,00")
+    expect(bodyHtml).toContain("45,00")
+  })
+
+  it("volta a avisar se o preço cair DE NOVO, mas não no mesmo preço", async () => {
+    mockUsers.mockResolvedValue([])
+    mockPriceDrop.mockResolvedValue([PAIR])
+    favoritesBy({ drops: [dropRow(4500)] })
+    await GET(req())
+
+    db.advanceDays(8) // libera o teto semanal
+    await GET(req())
+    expect(mockSend).toHaveBeenCalledTimes(1) // mesmo preço: já avisado
+
+    db.advanceDays(8)
+    favoritesBy({ drops: [dropRow(3000)] })
+    await GET(req())
+    expect(mockSend).toHaveBeenCalledTimes(2) // caiu mais: evento novo
+  })
+
+  it("avança a catraca da referência quando o e-mail sai", async () => {
+    mockUsers.mockResolvedValue([])
+    mockPriceDrop.mockResolvedValue([PAIR])
+    favoritesBy({ drops: [dropRow(4500)] })
+
+    await GET(req())
+
+    // Sem isso, a próxima comparação continuaria contra os R$60 originais — e
+    // uma ALTA de 45 para 50 dispararia "17% mais barato".
+    expect(prisma.favorite.update).toHaveBeenCalledWith({
+      where: { userId_itemId: { userId: FAVORITE_USER.id, itemId: "item-1" } },
+      data:  { priceReference: 4500 },
+    })
+  })
+
+  it("não avança a catraca quando o envio foi pulado pelo teto", async () => {
+    // Aqui o lembrete de avaliação gasta a cota primeiro; a queda é recusada.
+    mockPriceDrop.mockResolvedValue([PAIR])
+    favoritesBy({ drops: [dropRow(4500)] })
+    mockBookings.mockResolvedValue([COMPLETED_BOOKING])
+
+    await GET(req())
+
+    // Referência intacta = a queda continua elegível amanhã, em vez de ser
+    // silenciosamente perdida por causa de um e-mail que nunca saiu.
+    expect(prisma.favorite.update).not.toHaveBeenCalled()
+  })
+})
+
+describe("gatilho: voltou ao catálogo", () => {
+  const VOLTOU = new Date("2026-09-06T09:00:00Z")
+
+  const favoriteOf = (createdAt: Date) => ({
+    userId:    FAVORITE_USER.id,
+    createdAt,
+    user:      { email: FAVORITE_USER.email, name: FAVORITE_USER.name },
+    item:      {
+      id:             "item-1",
+      title:          "Bicicleta MTB Aro 29",
+      pricePerDay:    6000,
+      availableSince: VOLTOU,
+    },
+  })
+
+  it("avisa quem já tinha o item salvo antes de ele sumir", async () => {
+    mockUsers.mockResolvedValue([])
+    favoritesBy({ back: [favoriteOf(new Date("2026-08-01T00:00:00Z"))] })
+
+    await GET(req())
+
+    expect(mockSend).toHaveBeenCalledTimes(1)
+    expect(mockSend.mock.calls[0][0].subject).toContain("voltou a ficar disponível")
+  })
+
+  it("não avisa quem favoritou DEPOIS do retorno — para essa pessoa nada voltou", async () => {
+    mockUsers.mockResolvedValue([])
+    favoritesBy({ back: [favoriteOf(new Date("2026-09-06T10:00:00Z"))] })
+
+    await GET(req())
+
+    expect(mockSend).not.toHaveBeenCalled()
+  })
+})
+
+describe("gatilho: ainda interessado?", () => {
+  const NUDGE = {
+    userId: FAVORITE_USER.id,
+    user:   { email: FAVORITE_USER.email, name: FAVORITE_USER.name },
+    item:   { id: "item-1", title: "Bicicleta MTB Aro 29", pricePerDay: 6000 },
+  }
+
+  it("não pergunta 'ainda interessado?' para quem já alugou o item", async () => {
+    mockUsers.mockResolvedValue([])
+    favoritesBy({ nudge: [NUDGE] })
+    mockBookings.mockResolvedValue([{ borrowerId: FAVORITE_USER.id, itemId: "item-1" }])
+
+    await GET(req())
+
+    expect(mockSend).not.toHaveBeenCalled()
+  })
+})
+
+describe("higiene: contas de teste", () => {
+  it("exclui itens de dono em domínio de teste do digest", async () => {
+    await GET(req())
+
+    const { where } = mockUsers.mock.calls[0][0]
+    const ownerFilter = where.favorites.some.item.owner
+
+    // Casa por DOMÍNIO (`@dom`) ou subdomínio (`.dom`), nunca por sufixo da
+    // string inteira — `endsWith: "shareo-test.com"` excluiria um usuário real
+    // em `@meushareo-test.com` sem sinal nenhum.
+    expect(ownerFilter.NOT.OR).toEqual(
+      expect.arrayContaining([
+        { email: { endsWith: "@shareo.test" } },
+        { email: { endsWith: ".shareo.test" } },
+      ]),
+    )
+    expect(ownerFilter.NOT.OR).not.toContainEqual({ email: { endsWith: "shareo.test" } })
   })
 })

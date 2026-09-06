@@ -1,10 +1,13 @@
 /**
  * P3-75 — Cron de reengajamento via Resend.
  *
- * Roda diariamente às 10h UTC (07h BRT — ver vercel.json). Três e-mails:
+ * Roda diariamente às 10h UTC (07h BRT — ver vercel.json). Seis geradores:
  *   1d       → lembrete de avaliação da locação concluída
+ *   evento   → preço do favorito caiu >=10%
+ *   evento   → favorito voltou ao catálogo
+ *   3d       → "ainda interessado?", uma única vez por item favoritado
  *   7d       → sugestão de itens similares
- *   mensal   → digest dos favoritos ativos
+ *   mensal   → digest dos favoritos ativos (o único sem evento por trás)
  *
  * Este arquivo só monta consultas e copy. As três garantias que faltavam — não
  * reenviar, teto de 1 e-mail por usuário a cada 7 dias e respeito ao
@@ -24,11 +27,15 @@ import { assertCronAuth } from "@/lib/auth/cron-guard"
 import { prisma } from "@/lib/prisma"
 import { APP_URL } from "@/lib/app-url"
 import { formatPrice } from "@/utils/format"
+import { ctaButton, testAccountEmailFilter } from "@/lib/email"
 import {
   sendEngagementEmail,
   runEngagementBatch,
   bookingDedupeKey,
   monthlyDedupeKey,
+  nudgeDedupeKey,
+  priceDropDedupeKey,
+  backInStockDedupeKey,
   ENGAGEMENT_CAP_DAYS,
   type EngagementTally,
 } from "@/lib/engagement-email"
@@ -44,6 +51,32 @@ const BATCH = 200
 
 /** Itens listados no digest — o resto fica atrás do link "ver todos". */
 const DIGEST_MAX_ITEMS = 8
+
+/**
+ * Quem pode receber e-mail de reengajamento.
+ *
+ * Repete no `where` o que `sendEngagementEmail` já barraria no `INSERT` do
+ * claim — de propósito. Sem isso, as vagas do lote são gastas com gente que
+ * seria recusada de qualquer forma, e quem tinha direito fica para o dia
+ * seguinte. A garantia continua sendo a do banco; isto é só economia de lote.
+ */
+const ELIGIBLE_USER = {
+  engagementEmailsOptOut: false,
+  // Endereço nunca confirmado é a maior fonte de hard bounce, e bounce pesa
+  // mais nas regras de bulk sender do Gmail que a ausência de List-Unsubscribe.
+  emailVerified: { not: null },
+} as const
+
+/**
+ * Exclui itens de contas de teste — as fixtures E2E e as ~164 contas do robô de
+ * validação diária, que publicam itens no mesmo banco do staging.
+ *
+ * 🪤 NÃO resolve item de teste criado por gente de verdade. Um usuário real que
+ * publica um anúncio chamado "item teste" continua entrando no digest, porque
+ * não existe no schema nada que distinga anúncio sério de rascunho de teste.
+ * Isso é dado, não código.
+ */
+const NOT_TEST_OWNER = { owner: { NOT: testAccountEmailFilter() } }
 
 /**
  * Janelas de dia em UTC.
@@ -84,6 +117,22 @@ function firstName(name: string | null): string {
  */
 function itemUrl(item: { id: string }): string {
   return `${APP_URL}/itens/${item.id}`
+}
+
+/**
+ * Corpo dos e-mails que falam de UM item: saudação, uma frase, e o botão.
+ *
+ * Os três gatilhos de evento só diferem na frase do meio. Sem isto, cada
+ * gatilho novo recopia a saudação e o CTA — e foi copiando `<a>` de texto puro
+ * que os e-mails do cron ficaram com alvo de toque abaixo dos 44px do design
+ * system, enquanto os 15 templates transacionais usam `ctaButton`.
+ */
+function itemEmailBody(name: string | null, item: { id: string }, sentence: string): string {
+  return `
+    <p>Olá, ${firstName(name)}!</p>
+    <p>${sentence}</p>
+    ${ctaButton(itemUrl(item), "Ver o anúncio")}
+  `
 }
 
 // ─── Email 1d: lembrete de avaliação ────────────────────────────────────────
@@ -185,13 +234,8 @@ async function sendFavoriteDigest(): Promise<EngagementTally> {
 
   const users = await prisma.user.findMany({
     where: {
-      favorites: { some: { item: { status: "AVAILABLE" } } },
-      engagementEmailsOptOut: false,
-      // Endereço nunca confirmado é a maior fonte de hard bounce, e bounce pesa
-      // mais nas regras de bulk sender do Gmail que a ausência de
-      // List-Unsubscribe. Mandar propaganda para caixa não verificada é a outra
-      // metade do problema de reputação que este PR existe para resolver.
-      emailVerified: { not: null },
+      favorites: { some: { item: { status: "AVAILABLE", ...NOT_TEST_OWNER } } },
+      ...ELIGIBLE_USER,
       AND: [
         { engagementEmails: { none: { kind: "FAVORITE_DIGEST", dedupeKey } } },
         { engagementEmails: { none: { sentAt: { gte: cappedSince } } } },
@@ -202,7 +246,7 @@ async function sendFavoriteDigest(): Promise<EngagementTally> {
       email: true,
       name:  true,
       favorites: {
-        where:   { item: { status: "AVAILABLE" } },
+        where:   { item: { status: "AVAILABLE", ...NOT_TEST_OWNER } },
         orderBy: { createdAt: "desc" },
         take:    DIGEST_MAX_ITEMS,
         select:  { item: { select: { id: true, title: true, pricePerDay: true } } },
@@ -246,10 +290,233 @@ async function sendFavoriteDigest(): Promise<EngagementTally> {
   })
 }
 
+// ─── Gatilhos de evento ──────────────────────────────────────────────────────
+//
+// Os três geradores abaixo são a diferença entre um e-mail que responde a algo
+// que aconteceu e um que só marca o calendário. O e-mail antigo dizia "está
+// disponível!" sobre um fato que nunca mudava — por isso cansava na segunda
+// leitura, mesmo que a cadência fosse boa.
+
+/**
+ * D+3 do favorito, uma única vez: "ainda interessado?".
+ *
+ * Não avisa nada de novo sobre o item — o evento aqui é o tempo passar sem a
+ * pessoa voltar. Por isso é UMA vez por item, nunca repete: um segundo lembrete
+ * já não teria evento nenhum por trás, e vira a repetição que este trabalho
+ * existe para eliminar.
+ */
+async function sendFavoriteNudges(): Promise<EngagementTally> {
+  const favorites = await prisma.favorite.findMany({
+    where: {
+      // 🪤 Janela de 3 A 7 dias, não de um dia só. Com um dia, bastava o teto
+      // semanal bloquear naquela data e o nudge daquele favorito nunca mais
+      // saía — no dia seguinte ele já estava fora da janela. A chave
+      // `nudge:<itemId>` é quem garante "uma vez só", não o tamanho da janela.
+      createdAt: { gte: daysAgo(7), lte: daysAgoEnd(3) },
+      item:      { status: "AVAILABLE", ...NOT_TEST_OWNER },
+      user:      ELIGIBLE_USER,
+    },
+    select: {
+      userId: true,
+      user:   { select: { email: true, name: true } },
+      item:   { select: { id: true, title: true, pricePerDay: true } },
+    },
+    take: BATCH,
+  })
+
+  if (favorites.length === 0) return { sent: 0, skipped: 0, errors: 0 }
+
+  // Quem já alugou o item não pode receber "ainda interessado?". UMA consulta
+  // para o lote inteiro, não uma por candidato.
+  //
+  // 🪤 `OR` de pares exatos, e não `in` de cada lado: dois `in` formam produto
+  // cartesiano e trazem todo o histórico de reserva dos 200 locatários do lote
+  // — sem `take`, numa lambda com ~3 conexões de pool. O resultado seria
+  // correto (os pares vêm de reservas reais), mas o volume não tem teto.
+  //
+  // Reserva CANCELADA não silencia: quem tentou alugar e não conseguiu é
+  // justamente quem ainda pode estar interessado.
+  const booked = await prisma.booking.findMany({
+    where: {
+      OR:     favorites.map((f) => ({ borrowerId: f.userId, itemId: f.item.id })),
+      status: { not: "CANCELLED" },
+    },
+    select: { borrowerId: true, itemId: true },
+  })
+  const alreadyBooked = new Set(booked.map((b) => `${b.borrowerId}|${b.itemId}`))
+
+  return runEngagementBatch(favorites, async (f) => {
+    if (!f.user.email) return "skipped"
+    if (alreadyBooked.has(`${f.userId}|${f.item.id}`)) return "skipped"
+
+    return sendEngagementEmail(
+      { userId: f.userId, kind: "FAVORITE_NUDGE", dedupeKey: nudgeDedupeKey(f.item.id) },
+      {
+        to:      f.user.email,
+        subject: `Ainda de olho no ${f.item.title}?`,
+        bodyHtml: itemEmailBody(
+          f.user.name,
+          f.item,
+          `Você salvou <strong>${f.item.title}</strong> há alguns dias. Ele segue disponível por ${formatPrice(f.item.pricePerDay)}/dia.`,
+        ),
+      },
+    )
+  })
+}
+
+/**
+ * Preço caiu 10% ou mais desde a última referência.
+ *
+ * 🪤 A referência é CATRACA: `favorites.priceReference` avança para o preço
+ * novo a cada aviso enviado. Com referência fixa no preço original, o gatilho
+ * dispara em ALTA — um item que cai de R$60 para R$40 e depois SOBE para R$50
+ * ainda satisfaz `50 <= 60 * 0.9` e manda um segundo e-mail dizendo "17% mais
+ * barato", logo depois de ter dito 33%. Simulado com um dono oscilando o preço:
+ * 5 e-mails onde cabem 2, e três deles anunciando queda sobre um aumento.
+ *
+ * 🪤 SQL cru porque a comparação é entre DUAS COLUNAS de tabelas diferentes
+ * (`items.pricePerDay` contra `favorites.priceReference`), e o Prisma não
+ * expressa isso no `where`. A alternativa seria trazer todos os favoritos com
+ * preço registrado e filtrar em JS — carga sem teto para achar as poucas linhas
+ * que interessam.
+ */
+async function sendPriceDropAlerts(): Promise<EngagementTally> {
+  // O SQL cru faz SÓ o que o Prisma não expressa — a comparação entre duas
+  // colunas — e devolve pares. A elegibilidade fica na consulta tipada abaixo,
+  // reusando `ELIGIBLE_USER`/`NOT_TEST_OWNER`: reescrita em SQL, ela seria a
+  // única cópia das regras fora do alcance do compilador, e acrescentar uma
+  // quarta regra amanhã exigiria lembrar deste bloco.
+  //
+  // `ORDER BY` explícito porque `LIMIT` sem ordem devolve linhas arbitrárias:
+  // quando houver mais candidatos que o lote, o recorte precisa ser previsível.
+  const pairs = await prisma.$queryRaw<{ userId: string; itemId: string }[]>`
+    SELECT f."userId", f."itemId"
+    FROM "favorites" f
+    JOIN "items" i ON i."id" = f."itemId"
+    WHERE f."priceReference" IS NOT NULL
+      AND i."status" = 'AVAILABLE'
+      AND i."pricePerDay" <= f."priceReference" * 0.9
+    ORDER BY f."createdAt" ASC
+    LIMIT ${BATCH}
+  `
+
+  if (pairs.length === 0) return { sent: 0, skipped: 0, errors: 0 }
+
+  const drops = await prisma.favorite.findMany({
+    where: {
+      OR:   pairs.map((x) => ({ userId: x.userId, itemId: x.itemId })),
+      user: ELIGIBLE_USER,
+      item: NOT_TEST_OWNER,
+    },
+    select: {
+      userId:         true,
+      priceReference: true,
+      user:           { select: { email: true, name: true } },
+      item:           { select: { id: true, title: true, pricePerDay: true } },
+    },
+  })
+
+  return runEngagementBatch(drops, async (d) => {
+    if (!d.user.email || d.priceReference === null) return "skipped"
+    const off = Math.round((1 - d.item.pricePerDay / d.priceReference) * 100)
+
+    const outcome = await sendEngagementEmail(
+      {
+        userId:    d.userId,
+        kind:      "FAVORITE_PRICE_DROP",
+        dedupeKey: priceDropDedupeKey(d.item.id, d.item.pricePerDay),
+      },
+      {
+        to:      d.user.email,
+        subject: `${d.item.title} está ${off}% mais barato`,
+        bodyHtml: itemEmailBody(
+          d.user.name,
+          d.item,
+          `O preço de <strong>${d.item.title}</strong>, que você salvou, caiu de ${formatPrice(d.priceReference)} para <strong>${formatPrice(d.item.pricePerDay)}</strong> por dia.`,
+        ),
+      },
+    )
+
+    // Avança a catraca só quando o e-mail saiu de fato. Se o envio foi pulado
+    // (teto, descadastro) ou falhou, a referência fica onde está e a queda
+    // continua elegível amanhã.
+    if (outcome === "sent") {
+      await prisma.favorite.update({
+        where: { userId_itemId: { userId: d.userId, itemId: d.item.id } },
+        data:  { priceReference: d.item.pricePerDay },
+      })
+    }
+
+    return outcome
+  })
+}
+
+/**
+ * Item favoritado voltou ao catálogo depois de ter saído.
+ *
+ * Este é o e-mail que o original TENTAVA ser. A diferença é `availableSince`:
+ * antes só dava para saber que o item ESTAVA disponível — verdade permanente,
+ * portanto não-notícia — e agora dá para saber que ele VOLTOU.
+ */
+async function sendBackInStockAlerts(): Promise<EngagementTally> {
+  const favorites = await prisma.favorite.findMany({
+    where: {
+      item: {
+        status:         "AVAILABLE",
+        availableSince: { gte: daysAgo(1) },
+        ...NOT_TEST_OWNER,
+      },
+      user: ELIGIBLE_USER,
+    },
+    // `LIMIT` sem ordem devolve linhas arbitrárias: se um dono despausar mais
+    // de 200 itens no mesmo dia, o recorte precisa ser previsível — a janela
+    // desliza amanhã e o que ficou de fora não volta.
+    orderBy: { createdAt: "asc" },
+    select: {
+      userId:    true,
+      createdAt: true,
+      user:      { select: { email: true, name: true } },
+      item:      { select: { id: true, title: true, pricePerDay: true, availableSince: true } },
+    },
+    take: BATCH,
+  })
+
+  return runEngagementBatch(favorites, async (f) => {
+    if (!f.user.email || !f.item.availableSince) return "skipped"
+    // Quem favoritou DEPOIS do retorno viu o item já disponível — para essa
+    // pessoa não houve volta nenhuma. Comparação em JS porque o Prisma não
+    // compara duas colunas no `where`, e o conjunto aqui é pequeno.
+    if (f.createdAt >= f.item.availableSince) return "skipped"
+
+    return sendEngagementEmail(
+      {
+        userId:    f.userId,
+        kind:      "FAVORITE_BACK",
+        dedupeKey: backInStockDedupeKey(f.item.id, f.item.availableSince),
+      },
+      {
+        to:      f.user.email,
+        subject: `${f.item.title} voltou a ficar disponível`,
+        bodyHtml: itemEmailBody(
+          f.user.name,
+          f.item,
+          `<strong>${f.item.title}</strong>, que você salvou, estava fora do ar e voltou ao catálogo por ${formatPrice(f.item.pricePerDay)}/dia.`,
+        ),
+      },
+    )
+  })
+}
+
 // ─── Handler ─────────────────────────────────────────────────────────────────
 
 const GENERATORS = [
+  // Ordem = prioridade na disputa pela cota semanal. Evento real vence
+  // calendário: o digest mensal é o último a gastar a vaga, porque é o único
+  // que não responde a nada que tenha acontecido.
   { name: "review", run: sendReviewReminders },
+  { name: "priceDrop", run: sendPriceDropAlerts },
+  { name: "backInStock", run: sendBackInStockAlerts },
+  { name: "nudge", run: sendFavoriteNudges },
   { name: "similar", run: sendSimilarItemSuggestions },
   { name: "digest", run: sendFavoriteDigest },
 ] as const
