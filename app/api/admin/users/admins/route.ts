@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
+import { emailField } from "@/lib/validations/auth"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { requireAdminRole } from "@/lib/auth/admin-guards"
@@ -11,7 +12,7 @@ const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*]).{10,}$/
 
 const CreateSchema = z.object({
   name:      z.string().min(2).max(100),
-  email:     z.string().email().transform((e) => e.toLowerCase()),
+  email:     emailField(),
   password:  z.string()
     .min(10, "Mínimo 10 caracteres.")
     .max(100)

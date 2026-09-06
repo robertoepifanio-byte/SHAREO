@@ -2,6 +2,7 @@ import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
+import { LoginSchema } from "@/lib/validations/auth"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET,
@@ -19,20 +20,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Senha",   type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null
+        // 🪤 Validar com `LoginSchema` e não ler `credentials` cru. Antes daqui
+        // o schema existia e NÃO era usado por ninguém — o login lia o campo
+        // direto e fazia só `.toLowerCase()`, sem `.trim()`. Resultado: e-mail
+        // colado do gerenciador de senhas com um espaço à direita não achava a
+        // conta, e a pessoa via "credencial inválida" com a senha correta.
+        const parsed = LoginSchema.safeParse(credentials)
+        if (!parsed.success) return null
 
         const user = await prisma.user.findUnique({
-          where: { email: (credentials.email as string).toLowerCase() },
+          where: { email: parsed.data.email },
         })
 
         if (!user?.passwordHash) return null
         if (!user.isActive)      return null
         if (user.deletedAt)      return null
 
-        const valid = await bcrypt.compare(
-          credentials.password as string,
-          user.passwordHash,
-        )
+        const valid = await bcrypt.compare(parsed.data.password, user.passwordHash)
         if (!valid) return null
 
         return {
