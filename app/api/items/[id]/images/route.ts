@@ -138,6 +138,13 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
 
     let finalStatus: string = item.status
     if (item.status === "DRAFT" && item._count.images === 0) {
+      // 🪤 NÃO carimba `availableSince` aqui, de propósito. O DELETE desta
+      // mesma rota rebaixa AVAILABLE → DRAFT ao remover a última foto, então
+      // TROCAR a foto de capa de um anúncio com uma foto só passa por
+      // DRAFT → AVAILABLE em segundos. Carimbar mandaria "estava fora do ar e
+      // voltou ao catálogo" para todos que favoritaram o item, por causa de uma
+      // edição corriqueira. O carimbo fica só nas transições que o dono (ou o
+      // admin) pede de verdade: pausar e despausar.
       await prisma.item.update({ where: { id }, data: { status: "AVAILABLE" } })
       finalStatus = "AVAILABLE"
     }

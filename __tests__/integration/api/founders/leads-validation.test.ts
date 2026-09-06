@@ -6,9 +6,14 @@
  * `consentVersion` (trilha LGPD) e `intent` (ranking da cidade-piloto).
  *
  * Whitelist de versões de consentimento LGPD:
- *   - Versão vigente ("marketing-v1.0") → 201
+ *   - Versão vigente                    → 201
  *   - Versão legada ("v1.1")            → 201 + console.warn
- *   - Campo ausente                     → 201 (usa o default "marketing-v1.0")
+ *   - Campo ausente                     → 201 (usa o default)
+ *
+ * 🪤 As asserções comparam contra MARKETING_CONSENT_VERSION, não contra a
+ * string literal. Com o literal, todo bump de versão — que é um evento
+ * planejado, com procedimento documentado em lib/legal-config.ts — reprovava
+ * este arquivo por motivo que não é defeito.
  *   - String desconhecida               → 422 com code UNKNOWN_CONSENT_VERSION
  *
  * Arquivo fonte: app/api/founders/leads/route.ts
@@ -16,6 +21,7 @@
 
 import { NextRequest } from "next/server"
 import { POST } from "@/app/api/founders/leads/route"
+import { MARKETING_CONSENT_VERSION } from "@/lib/legal-config"
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -117,15 +123,15 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe("POST /api/founders/leads — consentVersion", () => {
-  it("aceita a versão vigente (marketing-v1.0) e retorna 201", async () => {
+  it("aceita a versão vigente e retorna 201", async () => {
     mockLeadCreated()
-    const res = await POST(makeRequest({ ...BASE_PAYLOAD, consentVersion: "marketing-v1.0" }))
+    const res = await POST(makeRequest({ ...BASE_PAYLOAD, consentVersion: MARKETING_CONSENT_VERSION }))
     expect(res.status).toBe(201)
     const json = await res.json()
     expect(json.data.leadId).toBeDefined()
     // Confirma que a versão foi gravada corretamente
     const createCall = mockCreate.mock.calls[0][0]
-    expect(createCall.data.consentVersion).toBe("marketing-v1.0")
+    expect(createCall.data.consentVersion).toBe(MARKETING_CONSENT_VERSION)
   })
 
   it("aceita versão legada (v1.1) com console.warn e retorna 201", async () => {
@@ -140,13 +146,13 @@ describe("POST /api/founders/leads — consentVersion", () => {
     warnSpy.mockRestore()
   })
 
-  it("usa o default (marketing-v1.0) quando o campo está ausente e retorna 201", async () => {
+  it("usa o default quando o campo está ausente e retorna 201", async () => {
     mockLeadCreated()
     // Envia payload SEM o campo consentVersion
     const res = await POST(makeRequest({ ...BASE_PAYLOAD }))
     expect(res.status).toBe(201)
     const createCall = mockCreate.mock.calls[0][0]
-    expect(createCall.data.consentVersion).toBe("marketing-v1.0")
+    expect(createCall.data.consentVersion).toBe(MARKETING_CONSENT_VERSION)
   })
 
   it("rejeita versão desconhecida com 422 e code UNKNOWN_CONSENT_VERSION", async () => {

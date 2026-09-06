@@ -27,6 +27,7 @@ const CONFIG_LINKS = [
   { href: "/perfil/repasses",         icon: "📊", label: "Meus repasses",          desc: "Histórico e status dos repasses recebidos" },
   { href: "/perfil/repasses/informe", icon: "📄", label: "Informe de Rendimentos", desc: "Total anual recebido para declaração de IR" },
   { href: "/perfil/indicacoes",       icon: "🎁", label: "Indicações",              desc: "Programa de indicação e créditos" },
+  { href: "/perfil/notificacoes", icon: "🔔", label: "Notificações",         desc: "Quais e-mails opcionais você recebe" },
   { href: "/perfil/dados",       icon: "📂", label: "Privacidade e dados",  desc: "Exportar dados, política de retenção" },
 ]
 

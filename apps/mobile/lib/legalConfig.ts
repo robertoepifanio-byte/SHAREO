@@ -35,7 +35,7 @@ export const DPO_EMAIL = "privacidade@shareo.com.br"
  * arquiva a pessoa sob um texto que ela nunca viu — era o que o app fazia até
  * 24/08/2026.
  */
-export const MARKETING_CONSENT_VERSION = "marketing-v1.0"
+export const MARKETING_CONSENT_VERSION = "marketing-v1.1"
 
 /**
  * Espelha MARKETING_CONSENT_TEXT — é ESTE texto que a versão acima versiona.
@@ -44,7 +44,7 @@ export const MARKETING_CONSENT_VERSION = "marketing-v1.0"
  * arquivo, e quebrar a string em concatenação o reprovaria à toa.
  */
 export const MARKETING_CONSENT_TEXT =
-  "Concordo em receber comunicações sobre o lançamento do Shareo por e-mail e, se eu informar meu telefone, por WhatsApp. Posso cancelar quando quiser — todo e-mail nosso traz um link de cancelamento em um clique."
+  "Concordo em receber comunicações sobre o lançamento do Shareo por e-mail e, se eu informar meu telefone, por WhatsApp. Posso cancelar quando quiser — todo e-mail nosso traz um link de cancelamento, sem precisar responder."
 
 /** Espelha POLICY_UPDATED_AT de lib/legal-config.ts. */
 export const POLICY_UPDATED_AT = "setembro de 2026"

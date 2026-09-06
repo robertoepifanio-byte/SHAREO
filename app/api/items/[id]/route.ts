@@ -3,6 +3,7 @@ import { NextResponse, after } from "next/server"
 import { unstable_cache } from "next/cache"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { availabilityPatch } from "@/lib/item-availability"
 import { UpdateItemSchema } from "@/lib/validations/items"
 import { MAX_ITEM_VALUE_CENTS } from "@/lib/platform-config"
 import { formatPriceShort } from "@/utils/format"
@@ -187,7 +188,7 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
     const { id } = await params
     const existing = await prisma.item.findFirst({
       where: { id, deletedAt: null },
-      select: { ownerId: true, estimatedRetailPrice: true },
+      select: { ownerId: true, estimatedRetailPrice: true, status: true },
     })
 
     if (!existing) {
@@ -278,6 +279,12 @@ export async function PUT(req: NextRequest, { params }: RouteContext) {
         ...(d.isActive === false && { status: "PAUSED" as const }),
         ...(d.isActive === true  && { status: "AVAILABLE" as const }),
         ...(d.status   !== undefined && { status: d.status }),
+        // Carimba a volta ao catálogo. `nextStatus` resolve as três formas de
+        // pedir a mudança (isActive legado e `status` direto) numa só.
+        ...availabilityPatch(
+          existing.status,
+          d.status ?? (d.isActive === true ? "AVAILABLE" : d.isActive === false ? "PAUSED" : undefined),
+        ),
         ...(d.voltage               !== undefined && { voltage:               d.voltage }),
         ...(d.requireIdVerification !== undefined && { requireIdVerification: d.requireIdVerification }),
         ...(d.requirePhone          !== undefined && { requirePhone:          d.requirePhone }),

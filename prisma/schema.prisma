@@ -282,6 +282,14 @@ model User {
   avatarUrl String?
   bio       String? @db.Text
 
+  /// Descadastro dos e-mails de REENGAJAMENTO (digest de favoritos, lembrete de
+  /// avaliação, sugestão de similares). NÃO afeta e-mail transacional —
+  /// verificação de conta, reset de senha, confirmação de reserva e cobrança
+  /// continuam saindo: são execução do contrato, não comunicação opcional.
+  /// Marcado pelo próprio titular em /perfil/notificacoes ou pelo link de
+  /// descadastro no rodapé do e-mail (LGPD art. 18, revogação).
+  engagementEmailsOptOut Boolean @default(false)
+
   // Localização (base do usuário — para geo-search de proximidade)
   cep          String? @db.Char(8) // somente dígitos, ex.: "59114270"
   street       String? // logradouro preenchido via ViaCEP
@@ -388,6 +396,7 @@ model User {
   messages            Message[]
   conversations       ConversationParticipant[]
   notifications       Notification[]
+  engagementEmails    EngagementEmail[]
   adminLogs           AdminLog[]
   exportJobs          ExportJob[]
   outboundWebhooks    OutboundWebhook[]
@@ -462,6 +471,14 @@ model Item {
   // Status — fonte de verdade única para visibilidade e soft-delete
   // DRAFT: sem fotos; AVAILABLE: publicado; PAUSED: pausado pelo dono; DELETED: soft-delete
   status       ItemStatus @default(DRAFT)
+
+  /// Momento da última transição PARA `AVAILABLE`. Distingue "está disponível"
+  /// (sempre verdade, portanto não é notícia) de "VOLTOU a ficar disponível",
+  /// que é evento e vale um e-mail. Escrito por `lib/item-availability.ts`.
+  /// Null em item que nunca mudou de status desde a migração — o gatilho não
+  /// dispara, que é o lado certo de errar: um backfill com `now()` faria o
+  /// catálogo inteiro parecer que acabou de voltar.
+  availableSince DateTime?
   isApproved   Boolean    @default(true) // true = publicação direta (moderação reativa no MVP)
   approvedAt   DateTime?
   approvedById String?
@@ -741,8 +758,60 @@ model Favorite {
   item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
 
+  /// Preço da diária (centavos) contra o qual a PRÓXIMA queda é medida. Nasce
+  /// como o preço no dia do favorito e AVANÇA a cada aviso enviado — é catraca,
+  /// só desce.
+  ///
+  /// 🪤 Comparar sempre com o preço original faz o gatilho disparar em ALTA: com
+  /// referência fixa em 6000, um item que vai a 4000 e depois SOBE para 5000
+  /// dispara de novo, anunciando "17% mais barato" logo depois de ter anunciado
+  /// 33%. Medido: 5 e-mails numa oscilação que merece 2.
+  ///
+  /// Null nos favoritos anteriores à migração — o gatilho não dispara para eles,
+  /// em vez de comparar com um valor inventado.
+  priceReference Int?
+
   @@unique([userId, itemId])
   @@map("favorites")
+}
+
+/// Tipos de e-mail de reengajamento. NÃO inclui e-mail transacional
+/// (verificação, reset de senha, confirmação de reserva): esses saem sempre,
+/// não respeitam teto nem descadastro.
+enum EngagementEmailKind {
+  REVIEW_REMINDER // 1d após a locação — peça de avaliação
+  SIMILAR_ITEMS // 7d após a locação — sugestão de itens parecidos
+  FAVORITE_DIGEST // resumo mensal dos favoritos ativos
+  FAVORITE_NUDGE // 3d após favoritar, uma única vez — "ainda interessado?"
+  FAVORITE_PRICE_DROP // preço caiu >=10% em relação ao dia em que foi favoritado
+  FAVORITE_BACK // item favoritado voltou ao catálogo depois de pausado
+}
+
+/// Registro de envio de e-mail de reengajamento — a memória que faltava.
+///
+/// Existe por causa de um bug real: o aviso de "item favoritado disponível"
+/// consultava `favorite.createdAt <= 30 dias atrás` e não guardava nada, então
+/// reenviava a cada execução diária do cron, para sempre, um e-mail POR ITEM.
+///
+/// O `@@unique([userId, kind, dedupeKey])` é a peça central: torna o reenvio
+/// impossível pelo banco, não apenas improvável pela query. Qualquer cadência
+/// construída sem isso volta a virar laço na primeira refatoração.
+///
+/// `dedupeKey` é a identidade do envio dentro do tipo — o que responde "este
+/// e-mail específico já saiu?". Ex.: `booking:<id>`, `digest:2026-09`.
+model EngagementEmail {
+  id        String              @id @default(cuid())
+  userId    String
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      EngagementEmailKind
+  dedupeKey String
+  sentAt    DateTime            @default(now())
+
+  @@unique([userId, kind, dedupeKey])
+  // Suporta a consulta do teto global ("quantos envios este usuário recebeu
+  // nos últimos 7 dias?"), executada uma vez por destinatário candidato.
+  @@index([userId, sentAt])
+  @@map("engagement_emails")
 }
 
 model Conversation {

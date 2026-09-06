@@ -21,7 +21,10 @@ export async function POST(req: NextRequest, { params }: Params) {
 
     const item = await prisma.item.findFirst({
       where:  { id, deletedAt: null },
-      select: { id: true },
+      // `pricePerDay` entra no favorito como referência inicial do aviso de
+      // queda de preço: não existe histórico de preço de item no schema, então
+      // sem esta cópia a queda é invisível depois.
+      select: { id: true, pricePerDay: true },
     })
 
     if (!item) {
@@ -41,7 +44,9 @@ export async function POST(req: NextRequest, { params }: Params) {
       return NextResponse.json({ data: { favorited: false } })
     }
 
-    await prisma.favorite.create({ data: { userId, itemId: id } })
+    await prisma.favorite.create({
+      data: { userId, itemId: id, priceReference: item.pricePerDay },
+    })
     return NextResponse.json({ data: { favorited: true } }, { status: 201 })
   } catch (e) {
     console.error("[POST /api/items/:id/favorite]", e instanceof Error ? e.message : e)

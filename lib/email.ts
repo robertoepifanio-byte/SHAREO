@@ -2,6 +2,7 @@ import { Resend } from "resend"
 import type { CreateEmailOptions, CreateEmailResponse } from "resend"
 import { APP_URL } from "@/lib/app-url"
 import { unsubscribeUrl } from "@/lib/founders-unsubscribe"
+import { engagementUnsubscribeUrl } from "@/lib/engagement-unsubscribe"
 import { formatPrice, formatDateLong } from "@/utils/format"
 import { prisma } from "@/lib/prisma"
 
@@ -31,6 +32,25 @@ export function isEmailProviderConfigured(): boolean {
  * que a cota da Resend estourou.
  */
 const TEST_EMAIL_DOMAINS = ["shareo.test", "shareo-test.com"] as const
+
+/**
+ * Filtro Prisma que casa e-mail de conta de teste — mesma regra do
+ * `isTestDomain` abaixo, na forma que o `where` entende.
+ *
+ * 🪤 NÃO usar `endsWith: dominio` direto. Isso é sufixo da STRING INTEIRA e
+ * casa `alguem@meushareo-test.com`, excluindo um usuário real das listas sem
+ * sinal nenhum. O casamento tem que ser por domínio (`@dominio`) ou subdomínio
+ * (`.dominio`) — é o mesmo erro que já custou a cota do Resend, documentado em
+ * `isTestDomain`.
+ */
+export function testAccountEmailFilter() {
+  return {
+    OR: TEST_EMAIL_DOMAINS.flatMap((d) => [
+      { email: { endsWith: `@${d}` } },
+      { email: { endsWith: `.${d}` } },
+    ]),
+  }
+}
 
 function isTestDomain(address: string): boolean {
   const at = address.lastIndexOf("@")
@@ -158,6 +178,87 @@ export async function sendAppEmail(opts: {
   )
 }
 
+/**
+ * Envio de e-mail de MARKETING/REENGAJAMENTO — o que o destinatário pode
+ * recusar. Difere de `sendAppEmail` em três coisas obrigatórias:
+ *
+ *   1. `baseLayout` — logo, slogan e rodapé do produto. Os e-mails do cron de
+ *      reengajamento saíam como `<p>` cru, sem nada disso.
+ *   2. Link de descadastro visível no corpo (LGPD art. 18 — revogar tem que ser
+ *      tão fácil quanto consentir).
+ *   3. Headers RFC 8058 de descadastro em um clique, exigidos pelas regras de
+ *      bulk sender do Gmail/Yahoo.
+ *
+ * 🪤 NÃO usar em e-mail transacional. `noreply@shareo.com.br` é o mesmo
+ * remetente da confirmação de reserva e do reset de senha; oferecer descadastro
+ * neles faria o usuário desligar mensagens que são execução do contrato. A
+ * separação entre os dois caminhos é o que protege a reputação do domínio.
+ */
+export async function sendMarketingEmail(opts: {
+  to: string
+  subject: string
+  bodyHtml: string
+}): Promise<{ error: { message: string } | null }> {
+  const resend = getResend()
+  if (!resend) {
+    console.warn(`[email] sem RESEND_API_KEY — "${opts.subject}" não enviado`)
+    return { error: { message: "RESEND_API_KEY ausente" } }
+  }
+
+  // 🪤 Segunda porta do descadastro, de propósito redundante com a de
+  // `lib/engagement-email.ts`. O cron já filtra pelo `INSERT` do claim, mas
+  // esta função é pública e chama-se "marketing" — é a que alguém vai importar
+  // para escrever a próxima campanha, sem saber que a garantia mora noutro
+  // módulo. Custa um SELECT por chave primária; a alternativa é mandar
+  // propaganda para quem pediu para parar, com o link de descadastro no corpo.
+  //
+  // `insensitive` porque o cadastro grava o e-mail verbatim — ver o comentário
+  // em app/api/engagement/unsubscribe/route.ts.
+  const optedOut = await prisma.user.findFirst({
+    where:  { email: { equals: opts.to, mode: "insensitive" }, engagementEmailsOptOut: true },
+    select: { id: true },
+  })
+  if (optedOut) return { error: null }
+
+  const unsubUrl = engagementUnsubscribeUrl(APP_URL, opts.to)
+
+  return sendWithRetry(
+    resend,
+    {
+      from:    `ShareO <${FROM}>`,
+      to:      opts.to,
+      subject: opts.subject,
+      html:    baseLayout(opts.bodyHtml + unsubscribeFooter(unsubUrl)),
+      headers: listUnsubscribeHeaders(unsubUrl),
+    },
+    "marketing",
+  )
+}
+
+/**
+ * Headers de descadastro em um clique (RFC 8058).
+ *
+ * Exigidos pelas regras de bulk sender de Gmail/Yahoo, que já mudaram duas
+ * vezes desde 2024 — por isso num lugar só, e não copiados por remetente.
+ */
+export function listUnsubscribeHeaders(unsubUrl: string): Record<string, string> {
+  return {
+    "List-Unsubscribe":      `<${unsubUrl}>, <mailto:privacidade@shareo.com.br?subject=unsubscribe>`,
+    "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+  }
+}
+
+/** Rodapé de descadastro dos e-mails opcionais. */
+function unsubscribeFooter(unsubUrl: string) {
+  return `
+    <p style="margin:28px 0 0;padding-top:16px;border-top:1px solid #E2E8F0;font-size:12px;color:#94A3B8;line-height:1.6;">
+      Você recebe este e-mail porque tem conta no ShareO.
+      <a href="${unsubUrl}" style="color:#007B3C;">Cancelar estes avisos</a>
+      — sem precisar responder este e-mail. Avisos sobre suas reservas continuam chegando.
+    </p>
+  `
+}
+
 // ─── Templates ────────────────────────────────────────────────────────────────
 
 function baseLayout(content: string) {
@@ -215,7 +316,7 @@ function baseLayout(content: string) {
 </html>`
 }
 
-function ctaButton(href: string, label: string) {
+export function ctaButton(href: string, label: string) {
   return `<a href="${href}"
     style="display:inline-block;background:#007B3C;color:#FFFFFF;font-size:15px;
            font-weight:700;text-decoration:none;border-radius:8px;
@@ -721,7 +822,7 @@ export function founderWelcomeHtml(firstName: string, queuePosition: number, uns
     <p style="margin:0;font-size:12px;color:#94A3B8;line-height:1.6;">
       Não quer mais receber?
       <a href="${unsubUrl}" style="color:#007B3C;">Cancelar inscrição</a>
-      — um clique, sem precisar responder. Dúvidas de privacidade:
+      — sem precisar responder este e-mail. Dúvidas de privacidade:
       <a href="mailto:privacidade@shareo.com.br" style="color:#007B3C;">privacidade@shareo.com.br</a>.
     </p>
   `)
@@ -746,10 +847,7 @@ export async function sendFounderWelcomeEmail(
     // RFC 8058 — descadastro em um clique. Exigido pelas regras de bulk sender
     // do Gmail/Yahoo para remetentes de volume, que é o caso da campanha nacional.
     // Sem estes headers o provedor tende a classificar como spam.
-    headers: {
-      "List-Unsubscribe":      `<${unsubUrl}>, <mailto:privacidade@shareo.com.br?subject=unsubscribe>`,
-      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-    },
+    headers: listUnsubscribeHeaders(unsubUrl),
   })
   if (error) throw new Error(`Resend error: ${error.message}`)
 }

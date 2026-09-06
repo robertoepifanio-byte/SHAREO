@@ -1,50 +1,21 @@
 /**
- * Token de descadastro da lista de interessados (campanha de pré-lançamento).
+ * Descadastro da lista de interessados (campanha de pré-lançamento).
  *
- * Por que HMAC e não um token guardado no banco:
- *   O link vai no rodapé de TODO e-mail da campanha. Um token persistido exigiria
- *   uma linha por envio e um cron de expurgo; o HMAC é derivado do próprio e-mail,
- *   é estável entre envios e não guarda nada. O lead não tem sessão — o clique vem
- *   do cliente de e-mail, sem cookie.
+ * A mecânica vive em `lib/unsubscribe-token.ts`, compartilhada com o
+ * descadastro dos e-mails de reengajamento. Aqui fica só o que é específico
+ * desta lista: o propósito e o caminho da rota.
  *
- * Segurança: assinado com AUTH_SECRET. Sem a chave não dá para forjar o link de
- * outra pessoa; com o link só se consegue DESCADASTRAR aquele e-mail (ação de
- * baixo impacto e reversível reinscrevendo-se), nunca ler dado.
+ * 🪤 `PURPOSE` faz parte do token. Mudar essa string invalida todos os links de
+ * descadastro já enviados pela campanha, que está no ar desde 01/09/2026.
  */
-import crypto from "crypto"
-import { timingSafeStringEqual } from "@/lib/timingSafe"
+import { makeUnsubscribeLink } from "@/lib/unsubscribe-token"
 
-const PURPOSE = "founder-unsubscribe-v1"
+export const foundersUnsubscribe = makeUnsubscribeLink(
+  "founder-unsubscribe-v1",
+  "/api/founders/unsubscribe",
+)
 
-function secret(): string {
-  const s = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET
-  if (!s) throw new Error("AUTH_SECRET não definida")
-  return s
-}
-
-/** Assinatura estável para um e-mail. Mesmo e-mail → mesmo token. */
-export function unsubscribeToken(email: string): string {
-  return crypto
-    .createHmac("sha256", secret())
-    .update(`${PURPOSE}:${email.trim().toLowerCase()}`)
-    .digest("hex")
-}
-
-/** Comparação em tempo constante — evita distinguir token válido por timing. */
-export function verifyUnsubscribeToken(email: string, token: string): boolean {
-  if (!email || !token) return false
-  let expected: string
-  try {
-    expected = unsubscribeToken(email)
-  } catch {
-    return false
-  }
-  return timingSafeStringEqual(expected, token)
-}
-
-/** URL absoluta do link que vai no rodapé dos e-mails. */
-export function unsubscribeUrl(appUrl: string, email: string): string {
-  const e = encodeURIComponent(email.trim().toLowerCase())
-  const t = unsubscribeToken(email)
-  return `${appUrl}/api/founders/unsubscribe?email=${e}&token=${t}`
-}
+// Nomes preservados: são os que `lib/email.ts` e a rota já importam.
+export const unsubscribeToken       = foundersUnsubscribe.token
+export const verifyUnsubscribeToken = foundersUnsubscribe.verify
+export const unsubscribeUrl         = foundersUnsubscribe.url
