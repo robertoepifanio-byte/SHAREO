@@ -14,6 +14,7 @@
 import React from "react"
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react-native"
 import { FounderCaptureForm } from "../../components/home/FounderCaptureForm"
+import { MARKETING_CONSENT_VERSION } from "../legalConfig"
 
 const VIACEP_OK = {
   logradouro: "Rua Pais Leme",
@@ -212,7 +213,11 @@ describe("envio", () => {
     expect(enviado.cep).toBe("05424150")
     expect(enviado.neighborhood).toBe("Pinheiros")
     expect(enviado.addressSource).toBe("CEP")
-    expect(enviado.consentVersion).toBe("marketing-v1.0")
+    // 🪤 Contra a constante, nunca contra o literal: subir a versão do
+    // consentimento é evento PLANEJADO, com procedimento documentado em
+    // lib/legal-config.ts. Com o literal, todo bump reprova aqui por motivo
+    // que não é defeito — e a suíte da raiz não roda apps/, então ninguém vê.
+    expect(enviado.consentVersion).toBe(MARKETING_CONSENT_VERSION)
   })
 })
 
