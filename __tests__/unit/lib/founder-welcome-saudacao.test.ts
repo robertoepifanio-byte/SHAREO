@@ -1,6 +1,13 @@
 import { founderWelcomeHtml } from "@/lib/email"
 
 /**
+ * Asserção sobre e-mail tem de olhar o TEXTO, nao a marcacao: as frases do
+ * template tem <strong> no meio, e as cores hex do style (#003366, #007B3C)
+ * casam com qualquer padrao que procure "#" seguido de digito.
+ */
+const semTags = (html: string) => html.replace(/<[^>]+>/g, "")
+
+/**
  * O campo Nome é OPCIONAL no formulário da campanha, então lead sem nome é o
  * caso comum, não a exceção.
  *
@@ -13,26 +20,31 @@ describe("founderWelcomeHtml — saudação", () => {
   const url = "https://www.shareo.com.br/api/founders/unsubscribe?email=a&token=b"
 
   it("usa o nome quando o lead informou", () => {
-    const html = founderWelcomeHtml("Roberto", 1, url)
+    const html = founderWelcomeHtml("Roberto", url)
     expect(html).toContain("Olá, Roberto!")
     expect(html).toContain("Você está na lista!")
   })
 
   it("OMITE o nome quando não há — não inventa", () => {
-    const html = founderWelcomeHtml("", 4, url)
+    const html = founderWelcomeHtml("", url)
     expect(html).toContain("Olá!")
     expect(html).not.toContain("Olá, !")
     // A comemoração é para todo mundo; o que some é o nome, não a mensagem.
     expect(html).toContain("Você está na lista!")
   })
 
-  it("mantém a posição na fila nos dois casos", () => {
-    expect(founderWelcomeHtml("", 4, url)).toContain("#4")
-    expect(founderWelcomeHtml("Ana", 7, url)).toContain("#7")
+  /**
+   * Removido em 08/09/2026 (decisao do fundador): o numero sugere uma ordem de
+   * atendimento que nao existe — a abertura e por CIDADE, nao por posicao.
+   */
+  it("nao cita a posicao na fila", () => {
+    // O "#N" e o que de fato saiu; "fila"/"posicao" barram a redacao voltar
+    // por outra formulacao. Sem o strip, o padrao casaria com as cores hex.
+    expect(semTags(founderWelcomeHtml("", url))).not.toMatch(/#\s*\d|fila|posição/i)
   })
 
   it("sempre inclui o link de descadastro (RFC 8058, exigência do Gmail)", () => {
-    expect(founderWelcomeHtml("", 1, url)).toContain(url)
+    expect(founderWelcomeHtml("", url)).toContain(url)
   })
 })
 
@@ -47,15 +59,13 @@ describe("founderWelcomeHtml — saudação", () => {
  */
 describe("founderWelcomeHtml — promessa de abertura", () => {
   const url  = "https://www.shareo.com.br/api/founders/unsubscribe?email=a&token=b"
-  const html = founderWelcomeHtml("Roberto", 2, url)
+  const html = founderWelcomeHtml("Roberto", url)
 
   it("diz que a abertura é por cidade", () => {
     // Checa o SENTIDO, nao a redacao: que a abertura e faseada e que o aviso e
     // sobre a cidade DA PESSOA. A frase ja mudou tres vezes num dia; fixar o
     // literal so avisaria que o texto mudou, nunca que a promessa mudou.
-    // O <strong> fica NO MEIO da frase, entao a substring contigua nao casa —
-    // comparar sobre o texto sem tags evita um teste que depende da marcacao.
-    const texto = html.replace(/<[^>]+>/g, "")
+    const texto = semTags(html)
     expect(texto).toContain("As cidades abrem por etapas")
     expect(texto).toContain("na sua cidade")
   })
@@ -74,12 +84,5 @@ describe("founderWelcomeHtml — promessa de abertura", () => {
   it("não promete abertura única nacional", () => {
     expect(html).not.toContain("quando abrirmos —")
     expect(html).not.toContain("assim que o ShareO")
-  })
-
-  it("posiciona o número como ordem de ENTRADA na lista, não de acesso ao produto", () => {
-    // A ordem de convite é definida pela cidade escolhida: um #2 nacional pode
-    // ser chamado depois de um #300 da cidade-piloto. O número só é honesto se
-    // descrever quando a pessoa entrou.
-    expect(html).toContain("interessado a entrar na lista")
   })
 })

@@ -236,7 +236,7 @@ async function handlePost(req: NextRequest) {
       // concluía que o envio tinha falhado — logo depois de reconquistarmos a
       // pessoa, que é o pior momento para o silêncio.
       const reactivatedName = name?.trim() ?? ""
-      after(() => sendFounderWelcomeEmail(emailLower, reactivatedName, lead.queuePosition).catch(() => {}))
+      after(() => sendFounderWelcomeEmail(emailLower, reactivatedName).catch(() => {}))
 
       return NextResponse.json(
         {
@@ -312,7 +312,7 @@ async function handlePost(req: NextRequest) {
     // crescimento depende de a pessoa ENCAMINHAR esse e-mail. E-mail sem nome é
     // neutro; e-mail com o nome errado é constrangedor.
     const displayName = name?.trim() ?? ""
-    after(() => sendFounderWelcomeEmail(emailLower, displayName, lead.queuePosition).catch(() => {}))
+    after(() => sendFounderWelcomeEmail(emailLower, displayName).catch(() => {}))
 
     return NextResponse.json(
       {
