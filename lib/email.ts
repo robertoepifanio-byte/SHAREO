@@ -777,7 +777,7 @@ export async function sendIdRejectedEmail(to: string, name: string, reason: stri
  * em template de e-mail viaja no source da mensagem e fica legível para o
  * destinatário.
  */
-export function founderWelcomeHtml(firstName: string, queuePosition: number, unsubUrl: string) {
+export function founderWelcomeHtml(firstName: string, unsubUrl: string) {
   return baseLayout(`
     <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
       ${firstName ? `Olá, ${firstName}!` : "Olá!"}
@@ -786,20 +786,9 @@ export function founderWelcomeHtml(firstName: string, queuePosition: number, uns
       Você está na lista! 🎉
     </p>
 
-    <div style="margin:0 0 20px;padding:18px 20px;background:#F8FAFC;border-radius:10px;border:1px solid #E2E8F0;text-align:center;">
-      <p style="margin:0 0 4px;font-size:13px;color:#475569;">
-        Você é o
-      </p>
-      <p style="margin:0;font-size:40px;line-height:1.1;font-weight:800;color:#007B3C;">
-        #${queuePosition}
-      </p>
-      <p style="margin:4px 0 0;font-size:13px;color:#475569;">
-        interessado a entrar na lista de Fundadores do ShareO
-      </p>
-    </div>
-
     <p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">
-      Isso significa que você estará entre os primeiros a fazer parte de uma nova forma de
+      Sua inscrição na lista de Fundadores do ShareO está confirmada. Isso significa
+      que você estará entre os primeiros a fazer parte de uma nova forma de
       <strong>gerar renda com o que já possui</strong> e
       <strong>economizar alugando o que precisa</strong>.
     </p>
@@ -828,11 +817,7 @@ export function founderWelcomeHtml(firstName: string, queuePosition: number, uns
   `)
 }
 
-export async function sendFounderWelcomeEmail(
-  to: string,
-  name: string,
-  queuePosition: number,
-): Promise<void> {
+export async function sendFounderWelcomeEmail(to: string, name: string): Promise<void> {
   const resend = getResend()
   if (!resend) return
 
@@ -843,7 +828,7 @@ export async function sendFounderWelcomeEmail(
     from:    `ShareO <${FROM}>`,
     to,
     subject: `Você está entre os primeiros Fundadores do ShareO!`,
-    html:    founderWelcomeHtml(firstName, queuePosition, unsubUrl),
+    html:    founderWelcomeHtml(firstName, unsubUrl),
     // RFC 8058 — descadastro em um clique. Exigido pelas regras de bulk sender
     // do Gmail/Yahoo para remetentes de volume, que é o caso da campanha nacional.
     // Sem estes headers o provedor tende a classificar como spam.
