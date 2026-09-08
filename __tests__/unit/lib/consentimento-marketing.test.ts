@@ -51,6 +51,28 @@ function secaoDoHistorico(versao: string): string {
   return fim < 0 ? resto : resto.slice(0, fim)
 }
 
+/**
+ * Versão em que a campanha está TRAVADA, e por quê.
+ *
+ * 🪤 Isto é um arame de tropeço deliberado, não uma asserção de coerência. As
+ * outras verificações deste arquivo passam com a campanha em `marketing-v1.1`
+ * — medido — porque nenhuma delas enxerga o que a PRODUÇÃO aceita. Enquanto a
+ * produção não deployar, subir a campanha para v1.1 faz todo lead virar 422, e
+ * o gate automático não teria como saber.
+ *
+ * Trocar este literal é o ato explícito que obriga quem for religar a ler o
+ * runbook em `apps/campanha/lib/legal-config.ts` e rodar a sonda de rede antes.
+ * Se você chegou aqui porque o teste ficou vermelho: não troque o literal para
+ * silenciar. Rode a sonda primeiro.
+ */
+const VERSAO_TRAVADA_NA_CAMPANHA = "marketing-v1.0"
+
+describe("campanha — trava de versão até a produção deployar", () => {
+  it("está na versão travada — mudar isto exige rodar a sonda de rede antes", () => {
+    expect(campanha.MARKETING_CONSENT_VERSION).toBe(VERSAO_TRAVADA_NA_CAMPANHA)
+  })
+})
+
 describe("campanha — coerência do que ela envia e mostra", () => {
   it("declara uma versão que a lista do repositório conhece", () => {
     // Necessário, não suficiente: a lista que decide o 422 é a da produção.
