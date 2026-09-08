@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { auth } from "@/lib/auth"
 import { redirect, notFound } from "next/navigation"
 import { prisma } from "@/lib/prisma"
+import { byIdOrSlug } from "@/lib/item-url"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { ItemForm } from "@/components/items/ItemForm"
 import { getPricingMultipliers } from "@/lib/platform-config"
@@ -18,7 +19,7 @@ export default async function EditarItemPage({ params }: Props) {
 
   const [item, { weeklyMultiplier, monthlyMultiplier }] = await Promise.all([
     prisma.item.findFirst({
-    where:   { id, deletedAt: null },
+    where:   byIdOrSlug(id),
       include: { images: { orderBy: { order: "asc" } } },
     }),
     getPricingMultipliers(),

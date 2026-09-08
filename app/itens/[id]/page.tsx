@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { byIdOrSlug, canonicalItemPath } from "@/lib/item-url"
 import { jsonLdScript } from "@/lib/jsonLd"
 import { AppHeader } from "@/components/layout/AppHeader"
 import { Avatar } from "@/components/ui/Avatar"
@@ -47,8 +48,9 @@ function relativeTime(date: Date): string {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params
   const item = await prisma.item.findFirst({
-    where:  { id, deletedAt: null },
+    where:  byIdOrSlug(id),
     select: {
+      id: true, slug: true,
       title: true, description: true, city: true, state: true,
       images: { select: { url: true }, orderBy: { order: "asc" }, take: 1 },
     },
@@ -62,7 +64,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title:       item.title,
     description: `${description}${location ? ` — ${location}` : ""}`,
+    // Duas URLs servem este anúncio (id e slug). Sem canonical isso é conteúdo
+    // duplicado aos olhos do buscador; com ele, os sinais de ranqueamento se
+    // consolidam na forma descritiva.
+    alternates: { canonical: canonicalItemPath(item) },
     openGraph: {
+      // 🪤 O Next NÃO deriva `og:url` do canonical — são campos independentes.
+      // Sem esta linha, compartilhar o anúncio no WhatsApp fixaria no preview a
+      // URL que a pessoa visitou, divergindo do canonical e do JSON-LD.
+      url:         canonicalItemPath(item),
       title:       `${item.title} | ShareO`,
       description,
       type:        "website",
@@ -85,9 +95,9 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
   const [item, session] = await Promise.all([
     prisma.item.findFirst({
 
-      where: { id, deletedAt: null },
+      where: byIdOrSlug(id),
       select: {
-        id: true, title: true, description: true, condition: true,
+        id: true, slug: true, title: true, description: true, condition: true,
         pricePerDay: true, pricePerWeek: true, pricePerMonth: true,
         depositAmount: true, rules: true, estimatedRetailPrice: true,
         city: true, state: true, neighborhood: true,
@@ -183,7 +193,11 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
   ])
 
   // NFR-BL2 — acumula no Redis; cron flush-view-counts persiste no Postgres em lote
-  after(() => { void incrementViewCount(id) })
+  // 🪤 `item.id`, não `id`: o parâmetro da rota agora pode ser um SLUG. O
+  // contador grava a chave no Redis e o cron `flush-view-counts` faz
+  // `item.update({ where: { id } })` — com slug isso vira P2025 e a
+  // visualização se perde, silenciosamente, em toda visita pela URL canônica.
+  after(() => { void incrementViewCount(item.id) })
 
   const [feeRateBps, contractCfg] = await Promise.all([
     getPlatformFeeRate(),
@@ -221,7 +235,7 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
         "@type":    "ListItem",
         position:   3,
         name:       item.title,
-        item:       `${BASE}/itens/${item.id}`,
+        item:       `${BASE}${canonicalItemPath(item)}`,
       },
     ],
   }
@@ -233,7 +247,7 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
     description: item.description,
     image:      item.images.map((i) => i.url),
     category:   item.category.name,
-    url:        `${BASE}/itens/${item.id}`,
+    url:        `${BASE}${canonicalItemPath(item)}`,
     offers: {
       "@type":         "Offer",
       priceCurrency:   "BRL",
