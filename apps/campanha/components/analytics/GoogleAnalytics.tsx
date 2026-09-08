@@ -57,7 +57,10 @@ export type GA4Event =
   // ⚠️ Nenhum parâmetro pode conter PII. `cep_used` é booleano de propósito: o
   // CEP identifica a pessoa em conjunto com o resto e não pode sair do banco.
   | { name: "founder_lead_submit";  params: { uf: string; lead_source: string; utm_campaign: string; has_phone: boolean; cep_used: boolean } }
-  | { name: "founder_invite_click"; params: { queue_position: number } }
+  // Sem parametros: a posicao na fila saiu do produto em 08/09/2026 e nao ha
+  // outro atributo do clique que nao seja PII. O evento sozinho ja mede o que
+  // importa — quantos Fundadores compartilham o convite.
+  | { name: "founder_invite_click"; params?: never }
 
 export function trackEvent(event: GA4Event) {
   if (typeof window === "undefined" || !("gtag" in window)) return
