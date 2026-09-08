@@ -58,6 +58,12 @@ export type GA4Event =
   // CEP identifica a pessoa em conjunto com o resto e não pode sair do banco.
   | { name: "founder_lead_submit";  params: { uf: string; lead_source: string; utm_campaign: string; has_phone: boolean; cep_used: boolean } }
   | { name: "founder_invite_click"; params: { queue_position: number } }
+  // 🪤 Evento de FALHA, e não só de conversão. Em 06/09/2026 a campanha mandou
+  // uma versão de consentimento que a API em produção não conhecia: todo lead
+  // virou 422, o visitante viu "Erro de conexão", e rodou ~39h com mídia paga
+  // porque nada distinguia "servidor fora" de "servidor recusando" — e este app
+  // não tem Sentry. Sem PII: só o status HTTP e o código de erro da própria API.
+  | { name: "founder_lead_error";   params: { http_status: number; error_code: string } }
 
 export function trackEvent(event: GA4Event) {
   if (typeof window === "undefined" || !("gtag" in window)) return

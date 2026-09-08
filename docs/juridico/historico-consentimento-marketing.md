@@ -18,6 +18,40 @@ texto vigente no código não bater com o registrado aqui para a mesma versão.
 
 ---
 
+## Estado atual das superfícies
+
+| Superfície | Versão | Por quê |
+|---|---|---|
+| Site (`lib/legal-config.ts`) | `marketing-v1.1` | fonte da verdade |
+| App mobile | `marketing-v1.1` | espelho do site |
+| Campanha (www.shareo.com.br) | `marketing-v1.0` | **uma atrás, de propósito** |
+
+🪤 A campanha sobe sozinha, auto-deployada do `main`, e posta os leads na
+PRODUÇÃO, cujo deploy é pulado (gated por D4). Quando ela passou a mandar v1.1
+em 06/09/2026, a produção ainda não conhecia essa versão e recusou **todo lead
+capturado com 422** por ~39h, com mídia paga rodando. Voltou para v1.0 até a
+produção deployar. O texto de v1.0 é o verdadeiro para quem está na produção:
+lá o descadastro por GET ainda é de um clique.
+
+Para religar, **perguntar à produção** em vez de inferir por outro sinal:
+edite `apps/campanha/lib/legal-config.ts` para v1.1 e rode a sonda
+
+```
+INTEGRATION_TEST_URL=https://shareo-prod.vercel.app npx jest --config apps/campanha/jest.config.ts --testPathIgnorePatterns "/node_modules/" --testPathPattern consent-version
+```
+
+Verde = a produção aceita, pode subir. Vermelho (422 `UNKNOWN_CONSENT_VERSION`)
+= ainda não, reverter e esperar. Depois de subir a campanha, rodar a sonda outra
+vez e atualizar a tabela acima.
+
+🪤 O app **mobile** está em v1.1 e não quebrou por acidente de configuração, não
+por trava: `apps/mobile/lib/api.ts` e os dois perfis de `apps/mobile/eas.json`
+apontam para o **staging**, que deploya do `main`. No dia em que o EAS apontar
+para a produção — mudança de uma linha, esperada no go-live — o APK em campo
+passa a gerar o mesmo 422, e APK não se atualiza sozinho.
+
+---
+
 ## `marketing-v1.1` — vigente desde 2026-09-06
 
 > Concordo em receber comunicações sobre o lançamento do Shareo por e-mail e, se eu informar meu telefone, por WhatsApp. Posso cancelar quando quiser — todo e-mail nosso traz um link de cancelamento, sem precisar responder.

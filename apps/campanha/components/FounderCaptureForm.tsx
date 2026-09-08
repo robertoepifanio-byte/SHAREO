@@ -192,7 +192,25 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
         setState("error-duplicate")
         return
       }
-      if (!res.ok)            { setState("error-network");   return }
+      if (!res.ok) {
+        // 🪤 Instrumentar a FALHA, não só a conversão. Em 06/09/2026 a campanha
+        // passou a mandar uma versão de consentimento que a API em produção
+        // ainda não conhecia: todo lead virou 422 e o visitante viu só "Erro de
+        // conexão". Rodou ~39h com mídia paga porque nada aqui distinguia
+        // "servidor fora" de "servidor recusando", e não há Sentry neste app.
+        //
+        // Sem PII: só o status e o código de erro da própria API.
+        const code = await res
+          .json()
+          .then((j) => (j as { error?: { code?: string } })?.error?.code)
+          .catch(() => undefined)
+        trackEvent({
+          name:   "founder_lead_error",
+          params: { http_status: res.status, error_code: code ?? "(sem código)" },
+        })
+        setState("error-network")
+        return
+      }
 
       const json = await res.json() as { data: { queuePosition: number; referralCode: string | null } }
       setPosition(json.data.queuePosition)
