@@ -10,6 +10,13 @@
  *   - células string, numéricas e com formato são lidas corretamente (cellToString);
  *   - cabeçalhos perigosos (__proto__) são descartados (guard anti-prototype-pollution);
  *   - o fluxo de criação PJ continua funcionando após a troca de dependência.
+ *
+ * O bloco "reimportação" guarda um bug diferente, achado em 06/09/2026: o
+ * objeto de dados era compartilhado entre `create` e `update`, então reimportar
+ * a planilha aplicava os DEFAULTS DE CRIAÇÃO a itens que já existiam —
+ * despublicando anúncios no ar (`status: "DRAFT"`) e apagando a localização
+ * (`city: ""`). Nenhuma das duas perdas dava erro: a importação respondia 200 e
+ * o dono só descobria pelo anúncio sumido da vitrine.
  */
 
 import ExcelJS from "exceljs"
@@ -137,5 +144,79 @@ describe("POST /api/items/import — parser .xlsx via exceljs", () => {
 
     expect(res.status).toBe(400)
     expect(json.error.code).toBe("INVALID_FILE")
+  })
+})
+
+describe("POST /api/items/import — reimportação de item existente", () => {
+  const EXISTING = { id: "item-ja-cadastrado" }
+
+  /** Planilha mínima: só as colunas obrigatórias, sem localização. */
+  async function reimportarSemLocalizacao() {
+    mockItemFindFirst.mockResolvedValue(EXISTING)
+    const buffer = await makeXlsxBuffer([
+      ["titulo", "categoria", "preco_dia", "condicao"],
+      ["Furadeira Bosch 500W", "Ferramentas", "35,00", "BOM"],
+    ])
+    return POST(await makeImportRequest(buffer))
+  }
+
+  it("NÃO despublica o anúncio que já estava no ar", async () => {
+    const res = await reimportarSemLocalizacao()
+    expect(res.status).toBe(200)
+
+    // O update não pode carregar `status`: quem decide se o anúncio está no ar
+    // é o dono, não uma reimportação de planilha para corrigir preço.
+    const { data } = mockItemUpdate.mock.calls[0][0] as { data: Record<string, unknown> }
+    expect(data).not.toHaveProperty("status")
+  })
+
+  it("NÃO apaga a localização quando a planilha não traz as colunas", async () => {
+    await reimportarSemLocalizacao()
+
+    // `cidade`/`estado`/`bairro` têm `.default("")` no schema da linha; aplicar
+    // esse default no update zerava a cidade do item e derrubava a busca por
+    // proximidade.
+    const { data } = mockItemUpdate.mock.calls[0][0] as { data: Record<string, unknown> }
+    expect(data).not.toHaveProperty("city")
+    expect(data).not.toHaveProperty("state")
+    expect(data).not.toHaveProperty("neighborhood")
+  })
+
+  it("atualiza o que a planilha de fato descreve", async () => {
+    await reimportarSemLocalizacao()
+
+    const { where, data } = mockItemUpdate.mock.calls[0][0] as {
+      where: { id: string }
+      data: Record<string, unknown>
+    }
+    expect(where.id).toBe(EXISTING.id)
+    expect(data.pricePerDay).toBe(3500)
+    expect(data.title).toBe("Furadeira Bosch 500W")
+  })
+
+  it("grava a localização quando a planilha TRAZ as colunas", async () => {
+    mockItemFindFirst.mockResolvedValue(EXISTING)
+    const buffer = await makeXlsxBuffer([
+      ["titulo", "categoria", "preco_dia", "condicao", "cidade", "estado"],
+      ["Furadeira Bosch 500W", "Ferramentas", "35,00", "BOM", "Recife", "PE"],
+    ])
+    await POST(await makeImportRequest(buffer))
+
+    const { data } = mockItemUpdate.mock.calls[0][0] as { data: Record<string, unknown> }
+    expect(data.city).toBe("Recife")
+    expect(data.state).toBe("PE")
+  })
+
+  it("item novo continua nascendo como rascunho", async () => {
+    mockItemFindFirst.mockResolvedValue(null)
+    const buffer = await makeXlsxBuffer([
+      ["titulo", "categoria", "preco_dia", "condicao"],
+      ["Serra Nova", "Ferramentas", "40,00", "NOVO"],
+    ])
+    await POST(await makeImportRequest(buffer))
+
+    // DRAFT na criação é correto e tem que continuar: significa "ainda sem foto".
+    const { data } = mockItemCreate.mock.calls[0][0] as { data: Record<string, unknown> }
+    expect(data.status).toBe("DRAFT")
   })
 })
