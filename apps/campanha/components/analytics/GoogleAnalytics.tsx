@@ -57,7 +57,10 @@ export type GA4Event =
   // ⚠️ Nenhum parâmetro pode conter PII. `cep_used` é booleano de propósito: o
   // CEP identifica a pessoa em conjunto com o resto e não pode sair do banco.
   | { name: "founder_lead_submit";  params: { uf: string; lead_source: string; utm_campaign: string; has_phone: boolean; cep_used: boolean } }
-  | { name: "founder_invite_click"; params: { queue_position: number } }
+  // Sem parametros: a posicao na fila saiu do produto em 08/09/2026 e nao ha
+  // outro atributo do clique que nao seja PII. O evento sozinho ja mede o que
+  // importa — quantos Fundadores compartilham o convite.
+  | { name: "founder_invite_click"; params?: never }
   // 🪤 Evento de FALHA, e não só de conversão. Em 06/09/2026 a campanha mandou
   // uma versão de consentimento que a API em produção não conhecia: todo lead
   // virou 422, o visitante viu "Erro de conexão", e rodou ~39h com mídia paga

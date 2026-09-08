@@ -151,7 +151,6 @@ export function FounderCaptureForm({
   const [showManual, setShowManual]     = useState(false)
 
   const [lgpdConsent, setLgpdConsent] = useState(false)
-  const [position, setPosition]       = useState(0)
 
   // Descarta respostas obsoletas do ViaCEP: digitar rápido "50030230" → "50030231"
   // pode resolver fora de ordem e sobrescrever o endereço certo pelo antigo.
@@ -250,20 +249,12 @@ export function FounderCaptureForm({
           utmCampaign:      campaign,
         }),
       })
-      // 409 = e-mail já cadastrado. A API devolve a posição na fila DENTRO do
-      // erro; aproveitamos para dizer QUAL é, em vez de um "você já está na
-      // lista" genérico que o usuário confunde com confirmação de novo cadastro.
+      // 409 = e-mail já cadastrado.
       if (res.status === 409) {
-        const dup = (await res.json().catch(() => null)) as
-          { error?: { data?: { queuePosition?: number } } } | null
-        // 0 = posição desconhecida (corpo inesperado); a UI omite o número.
-        setPosition(dup?.error?.data?.queuePosition ?? 0)
         setState("error-duplicate")
         return
       }
       if (!res.ok)            { setState("error-network");   return }
-      const json = (await res.json()) as { data: { queuePosition: number } }
-      setPosition(json.data.queuePosition)
       setState("success")
     } catch {
       setState("error-network")
@@ -289,11 +280,11 @@ export function FounderCaptureForm({
           <StarIcon stroke="#59C686" size={28} />
         </View>
         <View style={s.successTextBlock}>
-          <Text style={s.successTitle}>Você é o #{position}° na lista!</Text>
+          <Text style={s.successTitle}>Você está na lista!</Text>
           <Text style={s.successSubtitle}>
             {"Avisaremos "}
             <Text style={s.successEmail}>{email}</Text>
-            {" quando o Shareo abrir."}
+            {" antes da abertura dos cadastros na sua cidade."}
           </Text>
         </View>
         <TouchableOpacity
@@ -317,9 +308,7 @@ export function FounderCaptureForm({
         <Text style={s.alertSuccessText}>
           <Text style={s.alertStrong}>Este e-mail já estava na lista.</Text>
           {"\n"}
-          {position > 0
-            ? `Você é o Nº ${position} da fila — não criamos um cadastro novo.`
-            : "Não criamos um cadastro novo. Você será avisado quando abrirmos."}
+          {"Não criamos um cadastro novo. Você será avisado antes da abertura dos cadastros na sua cidade."}
         </Text>
       </View>
     )
