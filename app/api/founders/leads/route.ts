@@ -184,7 +184,7 @@ async function handlePost(req: NextRequest) {
     // Deduplicação por e-mail
     const existing = await prisma.founderLead.findUnique({
       where:  { email: emailLower },
-      select: { id: true, queuePosition: true, deletedAt: true, status: true, wave: true, referralCode: true },
+      select: { id: true, deletedAt: true, status: true, referralCode: true },
     })
 
     if (existing && !existing.deletedAt && existing.status !== "UNSUBSCRIBED") {
@@ -193,7 +193,6 @@ async function handlePost(req: NextRequest) {
           error: {
             code:    "LEAD_ALREADY_EXISTS",
             message: "Este e-mail já está na lista.",
-            data:    { queuePosition: existing.queuePosition },
           },
         },
         { status: 409 },
@@ -221,7 +220,7 @@ async function handlePost(req: NextRequest) {
           ...attributionData,
           ...consentData,
         },
-        select: { id: true, queuePosition: true, wave: true, referralCode: true },
+        select: { id: true, referralCode: true },
       })
 
       after(() =>
@@ -236,15 +235,17 @@ async function handlePost(req: NextRequest) {
       // concluía que o envio tinha falhado — logo depois de reconquistarmos a
       // pessoa, que é o pior momento para o silêncio.
       const reactivatedName = name?.trim() ?? ""
-      after(() => sendFounderWelcomeEmail(emailLower, reactivatedName, lead.queuePosition).catch(() => {}))
+      after(() => sendFounderWelcomeEmail(emailLower, reactivatedName).catch(() => {}))
 
       return NextResponse.json(
         {
           data: {
-            leadId:        lead.id,
-            queuePosition: lead.queuePosition,
-            wave:          lead.wave,
-            referralCode:  lead.referralCode,
+            // `wave` NAO sai daqui: e derivado de queuePosition por assignWave,
+            // ou seja, a posicao em granularidade grossa. A decisao de 08/09 e
+            // que o interessado nao ve a posicao — e nenhum formulario lia o
+            // campo.
+            leadId:       lead.id,
+            referralCode: lead.referralCode,
           },
         },
         { status: 201 },
@@ -312,14 +313,12 @@ async function handlePost(req: NextRequest) {
     // crescimento depende de a pessoa ENCAMINHAR esse e-mail. E-mail sem nome é
     // neutro; e-mail com o nome errado é constrangedor.
     const displayName = name?.trim() ?? ""
-    after(() => sendFounderWelcomeEmail(emailLower, displayName, lead.queuePosition).catch(() => {}))
+    after(() => sendFounderWelcomeEmail(emailLower, displayName).catch(() => {}))
 
     return NextResponse.json(
       {
         data: {
-          leadId:        lead.id,
-          queuePosition: lead.queuePosition,
-          wave,
+          leadId: lead.id,
           // O formulário monta o link de convite com isto. Sem devolver o código
           // aqui, o compartilhamento não teria como ser atribuído.
           referralCode:  lead.referralCode,

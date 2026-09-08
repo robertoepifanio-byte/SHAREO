@@ -62,7 +62,8 @@ async function preencherMinimo(email = "joana@exemplo.com") {
 /** A partir daqui o fetch responde como a API de leads, nao mais como o ViaCEP. */
 function mockLeadsOk() {
   global.fetch = jest.fn().mockResolvedValue({
-    ok: true, status: 200, json: async () => ({ data: { queuePosition: 7 } }),
+    // A tela nao le o corpo do 201 — nao ha dado a fingir aqui.
+    ok: true, status: 200, json: async () => ({}),
   }) as unknown as typeof fetch
 }
 

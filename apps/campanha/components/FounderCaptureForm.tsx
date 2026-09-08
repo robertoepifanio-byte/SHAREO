@@ -57,7 +57,6 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
   const [showManual, setShowManual] = useState(false)
 
   const [lgpdConsent, setLgpdConsent] = useState(false)
-  const [position, setPosition]   = useState(0)
   const [referralCode, setReferralCode] = useState<string | null>(null)
   const [attribution, setAttribution] = useState<Attribution>({ source: "VIP_LANDING" })
 
@@ -181,14 +180,8 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
         }),
       })
 
-      // 409 = e-mail já cadastrado. A API devolve a posição na fila dentro do
-      // erro; aproveitamos para dizer QUAL é, em vez de um "você já está na
-      // lista" genérico que o usuário confunde com confirmação de novo cadastro.
+      // 409 = e-mail já cadastrado.
       if (res.status === 409) {
-        const dup = await res.json().catch(() => null) as
-          { error?: { data?: { queuePosition?: number } } } | null
-        // 0 = posição desconhecida (corpo inesperado); a UI omite o número.
-        setPosition(dup?.error?.data?.queuePosition ?? 0)
         setState("error-duplicate")
         return
       }
@@ -212,8 +205,7 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
         return
       }
 
-      const json = await res.json() as { data: { queuePosition: number; referralCode: string | null } }
-      setPosition(json.data.queuePosition)
+      const json = await res.json() as { data: { referralCode: string | null } }
       setReferralCode(json.data.referralCode)
       setState("success")
 
@@ -270,17 +262,17 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
         </div>
         <div className="text-center">
           <p className="font-display text-xl font-bold text-white">
-            Você é o #{position}° na lista!
+            Você está na lista!
           </p>
           <p className="mt-1 text-sm text-white/70">
-            Avisaremos <strong className="text-white">{email}</strong> quando o Shareo abrir.
+            Avisaremos <strong className="text-white">{email}</strong> antes da abertura dos cadastros na sua cidade.
           </p>
         </div>
         <a
           href={`https://wa.me/?text=${encodeURIComponent(`Entrei na lista de fundadores do Shareo — plataforma de aluguel de itens entre pessoas. Entre também: ${inviteUrl}`)}`}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={() => trackEvent({ name: "founder_invite_click", params: { queue_position: position } })}
+          onClick={() => trackEvent({ name: "founder_invite_click" })}
           className="inline-flex min-h-[44px] items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-white/20"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -309,9 +301,8 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
         >
           <strong className="font-semibold">Este e-mail já estava na lista.</strong>
           <br />
-          {position > 0
-            ? `Você é o Nº ${position} da fila — não criamos um cadastro novo.`
-            : "Não criamos um cadastro novo. Você será avisado quando abrirmos."}
+          Não criamos um cadastro novo. Você será avisado antes da abertura dos
+          cadastros na sua cidade.
         </div>
       </div>
     )

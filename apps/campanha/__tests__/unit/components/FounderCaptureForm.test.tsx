@@ -3,13 +3,12 @@
  * Fonte: apps/campanha/components/FounderCaptureForm.tsx
  *
  * REGRA CRÍTICA: fetch é SEMPRE mockado. Nunca bater na API real.
- * Cada lead criado é permanente — ocupa posição na fila e dispara e-mail via Resend.
+ * Cada lead criado é permanente — e dispara e-mail via Resend.
  *
  * Coberturas obrigatórias (P0):
- *   (a) 409 com queuePosition → mensagem de duplicado com a posição numérica
- *   (b) 409 com body malformado → fallback ?? 0 não renderiza texto vazio
- *   (c) role="alert" só existe no estado error-duplicate, nunca no success
- *   (d) 201 → success com posição + link WhatsApp contendo o referralCode
+ *   (a) 409 → mensagem de duplicado, sem citar posição
+ *   (b) role="alert" só existe no estado error-duplicate, nunca no success
+ *   (c) 201 → success + link WhatsApp contendo o referralCode
  */
 
 import React from "react"
@@ -97,52 +96,30 @@ afterEach(() => {
 
 describe("FounderCaptureForm — e-mail duplicado (P0)", () => {
   /**
-   * (a) 409 com queuePosition válido → mostra a posição da fila.
+   * (a) 409 exibe o aviso de duplicado, sem numero.
    *
-   * O bug original: o formulário mostrava as MESMAS cores de sucesso e o
-   * usuário acreditava ter criado um segundo cadastro. Agora o 409 mostra
-   * role="alert" com o número da posição — nenhuma conta nova é criada.
+   * O bug original: o formulario mostrava as MESMAS cores de sucesso e o
+   * usuario acreditava ter criado um segundo cadastro. O aviso tem
+   * role="alert" e diz que nada foi criado.
+   *
+   * A posicao saiu do produto em 08/09/2026 (decisao do fundador) e a API
+   * deixou de devolve-la: o teste antigo exigia "N 42" no alerta.
    */
-  it("(a) 409 com queuePosition → exibe a posição na mensagem de duplicado", async () => {
+  it("(a) 409 exibe o aviso de duplicado sem citar posicao", async () => {
     ;(global.fetch as jest.Mock).mockResolvedValueOnce({
       status: 409,
       ok: false,
-      json: async () => ({
-        error: { data: { queuePosition: 42 } },
-      }),
+      json: async () => ({ error: { code: "LEAD_ALREADY_EXISTS" } }),
     })
 
     render(<FounderCaptureForm startExpanded />)
     await fillAndSubmit()
 
     const alert = await screen.findByRole("alert")
-    expect(alert).toHaveTextContent("Este e-mail já estava na lista.")
-    expect(alert).toHaveTextContent("42")
-    expect(alert).toHaveTextContent("Nº 42")
-  })
-
-  /**
-   * (b) 409 com body malformado (sem queuePosition) → ?? 0 → texto de fallback.
-   *
-   * Garante que o fallback `?? 0` não renderize texto vazio ("Nº 0" não
-   * aparece; o texto alternativo "Você será avisado" é exibido).
-   */
-  it("(b) 409 com body malformado → fallback ?? 0 exibe texto não-vazio", async () => {
-    ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-      status: 409,
-      ok: false,
-      json: async () => ({ erro: "inesperado" }), // sem error.data.queuePosition
-    })
-
-    render(<FounderCaptureForm startExpanded />)
-    await fillAndSubmit()
-
-    const alert = await screen.findByRole("alert")
-    // Com position === 0, o formulário exibe o texto de fallback (não a posição).
     expect(alert).toHaveTextContent("Este e-mail já estava na lista.")
     expect(alert).toHaveTextContent("Não criamos um cadastro novo.")
-    // Não deve renderizar "Nº 0" (texto sem sentido para o usuário).
-    expect(alert).not.toHaveTextContent("Nº 0")
+    // Mais forte que proibir as redacoes antigas: nenhum numero no alerta.
+    expect(alert).not.toHaveTextContent(/\d/)
   })
 
   /**
@@ -157,7 +134,7 @@ describe("FounderCaptureForm — e-mail duplicado (P0)", () => {
       status: 201,
       ok: true,
       json: async () => ({
-        data: { queuePosition: 7, referralCode: "ABCD1234" },
+        data: { referralCode: "ABCD1234" },
       }),
     })
 
@@ -165,7 +142,7 @@ describe("FounderCaptureForm — e-mail duplicado (P0)", () => {
     await fillAndSubmit()
 
     // Aguarda o estado de sucesso renderizar
-    await screen.findByText(/você é o #7°/i)
+    await screen.findByText(/você está na lista/i)
     expect(screen.queryByRole("alert")).toBeNull()
     unmount()
 
@@ -173,7 +150,7 @@ describe("FounderCaptureForm — e-mail duplicado (P0)", () => {
     ;(global.fetch as jest.Mock).mockResolvedValueOnce({
       status: 409,
       ok: false,
-      json: async () => ({ error: { data: { queuePosition: 7 } } }),
+      json: async () => ({ error: { code: "LEAD_ALREADY_EXISTS" } }),
     })
 
     render(<FounderCaptureForm startExpanded />)
@@ -184,25 +161,24 @@ describe("FounderCaptureForm — e-mail duplicado (P0)", () => {
   })
 
   /**
-   * (d) 201 → estado de sucesso com posição e link de WhatsApp com referralCode.
+   * (d) 201 → estado de sucesso e link de WhatsApp com referralCode.
    *
    * O link de convite precisa conter o referralCode para que o painel de
    * indicações atribua corretamente os leads vindos de boca a boca.
    */
-  it("(d) 201 → sucesso exibe posição e link WhatsApp com referralCode", async () => {
+  it("(d) 201 → sucesso exibe confirmação e link WhatsApp com referralCode", async () => {
     ;(global.fetch as jest.Mock).mockResolvedValueOnce({
       status: 201,
       ok: true,
       json: async () => ({
-        data: { queuePosition: 15, referralCode: "TESTCODE" },
+        data: { referralCode: "TESTCODE" },
       }),
     })
 
     render(<FounderCaptureForm startExpanded />)
     await fillAndSubmit()
 
-    // Posição na fila
-    await screen.findByText(/você é o #15°/i)
+    await screen.findByText(/você está na lista/i)
 
     // Link de WhatsApp presente
     const waLink = screen.getByRole("link", { name: /convidar amigos/i })
