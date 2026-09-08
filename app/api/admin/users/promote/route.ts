@@ -1,12 +1,13 @@
 import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
 import { z } from "zod"
+import { emailField } from "@/lib/validations/auth"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { requireAdminRole } from "@/lib/auth/admin-guards"
 
 const PromoteSchema = z.object({
-  email:     z.string().email().transform((e) => e.toLowerCase()),
+  email:     emailField(),
   adminRole: z.enum(["ADMIN_SUPERADMIN", "ADMIN_FINANCEIRO", "ADMIN_OPERACIONAL"]),
 })
 

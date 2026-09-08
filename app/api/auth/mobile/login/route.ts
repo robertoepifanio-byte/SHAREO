@@ -2,14 +2,9 @@ import type { NextRequest } from "next/server"
 import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { SignJWT } from "jose"
-import { z } from "zod"
 import { prisma } from "@/lib/prisma"
+import { LoginSchema } from "@/lib/validations/auth"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
-
-const Schema = z.object({
-  email:    z.string().email(),
-  password: z.string().min(1),
-})
 
 function secret() {
   const key = process.env.AUTH_SECRET
@@ -28,7 +23,11 @@ export async function POST(req: NextRequest) {
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const body = await req.json()
-    const parsed = Schema.safeParse(body)
+    // 🪤 O MESMO schema do login web. Esta rota tinha um schema próprio sem
+    // normalização e buscava `where: { email }` cru — é o único caminho de
+    // login que não passa pelo `authorize()`, então a garantia dependia de o
+    // app normalizar no cliente.
+    const parsed = LoginSchema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json(
         { error: { code: "VALIDATION_ERROR", message: "E-mail ou senha inválidos." } },
