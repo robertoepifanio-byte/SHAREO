@@ -494,6 +494,48 @@ export async function sendExportReadyEmail(
   if (error) throw new Error(`Resend error: ${error.message}`)
 }
 
+/**
+ * Relatório mensal de intermediações — requisito da Contabilizei (B3, retorno
+ * 10/09/2026, ver docs/juridico/retorno-contabilizei-tributacao-2026-09-10.md)
+ * para sustentar que os 85% repassados ao proprietário não são receita da
+ * ShareO. Diferente de `sendExportReadyEmail` (link pro painel), este anexa
+ * o CSV direto — é um envio automático recorrente, sem admin pra baixar.
+ */
+export async function sendIntermediationReportEmail(
+  to: string,
+  name: string,
+  monthLabel: string,
+  csv: string,
+  filename: string,
+): Promise<void> {
+  const resend = getResend()
+  if (!resend) return
+
+  const firstName = name.trim().split(" ")[0]
+
+  const html = baseLayout(`
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
+      Relatório de intermediações — ${monthLabel}
+    </h1>
+    <p style="margin:0;font-size:15px;color:#475569;line-height:1.6;">
+      Olá, ${firstName}! Segue em anexo o relatório de intermediações de
+      <strong>${monthLabel}</strong>, para envio à Contabilizei (Relatório de
+      Intermediações mensal — sustenta que os 85% repassados ao proprietário
+      não integram a receita da ShareO).
+    </p>
+  `)
+
+  const { error } = await resend.emails.send({
+    from:    `ShareO <${FROM}>`,
+    to,
+    subject: `Relatório de intermediações — ${monthLabel} — ShareO`,
+    html,
+    attachments: [{ filename, content: Buffer.from(csv, "utf-8") }],
+  })
+
+  if (error) throw new Error(`Resend error: ${error.message}`)
+}
+
 export async function sendVerificationEmail(
   to: string,
   name: string,

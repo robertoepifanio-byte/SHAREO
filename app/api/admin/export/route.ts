@@ -20,80 +20,15 @@ import { sendExportReadyEmail } from "@/lib/email"
 // toCsv vivia aqui como função local; foi extraído para lib/csv.ts quando a
 // exportação de interessados da campanha passou a precisar do mesmo escape
 // (incluindo a proteção contra formula injection, S14-SEC-06).
-import { toCsv, centsToCsvDecimal, CSV_BOM } from "@/lib/csv"
-import { PAYOUT_STATUS_LABEL } from "@/lib/payout-status"
-import type { PayoutStatus } from "@prisma/client"
+import { toCsv, CSV_BOM } from "@/lib/csv"
+// fetchFinancialRows tambem vivia aqui; extraida quando o cron mensal de
+// intermediacoes passou a precisar da mesma consulta (ver lib/financial-export.ts).
+import { fetchFinancialRows } from "@/lib/financial-export"
 
 export const runtime = "nodejs"
 
 const MAX_DAYS_SYNC  = 90
 const MAX_DAYS_TOTAL = 5 * 365 // ADR-017: 5 anos
-
-/**
- * Resumo do(s) `Payout` de uma reserva — normalmente 1, mas pode ser 2 quando
- * há extensão de prazo paga à parte (ATOR-03, um Payout por cobrança). Sem
- * essa junção o CSV mostrava o valor CALCULADO do repasse, nunca se ele
- * realmente saiu — pedido do fundador para auditoria de verdade.
- */
-function resumoRepasse(payouts: { status: PayoutStatus; processedAt: Date | null }[]): string {
-  if (payouts.length === 0) return "—"
-  if (payouts.every((p) => p.status === "COMPLETED")) return PAYOUT_STATUS_LABEL.COMPLETED
-  if (payouts.some((p) => p.status === "FAILED" || p.status === "BLOCKED")) {
-    return payouts.map((p) => PAYOUT_STATUS_LABEL[p.status]).join(" + ")
-  }
-  return PAYOUT_STATUS_LABEL[payouts[0].status]
-}
-
-async function fetchRows(start: Date, end: Date) {
-  const bookings = await prisma.booking.findMany({
-    where: {
-      // Reserva em disputa nao fica mais num status proprio: ela segue
-      // ACTIVE/RETURNED. Entra no export pelo `disputeStatus`, senao
-      // sumiria justamente do relatorio que existe para acompanha-la.
-      OR: [
-        { status: { in: ["COMPLETED", "CANCELLED"] } },
-        { disputeStatus: { not: "NONE" } },
-      ],
-      createdAt: { gte: start, lte: end },
-    },
-    orderBy: { createdAt: "asc" },
-    select: {
-      id:               true,
-      createdAt:        true,
-      status:           true,
-      paymentStatus:    true,
-      totalPrice:       true,
-      platformFeeRate:  true,
-      platformFeeAmount: true,
-      ownerNetAmount:   true,
-      stripeFee:        true,
-      stripeDisputeId:  true,
-      item:             { select: { title: true } },
-      owner:            { select: { name: true, email: true } },
-      borrower:         { select: { name: true, email: true } },
-      payouts:          { select: { status: true, processedAt: true } },
-    },
-  })
-
-  return bookings.map((b) => ({
-    "data":                b.createdAt.toISOString().slice(0, 10),
-    "cod locação":         b.id,
-    "descrição":           b.item.title,
-    "valor pago":          centsToCsvDecimal(b.totalPrice),
-    "tx Stripe":           centsToCsvDecimal(b.stripeFee),
-    "Comissão Shareo":     centsToCsvDecimal(b.platformFeeAmount),
-    "Valor proprietário":  centsToCsvDecimal(b.ownerNetAmount),
-    status:                b.status,
-    pagamento:             b.paymentStatus,
-    proprietario:          b.owner.name ?? "",
-    email_proprietario:    b.owner.email,
-    locatario:             b.borrower.name ?? "",
-    email_locatario:       b.borrower.email,
-    taxa_pct:              b.platformFeeRate != null ? (b.platformFeeRate / 100).toFixed(2) + "%" : "",
-    status_repasse:        resumoRepasse(b.payouts),
-    dispute_id:            b.stripeDisputeId ?? "",
-  }))
-}
 
 export async function POST(req: NextRequest) {
   const session = await auth()
@@ -135,7 +70,7 @@ export async function POST(req: NextRequest) {
 
   // ── Síncrono: ≤ 90 dias ──────────────────────────────────────────────────
   if (diffDays <= MAX_DAYS_SYNC) {
-    const rows = await fetchRows(start, end)
+    const rows = await fetchFinancialRows(start, end)
     // BOM: sem ele o Excel pt-BR abre em ANSI e "descrição"/"Comissão" viram lixo.
     const csv  = CSV_BOM + toCsv(rows)
 
@@ -189,7 +124,7 @@ async function processExportJobAsync(
   await prisma.exportJob.update({ where: { id: jobId }, data: { status: "PROCESSING" } })
 
   try {
-    const rows = await fetchRows(start, end)
+    const rows = await fetchFinancialRows(start, end)
     const csv  = CSV_BOM + toCsv(rows)
 
     // MVP: salva como data URL base64 (sem Supabase Storage configurado para exports)
