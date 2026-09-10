@@ -8,6 +8,20 @@
 
 ---
 
+## 📊 Relatório mensal de intermediações — requisito da Contabilizei (registrado em 2026-09-10)
+
+**Origem:** retorno formal da Contabilizei sobre B3/tributação ([`docs/juridico/retorno-contabilizei-tributacao-2026-09-10.md`](juridico/retorno-contabilizei-tributacao-2026-09-10.md)). Para sustentar que os 85% repassados não são receita da ShareO (Simples Nacional, comissão de 15% como base do DAS), a Contabilizei exige envio **mensal obrigatório** de um "Relatório de Intermediações" — por transação: data, identificação do proprietário (**CPF/nome**), valor total, valor do repasse, valor da comissão.
+
+**O que já existe:** `app/api/admin/export/route.ts` (ADR-016) já exporta quase tudo isso por reserva — data, valor pago, comissão, valor proprietário, nome/e-mail — sob demanda, com período escolhido pelo admin.
+
+**O que falta (não implementado nesta sessão):**
+1. **CPF do proprietário no export** — hoje só `name`/`email`. O dado existe criptografado (`User.cpfHash`, `lib/crypto.ts`); decidir como/se expor em claro num export administrativo (dado sensível, LGPD).
+2. **Geração/fechamento mensal automático** — hoje é sob demanda; a Contabilizei pede o relatório "no fechamento de cada mês". Decisão de produto: gerar e disponibilizar para download vs. enviar por e-mail automaticamente (segundo caso levanta questão de base legal para envio automático de dado financeiro/pessoal).
+
+Sem prioridade definida ainda — **não bloqueia** nenhuma das condições de go-live (B3 já está fechado), mas vira obrigação operacional recorrente assim que houver a primeira transação real.
+
+---
+
 ## 💾 Backup e restauração — o que ficou aberto depois do teste de 04/09/2026
 
 Contexto: em 04/09 a restauração do **Storage** passou a existir e foi **testada ponta a ponta** (599 arquivos no backup; 3 arquivos com checksums distintos restaurados, baixados de volta e conferidos — os três md5 bateram). Detalhes e armadilhas da CLI em [`runbook-restauracao-backup.md`](runbook-restauracao-backup.md). Restam duas coisas.

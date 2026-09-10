@@ -2,12 +2,11 @@
 
 **Atualizado:** 2026-09-03 · **Fonte:** **parecer jurídico FORMAL** do D4 ([`parecer-juridico-revisado-mp.md`](parecer-juridico-revisado-mp.md)) — ⚠️ escrito com o **Mercado Pago** como PSP, ver a ressalva — + dossiê [`briefing-juridico-d4.md`](briefing-juridico-d4.md) + revisão da Central de Ajuda (s41).
 
-> 📌 **Em curso desde 03/09/2026 — as duas consultas foram acionadas:**
-> **(a)** chamado aberto na **Contabilizei** sobre o tratamento dos 85% no Simples Nacional
-> (roteiro: [`roteiro-contabilizei-simples-nacional-2026-09-03.md`](roteiro-contabilizei-simples-nacional-2026-09-03.md));
-> **(b)** Raimundo está com o roteiro para falar com a **advogada** sobre a custódia do valor e a Lei 12.865
+> 📌 **Duas consultas acionadas em 03/09/2026:**
+> **(a)** ✅ **respondida em 10/09** — chamado na **Contabilizei** sobre o tratamento dos 85% no Simples Nacional, resposta completa em [`retorno-contabilizei-tributacao-2026-09-10.md`](retorno-contabilizei-tributacao-2026-09-10.md) (roteiro original: [`roteiro-contabilizei-simples-nacional-2026-09-03.md`](roteiro-contabilizei-simples-nacional-2026-09-03.md));
+> **(b)** ⏳ **ainda sem resposta** — Raimundo está com o roteiro para falar com a **advogada** sobre a custódia do valor e a Lei 12.865
 > ([`roteiro-advogada-lei-12865-2026-09-03.md`](roteiro-advogada-lei-12865-2026-09-03.md)).
-> Nenhuma das duas tem resposta ainda. **Enquanto isso, nada de produção muda.**
+> **Enquanto (b) não responder, nada de produção muda** — é a ressalva do PSP (Stripe custodia o valor, diferente do desenho do parecer original com o MP), o item mais crítico do D4 hoje.
 
 > ✅ **Parecer FORMAL recebido** (condição 1 das 4 de go-live cumprida). ⚠️ **Go-live ainda NÃO liberado.** Das quatro condições, três estão cumpridas (parecer, PSP + conta PJ, conteúdo de Termos/Política aprovado); falta o **checklist 100%** — hoje **C2 (DPA)** e **C3 (RIPD/DPO)**. 🔴 **Some-se a ressalva do PSP:** o parecer analisou o **Mercado Pago**, e o PSP é a **Stripe** desde 24/08 — ver [`ressalva-psp-stripe-2026-09-03.md`](ressalva-psp-stripe-2026-09-03.md). Até o sign-off, **nenhuma atividade de produção** (regra absoluta). Este checklist **rastreia** os ajustes exigidos; não os declara cumpridos juridicamente.
 
@@ -22,10 +21,11 @@
 - 🔵 **Conta de recebimento = PJ da ShareO** (nunca pessoal) — societário.
 
 ## 2. Fiscal / Tributário
-- 🔨 **Emissão de NF** sobre a taxa de 15% (receita da plataforma).
-- 🔵 Definição contábil: **85% repassado ao proprietário ≠ receita** da ShareO.
-- 🟡 Orientação fiscal a proprietários (PF declara IR / PJ emite NF própria) — hoje há **Informe de IR informativo** com disclaimer; formalizar orientação.
-- 🔵 Revisão por **tributarista** (ISS/PIS/COFINS).
+- ✅ **Regime tributário definido e detalhado (10/09):** Simples Nacional, Anexo III/V por Fator R, alíquota projetada 6% sobre a comissão. Ver [`retorno-contabilizei-tributacao-2026-09-10.md`](retorno-contabilizei-tributacao-2026-09-10.md).
+- ✅ Definição contábil: **85% repassado ao proprietário ≠ receita** da ShareO — confirmado pela Contabilizei, alinhado ao parecer.
+- 🔨 **Emissão de NF** sobre a taxa de 15% — emitida contra o **proprietário**, pela própria plataforma Contabilizei (CNAE 7490-1/04 + item 10.03); mensal consolidada é aceita. Falta decidir automação (B2 do checklist abaixo).
+- 🟡 Orientação fiscal a proprietários (PF declara IR / PJ emite NF própria) — hoje há **Informe de IR informativo** com disclaimer; formalizar orientação. Confirmado: **sem retenção de IR/INSS** pela ShareO, **DIMOB não se aplica** (só para operações imobiliárias).
+- 🔨 **Relatório mensal de intermediações** — requisito novo da Contabilizei, vira item de produto/engenharia (ver B3 abaixo e o backlog).
 
 ## 3. LGPD (Lei 13.709/2018)
 - ✅ **DPO/Encarregado** designado + canal (`privacidade@shareo.com.br`, `lib/legal-config.ts`).
@@ -103,7 +103,7 @@ Fonte: `docs/Pauta única decisões jurídicas societárias Respostas.docx`. **T
 | **A4** | ✅ Expurgo **suspenso** sob ordem judicial/litígio/investigação. | Implementar **flag de "retenção legal" por registro** ANTES de ligar os crons. |
 | ~~**B1**~~ | ✅ **FECHADO (2026-08-24).** As duas metades do B1 eram *(a)* constituir a PJ e *(b)* contratar o PSP. **(a) está feita:** CNPJ **68.512.556/0001-09 ativo desde 11/08/2026**, CNAE 74.90-1-04 (intermediação), coerente com o parecer. **(b) mudou de objeto:** o Mercado Pago **não será utilizado** (decisão do fundador, 24/08/2026) — o PSP é a **Stripe** ([[ADR-028]]). Com isso o "contrato MP assinado", que era a metade travada, **deixa de existir como pendência**: a Stripe não tem contrato de split para assinar à parte; a relação se formaliza pela aceitação eletrônica do Stripe Services Agreement no cadastro da conta plataforma. **Confirmado pelo fundador em 24/08:** a conta plataforma está no **CNPJ da PJ** — é o que sustenta o desenho de "ShareO não é merchant of record". | — (nada pendente). |
 | **B2** | ✅ NF da ShareO sobre os 15% (ISS + PIS/COFINS). 85% = **não-receita** (terceiros em trânsito); locador emite a própria. | Automação de NF = análise futura. |
-| **B3** | ✅ **FECHADO (2026-09-03).** Abertura: CNPJ ativo desde 11/08/2026. **Regime tributário definido: SIMPLES NACIONAL**, com apoio dos tributaristas da Contabilizei (contador oficial). | Contabilizei (execução) + Fundador Raimundo. |
+| **B3** | ✅ **FECHADO E DETALHADO (2026-09-10).** Simples Nacional, Anexo III/V por Fator R (alíquota projetada **6%** sobre a comissão), NF emitida contra o proprietário, sem retenção de IR/INSS, DIMOB não se aplica. Resposta completa da Contabilizei ao chamado 29468012 — ver [`retorno-contabilizei-tributacao-2026-09-10.md`](retorno-contabilizei-tributacao-2026-09-10.md). 🔨 **Gerou requisito de produto:** relatório mensal de intermediações (data/CPF-nome do proprietário/valor total/repasse/comissão) — export atual (`app/api/admin/export/route.ts`, ADR-016) cobre quase tudo, falta CPF e geração automática de fechamento mensal. Registrado no backlog. | Contabilizei (execução) + Fundador Raimundo + engenharia (relatório mensal). |
 | **B4** | ✅ ShareO **não é sujeito obrigado** (PSP assume KYC/KYB/monitoramento). Manter **política mínima** de PLD/FT: KYC/KYB básico (feito), monitoramento de suspeitas, canal de reporte, treinamento, logs de alertas 5a. Sem comunicação direta ao COAF. | Redigir política mínima. |
 | **C1** | ✅ Selfie **É dado biométrico sensível (art. 11)** — interesse legítimo **insuficiente**; exige **consentimento específico e destacado** (art. 11 II "a"). | Ajustar base legal no RIPD (risco F-09), texto de consentimento separado dos Termos, segurança reforçada. |
 | **C2** | 🔴 **Responsável nomeado (2026-08-04): Raimundo Gomes da Silva.** Reenquadrado em **03/09/2026** ([`dpa-apuracao-2026-09-03.md`](dpa-apuracao-2026-09-03.md)) — o pendente **não é** "assinar DPAs": **Stripe ✅** (adota as CPC da ANPD, nada a assinar) · **Vercel/Resend/Sentry/Mapbox/Upstash ❌** (sem CPC — decisão da **advogada**) · **GA4 ✅** (encerrado 04/09: nunca esteve ligado; Política corrigida e código travado) · **Supabase ❓** (definir se há transferência) · **Cláusula 14** 🔨 (rascunho pronto, obrigação nossa). | Decisões dos fornecedores: **advogada**. Cláusula 14 e medições: **equipe técnica**. Coordenação: Raimundo. |
