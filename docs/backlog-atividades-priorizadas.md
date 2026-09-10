@@ -8,6 +8,18 @@
 
 ---
 
+## ✅ Relatório mensal de intermediações — requisito da Contabilizei (registrado 10/09, implementado no mesmo dia)
+
+**Origem:** retorno formal da Contabilizei sobre B3/tributação ([`docs/juridico/retorno-contabilizei-tributacao-2026-09-10.md`](juridico/retorno-contabilizei-tributacao-2026-09-10.md)). Para sustentar que os 85% repassados não são receita da ShareO (Simples Nacional, comissão de 15% como base do DAS), a Contabilizei exige envio **mensal obrigatório** de um "Relatório de Intermediações" — por transação: data, identificação do proprietário (**CPF/nome**), valor total, valor do repasse, valor da comissão.
+
+**Implementado:**
+1. **CPF/CNPJ do proprietário no export** — `lib/financial-export.ts` (consulta extraída de `app/api/admin/export/route.ts`, que não pode ter export extra num `route.ts` — `next build` reprova, ver `feedback-next-route-export-solto`) decripta `cpfEncrypted`/`cnpjEncrypted` via `decryptDocument()` e adiciona a coluna `cpf_cnpj_proprietario`, **sem máscara** (diferente da exibição em tela) — o público é um sistema contábil, não um usuário; escopo já restrito a `ADMIN_SUPERADMIN`/`ADMIN_FINANCEIRO` nos dois pontos de chamada.
+2. **Fechamento mensal automático** — `app/api/cron/intermediation-report/route.ts`, novo cron (dia 1 de cada mês, `vercel.json`), fecha o mês anterior e envia o CSV **em anexo** por e-mail (`sendIntermediationReportEmail`, `lib/email.ts`) a cada admin `ADMIN_FINANCEIRO`/`ADMIN_SUPERADMIN` — sem exigir que alguém entre no painel para baixar. O cron envia só as colunas que a Contabilizei pediu (data, valores, proprietário/documento) — sem e-mail/nome do locatário nem metadados de disputa, que existem no export administrativo geral mas não têm função no relatório fiscal.
+
+**Verificado:** `tsc --noEmit`, `next lint` e `next build` limpos (rota nova validada, regra do CLAUDE.md); suíte completa (108 suítes / 1557 testes) e o teste de cobertura do guard de cron (`cron-guard-cobertura.test.ts`, 37 testes) verdes reconhecendo a rota nova.
+
+---
+
 ## 💾 Backup e restauração — o que ficou aberto depois do teste de 04/09/2026
 
 Contexto: em 04/09 a restauração do **Storage** passou a existir e foi **testada ponta a ponta** (599 arquivos no backup; 3 arquivos com checksums distintos restaurados, baixados de volta e conferidos — os três md5 bateram). Detalhes e armadilhas da CLI em [`runbook-restauracao-backup.md`](runbook-restauracao-backup.md). Restam duas coisas.

@@ -7,6 +7,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { assertCronAuth } from "@/lib/auth/cron-guard"
 import { formatPrice } from "@/utils/format"
+import { getPreviousMonthWindow, getFinanceAdmins } from "@/lib/financial-export"
 
 export const runtime     = "nodejs"
 export const maxDuration = 60
@@ -15,11 +16,7 @@ export async function GET(req: NextRequest) {
   const denied = assertCronAuth(req)
   if (denied) return denied
 
-  // Calcula janela do mês anterior
-  const now       = new Date()
-  const firstDay  = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-  const lastDay   = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999)
-  const monthLabel = firstDay.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
+  const { firstDay, lastDay, monthLabel } = getPreviousMonthWindow()
 
   const [gmv, fees, payouts, disputes, newAccounts] = await Promise.all([
     // GMV — volume total de aluguéis concluídos no mês
@@ -62,10 +59,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Notifica todos os admins financeiros
-  const admins = await prisma.user.findMany({
-    where:  { role: "ADMIN", adminRole: { in: ["ADMIN_FINANCEIRO", "ADMIN_SUPERADMIN"] } },
-    select: { id: true, name: true },
-  })
+  const admins = await getFinanceAdmins()
 
   const summaryText = [
     `📊 Relatório financeiro — ${monthLabel}`,
