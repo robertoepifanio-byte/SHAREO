@@ -83,6 +83,10 @@ export const RATE_LIMITS = {
   // num pico de campanha paga, 5/min derrubaria conversão real.
   foundersLead:   { limit: 10, windowMs: 60_000 },               // 10/min por IP
   foundersExport: { limit: 10, windowMs: 60_000 },               // 10/min por admin
+  // Contador de funil (view/submit_attempt) — dispara em toda carga de página,
+  // não só em envio. Limite mais alto que foundersLead para não descartar
+  // visitas legítimas atrás do mesmo CGNAT/IP corporativo.
+  foundersFunnel: { limit: 30, windowMs: 60_000 },               // 30/min por IP
 } as const
 
 // ─── Public API ───────────────────────────────────────────────────────────────

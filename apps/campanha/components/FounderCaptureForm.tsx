@@ -7,6 +7,7 @@ import { fetchAddressByCep } from "@/lib/forms/address"
 import { trackEvent } from "@/components/analytics/GoogleAnalytics"
 import { readAttribution, type Attribution } from "@/lib/founders-attribution"
 import { ROTAS } from "@/lib/config"
+import { trackFunnel } from "@/lib/track-funnel"
 
 type IntentOption = "proprietario" | "locatario"
 type State  = "collapsed" | "expanded" | "loading" | "success" | "error-network" | "error-duplicate"
@@ -69,6 +70,10 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
 
   // Captura atribuição (UTM/ref) uma vez, no cliente — define o canal de origem do lead.
   useEffect(() => { setAttribution(readAttribution()) }, [])
+
+  // Conta "chegou até o formulário" uma vez por carregamento — a única forma de
+  // saber, sem GA4, se a queda é visita→formulário ou formulário→envio.
+  useEffect(() => { trackFunnel("view") }, [])
 
   function toggleIntent(opt: IntentOption) {
     setSelected((prev) => {
@@ -147,6 +152,10 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
       // mesmo formato de User.phone. Menos de 10 dígitos = incompleto → não envia.
       const phoneDigits = phone.replace(/\D/g, "")
       const phoneE164 = phoneDigits.length >= 10 ? `+55${phoneDigits}` : undefined
+
+      // Só conta daqui pra frente: um Enter sem intenção escolhida retorna antes
+      // (linha acima) e não deve inflar a contagem de tentativas reais.
+      trackFunnel("submit_attempt")
 
       // Cross-origin para a API do ShareO — e sai do NAVEGADOR de propósito.
       // O servidor de lá lê `x-forwarded-for` para gravar `consentIp` (trilha

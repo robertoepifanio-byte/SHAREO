@@ -149,8 +149,15 @@ export async function ListaVIP({ as = "h2", hideBadge = false }: Props = {}) {
           </div>
         </div>
 
-        {/* Mini-formulário de captação — folha client */}
-        <FounderCaptureForm />
+        {/*
+          Mini-formulário de captação — folha client. Sempre expandido: este
+          componente tem um único chamador em apps/campanha (PreLaunchHome,
+          a landing que a mídia paga leva o visitante), e o botão intermediário
+          "Quero ser avisado no lançamento" — mesma cor e peso visual do envio
+          final — era um clique a mais sem função, só atrito. Ver
+          apps/campanha/components/FounderCaptureForm.tsx (prop `startExpanded`).
+        */}
+        <FounderCaptureForm startExpanded />
 
         {/* Social proof dinâmico — só com dados reais */}
         {showCount ? (
