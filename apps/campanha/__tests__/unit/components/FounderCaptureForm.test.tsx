@@ -28,6 +28,13 @@ jest.mock("@/components/analytics/GoogleAnalytics", () => ({
   trackEvent: jest.fn(),
 }))
 
+// trackFunnel chama fetch por conta própria (evento "view" no mount, e
+// "submit_attempt" no submit) — mockado à parte para não se misturar com o
+// fetch mockado por caso de teste para /api/founders/leads.
+jest.mock("@/lib/track-funnel", () => ({
+  trackFunnel: jest.fn(),
+}))
+
 // fetchAddressByCep bate no ViaCEP — nunca deve rodar nos testes unitários.
 jest.mock("@/lib/forms/address", () => ({
   fetchAddressByCep: jest.fn().mockResolvedValue(null),

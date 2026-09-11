@@ -24,6 +24,7 @@ export const SHAREO_SITE = (process.env.NEXT_PUBLIC_SHAREO_SITE_URL ?? SHAREO_AP
 export const ROTAS = {
   leads: `${SHAREO_API}/api/founders/leads`,
   stats: `${SHAREO_API}/api/founders/stats`,
+  funnel: `${SHAREO_API}/api/founders/funnel`,
   termos: `${SHAREO_SITE}/termos`,
   privacidade: `${SHAREO_SITE}/privacidade`,
   politicas: `${SHAREO_SITE}/politicas`,
