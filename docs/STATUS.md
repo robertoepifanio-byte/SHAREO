@@ -1,5 +1,17 @@
 # ShareO — Status do Projeto
 
+**Atualizado em**: 2026-09-11 — **📉 6.771 visitas do YouTube viraram só 6 leads (4 de teste interno, antes da UTM entrar no link) — atrito real encontrado e corrigido, contador de funil no ar em staging.**
+
+Investigando a conversão baixíssima da campanha ([#477](https://github.com/robertoepifanio-byte/SHAREO/pull/477)): o CTA "Entrar na lista" da landing (`shareo.com.br`, `apps/campanha`) exigia um clique extra num botão verde idêntico ao de envio final ("Quero ser avisado no lançamento") só para revelar o formulário de verdade — atrito sem nenhuma instrumentação para provar, porque o GA4 segue desligado (Art. 33/CPC vencido). O formulário agora abre direto.
+
+**Contador de funil (`view` / `submit_attempt`) criado para medir a queda sem reabrir o GA4** — agregado por dia no Upstash, sem PII/IP/cookie. `POST /api/founders/funnel` é público (mesma allowlist CORS de `/api/founders/leads`); `GET` é admin-only. Revisão `/simplify` extraiu `lib/upstash.ts` (o trio `upstashFetch`/`upstashUrl`/`upstashToken` já estava duplicado em `viewCounter.ts` e `redis-admin-blocklist.ts` — o código novo passou a reusar em vez de virar a 3ª cópia) e removeu uma prop (`formExpanded`) sem variância real.
+
+**Verificado ponta a ponta em staging depois do merge:** `POST` real → 202, evento inválido → 400, `GET` sem sessão → 403, `GET` autenticado (`admin@shareo.com.br`) devolveu a contagem certa dos dois eventos de teste no dia. 🔑 **`CAMPANHA_ORIGINS` do staging = só `https://shareo-campanha.vercel.app`** — não inclui `shareo.com.br` (esse é só produção) nem `localhost:3007` (dev local). Confirmado por tentativa direta: testar CORS com a origem errada (`shareo.com.br`) deu 403 tanto na rota nova quanto na já existente `/api/founders/leads` — mesmo comportamento, não é regressão.
+
+Achado colateral, ainda sem correção: **nenhum dos leads reais aparece com canal "YouTube"** no painel — o `deriveSource()` só reconhece por `utm_source` (`lib/founders-attribution.ts`), e o link do vídeo parece estar sem essa etiqueta (ou com um valor não reconhecido), caindo em "Landing VIP". Guia já existe: [`guias/etiquetas-anuncios.md`](guias/etiquetas-anuncios.md). Correção é no link do anúncio, não no código.
+
+---
+
 **Atualizado em**: 2026-09-10 — **📊 B3 (tributação) fechado com detalhe operacional + 3 correções de segurança mescladas e no ar em staging.**
 
 A Contabilizei respondeu por completo o roteiro de 6 perguntas de 03/09 (chamado 29468012): **Simples Nacional**, Anexo III/V por Fator R (alíquota projetada **6%** sobre a comissão), NF emitida **contra o proprietário**, sem retenção de IR/INSS, DIMOB não se aplica — confirma que os 85% repassados nunca foram receita da ShareO. Documento completo em `docs/juridico/retorno-contabilizei-tributacao-2026-09-10.md`.
