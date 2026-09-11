@@ -8,6 +8,7 @@ import { trackEvent } from "@/components/analytics/GoogleAnalytics"
 import { readAttribution, type Attribution } from "@/lib/founders-attribution"
 import { ROTAS } from "@/lib/config"
 import { trackFunnel } from "@/lib/track-funnel"
+import NeonBorder from "@/components/NeonBorder"
 
 type IntentOption = "proprietario" | "locatario"
 type State  = "collapsed" | "expanded" | "loading" | "success" | "error-network" | "error-duplicate"
@@ -348,11 +349,18 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
     lgpdConsent
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      aria-label="Formulário de entrada na lista do ShareO"
-      className="mx-auto flex max-w-[400px] flex-col gap-3"
-    >
+    <div className="relative mx-auto max-w-[400px] p-2">
+      {/* Borda neon decorativa — puramente visual, não deve interferir na
+          navegação por teclado nem no toque em mobile. */}
+      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+        <NeonBorder color="#007B3C" rounded={10} thickness={2} borderSize={35} glow={45} speed={9} />
+      </div>
+
+      <form
+        onSubmit={handleSubmit}
+        aria-label="Formulário de entrada na lista do ShareO"
+        className="relative flex flex-col gap-3"
+      >
       <div role="group" aria-label="Tipo de uso" className="grid grid-cols-2 gap-2">
         {(["proprietario", "locatario"] as const).map((opt) => {
           const isChecked = selected.has(opt)
@@ -652,6 +660,7 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
           políticas do Shareo
         </a>.
       </p>
-    </form>
+      </form>
+    </div>
   )
 }
