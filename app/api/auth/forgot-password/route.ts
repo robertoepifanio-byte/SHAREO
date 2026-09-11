@@ -6,6 +6,7 @@ import { z } from "zod"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { sendPasswordResetEmail } from "@/lib/email"
 import { PASSWORD_RESET_TOKEN_TTL_MS } from "@/lib/auth-config"
+import { hashToken } from "@/lib/crypto"
 
 const Schema = z.object({
   email: z.string().email("E-mail inválido"),
@@ -48,11 +49,15 @@ export async function POST(req: NextRequest) {
     // Invalida tokens anteriores do mesmo e-mail
     await prisma.passwordResetToken.deleteMany({ where: { email: email.toLowerCase() } })
 
+    // SEC-MED-01 — só o hash vai pro banco (mesmo padrão de emailVerifyToken em
+    // hashToken()). O token cru só existe no e-mail enviado ao usuário: um vazamento
+    // da tabela (backup, dump, credencial de banco comprometida) não entrega tokens
+    // utilizáveis dentro da janela de validade.
     const token = crypto.randomBytes(32).toString("hex")
     await prisma.passwordResetToken.create({
       data: {
         email:     email.toLowerCase(),
-        token,
+        token:     hashToken(token),
         expiresAt: new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MS),
       },
     })

@@ -102,11 +102,14 @@ export function verifyDocument(doc: string, hash: string): boolean {
   return hashDocument(doc) === hash
 }
 
-// SEC-ALTO-07 — hash de token de uso único (verificação de e-mail) para
-// armazenamento. O token enviado ao usuário é aleatório de 256 bits
+// SEC-ALTO-07 / SEC-MED-01 — hash de token de uso único de alta entropia para
+// armazenamento (verificação de e-mail em app/api/auth/verify-email|register|
+// resend-verification/route.ts; reset de senha em app/api/auth/forgot-password|
+// reset-password/route.ts). O token enviado ao usuário é aleatório de 256 bits
 // (crypto.randomBytes(32)), então SHA-256 sem chave já é seguro: o banco guarda
 // apenas o hash. Se a tabela vazar (ex.: Data API do Supabase exposta), o token
-// em claro não é recuperável — impede confirmar e-mail alheio com o valor lido.
+// em claro não é recuperável — impede confirmar e-mail alheio ou redefinir senha
+// alheia com o valor lido.
 export function hashToken(token: string): string {
   return crypto.createHash("sha256").update(token).digest("hex")
 }

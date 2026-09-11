@@ -316,6 +316,24 @@ function baseLayout(content: string) {
 </html>`
 }
 
+/**
+ * SEC-MED-02 — escapa texto livre do usuário (nome, título de item, motivo de
+ * cancelamento/rejeição) antes de embutir no HTML do e-mail. Nenhum template
+ * deste arquivo usa React (que escaparia sozinho) nem sanitiza na entrada —
+ * sem isto, um título de item ou motivo com `<a href="...">` vira link
+ * clicável no Gmail/Outlook, saindo de um remetente @shareo.com.br
+ * (phishing com a cara do domínio). Aplicar SÓ dentro do HTML — nunca em
+ * `subject`, que é texto puro e mostraria `&amp;` literal ao destinatário.
+ */
+function escapeHtml(input: string): string {
+  return input
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+}
+
 export function ctaButton(href: string, label: string) {
   return `<a href="${href}"
     style="display:inline-block;background:#007B3C;color:#FFFFFF;font-size:15px;
@@ -331,7 +349,7 @@ function passwordResetHtml(firstName: string, resetUrl: string) {
       Redefinir sua senha
     </h1>
     <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
-      Olá, ${firstName}! Recebemos uma solicitação para redefinir a senha da sua conta ShareO.
+      Olá, ${escapeHtml(firstName)}! Recebemos uma solicitação para redefinir a senha da sua conta ShareO.
       Clique no botão abaixo para criar uma nova senha:
     </p>
 
@@ -358,8 +376,8 @@ function bookingConfirmedHtml(firstName: string, itemTitle: string, startDate: D
       ✅ Reserva confirmada!
     </h1>
     <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
-      Olá, ${firstName}! O proprietário confirmou sua reserva de
-      <strong>${itemTitle}</strong>. Combine os detalhes de retirada com ele pelo chat.
+      Olá, ${escapeHtml(firstName)}! O proprietário confirmou sua reserva de
+      <strong>${escapeHtml(itemTitle)}</strong>. Combine os detalhes de retirada com ele pelo chat.
     </p>
     <table width="100%" cellpadding="0" cellspacing="0"
       style="margin-bottom:24px;border-radius:8px;border:1px solid #E2E8F0;padding:16px 20px;">
@@ -387,11 +405,11 @@ function bookingCancelledHtml(firstName: string, itemTitle: string, role: "borro
       ❌ Reserva cancelada
     </h1>
     <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
-      Olá, ${firstName}! ${who} a reserva de <strong>${itemTitle}</strong>.
+      Olá, ${escapeHtml(firstName)}! ${who} a reserva de <strong>${escapeHtml(itemTitle)}</strong>.
     </p>
     ${reason ? `
     <div style="margin-bottom:20px;padding:14px 18px;background:#FFF7ED;border-radius:8px;border:1px solid #FED7AA;">
-      <p style="margin:0;font-size:13px;color:#C2410C;"><strong>Motivo:</strong> ${reason}</p>
+      <p style="margin:0;font-size:13px;color:#C2410C;"><strong>Motivo:</strong> ${escapeHtml(reason)}</p>
     </div>` : ""}
     <div style="text-align:center;">${ctaButton(bookingUrl, "Ver reserva")}</div>
     <p style="margin:20px 0 0;font-size:13px;color:#64748B;line-height:1.6;">
@@ -406,7 +424,7 @@ function lateFeeHtml(firstName: string, itemTitle: string, lateFeeFormatted: str
       🚨 Taxa de atraso — pagamento necessário
     </h1>
     <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
-      Olá, ${firstName}! O prazo de devolução de <strong>${itemTitle}</strong> foi ultrapassado.
+      Olá, ${escapeHtml(firstName)}! O prazo de devolução de <strong>${escapeHtml(itemTitle)}</strong> foi ultrapassado.
       Uma taxa de atraso de <strong>${lateFeeFormatted}</strong> foi gerada${calculadoAte ? `, com o atraso calculado até <strong>${calculadoAte}</strong>` : ""}.
     </p>
     ${calculadoAte ? `<p style="margin:0 0 20px;font-size:13px;color:#94A3B8;line-height:1.6;">
@@ -470,7 +488,7 @@ export async function sendExportReadyEmail(
       Exportação concluída
     </h1>
     <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
-      Olá, ${firstName}! A exportação financeira do período
+      Olá, ${escapeHtml(firstName)}! A exportação financeira do período
       <strong>${formatDateLong(periodStart)} a ${formatDateLong(periodEnd)}</strong> foi concluída
       e está disponível para download no painel administrativo.
     </p>
@@ -518,7 +536,7 @@ export async function sendIntermediationReportEmail(
       Relatório de intermediações — ${monthLabel}
     </h1>
     <p style="margin:0;font-size:15px;color:#475569;line-height:1.6;">
-      Olá, ${firstName}! Segue em anexo o relatório de intermediações de
+      Olá, ${escapeHtml(firstName)}! Segue em anexo o relatório de intermediações de
       <strong>${monthLabel}</strong>, para envio à Contabilizei (Relatório de
       Intermediações mensal — sustenta que os 85% repassados ao proprietário
       não integram a receita da ShareO).
@@ -557,7 +575,7 @@ export async function sendVerificationEmail(
       Confirme seu e-mail
     </h1>
     <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
-      Olá, ${firstName}! Clique no botão abaixo para confirmar seu endereço de e-mail.
+      Olá, ${escapeHtml(firstName)}! Clique no botão abaixo para confirmar seu endereço de e-mail.
       O link expira em <strong>48 horas</strong>.
     </p>
 
@@ -608,7 +626,7 @@ export async function sendReminderStartTomorrow(
       ${role === "borrower" ? "🗓 Sua reserva começa amanhã!" : "🗓 Entrega de item amanhã!"}
     </h1>
     <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
-      Olá, ${firstName}! O aluguel de <strong>${itemTitle}</strong> começa em
+      Olá, ${escapeHtml(firstName)}! O aluguel de <strong>${escapeHtml(itemTitle)}</strong> começa em
       <strong>${fmtDate(startDate)}</strong>.
       ${role === "borrower"
         ? "Combine os detalhes de retirada com o proprietário."
@@ -647,7 +665,7 @@ export async function sendReminderReturnTomorrow(
       ⏰ Devolução amanhã!
     </h1>
     <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
-      Olá, ${firstName}! O prazo de devolução de <strong>${itemTitle}</strong> é
+      Olá, ${escapeHtml(firstName)}! O prazo de devolução de <strong>${escapeHtml(itemTitle)}</strong> é
       <strong>${fmtDate(endDate)}</strong>. Combine com o proprietário para evitar taxa de atraso.
     </p>
     <div style="text-align:center;">${ctaButton(url, "Ver reserva")}</div>
@@ -736,7 +754,7 @@ function idVerifiedHtml(firstName: string) {
       ✅ Identidade verificada!
     </h1>
     <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
-      Olá, ${firstName}! Sua identidade foi verificada com sucesso pela equipe ShareO.
+      Olá, ${escapeHtml(firstName)}! Sua identidade foi verificada com sucesso pela equipe ShareO.
       Agora você pode alugar e anunciar itens com o selo de verificação na sua conta.
     </p>
 
@@ -758,12 +776,12 @@ function idRejectedHtml(firstName: string, reason: string) {
       Verificação não aprovada
     </h1>
     <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
-      Olá, ${firstName}! Infelizmente não foi possível verificar sua identidade com os documentos enviados.
+      Olá, ${escapeHtml(firstName)}! Infelizmente não foi possível verificar sua identidade com os documentos enviados.
     </p>
 
     <div style="margin-bottom:24px;padding:16px 20px;background:#FFF7ED;border-radius:8px;border:1px solid #FED7AA;">
       <p style="margin:0 0 4px;font-size:12px;font-weight:700;color:#C2410C;text-transform:uppercase;letter-spacing:0.5px;">Motivo</p>
-      <p style="margin:0;font-size:14px;color:#C2410C;">${reason}</p>
+      <p style="margin:0;font-size:14px;color:#C2410C;">${escapeHtml(reason)}</p>
     </div>
 
     <p style="margin:0 0 20px;font-size:14px;color:#475569;line-height:1.6;">
@@ -822,7 +840,7 @@ export async function sendIdRejectedEmail(to: string, name: string, reason: stri
 export function founderWelcomeHtml(firstName: string, unsubUrl: string) {
   return baseLayout(`
     <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
-      ${firstName ? `Olá, ${firstName}!` : "Olá!"}
+      ${firstName ? `Olá, ${escapeHtml(firstName)}!` : "Olá!"}
     </h1>
     <p style="margin:0 0 16px;font-size:18px;font-weight:700;color:#003366;">
       Você está na lista! 🎉
@@ -882,7 +900,7 @@ export async function sendFounderWelcomeEmail(to: string, name: string): Promise
 function founderInviteHtml(firstName: string, setPasswordUrl: string) {
   return baseLayout(`
     <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
-      Bem-vindo ao piloto do ShareO, ${firstName}!
+      Bem-vindo ao piloto do ShareO, ${escapeHtml(firstName)}!
     </h1>
     <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
       Sua vaga no piloto está confirmada. Para começar a explorar, defina sua senha de acesso
@@ -956,8 +974,8 @@ export async function sendReturnInProgressEmail(
       🔄 Devolução em andamento
     </h1>
     <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
-      Olá, ${firstName}! <strong>${borrowerFirst}</strong> iniciou a devolução de
-      <strong>${itemTitle}</strong>. Confira o item e confirme o recebimento para concluir a locação.
+      Olá, ${escapeHtml(firstName)}! <strong>${escapeHtml(borrowerFirst)}</strong> iniciou a devolução de
+      <strong>${escapeHtml(itemTitle)}</strong>. Confira o item e confirme o recebimento para concluir a locação.
     </p>
     <div style="text-align:center;">${ctaButton(bookingUrl, "Confirmar recebimento")}</div>
     <p style="margin:20px 0 0;font-size:13px;color:#64748B;line-height:1.6;">
@@ -990,9 +1008,9 @@ export async function sendReturnCompletedEmail(
       ✅ Devolução confirmada
     </h1>
     <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
-      Olá, ${firstName}! ${role === "owner"
-        ? `Você confirmou o recebimento de <strong>${itemTitle}</strong>. A locação está concluída.`
-        : `O proprietário confirmou o recebimento de <strong>${itemTitle}</strong>. A locação está concluída.`}
+      Olá, ${escapeHtml(firstName)}! ${role === "owner"
+        ? `Você confirmou o recebimento de <strong>${escapeHtml(itemTitle)}</strong>. A locação está concluída.`
+        : `O proprietário confirmou o recebimento de <strong>${escapeHtml(itemTitle)}</strong>. A locação está concluída.`}
       ${role === "borrower" ? " Que tal avaliar a experiência?" : ""}
     </p>
     <div style="text-align:center;">${ctaButton(url, "Ver reserva")}</div>
@@ -1029,7 +1047,7 @@ export async function sendReminderOverdue(
       🚨 Item em atraso — ${daysLate} dia${daysLate > 1 ? "s" : ""}
     </h1>
     <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
-      Olá, ${firstName}! O prazo de devolução de <strong>${itemTitle}</strong> era
+      Olá, ${escapeHtml(firstName)}! O prazo de devolução de <strong>${escapeHtml(itemTitle)}</strong> era
       <strong>${fmtDate(endDate)}</strong>. ${role === "borrower"
         ? `O item está em atraso há <strong>${daysLate} dia${daysLate > 1 ? "s" : ""}</strong>. Taxa de atraso estimada: <strong>${lateFee}</strong>.`
         : `O locatário ainda não devolveu o item (${daysLate} dia${daysLate > 1 ? "s" : ""} de atraso). Taxa de atraso estimada: <strong>${lateFee}</strong>.`}

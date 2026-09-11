@@ -6,6 +6,7 @@ import { z } from "zod"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { invalidateUserSessions } from "@/lib/redis-admin-blocklist"
 import { logAccess, extractClientIp } from "@/lib/access-log"
+import { hashToken } from "@/lib/crypto"
 
 const Schema = z.object({
   token:    z.string().min(1),
@@ -43,7 +44,10 @@ export async function POST(req: NextRequest) {
 
     const { token, password } = parsed.data
 
-    const record = await prisma.passwordResetToken.findUnique({ where: { token } })
+    // SEC-MED-01 — o banco guarda hashToken(token), não o token cru (ver
+    // forgot-password/route.ts). Hashear de novo aqui pra comparar.
+    const hashedToken = hashToken(token)
+    const record = await prisma.passwordResetToken.findUnique({ where: { token: hashedToken } })
 
     if (!record) {
       return NextResponse.json(
@@ -53,7 +57,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (record.expiresAt < new Date()) {
-      await prisma.passwordResetToken.delete({ where: { token } })
+      await prisma.passwordResetToken.delete({ where: { token: hashedToken } })
       return NextResponse.json(
         { error: { code: "EXPIRED_TOKEN", message: "Este link expirou. Solicite um novo." } },
         { status: 400 },
@@ -75,7 +79,7 @@ export async function POST(req: NextRequest) {
     const passwordHash = await bcrypt.hash(password, 12)
     await prisma.$transaction([
       prisma.user.update({ where: { id: user.id }, data: { passwordHash } }),
-      prisma.passwordResetToken.delete({ where: { token } }),
+      prisma.passwordResetToken.delete({ where: { token: hashedToken } }),
     ])
 
     // SEC-CRIT-04 / GAP-CRIT-04b: reset por link também invalida sessões anteriores

@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
+import { stripHtml } from "@/lib/sanitize"
 import { z } from "zod"
 
 const MessageSchema = z.object({
@@ -10,14 +11,6 @@ const MessageSchema = z.object({
 }).refine((d) => d.content ?? d.body, {
   message: "Mensagem não pode ser vazia",
 })
-
-// Remove dangerous tag blocks entirely (including inner content), then strips remaining tags.
-function stripHtml(input: string): string {
-  return input
-    .replace(/<(script|style|iframe|object|embed|svg|math)\b[^>]*>[\s\S]*?<\/\1>/gi, "")
-    .replace(/<[^>]*>/g, "")
-    .trim()
-}
 
 type Params = { params: Promise<{ id: string }> }
 

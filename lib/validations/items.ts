@@ -1,6 +1,7 @@
 import { z } from "zod"
 import { MAX_ITEM_VALUE_CENTS } from "@/lib/platform-config"
 import { formatPriceShort } from "@/utils/format"
+import { stripHtml } from "@/lib/sanitize"
 
 const BR_STATES = [
   "AC","AL","AM","AP","BA","CE","DF","ES","GO","MA",
@@ -9,8 +10,8 @@ const BR_STATES = [
 ] as const
 
 export const CreateItemSchema = z.object({
-  title:         z.string().min(5, "Título: mínimo 5 caracteres").max(120, "Título muito longo"),
-  description:   z.string().min(20, "Descrição: mínimo 20 caracteres").max(2000, "Descrição muito longa"),
+  title:         z.string().min(5, "Título: mínimo 5 caracteres").max(120, "Título muito longo").transform(stripHtml),
+  description:   z.string().min(20, "Descrição: mínimo 20 caracteres").max(2000, "Descrição muito longa").transform(stripHtml),
   categoryId:    z.string().min(1, "Selecione uma categoria"),
   condition:     z.enum(["NEW", "EXCELLENT", "GOOD", "FAIR"], {
     errorMap: () => ({ message: "Estado de conservação inválido" }),
