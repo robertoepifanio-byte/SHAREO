@@ -16,7 +16,7 @@ import { getLateFeeMultiplier, calcLateFee } from "@/lib/platform-config"
 import { getStripe } from "@/lib/stripe"
 import {
   emitirCobrancaTaxaAtraso, precisaCobrar, diasDeAtraso, diasParaCalculo,
-  houveAtraso, TETO_DIAS_CALCULO_AUTOMATICO,
+  houveAtraso, taxaDeAtrasoQuitada, TETO_DIAS_CALCULO_AUTOMATICO,
 } from "@/lib/lateFee"
 
 export const runtime = "nodejs"
@@ -240,20 +240,28 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Lembrete diário de atraso (independente de já ter cobrado)
-    try {
-      await sendReminderOverdue(
-        b.borrower.email, b.borrower.name,
-        b.owner.email,    b.owner.name,
-        itemsLabel,       b.id,
-        b.endDate,        daysLate,
-        b.dailyPrice,     lateFeeMultiplier,
-      )
-      sent.push(`overdue:${b.id}`)
-    } catch (e) {
-      console.error("[cron] overdue reminder", b.id, e)
-      failed.push(`overdue:${b.id}`)
-      throw e
+    // Lembrete diário de atraso (independente de já ter cobrado — mas NÃO
+    // independente de já ter sido PAGO: `precisaCobrar`, acima, já para de
+    // gerar cobrança nova quando `taxaDeAtrasoQuitada`, mas o webhook de
+    // pagamento não muda o `status` da reserva — ela continua ACTIVE e
+    // batendo nesta consulta todo dia enquanto o item não volta. Sem este
+    // gate, quem já pagou a multa seguia recebendo "🚨 pague a multa" a cada
+    // execução do cron, diariamente — achado de teste do Thiago, 13/09).
+    if (!taxaDeAtrasoQuitada(b)) {
+      try {
+        await sendReminderOverdue(
+          b.borrower.email, b.borrower.name,
+          b.owner.email,    b.owner.name,
+          itemsLabel,       b.id,
+          b.endDate,        daysLate,
+          b.dailyPrice,     lateFeeMultiplier,
+        )
+        sent.push(`overdue:${b.id}`)
+      } catch (e) {
+        console.error("[cron] overdue reminder", b.id, e)
+        failed.push(`overdue:${b.id}`)
+        throw e
+      }
     }
   })
 
