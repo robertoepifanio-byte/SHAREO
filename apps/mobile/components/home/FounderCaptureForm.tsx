@@ -301,19 +301,6 @@ export function FounderCaptureForm({
     )
   }
 
-  // ── error-duplicate ────────────────────────────────────────────────────────
-  if (state === "error-duplicate") {
-    return (
-      <View style={s.alertSuccess} accessibilityRole="alert">
-        <Text style={s.alertSuccessText}>
-          <Text style={s.alertStrong}>Este e-mail já estava na lista.</Text>
-          {"\n"}
-          {"Não criamos um cadastro novo. Você será avisado antes da abertura dos cadastros na sua cidade."}
-        </Text>
-      </View>
-    )
-  }
-
   // ── collapsed ──────────────────────────────────────────────────────────────
   if (state === "collapsed") {
     return (
@@ -389,6 +376,21 @@ export function FounderCaptureForm({
         style={inputStyle()}
         accessibilityLabel="E-mail"
       />
+
+      {/* AVISO, não confirmação — a diferença precisa ser visível. Antes este
+          aviso trocava a tela inteira pelo formulário (e usava cores de
+          sucesso); fica logo abaixo do campo de e-mail, mantendo o resto do
+          formulário visível. Fonte: components/home/FounderCaptureForm.tsx
+          (achado do Thiago em 13/09 na cópia da campanha). */}
+      {state === "error-duplicate" && (
+        <View style={s.duplicateAlert} accessibilityRole="alert">
+          <Text style={s.duplicateAlertIcon}>⚠️</Text>
+          <Text style={[s.cepAviso, s.duplicateAlertTextExtra]}>
+            <Text style={s.duplicateAlertStrong}>Este e-mail já estava na lista.</Text>
+            {" Não criamos um cadastro novo. Você será avisado antes da abertura dos cadastros na sua cidade."}
+          </Text>
+        </View>
+      )}
 
       {/* WhatsApp (opcional) */}
       <View>
@@ -620,14 +622,14 @@ const s = StyleSheet.create({
   waText: { fontSize: 14, fontWeight: "600", color: "#FFFFFF" },
 
   // Alertas
-  alertSuccess: {
-    borderRadius: 8, borderWidth: 1, borderColor: "rgba(89,198,134,0.30)",
-    backgroundColor: "rgba(89,198,134,0.10)",
-    paddingHorizontal: 16, paddingVertical: 12,
+  // E-mail duplicado — reusa a cor âmbar de `cepAviso` (não vermelho nem
+  // verde: é aviso, não erro de rede nem confirmação de sucesso).
+  duplicateAlert: {
+    marginTop: 6, flexDirection: "row", alignItems: "flex-start", gap: 6,
   },
-  alertSuccessText: { fontSize: 14, color: "#59C686", textAlign: "center" },
-  // <strong> do site — o aviso tem duas frases e a primeira é a que importa.
-  alertStrong: { fontWeight: "600" },
+  duplicateAlertIcon: { fontSize: 12, lineHeight: 17 },
+  duplicateAlertTextExtra: { flex: 1, textAlign: "left" },
+  duplicateAlertStrong: { fontWeight: "600" },
   alertError: {
     borderRadius: 8, borderWidth: 1, borderColor: "rgba(248,113,113,0.30)",
     backgroundColor: "rgba(248,113,113,0.10)",

@@ -261,31 +261,6 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
     )
   }
 
-  if (state === "error-duplicate") {
-    /*
-      Este bloco é AVISO, não confirmação — e a diferença precisa ser visível.
-
-      Antes ele usava as mesmas cores de sucesso (borda accent, texto success) e
-      dizia só "Você já está na lista!". Quem reenviava o formulário lia como
-      "cadastrado com sucesso" e concluía que tinha criado um segundo registro
-      (relatado pelo fundador em 12/08). Nada é criado: o e-mail é UNIQUE e a API
-      recusa com 409 antes de escrever.
-    */
-    return (
-      <div className="mx-auto max-w-[400px]">
-        <div
-          role="alert"
-          className="rounded-lg border border-border bg-white/10 px-4 py-3 text-center text-sm text-white"
-        >
-          <strong className="font-semibold">Este e-mail já estava na lista.</strong>
-          <br />
-          Não criamos um cadastro novo. Você será avisado antes da abertura dos
-          cadastros na sua cidade.
-        </div>
-      </div>
-    )
-  }
-
   if (state === "collapsed") {
     return (
       <button
@@ -390,6 +365,27 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
           disabled={isLoading}
           className={inputCls}
         />
+        {/*
+          AVISO, não confirmação — a diferença precisa ser visível. Antes este
+          bloco usava as mesmas cores de sucesso e dizia só "Você já está na
+          lista!"; quem reenviava lia como "cadastrado com sucesso" e concluía
+          que tinha criado um segundo registro (relatado pelo fundador em
+          12/08). Nada é criado: o e-mail é UNIQUE e a API recusa com 409 antes
+          de escrever. Fica logo abaixo do campo de e-mail (não substitui o
+          formulário inteiro) — achado do Thiago em 13/09 na cópia da campanha:
+          a versão antiga trocava a tela toda por um aviso solto, longe do
+          campo que causou o 409, e sem nenhum destaque visual de alerta.
+        */}
+        {state === "error-duplicate" && (
+          <p role="alert" className="mt-1.5 flex items-start gap-1.5 text-left text-xs text-amber-200">
+            <span aria-hidden="true">⚠️</span>
+            <span>
+              <strong className="font-semibold">Este e-mail já estava na lista.</strong>{" "}
+              Não criamos um cadastro novo. Você será avisado antes da abertura dos
+              cadastros na sua cidade.
+            </span>
+          </p>
+        )}
       </div>
 
       <div>
