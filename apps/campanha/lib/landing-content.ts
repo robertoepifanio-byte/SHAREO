@@ -274,5 +274,5 @@ export const FAQ = [
 export const ARTE = {
   hero: true,
   lados: true,
-  cidade: false,
+  cidade: true,
 } as const

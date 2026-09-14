@@ -75,27 +75,33 @@ async function gerar(fonte, larguras, prefixo) {
  * com a fonte do sistema e são traduzíveis e indexáveis. Os PNGs de origem
  * seguem em assets-fonte/ caso a arte volte a ser usada em outro canal.
  *
- * As artes abaixo ainda não foram entregues — `gerar()` pula o que não existe.
- * Quando chegarem:
+ * As quatro artes abaixo foram entregues em 14/09/2026. `gerar()` pula o que não
+ * existir, então o script continua rodando se alguma for removida. Para trocar
+ * ou acrescentar uma arte:
  *
- *   1. colocar os PNGs em assets-fonte/ com exatamente estes nomes;
+ *   1. colocar o PNG em assets-fonte/ com exatamente o nome usado abaixo;
  *   2. conferir se a maior largura pedida aqui NÃO passa da largura nativa da
  *      arte (`withoutEnlargement` não faz upscale, então pedir mais só geraria
  *      um arquivo idêntico com nome mentiroso — ajuste o número se preciso);
  *   3. rodar este script de dentro de apps/campanha;
  *   4. ajustar a constante `ASPECTO` do componente correspondente para a
- *      proporção real informada no log — ANTES de virar as flags;
- *   5. virar `ARTE.heroPronta` / `ARTE.fotosProntas` em lib/landing-content.ts.
+ *      proporção real informada no log — ANTES de virar a flag;
+ *   5. virar a flag da arte em `ARTE`, em lib/landing-content.ts.
  */
 // Larguras SEMPRE ≤ a nativa da arte (`withoutEnlargement` não faz upscale;
 // pedir mais só geraria um arquivo idêntico com nome mentiroso):
-//   hero 1888×833 · lados ~1704×920 · cidade ainda não entregue.
+//   hero 1888×833 · lados ~1704×920 · cidade 2172×182.
+//
+// ⚠️ A cidade em assets-fonte/ JÁ ESTÁ RECORTADA. O PNG entregue tinha 2172×724
+// com a foto ocupando só y=271..452 — o resto era branco, que sobre o navy da
+// seção viraria uma faixa lavada. Se a arte for reentregue, conferir as bordas
+// antes de substituir.
 // O hero tem uma orientação só — não há art direction a fazer, então o
 // componente usa <img srcSet> em vez de <picture>.
 const he = await gerar("hero-campanha.png",     [944, 1888], "hero")
 const lp = await gerar("lado-proprietario.png", [640, 1280], "lado-proprietario")
 const ll = await gerar("lado-locatario.png",    [640, 1280], "lado-locatario")
-const cd = await gerar("cidade-fechamento.png", [640, 1280], "cidade")
+const cd = await gerar("cidade-fechamento.png", [1280, 2172], "cidade")
 
 const totalNovo = he + lp + ll + cd
 console.log(

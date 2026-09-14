@@ -24,19 +24,39 @@ export function Fechamento() {
         className="relative isolate overflow-hidden"
       >
         {/*
-          Imagem de fundo: `absolute inset-0 -z-10`, fora do fluxo. Por isso não
-          há placeholder nem proporção a reservar — a caixa da seção é definida
-          pelo texto, e a foto entrando depois não move nada.
+          A arte é uma panorâmica muito larga e baixa (2172×182). Esticá-la para
+          cobrir a seção inteira com `object-cover` mostraria só o miolo — a
+          moldura recortaria mais da metade da orla. Ancorada na base, em largura
+          total e na proporção nativa, ela aparece inteira e funciona como linha
+          de horizonte: o céu dela é navy e encosta no fundo da seção sem emenda.
+
+          Fora do fluxo (`absolute`), então não há caixa a reservar nem CLS a
+          evitar — a altura da seção vem do texto.
         */}
         {ARTE.cidade && (
           <img
             src="/campanha/cidade-1280.webp"
-            srcSet="/campanha/cidade-640.webp 640w, /campanha/cidade-1280.webp 1280w"
+            srcSet="/campanha/cidade-1280.webp 1280w, /campanha/cidade-2172.webp 2172w"
             sizes="100vw"
             alt=""
             loading="lazy"
             decoding="async"
-            className="absolute inset-0 -z-10 h-full w-full object-cover opacity-40"
+            className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 w-full opacity-60"
+            /*
+              Sem a máscara, o topo da faixa encosta no fundo da seção com uma
+              linha horizontal dura: medido, o topo da arte é rgb(62,105,160) e
+              o navy-deep é rgb(0,31,64) — 58 níveis de diferença no azul, que
+              lê como falha de montagem. O degradê dissolve o céu da foto no
+              fundo da seção e deixa só a orla iluminada.
+
+              Vai em `style` porque é um efeito pontual: criar utilitário de
+              máscara obrigaria editar o tailwind.config, que é cópia
+              byte-idêntica da raiz e não deve divergir por causa de uma seção.
+            */
+            style={{
+              maskImage: "linear-gradient(to bottom, transparent 0%, #000 55%)",
+              WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, #000 55%)",
+            }}
           />
         )}
 
