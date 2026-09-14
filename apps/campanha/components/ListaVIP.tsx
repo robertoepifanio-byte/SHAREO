@@ -99,9 +99,9 @@ export async function ListaVIP({ as = "h2", hideBadge = false }: Props = {}) {
               </svg>
             </div>
             <div>
-              <div className="mb-1 text-sm font-bold text-white">Condições especiais</div>
+              <div className="mb-1 text-sm font-bold text-white">Selo de Fundador</div>
               <div className="text-xs leading-snug text-white/70">
-                Os primeiros anunciantes terão reconhecimento exclusivo — detalhes no lançamento
+                Um selo exclusivo no seu perfil, visível desde o primeiro dia — reconhecimento que só os primeiros da lista têm
               </div>
             </div>
           </div>

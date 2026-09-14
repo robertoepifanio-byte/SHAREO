@@ -21,6 +21,14 @@ export const SHAREO_API = (process.env.NEXT_PUBLIC_SHAREO_API_URL ?? "").replace
 /** Base do site do ShareO, para links legais (fonte única lá, não duplicada aqui). */
 export const SHAREO_SITE = (process.env.NEXT_PUBLIC_SHAREO_SITE_URL ?? SHAREO_API).replace(/\/$/, "")
 
+/**
+ * Âncora do formulário de captação — destino do CTA "Entrar na lista" do
+ * banner (CampaignBanner.tsx) e id do container em FounderCaptureForm.tsx.
+ * Constante única para os dois lados não dependerem de uma string igual por
+ * coincidência.
+ */
+export const FOUNDER_FORM_ANCHOR_ID = "founder-form"
+
 export const ROTAS = {
   leads: `${SHAREO_API}/api/founders/leads`,
   stats: `${SHAREO_API}/api/founders/stats`,

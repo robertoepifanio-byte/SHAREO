@@ -1,3 +1,5 @@
+import { FOUNDER_FORM_ANCHOR_ID } from "@/lib/config"
+
 /**
  * Banner da campanha nacional de pré-lançamento.
  *
@@ -78,8 +80,11 @@ export function CampaignBanner() {
         abaixo da dobra. Aqui ele aparece por volta de 650px, dentro da primeira
         tela da maioria dos aparelhos.
 
-        Âncora pura, sem JS: o destino #lista-vip é uma seção real, então o link
-        funciona mesmo antes da hidratação e para quem navega por teclado.
+        Âncora pura, sem JS: o destino (FOUNDER_FORM_ANCHOR_ID, lib/config.ts)
+        é o formulário em si, não o topo da seção — pular os 4 cards de
+        benefício economiza ~360px de scroll no mobile, onde ele já cai fora
+        da primeira tela. Funciona mesmo antes da hidratação e para quem
+        navega por teclado.
       */}
       {/*
         Três destinos, uma hierarquia só: "Entrar na lista" é a conversão da
@@ -115,7 +120,7 @@ export function CampaignBanner() {
         </a>
 
         <a
-          href="#lista-vip"
+          href={`#${FOUNDER_FORM_ANCHOR_ID}`}
           className="order-first inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border border-transparent bg-brand px-8 py-3 sm:order-none text-sm font-semibold uppercase tracking-[0.4px] text-white transition-colors hover:bg-brand-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-navy-deep sm:w-auto"
         >
           Entrar na lista

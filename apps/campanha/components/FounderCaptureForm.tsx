@@ -6,7 +6,7 @@ import { maskCEP, maskPhone } from "@/lib/forms/masks"
 import { fetchAddressByCep } from "@/lib/forms/address"
 import { trackEvent } from "@/components/analytics/GoogleAnalytics"
 import { readAttribution, type Attribution } from "@/lib/founders-attribution"
-import { ROTAS } from "@/lib/config"
+import { ROTAS, FOUNDER_FORM_ANCHOR_ID } from "@/lib/config"
 import { trackFunnel } from "@/lib/track-funnel"
 import NeonBorder from "@/components/NeonBorder"
 
@@ -325,7 +325,12 @@ export function FounderCaptureForm({ defaultCity, defaultUf, campaign, startExpa
     lgpdConsent
 
   return (
-    <div className="relative mx-auto max-w-[400px] p-2">
+    // id + scroll-mt-16 = destino do CTA "Entrar na lista" do banner, pulando
+    // os cards de benefício. scroll-mt-16 casa com a altura do cabeçalho
+    // sticky (h-16), mesma convenção do #lista-vip em ListaVIP.tsx. O id vem
+    // de FOUNDER_FORM_ANCHOR_ID (lib/config.ts) para não depender de duas
+    // strings iguais por coincidência entre este arquivo e CampaignBanner.tsx.
+    <div id={FOUNDER_FORM_ANCHOR_ID} className="relative mx-auto max-w-[400px] scroll-mt-16 p-2">
       {/* Borda neon decorativa — puramente visual, não deve interferir na
           navegação por teclado nem no toque em mobile. */}
       <div className="pointer-events-none absolute inset-0" aria-hidden="true">
