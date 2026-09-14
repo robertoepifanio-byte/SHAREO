@@ -87,13 +87,17 @@ async function gerar(fonte, larguras, prefixo) {
  *      proporção real informada no log — ANTES de virar as flags;
  *   5. virar `ARTE.heroPronta` / `ARTE.fotosProntas` em lib/landing-content.ts.
  */
-const hh = await gerar("hero-campanha-horizontal.png", [1280, 1983], "hero-h")
-const hv = await gerar("hero-campanha-vertical.png",   [768, 1024],  "hero-v")
-const lp = await gerar("lado-proprietario.png",        [640, 1280],  "lado-proprietario")
-const ll = await gerar("lado-locatario.png",           [640, 1280],  "lado-locatario")
-const cd = await gerar("cidade-fechamento.png",        [640, 1280],  "cidade")
+// Larguras SEMPRE ≤ a nativa da arte (`withoutEnlargement` não faz upscale;
+// pedir mais só geraria um arquivo idêntico com nome mentiroso):
+//   hero 1888×833 · lados ~1704×920 · cidade ainda não entregue.
+// O hero tem uma orientação só — não há art direction a fazer, então o
+// componente usa <img srcSet> em vez de <picture>.
+const he = await gerar("hero-campanha.png",     [944, 1888], "hero")
+const lp = await gerar("lado-proprietario.png", [640, 1280], "lado-proprietario")
+const ll = await gerar("lado-locatario.png",    [640, 1280], "lado-locatario")
+const cd = await gerar("cidade-fechamento.png", [640, 1280], "cidade")
 
-const totalNovo = hh + hv + lp + ll + cd
+const totalNovo = he + lp + ll + cd
 console.log(
   totalNovo > 0
     ? `\n🎉 Artes do redesenho geradas. Total: ${totalNovo} KB`

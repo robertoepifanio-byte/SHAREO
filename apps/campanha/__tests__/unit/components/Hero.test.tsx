@@ -29,10 +29,24 @@ describe("Hero", () => {
     expect(cta).toHaveAttribute("href", CTA_HREF)
   })
 
-  it("a ilustração é decorativa — o texto ao lado já diz tudo que ela diria", () => {
+  /**
+   * A arte do hero tem texto embutido (o fluxo "furadeira parada → ShareO →
+   * renda extra" e a pergunta manuscrita), então `alt=""` deixaria quem usa
+   * leitor de tela sem acesso ao que ela mostra. Mas o alt também não pode
+   * transcrever as frases: elas repetem o H1 e o parágrafo ao lado quase
+   * palavra por palavra, e reler isso é ruído, não acessibilidade.
+   */
+  it("a ilustração descreve o que mostra, sem repetir a headline", () => {
     const { container } = render(<Hero />)
-    for (const img of container.querySelectorAll("img")) {
-      expect(img.getAttribute("alt")).toBe("")
+    const imagens = [...container.querySelectorAll("img")]
+
+    expect(imagens.length).toBeGreaterThan(0)
+
+    for (const img of imagens) {
+      const alt = img.getAttribute("alt") ?? ""
+      expect(alt.length).toBeGreaterThan(20)
+      expect(alt).not.toMatch(/virar dinheiro/i)
+      expect(alt).not.toMatch(/quase não usa/i)
     }
   })
 })

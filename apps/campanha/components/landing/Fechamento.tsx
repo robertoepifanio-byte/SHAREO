@@ -28,7 +28,7 @@ export function Fechamento() {
           há placeholder nem proporção a reservar — a caixa da seção é definida
           pelo texto, e a foto entrando depois não move nada.
         */}
-        {ARTE.fotosProntas && (
+        {ARTE.cidade && (
           <img
             src="/campanha/cidade-1280.webp"
             srcSet="/campanha/cidade-640.webp 640w, /campanha/cidade-1280.webp 1280w"

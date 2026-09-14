@@ -259,14 +259,20 @@ export const FAQ = [
 ] as const
 
 /**
- * Artes que o fundador vai entregar. Enquanto forem `false`, os componentes
- * renderizam ArtePlaceholder — uma caixa com a proporção EXATA da arte final,
- * para o CLS não mudar quando a imagem entrar.
+ * Quais artes já foram entregues.
  *
- * Passo a passo para ligar: ver a seção "Artes" no plano do redesign e o
- * cabeçalho de scripts/generate-campaign-banners.mjs.
+ * Uma flag POR ARTE, não uma por grupo: elas chegam em momentos diferentes, e
+ * uma flag compartilhada faria a primeira entrega ligar também o `<img>` de uma
+ * arte inexistente — 404 silencioso, que ninguém vê porque a imagem é
+ * decorativa. Enquanto `false`, entra o `ArtePlaceholder` (ou nada, quando a
+ * arte é um fundo fora do fluxo), sempre reservando a mesma caixa para o CLS
+ * não mudar na troca.
+ *
+ * Passo a passo para gerar e ligar: rodapé de
+ * scripts/generate-campaign-banners.mjs.
  */
 export const ARTE = {
-  heroPronta: false,
-  fotosProntas: false,
+  hero: true,
+  lados: true,
+  cidade: false,
 } as const

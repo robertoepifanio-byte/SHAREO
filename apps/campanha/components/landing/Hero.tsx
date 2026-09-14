@@ -18,14 +18,31 @@ import { ARTE, CTA_MICROCOPY, HERO_BENEFICIOS } from "@/lib/landing-content"
  * DEPOIS do CTA — a ordem do DOM é a ordem de leitura, e o botão precisa caber
  * na primeira tela.
  *
- * ⚠️ Enquanto `ARTE.heroPronta` for `false`, entra o placeholder com a mesma
+ * ⚠️ Enquanto `ARTE.hero` for `false`, entra o placeholder com a mesma
  * proporção da arte final. Ver o passo a passo em lib/landing-content.ts.
  */
 /**
- * Proporção da ilustração, declarada UMA vez — o placeholder e a arte final
- * precisam reservar a mesma caixa, senão a troca move o layout (CLS).
+ * Proporção NATIVA da arte (1888×833), declarada UMA vez — o placeholder e a
+ * imagem final precisam reservar a mesma caixa, senão a troca move o layout.
+ *
+ * Usar a proporção da própria arte, e não uma escolhida por nós, é o que
+ * dispensa `object-cover`: em qualquer largura a composição aparece inteira.
+ * Com `cover` numa caixa mais alta, o corte comeria o cartão "furadeira parada
+ * → ShareO → renda extra" na borda direita, que é o argumento visual da peça.
  */
-const ASPECTO = "aspect-[4/3] md:aspect-[16/10]"
+const ASPECTO = "aspect-[1888/833]"
+
+/**
+ * A arte traz texto embutido — o fluxo "furadeira parada → ShareO → renda
+ * extra" e a pergunta manuscrita. O alt descreve o que está DESENHADO em vez de
+ * transcrever as frases: elas repetem, quase palavra por palavra, o H1 e o
+ * parágrafo ao lado, e reler isso seria redundância para quem usa leitor de
+ * tela.
+ */
+const ALT_HERO =
+  "Furadeira, câmera, caixa de som, projetor, bicicleta, escada e um carro " +
+  "em volta de uma seta circular, ilustrando o caminho de um item parado até " +
+  "virar renda extra."
 
 export function Hero() {
   return (
@@ -79,29 +96,21 @@ export function Hero() {
           `order-last` no mobile não é necessário — a arte já está depois do
           bloco de texto no DOM. Em xl o grid a coloca à direita naturalmente.
         */}
-        {ARTE.heroPronta ? (
-          <picture>
-            <source
-              media="(min-width: 768px)"
-              srcSet="/campanha/hero-h-1280.webp 1280w, /campanha/hero-h-1983.webp 1983w"
-              sizes="(min-width: 1280px) 600px, 100vw"
-            />
-            <img
-              src="/campanha/hero-v-1024.webp"
-              srcSet="/campanha/hero-v-768.webp 768w, /campanha/hero-v-1024.webp 1024w"
-              sizes="100vw"
-              alt=""
-              // `eager` sim (é a ilustração do topo, não pode ficar para o
-              // fim), mas SEM `fetchPriority="high"`: o hint vale para o <img>
-              // inteiro, não por <source>, e no mobile esta arte vem depois do
-              // CTA e é decorativa. Priorizá-la ali seria disputar banda com a
-              // fonte e o H1 — que é o LCP real no telefone, justamente o
-              // aparelho que a mídia paga atinge.
-              loading="eager"
-              decoding="async"
-              className={`w-full rounded-xl object-cover ${ASPECTO}`}
-            />
-          </picture>
+        {ARTE.hero ? (
+          <img
+            src="/campanha/hero-944.webp"
+            srcSet="/campanha/hero-944.webp 944w, /campanha/hero-1888.webp 1888w"
+            sizes="(min-width: 1280px) 620px, 100vw"
+            alt={ALT_HERO}
+            // `eager` sim (é a ilustração do topo, não pode ficar para o fim),
+            // mas SEM `fetchPriority="high"`: no mobile esta arte vem depois do
+            // CTA, e priorizá-la seria disputar banda com a fonte e o H1 — que
+            // é o LCP real no telefone, justamente o aparelho que a mídia paga
+            // atinge.
+            loading="eager"
+            decoding="async"
+            className={`w-full rounded-xl ${ASPECTO}`}
+          />
         ) : (
           <ArtePlaceholder
             aspecto={ASPECTO}

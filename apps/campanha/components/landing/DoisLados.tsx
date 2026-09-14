@@ -65,7 +65,7 @@ export function DoisLados() {
                   sozinho. `<picture>` só se paga quando há art direction —
                   composições diferentes por breakpoint, como no hero.
                 */}
-                {ARTE.fotosProntas ? (
+                {ARTE.lados ? (
                   <img
                     src={`/campanha/lado-${item.lado}-640.webp`}
                     srcSet={`/campanha/lado-${item.lado}-640.webp 640w, /campanha/lado-${item.lado}-1280.webp 1280w`}
