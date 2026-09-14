@@ -13,10 +13,9 @@ import { ARTE, CTA_MICROCOPY, HERO_BENEFICIOS } from "@/lib/landing-content"
  * traduzível nem indexável (WCAG 1.4.5) — e empurrava o primeiro campo do
  * formulário para ~1.400px de rolagem no mobile.
  *
- * Agora o H1 é texto. A imagem passa a ser ilustração de apoio: decorativa
- * (`alt=""`), porque tudo que ela dizia está escrito ao lado. No mobile ela vem
- * DEPOIS do CTA — a ordem do DOM é a ordem de leitura, e o botão precisa caber
- * na primeira tela.
+ * Agora o H1 é texto e a imagem é ilustração de apoio. No mobile ela vem DEPOIS
+ * do CTA — a ordem do DOM é a ordem de leitura, e o botão precisa caber na
+ * primeira tela.
  *
  * ⚠️ Enquanto `ARTE.hero` for `false`, entra o placeholder com a mesma
  * proporção da arte final. Ver o passo a passo em lib/landing-content.ts.
@@ -51,26 +50,33 @@ export function Hero() {
       aria-labelledby="hero-titulo"
       className="bg-gradient-to-br from-primary to-navy-deep px-5 py-12 sm:px-6 xl:py-16"
     >
-      <div className="mx-auto grid max-w-[1200px] items-center gap-10 xl:grid-cols-[1.05fr_1fr] xl:gap-12">
+      {/*
+        A arte é panorâmica (2,27:1) e o bloco de texto é alto. Dividir a largura
+        meio a meio deixava a arte com ~247px de altura contra ~500px de texto ao
+        lado — pequena, cercada de vazio. Dando a ela a coluna maior (e um
+        contêiner mais largo), ela cresce sem precisar de recorte, que comeria o
+        cartão da borda direita.
+      */}
+      <div className="mx-auto grid max-w-[1360px] items-center gap-10 xl:grid-cols-[minmax(0,0.62fr)_1fr]">
         <div>
           <PrelaunchBadge className="mb-5" />
 
           <h1
             id="hero-titulo"
-            className="mb-4 font-display text-[30px] font-extrabold leading-[1.15] text-white sm:text-[38px] xl:text-[48px]"
+            className="mb-3 font-display text-[30px] font-extrabold leading-[1.15] text-white sm:text-[38px] xl:text-[42px]"
           >
             Tem algo parado?
             <br />
             <span className="text-accent">Faça isso virar dinheiro.</span>
           </h1>
 
-          <p className="mb-7 max-w-[540px] text-[15px] leading-relaxed text-white/85 xl:text-base">
+          <p className="mb-6 max-w-[540px] text-[15px] leading-relaxed text-white/85 xl:text-base">
             O ShareO vai conectar pessoas que têm coisas sem uso com{" "}
             <span className="font-semibold text-accent">quem precisa delas</span> — perto de
             você, de forma simples e segura.
           </p>
 
-          <ul className="mb-8 grid gap-5 sm:grid-cols-3">
+          <ul className="mb-7 grid gap-5 sm:grid-cols-3">
             {HERO_BENEFICIOS.map((beneficio) => (
               <li key={beneficio.titulo} className="flex gap-3 sm:flex-col sm:gap-2">
                 <span
@@ -100,7 +106,7 @@ export function Hero() {
           <img
             src="/campanha/hero-944.webp"
             srcSet="/campanha/hero-944.webp 944w, /campanha/hero-1888.webp 1888w"
-            sizes="(min-width: 1280px) 620px, 100vw"
+            sizes="(min-width: 1280px) 800px, 100vw"
             alt={ALT_HERO}
             // `eager` sim (é a ilustração do topo, não pode ficar para o fim),
             // mas SEM `fetchPriority="high"`: no mobile esta arte vem depois do
