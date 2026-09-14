@@ -22,10 +22,10 @@ export const SHAREO_API = (process.env.NEXT_PUBLIC_SHAREO_API_URL ?? "").replace
 export const SHAREO_SITE = (process.env.NEXT_PUBLIC_SHAREO_SITE_URL ?? SHAREO_API).replace(/\/$/, "")
 
 /**
- * Âncora do formulário de captação — destino do CTA "Entrar na lista" do
- * banner (CampaignBanner.tsx) e id do container em FounderCaptureForm.tsx.
- * Constante única para os dois lados não dependerem de uma string igual por
- * coincidência.
+ * Âncora do formulário de captação — destino de TODOS os CTAs da landing
+ * (components/landing/CtaAncora.tsx) e id do container em
+ * FounderCaptureForm.tsx. Constante única para os dois lados não dependerem de
+ * uma string igual por coincidência.
  */
 export const FOUNDER_FORM_ANCHOR_ID = "founder-form"
 
