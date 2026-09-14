@@ -134,10 +134,9 @@ const DEFAULT_PAYOUT_WINDOW_DAYS = 3
  * 🪤 `getPayoutWindowDays()` aceita 0 (`v >= 0`), e nenhuma das cópias tratava
  * isso: sairia "fica retido por 0 dias" nos Termos.
  */
-export function formatPayoutWindow(days: number): string {
-  if (days <= 0) return "no mesmo dia"
-  return days === 1 ? "1 dia" : `${days} dias`
-}
+// Mora em @shareo/legal — a landing da campanha imprime a mesma janela nos
+// Termos e precisa da mesma grafia. Reexportado para os imports antigos.
+export { formatPayoutWindow } from "@shareo/legal"
 
 export async function getPayoutWindowDays(): Promise<number> {
   try {

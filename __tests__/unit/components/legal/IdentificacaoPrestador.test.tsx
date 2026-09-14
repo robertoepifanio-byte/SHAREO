@@ -60,7 +60,12 @@ describe("endereço da sede", () => {
   // código morto até o go-live e o caso "vazio" seria uma asserção vácua.
   const renderizarCom = (enderecoSede: string | null) => {
     jest.resetModules()
-    jest.doMock("@/lib/legal-config", () => ({
+    // 🪤 O mock é do módulo INTERNO do pacote, não do índice nem de
+    // @/lib/legal-config. LEGAL_ENTITY passou a morar em @shareo/legal, e o
+    // componente o lê de `./entidade` direto — mockar o índice (ou a
+    // reexportação da raiz) não intercepta esse import e o teste passaria a
+    // renderizar o endereço real, provando nada.
+    jest.doMock(path.join(RAIZ, "packages/legal/src/entidade.ts"), () => ({
       LEGAL_ENTITY: { ...LEGAL_ENTITY, enderecoSede },
     }))
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -68,7 +73,7 @@ describe("endereço da sede", () => {
     return render(<Componente />)
   }
 
-  afterEach(() => jest.dontMock("@/lib/legal-config"))
+  afterEach(() => jest.dontMock(path.join(RAIZ, "packages/legal/src/entidade.ts")))
 
   it("renderiza o endereço quando ele existe", () => {
     renderizarCom("Rua Exemplo, 100 — Pinheiros, São Paulo/SP, CEP 05000-000")
@@ -88,15 +93,37 @@ describe("endereço da sede", () => {
 
 describe("telas legais", () => {
   it.each([
-    "app/termos/page.tsx",
-    "app/privacidade/page.tsx",
-    "app/politicas/page.tsx",
+    // O texto dos três documentos web mora em @shareo/legal desde 09/2026 — é
+    // o mesmo componente que o marketplace e a landing da campanha renderizam,
+    // então é lá que a obrigação de identificar a PJ tem de estar cravada.
+    "packages/legal/src/TermosConteudo.tsx",
+    "packages/legal/src/PrivacidadeConteudo.tsx",
+    "packages/legal/src/PoliticasConteudo.tsx",
     // O app transcreve o site (apps/mobile/CLAUDE.md) — a obrigação legal não
     // some porque o usuário abriu pelo celular.
     "apps/mobile/app/termos.tsx",
     "apps/mobile/app/privacidade.tsx",
   ])("%s renderiza o bloco de identificação", (arquivo) => {
     expect(semComentarios(lerFonte(arquivo))).toMatch(/<IdentificacaoPrestador\b/)
+  })
+
+  /**
+   * 🪤 O teste acima prova que o COMPONENTE contém o bloco — afirmação que
+   * continua verdadeira mesmo se alguém apagar `<TermosConteudo />` da página e
+   * publicar /termos em branco. Desde que o texto saiu para @shareo/legal, a
+   * composição virou o elo frágil: nenhuma das seis páginas é renderizável em
+   * jest (Server Components async, banco, sessão), então ela também se verifica
+   * por fonte.
+   */
+  it.each([
+    ["app/termos/page.tsx", "TermosConteudo"],
+    ["app/privacidade/page.tsx", "PrivacidadeConteudo"],
+    ["app/politicas/page.tsx", "PoliticasConteudo"],
+    ["apps/campanha/app/termos/page.tsx", "TermosConteudo"],
+    ["apps/campanha/app/privacidade/page.tsx", "PrivacidadeConteudo"],
+    ["apps/campanha/app/politicas/page.tsx", "PoliticasConteudo"],
+  ])("%s compõe <%s />", (arquivo, componente) => {
+    expect(semComentarios(lerFonte(arquivo))).toMatch(new RegExp(`<${componente}\\b`))
   })
 })
 

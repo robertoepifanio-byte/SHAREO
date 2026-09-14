@@ -1,0 +1,441 @@
+import type { ReactNode } from "react"
+import { IdentificacaoPrestador } from "./IdentificacaoPrestador"
+
+/**
+ * Corpo das Políticas. Fonte única: renderizado pelo marketplace
+ * (app/politicas) e pela landing da campanha (apps/campanha/app/politicas).
+ */
+export function PoliticasConteudo({
+  atualizadoEm,
+  feeLabel,
+  maxLabel,
+  payoutLabel,
+  hrefCentralAjuda = null,
+}: {
+  /** Data por extenso da última revisão do documento. */
+  atualizadoEm: string
+  /** Taxa de serviço já formatada, ex. "15%". */
+  feeLabel: string
+  /** Teto por transação já formatado em reais. */
+  maxLabel: string
+  /** Janela de repasse já por extenso. */
+  payoutLabel: string
+  /**
+   * Destino da Central de Ajuda. `null` na campanha, onde a rota não existe:
+   * a frase continua inteira, só sem virar link. Melhor do que apontar para uma
+   * página que o visitante não consegue abrir.
+   */
+  hrefCentralAjuda?: string | null
+}) {
+  // Nome preservado para o corpo abaixo entrar verbatim do arquivo de origem.
+  const LAST_UPDATED = atualizadoEm
+
+  return (
+    <div className="mx-auto max-w-3xl">
+        <div className="mb-10">
+          <h1 className="font-display text-3xl font-bold text-primary">Políticas do ShareO</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Última atualização: {LAST_UPDATED}
+          </p>
+          <p className="mt-3 text-muted-foreground">
+            Estas políticas regem o uso da plataforma ShareO e o tratamento de dados pessoais de seus usuários.
+            Ao criar uma conta ou utilizar os serviços, você confirma que leu, compreendeu e concorda com estes termos.
+          </p>
+        </div>
+
+        {/* Índice */}
+        <nav aria-label="Índice das políticas" className="mb-10 rounded-xl border border-border bg-surface p-6">
+          <h2 className="mb-4 font-display text-sm font-bold uppercase tracking-wide text-muted-foreground">
+            Nesta página
+          </h2>
+          <ol className="space-y-2 text-sm">
+            {[
+              ["#termos-uso",      "1. Termos de Uso"],
+              ["#privacidade",     "2. Política de Privacidade (LGPD)"],
+              ["#responsabilidade","3. Responsabilidade"],
+              ["#cancelamento",    "4. Cancelamento e Reembolso"],
+              ["#cookies",         "5. Cookies e Analytics"],
+              ["#contato",         "6. Contato"],
+            ].map(([href, label]) => (
+              <li key={href}>
+                <a href={href} className="text-brand hover:underline">{label}</a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+
+        <div className="space-y-12">
+
+          {/* 1. Termos de Uso */}
+          <section id="termos-uso" className="scroll-mt-24">
+            <div className="mb-6 flex items-center gap-2">
+              <span className="text-2xl" aria-hidden="true">📜</span>
+              <h2 className="font-display text-2xl font-bold text-primary">1. Termos de Uso</h2>
+            </div>
+
+            <div className="space-y-6">
+              <PolicyBlock title="1.1 Descrição do Serviço">
+                O ShareO é uma plataforma digital que conecta proprietários de itens (&quot;Locadores&quot;) a pessoas
+                que desejam alugá-los temporariamente (&quot;Locatários&quot;). O ShareO atua exclusivamente como
+                intermediário tecnológico, facilitando a descoberta de itens, a comunicação entre as partes,
+                o processamento de pagamentos e a gestão de reservas. O ShareO não é parte do contrato de
+                locação celebrado entre Locador e Locatário.
+              </PolicyBlock>
+
+              <PolicyBlock title="1.2 Elegibilidade">
+                Para criar uma conta no ShareO, você deve: (a) ter pelo menos 18 anos de idade ou ser
+                legalmente emancipado; (b) possuir CPF ou CNPJ válido e em situação regular; (c) ter
+                capacidade civil plena para celebrar contratos; e (d) não ter sido banido anteriormente
+                da plataforma.
+              </PolicyBlock>
+
+              <PolicyBlock title="1.3 Cadastro e Conta">
+                Você é responsável por manter a confidencialidade de suas credenciais de acesso. Qualquer
+                atividade realizada com sua conta é de sua responsabilidade. Notifique imediatamente o
+                ShareO em caso de acesso não autorizado pelo e-mail{" "}
+                <a href="mailto:seguranca@shareo.com.br" className="text-brand hover:underline">
+                  seguranca@shareo.com.br
+                </a>.
+                O ShareO se reserva o direito de suspender ou encerrar contas que violem estas políticas.
+              </PolicyBlock>
+
+              <PolicyBlock title="1.4 Regras para Anúncio de Itens">
+                Ao anunciar um item, o Locador declara: (a) ser o legítimo proprietário do item ou
+                ter autorização para alugá-lo; (b) que o item está em boas condições de funcionamento e
+                é seguro para uso; (c) que as informações, fotos e preços divulgados são precisos e
+                verídicos; (d) que o item não está gravado por ônus ou constrição judicial que impeça
+                sua disponibilização.
+              </PolicyBlock>
+
+              <PolicyBlock title="1.5 Itens Proibidos">
+                São vedados na plataforma: armas de fogo, munições e acessórios; substâncias
+                entorpecentes, medicamentos controlados e psicotrópicos; artigos cujo aluguel seja
+                ilegal ou exija habilitação especial não verificável pela plataforma; itens que
+                violem direitos de propriedade intelectual de terceiros; e qualquer bem cuja
+                transação configure prática ilícita nos termos da legislação brasileira.
+              </PolicyBlock>
+
+              <PolicyBlock title="1.6 Obrigações do Locatário">
+                O Locatário se compromete a: utilizar o item exclusivamente para os fins acordados;
+                devolvê-lo no prazo e nas condições originais, ressalvado o desgaste natural pelo
+                uso adequado; comunicar imediatamente qualquer dano, extravio ou sinistro ao Locador
+                e ao ShareO; e responder por danos causados ao item por uso indevido.
+              </PolicyBlock>
+
+              <PolicyBlock title="1.7 Pagamentos e Taxa de Serviço">
+                Os pagamentos das locações são processados pela <strong>Stripe</strong>, provedor de
+                pagamentos contratado pelo ShareO, responsável pelo processamento da cobrança e pelo
+                repasse ao Locador. Sobre o valor da locação, o ShareO cobra uma <strong>taxa de
+                serviço de {feeLabel}</strong>, devida pelo Locatário e exibida no resumo antes da
+                confirmação do pagamento; o valor restante é destinado ao Locador. Nesta versão da
+                plataforma, o checkout aceita <strong>cartão de crédito à vista, sem parcelamento</strong>,
+                e cada locação está sujeita ao limite de <strong>{maxLabel} por transação</strong>.
+                O valor pago é <strong>retido</strong> e não é repassado ao Locador no ato do pagamento:
+                o repasse torna-se elegível <strong>{payoutLabel} após a confirmação da devolução</strong>{" "}
+                do item, prazo que cobre a janela de abertura de disputa, e fica suspenso enquanto
+                houver disputa em análise. Para receber, o Locador deve cadastrar seus dados de
+                recebimento em Meu Perfil → Recebimentos. Não há exigência de caução nesta versão.
+              </PolicyBlock>
+
+              <PolicyBlock title="1.8 Alterações nos Termos">
+                O ShareO poderá atualizar estas políticas a qualquer tempo. Alterações substanciais
+                serão comunicadas por e-mail com antecedência mínima de 30 dias. O uso contínuo da
+                plataforma após a entrada em vigor das alterações implica aceitação dos novos termos.
+              </PolicyBlock>
+            </div>
+          </section>
+
+          {/* 2. Privacidade */}
+          <section id="privacidade" className="scroll-mt-24">
+            <div className="mb-6 flex items-center gap-2">
+              <span className="text-2xl" aria-hidden="true">🔒</span>
+              <h2 className="font-display text-2xl font-bold text-primary">2. Política de Privacidade (LGPD)</h2>
+            </div>
+            <p className="mb-6 text-sm text-muted-foreground">
+              Esta seção atende aos requisitos da Lei Geral de Proteção de Dados Pessoais —
+              Lei nº 13.709/2018 (LGPD).
+            </p>
+
+            <div className="space-y-6">
+              <PolicyBlock title="2.1 Dados Coletados">
+                Coletamos os seguintes dados pessoais: <strong>dados de cadastro</strong> (nome, e-mail,
+                CPF/CNPJ, telefone, endereço); <strong>dados de identidade</strong> (documento de
+                identificação com foto e selfie, para verificação de identidade opcional); <strong>dados
+                financeiros</strong> (dados bancários e de verificação informados ao provedor de
+                pagamentos para recebimento de repasses, chave PIX para recebimento, histórico de
+                transações); <strong>dados
+                de uso</strong> (endereços IP, logs de acesso, dispositivo e navegador);
+                <strong> dados de localização</strong> (cidade e estado informados no perfil;
+                coordenadas GPS somente quando o usuário concede permissão no dispositivo); e
+                <strong> conteúdo gerado</strong> (fotos de itens, avaliações, mensagens de chat).
+              </PolicyBlock>
+
+              <PolicyBlock title="2.2 Finalidade e Base Legal">
+                <ul className="mt-2 space-y-1.5 text-sm">
+                  <li>• <strong>Execução do contrato</strong> (Art. 7, V, LGPD): operação da plataforma, processamento de pagamentos, suporte ao usuário.</li>
+                  <li>• <strong>Obrigação legal</strong> (Art. 7, II, LGPD): cumprimento de obrigações fiscais, anti-lavagem de dinheiro (Lei 9.613/98) e retenção de dados financeiros (CTN Art. 173 — 5 anos).</li>
+                  <li>• <strong>Legítimo interesse</strong> (Art. 7, IX, LGPD): prevenção a fraudes, segurança da plataforma, melhorias de produto com base em dados anonimizados.</li>
+                  <li>• <strong>Consentimento</strong> (Art. 7, I, LGPD): envio de comunicações de marketing e novidades. Pode ser revogado a qualquer momento sem prejuízo ao uso do serviço.</li>
+                </ul>
+              </PolicyBlock>
+
+              <PolicyBlock title="2.3 Compartilhamento de Dados">
+                Seus dados podem ser compartilhados com: <strong>Stripe</strong> (processamento dos
+                pagamentos, verificação dos dados do Locador e repasse dos valores, atuando como
+                operador de dados financeiros — sujeito à Política de Privacidade da Stripe Inc.);
+                <strong> Supabase</strong> (infraestrutura de banco de dados e armazenamento —
+                servidores na região sa-east-1, Brasil); <strong>Resend</strong> (envio de
+                e-mails transacionais); <strong>Sentry</strong> (monitoramento de erros — dados
+                de sessão anonimizados); <strong>Mapbox</strong> (mapas e geocodificação —
+                coordenadas aproximadas); <strong>Vercel</strong> (hospedagem e execução da
+                plataforma — dados das requisições enquanto você usa o site ou o app); e{" "}
+                <strong>Upstash</strong> (proteção contra uso abusivo, contagem de visualizações e
+                cache das consultas de CNPJ — endereço IP, o identificador da sua conta, o e-mail
+                usado no login e, no cadastro de empresa, os dados públicos do CNPJ consultado).
+                Não vendemos dados pessoais a terceiros.
+              </PolicyBlock>
+
+              <PolicyBlock title="2.4 Retenção de Dados">
+                Os dados são retidos pelos seguintes prazos: dados de conta ativa — enquanto a conta
+                existir; dados financeiros e de transações — 5 anos (CTN Art. 173); logs de acesso —
+                6 meses (Marco Civil da Internet, Art. 15); dados de marketing com consentimento —
+                até a revogação pelo titular; dados de verificação de identidade — 5 anos ou conforme
+                exigência regulatória. Após o prazo, os dados são anonimizados ou excluídos.
+              </PolicyBlock>
+
+              <PolicyBlock title="2.5 Direitos do Titular (LGPD Art. 18)">
+                Você tem direito a: <strong>acesso</strong> — obter confirmação e cópia dos seus dados;
+                <strong> correção</strong> — corrigir dados incompletos, inexatos ou desatualizados;
+                <strong> anonimização, bloqueio ou eliminação</strong> — de dados desnecessários ou
+                tratados em desconformidade; <strong>portabilidade</strong> — obter seus dados em
+                formato estruturado; <strong>informação</strong> — sobre compartilhamento com
+                terceiros; <strong>revogação do consentimento</strong> — para finalidades que dependam
+                de consentimento; e <strong>eliminação da conta</strong> — com exclusão de dados não
+                sujeitos a obrigação legal de retenção. Exerça seus direitos em:{" "}
+                <a href="mailto:privacidade@shareo.com.br" className="text-brand hover:underline">
+                  privacidade@shareo.com.br
+                </a>.
+              </PolicyBlock>
+
+              <PolicyBlock title="2.6 Segurança">
+                Adotamos medidas técnicas e organizacionais para proteger seus dados: criptografia
+                em trânsito (TLS 1.2+) e em repouso para dados sensíveis; autenticação com tokens
+                JWT de curta duração; controles de acesso por função (RBAC); e monitoramento
+                contínuo de incidentes via Sentry. Em caso de violação de dados que possa acarretar
+                risco aos titulares, notificaremos a ANPD e os usuários afetados no prazo legal.
+              </PolicyBlock>
+
+              <PolicyBlock title="2.7 Encarregado (DPO)">
+                <p className="mb-3">
+                  O Encarregado de Proteção de Dados (DPO) do ShareO, nos termos do Art. 41 da LGPD, é:
+                </p>
+                <p className="mb-1 font-semibold text-foreground">Roberto Epifanio da Silva</p>
+                <p className="mb-3">
+                  Responsável por assegurar a conformidade da organização com a LGPD e demais normas
+                  aplicáveis à privacidade e proteção de dados pessoais. Atua como ponto de contato
+                  entre o ShareO, os titulares de dados e a Autoridade Nacional de Proteção de Dados
+                  (ANPD), monitorando práticas de tratamento de dados, promovendo treinamentos internos
+                  e apoiando a gestão de riscos e a resposta a incidentes de segurança.
+                </p>
+                <p>
+                  Contato:{" "}
+                  <a href="mailto:privacidade@shareo.com.br" className="text-brand hover:underline">
+                    privacidade@shareo.com.br
+                  </a>
+                </p>
+              </PolicyBlock>
+            </div>
+          </section>
+
+          {/* 3. Responsabilidade */}
+          <section id="responsabilidade" className="scroll-mt-24">
+            <div className="mb-6 flex items-center gap-2">
+              <span className="text-2xl" aria-hidden="true">⚖️</span>
+              <h2 className="font-display text-2xl font-bold text-primary">3. Responsabilidade</h2>
+            </div>
+
+            <div className="space-y-6">
+              <PolicyBlock title="3.1 Papel do ShareO">
+                O ShareO é uma plataforma de intermediação. Não é parte, locador nem locatário em
+                qualquer transação realizada entre usuários. O contrato de locação é celebrado
+                exclusivamente entre o Locador e o Locatário, ficando o ShareO alheio às obrigações
+                decorrentes desse contrato, salvo na medida em que expressamente assumidas nessas
+                políticas.
+              </PolicyBlock>
+
+              <PolicyBlock title="3.2 Limitação de Responsabilidade">
+                O ShareO não se responsabiliza por: (a) danos ao item locado ou a terceiros
+                decorrentes de uso indevido pelo Locatário; (b) inexatidão nas informações
+                prestadas pelos usuários; (c) inadimplemento de qualquer obrigação entre Locador e
+                Locatário; (d) eventos de força maior ou caso fortuito que impeçam a realização
+                da locação. A responsabilidade total do ShareO, em qualquer hipótese, fica
+                limitada ao valor da taxa de serviço da transação em questão.
+              </PolicyBlock>
+
+              <PolicyBlock title="3.3 Disputas">
+                Em caso de conflito entre Locador e Locatário, o ShareO oferece um mecanismo de
+                mediação disponível na plataforma. O prazo para abrir uma disputa depende de quem
+                abre: o Locatário pode abrir enquanto a locação estiver ativa, antes de devolver o
+                item; o Locador pode abrir somente depois que o Locatário devolver o item, em até
+                48 horas a partir da devolução. O ShareO analisará as evidências apresentadas
+                e emitirá uma decisão em até 5 dias úteis, que poderá incluir reembolso parcial ou
+                total ao Locatário ou liberação do valor ao Locador. A decisão do ShareO é vinculante
+                para efeitos do repasse do valor retido na plataforma. O ShareO poderá encerrar a
+                análise sem alteração financeira quando as partes compuserem-se diretamente, quando
+                a parte que abriu a disputa desistir, ou quando não houver elementos suficientes
+                para decidir o mérito. Nessa hipótese, a locação segue seu curso normal, sem
+                reembolso ou retenção adicional, e o encerramento é registrado com a respectiva
+                justificativa.
+              </PolicyBlock>
+
+              <PolicyBlock title="3.4 Indenização">
+                Você concorda em indenizar e isentar o ShareO, seus diretores, funcionários e
+                parceiros de qualquer reclamação, dano, perda, responsabilidade ou despesa
+                (incluindo honorários advocatícios) decorrentes de: (a) violação destas políticas;
+                (b) uso indevido da plataforma; ou (c) infração de direitos de terceiros.
+              </PolicyBlock>
+            </div>
+          </section>
+
+          {/* 4. Cancelamento */}
+          <section id="cancelamento" className="scroll-mt-24">
+            <div className="mb-6 flex items-center gap-2">
+              <span className="text-2xl" aria-hidden="true">↩️</span>
+              <h2 className="font-display text-2xl font-bold text-primary">4. Cancelamento e Reembolso</h2>
+            </div>
+
+            <div className="space-y-6">
+              <PolicyBlock title="4.1 Cancelamento pelo Locatário">
+                O cancelamento não depende da antecedência em relação ao início da locação: o
+                Locatário recebe de volta 100% do valor pago, descontada apenas a taxa que a
+                Stripe já havia cobrado sobre a cobrança original — repassada integralmente ao
+                provedor de pagamentos, sem retenção pelo ShareO.
+              </PolicyBlock>
+
+              <PolicyBlock title="4.2 Cancelamento pelo Locador">
+                O cancelamento pelo Locador após a confirmação da reserva resulta em reembolso
+                integral ao Locatário. Cancelamentos recorrentes por parte do Locador podem
+                acarretar advertência, suspensão temporária ou encerramento de conta, a critério
+                do ShareO.
+              </PolicyBlock>
+
+              {/*
+                Decisão dos fundadores (22/08/2026): esta seção descreve APENAS o
+                que a Stripe de fato estabelece. A versão anterior prometia prazo
+                fixo de "5 a 10 dias úteis" contado do cancelamento, o que o
+                ShareO não controla — o estorno é emitido pela equipe e só a
+                partir daí o prazo da operadora corre. Prometer o prazo cheio era
+                oferta vinculante (CDC art. 30) sobre algo fora do nosso alcance.
+              */}
+              <PolicyBlock title="4.3 Processamento do Reembolso">
+                Reembolsos são processados pela Stripe, provedor de pagamentos do ShareO, e
+                devolvidos ao mesmo meio de pagamento utilizado na reserva — não é possível
+                reembolsar em conta ou meio diferente. Depois de emitido o estorno, o prazo até o
+                crédito aparecer é definido pelo banco ou operadora do cartão, não pelo ShareO nem
+                pela Stripe. O ShareO não retém a taxa de serviço sobre o valor reembolsado.
+              </PolicyBlock>
+            </div>
+          </section>
+
+          {/* 5. Cookies */}
+          <section id="cookies" className="scroll-mt-24">
+            <div className="mb-6 flex items-center gap-2">
+              <span className="text-2xl" aria-hidden="true">🍪</span>
+              <h2 className="font-display text-2xl font-bold text-primary">5. Cookies e Analytics</h2>
+            </div>
+
+            <div className="space-y-6">
+              <PolicyBlock title="5.1 Cookies Funcionais">
+                Utilizamos cookies estritamente necessários para: manter sua sessão autenticada;
+                lembrar preferências de navegação; e garantir o funcionamento seguro da plataforma.
+                Esses cookies não podem ser desativados sem comprometer o uso do serviço.
+              </PolicyBlock>
+
+              <PolicyBlock title="5.2 Analytics">
+                A plataforma <strong>não utiliza ferramentas de analytics de terceiros</strong>:
+                não usamos cookies analíticos e não enviamos seus dados de navegação a terceiros
+                para essa finalidade. Contamos <strong>visualizações por anúncio</strong>, de forma
+                agregada, para mostrar o desempenho a quem anuncia — esse número não identifica
+                quem visitou.
+              </PolicyBlock>
+            </div>
+          </section>
+
+          {/* 6. Contato */}
+          <section id="contato" className="scroll-mt-24">
+            <div className="mb-6 flex items-center gap-2">
+              <span className="text-2xl" aria-hidden="true">✉️</span>
+              <h2 className="font-display text-2xl font-bold text-primary">6. Contato</h2>
+            </div>
+            <div className="rounded-xl border border-border bg-surface p-6 text-sm text-muted-foreground space-y-2">
+              <p>
+                <strong className="text-foreground">Dúvidas gerais e suporte:</strong>{" "}
+                <a href="mailto:suporte@shareo.com.br" className="text-brand hover:underline">
+                  suporte@shareo.com.br
+                </a>
+              </p>
+              <p>
+                <strong className="text-foreground">Privacidade e direitos LGPD:</strong>{" "}
+                <a href="mailto:privacidade@shareo.com.br" className="text-brand hover:underline">
+                  privacidade@shareo.com.br
+                </a>
+              </p>
+              <p>
+                <strong className="text-foreground">Segurança e incidentes:</strong>{" "}
+                <a href="mailto:seguranca@shareo.com.br" className="text-brand hover:underline">
+                  seguranca@shareo.com.br
+                </a>
+              </p>
+            </div>
+
+            {/* Fora do card de contatos de propósito: o bloco tem casca própria
+                (borda + fundo surface) e aninhar as duas vira borda dentro de borda. */}
+            <div className="mt-4">
+              <IdentificacaoPrestador />
+            </div>
+          </section>
+
+        </div>
+
+        <div className="mt-12 rounded-xl border border-brand/20 bg-brand/5 p-6 text-center">
+          <p className="text-sm text-muted-foreground">
+            Dúvidas sobre as políticas?{" "}
+            <LinkOpcional href={hrefCentralAjuda} className="font-semibold text-brand hover:underline">
+              Consulte nossa central de ajuda
+            </LinkOpcional>
+            {" "}ou entre em contato em{" "}
+            <a href="mailto:suporte@shareo.com.br" className="font-semibold text-brand hover:underline">
+              suporte@shareo.com.br
+            </a>.
+          </p>
+        </div>
+      </div>
+  )
+}
+
+/** Envolve o trecho num link só quando há destino. Ver `hrefCentralAjuda`. */
+function LinkOpcional({
+  href,
+  className,
+  children,
+}: {
+  href: string | null
+  className?: string
+  children: ReactNode
+}) {
+  if (!href) return <>{children}</>
+  return (
+    <a href={href} className={className}>
+      {children}
+    </a>
+  )
+}
+
+function PolicyBlock({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="rounded-xl border border-border bg-surface p-6">
+      <h3 className="mb-3 font-display text-base font-bold text-primary">{title}</h3>
+      <div className="text-sm text-muted-foreground leading-relaxed">{children}</div>
+    </div>
+  )
+}

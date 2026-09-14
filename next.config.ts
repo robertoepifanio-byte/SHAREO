@@ -67,7 +67,8 @@ const config: NextConfig = {
   },
 
   // Mapbox GL requer transpilação
-  transpilePackages: ["mapbox-gl"],
+  // @shareo/legal é TypeScript não compilado (workspace) — o Next precisa transpilar.
+  transpilePackages: ["mapbox-gl", "@shareo/legal"],
 
   // Logs de build mais limpos
   logging: {

@@ -22,10 +22,10 @@ export const SHAREO_API = (process.env.NEXT_PUBLIC_SHAREO_API_URL ?? "").replace
 export const SHAREO_SITE = (process.env.NEXT_PUBLIC_SHAREO_SITE_URL ?? SHAREO_API).replace(/\/$/, "")
 
 /**
- * Âncora do formulário de captação — destino do CTA "Entrar na lista" do
- * banner (CampaignBanner.tsx) e id do container em FounderCaptureForm.tsx.
- * Constante única para os dois lados não dependerem de uma string igual por
- * coincidência.
+ * Âncora do formulário de captação — destino de TODOS os CTAs da landing
+ * (components/landing/CtaAncora.tsx) e id do container em
+ * FounderCaptureForm.tsx. Constante única para os dois lados não dependerem de
+ * uma string igual por coincidência.
  */
 export const FOUNDER_FORM_ANCHOR_ID = "founder-form"
 
@@ -33,9 +33,19 @@ export const ROTAS = {
   leads: `${SHAREO_API}/api/founders/leads`,
   stats: `${SHAREO_API}/api/founders/stats`,
   funnel: `${SHAREO_API}/api/founders/funnel`,
-  termos: `${SHAREO_SITE}/termos`,
-  privacidade: `${SHAREO_SITE}/privacidade`,
-  politicas: `${SHAREO_SITE}/politicas`,
+  /**
+   * Os três documentos legais são publicados PELA PRÓPRIA campanha, em rotas
+   * locais. Antes apontavam para o site do marketplace, que ainda não está
+   * aberto ao público — o visitante saía da landing e caía num produto que não
+   * pode usar.
+   *
+   * Isso NÃO recriou duas versões do mesmo documento: o texto vem de
+   * `@shareo/legal`, o mesmo componente que o marketplace renderiza. Ver
+   * packages/legal e apps/campanha/app/termos.
+   */
+  termos: "/termos",
+  privacidade: "/privacidade",
+  politicas: "/politicas",
   pilotos: `${SHAREO_SITE}/pilotos`,
 } as const
 

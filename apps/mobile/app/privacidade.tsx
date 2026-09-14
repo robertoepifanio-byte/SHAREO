@@ -1,4 +1,5 @@
-// Fonte: app/privacidade/page.tsx
+// Fonte: packages/legal/src/PrivacidadeConteudo.tsx (o texto saiu da página
+// para o pacote em 09/2026 — é ele que site e campanha renderizam).
 // Política de Privacidade — documento legal público.
 // NÃO confundir com apps/mobile/app/perfil/dados.tsx (gestão de dados do usuário).
 

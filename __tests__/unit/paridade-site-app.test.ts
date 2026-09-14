@@ -54,9 +54,10 @@ const DIVERGENCIAS_CONHECIDAS: Record<string, { texto: string; motivo: string }[
   // O breadcrumb "Início › X" do site não se transcreve: no app o caminho de
   // volta é o botão do cabeçalho. Convenção já estabelecida antes destas telas
   // — `app/comunidade/page.tsx` tem o breadcrumb e `apps/mobile/app/comunidade.tsx` não.
-  "app/politicas/page.tsx": [
-    { texto: "Início", motivo: "Breadcrumb do site; no app o retorno é o botão voltar do cabeçalho (mesma convenção de comunidade/sobre)." },
-  ],
+  // `app/politicas/page.tsx` saiu daqui: o par passou a ser
+  // `packages/legal/src/PoliticasConteudo.tsx`, que não tem breadcrumb — ele
+  // ficou na página, junto com o resto do chrome do marketplace. A divergência
+  // deixou de existir em vez de ser tolerada.
   "app/suporte/page.tsx": [
     { texto: "Início", motivo: "Breadcrumb do site; no app o retorno é o botão voltar do cabeçalho (mesma convenção de comunidade/sobre)." },
   ],
@@ -118,7 +119,12 @@ function listarTsx(dir: string): string[] {
  * texto jurídico das Políticas) ficariam fora de qualquer rede.
  */
 const MAPA_TELAS: [string, string][] = [
-  ["app/politicas/page.tsx",       "apps/mobile/app/politicas.tsx"],
+  // 🪤 Aponta para o PACOTE, não para `app/politicas/page.tsx`. Desde 09/2026 o
+  // texto mora em @shareo/legal e a página só monta o chrome em volta — o
+  // extrator tirava 67 textos dela e passou a tirar 2, sem nada ficar vermelho.
+  // Guarda que não morde é pior que guarda nenhuma: ela dá a impressão de que o
+  // texto jurídico das Políticas está coberto quando não está.
+  ["packages/legal/src/PoliticasConteudo.tsx", "apps/mobile/app/politicas.tsx"],
   ["app/suporte/page.tsx",         "apps/mobile/app/suporte.tsx"],
   ["app/loja/[slug]/page.tsx",     "apps/mobile/app/loja/[slug].tsx"],
 ]

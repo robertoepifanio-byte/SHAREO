@@ -1,61 +1,89 @@
 import Image from "next/image"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/ThemeToggle"
-import { PrelaunchBadge } from "@/components/PrelaunchBadge"
+import { CtaAncora, ESTILO_CTA } from "@/components/landing/CtaAncora"
+import { UiIcon } from "@/components/landing/icons/UiIcon"
+import { NAV_LINKS } from "@/lib/landing-content"
 
 /**
- * Cabeçalho do modo de pré-lançamento: logo + tema, nada mais.
+ * Cabeçalho da landing: logo, navegação por âncoras, tema e o CTA.
  *
- * Não reusa o `AppHeader` de propósito — ele arrasta `NavLinks` (/itens,
- * /itens/novo) e o `MobileMenu` com seis listas de links do marketplace, todos
- * apontando para rotas que o gate bloqueia. Um header que leva a lugar nenhum é
- * pior do que header nenhum.
+ * Não reusa o `AppHeader` do marketplace de propósito — ele arrasta links para
+ * rotas (/itens, /itens/novo) que não existem nesta campanha. Um header que
+ * leva a lugar nenhum é pior do que header nenhum.
+ *
+ * ⚠️ `h-16` é fixo em TODAS as larguras, e isso não é estético: é o número que
+ * o `scroll-mt-16` de cada seção compensa. Mudar a altura aqui sem mudar lá faz
+ * toda âncora aterrissar com o título escondido atrás do cabeçalho.
+ *
+ * A navegação é `hidden md:flex`. Em 375px sobram ~343px úteis, onde os cinco
+ * links não cabem — e numa página única a navegação é redundante com a própria
+ * rolagem. A alternativa (segunda linha rolável) custaria `h-24` no mobile e
+ * obrigaria `scroll-mt-24 md:scroll-mt-16` em todas as seções, para resolver um
+ * problema que o scroll já resolve. No mobile fica logo + CTA.
  */
-type Props = {
-  /**
-   * `"minimal"` omite o logo. Usado quando o banner da campanha abre a página —
-   * ele já traz a marca em destaque, e repetir o logo logo acima só rouba altura
-   * da primeira tela. Default `"full"` para não afetar outros usos.
-   */
-  variant?: "full" | "minimal"
-  /**
-   * Mostra o selo de pré-lançamento no cabeçalho. Como ele é sticky, o aviso de
-   * que o serviço ainda não abriu acompanha a rolagem inteira — em vez de sumir
-   * assim que a pessoa passa do topo. Quando ligado, a ListaVIP deve receber
-   * `hideBadge` para o selo não aparecer duas vezes.
-   */
-  showBadge?: boolean
-}
-
-export function PreLaunchHeader({ variant = "full", showBadge = false }: Props = {}) {
+/**
+ * `navegacao={false}` nas páginas legais: as cinco âncoras apontam para seções
+ * que só existem na landing, e mantê-las ali daria cinco links mortos. O CTA
+ * também muda de natureza — vira o caminho de volta para a landing, porque o
+ * formulário não está nesta página.
+ */
+export function PreLaunchHeader({ navegacao = true }: { navegacao?: boolean } = {}) {
   return (
     <header className="sticky top-0 z-[200] bg-primary" role="banner">
-      <div className={`container flex h-16 items-center gap-2 ${variant === "minimal" && !showBadge ? "justify-end" : "justify-between"}`}>
-        {variant === "full" && (
-          <Link
-            href="/"
-            className="flex-shrink-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
-            aria-label="ShareO — página inicial"
-          >
-            <span className="block overflow-hidden rounded-lg bg-white px-2 py-1">
-              <Image
-                src="/logos/shareo-logo.png"
-                alt="ShareO"
-                width={120}
-                height={32}
-                sizes="120px"
-                className="object-contain"
-                style={{ width: "auto", height: "32px" }}
-                priority
-              />
-            </span>
-          </Link>
-        )}
+      <nav
+        className="container flex h-16 items-center justify-between gap-3"
+        aria-label="Navegação da campanha"
+      >
+        <Link
+          href="/"
+          className="flex min-h-tap flex-shrink-0 items-center rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
+          aria-label="ShareO — página inicial"
+        >
+          <span className="block overflow-hidden rounded-lg bg-white px-2 py-1">
+            <Image
+              src="/logos/shareo-logo.png"
+              alt="ShareO"
+              width={120}
+              height={32}
+              sizes="120px"
+              className="object-contain"
+              style={{ width: "auto", height: "32px" }}
+              priority
+            />
+          </span>
+        </Link>
 
-        {showBadge && <PrelaunchBadge />}
+        <ul className="hidden items-center gap-1 md:flex">
+          {(navegacao ? NAV_LINKS : []).map((link) => (
+            <li key={link.href}>
+              <a
+                href={link.href}
+                className="inline-flex min-h-tap items-center rounded-lg px-3 text-sm font-semibold text-white/85 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
+              >
+                {link.rotulo}
+              </a>
+            </li>
+          ))}
+        </ul>
 
-        <ThemeToggle />
-      </div>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          {/* No mobile o rótulo encurta para caber ao lado do logo em 375px. */}
+          {navegacao ? (
+            <CtaAncora className="px-4 text-xs sm:px-6 sm:text-sm">
+              <span className="sm:hidden">Participar</span>
+              <span className="hidden sm:inline">Quero participar</span>
+            </CtaAncora>
+          ) : (
+            <Link href="/" className={`${ESTILO_CTA} px-4 text-xs sm:px-6 sm:text-sm`}>
+              <span className="sm:hidden">Participar</span>
+              <span className="hidden sm:inline">Quero participar</span>
+              <UiIcon name="seta-direita" size={16} className="shrink-0" />
+            </Link>
+          )}
+        </div>
+      </nav>
     </header>
   )
 }

@@ -86,68 +86,14 @@ export async function ListaVIP({ as = "h2", hideBadge = false }: Props = {}) {
           anunciantes.
         </p>
 
-        <div
-          role="list"
-          aria-label="Por que entrar na lista"
-          className="mx-auto mb-9 grid max-w-[640px] grid-cols-1 gap-4 text-left xl:grid-cols-2"
-        >
-          <div role="listitem" className="flex items-start gap-3.5 rounded-xl border border-white/[0.12] bg-white/[0.07] p-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand/30 text-accent" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M12 6v2m0 8v2M9.5 9.5a2.5 2.5 0 0 1 5 0c0 1.5-2.5 3-2.5 3"/>
-              </svg>
-            </div>
-            <div>
-              <div className="mb-1 text-sm font-bold text-white">Selo de Fundador</div>
-              <div className="text-xs leading-snug text-white/70">
-                Um selo exclusivo no seu perfil, visível desde o primeiro dia — reconhecimento que só os primeiros da lista têm
-              </div>
-            </div>
-          </div>
-
-          <div role="listitem" className="flex items-start gap-3.5 rounded-xl border border-white/[0.12] bg-white/[0.07] p-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand/30 text-accent" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12"/>
-              </svg>
-            </div>
-            <div>
-              <div className="mb-1 text-sm font-bold text-white">Verificação de perfil gratuita</div>
-              <div className="text-xs leading-snug text-white/70">
-                Credibilidade desde o primeiro dia — sem custos adicionais
-              </div>
-            </div>
-          </div>
-
-          <div role="listitem" className="flex items-start gap-3.5 rounded-xl border border-white/[0.12] bg-white/[0.07] p-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand/30 text-accent" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-              </svg>
-            </div>
-            <div>
-              <div className="mb-1 text-sm font-bold text-white">Acesso antecipado</div>
-              <div className="text-xs leading-snug text-white/70">
-                Você é avisado antes da abertura dos cadastros na sua cidade
-              </div>
-            </div>
-          </div>
-
-          <div role="listitem" className="flex items-start gap-3.5 rounded-xl border border-white/[0.12] bg-white/[0.07] p-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand/30 text-accent" aria-hidden="true">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-              </svg>
-            </div>
-            <div>
-              <div className="mb-1 text-sm font-bold text-white">Primeiro a descobrir</div>
-              <div className="text-xs leading-snug text-white/70">
-                Novas funcionalidades chegam primeiro para quem está na lista
-              </div>
-            </div>
-          </div>
-        </div>
+        {/*
+          Os 4 cards de benefício que ficavam aqui migraram para a seção
+          Fundadores (components/landing/Fundadores.tsx) no redesenho de 09/2026:
+          nesta posição eles ficavam entre a headline e o formulário, empurrando
+          o primeiro campo para baixo justamente no ponto em que a pessoa já
+          decidiu se cadastrar. O argumento agora vem antes, na página; aqui
+          sobra só a conversão.
+        */}
 
         {/*
           Mini-formulário de captação — folha client. Sempre expandido: este
