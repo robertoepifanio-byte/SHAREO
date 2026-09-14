@@ -1,0 +1,6 @@
+export { formatPayoutWindow, formatPriceShort, formatPriceLong, formatPercentLabel, formatPercentValue } from "./formato"
+export { LEGAL_ENTITY, POLICY_UPDATED_AT, POLITICAS_UPDATED_AT } from "./entidade"
+export { IdentificacaoPrestador } from "./IdentificacaoPrestador"
+export { TermosConteudo } from "./TermosConteudo"
+export { PrivacidadeConteudo } from "./PrivacidadeConteudo"
+export { PoliticasConteudo } from "./PoliticasConteudo"

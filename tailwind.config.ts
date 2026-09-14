@@ -7,6 +7,11 @@ const config: Config = {
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./lib/**/*.{js,ts,jsx,tsx,mdx}",
+    // Os componentes de texto legal moram fora do app (@shareo/legal). Sem esta
+    // linha as classes que só aparecem lá são PURGADAS, e nada acusa: o build
+    // passa, o HTML vem certo e a página renderiza sem marcador de lista, sem
+    // tabular-nums no CNPJ e sem a caixa de contato.
+    "./packages/legal/src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     // ─── Breakpoints ──────────────────────────────────────

@@ -33,9 +33,19 @@ export const ROTAS = {
   leads: `${SHAREO_API}/api/founders/leads`,
   stats: `${SHAREO_API}/api/founders/stats`,
   funnel: `${SHAREO_API}/api/founders/funnel`,
-  termos: `${SHAREO_SITE}/termos`,
-  privacidade: `${SHAREO_SITE}/privacidade`,
-  politicas: `${SHAREO_SITE}/politicas`,
+  /**
+   * Os três documentos legais são publicados PELA PRÓPRIA campanha, em rotas
+   * locais. Antes apontavam para o site do marketplace, que ainda não está
+   * aberto ao público — o visitante saía da landing e caía num produto que não
+   * pode usar.
+   *
+   * Isso NÃO recriou duas versões do mesmo documento: o texto vem de
+   * `@shareo/legal`, o mesmo componente que o marketplace renderiza. Ver
+   * packages/legal e apps/campanha/app/termos.
+   */
+  termos: "/termos",
+  privacidade: "/privacidade",
+  politicas: "/politicas",
   pilotos: `${SHAREO_SITE}/pilotos`,
 } as const
 

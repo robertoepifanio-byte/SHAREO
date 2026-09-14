@@ -22,6 +22,14 @@ const ESTILO: Record<Variante, string> = {
     "border-transparent bg-blue-medium text-white hover:bg-primary focus-visible:ring-blue-medium",
 }
 
+/**
+ * Classes do botão, exportadas para quem precisa do MESMO visual com um destino
+ * diferente — hoje só o cabeçalho das páginas legais, que volta para a landing
+ * em vez de rolar até o formulário. Evita uma segunda cópia de ~40 classes.
+ */
+export const ESTILO_CTA =
+  "inline-flex min-h-tap items-center justify-center gap-2 rounded-lg border px-6 py-3 text-center text-sm font-bold uppercase tracking-[0.4px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 border-transparent bg-brand text-white hover:bg-brand-hover focus-visible:ring-brand"
+
 export function CtaAncora({
   children,
   variante = "solido",

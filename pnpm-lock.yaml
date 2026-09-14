@@ -75,6 +75,9 @@ importers:
       '@sentry/nextjs':
         specifier: ^10.70.0
         version: 10.70.0(@opentelemetry/core@2.10.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.10.0(@opentelemetry/api@1.9.1))(next@15.5.25(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.62.1)(@types/node@22.20.1)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)(webpack@5.107.1(postcss@8.5.26))
+      '@shareo/legal':
+        specifier: workspace:*
+        version: link:packages/legal
       '@supabase/ssr':
         specifier: ^0.12.4
         version: 0.12.4(@supabase/supabase-js@2.112.4(@opentelemetry/api@1.9.1))
@@ -280,6 +283,9 @@ importers:
 
   apps/campanha:
     dependencies:
+      '@shareo/legal':
+        specifier: workspace:*
+        version: link:../../packages/legal
       lucide-react:
         specifier: ^0.577.0
         version: 0.577.0(react@19.2.8)
@@ -474,6 +480,12 @@ importers:
       typescript:
         specifier: ^5.3.0
         version: 5.9.3
+
+  packages/legal:
+    dependencies:
+      react:
+        specifier: '>=18'
+        version: 19.2.8
 
 packages:
 

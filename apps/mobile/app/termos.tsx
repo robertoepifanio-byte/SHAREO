@@ -1,4 +1,5 @@
-// Fonte: app/termos/page.tsx
+// Fonte: packages/legal/src/TermosConteudo.tsx (o texto saiu da página para o
+// pacote em 09/2026 — é ele que o site e a landing da campanha renderizam).
 // Taxa de serviço lida de /api/platform-config/public (nunca hardcode — CLAUDE.md).
 
 import {

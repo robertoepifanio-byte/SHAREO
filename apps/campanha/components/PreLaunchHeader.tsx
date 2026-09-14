@@ -1,7 +1,8 @@
 import Image from "next/image"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/ThemeToggle"
-import { CtaAncora } from "@/components/landing/CtaAncora"
+import { CtaAncora, ESTILO_CTA } from "@/components/landing/CtaAncora"
+import { UiIcon } from "@/components/landing/icons/UiIcon"
 import { NAV_LINKS } from "@/lib/landing-content"
 
 /**
@@ -21,7 +22,13 @@ import { NAV_LINKS } from "@/lib/landing-content"
  * obrigaria `scroll-mt-24 md:scroll-mt-16` em todas as seções, para resolver um
  * problema que o scroll já resolve. No mobile fica logo + CTA.
  */
-export function PreLaunchHeader() {
+/**
+ * `navegacao={false}` nas páginas legais: as cinco âncoras apontam para seções
+ * que só existem na landing, e mantê-las ali daria cinco links mortos. O CTA
+ * também muda de natureza — vira o caminho de volta para a landing, porque o
+ * formulário não está nesta página.
+ */
+export function PreLaunchHeader({ navegacao = true }: { navegacao?: boolean } = {}) {
   return (
     <header className="sticky top-0 z-[200] bg-primary" role="banner">
       <nav
@@ -48,7 +55,7 @@ export function PreLaunchHeader() {
         </Link>
 
         <ul className="hidden items-center gap-1 md:flex">
-          {NAV_LINKS.map((link) => (
+          {(navegacao ? NAV_LINKS : []).map((link) => (
             <li key={link.href}>
               <a
                 href={link.href}
@@ -63,10 +70,18 @@ export function PreLaunchHeader() {
         <div className="flex items-center gap-2">
           <ThemeToggle />
           {/* No mobile o rótulo encurta para caber ao lado do logo em 375px. */}
-          <CtaAncora className="px-4 text-xs sm:px-6 sm:text-sm">
-            <span className="sm:hidden">Participar</span>
-            <span className="hidden sm:inline">Quero participar</span>
-          </CtaAncora>
+          {navegacao ? (
+            <CtaAncora className="px-4 text-xs sm:px-6 sm:text-sm">
+              <span className="sm:hidden">Participar</span>
+              <span className="hidden sm:inline">Quero participar</span>
+            </CtaAncora>
+          ) : (
+            <Link href="/" className={`${ESTILO_CTA} px-4 text-xs sm:px-6 sm:text-sm`}>
+              <span className="sm:hidden">Participar</span>
+              <span className="hidden sm:inline">Quero participar</span>
+              <UiIcon name="seta-direita" size={16} className="shrink-0" />
+            </Link>
+          )}
         </div>
       </nav>
     </header>

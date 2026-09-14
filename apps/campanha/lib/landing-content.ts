@@ -30,6 +30,20 @@ export const ANCORAS = {
   faq: "faq",
 } as const
 
+/**
+ * Destino de todos os CTAs.
+ *
+ * 🪤 Âncora PURA (`#...`), nunca `/#...`. Chegou a ser `/#` para o mesmo
+ * cabeçalho servir às páginas legais, e isso tem um custo que só aparece no
+ * tráfego pago: quando a URL traz query (`/?utm_source=meta&...`), `/#x` não é
+ * igual à URL atual desconsiderando o fragmento, então o navegador faz
+ * NAVEGAÇÃO DE DOCUMENTO em vez de rolar — recarrega a página, some com a
+ * query da barra e dispara um segundo page_view no clique do CTA principal.
+ * Em `localhost:3007/`, sem query, o defeito é invisível.
+ *
+ * As páginas legais não reusam a navegação da landing: usam um cabeçalho
+ * próprio (ver PaginaLegal).
+ */
 export const CTA_HREF = `#${FOUNDER_FORM_ANCHOR_ID}`
 
 /**

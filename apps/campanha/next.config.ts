@@ -10,6 +10,11 @@ import type { NextConfig } from "next"
 const nextConfig: NextConfig = {
   reactStrictMode: true,
 
+  // @shareo/legal é TypeScript não compilado (pacote do workspace) — o Next
+  // precisa transpilá-lo. É de lá que vêm os textos de /termos, /privacidade e
+  // /politicas, os mesmos que o marketplace publica.
+  transpilePackages: ["@shareo/legal"],
+
   // A landing não sobe imagem de usuário; as artes são .webp estáticos servidos
   // de public/campanha por <picture>. Nenhum host remoto é necessário.
   images: { remotePatterns: [] },

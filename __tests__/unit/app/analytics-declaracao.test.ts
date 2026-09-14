@@ -39,7 +39,10 @@ describe("declaração de analytics", () => {
     expect(lerTrava(COMPONENTES[0])).toBe(false)
   })
 
-  it.each(["app/politicas/page.tsx", "apps/mobile/app/politicas.tsx"])(
+  // O texto das Políticas web mora em @shareo/legal desde 09/2026 — renderizado
+  // igual pelo marketplace e pela landing da campanha. A declaração precisa
+  // estar travada lá, não na página que só monta o chrome em volta.
+  it.each(["packages/legal/src/PoliticasConteudo.tsx", "apps/mobile/app/politicas.tsx"])(
     "%s afirma que não há analytics de terceiros, e não oferece opt-out",
     (rel) => {
       const texto = ler(rel)

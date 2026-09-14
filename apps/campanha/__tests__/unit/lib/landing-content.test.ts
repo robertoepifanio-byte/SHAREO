@@ -112,7 +112,17 @@ describe("Âncoras", () => {
     }
   })
 
-  it("o CTA aponta para o formulário", () => {
+  /**
+   * 🪤 Âncora PURA, sem a barra. `/#x` parece equivalente e não é: com query na
+   * URL — `/?utm_source=meta&...`, que é o tráfego pago — o navegador trata
+   * `/#x` como navegação de documento e RECARREGA a página, perdendo a query da
+   * barra e disparando um segundo page_view no clique do CTA principal. Sem
+   * query o defeito é invisível, e por isso precisa de teste.
+   */
+  it("nav e CTA usam âncora pura, para não recarregar a página com UTM na URL", () => {
+    for (const link of NAV_LINKS) {
+      expect(link.href.startsWith("#")).toBe(true)
+    }
     expect(CTA_HREF).toBe("#founder-form")
   })
 })

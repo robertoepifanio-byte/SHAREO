@@ -1,4 +1,5 @@
-// Fonte: app/politicas/page.tsx
+// Fonte: packages/legal/src/PoliticasConteudo.tsx (o texto saiu da página para
+// o pacote em 09/2026 — é ele que site e campanha renderizam).
 
 import React from "react"
 import {
