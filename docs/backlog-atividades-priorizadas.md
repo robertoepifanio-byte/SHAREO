@@ -8,6 +8,23 @@
 
 ---
 
+## 🔒 Pentest ativo com Strix no staging — bloqueado por falta de chave de LLM (registrado 11/09/2026)
+
+**Contexto:** revisão de segurança OWASP no código (11/09, read-only) fechou 3 achados — token de reset de senha em texto puro, HTML não escapado em e-mails transacionais, `title`/`description` de item sem sanitização — corrigidos e deployados em staging no mesmo dia (commit `64425f5`). Para complementar com teste ativo (dinâmico) contra `https://shareo-rouge.vercel.app`, avaliou-se o [Strix](https://github.com/usestrix/strix), agente de pentest autônomo open-source.
+
+**Bloqueador:** Roberto ainda não tem chave de API de nenhum provedor de LLM (`LLM_API_KEY` — OpenAI, Anthropic, Google, Bedrock/Vertex, OpenRouter ou modelo local via Ollama/vLLM), exigida para rodar o Strix.
+
+**Antes de rodar, decidir (registrado na mesma sessão):**
+- Qual provedor de LLM usar — custo e, mais importante, qual dado sai da ShareO para um quarto fornecedor.
+- Escopo travado em `shareo-rouge.vercel.app` — nunca `shareo-prd` (uso interno, D4 não fechou).
+- Risco de PII passando por mais um processador sem DPA: a ShareO já está fora do prazo do Art. 33 CPC/ANPD (ver [[project-art33-cpc-anpd]]) — usar só contas de teste sintéticas, nunca dado de usuário real.
+- Coordenar horário para não colidir com o robô de validação diária nem sujar a base demo de staging (nenhum dos dois leva `--reset` por causa disso).
+- Cota do Resend — fluxos de cadastro/reset de senha disparam e-mail de verdade, a menos que usem endereços do domínio de teste (`@shareo-test.com`, já filtrado em `lib/email.ts`).
+
+**Próximo passo:** Roberto obtém a chave de API; então definir escopo final e rodar.
+
+---
+
 ## ✅ Relatório mensal de intermediações — requisito da Contabilizei (registrado 10/09, implementado no mesmo dia)
 
 **Origem:** retorno formal da Contabilizei sobre B3/tributação ([`docs/juridico/retorno-contabilizei-tributacao-2026-09-10.md`](juridico/retorno-contabilizei-tributacao-2026-09-10.md)). Para sustentar que os 85% repassados não são receita da ShareO (Simples Nacional, comissão de 15% como base do DAS), a Contabilizei exige envio **mensal obrigatório** de um "Relatório de Intermediações" — por transação: data, identificação do proprietário (**CPF/nome**), valor total, valor do repasse, valor da comissão.
