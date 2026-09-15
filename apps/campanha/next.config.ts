@@ -35,11 +35,18 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              // Domínios do Google Tag Manager (GoogleTagManager.tsx): o container
+              // em si e o destino de tags de medição que ele vier a publicar —
+              // 'unsafe-inline' já cobre os scripts que o container injeta em
+              // runtime, que não carregam nonce.
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob:",
+              "img-src 'self' data: blob: https://www.google-analytics.com",
               "font-src 'self' data:",
-              `connect-src 'self' ${process.env.NEXT_PUBLIC_SHAREO_API_URL ?? ""} https://viacep.com.br`,
+              `connect-src 'self' ${process.env.NEXT_PUBLIC_SHAREO_API_URL ?? ""} https://viacep.com.br https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com`,
+              // Só para o iframe de fallback sem-JS do GTM; frame-ancestors abaixo
+              // continua protegendo contra ESTE site ser embutido alhures.
+              "frame-src https://www.googletagmanager.com",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",

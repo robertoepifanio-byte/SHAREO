@@ -4,6 +4,7 @@ import { Providers } from "@/components/Providers"
 import { PreLaunchFooter } from "@/components/PreLaunchFooter"
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics"
 import { MetaPixel } from "@/components/analytics/MetaPixel"
+import { GoogleTagManagerScript, GoogleTagManagerNoscript } from "@/components/analytics/GoogleTagManager"
 import { BASE_URL, NOINDEX_ENABLED } from "@/lib/seo"
 import "./globals.css"
 
@@ -52,6 +53,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="pt-BR" className={`${montserrat.variable} ${inter.variable}`} suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans antialiased">
+        {/* Precisa ser o primeiro elemento do body, por recomendação do Google. */}
+        <GoogleTagManagerNoscript />
         {/* Skip link — acessibilidade de teclado */}
         <a
           href="#main-content"
@@ -72,6 +75,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               ⚠️ Ligar exige parecer jurídico: compartilha dados com terceiro para
               uso publicitário dele. */}
           <MetaPixel />
+          {/* Ativo — ver GoogleTagManager.tsx para o porquê e a autorização. */}
+          <GoogleTagManagerScript />
         </Providers>
       </body>
     </html>

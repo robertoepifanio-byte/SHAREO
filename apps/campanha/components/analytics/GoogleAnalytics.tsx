@@ -9,9 +9,10 @@ import Script from "next/script"
 /**
  * 🔒 Trava — igual à do site. Ver `components/analytics/GoogleAnalytics.tsx`.
  *
- * ⚠️ A campanha **não tem medição de terceiro** — anterior a esta trava. A origem
- * do lead é gravada no nosso banco (`SignupSource`), que é o caminho escolhido
- * em 04/09: ferramenta estrangeira reabriria o art. 33.
+ * Esta trava (GA4 via `gtag.js`) segue de pé — é independente do Google Tag
+ * Manager, autorizado em 15/09/2026 (ver `GoogleTagManager.tsx` e
+ * [[project-gtm-campanha-2026-09-15]]). Religar ESTE componente ainda exige
+ * decisão própria sobre o art. 33 + reescrever a §5.2 de `/politicas`.
  */
 export const GA4_LIBERADO = false
 
