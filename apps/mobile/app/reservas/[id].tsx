@@ -36,6 +36,8 @@ interface BookingDetail {
   cancelReason:  string | null
   lateFeeAmount: number | null
   lateFeeCalculatedUntil: string | null
+  /** Derivado no servidor a partir do PaymentIntent da multa. */
+  lateFeePaid?: boolean
   // timestamps de histórico — fonte: app/reservas/[id]/page.tsx linhas 83-96
   createdAt:            string
   respondedAt:          string | null
@@ -134,7 +136,7 @@ const ACTOR_ROLE_EMOJI: Record<string, string> = {
 // Fonte: components/booking/ReturnCountdown.tsx linhas 44-116
 // Exibe tempo restante até endDate; atualiza a cada 60s.
 // Urgente quando dias === 0 && horas < 4; vermelho quando expirado.
-function ReturnCountdownInline({ endDateIso }: { endDateIso: string }) {
+function ReturnCountdownInline({ endDateIso, isOwner = false }: { endDateIso: string; isOwner?: boolean }) {
   const { tokens, mode } = useTheme()
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
@@ -150,7 +152,9 @@ function ReturnCountdownInline({ endDateIso }: { endDateIso: string }) {
         <View style={{ flex: 1 }}>
           <Text style={[sCountdown.title, { color: tokens.error }]}>Prazo de devolução encerrado</Text>
           <Text style={[sCountdown.sub, { color: tokens.error }]}>
-            Devolva o item agora para evitar taxas de atraso adicionais.
+            {isOwner
+              ? "O locatário está em atraso. A taxa de atraso é aplicada automaticamente."
+              : "Devolva o item agora para evitar taxas de atraso adicionais."}
           </Text>
         </View>
       </View>
@@ -345,6 +349,13 @@ export default function BookingDetailScreen() {
   const disputa    = getStatusLabel("DISPUTED", mode)
   const isOwner    = user.id === booking.owner.id
   const isBorrower = user.id === booking.borrower.id
+  // Fonte: app/reservas/[id]/page.tsx — `temTaxaAtraso` / `itemAindaFora`.
+  // Com a taxa correndo, a caixa "Item em atraso" ja diz o mesmo com numero;
+  // e em ACTIVE o item AINDA nao voltou, entao "devolvido" seria falso.
+  const temTaxaAtraso = (booking.lateFeeAmount ?? 0) > 0
+  // Paga a multa, ela para de ser cobranca — nao pode seguir "aumentando".
+  const taxaQuitada   = booking.lateFeePaid === true
+  const itemAindaFora = booking.status === "ACTIVE"
   // Site: PENDING ou CONFIRMED, AMBOS os papéis — fonte: _BookingActions.tsx linha 241-242
   const canCancel        = (booking.status === "PENDING" || booking.status === "CONFIRMED") && (isOwner || isBorrower)
   const canReturn        = booking.status === "ACTIVE"   && isBorrower
@@ -887,14 +898,25 @@ export default function BookingDetailScreen() {
         </View>
 
         {/* Taxa de atraso — fonte: app/reservas/[id]/page.tsx linhas 549-561 */}
-        {booking.lateFeeAmount != null && booking.lateFeeAmount > 0 && (
-          <View style={[s.alertBox, { borderColor: mode === "dark" ? "#F08C8466" : "#FCA5A5", backgroundColor: mode === "dark" ? "#2A0A0A" : "#FEF2F2" }]}>
-            <Text style={{ fontSize: 16, marginRight: 8 }}>⏱</Text>
+        {temTaxaAtraso && (
+          <View style={[s.alertBox, taxaQuitada
+            ? { borderColor: tokens.border, backgroundColor: tokens.surface }
+            : { borderColor: mode === "dark" ? "#F08C8466" : "#FCA5A5", backgroundColor: mode === "dark" ? "#2A0A0A" : "#FEF2F2" }]}>
+            <Text style={{ fontSize: 16, marginRight: 8 }}>{taxaQuitada ? "✅" : "⏱"}</Text>
             <View style={{ flex: 1 }}>
-              <Text style={[s.alertTitle, { color: mode === "dark" ? "#F08C84" : "#991B1B" }]}>Taxa de atraso aplicada</Text>
-              <Text style={[s.alertDesc, { color: tokens.error }]}>
-                Item devolvido após o prazo. Taxa adicional: <Text style={{ fontWeight: "700" }}>{fmt(booking.lateFeeAmount)}</Text>
-                {booking.lateFeeCalculatedUntil ? ` — atraso calculado até ${fmtDate(booking.lateFeeCalculatedUntil)}` : ""}
+              <Text style={[s.alertTitle, { color: taxaQuitada ? tokens.text : mode === "dark" ? "#F08C84" : "#991B1B" }]}>
+                {taxaQuitada
+                  ? "Taxa de atraso paga"
+                  : itemAindaFora ? "Item em atraso" : "Taxa de atraso aplicada"}
+              </Text>
+              <Text style={[s.alertDesc, { color: taxaQuitada ? tokens.muted : tokens.error }]}>
+                {taxaQuitada
+                  ? "O locatário já pagou a taxa de atraso: "
+                  : itemAindaFora
+                    ? "Item ainda não devolvido. A taxa aumenta a cada dia de atraso. Taxa até agora: "
+                    : "Item devolvido após o prazo. Taxa adicional: "}
+                <Text style={{ fontWeight: "700" }}>{fmt(booking.lateFeeAmount)}</Text>
+                {booking.lateFeeCalculatedUntil && !taxaQuitada ? ` — atraso calculado até ${fmtDate(booking.lateFeeCalculatedUntil)}` : ""}
               </Text>
             </View>
           </View>
@@ -1047,8 +1069,8 @@ export default function BookingDetailScreen() {
             Lógica: calcula dias/horas/minutos restantes; atualiza a cada 60s via useEffect.
             Urgente: dias === 0 && horas < 4 (laranja). Expirado: vermelho.
         ── */}
-        {booking.status === "ACTIVE" && (
-          <ReturnCountdownInline endDateIso={booking.endDate} />
+        {itemAindaFora && !temTaxaAtraso && (
+          <ReturnCountdownInline endDateIso={booking.endDate} isOwner={isOwner} />
         )}
 
         {/* ── ReturnChecklist — checklist de devolução (locatário + ACTIVE)

@@ -22,6 +22,7 @@ import { deriveBookingHistory } from "@/lib/bookingHistory"
 import { BookingStatusBadge } from "@/components/ui/BookingStatusBadge"
 import { formatPrice, formatDate, formatDateLong } from "@/utils/format"
 import { prazoParaContestar, podeContestar } from "@/lib/prazoContestacao"
+import { taxaDeAtrasoAplicada, taxaDeAtrasoQuitada } from "@/lib/lateFee"
 
 // Data+hora no fuso do Brasil (BRT) e por extenso — o servidor roda em UTC,
 // então o timeZone explícito é obrigatório para não exibir a hora 3h adiantada.
@@ -85,6 +86,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
       extensionRespondedAt: true,
       lateFeeAmount: true,
       lateFeeCalculatedUntil: true,
+      lateFeePaymentIntentId: true,
       photos:        { select: { id: true, url: true, phase: true, createdAt: true }, orderBy: { createdAt: "asc" } },
       item: {
         select: {
@@ -150,6 +152,17 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
   if (!isOwner && !isBorrower) notFound()
 
   const counterpart = isOwner ? booking.borrower : booking.owner
+
+  // Com a taxa já correndo, a caixa "Item em atraso" abaixo diz o mesmo com
+  // número — o countdown repetindo "evite taxas" só contradiz o que já foi
+  // cobrado. E em ACTIVE o item AINDA não voltou: o cron acumula a taxa
+  // durante o atraso, então "devolvido" é falso.
+  const temTaxaAtraso = taxaDeAtrasoAplicada(booking)
+  const taxaAtraso    = booking.lateFeeAmount ?? 0
+  // Paga a multa, ela para de ser cobrança: dizer "a taxa aumenta a cada dia"
+  // depois do pagamento é a mesma contradição que o resto deste bloco corrige.
+  const taxaQuitada   = taxaDeAtrasoQuitada(booking)
+  const itemAindaFora = booking.status === "ACTIVE"
   const img         = booking.item.images[0]?.url
 
   return (
@@ -514,9 +527,9 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
           )}
 
           {/* ── P2-47 — Countdown de devolução ── */}
-          {booking.status === "ACTIVE" && (
+          {itemAindaFora && !temTaxaAtraso && (
             <div className="mb-6">
-              <ReturnCountdown endDateIso={booking.endDate.toISOString()} />
+              <ReturnCountdown endDateIso={booking.endDate.toISOString()} isOwner={isOwner} />
             </div>
           )}
 
@@ -579,18 +592,34 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
           )}
 
           {/* ── Taxa de atraso ── */}
-          {booking.lateFeeAmount != null && booking.lateFeeAmount > 0 && (
-            <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-300 bg-red-50 px-4 py-4">
-              <span className="text-xl" aria-hidden="true">⏱</span>
+          {temTaxaAtraso && (
+            <div className={[
+              "mb-6 flex items-start gap-3 rounded-xl border px-4 py-4",
+              // Multa paga não é alerta: o vermelho seguia gritando cobrança
+              // encerrada.
+              taxaQuitada ? "border-border bg-surface" : "border-red-300 bg-red-50",
+            ].join(" ")}>
+              <span className="text-xl" aria-hidden="true">{taxaQuitada ? "✅" : "⏱"}</span>
               <div>
-                <p className="text-sm font-semibold text-red-800">Taxa de atraso aplicada</p>
-                <p className="text-xs text-red-700">
-                  Item devolvido após o prazo. Taxa adicional:{" "}
-                  <strong>{formatPrice(booking.lateFeeAmount)}</strong>
+                <p className={[
+                  "text-sm font-semibold",
+                  taxaQuitada ? "text-foreground" : "text-red-800",
+                ].join(" ")}>
+                  {taxaQuitada
+                    ? "Taxa de atraso paga"
+                    : itemAindaFora ? "Item em atraso" : "Taxa de atraso aplicada"}
+                </p>
+                <p className={["text-xs", taxaQuitada ? "text-muted-foreground" : "text-red-700"].join(" ")}>
+                  {taxaQuitada
+                    ? "O locatário já pagou a taxa de atraso: "
+                    : itemAindaFora
+                      ? "Item ainda não devolvido. A taxa aumenta a cada dia de atraso. Taxa até agora: "
+                      : "Item devolvido após o prazo. Taxa adicional: "}
+                  <strong>{formatPrice(taxaAtraso)}</strong>
                   {/* Sem a data, o valor não diz a que período se refere — o
                       cálculo automático para no 30º dia e o admin pode atualizar
                       a dívida depois. */}
-                  {booking.lateFeeCalculatedUntil && (
+                  {booking.lateFeeCalculatedUntil && !taxaQuitada && (
                     <> — atraso calculado até {formatDate(booking.lateFeeCalculatedUntil)}</>
                   )}
                 </p>
@@ -599,9 +628,9 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                     lendo só o líquido do aluguel em "Você recebe" — parecia que a
                     multa não era dele. */}
                 {isOwner && (
-                  <p className="mt-1 text-xs text-red-700">
+                  <p className={["mt-1 text-xs", taxaQuitada ? "text-muted-foreground" : "text-red-700"].join(" ")}>
                     Do valor da taxa você recebe{" "}
-                    <strong>{formatPrice(calcSplit(booking.lateFeeAmount, feeRateBps).ownerNetAmount)}</strong>,
+                    <strong>{formatPrice(calcSplit(taxaAtraso, feeRateBps).ownerNetAmount)}</strong>,
                     já descontada a taxa da plataforma de {feeRateLabel}%.
                   </p>
                 )}

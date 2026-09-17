@@ -93,6 +93,15 @@ export function houveAtraso(endDate: Date, referencia: Date): boolean {
 }
 
 /**
+ * A multa já foi aplicada? É o predicado que a UI usa para decidir entre
+ * "devolva para evitar taxas" e "a taxa já está correndo" — estava sendo
+ * recombinado à mão em cada tela.
+ */
+export function taxaDeAtrasoAplicada(b: { lateFeeAmount: number | null }): boolean {
+  return (b.lateFeeAmount ?? 0) > 0
+}
+
+/**
  * A multa já foi paga? `lateFeePaymentIntentId` só é gravado pelo webhook,
  * quando o dinheiro entra — é o sinal de quitação, não a existência do valor.
  */

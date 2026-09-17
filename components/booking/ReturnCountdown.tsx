@@ -11,6 +11,8 @@ import { useState, useEffect } from "react"
 interface Props {
   /** ISO string da data de devolução (booking.endDate) */
   endDateIso: string
+  /** Quem está vendo: o locador não devolve nada, o texto de urgência muda. */
+  isOwner?: boolean
 }
 
 interface TimeLeft {
@@ -41,7 +43,7 @@ function buildAriaLabel({ days, hours, minutes, expired }: TimeLeft): string {
   return `Devolução em ${parts.join(", ")}`
 }
 
-export function ReturnCountdown({ endDateIso }: Props) {
+export function ReturnCountdown({ endDateIso, isOwner = false }: Props) {
   const [timeLeft, setTimeLeft] = useState<TimeLeft>(() => calcTimeLeft(endDateIso))
 
   useEffect(() => {
@@ -70,7 +72,9 @@ export function ReturnCountdown({ endDateIso }: Props) {
             Prazo de devolução encerrado
           </p>
           <p className="mt-0.5 text-xs text-destructive/80">
-            Devolva o item agora para evitar taxas de atraso adicionais.
+            {isOwner
+              ? "O locatário está em atraso. A taxa de atraso é aplicada automaticamente."
+              : "Devolva o item agora para evitar taxas de atraso adicionais."}
           </p>
         </div>
       </div>

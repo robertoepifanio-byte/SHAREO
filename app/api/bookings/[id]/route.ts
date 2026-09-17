@@ -3,6 +3,7 @@ import { NextResponse, after } from "next/server"
 import { randomInt } from "node:crypto"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
+import { taxaDeAtrasoQuitada } from "@/lib/lateFee"
 import { userMiniSelect } from "@/lib/prisma/selects"
 import { PatchBookingSchema } from "@/lib/validations/bookings"
 import type { BookingStatus } from "@prisma/client"
@@ -69,6 +70,7 @@ export async function GET(req: NextRequest, { params }: Params) {
         extensionRequestedEndDate: true,
         lateFeeAmount:             true,
         lateFeeCalculatedUntil:    true,
+        lateFeePaymentIntentId:    true,
         pickupTokenUsedAt:         true,
         photos: { select: { id: true, url: true, phase: true, createdAt: true }, orderBy: { createdAt: "asc" } },
         item: {
@@ -129,9 +131,15 @@ export async function GET(req: NextRequest, { params }: Params) {
     // O endereço do proprietário só vai para quem tem direito a ele — ver
     // redactOwnerAddress. Ser participante da reserva NÃO basta: qualquer pessoa
     // cria uma reserva sem o dono aceitar.
+    // O id do PaymentIntent não sai daqui: o app só precisa saber SE a multa
+    // foi paga, e o texto da tela depende disso (uma multa paga não "aumenta
+    // a cada dia"). Derivar no servidor mantém a regra num lugar só.
+    const { lateFeePaymentIntentId, ...bookingPublico } = booking
+
     return NextResponse.json({
       data: {
-        ...booking,
+        ...bookingPublico,
+        lateFeePaid: taxaDeAtrasoQuitada({ lateFeePaymentIntentId }),
         owner: redactOwnerAddress(booking.owner, {
           isOwner,
           isPaid: booking.paymentStatus === "PAID",

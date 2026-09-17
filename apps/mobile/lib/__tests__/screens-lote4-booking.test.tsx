@@ -113,6 +113,7 @@ function makeBooking(overrides: Record<string, unknown> = {}) {
     borrowerNote:          null,
     cancelReason:          null,
     lateFeeAmount:         null,
+    lateFeePaid:           false,
     createdAt:             "2026-07-04T10:00:00Z",
     respondedAt:           null,
     paidAt:                null,
@@ -393,6 +394,53 @@ describe("ReturnCountdown — prazo encerrado (diff <= 0)", () => {
         "Devolva o item agora para evitar taxas de atraso adicionais."
       )).toBeTruthy()
     )
+  })
+})
+
+// ── Atraso: countdown x taxa aplicada ─────────────────────────────────────────
+// O countdown expirado dizia "evite taxas adicionais" com a taxa JÁ cobrada, e
+// mandava o LOCADOR devolver o item que ele nunca teve.
+
+describe("Prazo encerrado — coerência com a taxa de atraso", () => {
+  it("com a taxa aplicada: some o countdown e a caixa fala em atraso em curso", async () => {
+    setApiFetch({ status: "ACTIVE", endDate: EXPIRED_DATE, lateFeeAmount: 1500 })
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Em andamento")
+    await waitFor(() => expect(screen.getByText("Item em atraso")).toBeTruthy())
+    expect(screen.queryByText("Prazo de devolução encerrado")).toBeNull()
+    expect(
+      screen.queryByText("Devolva o item agora para evitar taxas de atraso adicionais.")
+    ).toBeNull()
+    // Em ACTIVE o item nao voltou: a caixa nao pode dizer "devolvido".
+    expect(screen.queryByText("Taxa de atraso aplicada")).toBeNull()
+  })
+
+  it("multa paga: a caixa não segue dizendo que a taxa aumenta", async () => {
+    setApiFetch({
+      status: "COMPLETED", endDate: EXPIRED_DATE,
+      lateFeeAmount: 1500, lateFeePaid: true,
+    })
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Concluída")
+    await waitFor(() => expect(screen.getByText("Taxa de atraso paga")).toBeTruthy())
+    expect(screen.queryByText("Item em atraso")).toBeNull()
+    expect(screen.queryByText("Taxa de atraso aplicada")).toBeNull()
+  })
+
+  it("para o locador, o aviso de prazo encerrado não manda ele devolver", async () => {
+    mockAuthUserId   = "user-owner"
+    mockAuthUserName = "Carlos Proprietário"
+    setApiFetch({ status: "ACTIVE", endDate: EXPIRED_DATE })
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Em andamento")
+    await waitFor(() =>
+      expect(screen.getByText(
+        "O locatário está em atraso. A taxa de atraso é aplicada automaticamente."
+      )).toBeTruthy()
+    )
+    expect(
+      screen.queryByText("Devolva o item agora para evitar taxas de atraso adicionais.")
+    ).toBeNull()
   })
 })
 
