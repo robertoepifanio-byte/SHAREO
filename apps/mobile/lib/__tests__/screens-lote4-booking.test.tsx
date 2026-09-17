@@ -113,6 +113,7 @@ function makeBooking(overrides: Record<string, unknown> = {}) {
     borrowerNote:          null,
     cancelReason:          null,
     lateFeeAmount:         null,
+    lateFeePaid:           false,
     createdAt:             "2026-07-04T10:00:00Z",
     respondedAt:           null,
     paidAt:                null,
@@ -411,6 +412,18 @@ describe("Prazo encerrado — coerência com a taxa de atraso", () => {
       screen.queryByText("Devolva o item agora para evitar taxas de atraso adicionais.")
     ).toBeNull()
     // Em ACTIVE o item nao voltou: a caixa nao pode dizer "devolvido".
+    expect(screen.queryByText("Taxa de atraso aplicada")).toBeNull()
+  })
+
+  it("multa paga: a caixa não segue dizendo que a taxa aumenta", async () => {
+    setApiFetch({
+      status: "COMPLETED", endDate: EXPIRED_DATE,
+      lateFeeAmount: 1500, lateFeePaid: true,
+    })
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Concluída")
+    await waitFor(() => expect(screen.getByText("Taxa de atraso paga")).toBeTruthy())
+    expect(screen.queryByText("Item em atraso")).toBeNull()
     expect(screen.queryByText("Taxa de atraso aplicada")).toBeNull()
   })
 

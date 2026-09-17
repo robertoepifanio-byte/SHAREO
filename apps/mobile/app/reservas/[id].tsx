@@ -36,6 +36,8 @@ interface BookingDetail {
   cancelReason:  string | null
   lateFeeAmount: number | null
   lateFeeCalculatedUntil: string | null
+  /** Derivado no servidor a partir do PaymentIntent da multa. */
+  lateFeePaid?: boolean
   // timestamps de histórico — fonte: app/reservas/[id]/page.tsx linhas 83-96
   createdAt:            string
   respondedAt:          string | null
@@ -351,6 +353,8 @@ export default function BookingDetailScreen() {
   // Com a taxa correndo, a caixa "Item em atraso" ja diz o mesmo com numero;
   // e em ACTIVE o item AINDA nao voltou, entao "devolvido" seria falso.
   const temTaxaAtraso = (booking.lateFeeAmount ?? 0) > 0
+  // Paga a multa, ela para de ser cobranca — nao pode seguir "aumentando".
+  const taxaQuitada   = booking.lateFeePaid === true
   const itemAindaFora = booking.status === "ACTIVE"
   // Site: PENDING ou CONFIRMED, AMBOS os papéis — fonte: _BookingActions.tsx linha 241-242
   const canCancel        = (booking.status === "PENDING" || booking.status === "CONFIRMED") && (isOwner || isBorrower)
@@ -895,18 +899,24 @@ export default function BookingDetailScreen() {
 
         {/* Taxa de atraso — fonte: app/reservas/[id]/page.tsx linhas 549-561 */}
         {temTaxaAtraso && (
-          <View style={[s.alertBox, { borderColor: mode === "dark" ? "#F08C8466" : "#FCA5A5", backgroundColor: mode === "dark" ? "#2A0A0A" : "#FEF2F2" }]}>
-            <Text style={{ fontSize: 16, marginRight: 8 }}>⏱</Text>
+          <View style={[s.alertBox, taxaQuitada
+            ? { borderColor: tokens.border, backgroundColor: tokens.surface }
+            : { borderColor: mode === "dark" ? "#F08C8466" : "#FCA5A5", backgroundColor: mode === "dark" ? "#2A0A0A" : "#FEF2F2" }]}>
+            <Text style={{ fontSize: 16, marginRight: 8 }}>{taxaQuitada ? "✅" : "⏱"}</Text>
             <View style={{ flex: 1 }}>
-              <Text style={[s.alertTitle, { color: mode === "dark" ? "#F08C84" : "#991B1B" }]}>
-                {itemAindaFora ? "Item em atraso" : "Taxa de atraso aplicada"}
+              <Text style={[s.alertTitle, { color: taxaQuitada ? tokens.text : mode === "dark" ? "#F08C84" : "#991B1B" }]}>
+                {taxaQuitada
+                  ? "Taxa de atraso paga"
+                  : itemAindaFora ? "Item em atraso" : "Taxa de atraso aplicada"}
               </Text>
-              <Text style={[s.alertDesc, { color: tokens.error }]}>
-                {itemAindaFora
-                  ? "Item ainda não devolvido. A taxa aumenta a cada dia de atraso. Taxa até agora: "
-                  : "Item devolvido após o prazo. Taxa adicional: "}
+              <Text style={[s.alertDesc, { color: taxaQuitada ? tokens.muted : tokens.error }]}>
+                {taxaQuitada
+                  ? "O locatário já pagou a taxa de atraso: "
+                  : itemAindaFora
+                    ? "Item ainda não devolvido. A taxa aumenta a cada dia de atraso. Taxa até agora: "
+                    : "Item devolvido após o prazo. Taxa adicional: "}
                 <Text style={{ fontWeight: "700" }}>{fmt(booking.lateFeeAmount)}</Text>
-                {booking.lateFeeCalculatedUntil ? ` — atraso calculado até ${fmtDate(booking.lateFeeCalculatedUntil)}` : ""}
+                {booking.lateFeeCalculatedUntil && !taxaQuitada ? ` — atraso calculado até ${fmtDate(booking.lateFeeCalculatedUntil)}` : ""}
               </Text>
             </View>
           </View>
