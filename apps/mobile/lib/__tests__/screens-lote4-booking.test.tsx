@@ -444,6 +444,56 @@ describe("Prazo encerrado — coerência com a taxa de atraso", () => {
   })
 })
 
+// ── Taxa de atraso no resumo financeiro ───────────────────────────────────────
+// O resumo dizia "Total R$ 175,00 / Você recebe R$ 148,75" ignorando a multa,
+// que só aparecia na caixa colorida mais abaixo. Multa 4500 = 675 de taxa + 3825
+// líquido; locação 17500 = 2625 de taxa + 14875 líquido (15%, feeRateBps 1500).
+
+describe("Resumo financeiro — taxa de atraso soma ao total", () => {
+  it("locatário: mostra a taxa a pagar e o total com ela", async () => {
+    setApiFetch({ status: "RETURNED", lateFeeAmount: 4500 })
+    wrap(<BookingDetailScreen />)
+    // O rótulo do status aparece duas vezes para o locatário; esperar pela linha.
+    await waitFor(() => expect(screen.getByText("Taxa de atraso (a pagar)")).toBeTruthy(), { timeout: 4000 })
+    expect(screen.getByText("Total com a taxa de atraso")).toBeTruthy()
+    expect(screen.getByText(/R\$\s220,00/)).toBeTruthy() // 17500 + 4500
+    expect(screen.queryByText("Você recebe no total")).toBeNull()
+  })
+
+  it("locador: total recebido soma o líquido da multa, com aviso de que depende do pagamento", async () => {
+    mockAuthUserId   = "user-owner"
+    mockAuthUserName = "Carlos Proprietário"
+    setApiFetch({ status: "RETURNED", lateFeeAmount: 4500 })
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Devolução em andamento")
+    await waitFor(() => expect(screen.getByText("Você recebe no total")).toBeTruthy())
+    expect(screen.getByText(/R\$\s187,00/)).toBeTruthy() // 14875 + 3825
+    expect(screen.getByText("Inclui a taxa de atraso, repassada quando o locatário pagar.")).toBeTruthy()
+    // Antes do pagamento a caixa não promete o repasse como certo.
+    expect(screen.getByText(/Quando o locatário pagar, você recebe/)).toBeTruthy()
+  })
+
+  it("multa paga: rótulo vira '(paga)' e some a ressalva de repasse", async () => {
+    mockAuthUserId   = "user-owner"
+    mockAuthUserName = "Carlos Proprietário"
+    setApiFetch({ status: "COMPLETED", lateFeeAmount: 4500, lateFeePaid: true })
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Concluída")
+    await waitFor(() => expect(screen.getByText("Taxa de atraso (paga)")).toBeTruthy())
+    expect(screen.queryByText("Inclui a taxa de atraso, repassada quando o locatário pagar.")).toBeNull()
+    expect(screen.queryByText(/Quando o locatário pagar, você recebe/)).toBeNull()
+    expect(screen.getByText(/Do valor da taxa você recebe/)).toBeTruthy()
+  })
+
+  it("sem multa: o resumo não ganha linha de atraso", async () => {
+    setApiFetch({ status: "COMPLETED" })
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Concluída")
+    expect(screen.queryByText(/^Taxa de atraso \(/)).toBeNull()
+    expect(screen.queryByText("Total com a taxa de atraso")).toBeNull()
+  })
+})
+
 // ── ReturnChecklist — rótulos dos 4 checkboxes ───────────────────────────────
 
 describe("ReturnChecklist — 4 checkboxes verbatim (ReturnChecklist.tsx linhas 30-36)", () => {

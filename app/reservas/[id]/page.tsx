@@ -163,6 +163,10 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
   // depois do pagamento é a mesma contradição que o resto deste bloco corrige.
   const taxaQuitada   = taxaDeAtrasoQuitada(booking)
   const itemAindaFora = booking.status === "ACTIVE"
+  // A multa segue o mesmo split da locação. Fica aqui, e não só na caixa da
+  // taxa, porque o resumo financeiro também precisa dela: sem a linha lá,
+  // "Total da locação" e "Você recebe" ignoravam uma dívida de 9× o aluguel.
+  const taxaSplit     = calcSplit(taxaAtraso, feeRateBps)
   const img         = booking.item.images[0]?.url
 
   return (
@@ -317,6 +321,40 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                     <span className="text-brand">{formatPrice(ownerNet)}</span>
                   </div>
                 </div>
+
+                {/* Taxa de atraso — soma ao resumo. A caixa colorida mais abaixo
+                    explica o motivo; aqui entra só o número, para que o total
+                    de quem paga e o de quem recebe fechem numa leitura. */}
+                {temTaxaAtraso && (
+                  <div className="space-y-1.5 rounded-lg bg-background p-3">
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Taxa de atraso {taxaQuitada ? "(paga)" : "(a pagar)"}</span>
+                      <span>{formatPrice(taxaAtraso)}</span>
+                    </div>
+                    {isOwner ? (
+                      <>
+                        <div className="flex justify-between text-muted-foreground">
+                          <span>Taxa Shareo ({feeRateLabel}%)</span>
+                          <span className="text-destructive">− {formatPrice(taxaSplit.platformFeeAmount)}</span>
+                        </div>
+                        <div className="flex justify-between font-semibold text-foreground">
+                          <span>Você recebe no total</span>
+                          <span className="text-brand">{formatPrice(ownerNet + taxaSplit.ownerNetAmount)}</span>
+                        </div>
+                        {!taxaQuitada && (
+                          <p className="text-xs text-muted-foreground">
+                            Inclui a taxa de atraso, repassada quando o locatário pagar.
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <div className="flex justify-between font-semibold text-foreground">
+                        <span>Total com a taxa de atraso</span>
+                        <span>{formatPrice(booking.totalPrice + taxaAtraso)}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Notas */}
@@ -629,8 +667,11 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                     multa não era dele. */}
                 {isOwner && (
                   <p className={["mt-1 text-xs", taxaQuitada ? "text-muted-foreground" : "text-red-700"].join(" ")}>
-                    Do valor da taxa você recebe{" "}
-                    <strong>{formatPrice(calcSplit(taxaAtraso, feeRateBps).ownerNetAmount)}</strong>,
+                    {/* Só é do proprietário quando o locatário paga: antes disso
+                        "você recebe" prometia dinheiro que pode não entrar. */}
+                    {taxaQuitada
+                      ? <>Do valor da taxa você recebe <strong>{formatPrice(taxaSplit.ownerNetAmount)}</strong></>
+                      : <>Quando o locatário pagar, você recebe <strong>{formatPrice(taxaSplit.ownerNetAmount)}</strong> do valor da taxa</>},
                     já descontada a taxa da plataforma de {feeRateLabel}%.
                   </p>
                 )}
