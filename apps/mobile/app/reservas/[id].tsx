@@ -352,7 +352,8 @@ export default function BookingDetailScreen() {
   // Fonte: app/reservas/[id]/page.tsx — `temTaxaAtraso` / `itemAindaFora`.
   // Com a taxa correndo, a caixa "Item em atraso" ja diz o mesmo com numero;
   // e em ACTIVE o item AINDA nao voltou, entao "devolvido" seria falso.
-  const temTaxaAtraso = (booking.lateFeeAmount ?? 0) > 0
+  const taxaAtraso    = booking.lateFeeAmount ?? 0
+  const temTaxaAtraso = taxaAtraso > 0
   // Paga a multa, ela para de ser cobranca — nao pode seguir "aumentando".
   const taxaQuitada   = booking.lateFeePaid === true
   const itemAindaFora = booking.status === "ACTIVE"
@@ -377,6 +378,9 @@ export default function BookingDetailScreen() {
   const feeRateLabel = feeRatePct != null
     ? (feeRatePct % 1 === 0 ? feeRatePct.toFixed(0) : String(feeRatePct))
     : null
+  // Fonte: app/reservas/[id]/page.tsx — `taxaSplit`. A multa segue o mesmo
+  // split da locação; o resumo financeiro soma a linha dela.
+  const taxaSplit  = feeRateBps != null ? calcSplit(taxaAtraso, feeRateBps) : null
   const pickupAddress = formatPickupAddress(booking.owner)
 
   // Histórico de eventos — fonte: lib/bookingHistory.ts (deriveBookingHistory)
@@ -895,6 +899,44 @@ export default function BookingDetailScreen() {
               </View>
             </View>
           )}
+          {/* Taxa de atraso no resumo — fonte: app/reservas/[id]/page.tsx (bloco
+              "Taxa de atraso" dentro do resumo financeiro). */}
+          {temTaxaAtraso && split && taxaSplit && (
+            <View style={[s.splitBox, { backgroundColor: tokens.bg }]}>
+              <View style={s.finRow}>
+                <Text style={[s.finLabel, { color: tokens.muted }]}>
+                  Taxa de atraso {taxaQuitada ? "(paga)" : "(a pagar)"}
+                </Text>
+                <Text style={[s.finValue, { color: tokens.muted }]}>{fmt(taxaAtraso)}</Text>
+              </View>
+              {isOwner ? (
+                <>
+                  <View style={s.finRow}>
+                    <Text style={[s.finLabel, { color: tokens.muted }]}>Taxa Shareo ({feeRateLabel}%)</Text>
+                    <Text style={[s.finValue, { color: tokens.error }]}>− {fmt(taxaSplit.platformFeeAmount)}</Text>
+                  </View>
+                  <View style={s.finRow}>
+                    <Text style={[s.finTotalLabel, { color: tokens.text, fontSize: 13 }]}>Você recebe no total</Text>
+                    <Text style={[s.finTotalValue, { color: tokens.green, fontSize: 13 }]}>
+                      {fmt(split.ownerNet + taxaSplit.ownerNetAmount)}
+                    </Text>
+                  </View>
+                  {!taxaQuitada && (
+                    <Text style={[s.finLabel, { color: tokens.muted, fontSize: 12 }]}>
+                      Inclui a taxa de atraso, repassada quando o locatário pagar.
+                    </Text>
+                  )}
+                </>
+              ) : (
+                <View style={s.finRow}>
+                  <Text style={[s.finTotalLabel, { color: tokens.text, fontSize: 13 }]}>Total com a taxa de atraso</Text>
+                  <Text style={[s.finTotalValue, { color: tokens.text, fontSize: 13 }]}>
+                    {fmt(booking.totalPrice + taxaAtraso)}
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
         </View>
 
         {/* Taxa de atraso — fonte: app/reservas/[id]/page.tsx linhas 549-561 */}
@@ -918,6 +960,16 @@ export default function BookingDetailScreen() {
                 <Text style={{ fontWeight: "700" }}>{fmt(booking.lateFeeAmount)}</Text>
                 {booking.lateFeeCalculatedUntil && !taxaQuitada ? ` — atraso calculado até ${fmtDate(booking.lateFeeCalculatedUntil)}` : ""}
               </Text>
+              {/* Repasse da multa ao locador — fonte: app/reservas/[id]/page.tsx.
+                  Só é dele quando o locatário paga. */}
+              {isOwner && taxaSplit && feeRateLabel != null && (
+                <Text style={[s.alertDesc, { color: taxaQuitada ? tokens.muted : tokens.error, marginTop: 4 }]}>
+                  {taxaQuitada
+                    ? <>Do valor da taxa você recebe <Text style={{ fontWeight: "700" }}>{fmt(taxaSplit.ownerNetAmount)}</Text></>
+                    : <>Quando o locatário pagar, você recebe <Text style={{ fontWeight: "700" }}>{fmt(taxaSplit.ownerNetAmount)}</Text> do valor da taxa</>}
+                  {`, já descontada a taxa da plataforma de ${feeRateLabel}%.`}
+                </Text>
+              )}
             </View>
           </View>
         )}
