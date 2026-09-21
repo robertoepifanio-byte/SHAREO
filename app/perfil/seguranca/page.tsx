@@ -25,7 +25,7 @@ export default async function SegurancaPage() {
 
   const user = await prisma.user.findUnique({
     where:  { id: session.user.id },
-    select: { email: true, createdAt: true, role: true, emailVerified: true },
+    select: { email: true, createdAt: true, role: true, emailVerified: true, totpEnabledAt: true },
   })
 
   if (!user) redirect("/login")
@@ -101,6 +101,24 @@ export default async function SegurancaPage() {
               </>
             )}
           </div>
+
+          {/* 2FA — obrigatório para admins */}
+          {isAdmin && (
+            <div className="rounded-xl border border-border bg-surface p-5">
+              <h2 className="mb-1 font-semibold text-foreground">Verificação em duas etapas</h2>
+              <p className="mb-4 text-sm text-muted-foreground">
+                {user.totpEnabledAt
+                  ? "Ativa: além da senha, o login pede o código do aplicativo autenticador."
+                  : "Obrigatória para administradores. Enquanto não for ativada, o painel admin fica bloqueado."}
+              </p>
+              <Link
+                href="/perfil/seguranca/2fa"
+                className="inline-flex h-11 items-center rounded-lg border border-border px-4 text-sm font-semibold text-foreground hover:bg-background transition-colors"
+              >
+                {user.totpEnabledAt ? "Ver detalhes" : "Ativar agora"}
+              </Link>
+            </div>
+          )}
 
           {/* Zona de perigo — oculta para admins */}
           {!isAdmin && (

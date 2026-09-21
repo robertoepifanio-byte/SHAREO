@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import { useEffect, useState, type FormEvent } from "react"
 import { signIn } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
@@ -25,6 +25,17 @@ export function LoginForm() {
     urlError ? (ERROR_MESSAGES[urlError] ?? ERROR_MESSAGES.default) : "",
   )
   const [loading, setLoading] = useState(false)
+  // 2FA de admin: a senha estava certa e o servidor pede o código (segunda etapa).
+  const [needsCode, setNeedsCode] = useState(false)
+  const [code,      setCode]      = useState("")
+  const notice = searchParams.get("msg") === "2fa-ativado"
+    ? "Verificação em duas etapas ativada. Entre de novo com a senha e o código do aplicativo."
+    : null
+
+  // O campo do código aparece depois do clique em "Entrar": leva o foco até ele.
+  useEffect(() => {
+    if (needsCode) document.getElementById("login-code")?.focus()
+  }, [needsCode])
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -34,11 +45,18 @@ export function LoginForm() {
     const result = await signIn("credentials", {
       email,
       password,
+      ...(needsCode ? { code } : {}),
       redirect: false,
     })
 
     setLoading(false)
 
+    // 2FA de admin: `mfa_required` = a senha estava certa e falta o código; `mfa_invalid` = código recusado.
+    if (result?.code?.startsWith("mfa_")) {
+      setNeedsCode(true)
+      if (result.code === "mfa_invalid") setError("Código incorreto, expirado ou já utilizado.")
+      return
+    }
     if (result?.error) {
       setError(ERROR_MESSAGES[result.error] ?? ERROR_MESSAGES.default)
       return
@@ -77,6 +95,12 @@ export function LoginForm() {
           </div>
         )}
 
+        {notice && !error && (
+          <div role="status" className="rounded-md border border-brand/30 bg-brand/10 px-4 py-3 text-sm text-foreground">
+            {notice}
+          </div>
+        )}
+
         <Input
           label="E-mail"
           type="email"
@@ -85,7 +109,7 @@ export function LoginForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          disabled={loading}
+          disabled={loading || needsCode}
         />
 
         <div className="flex flex-col gap-1.5">
@@ -109,7 +133,7 @@ export function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              disabled={loading}
+              disabled={loading || needsCode}
               className="h-11 w-full rounded-md border border-input bg-surface px-3 pr-10 text-sm text-foreground placeholder:text-muted-foreground transition-colors outline-none focus:border-ring focus:ring-2 focus:ring-ring/20 disabled:opacity-50"
             />
             <button
@@ -122,6 +146,32 @@ export function LoginForm() {
             </button>
           </div>
         </div>
+
+        {needsCode && (
+          <div className="flex flex-col gap-1.5">
+            <Input
+              label="Código de verificação"
+              type="text"
+              autoComplete="one-time-code"
+              placeholder="000000"
+              value={code}
+              id="login-code"
+              onChange={(e) => setCode(e.target.value)}
+              required
+              disabled={loading}
+            />
+            <p className="text-xs text-muted-foreground">
+              Digite o código de 6 dígitos do aplicativo autenticador, ou um código de recuperação.{" "}
+              <button
+                type="button"
+                onClick={() => { setNeedsCode(false); setCode(""); setError("") }}
+                className="text-brand hover:underline outline-none focus-visible:ring-1 focus-visible:ring-brand rounded"
+              >
+                Voltar
+              </button>
+            </p>
+          </div>
+        )}
 
         <Button type="submit" size="lg" loading={loading} className="mt-2 w-full">
           Entrar

@@ -28,6 +28,8 @@ import { chromium } from '@playwright/test'
 import { PrismaClient } from '@prisma/client'
 import * as fs from 'fs'
 import * as path from 'path'
+import { encryptPII } from '../lib/crypto'
+import { assertNotEnrollment, completeTwoFactorIfAsked } from '../e2e/fixtures/totp'
 import { FIXTURE_LOCATARIO, FIXTURE_PROPRIETARIO, FIXTURE_ADMIN, SESSION_PATHS } from '../e2e/fixtures/test-credentials'
 
 const STAGING_URL =
@@ -91,6 +93,7 @@ async function loginAndSaveSession(
   email: string,
   password: string,
   outputPath: string,
+  totpSecret?: string,
 ): Promise<void> {
   const browser = await chromium.launch({ headless: true })
   const context = await browser.newContext({ baseURL: STAGING_URL })
@@ -102,6 +105,8 @@ async function loginAndSaveSession(
     await page.getByLabel(/e-mail/i).fill(email)
     await page.locator('#password').fill(password)
     await page.getByRole('button', { name: /entrar/i }).click()
+    // Só o admin tem 2FA — para os outros, esperar o campo custaria 6 s por login à toa.
+    if (email === FIXTURE_ADMIN.email) await completeTwoFactorIfAsked(page, email, totpSecret)
 
     try {
       await page.waitForURL(/\/(dashboard|itens|perfil|home|meus-anuncios)/, { timeout: 30000 })
@@ -111,6 +116,8 @@ async function loginAndSaveSession(
       const bodyText = await page.locator('body').innerText().catch(() => '')
       throw new Error(`Login timeout. URL atual: ${url}\nConteúdo: ${bodyText.slice(0, 500)}`)
     }
+
+    assertNotEnrollment(page, email)
 
     const dir = path.dirname(outputPath)
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
@@ -156,6 +163,27 @@ async function promoteToAdmin(email: string): Promise<void> {
     throw new Error(`Nenhum usuário encontrado com email ${email} — registerUser() rodou antes?`)
   }
   console.log(`  ✅ Promovido a ADMIN: ${email}`)
+}
+
+/**
+ * Cadastra o 2FA (TOTP) do admin fixture com um segredo CONHECIDO, para o login da
+ * suíte poder calcular o código. É a alternativa a um bypass: o 2FA segue obrigatório
+ * no staging, só que este admin já o tem cadastrado e o teste sabe o segredo.
+ *
+ * Idempotente (reaplica o mesmo segredo). Sem o segredo no ambiente, não mexe em
+ * nada — o login do admin então cai no cadastro do 2FA e `loginAndSaveSession` avisa.
+ */
+async function enrollFixtureTotp(email: string, secret: string | undefined): Promise<void> {
+  if (!secret) {
+    console.log('  ⚠️  FIXTURE_ADMIN_TOTP_SECRET ausente — admin fixture ficará sem 2FA e sem acesso ao painel.')
+    return
+  }
+  const { count } = await db().user.updateMany({
+    where: { email },
+    data:  { totpSecretEnc: encryptPII(secret), totpEnabledAt: new Date(), totpLastStep: null, totpRecoveryHashes: [] },
+  })
+  if (count === 0) throw new Error(`Nenhum usuário encontrado com email ${email} para cadastrar o 2FA.`)
+  console.log(`  ✅ 2FA cadastrado (segredo conhecido): ${email}`)
 }
 
 /**
@@ -221,7 +249,8 @@ async function main() {
   console.log('\n👤 Admin:')
   await registerUser(FIXTURE_ADMIN)
   await promoteToAdmin(FIXTURE_ADMIN.email)
-  await loginAndSaveSession(FIXTURE_ADMIN.email, FIXTURE_ADMIN.password, SESSION_PATHS.admin)
+  await enrollFixtureTotp(FIXTURE_ADMIN.email, process.env.FIXTURE_ADMIN_TOTP_SECRET)
+  await loginAndSaveSession(FIXTURE_ADMIN.email, FIXTURE_ADMIN.password, SESSION_PATHS.admin, process.env.FIXTURE_ADMIN_TOTP_SECRET)
 
   // --- Guards de reserva: e-mail verificado + cadastro completo (os três) ---
   console.log('\n📧 Verificação de e-mail:')

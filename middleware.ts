@@ -2,6 +2,7 @@ import { getToken } from "next-auth/jwt"
 import { jwtVerify } from "jose"
 import { NextResponse, type NextRequest } from "next/server"
 import { isSessionStale } from "@/lib/redis-admin-blocklist"
+import { sessionAccess } from "@/lib/auth/mfa-gate"
 
 const PROTECTED_PREFIXES = [
   "/dashboard",
@@ -211,7 +212,27 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  // 2FA obrigatório: admin cujo login não passou pelo segundo fator (ou cujo token é
+  // anterior ao 2FA) não abre o painel. A regra vive em sessionAccess — a mesma que
+  // rebaixa a sessão — para o middleware e a sessão não divergirem.
+  const mfaPending = token ? sessionAccess(token).mfaPending : false
+
+  // Destino padrão do login (/dashboard): leva o admin sem 2FA direto ao cadastro, em vez
+  // de deixá-lo numa tela sem link de admin (o formulário de login não precisa saber disso).
+  if (mfaPending && pathname === "/dashboard") {
+    return NextResponse.redirect(new URL("/perfil/seguranca/2fa", req.url))
+  }
+
   if (isAdminRoute && token) {
+    if (mfaPending) {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json(
+          { error: { code: "MFA_REQUIRED", message: "Verificação em duas etapas obrigatória para administradores." } },
+          { status: 403 },
+        )
+      }
+      return NextResponse.redirect(new URL("/perfil/seguranca/2fa", req.url))
+    }
     const role = token.role as string | undefined
     // Sessões de admin rebaixado/desativado/removido são mortas pelo epoch
     // (isSessionStale, acima); o login novo reflete o role atual. Aqui só

@@ -3,6 +3,8 @@ import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { LoginSchema } from "@/lib/validations/auth"
+import { checkAdminSecondFactor } from "@/lib/auth/mfa"
+import { sessionAccess } from "@/lib/auth/mfa-gate"
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET,
@@ -18,6 +20,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         email:    { label: "E-mail",  type: "email"    },
         password: { label: "Senha",   type: "password" },
+        code:     { label: "Código",  type: "text"     }, // 2FA de admin (TOTP ou código de recuperação)
       },
       async authorize(credentials) {
         // 🪤 Validar com `LoginSchema` e não ler `credentials` cru. Antes daqui
@@ -39,6 +42,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const valid = await bcrypt.compare(parsed.data.password, user.passwordHash)
         if (!valid) return null
 
+        // Segundo fator SÓ depois de a senha estar certa — pedir o código a quem errou
+        // a senha confirmaria a um estranho que aquele e-mail é de um admin.
+        const code = typeof credentials?.code === "string" ? credentials.code : undefined
+        const mfa = await checkAdminSecondFactor(user, code)
+
         return {
           id:        user.id,
           email:     user.email,
@@ -46,6 +54,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           role:      user.role,
           userType:  user.userType,
           adminRole: user.adminRole ?? undefined,
+          mfa,
         }
       },
     }),
@@ -53,11 +62,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     jwt({ token, user }) {
       if (user) {
-        const u = user as typeof user & { role: "USER" | "ADMIN"; userType: "PF" | "PJ"; adminRole?: string }
+        const u = user as typeof user & { role: "USER" | "ADMIN"; userType: "PF" | "PJ"; adminRole?: string; mfa?: boolean }
         token.id        = u.id as string
         token.role      = u.role
         token.userType  = u.userType
         token.adminRole = u.adminRole ?? undefined
+        token.mfa       = u.mfa === true
         token.loginAt   = Math.floor(Date.now() / 1000)  // SEC-CRIT-04: fixado no login, preservado nos refreshes
       }
       return token
@@ -65,9 +75,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     session({ session, token }) {
       if (session.user) {
         session.user.id        = token.id as string
-        session.user.role      = token.role as "USER" | "ADMIN"
         session.user.userType  = token.userType as "PF" | "PJ"
-        session.user.adminRole = token.adminRole as "ADMIN_SUPERADMIN" | "ADMIN_FINANCEIRO" | "ADMIN_OPERACIONAL" | undefined
+        // Admin sem 2FA verificado sai rebaixado — ver lib/auth/mfa-gate.ts.
+        const access = sessionAccess(token)
+        session.user.role       = access.role
+        session.user.adminRole  = access.adminRole
       }
       return session
     },

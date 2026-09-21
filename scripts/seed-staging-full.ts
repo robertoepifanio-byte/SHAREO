@@ -20,6 +20,7 @@ import { chromium } from '@playwright/test'
 import { PrismaClient } from '@prisma/client'
 import * as fs from 'fs'
 import * as path from 'path'
+import { assertNotEnrollment, completeTwoFactorIfAsked } from '../e2e/fixtures/totp'
 import { FIXTURE_LOCATARIO, FIXTURE_PROPRIETARIO, FIXTURE_ADMIN, SESSION_PATHS } from '../e2e/fixtures/test-credentials'
 
 const STAGING_URL = process.env.STAGING_URL ?? 'https://shareo-rouge.vercel.app'
@@ -230,7 +231,10 @@ async function saveSession(email: string, password: string, outputPath: string):
     await page.getByLabel(/e-mail/i).fill(email)
     await page.locator('#password').fill(password)
     await page.getByRole('button', { name: /entrar/i }).click()
+    // Admin fixture: 2FA obrigatório — informa o código se o formulário o pedir.
+    if (email === FIXTURE_ADMIN.email) await completeTwoFactorIfAsked(page, email, process.env.FIXTURE_ADMIN_TOTP_SECRET)
     await page.waitForURL(/\/(dashboard|meus-anuncios|perfil)/, { timeout: 25000 })
+    assertNotEnrollment(page, email)
 
     const dir = path.dirname(outputPath)
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })

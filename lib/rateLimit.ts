@@ -76,6 +76,9 @@ export const RATE_LIMITS = {
   upgradePjCnpj:  { limit: 3,  windowMs: 24 * 60 * 60 * 1000 }, // 3/dia por CNPJ (anti-abuso fail-open, ADR-024)
   pjWebhooks:     { limit: 10, windowMs: 60_000 },              // 10/min por usuário
   adminCreate:    { limit: 5,  windowMs: 24 * 60 * 60 * 1000 }, // 5/dia por admin
+  // Códigos do 2FA de admin (6 dígitos = 1M de combinações): conta por USUÁRIO, além
+  // do limite por e-mail do login, para que trocar de IP/e-mail não reinicie a contagem.
+  adminMfa:       { limit: 10, windowMs: 15 * 60_000 },         // 10/15min por admin
   upload:         { limit: 30, windowMs: 60_000 },               // 30/min por usuário (booking-photos, item-images, id-docs)
   dataExport:     { limit: 3,  windowMs: 24 * 60 * 60 * 1000 },  // 3/dia por usuário (LGPD art. 20 — 11 findMany sem paginação, protege contra loop)
   // Captação da campanha nacional. 10/min (e não 5) porque CGNAT de operadora

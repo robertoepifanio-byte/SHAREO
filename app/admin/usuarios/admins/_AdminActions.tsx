@@ -15,9 +15,10 @@ interface Props {
   userId:    string
   adminRole: AdminRole
   isActive:  boolean
+  has2fa:    boolean
 }
 
-export function AdminActions({ userId, adminRole, isActive }: Props) {
+export function AdminActions({ userId, adminRole, isActive, has2fa }: Props) {
   const router                = useRouter()
   const [, startTransition]   = useTransition()
   const [loading, setLoading] = useState(false)
@@ -56,6 +57,16 @@ export function AdminActions({ userId, adminRole, isActive }: Props) {
     patch({ action: "demote_to_user" })
   }
 
+  function handleReset2fa() {
+    if (
+      !confirm(
+        "Reiniciar o 2FA deste admin?\n\nEle perde o autenticador atual e os códigos de recuperação, e será desconectado. No próximo login entra só com a senha e precisa cadastrar o 2FA de novo — até lá o painel fica bloqueado para ele.\n\nConfirme a identidade da pessoa antes (ex.: ligação ou videochamada).",
+      )
+    )
+      return
+    patch({ action: "reset_2fa" })
+  }
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       <select
@@ -90,6 +101,17 @@ export function AdminActions({ userId, adminRole, isActive }: Props) {
       >
         {loading ? "…" : "Remover admin"}
       </button>
+
+      {has2fa && (
+        <button
+          onClick={handleReset2fa}
+          disabled={loading}
+          className="rounded-md border border-border px-3 py-1 text-xs font-semibold text-foreground hover:bg-background disabled:opacity-50 transition-colors"
+          title="Para quem perdeu o celular e os códigos de recuperação"
+        >
+          {loading ? "…" : "Reiniciar 2FA"}
+        </button>
+      )}
 
       {error && <p className="mt-0.5 text-xs text-red-600">{error}</p>}
     </div>

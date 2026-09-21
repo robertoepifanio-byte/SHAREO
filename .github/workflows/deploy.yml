@@ -313,6 +313,12 @@ jobs:
           # script fazia login como usuário comum e todo endpoint admin-only
           # respondia 403 no job de E2E seguinte (feedback-e2e-admin-session-ci-sempre-403).
           DIRECT_URL:  ${{ secrets.DIRECT_URL_STAGING }}
+          # 2FA de admin é obrigatório: o fixture tem o autenticador cadastrado com este
+          # segredo conhecido e o login calcula o código do momento (e2e/fixtures/totp.ts).
+          # A ENCRYPTION_KEY é a do staging — o segredo é gravado cifrado, e o app só o lê
+          # se a chave for a mesma do runtime.
+          FIXTURE_ADMIN_TOTP_SECRET: ${{ secrets.FIXTURE_ADMIN_TOTP_SECRET }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
 
       # (removido) "Provisionar usuários fixture": o mesmo UPDATE agora vive em
       # scripts/create-staging-fixtures.ts, que roda no step acima. O SQL daqui listava os

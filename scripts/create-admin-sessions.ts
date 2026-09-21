@@ -15,6 +15,7 @@
 import { chromium } from "@playwright/test"
 import * as fs from "fs"
 import * as path from "path"
+import { assertNotEnrollment, completeTwoFactorIfAsked } from "../e2e/fixtures/totp"
 
 const BASE    = process.env.STAGING_URL ?? "https://shareo-rouge.vercel.app"
 const OUT_DIR = path.join(process.cwd(), "e2e", "fixtures")
@@ -30,6 +31,8 @@ interface AdminConfig {
    */
   validateUrl?: string
   validatePattern?: RegExp
+  /** Segredo TOTP da conta (2FA obrigatório). Sem ele, o login para no pedido do código. */
+  totpSecret?: string
 }
 
 const ADMINS: AdminConfig[] = [
@@ -37,6 +40,7 @@ const ADMINS: AdminConfig[] = [
     email:          "admin.fixture@shareo-test.com",
     password:       "Fixture@Admin99",
     file:           "session-admin.json",
+    totpSecret:     process.env.FIXTURE_ADMIN_TOTP_SECRET,
     // SUPERADMIN deve acessar /admin/usuarios/admins — se cair em /admin,
     // o adminRole está errado no banco. Execute fix-admin-roles.ts primeiro.
     validateUrl:    "/admin/usuarios/admins",
@@ -46,6 +50,7 @@ const ADMINS: AdminConfig[] = [
     email:          "financeiro@shareo.com.br",
     password:       process.env.FIXTURE_FINANCEIRO_PASSWORD ?? "",
     file:           "session-financeiro.json",
+    totpSecret:     process.env.FIXTURE_FINANCEIRO_TOTP_SECRET,
     validateUrl:    "/admin/usuarios",
     validatePattern: /\/admin\/usuarios/,
   },
@@ -53,6 +58,7 @@ const ADMINS: AdminConfig[] = [
     email:          "operacional@shareo.com.br",
     password:       process.env.FIXTURE_OPERACIONAL_PASSWORD ?? "",
     file:           "session-operacional.json",
+    totpSecret:     process.env.FIXTURE_OPERACIONAL_TOTP_SECRET,
     validateUrl:    "/admin/usuarios",
     validatePattern: /\/admin\/usuarios/,
   },
@@ -72,10 +78,11 @@ async function createSession(cfg: AdminConfig): Promise<object> {
     await page.locator('input[type="email"]').fill(email)
     await page.locator('input[type="password"]').fill(password)
 
-    await Promise.all([
-      page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 20_000 }),
-      page.locator('button[type="submit"]').click(),
-    ])
+    await page.locator('button[type="submit"]').click()
+    // 2FA obrigatório para admin: a URL só sai de /login depois do código.
+    await completeTwoFactorIfAsked(page, email, cfg.totpSecret)
+    await page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 20_000 })
+    assertNotEnrollment(page, email)
 
     const postLoginUrl = page.url()
     console.log(`  → Redirecionado para ${postLoginUrl}`)

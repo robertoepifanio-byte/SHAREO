@@ -8,6 +8,28 @@
 
 ---
 
+## 🔐 2FA (TOTP) obrigatório para administradores — implementado, AGUARDANDO verificação em staging (21/09/2026)
+
+**Origem:** frente C da pauta D4 de 21/09 ([`juridico/pauta-d4-reuniao-2026-09-21.md`](juridico/pauta-d4-reuniao-2026-09-21.md)) — painel `/admin` protegido só por senha, com RLS desabilitado.
+
+**O que foi construído** (branch `feat/admin-2fa-totp`): TOTP RFC 6238 sem dependência (`lib/totp.ts`, validado contra os 6 vetores do RFC), 10 códigos de recuperação de uso único (só o hash no banco), segredo cifrado com `encryptPII`, consumo do código/passo **atômico** no banco (anti-replay concorrente). Todo `role=ADMIN` precisa; escopo decidido pelo fundador: os 3 papéis.
+
+**Como barra:** admin sem 2FA verificado é **rebaixado na sessão** (`lib/auth/mfa-gate.ts` → `role: USER`, sem `adminRole`) — um ponto só cobre todos os guards, inclusive rotas fora de `/admin`. O middleware redireciona `/admin` ao cadastro (`/perfil/seguranca/2fa`) e devolve `403 MFA_REQUIRED` nas APIs. Sessões emitidas antes do 2FA não têm o claim `mfa`, então todo admin precisa entrar de novo.
+
+**Recuperação:** outro superadmin reinicia em *Admin → Administradores → Reiniciar 2FA* (audita `MFA_RESET`, derruba as sessões, não vale sobre si mesmo); último recurso: `scripts/reset-admin-2fa.ts` (não derruba sessões abertas — ver aviso no cabeçalho do script).
+
+**E2E:** sem bypass. O admin fixture tem o autenticador cadastrado com segredo conhecido (`FIXTURE_ADMIN_TOTP_SECRET`) e o login calcula o código (`e2e/fixtures/totp.ts`).
+
+**⚠️ Antes do merge:** criar o GitHub Secret `FIXTURE_ADMIN_TOTP_SECRET` (32 caracteres base32). Sem ele o step de fixtures (que é `continue-on-error`) falha e **toda spec de admin dá SKIP em silêncio**.
+
+**⚠️ Depois do deploy:** cada admin (staging e produção) entra com a senha, é levado ao cadastro do 2FA e precisa de um app autenticador. Até lá o painel fica bloqueado para ele.
+
+**Não verificado:** o fluxo ponta a ponta (QR → código → login com código → recuperação) nunca rodou contra um banco real — não há banco local desde a exclusão do shareo-dev. `tsc`, lint, `next build` e a suíte (114 suítes / 1642 testes) estão verdes; as três proteções centrais foram provadas por mutação. A migração `20260921120000_admin_2fa_totp` é aditiva (4 colunas) e só roda no deploy.
+
+**Pontos abertos:** sem regeneração de códigos de recuperação (quem gastar todos pede reset a outro superadmin); a tentativa de código errado conta 10/15 min por admin, além do limite por e-mail do login.
+
+---
+
 ## 🔒 Pentest ativo com Strix no staging — bloqueado por falta de chave de LLM (registrado 11/09/2026)
 
 **Contexto:** revisão de segurança OWASP no código (11/09, read-only) fechou 3 achados — token de reset de senha em texto puro, HTML não escapado em e-mails transacionais, `title`/`description` de item sem sanitização — corrigidos e deployados em staging no mesmo dia (commit `64425f5`). Para complementar com teste ativo (dinâmico) contra `https://shareo-rouge.vercel.app`, avaliou-se o [Strix](https://github.com/usestrix/strix), agente de pentest autônomo open-source.

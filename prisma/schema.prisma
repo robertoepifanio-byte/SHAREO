@@ -270,6 +270,14 @@ model User {
   role                UserRole   @default(USER)
   adminRole           AdminRole? // só presente em usuários com role=ADMIN; define o escopo de permissões
 
+  // 2FA por TOTP — obrigatório para role=ADMIN (lib/totp.ts, lib/auth/mfa.ts).
+  // `totpSecretEnc` com `totpEnabledAt` nulo = cadastro iniciado e ainda não
+  // confirmado com um código; só passa a valer quando `totpEnabledAt` é gravado.
+  totpSecretEnc      String? // AES-256-GCM (encryptPII) do segredo base32
+  totpEnabledAt      DateTime?
+  totpLastStep       Int? // passo de 30 s do último código aceito — anti-replay
+  totpRecoveryHashes String[] // SHA-256 dos códigos de recuperação ainda não usados
+
   // Documentos — armazenados criptografados (ver ADR-004)
   // Nunca expor em respostas de API sem mascaramento
   cpfHash       String? @unique // bcrypt hash para verificação de unicidade
