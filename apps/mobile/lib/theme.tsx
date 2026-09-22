@@ -30,6 +30,8 @@ export const LIGHT_TOKENS = {
   muted:     "#64748B",   // --muted-foreground
   border:    "#E2E8F0",   // --border
   navy:      "#003366",   // --primary / --shareo-navy
+  navyDeep:  "#001F40",   // --navy-deep — fundo das seções navy da landing (Hero, Confiança, Como vai funcionar)
+  blueMedium: "#144D81",  // --blue-medium — FILL (pílulas, CTA variante azul); mesmo valor claro/escuro no site
   green:     "#007B3C",   // --brand / --shareo-green-dark
   error:     "#C0392B",   // --destructive (WCAG AA 5.44:1 sobre branco)
   warning:   "#F59E0B",   // --booking-pending
@@ -56,6 +58,8 @@ export const DARK_TOKENS = {
   muted:     "#94A3B8",   // --muted-foreground dark
   border:    "#26395A",   // --border dark
   navy:      "#1E4D80",   // --primary dark #1E4D80 (chips/badges + texto primary). Antes #003366 fixo (não flipava) → navy-as-text sumia no dark (~1.24:1). Achado revisão s41.
+  navyDeep:  "#000F20",   // --navy-deep dark — ainda mais escuro que o navy claro
+  blueMedium: "#144D81",  // --blue-medium — mesmo valor do claro (FILL; texto branco 8.97:1 no dark)
   green:     "#007B3C",   // fill preservado (--brand dark; branco 5.39:1)
   error:     "#D14438",   // --destructive dark
   warning:   "#FBBF77",   // --booking-pending dark
@@ -80,6 +84,8 @@ export type Tokens = {
   muted:            string
   border:           string
   navy:             string
+  navyDeep:         string
+  blueMedium:       string
   green:            string
   error:            string
   warning:          string
