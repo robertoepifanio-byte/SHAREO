@@ -1,5 +1,7 @@
 # REDLINE — RIPD: incluir Mercado Pago como Operador e corrigir "merchant of record"
 
+> **SUPERADO em 21/09/2026.** O RIPD versão 2.0 (`rascunho-ripd.md`) incorpora este redline, já ajustado ao sistema atual (Stripe no lugar do Mercado Pago; consentimento biométrico implementado atrás de flag). Não aplicar de novo. Mantido só como histórico da decisão.
+
 > **RASCUNHO GATED — nao publicar.** Este documento lista as edicoes concretas a fazer em [`rascunho-ripd.md`](rascunho-ripd.md) para refletir o Mercado Pago como operador de dados financeiros e corrigir a descricao de "merchant of record". Aplicar apos validacao do DPO/advogada. Complementa [`draft-clausulas-mp-termos-privacidade.md`](draft-clausulas-mp-termos-privacidade.md) Secao B.3.
 
 **Data:** 2026-06-30 (s41)

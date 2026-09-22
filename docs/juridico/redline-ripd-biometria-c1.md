@@ -1,5 +1,7 @@
 # Redline / Adendo ao RIPD — Selfie como Dado Biometrico Sensivel (C1)
 
+> **SUPERADO em 21/09/2026.** O RIPD versão 2.0 (`rascunho-ripd.md`) incorpora este redline, já ajustado ao sistema atual (Stripe no lugar do Mercado Pago; consentimento biométrico implementado atrás de flag). Não aplicar de novo. Mantido só como histórico da decisão.
+
 > **DRAFT — gated D4, nao publicar.**
 > Adendo ao `docs/juridico/rascunho-ripd.md` produzido em reacao a **decisao juridica de 2026-06-30 (resposta C1)**: a selfie coletada no fluxo de KYC do ShareO **e dado pessoal sensivel de natureza biometrica** (LGPD art. 5o II + art. 11). Interesse legitimo (art. 7o IX) **nao e base legal suficiente** para esse tratamento; e exigido **consentimento especifico e destacado** (art. 11, II, "a"), separado do aceite dos Termos.
 >
