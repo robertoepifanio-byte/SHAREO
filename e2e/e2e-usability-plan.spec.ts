@@ -237,7 +237,10 @@ test.describe('Plano E2E Usabilidade — ShareO', () => {
           // ── Homepage: proposta de valor visível ───────────────────────────
           await page.goto(BASE_URL, { waitUntil: 'networkidle' })
 
-          const heroImage = page.getByRole('img', { name: /itens disponíveis para alugar no shareo/i })
+          // Alt transcrito de components/home/landing/Hero.tsx (home virou landing
+          // da campanha em 22/09/2026 — a arte antiga "itens disponíveis para
+          // alugar" saiu).
+          const heroImage = page.getByRole('img', { name: /furadeira, câmera, caixa de som/i })
           await expect(heroImage, 'Imagem dos itens do hero deve ser visível').toBeVisible({ timeout: 10_000 })
 
           const h1 = page.getByRole('heading', { level: 1 })
