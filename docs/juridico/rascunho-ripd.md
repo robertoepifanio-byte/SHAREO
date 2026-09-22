@@ -288,7 +288,7 @@ Escala: probabilidade e impacto em Baixo / Médio / Alto.
 | # | Pendência | Responsável | Bloqueia go-live? |
 |---|---|---|---|
 | 1 | Decisão sobre os 5 fornecedores sem CPC e sobre o Supabase (F-06) | Advogada | **Sim** |
-| 2 | Enquadramento legal do fluxo do dinheiro pela Stripe (seção B) e efeito neste relatório | Advogada | **Parcialmente respondido em 21/09/2026** — a ShareO não precisaria de autorização do Banco Central, condicionado à redação dos Termos (ver [`parecer-lei-12865-2026-09-21.md`](parecer-lei-12865-2026-09-21.md)). ⚠️ Resposta sem identificação da advogada — confirmar autoria. |
+| 2 | Enquadramento legal do fluxo do dinheiro pela Stripe (seção B) e efeito neste relatório | Advogada | **Parcialmente respondido em 21/09/2026** — a ShareO não precisaria de autorização do Banco Central, condicionado à redação dos Termos (ver [`parecer-lei-12865-2026-09-21.md`](parecer-lei-12865-2026-09-21.md)). |
 | 3 | Declarar ou desligar o Google Tag Manager (F-13) | Fundadores + advogada | **Sim** |
 | 4 | Deploy e verificação do 2FA de administradores (F-12) | Técnico | **Sim** |
 | 5 | Plano de resposta a incidentes e procedimentos das Cláusulas 15 e 16 (F-11) | Encarregado | **Sim** |

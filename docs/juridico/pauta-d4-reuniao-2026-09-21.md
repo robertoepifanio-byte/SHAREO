@@ -3,7 +3,7 @@
 **Pauta da reunião com Raimundo e a advogada** · 21 de setembro de 2026
 **Preparado por:** Roberto Epifânio, com apoio da equipe técnica
 
-> **✅ Atualização de 22/09/2026 — respostas recebidas.** As perguntas 1, 2, 3 e 9 da seção 7 tiveram resposta (parcial na 3) no dia seguinte à reunião, junto com a assinatura do RIPD pelo Encarregado. Detalhe completo em [`parecer-lei-12865-2026-09-21.md`](parecer-lei-12865-2026-09-21.md). ⚠️ A resposta não identifica a advogada — só a assinatura do fundador Raimundo — então trate como recebida, não como formalmente confirmada, até esclarecer a autoria.
+> **✅ Atualização de 22/09/2026 — respostas recebidas.** As perguntas 1, 2, 3 e 9 da seção 7 tiveram resposta (parcial na 3) no dia seguinte à reunião, junto com a assinatura do RIPD pelo Encarregado. Detalhe completo em [`parecer-lei-12865-2026-09-21.md`](parecer-lei-12865-2026-09-21.md) — confirmado por Raimundo: é a advogada amiga que o apoia neste momento inicial, sem cobrar.
 
 ---
 

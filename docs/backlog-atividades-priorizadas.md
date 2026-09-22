@@ -32,7 +32,7 @@
 1. **A ShareO não precisa de autorização do Banco Central** (Lei 12.865/2013), desde que os Termos deixem claro que o dinheiro pertence ao proprietário desde o início e a ShareO só intermedeia. Veio com texto pronto para a seção 6 dos Termos (que ganha a frase que faltava) e uma seção 7 nova, de prevenção à lavagem de dinheiro. Registrado em [`docs/juridico/parecer-lei-12865-2026-09-21.md`](juridico/parecer-lei-12865-2026-09-21.md).
 2. **RIPD v2.0 assinado pelo Encarregado** (Raimundo) em 21/09. O PDF assinado foi mantido fora do repositório (é público); o `.md` fonte tem uma nota registrando a assinatura.
 
-**⚠️ Ressalva que atravessa os dois documentos:** nenhum deles identifica a advogada — nem nome, nem OAB, nem assinatura dela. Só a assinatura do fundador aparece. Tratamos como **resposta recebida**, não como confirmação formal, até esclarecer com Raimundo se é transcrição do parecer dela ou síntese própria dele. Não marcamos a condição 1 do go-live como definitivamente fechada por causa disso.
+**✅ Autoria confirmada (22/09/2026):** os documentos não identificavam a advogada (nem nome, nem OAB — só a assinatura de Raimundo). Perguntado, ele confirmou: é a advogada amiga que o apoia neste momento inicial, sem cobrar. Assunto encerrado.
 
 **O que ainda falta, mesmo com essas respostas:**
 - PLD/FT (pergunta 3): a resposta trouxe o texto contratual, mas não confirma explicitamente se "ShareO não é sujeito obrigado" se mantém com a Stripe (estrangeira) no lugar do Mercado Pago.
