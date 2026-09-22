@@ -8,6 +8,22 @@
 
 ---
 
+## 🏠 Home do site transcrita da campanha — implementada, AGUARDANDO verificação em staging (22/09/2026)
+
+**Origem:** revisão pré-go-live (22/09). Fundador pediu para levar o layout/copy da landing de campanha (`apps/campanha`, hoje publicada em shareo.com.br) para a home do site principal, mobile-first.
+
+**Decidido com o fundador:** todas as 10 seções da campanha entram (Hero, ItensParados, DoisLados, ComoFunciona, QuantoVale, Confiança, Fundadores, Embaixadores, Faq, Fechamento) — Embaixadores mantido mesmo com payout bloqueado até D4 (D4 previsto para fechar no mesmo dia; produção só em outubro). Todo CTA passa a apontar para `/cadastro` (conta real) em vez da âncora do formulário de lead da campanha. Fechamento perde o formulário (`ListaVIP`) e vira um botão grande de Cadastro. As seções antigas de marketplace (SimuladorRenda, Categorias, "Como funciona" antigo, CasosRenda, ItensProcurados, Seguranca, ListaVIP) saíram, e seus componentes foram apagados por ficarem sem uso (confirmado por grep — `apps/mobile` tem cópias próprias independentes, não afetadas).
+
+**Implementado:** `app/page.tsx` reescrito; conteúdo/componentes transcritos para `lib/landing-content.ts` + `components/home/landing/*`; `CtaCadastro` novo (aponta pra `/cadastro`); `AppHeader` ganhou botão "Cadastre-se" ao lado de "Entrar"; 8 imagens copiadas para `public/campanha/`; `e2e/e2e-home-plan.spec.ts` reescrito (o antigo testava busca e seções que não existem mais e quebraria 100% no CI).
+
+**⚠️ Risco de conteúdo registrado, não corrigido a pedido do fundador:** a copy da campanha é escrita inteiramente no futuro ("o ShareO vai...", "acesso antecipado") por exigência jurídica (CDC art. 30/37 — serviço "ainda não está no ar" na campanha). A home real já é um marketplace ativo. O FAQ transcrito literal inclui a pergunta "O ShareO já está funcionando?" respondida "Ainda não" — falso na home real. Fundador optou por transcrever tudo literal mesmo, ajuste de tom fica para revisão de copy separada.
+
+**Não verificado:** build local (`next build`) limpo e preview em 375px conferido (imagens carregando, CTA "Quero ser um dos primeiros" navegando de fato para `/cadastro`), mas **sem deploy em staging** — falta confirmar lá antes de marcar ✅ (regra de verificação por evidência).
+
+**Fora de escopo desta entrega:** transcrição da mesma home nova para o app Android (`apps/mobile`) — regra de transcrição literal do CLAUDE.md exige ler o site (não a campanha) como fonte; fica para tarefa seguinte.
+
+---
+
 ## 🔒 Pentest ativo com Strix no staging — bloqueado por falta de chave de LLM (registrado 11/09/2026)
 
 **Contexto:** revisão de segurança OWASP no código (11/09, read-only) fechou 3 achados — token de reset de senha em texto puro, HTML não escapado em e-mails transacionais, `title`/`description` de item sem sanitização — corrigidos e deployados em staging no mesmo dia (commit `64425f5`). Para complementar com teste ativo (dinâmico) contra `https://shareo-rouge.vercel.app`, avaliou-se o [Strix](https://github.com/usestrix/strix), agente de pentest autônomo open-source.
