@@ -24,17 +24,16 @@ class SkipStep extends Error {
 }
 
 const STEPS = [
-  { num: 1, name: '1. Carregamento e estrutura',       priority: 'critical', onFail: 'ABORTAR'   },
-  { num: 2, name: '2. CTAs do hero',                   priority: 'high',     onFail: 'CONTINUAR' },
-  { num: 3, name: '3. Busca no hero',                  priority: 'high',     onFail: 'CONTINUAR' },
-  { num: 4, name: '4. Seções visíveis',                priority: 'medium',   onFail: 'CONTINUAR' },
-  { num: 5, name: '5. Chips de ItensProcurados',       priority: 'medium',   onFail: 'CONTINUAR' },
+  { num: 1, name: '1. Carregamento e estrutura',   priority: 'critical', onFail: 'ABORTAR'   },
+  { num: 2, name: '2. CTA principal do hero',      priority: 'high',     onFail: 'CONTINUAR' },
+  { num: 3, name: '3. Seções visíveis',            priority: 'medium',   onFail: 'CONTINUAR' },
+  { num: 4, name: '4. CTAs de outras seções',       priority: 'medium',   onFail: 'CONTINUAR' },
 ] as const
 
 test.describe('Plano E2E Homepage — ShareO', () => {
   test.setTimeout(120_000)
 
-  test('Estrutura · CTAs · Busca · Seções · Chips', async ({ page }) => {
+  test('Estrutura · CTA do hero · Seções · Outros CTAs', async ({ page }) => {
 
     const results: StepResult[] = []
     let abortError: Error | undefined
@@ -74,13 +73,8 @@ test.describe('Plano E2E Homepage — ShareO', () => {
           const h1Text = await h1.textContent()
           expect(h1Text?.trim().length, 'H1 deve ter conteúdo').toBeGreaterThan(0)
 
-          // Seção principal (hero)
-          await expect(page.locator('[aria-label="Seção principal"]')).toBeVisible()
-
-          // Imagem dos itens no hero (substituiu o badge de proposta de valor)
-          await expect(
-            page.getByRole('img', { name: /itens disponíveis para alugar no shareo/i }),
-          ).toBeVisible()
+          // Hero (seção "topo" da landing transcrita)
+          await expect(page.locator('#topo')).toBeVisible()
 
           // Header presente
           await expect(page.locator('header[role="banner"]')).toBeVisible()
@@ -88,102 +82,58 @@ test.describe('Plano E2E Homepage — ShareO', () => {
           // Footer presente
           await expect(page.locator('footer[aria-label="Rodapé ShareO"]')).toBeVisible()
 
-          // Stats da plataforma
-          await expect(page.locator('[role="list"][aria-label="Números da plataforma"]')).toBeVisible()
-
           test.info().annotations.push({ type: 'h1', description: h1Text?.trim() ?? '' })
         })
       )
       if (abortError) throw abortError
 
-      // ── Passo 2: CTAs do hero ─────────────────────────────────────────────────
+      // ── Passo 2: CTA principal do hero ────────────────────────────────────────
       await test.step(STEPS[1].name, () =>
         runStep(STEPS[1], async () => {
           await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
 
-          // CTA 1: "Quero Ganhar Dinheiro" → /itens/novo
-          const ctaGanhar = page.getByRole('link', { name: /quero ganhar dinheiro/i })
-          await expect(ctaGanhar).toBeVisible()
-          const hrefGanhar = await ctaGanhar.getAttribute('href')
-          expect(hrefGanhar, 'CTA Ganhar deve apontar para /itens/novo').toContain('/itens/novo')
-
-          // /itens/novo requer auth — middleware redireciona para /login?callbackUrl=/itens/novo
-          await Promise.all([
-            page.waitForURL(
-              (url) => url.pathname.includes('/itens/novo') || url.pathname === '/login',
-              { timeout: 15_000 },
-            ),
-            ctaGanhar.click(),
-          ])
-          const url1 = new URL(page.url())
-          const validCta1 = url1.pathname === '/itens/novo' ||
-            (url1.pathname === '/login' && (url1.searchParams.get('callbackUrl') ?? '').includes('/itens/novo'))
-          expect(validCta1, 'CTA Ganhar deve chegar a /itens/novo ou a /login com callbackUrl correto').toBe(true)
-          await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
-
-          // CTA 2: "Quero Alugar" → /itens
-          const ctaAlugar = page.getByRole('link', { name: /quero alugar/i })
-          await expect(ctaAlugar).toBeVisible()
-          const hrefAlugar = await ctaAlugar.getAttribute('href')
-          expect(hrefAlugar, 'CTA Alugar deve apontar para /itens').toContain('/itens')
+          // CTA "Quero ser um dos primeiros" → /cadastro (todo CTA da home aponta
+          // para o cadastro de conta real, não para um formulário de lead)
+          const ctaCadastro = page.getByRole('link', { name: /quero ser um dos primeiros/i })
+          await expect(ctaCadastro).toBeVisible()
+          const href = await ctaCadastro.getAttribute('href')
+          expect(href, 'CTA do hero deve apontar para /cadastro').toContain('/cadastro')
 
           await Promise.all([
-            page.waitForURL(/\/itens/, { timeout: 15_000 }),
-            ctaAlugar.click(),
+            page.waitForURL((url) => url.pathname === '/cadastro', { timeout: 15_000 }),
+            ctaCadastro.click(),
           ])
+          expect(new URL(page.url()).pathname).toBe('/cadastro')
 
           test.info().annotations.push({
-            type: 'ctas',
-            description: `Ganhar → ${hrefGanhar} ✓ | Alugar → ${hrefAlugar} ✓`,
+            type: 'cta-hero',
+            description: `Quero ser um dos primeiros → ${href} ✓`,
           })
         })
       )
 
-      // ── Passo 3: Busca no hero ────────────────────────────────────────────────
+      // ── Passo 3: Seções visíveis ──────────────────────────────────────────────
       await test.step(STEPS[2].name, () =>
         runStep(STEPS[2], async () => {
-          await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
-
-          const searchInput = page.getByRole('searchbox').or(
-            page.locator('input[name="search"]'),
-          )
-          await expect(searchInput).toBeVisible()
-          await searchInput.fill('furadeira')
-
-          await Promise.all([
-            page.waitForURL((url) => url.pathname === '/itens' && url.searchParams.get('search') === 'furadeira', { timeout: 15_000 }),
-            page.getByRole('button', { name: /buscar/i }).click(),
-          ])
-
-          const finalUrl = new URL(page.url())
-          expect(finalUrl.pathname).toBe('/itens')
-          expect(finalUrl.searchParams.get('search')).toBe('furadeira')
-
-          test.info().annotations.push({ type: 'search-result-url', description: page.url() })
-        })
-      )
-
-      // ── Passo 4: Seções visíveis ──────────────────────────────────────────────
-      await test.step(STEPS[3].name, () =>
-        runStep(STEPS[3], async () => {
           await page.goto(BASE_URL, { waitUntil: 'networkidle' })
 
           const sections: { id: string; label: string }[] = [
-            { id: 'simulador-renda',  label: 'SimuladorRenda'    },
-            { id: 'casos-renda',      label: 'CasosRenda'        },
-            { id: 'itens-procurados', label: 'ItensProcurados'   },
-            { id: 'seguranca',        label: 'Segurança'         },
-            { id: 'lista-vip',        label: 'ListaVIP'          },
+            { id: 'topo',                 label: 'Hero'          },
+            { id: 'para-quem',            label: 'Dois lados'    },
+            { id: 'como-funciona',        label: 'Como funciona' },
+            { id: 'seguranca',            label: 'Confiança'     },
+            { id: 'fundadores',           label: 'Fundadores'    },
+            { id: 'programa-embaixadores',label: 'Embaixadores'  },
+            { id: 'faq',                  label: 'FAQ'           },
           ]
 
           const missing: string[] = []
 
           /**
            * `.catch(() => false)` cru reporta "seção ausente" para QUALQUER erro do
-           * seletor. Foi assim que um id duplicado na home (o wrapper `<div>` e o
-           * `<section>` interno carregavam o mesmo id) apareceu como CasosRenda e
-           * ItensProcurados sumidos: o strict mode do Playwright reclamava de 2
-           * elementos e o catch engolia o motivo. Aqui separamos os dois casos.
+           * seletor. Separar contagem de visibilidade evita mascarar um id
+           * duplicado como seção sumida (lição herdada da versão anterior deste
+           * teste).
            */
           async function checarSecao(id: string, label: string) {
             const el = page.locator(`#${id}`)
@@ -195,8 +145,8 @@ test.describe('Plano E2E Homepage — ShareO', () => {
 
           for (const sec of sections) await checarSecao(sec.id, sec.label)
 
-          // "Como funciona" — section com h2 #how-title
-          await checarSecao('how-title', 'Como funciona')
+          // Fechamento — section com h2 #fechamento-titulo
+          await checarSecao('fechamento-titulo', 'Fechamento')
 
           test.info().annotations.push({
             type: 'secoes',
@@ -211,31 +161,26 @@ test.describe('Plano E2E Homepage — ShareO', () => {
         })
       )
 
-      // ── Passo 5: Chips de ItensProcurados ─────────────────────────────────────
-      await test.step(STEPS[4].name, () =>
-        runStep(STEPS[4], async () => {
+      // ── Passo 4: CTAs de outras seções ────────────────────────────────────────
+      await test.step(STEPS[3].name, () =>
+        runStep(STEPS[3], async () => {
           await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
 
-          // Chip "Furadeiras" sempre presente (dados hardcoded no componente)
-          const chip = page.getByRole('listitem').filter({ has: page.locator('[aria-label="Buscar Furadeiras"]') })
-            .or(page.locator('[aria-label="Buscar Furadeiras"]'))
-          await expect(chip.first()).toBeVisible({ timeout: 10_000 })
+          // Todo CTA da home aponta para /cadastro — checagem por amostragem em
+          // seções diferentes do hero, para pegar um CtaCadastro esquecido
+          // apontando pra âncora antiga da campanha.
+          const rotulos = [/quero ganhar dinheiro/i, /quero anunciar meu item/i, /quero ser um fundador/i]
 
-          await Promise.all([
-            page.waitForURL(
-              (url) => url.pathname === '/itens' && !!url.searchParams.get('search'),
-              { timeout: 15_000 },
-            ),
-            chip.first().click(),
-          ])
-
-          const finalUrl = new URL(page.url())
-          expect(finalUrl.pathname).toBe('/itens')
-          expect(finalUrl.searchParams.get('search')).toBeTruthy()
+          for (const rotulo of rotulos) {
+            const cta = page.getByRole('link', { name: rotulo }).first()
+            await expect(cta).toBeVisible()
+            const href = await cta.getAttribute('href')
+            expect(href, `CTA "${rotulo}" deve apontar para /cadastro`).toContain('/cadastro')
+          }
 
           test.info().annotations.push({
-            type: 'chip-navegacao',
-            description: `Chip Furadeiras → ${page.url()} ✓`,
+            type: 'ctas-secoes',
+            description: 'Todos os CTAs amostrados apontam para /cadastro ✓',
           })
         })
       )
