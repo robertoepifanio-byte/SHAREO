@@ -24,6 +24,48 @@
 
 ---
 
+## ⚖️ D4 — resposta sobre a Stripe (Lei 12.865) e RIPD assinado pelo Encarregado (22/09/2026)
+
+**Origem:** reunião de 21/09 com Raimundo e a advogada ([`pauta-d4-reuniao-2026-09-21.md`](juridico/pauta-d4-reuniao-2026-09-21.md)). No dia seguinte, Roberto trouxe dois PDFs assinados por Raimundo: uma resposta à pergunta central da frente A e o RIPD assinado.
+
+**O que veio:**
+1. **A ShareO não precisa de autorização do Banco Central** (Lei 12.865/2013), desde que os Termos deixem claro que o dinheiro pertence ao proprietário desde o início e a ShareO só intermedeia. Veio com texto pronto para a seção 6 dos Termos (que ganha a frase que faltava) e uma seção 7 nova, de prevenção à lavagem de dinheiro. Registrado em [`docs/juridico/parecer-lei-12865-2026-09-21.md`](juridico/parecer-lei-12865-2026-09-21.md).
+2. **RIPD v2.0 assinado pelo Encarregado** (Raimundo) em 21/09. O PDF assinado foi mantido fora do repositório (é público); o `.md` fonte tem uma nota registrando a assinatura.
+
+**✅ Autoria confirmada (22/09/2026):** os documentos não identificavam a advogada (nem nome, nem OAB — só a assinatura de Raimundo). Perguntado, ele confirmou: é a advogada amiga que o apoia neste momento inicial, sem cobrar. Assunto encerrado.
+
+**O que ainda falta, mesmo com essas respostas:**
+- ~~PLD/FT (pergunta 3)~~ ✅ **Respondida em 23/09/2026** (e-mail da advogada, via Raimundo): o raciocínio de 30/06 continua válido com processador estrangeiro; responsabilidade primária da Stripe (Lei 9.613), ShareO mantém só compliance mínimo. Reafirma também a Lei 12.865: **o risco jurídico está na redação dos Termos, não na operação.** Registrado em [`parecer-lei-12865-2026-09-21.md`](juridico/parecer-lei-12865-2026-09-21.md). **Frente A sem pergunta jurídica em aberto.**
+- ~~Aplicar a nova redação da seção 6/7 dos Termos~~ 🟡 **Implementada no PR #494** (site, campanha e app; 23/09/2026). **Aguardando merge, deploy e verificação em staging** — a tela renderizada em `/termos` e no app não foi vista. Desvios do texto da advogada e pontos a mostrar a ela estão na descrição do PR.
+- Confirmar se falta a assinatura do "representante legal do controlador" no RIPD — o PDF recebido só trouxe a do Encarregado.
+- As pendências que a própria seção I do RIPD lista como bloqueadoras do go-live (fornecedores sem cláusula da ANPD, GTM sem declaração na Política, deploy do 2FA em staging, plano de resposta a incidentes) continuam abertas — assinar o RIPD as reconhece, não as resolve.
+- Perguntas 4-7 da pauta (fornecedores sem CPC, Supabase, Cláusulas 15/16, GTM) seguem sem resposta.
+
+---
+
+## 🔐 2FA (TOTP) obrigatório para administradores — implementado, AGUARDANDO verificação em staging (21/09/2026)
+
+**Origem:** frente C da pauta D4 de 21/09 ([`juridico/pauta-d4-reuniao-2026-09-21.md`](juridico/pauta-d4-reuniao-2026-09-21.md)) — painel `/admin` protegido só por senha, com RLS desabilitado.
+
+**O que foi construído** (branch `feat/admin-2fa-totp`): TOTP RFC 6238 sem dependência (`lib/totp.ts`, validado contra os 6 vetores do RFC), 10 códigos de recuperação de uso único (só o hash no banco), segredo cifrado com `encryptPII`, consumo do código/passo **atômico** no banco (anti-replay concorrente). Todo `role=ADMIN` precisa; escopo decidido pelo fundador: os 3 papéis.
+
+**Como barra:** admin sem 2FA verificado é **rebaixado na sessão** (`lib/auth/mfa-gate.ts` → `role: USER`, sem `adminRole`) — um ponto só cobre todos os guards, inclusive rotas fora de `/admin`. O middleware redireciona `/admin` ao cadastro (`/perfil/seguranca/2fa`) e devolve `403 MFA_REQUIRED` nas APIs. Sessões emitidas antes do 2FA não têm o claim `mfa`, então todo admin precisa entrar de novo.
+
+**Recuperação:** outro superadmin reinicia em *Admin → Administradores → Reiniciar 2FA* (audita `MFA_RESET`, derruba as sessões, não vale sobre si mesmo); último recurso: `scripts/reset-admin-2fa.ts` (não derruba sessões abertas — ver aviso no cabeçalho do script).
+
+**E2E:** sem bypass. O admin fixture tem o autenticador cadastrado com segredo conhecido (`FIXTURE_ADMIN_TOTP_SECRET`) e o login calcula o código (`e2e/fixtures/totp.ts`).
+
+**⚠️ Antes do merge:** criar o GitHub Secret `FIXTURE_ADMIN_TOTP_SECRET` (32 caracteres base32). Sem ele o step de fixtures (que é `continue-on-error`) falha e **toda spec de admin dá SKIP em silêncio**.
+
+**⚠️ Depois do deploy:** cada admin (staging e produção) entra com a senha, é levado ao cadastro do 2FA e precisa de um app autenticador. Até lá o painel fica bloqueado para ele.
+
+**Não verificado:** o fluxo ponta a ponta (QR → código → login com código → recuperação) nunca rodou contra um banco real — não há banco local desde a exclusão do shareo-dev. `tsc`, lint, `next build` e a suíte (114 suítes / 1642 testes) estão verdes; as três proteções centrais foram provadas por mutação. A migração `20260921120000_admin_2fa_totp` é aditiva (4 colunas) e só roda no deploy.
+
+**Pontos abertos:** sem regeneração de códigos de recuperação (quem gastar todos pede reset a outro superadmin); a tentativa de código errado conta 10/15 min por admin, além do limite por e-mail do login.
+
+---
+
+
 ## 🔒 Pentest ativo com Strix no staging — bloqueado por falta de chave de LLM (registrado 11/09/2026)
 
 **Contexto:** revisão de segurança OWASP no código (11/09, read-only) fechou 3 achados — token de reset de senha em texto puro, HTML não escapado em e-mails transacionais, `title`/`description` de item sem sanitização — corrigidos e deployados em staging no mesmo dia (commit `64425f5`). Para complementar com teste ativo (dinâmico) contra `https://shareo-rouge.vercel.app`, avaliou-se o [Strix](https://github.com/usestrix/strix), agente de pentest autônomo open-source.
