@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { DPO_NOME } from "./entidade"
 import { IdentificacaoPrestador } from "./IdentificacaoPrestador"
 
 /**
@@ -231,7 +232,7 @@ export function PoliticasConteudo({
                 <p className="mb-3">
                   O Encarregado de Proteção de Dados (DPO) do ShareO, nos termos do Art. 41 da LGPD, é:
                 </p>
-                <p className="mb-1 font-semibold text-foreground">Roberto Epifanio da Silva</p>
+                <p className="mb-1 font-semibold text-foreground">{DPO_NOME}</p>
                 <p className="mb-3">
                   Responsável por assegurar a conformidade da organização com a LGPD e demais normas
                   aplicáveis à privacidade e proteção de dados pessoais. Atua como ponto de contato

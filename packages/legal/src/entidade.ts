@@ -28,6 +28,9 @@ export const POLICY_UPDATED_AT = "setembro de 2026"
  */
 export const POLITICAS_UPDATED_AT = "23 de setembro de 2026"
 
+/** Encarregado (DPO) publicado na Política — o nomeado no RIPD, seção A (LGPD art. 41, §1º). */
+export const DPO_NOME = "Raimundo Gomes da Silva"
+
 /**
  * Identificação da pessoa jurídica que opera a plataforma.
  *

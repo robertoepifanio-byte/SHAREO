@@ -16,6 +16,7 @@ import { render, screen } from "@testing-library/react"
 import fs from "node:fs"
 import path from "node:path"
 import { IdentificacaoPrestador } from "@/components/legal/IdentificacaoPrestador"
+import { DPO_NOME } from "@shareo/legal"
 import { LEGAL_ENTITY, CONSENT_VERSION, DPO_EMAIL, PJ_DECLARATION_TEXT, MARKETING_CONSENT_VERSION, MARKETING_CONSENT_TEXT, POLICY_UPDATED_AT, POLITICAS_UPDATED_AT } from "@/lib/legal-config"
 
 const RAIZ = path.resolve(__dirname, "../../../..")
@@ -140,6 +141,7 @@ describe("espelho do app", () => {
     ["endereço da sede", LEGAL_ENTITY.enderecoSede],
     ["versão dos Termos", CONSENT_VERSION],
     ["canal do DPO", DPO_EMAIL],
+    ["nome do DPO", DPO_NOME],
     // Declaração sob as penas da lei (ADR-024) — registrada com data e IP.
     // Divergir do site aqui é gravar prova de um texto que ninguém assinou.
     ["declaração de vínculo PJ", PJ_DECLARATION_TEXT],
@@ -176,5 +178,21 @@ describe("espelho do app", () => {
     "apps/mobile/app/(auth)/register.tsx",
   ])("%s não traz a versão cravada de volta", (arquivo) => {
     expect(semComentarios(lerFonte(arquivo))).not.toMatch(/"v1\.1"/)
+  })
+})
+
+// 🪤 O nome do Encarregado esteve solto em dois componentes e divergiu do RIPD sem
+// nada ficar vermelho. A suíte da campanha (que confere o render) não roda no CI,
+// então a trava mora aqui: as telas leem a constante, e a constante é o nome do RIPD.
+describe("nome do Encarregado (DPO)", () => {
+  it.each([
+    "packages/legal/src/PoliticasConteudo.tsx",
+    "apps/mobile/app/politicas.tsx",
+  ])("%s exibe DPO_NOME, não um nome digitado", (arquivo) => {
+    expect(semComentarios(lerFonte(arquivo))).toMatch(/\{DPO_NOME\}/)
+  })
+
+  it("é o Encarregado registrado no RIPD", () => {
+    expect(lerFonte("docs/juridico/rascunho-ripd.md")).toContain(DPO_NOME)
   })
 })

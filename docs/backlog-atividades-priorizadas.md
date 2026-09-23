@@ -44,7 +44,9 @@
   - 🟡 **GTM declarado** nas duas Políticas (site, campanha e app) e teste que reprova se o GTM ficar ligado sem declaração. Aguardando merge/deploy; **a advogada ainda decide se basta**.
   - 🟡 **Plano de incidentes e Cláusula 15** em rascunho: `docs/juridico/plano-resposta-incidentes-e-direitos-titular.md`. Faltam adoção do Encarregado, exercício de mesa e a recifragem da `ENCRYPTION_KEY` (não existe; está como P2/H2 no ADR-005, o plano propõe subir para antes do go-live).
   - 🔴 **Art. 33:** releitura em `docs/juridico/art33-fornecedores-recheck-2026-09-23.md`. Nenhum fornecedor mudou; o **Google (GTM)** entra como sexto sem CPC. Depende da advogada.
-  - ❓ Política §2.7 publica Roberto como Encarregado; o RIPD diz Raimundo. Confirmar.
+  - 🟡 **Encarregado unificado:** a Política §2.7 (site, campanha e app) passa a publicar **Raimundo Gomes da Silva**, como no RIPD, por uma constante única (`DPO_NOME`) ligada ao RIPD por teste. Aguardando merge e deploy (#498).
+    - O RIPD assinado não foi alterado: a Seção A ("a Política ainda não publica o nome") e o item 7 da Seção I ficam desatualizados.
+    - Os textos de consentimento biométrico ainda dizem "Encarregada" (texto hasheado; corrigir junto com o F-09).
 
 ---
 

@@ -1,6 +1,7 @@
 import React from "react"
 import { render, screen } from "@testing-library/react"
 import {
+  DPO_NOME,
   LEGAL_ENTITY,
   POLICY_UPDATED_AT,
   POLITICAS_UPDATED_AT,
@@ -89,6 +90,13 @@ describe("Políticas", () => {
     expect(texto).toContain(VALORES.feeLabel)
     expect(texto).toContain(VALORES.maxLabel)
     expect(texto).toContain(VALORES.payoutLabel)
+  })
+
+  it("publica o Encarregado nomeado no RIPD (LGPD art. 41, §1º)", () => {
+    const { container } = renderPoliticas("/ajuda")
+    const texto = container.textContent ?? ""
+
+    expect(texto).toContain(DPO_NOME)
   })
 
   /**

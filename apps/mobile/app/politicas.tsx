@@ -20,7 +20,7 @@ import {
   formatMaxLabel,
 } from "@/lib/platformConfig"
 import { IdentificacaoPrestador } from "@/components/legal/IdentificacaoPrestador"
-import { POLITICAS_UPDATED_AT } from "@/lib/legalConfig"
+import { DPO_NOME, POLITICAS_UPDATED_AT } from "@/lib/legalConfig"
 
 // ── Componentes internos ───────────────────────────────────────────────────────
 
@@ -319,7 +319,7 @@ export default function PoliticasScreen() {
             O Encarregado de Proteção de Dados (DPO) do ShareO, nos termos do Art. 41 da LGPD, é:
           </Text>
           <Text style={[s.dpoName, { color: tokens.text }]}>
-            Roberto Epifanio da Silva
+            {DPO_NOME}
           </Text>
           <Text style={[s.body, { color: tokens.muted }]}>
             Responsável por assegurar a conformidade da organização com a LGPD e demais normas aplicáveis à privacidade e proteção de dados pessoais. Atua como ponto de contato entre o ShareO, os titulares de dados e a Autoridade Nacional de Proteção de Dados (ANPD), monitorando práticas de tratamento de dados, promovendo treinamentos internos e apoiando a gestão de riscos e a resposta a incidentes de segurança.

@@ -114,8 +114,3 @@ O RIPD lista o que já existe: **exclusão imediata, exportação (`/api/users/m
 6. ☐ Decidir a flag `accessLogsEnabled` (sem ela não há trilha de acesso).
 7. ☐ Criar o arquivo de contatos de emergência **fora** do repositório.
 
----
-
-## Ponto a resolver (achado ao escrever este plano)
-
-A Política `/politicas`, seção 2.7, publica **Roberto Epifanio da Silva** como Encarregado; o RIPD (seção A) registra **Raimundo Gomes da Silva** (nomeado em 04/08/2026) e diz que a Política ainda não publica o nome. Este plano assume o RIPD. O texto público **não foi alterado** — depende de confirmar qual designação vale (acompanhamento no backlog).

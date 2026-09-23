@@ -12,6 +12,7 @@
 > **descartado em 24/08** (B1 fechado, PSP é a **Stripe**), **B3 fechou em 03/09** (Simples Nacional),
 > e a seção **C2 foi reenquadrada em 03/09** — ver `dpa-apuracao-2026-09-03.md`. O inventário da
 > tabela 2.1 e os textos de §1 ainda descrevem o mundo anterior; leia-os com essa ressalva.
+> C3.6 a C3.8 abaixo constam como abertas, mas a nomeação já foi cumprida: ver o RIPD, seção A.
 
 ---
 

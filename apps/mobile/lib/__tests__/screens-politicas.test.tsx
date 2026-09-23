@@ -164,7 +164,7 @@ describe("PoliticasScreen — rótulos verbatim (transcrição de app/politicas/
 
   it("exibe o nome do DPO verbatim", () => {
     wrap(<PoliticasScreen />)
-    expect(screen.getByText("Roberto Epifanio da Silva")).toBeTruthy()
+    expect(screen.getByText("Raimundo Gomes da Silva")).toBeTruthy()
   })
 
   it("exibe as bases legais da seção 2.2 verbatim", () => {
