@@ -1,6 +1,8 @@
 # ShareO — Status do Projeto
 
-**Atualizado em**: 2026-09-23 — **⚖️ D4: a advogada respondeu a pergunta da Lei 12.865 e a de PLD/FT, o RIPD foi assinado, e o 2FA de administradores e as seções 6/7 dos Termos estão implementados, mas nada disso está no ar ainda.** Quatro PRs abertos, nenhum mesclado.
+**Atualizado em**: 2026-09-23 — **⚖️ D4: a advogada respondeu a pergunta da Lei 12.865 e a de PLD/FT, o RIPD foi assinado, e o 2FA de administradores e as seções 6/7 dos Termos foram mesclados e estão no staging.** PRs #488, #493, #494, #495 e #496 mesclados em 23/09 (o texto abaixo foi escrito antes dos merges).
+
+**Desfecho dos merges (23/09, deploy de staging `8728e46` verde):** migração `20260921120000_admin_2fa_totp` aplicada limpa e `/api/health` saudável. O login do admin fixture com 2FA **falhou** no 1º deploy (o CI gravava o segredo TOTP cifrado com a `ENCRYPTION_KEY` do build, diferente da do runtime); corrigido no #496 com uma rota de teste, e o deploy seguinte registrou "Sessão salva: session-admin.json". **Ainda não verificado por um humano:** o cadastro do 2FA pela UI (QR → código → login → recuperação) e a tela `/termos` renderizada. Todo admin precisa cadastrar o autenticador para abrir o painel. **A campanha não tem staging: o texto novo dos Termos (#494) já está em shareo.com.br.**
 
 **Respostas jurídicas (PR [#493](https://github.com/robertoepifanio-byte/SHAREO/pull/493), só documentação):**
 - **Lei 12.865:** a ShareO não precisa de autorização do Banco Central — a Stripe gerencia a conta de pagamento, a ShareO intermedeia e retém a comissão. Condição: os Termos dizerem que o dinheiro pertence ao proprietário desde o início. Confirmada de novo em 23/09 com processador estrangeiro: **o risco está na redação, não na operação.**
@@ -15,7 +17,7 @@
 
 **Ainda bloqueando o go-live público:** fornecedores sem cláusula da ANPD (Vercel, Resend, Sentry, Mapbox, Upstash; Supabase em definição) — decisão da advogada, **sem resposta**; Google Tag Manager ligado na landing sem declaração na Política; plano de resposta a incidentes (Cláusulas 15/16); deploy e verificação do 2FA e dos Termos em staging.
 
-**Achado colateral, não corrigido:** 2 testes de `IdentificacaoPrestador.test.tsx` ("endereço da sede") reprovam em `origin/main` puro.
+**Correção (23/09):** afirmei aqui que 2 testes de `IdentificacaoPrestador.test.tsx` ("endereço da sede") reprovavam em `origin/main` puro. **Falso:** o CI passou com eles; a falha só ocorria no meu ambiente local (worktree com `node_modules` por junction).
 
 ---
 
