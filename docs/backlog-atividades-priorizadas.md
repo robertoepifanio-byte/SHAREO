@@ -36,7 +36,7 @@
 
 **O que ainda falta, mesmo com essas respostas:**
 - ~~PLD/FT (pergunta 3)~~ ✅ **Respondida em 23/09/2026** (e-mail da advogada, via Raimundo): o raciocínio de 30/06 continua válido com processador estrangeiro; responsabilidade primária da Stripe (Lei 9.613), ShareO mantém só compliance mínimo. Reafirma também a Lei 12.865: **o risco jurídico está na redação dos Termos, não na operação.** Registrado em [`parecer-lei-12865-2026-09-21.md`](juridico/parecer-lei-12865-2026-09-21.md). **Frente A sem pergunta jurídica em aberto.**
-- Aplicar a nova redação da seção 6/7 dos Termos ao texto publicado (`packages/legal/src/TermosConteudo.tsx`) — não implementado ainda, é decisão de produto/jurídico, não só transcrição.
+- ~~Aplicar a nova redação da seção 6/7 dos Termos~~ 🟡 **Implementada no PR #494** (site, campanha e app; 23/09/2026). **Aguardando merge, deploy e verificação em staging** — a tela renderizada em `/termos` e no app não foi vista. Desvios do texto da advogada e pontos a mostrar a ela estão na descrição do PR.
 - Confirmar se falta a assinatura do "representante legal do controlador" no RIPD — o PDF recebido só trouxe a do Encarregado.
 - As pendências que a própria seção I do RIPD lista como bloqueadoras do go-live (fornecedores sem cláusula da ANPD, GTM sem declaração na Política, deploy do 2FA em staging, plano de resposta a incidentes) continuam abertas — assinar o RIPD as reconhece, não as resolve.
 - Perguntas 4-7 da pauta (fornecedores sem CPC, Supabase, Cláusulas 15/16, GTM) seguem sem resposta.
