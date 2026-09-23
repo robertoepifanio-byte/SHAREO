@@ -184,17 +184,74 @@ describe("middleware", () => {
   })
 
   describe("rotas de admin", () => {
-    it("rota admin /admin com token role=ADMIN → NextResponse.next() (sem redirect)", async () => {
+    it("rota admin /admin com token role=ADMIN e 2FA verificado → NextResponse.next() (sem redirect)", async () => {
       mockGetToken.mockResolvedValue({
         id: "admin-1",
         email: "admin@shareo.com",
         role: "ADMIN",
+        mfa: true,
       } as never)
 
       const req = makeReq("/admin")
       const res = await middleware(req)
 
       expect(res.headers.get("location")).toBeNull()
+    })
+
+    describe("2FA obrigatório", () => {
+      // `mfa` ausente cobre os dois casos: admin que ainda não cadastrou o autenticador
+      // e token emitido ANTES do 2FA existir. `mfa: false` é o login de admin sem 2FA.
+      it.each([
+        ["mfa ausente (token anterior ao 2FA)", { id: "a", role: "ADMIN" }],
+        ["mfa=false (admin sem 2FA cadastrado)", { id: "a", role: "ADMIN", mfa: false }],
+      ])("página /admin com %s → redireciona ao cadastro do 2FA", async (_caso, token) => {
+        mockGetToken.mockResolvedValue(token as never)
+
+        const res = await middleware(makeReq("/admin/financeiro"))
+
+        expect(res.headers.get("location")).toContain("/perfil/seguranca/2fa")
+      })
+
+      it("/api/admin sem 2FA verificado → 403 MFA_REQUIRED (JSON, não redirect)", async () => {
+        mockGetToken.mockResolvedValue({ id: "a", role: "ADMIN" } as never)
+
+        const res = await middleware(makeReq("/api/admin/users"))
+
+        expect(res.status).toBe(403)
+        expect((await res.json()).error.code).toBe("MFA_REQUIRED")
+      })
+
+      it("/dashboard (destino padrão do login) leva o admin sem 2FA direto ao cadastro", async () => {
+        mockGetToken.mockResolvedValue({ id: "a", role: "ADMIN" } as never)
+
+        const res = await middleware(makeReq("/dashboard"))
+
+        expect(res.headers.get("location")).toContain("/perfil/seguranca/2fa")
+      })
+
+      it("/dashboard com 2FA verificado segue normal", async () => {
+        mockGetToken.mockResolvedValue({ id: "a", role: "ADMIN", mfa: true } as never)
+
+        const res = await middleware(makeReq("/dashboard"))
+
+        expect(res.headers.get("location")).toBeNull()
+      })
+
+      it("a tela de cadastro do 2FA NÃO é barrada para o admin sem 2FA (senão ninguém cadastraria)", async () => {
+        mockGetToken.mockResolvedValue({ id: "a", role: "ADMIN" } as never)
+
+        const res = await middleware(makeReq("/perfil/seguranca/2fa"))
+
+        expect(res.headers.get("location")).toBeNull()
+      })
+
+      it("usuário comum com mfa ausente não é afetado (o 2FA é só de admin)", async () => {
+        mockGetToken.mockResolvedValue({ id: "u", role: "USER" } as never)
+
+        const res = await middleware(makeReq("/dashboard"))
+
+        expect(res.headers.get("location")).toBeNull()
+      })
     })
 
     it("rota admin /admin com token role=USER → redireciona para /dashboard", async () => {

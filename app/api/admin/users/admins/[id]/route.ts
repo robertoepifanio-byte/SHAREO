@@ -5,12 +5,13 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { requireAdminRole } from "@/lib/auth/admin-guards"
 import { invalidateUserSessions } from "@/lib/redis-admin-blocklist"
+import { resetSecondFactor } from "@/lib/auth/mfa"
 
 type Params = { params: Promise<{ id: string }> }
 
 const PatchSchema = z.union([
   z.object({ adminRole: z.enum(["ADMIN_SUPERADMIN", "ADMIN_FINANCEIRO", "ADMIN_OPERACIONAL"]) }),
-  z.object({ action: z.enum(["activate", "deactivate", "demote_to_user"]) }),
+  z.object({ action: z.enum(["activate", "deactivate", "demote_to_user", "reset_2fa"]) }),
 ])
 
 export async function PATCH(req: NextRequest, { params }: Params) {
@@ -47,6 +48,18 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         { error: { code: "NOT_FOUND", message: "Admin não encontrado." } },
         { status: 404 },
       )
+    }
+
+    // Perdeu o celular e os códigos de recuperação: outro superadmin zera o 2FA. O admin
+    // entra só com a senha, sem `mfa` (rebaixado na sessão), e refaz o cadastro do autenticador.
+    if ("action" in parsed.data && parsed.data.action === "reset_2fa") {
+      await Promise.all([resetSecondFactor(id), invalidateUserSessions(id)])
+      after(() =>
+        prisma.adminLog.create({
+          data: { adminId: session!.user.id, action: "MFA_RESET", entityType: "User", entityId: id },
+        }).catch((e) => console.warn("[adminLog]", e instanceof Error ? e.message : e))
+      )
+      return NextResponse.json({ data: { id, totpReset: true } })
     }
 
     const data =

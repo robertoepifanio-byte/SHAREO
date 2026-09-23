@@ -23,7 +23,7 @@ export default async function AdminsPage() {
   const admins = await prisma.user.findMany({
     where:   { role: "ADMIN", deletedAt: null },
     orderBy: { createdAt: "asc" },
-    select:  { id: true, name: true, email: true, adminRole: true, isActive: true, createdAt: true },
+    select:  { id: true, name: true, email: true, adminRole: true, isActive: true, createdAt: true, totpEnabledAt: true },
   })
 
   return (
@@ -79,6 +79,9 @@ export default async function AdminsPage() {
                           )}
                         </p>
                         <p className="text-xs text-muted-foreground">{admin.email}</p>
+                        <p className={`text-[11px] ${admin.totpEnabledAt ? "text-success" : "text-amber-700 dark:text-amber-400"}`}>
+                          {admin.totpEnabledAt ? "2FA ativo" : "2FA pendente — painel bloqueado até ativar"}
+                        </p>
                       </div>
                     </div>
                   </td>
@@ -100,6 +103,7 @@ export default async function AdminsPage() {
                         userId={admin.id}
                         adminRole={(admin.adminRole ?? "ADMIN_OPERACIONAL") as "ADMIN_SUPERADMIN" | "ADMIN_FINANCEIRO" | "ADMIN_OPERACIONAL"}
                         isActive={admin.isActive}
+                        has2fa={!!admin.totpEnabledAt}
                       />
                     )}
                   </td>
