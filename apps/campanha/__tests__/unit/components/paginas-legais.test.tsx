@@ -38,7 +38,7 @@ describe("Termos de Uso", () => {
       />,
     )
 
-    const clausula = screen.getByText(/Pagamentos e Taxa de Serviço/i).parentElement
+    const clausula = screen.getByText(/Da Intermediação e do Pagamento das Locações/i).parentElement
     expect(clausula?.textContent).toContain(`${VALORES.feePct}%`)
     expect(clausula?.textContent).toContain(VALORES.payoutLabel)
     expect(clausula?.textContent).toContain(VALORES.maxPorTransacao)

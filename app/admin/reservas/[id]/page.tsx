@@ -8,6 +8,7 @@ import { formatPrice, formatDate, formatDateTime } from "@/utils/format"
 import { BookingStatusBadge } from "@/components/ui/BookingStatusBadge"
 import { RecalcularTaxaAtraso } from "./_RecalcularTaxaAtraso"
 import { prazoParaContestar, podeContestar } from "@/lib/prazoContestacao"
+import { taxaDeAtrasoQuitada } from "@/lib/lateFee"
 
 export const metadata: Metadata = { title: "Admin — Detalhe da reserva" }
 
@@ -71,6 +72,8 @@ export default async function AdminReservaPage({ params }: Props) {
   const gross         = calcSplit(booking.totalPrice + discountCents, feeRateBps)
   const platformFee   = booking.platformFeeAmount ?? Math.max(0, gross.platformFeeAmount - discountCents)
   const ownerNet      = booking.ownerNetAmount ?? gross.ownerNetAmount
+  const multaQuitada  = taxaDeAtrasoQuitada(booking)
+  const multaSplit    = calcSplit(booking.lateFeeAmount ?? 0, feeRateBps)
 
   // Preset: dia "2-digit" + mês "short" + ano "2-digit" (equivalente ao fmtDate original)
   const fmtDate     = (d: Date) => formatDate(d, { day: "2-digit", month: "short", year: "2-digit" })
@@ -155,14 +158,25 @@ export default async function AdminReservaPage({ params }: Props) {
             />
           ) : null}
           {booking.lateFeeAmount ? (
-            <Row
-              label="Multa por atraso"
-              value={
-                booking.lateFeeCalculatedUntil
-                  ? `${formatPrice(booking.lateFeeAmount)} — calculado até ${formatDate(booking.lateFeeCalculatedUntil)}`
-                  : formatPrice(booking.lateFeeAmount)
-              }
-            />
+            <>
+              <Row
+                label={`Multa por atraso (${multaQuitada ? "paga" : "a pagar"})`}
+                value={
+                  booking.lateFeeCalculatedUntil
+                    ? `${formatPrice(booking.lateFeeAmount)} — calculado até ${formatDate(booking.lateFeeCalculatedUntil)}`
+                    : formatPrice(booking.lateFeeAmount)
+                }
+              />
+              {/* Mesmo split da locação. Sem estas linhas o "Repasse ao
+                  proprietário" acima ignorava a multa, e a equipe somava de cabeça. */}
+              <Row label={`Taxa ShareO sobre a multa (${feeRateBps / 100}%)`} value={`− ${formatPrice(multaSplit.platformFeeAmount)}`} />
+              <Row label="Repasse da multa ao proprietário" value={formatPrice(multaSplit.ownerNetAmount)} />
+              <Row
+                label={multaQuitada ? "Repasse total ao proprietário" : "Repasse total, se a multa for paga"}
+                value={formatPrice(ownerNet + multaSplit.ownerNetAmount)}
+                strong
+              />
+            </>
           ) : null}
           {booking.lateFeeAmount && !booking.lateFeePaymentIntentId ? (
             <div className="mt-2">

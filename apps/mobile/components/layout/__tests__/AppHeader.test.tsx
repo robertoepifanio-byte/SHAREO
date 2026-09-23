@@ -34,4 +34,25 @@ describe("AppHeader — paridade de rótulos com o site", () => {
     )
     expect(screen.getByLabelText("Entrar")).toBeTruthy()
   })
+
+  it('exibe "Cadastre-se" (VERBATIM) quando isLoggedIn=false', () => {
+    render(
+      <AppHeader menuOpen={false} onToggleMenu={jest.fn()} isLoggedIn={false} />,
+    )
+    expect(screen.getByText("Cadastre-se")).toBeTruthy()
+  })
+
+  it('não exibe "Cadastre-se" quando isLoggedIn=true (padrão)', () => {
+    render(
+      <AppHeader menuOpen={false} onToggleMenu={jest.fn()} isLoggedIn={true} />,
+    )
+    expect(screen.queryByText("Cadastre-se")).toBeNull()
+  })
+
+  it('accessibilityLabel do botão "Cadastre-se" está correto (VERBATIM)', () => {
+    render(
+      <AppHeader menuOpen={false} onToggleMenu={jest.fn()} isLoggedIn={false} />,
+    )
+    expect(screen.getByLabelText("Cadastre-se")).toBeTruthy()
+  })
 })

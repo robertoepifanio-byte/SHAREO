@@ -87,6 +87,12 @@ export async function AppHeader() {
               >
                 Entrar
               </Link>
+              <Link
+                href="/cadastro"
+                className="inline-flex h-11 items-center px-4 rounded-md text-sm font-medium bg-brand text-white hover:bg-brand-hover transition-colors outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
+              >
+                Cadastre-se
+              </Link>
             </>
           )}
 

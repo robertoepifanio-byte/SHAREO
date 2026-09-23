@@ -3,6 +3,8 @@
 **Pauta da reunião com Raimundo e a advogada** · 21 de setembro de 2026
 **Preparado por:** Roberto Epifânio, com apoio da equipe técnica
 
+> **✅ Atualização de 22/09/2026 — respostas recebidas.** As perguntas 1, 2, 3 e 9 da seção 7 tiveram resposta (parcial na 3) no dia seguinte à reunião, junto com a assinatura do RIPD pelo Encarregado. Detalhe completo em [`parecer-lei-12865-2026-09-21.md`](parecer-lei-12865-2026-09-21.md) — confirmado por Raimundo: é a advogada amiga que o apoia neste momento inicial, sem cobrar.
+
 ---
 
 ## 1. Em uma página
@@ -13,9 +15,9 @@
 
 | # | Frente | Em uma frase | Quem decide |
 |---|---|---|---|
-| A | **Ressalva do PSP** | O parecer analisou o Mercado Pago. Hoje o processador de pagamentos é a Stripe, e o dinheiro passa pela conta da ShareO antes do repasse. | Advogada |
+| A | **Pagamentos pela Stripe** | O dinheiro da locação passa pelo saldo da ShareO na Stripe antes do repasse. A parte tributária já foi respondida pela Contabilizei; falta a advogada avaliar o enquadramento legal. | Advogada |
 | B | **Transferência internacional de dados** (Art. 33 da LGPD) | O prazo para adotar as cláusulas-padrão da ANPD venceu em 23/08/2025. Só 1 de 7 fornecedores está regular. | Advogada |
-| C | **Segurança do painel de administração** | Não existe verificação em duas etapas (MFA). Há um superadministrador em produção protegido só por senha. | Fundadores (decisão técnica) |
+| C | **Segurança do painel de administração** | O painel era protegido só por senha. A verificação em duas etapas (2FA) para administradores foi **implementada** (PR #488, testes verdes) e **aguarda deploy e verificação em staging**. | Fundadores (decisão técnica) |
 | D | **Encarregado (DPO) e RIPD** | Raimundo está nomeado, mas o relatório de impacto ainda não foi validado nem assinado. | Raimundo + advogada |
 | E | **Novo, de 15/09: Google Tag Manager** | Foi instalado na landing `shareo.com.br`. A Política de Privacidade ainda não o menciona. | Advogada + fundadores |
 
@@ -27,44 +29,55 @@
 
 | # | Condição | Estado | Observação |
 |---|---|---|---|
-| 1 | Parecer jurídico formal | ✅ Recebido, **com ressalva** | Foi escrito com o Mercado Pago como processador. Ver frente A. |
+| 1 | Parecer jurídico formal | ✅ Recebido em 30/06 | Falta a advogada confirmar o enquadramento dos pagamentos pela Stripe (frente A). |
 | 2 | Contrato com o processador de pagamentos + conta em nome da empresa (PJ) | ✅ Cumprida em 24/08/2026 | Conta na Stripe no CNPJ 68.512.556/0001-09, o mesmo do Comprovante de Situação Cadastral. |
 | 3 | Termos de Uso e Política de Privacidade revisados | ✅ Conteúdo aprovado | Só serão publicados no go-live. |
 | 4 | Checklist de conformidade 100% cumprido | 🔴 **Aberta** | Faltam C2 (fornecedores estrangeiros) e C3 (RIPD/DPO), além da ressalva do processador. |
 
 ---
 
-## 3. Frente A — Ressalva do processador de pagamentos (Lei 12.865/2013)
+## 3. Frente A — Stripe: o dinheiro passa pela conta da ShareO
 
-### Em linguagem simples
+### Como funciona hoje
 
-O parecer disse que a ShareO **não precisa ser autorizada pelo Banco Central** como instituição de pagamento. O motivo era que a ShareO **não guardaria o dinheiro dos usuários**: o pagamento iria direto para o processador, que dividiria e repassaria ao proprietário.
+(detalhe completo em [`ressalva-psp-stripe-2026-09-03.md`](ressalva-psp-stripe-2026-09-03.md))
 
-Em agosto, a decisão mudou: o Mercado Pago foi descartado e a **Stripe** virou o processador (ADR-028). Ao conferir como a Stripe foi implementada, encontramos que o desenho é **diferente do que o parecer analisou**:
+1. O locatário paga o valor **cheio** da locação com cartão.
+2. O valor entra no **saldo da ShareO dentro da Stripe** (uma conta da Stripe em nome da ShareO, não uma conta bancária).
+3. Três dias depois da devolução do item, a Stripe transfere **85%** ao proprietário.
+4. Os **15%** ficam com a ShareO. É a receita dela.
 
-- o valor **cheio** da locação entra no **saldo da ShareO dentro da Stripe**;
-- fica lá por alguns dias, até o repasse ao proprietário (liberado N dias após a devolução);
-- só então sai a transferência de **85%** ao proprietário; os 15% ficam com a ShareO.
+O valor fica retido de propósito: é o que permite mediar uma disputa por dano antes de pagar o proprietário.
 
-Não foi acidente: reter o valor até a devolução é o que permite mediar uma disputa. Mas é **factualmente diferente** do arranjo que o parecer validou.
+### O que a Contabilizei respondeu (10/09, chamado 29468012)
 
-### Para a advogada
+O roteiro enviado a ela já descrevia esse fluxo. Respostas:
 
-O parecer de 30/06 afastou o enquadramento da Lei 12.865/2013 sobre a premissa de que a plataforma *não retém nem custodia* o valor devido ao locador. A implementação com a Stripe usa o modelo *separate charges and transfers*: a cobrança se completa na conta da plataforma e o *Transfer* ao locador ocorre depois, em cron de repasse. A taxa de 15% não é cobrada por `application_fee`; transfere-se apenas a parcela do locador, e o restante permanece.
+| Pergunta | Resposta |
+|---|---|
+| Os 85% entram na receita bruta? | **Não.** O imposto incide só sobre a comissão de 15%. Os 85% são "valores de terceiros em trânsito". Numa locação de R$ 100, a receita é R$ 15. |
+| Regime e alíquota | **Simples Nacional**, Anexo III, alíquota projetada de **6%** sobre a comissão. |
+| Teto do Simples (R$ 4,8 mi) | Conta as **comissões**, não o volume. O volume precisaria chegar a ~R$ 32 mi/ano. |
+| Nota fiscal | Emitida **contra o proprietário**, sobre os 15%. |
+| Retenções | **Sem** retenção de IR nem de INSS. DIMOB não se aplica. |
 
-**Pergunta central:** com o valor transitando pelo saldo da ShareO na Stripe, a conclusão de 30/06 se mantém?
+Ela exige ainda um **Relatório de Intermediações** mensal (data, proprietário, valor total, repasse e comissão), que **já está implementado** e é gerado sozinho no dia 1º de cada mês.
 
-**Por que é o ponto mais pesado:** é o único em que uma resposta negativa **mexeria no produto**, não só nos textos. Uma alternativa técnica seria migrar para *destination charge*, em que o valor vai direto à conta do locador. Isso perderia a retenção durante a disputa, hoje essencial ao produto.
+**A parte tributária está resolvida.** Não há pergunta fiscal para a advogada.
 
-### O que continua de pé
+### O que continua com a advogada
 
-- A terceirização do arranjo a um processador licenciado, que opera o fluxo e faz a verificação de identidade (KYC).
-- Taxa de 15% destacada nos Termos e na interface, sem caução, teto de R$ 500 por transação, retenção fiscal de 5 anos.
+**Pergunta central:** com o valor cheio entrando no saldo da ShareO na Stripe por alguns dias, a ShareO precisa de autorização do Banco Central como instituição de pagamento (Lei 12.865/2013), ou o arranjo é apenas intermediação?
 
-### Duas perguntas conexas
+**Como isso se liga à resposta da Contabilizei.** Para o imposto, tratar os 85% como "valores de terceiros em trânsito" é o que nos favorece. Os documentos mensais que ela pede (relatório, comprovantes de transferência, extratos da Stripe no lugar de extrato bancário) registram por escrito essa mesma situação: dinheiro de terceiros no saldo da ShareO por alguns dias. A advogada deve avaliar a mesma situação sob a ótica da lei, sabendo o que a contabilidade já documenta.
 
-- **Fiscal:** a Contabilizei respondeu em 10/09 (chamado 29468012). Regime: **Simples Nacional**. Os 85% repassados **não são receita** da ShareO. A nota fiscal é emitida contra o proprietário, sem retenção de IR/INSS, e o DIMOB não se aplica. Pergunta à advogada: alguma ressalva a essa conclusão dado que o valor cheio passa pela conta da plataforma?
-- **Prevenção à lavagem de dinheiro (Lei 9.613/1998):** a resposta B4 disse que a ShareO não é sujeito obrigado porque *o processador assume KYC/KYB/monitoramento*. Essa conclusão depende de o processador ser instituição autorizada pelo Banco Central, o que o Mercado Pago era. **A Stripe é estrangeira.** A conclusão se mantém?
+**Por que é o ponto mais pesado:** é o único em que uma resposta negativa **mexeria no produto**. A alternativa técnica seria a Stripe pagar direto ao proprietário (*destination charge*), o que perde a retenção durante a disputa. Se isso acontecer, a Contabilizei também precisa ser avisada, porque o relatório e os extratos passam a ter outra origem.
+
+**Um texto nosso a conferir.** A Contabilizei pediu que os Termos digam que a ShareO é intermediadora, que o valor total pertence ao proprietário e que ela retém só a comissão. A seção 6 dos Termos diz que a plataforma "intermedia o valor", "retém uma taxa de serviço" e "repassa o restante ao locador". **Não diz que o valor pertence ao locador** e não nomeia a Stripe. A redação basta, ou ajustamos? Depende da resposta à pergunta central.
+
+### Uma pergunta conexa
+
+**Prevenção à lavagem de dinheiro (Lei 9.613/1998):** a conclusão de que a ShareO não é sujeito obrigado se apoia em a Stripe assumir a verificação de identidade (KYC/KYB) e o monitoramento. A Stripe é estrangeira. A conclusão se mantém?
 
 ---
 
@@ -79,6 +92,8 @@ Em 23/08/2024 a ANPD publicou essas cláusulas (Resolução CD/ANPD nº 19/2024)
 Não dá para "assinar" as cláusulas: adota-se o texto **na íntegra e sem alteração**. Verificamos quem já o fez.
 
 ### Situação dos sete fornecedores
+
+(medição completa, com metodologia e evidências, em [`dpa-apuracao-2026-09-03.md`](dpa-apuracao-2026-09-03.md))
 
 | Fornecedor | O que faz na ShareO | Adota as cláusulas da ANPD? |
 |---|---|---|
@@ -118,13 +133,24 @@ Ainda são nossas, e temos de confirmar como estão documentadas: as obrigaçõe
 
 ### Em linguagem simples
 
-O painel `/admin` permite ver dados de usuários, decidir disputas e mexer em valores. Hoje o acesso exige **só e-mail e senha**. Não existe uma segunda etapa (código no celular, por exemplo). Existe um superadministrador na produção, que é de uso interno mas guarda os mesmos dados. Se a senha de alguém vazar, quem a obtiver entra sem barreira adicional.
+O painel `/admin` permite ver dados de usuários, decidir disputas e mexer em valores. Até agora o acesso exigia **só e-mail e senha**, inclusive para um superadministrador na produção (de uso interno, mas com os mesmos dados). Se a senha de alguém vazasse, quem a obtivesse entrava sem barreira adicional.
 
 Também não há uma "segunda barreira" no banco: a proteção depende de cada rota do sistema verificar quem está chamando. Se uma verificação for esquecida, o acesso fica liberado. Já encontramos e corrigimos casos assim (em 02/09, duas rotas administrativas ignoravam o tipo de administrador).
 
+### O que foi feito (21/09)
+
+Todo administrador, dos três papéis, passa a precisar de um **segundo fator**: além da senha, o código de 6 dígitos de um aplicativo autenticador no celular (Google Authenticator, Authy, 1Password ou similar).
+
+- **Sem o segundo fator, o painel não abre.** O administrador que ainda não o cadastrou consegue entrar no site, mas é tratado como usuário comum em todo o sistema até cadastrar.
+- **Perdeu o celular?** Cada administrador recebe 10 códigos de recuperação de uso único. Sem eles, outro superadministrador reinicia o 2FA dele (a ação é registrada no log de auditoria e encerra as sessões abertas).
+- **Cada código vale uma vez**, e as tentativas erradas são limitadas.
+- Os testes automatizados do painel continuam funcionando sem nenhum atalho que desligue a proteção.
+
+**Estado honesto:** implementado no PR #488, com a suíte de testes e o CI verdes. **Ainda não foi verificado ao vivo**: o fluxo completo (QR code, código, login, recuperação) só pode ser exercitado no staging depois do deploy. Quando isso entrar, **todos os administradores precisarão entrar de novo e cadastrar o autenticador**; até lá o painel fica bloqueado para eles.
+
 ### Para a advogada
 
-Não é pergunta jurídica, mas tem reflexo: a LGPD exige medidas técnicas de segurança adequadas aos dados tratados (art. 46), e o painel acessa documentos de identidade e dados financeiros. Sugerimos tratar como **condição técnica de abertura ao público**. A implementação é decisão dos fundadores.
+Não é pergunta jurídica, mas tem reflexo: a LGPD exige medidas técnicas de segurança adequadas aos dados tratados (art. 46), e o painel acessa documentos de identidade e dados financeiros. Com o 2FA, essa barreira deixa de depender só de senha. Sugerimos manter como **condição técnica de abertura ao público**, com a verificação em staging registrada antes do go-live. Não há pergunta a ela nesta frente.
 
 ---
 
@@ -134,7 +160,7 @@ Não é pergunta jurídica, mas tem reflexo: a LGPD exige medidas técnicas de s
 
 - **Raimundo Gomes da Silva** foi nomeado Encarregado em 04/08/2026, para o período de MVP e o primeiro ano.
 - O **RIPD** (Relatório de Impacto à Proteção de Dados) existe como **rascunho** e está marcado "pendente de revisão do DPO e da advogada". Falta validar e assinar.
-- O RIPD ainda precisa incorporar duas mudanças: a Stripe no lugar do Mercado Pago (e o que isso significa em transferência internacional) e a **base legal da selfie**: decidiu-se que ela é dado biométrico sensível (art. 11) e exige consentimento específico, não interesse legítimo.
+- O RIPD ainda precisa incorporar duas mudanças: a Stripe como processador de pagamentos (e o que isso significa em transferência internacional) e a **base legal da selfie**: decidiu-se que ela é dado biométrico sensível (art. 11) e exige consentimento específico, não interesse legítimo.
 
 ### E — Google Tag Manager na landing (novo, 15/09)
 
@@ -154,17 +180,17 @@ Ao lado do GTM, a origem de cada lead segue gravada no nosso banco, sem depender
 
 ## 7. Perguntas para a advogada
 
-| # | Pergunta | Frente | Efeito se a resposta for negativa |
-|---|---|---|---|
-| 1 | Com o valor transitando pelo saldo da ShareO na Stripe, a conclusão do parecer sobre a Lei 12.865/2013 se mantém? | A | **Mexe no produto**: migração para *destination charge* |
-| 2 | A separação 15% receita / 85% em trânsito se sustenta sob o Simples Nacional, dado o valor cheio na conta da plataforma? | A | Reflexo em imposto e limite de enquadramento |
-| 3 | A conclusão de que a ShareO não é sujeito obrigado (PLD/FT) depende de o processador ser autorizado pelo Banco Central? | A | Exige política própria de monitoramento |
-| 4 | Vercel, Resend, Sentry, Mapbox e Upstash: negociar adendo, enquadrar em outra hipótese do art. 33 ou trocar? | B | Troca de fornecedor |
-| 5 | Supabase (dados em São Paulo, matriz nos EUA): há transferência internacional? | B | Mais um fornecedor irregular |
-| 6 | Os procedimentos das Cláusulas 15 e 16 (titulares e incidentes) estão adequados ou precisamos formalizá-los? | B | Documento e rotina novos |
-| 7 | GTM: o enquadramento no art. 33 e a atualização da seção 5.2 da Política. É necessário aviso de cookies/consentimento? | E | Desligar o GTM (é uma linha no código) ou ajustar a Política |
-| 8 | O restante do parecer de 30/06 se aplica ao desenho com a Stripe, ou algum outro ponto precisa ser revisitado? | A | Revisão parcial do parecer |
-| 9 | O RIPD, atualizado para a Stripe e para a selfie como dado sensível, pode ser assinado pelo Encarregado? | D | Fecha a condição C3 |
+| # | Pergunta | Frente | Efeito se a resposta for negativa | Status |
+|---|---|---|---|---|
+| 1 | Com o valor cheio entrando no saldo da ShareO na Stripe por alguns dias, a ShareO precisa de autorização do Banco Central (Lei 12.865/2013) ou o arranjo é apenas intermediação? | A | **Mexe no produto**: migração para *destination charge* | ✅ **Respondido 21/09** — não precisa, condicionado à redação dos Termos. Ver [`parecer-lei-12865-2026-09-21.md`](parecer-lei-12865-2026-09-21.md) |
+| 2 | A Contabilizei classificou os 85% como "valores de terceiros em trânsito". Essa qualificação é compatível com a resposta à pergunta 1? | A | Avisar a Contabilizei e rever o relatório mensal | ✅ **Respondido 21/09** — sim, o texto trata as duas conclusões como a mesma coisa |
+| 3 | PLD/FT: a ShareO não ser sujeito obrigado, porque a Stripe assume o KYC e o monitoramento, se mantém sendo a Stripe estrangeira? | A | Exige política própria de monitoramento | ✅ **Respondido 23/09** — o raciocínio de 30/06 continua válido; responsabilidade primária da Stripe, ShareO mantém compliance mínimo |
+| 4 | Vercel, Resend, Sentry, Mapbox e Upstash: negociar adendo, enquadrar em outra hipótese do art. 33 ou trocar? | B | Troca de fornecedor | ⏳ Sem resposta ainda |
+| 5 | Supabase (dados em São Paulo, matriz nos EUA): há transferência internacional? | B | Mais um fornecedor irregular | ⏳ Sem resposta ainda |
+| 6 | Os procedimentos das Cláusulas 15 e 16 (titulares e incidentes) estão adequados ou precisamos formalizá-los? | B | Documento e rotina novos | ⏳ Sem resposta ainda |
+| 7 | GTM: o enquadramento no art. 33 e a atualização da seção 5.2 da Política. É necessário aviso de cookies/consentimento? | E | Desligar o GTM (é uma linha no código) ou ajustar a Política | ⏳ Sem resposta ainda |
+| 8 | O RIPD, atualizado para a Stripe e para a selfie como dado sensível, pode ser assinado pelo Encarregado? | D | Fecha a condição C3 | ✅ **Assinado 21/09** pelo Encarregado — ver `rascunho-ripd.md`. Seção I do RIPD lista o que ainda falta |
+| 9 | A seção 6 dos Termos diz que a plataforma "intermedia o valor" e "retém uma taxa", mas não diz que o valor pertence ao locador nem nomeia a Stripe. Isso basta, ou ajustamos como a Contabilizei pediu? | A | Nova redação (o conteúdo dos Termos já estava aprovado) | ✅ **Respondido 21/09** — texto novo entregue para a seção 6 (e uma seção 7 de PLD/FT), ainda não aplicado ao Termos publicados |
 
 ---
 
@@ -172,16 +198,15 @@ Ao lado do GTM, a origem de cada lead segue gravada no nosso banco, sem depender
 
 1. **Ordem de fechamento.** Sugestão: primeiro a pergunta 1 (única que pode mudar o produto), depois a frente B em paralelo com o RIPD.
 2. **GTM:** manter ligado até o parecer ou desligar agora? Desligar é uma linha e reversível. Enquanto a Política não o mencionar, a exposição é a mesma do GA4.
-3. **MFA para administradores:** entra antes do go-live? Recomendamos que sim.
+3. **2FA para administradores:** já está implementado (PR #488). Falta aprovar o merge e o deploy, e verificar no staging. Depois do deploy, todos os administradores precisam cadastrar o autenticador.
 4. **Quem responde à ANPD e aos titulares** nas Cláusulas 15 e 16, e com qual procedimento.
 
 ---
 
 ## 9. O que já está resolvido
 
-- **Tributação** (B3): Simples Nacional, com relatório mensal de intermediações implementado em 10/09 (exigência da Contabilizei).
+- **Tributação** (B3): respondida pela Contabilizei em 10/09 — Simples Nacional, imposto só sobre a comissão de 15%, nota contra o proprietário. O relatório mensal que ela exige já está implementado.
 - **Pessoa jurídica identificada** nos Termos, na Privacidade e nas Políticas (razão social, CNPJ e endereço da sede) desde 24/08.
-- **Nenhum texto publicado menciona o Mercado Pago**; o código dele foi removido.
 - **Duas pendências que não existiam:** o "DPA da Stripe" (a Stripe já adota as cláusulas) e o Google Analytics (nunca esteve ligado).
 - **Backup do banco:** existem 7 backups diários. Há um ponto aberto no Storage (fotos de reserva e documentos de identidade), que só é copiado por rotina manual.
 

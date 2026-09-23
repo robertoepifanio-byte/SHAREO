@@ -8,6 +8,41 @@
 
 ---
 
+## 🏠 Home do site transcrita da campanha — implementada, AGUARDANDO verificação em staging (22/09/2026)
+
+**Origem:** revisão pré-go-live (22/09). Fundador pediu para levar o layout/copy da landing de campanha (`apps/campanha`, hoje publicada em shareo.com.br) para a home do site principal, mobile-first.
+
+**Decidido com o fundador:** todas as 10 seções da campanha entram (Hero, ItensParados, DoisLados, ComoFunciona, QuantoVale, Confiança, Fundadores, Embaixadores, Faq, Fechamento) — Embaixadores mantido mesmo com payout bloqueado até D4 (D4 previsto para fechar no mesmo dia; produção só em outubro). Todo CTA passa a apontar para `/cadastro` (conta real) em vez da âncora do formulário de lead da campanha. Fechamento perde o formulário (`ListaVIP`) e vira um botão grande de Cadastro. As seções antigas de marketplace (SimuladorRenda, Categorias, "Como funciona" antigo, CasosRenda, ItensProcurados, Seguranca, ListaVIP) saíram, e seus componentes foram apagados por ficarem sem uso (confirmado por grep — `apps/mobile` tem cópias próprias independentes, não afetadas).
+
+**Implementado:** `app/page.tsx` reescrito; conteúdo/componentes transcritos para `lib/landing-content.ts` + `components/home/landing/*`; `CtaCadastro` novo (aponta pra `/cadastro`); `AppHeader` ganhou botão "Cadastre-se" ao lado de "Entrar"; 8 imagens copiadas para `public/campanha/`; `e2e/e2e-home-plan.spec.ts` reescrito (o antigo testava busca e seções que não existem mais e quebraria 100% no CI).
+
+**⚠️ Risco de conteúdo registrado, não corrigido a pedido do fundador:** a copy da campanha é escrita inteiramente no futuro ("o ShareO vai...", "acesso antecipado") por exigência jurídica (CDC art. 30/37 — serviço "ainda não está no ar" na campanha). A home real já é um marketplace ativo. O FAQ transcrito literal inclui a pergunta "O ShareO já está funcionando?" respondida "Ainda não" — falso na home real. Fundador optou por transcrever tudo literal mesmo, ajuste de tom fica para revisão de copy separada.
+
+**Não verificado:** build local (`next build`) limpo e preview em 375px conferido (imagens carregando, CTA "Quero ser um dos primeiros" navegando de fato para `/cadastro`), mas **sem deploy em staging** — falta confirmar lá antes de marcar ✅ (regra de verificação por evidência).
+
+**Fora de escopo desta entrega:** transcrição da mesma home nova para o app Android (`apps/mobile`) — regra de transcrição literal do CLAUDE.md exige ler o site (não a campanha) como fonte; fica para tarefa seguinte.
+
+---
+
+## ⚖️ D4 — resposta sobre a Stripe (Lei 12.865) e RIPD assinado pelo Encarregado (22/09/2026)
+
+**Origem:** reunião de 21/09 com Raimundo e a advogada ([`pauta-d4-reuniao-2026-09-21.md`](juridico/pauta-d4-reuniao-2026-09-21.md)). No dia seguinte, Roberto trouxe dois PDFs assinados por Raimundo: uma resposta à pergunta central da frente A e o RIPD assinado.
+
+**O que veio:**
+1. **A ShareO não precisa de autorização do Banco Central** (Lei 12.865/2013), desde que os Termos deixem claro que o dinheiro pertence ao proprietário desde o início e a ShareO só intermedeia. Veio com texto pronto para a seção 6 dos Termos (que ganha a frase que faltava) e uma seção 7 nova, de prevenção à lavagem de dinheiro. Registrado em [`docs/juridico/parecer-lei-12865-2026-09-21.md`](juridico/parecer-lei-12865-2026-09-21.md).
+2. **RIPD v2.0 assinado pelo Encarregado** (Raimundo) em 21/09. O PDF assinado foi mantido fora do repositório (é público); o `.md` fonte tem uma nota registrando a assinatura.
+
+**✅ Autoria confirmada (22/09/2026):** os documentos não identificavam a advogada (nem nome, nem OAB — só a assinatura de Raimundo). Perguntado, ele confirmou: é a advogada amiga que o apoia neste momento inicial, sem cobrar. Assunto encerrado.
+
+**O que ainda falta, mesmo com essas respostas:**
+- ~~PLD/FT (pergunta 3)~~ ✅ **Respondida em 23/09/2026** (e-mail da advogada, via Raimundo): o raciocínio de 30/06 continua válido com processador estrangeiro; responsabilidade primária da Stripe (Lei 9.613), ShareO mantém só compliance mínimo. Reafirma também a Lei 12.865: **o risco jurídico está na redação dos Termos, não na operação.** Registrado em [`parecer-lei-12865-2026-09-21.md`](juridico/parecer-lei-12865-2026-09-21.md). **Frente A sem pergunta jurídica em aberto.**
+- ~~Aplicar a nova redação da seção 6/7 dos Termos~~ 🟡 **Implementada no PR #494** (site, campanha e app; 23/09/2026). **Aguardando merge, deploy e verificação em staging** — a tela renderizada em `/termos` e no app não foi vista. Desvios do texto da advogada e pontos a mostrar a ela estão na descrição do PR.
+- Confirmar se falta a assinatura do "representante legal do controlador" no RIPD — o PDF recebido só trouxe a do Encarregado.
+- As pendências que a própria seção I do RIPD lista como bloqueadoras do go-live (fornecedores sem cláusula da ANPD, GTM sem declaração na Política, deploy do 2FA em staging, plano de resposta a incidentes) continuam abertas — assinar o RIPD as reconhece, não as resolve.
+- Perguntas 4-7 da pauta (fornecedores sem CPC, Supabase, Cláusulas 15/16, GTM) seguem sem resposta.
+
+---
+
 ## 🔐 2FA (TOTP) obrigatório para administradores — implementado, AGUARDANDO verificação em staging (21/09/2026)
 
 **Origem:** frente C da pauta D4 de 21/09 ([`juridico/pauta-d4-reuniao-2026-09-21.md`](juridico/pauta-d4-reuniao-2026-09-21.md)) — painel `/admin` protegido só por senha, com RLS desabilitado.
@@ -29,6 +64,7 @@
 **Pontos abertos:** sem regeneração de códigos de recuperação (quem gastar todos pede reset a outro superadmin); a tentativa de código errado conta 10/15 min por admin, além do limite por e-mail do login.
 
 ---
+
 
 ## 🔒 Pentest ativo com Strix no staging — bloqueado por falta de chave de LLM (registrado 11/09/2026)
 

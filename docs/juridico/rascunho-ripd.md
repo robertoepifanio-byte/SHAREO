@@ -1,312 +1,337 @@
-# Relatório de Impacto à Proteção de Dados Pessoais (RIPD / DPIA)
-## ShareO Marketplace de Aluguel Ltda.
+# Relatório de Impacto à Proteção de Dados Pessoais (RIPD)
 
-> **RASCUNHO — pendente de revisão do DPO/advogada (D4); nao e documento final.**
-> Este rascunho foi elaborado pela equipe de produto/tecnologia como insumo para o parecer juridico (D4). Nao substitui o RIPD formal. A versao final deve ser validada e assinada pela Encarregada (DPO) e pela assessoria juridica responsavel.
+## SHAREO MARKETPLACE DE INTERMEDIACAO DE NEGOCIOS LTDA
 
-**Versao do rascunho:** 2026-06-28
-**Preparado por:** Equipe de Produto — ShareO
-**Base legal de referencia:** LGPD (Lei 13.709/2018), Resolucao CD/ANPD no 02/2022 (RIPD)
+> **Versão 2.0, de 21/09/2026 — para leitura e assinatura do Encarregado.**
+> Substitui o rascunho de 28/06/2026. Foi reescrito contra o sistema como ele é hoje (Stripe como processador de pagamentos, seleção de fornecedores medida, retenção efetivamente implementada). Cada afirmação sobre o sistema foi conferida no código ou nos documentos da pasta `docs/juridico/`.
+> **O que o Encarregado assina:** que leu o relatório, concorda com a descrição do tratamento e dos riscos, e **toma ciência das pendências da seção I**, que continuam abertas.
+>
+> **✅ Assinado por Raimundo Gomes da Silva (Encarregado) em 21/09/2026.** A via assinada foi enviada como PDF em 22/09 e **não entra neste repositório** (é público) — conferir a Seção K para o procedimento de arquivamento. ⚠️ No PDF recebido, só a assinatura do Encarregado foi identificada; o campo "Representante legal do controlador" da Seção J não veio preenchido — confirmar se essa assinatura ainda falta antes de considerar o RIPD integralmente executado.
+
+**Base legal do relatório:** LGPD (Lei 13.709/2018), art. 5º, XVII (definição de RIPD) e art. 38 (a ANPD pode exigi-lo do controlador).
+**Preparado por:** Equipe de Produto e Tecnologia — ShareO.
+**Situação do produto:** o marketplace **ainda não está aberto ao público**. Roda em staging e em produção de uso interno. O que está no ar para o público é a **landing de captação de interessados** (`shareo.com.br`, desde 31/08/2026). Nenhuma locação com pagamento real foi realizada; os testes usam contas de teste e testadores convidados.
+
+> **Nota sobre a base normativa.** O rascunho anterior citava a Resolução CD/ANPD nº 2/2022 como norma do RIPD. Essa resolução trata de agentes de tratamento de pequeno porte. Foi retirada como base. **A advogada confirma** se a ShareO se enquadra como agente de pequeno porte e se isso altera alguma obrigação deste relatório.
 
 ---
 
-## Secao A — Identificacao do Controlador e do Encarregado
+## Seção A — Identificação do controlador e do Encarregado
 
-| Campo | Informacao |
+| Campo | Informação |
 |---|---|
-| **Controlador** | ShareO Marketplace de Aluguel Ltda. |
-| **CNPJ** | A confirmar com o juridico antes da finalizacao |
-| **Endereco** | A confirmar com o juridico antes da finalizacao |
-| **Atividade principal** | Plataforma digital de intermediacao de aluguel de bens moveis entre particulares (C2C) |
-| **Encarregado (DPO)** | A ser formalmente designado — canal publico ja operacional |
-| **Canal do Encarregado** | privacidade@shareo.com.br |
-| **Site da plataforma** | https://shareo.com.br (producao — a ativar pos-D4) |
+| **Controlador** | SHAREO MARKETPLACE DE INTERMEDIACAO DE NEGOCIOS LTDA (razão social conforme a Receita Federal) |
+| **CNPJ** | 68.512.556/0001-09 (ativo desde 11/08/2026) |
+| **Endereço da sede** | Rua Pais Leme, 215, conj. 1713 — Pinheiros, São Paulo/SP, CEP 05424-150 |
+| **Regime tributário** | Simples Nacional (CNAE 7490-1/04 — intermediação) |
+| **Atividade** | Plataforma digital de intermediação de aluguel de bens móveis entre particulares e empresas |
+| **Encarregado (DPO)** | Raimundo Gomes da Silva — nomeado em 04/08/2026, para o período de MVP e o primeiro ano de atividade |
+| **Canal do Encarregado** | privacidade@shareo.com.br (já configurado e publicado na Política de Privacidade) |
 
-> **Nota para o DPO:** verificar se a designacao formal do Encarregado (art. 41 LGPD) esta documentada internamente e publicada na Politica de Privacidade.
-
----
-
-## Secao B — Descricao do Tratamento e Finalidades
-
-O ShareO e um marketplace de aluguel local que conecta **Proprietarios** (PF ou PJ que anunciam bens moveis subutilizados) a **Locatarios** (PF ou PJ que buscam alugar itens por periodo determinado). A plataforma atua como **intermediadora e merchant of record** no fluxo financeiro, retendo 15% de taxa de servico e repassando o liquido ao proprietario.
-
-### Finalidades do tratamento de dados pessoais
-
-| Finalidade | Descricao | Necessidade |
-|---|---|---|
-| **Cadastro e autenticacao** | Criar e manter conta de usuario; autenticar sessoes | Essencial — sem isso nao ha acesso a plataforma |
-| **Perfil e navegacao** | Exibir nome, cidade, avatar e vitrine do proprietario | Essencial para o funcionamento do marketplace |
-| **Verificacao de identidade** | Confirmar CPF/CNPJ para permitir anunciar ou alugar | Prevencao a fraudes; base legal art. 7 IX (interesse legitimo) e cumprimento de obrigacao |
-| **Geolocalizacao** | Busca de itens por proximidade; geocoding do endereco | Essencial para a proposta de valor central da plataforma |
-| **Intermediacao de locacao** | Processar reservas, pagamentos e repassar valores | Execucao de contrato (art. 7 V LGPD) |
-| **Chat in-app** | Comunicacao entre locatario e proprietario sobre a locacao | Essencial para o servico |
-| **Avaliacoes e reputacao** | Publicar avaliacoes mutuas apos cada locacao | Interesse legitimo da plataforma (confianca no marketplace) |
-| **Notificacoes transacionais** | E-mails e alertas sobre status de reserva, pagamento, devolucao | Execucao de contrato |
-| **Cumprir obrigacoes legais** | Retencao de dados fiscais/transacionais conforme CTN art. 173 | Obrigacao legal (art. 7 II LGPD) |
-| **Marketing e comunicacoes** | Newsletter, campanhas, Programa Fundadores | Consentimento explicito (art. 7 I LGPD) — opt-in destacado |
-| **Prevencao a fraudes e PLD/FT** | Monitorar transacoes suspeitas, KYC/KYB | Interesse legitimo / cumprimento de obrigacao legal |
-| **Administracao e auditoria interna** | Logs de acoes administrativas, resolucao de disputas | Interesse legitimo; obrigacao legal |
+> **Pendência (art. 41, §1º):** a Política publica o **canal**, mas ainda não o **nome** do Encarregado. A publicação do nome está prevista para o go-live (item C3.8 do plano de governança).
 
 ---
 
-## Secao C — Inventario de Categorias de Dados Pessoais
+## Seção B — Descrição do tratamento e finalidades
 
-Inventario extraido do modelo de dados (`prisma/schema.prisma`) em vigor na data deste rascunho.
+A ShareO conecta **proprietários** (pessoa física ou jurídica que anuncia bens móveis) a **locatários** (quem aluga por período determinado). Cobra **15% de taxa de serviço**, que é a sua receita, e repassa o restante ao proprietário.
 
-### C.1 Dados de identificacao e cadastro (model `users`)
+### Como o dinheiro se move
 
-| Campo no banco | Descricao | Classificacao | Base legal provavel |
-|---|---|---|---|
-| `name` | Nome completo | Dado pessoal | Art. 7 V (execucao de contrato) |
-| `email` | Endereco de e-mail | Dado pessoal | Art. 7 V (execucao de contrato) |
-| `phone` | Numero de telefone | Dado pessoal | Art. 7 V (execucao de contrato) + verificacao SMS |
-| `passwordHash` | Hash da senha (bcrypt) | Dado pessoal derivado | Art. 7 V (execucao de contrato) |
-| `cpfEncrypted` | CPF criptografado (AES-256-GCM) | Dado pessoal sensivel (documento) | Art. 7 V (execucao de contrato) + art. 7 IX (interesse legitimo — prevencao a fraude) |
-| `cpfHash` | HMAC-SHA256 do CPF (unicidade, sem CPF em claro) | Dado pessoal derivado | Art. 7 V + art. 7 IX |
-| `cnpjEncrypted` | CNPJ criptografado (AES-256-GCM) — PJ | Dado pessoal/empresarial | Art. 7 V + art. 7 IX |
-| `cnpjHash` | HMAC-SHA256 do CNPJ | Dado pessoal derivado | Art. 7 V + art. 7 IX |
-| `cnpjResponsavelLegalEncrypted` | Dados do responsavel legal PJ (AES-256-GCM) | Dado pessoal | Art. 7 V + art. 7 IX |
-| `avatarUrl` | URL da foto de perfil (bucket publico) | Dado pessoal | Art. 7 V |
-| `bio` | Texto livre de apresentacao | Dado pessoal | Art. 7 V + consentimento implicito pela acao do titular |
-| `slug` | URL da vitrine publica | Dado pessoal | Art. 7 V |
+1. O locatário paga o valor **cheio** da locação, **somente com cartão**, em uma página de pagamento da **Stripe**. Os dados do cartão são digitados na Stripe e **nunca passam pelos servidores da ShareO**.
+2. O valor entra no **saldo da ShareO dentro da Stripe** (uma conta da Stripe em nome da ShareO).
+3. **Três dias após a devolução** do item, a Stripe transfere **85%** ao proprietário. Os 15% ficam com a ShareO. A retenção existe para permitir a análise de eventual disputa por dano.
+4. O proprietário recebe pelo **Stripe Connect**: a verificação de identidade e os dados bancários dele são coletados **dentro da Stripe**. A ShareO guarda apenas o identificador da conta e o status (`stripeConnectStatus`), nunca os documentos.
+5. Se o Connect do proprietário não estiver ativo, existe um **repasse manual por PIX**, com a chave PIX guardada na ShareO.
 
-### C.2 Dados de localizacao (model `users`)
+> **O enquadramento legal desse fluxo** (se o saldo na Stripe configura custódia para efeito da Lei 12.865/2013) teve **resposta parcial em 21/09/2026** — ver [`parecer-lei-12865-2026-09-21.md`](parecer-lei-12865-2026-09-21.md) e a pendência 2 da Seção I. Este relatório descreve o fato e **não afirma conclusão jurídica própria** sobre ele.
 
-| Campo no banco | Descricao | Classificacao | Base legal provavel |
-|---|---|---|---|
-| `cep` | CEP (somente digitos) | Dado pessoal | Art. 7 V (execucao de contrato — busca por proximidade) |
-| `street`, `neighborhood`, `city`, `state` | Endereco base do usuario | Dado pessoal | Art. 7 V |
-| `latitude`, `longitude` | Coordenadas geograficas do endereco | Dado pessoal / localizacao | Art. 7 V (geocoding automatico de endereco informado) |
+### Finalidades
 
-> **Nota para o DPO:** coordenadas de localizacao derivam do endereco informado pelo proprio usuario. A Politica de Privacidade deve informar que o endereco e convertido em coordenadas geograficas e utilizado para exibir proximidade a outros usuarios (resolucao no nivel de cidade, sem expor o endereco exato).
-
-### C.3 Dados de verificacao de identidade (model `users`)
-
-| Campo no banco | Descricao | Classificacao | Base legal provavel |
-|---|---|---|---|
-| `idDocumentUrl` | URL do documento de identidade (RG/CNH) — bucket privado `id-docs` | Dado pessoal sensivel (documento) | Art. 7 IX (interesse legitimo — KYC) |
-| `idSelfieUrl` | URL da selfie para verificacao — bucket privado `id-docs` | Dado pessoal — imagem (potencialmente biometrico) | Art. 7 IX (interesse legitimo — KYC) |
-| `idVerificationStatus` | Status da verificacao (UNVERIFIED/PENDING/VERIFIED/REJECTED) | Dado pessoal derivado | Art. 7 V + art. 7 IX |
-| `idSubmittedAt`, `idVerifiedAt`, `idRejectionReason` | Auditoria do processo de verificacao | Dado pessoal | Art. 7 II (obrigacao legal) + art. 7 IX |
-
-> **Nota para o DPO:** imagens de selfie podem ser enquadradas como dado biometrico (art. 5 II LGPD), categoria especial (art. 11). Verificar se a base legal art. 7 IX e suficiente ou se e necessario consentimento especifico (art. 11 II a). Ponto a confirmar com a advogada no parecer D4.
-
-### C.4 Dados de consentimento e auditoria LGPD (model `users`)
-
-| Campo no banco | Descricao | Classificacao | Base legal provavel |
-|---|---|---|---|
-| `consentAt` | Momento do consentimento ao cadastro | Dado de auditoria | Art. 7 I (consentimento) |
-| `consentIp` | IP no momento do consentimento | Dado pessoal | Obrigacao legal — registro do consentimento |
-| `consentVersion` | Versao da politica aceita | Dado de auditoria | Obrigacao legal |
-| `ageDeclaredAt` | Declaracao de maioridade (18+) | Dado de auditoria | Art. 14 LGPD (protecao de menores) |
-| `profileCompletedAt` | Momento da conclusao do cadastro completo | Dado operacional | Art. 7 V |
-
-### C.5 Dados transacionais de locacao (models `bookings`, `booking_items`)
-
-| Campo no banco | Descricao | Classificacao | Base legal provavel |
-|---|---|---|---|
-| Identificadores das partes (`borrowerId`, `ownerId`) | Vinculo entre usuarios e reservas | Dado pessoal | Art. 7 V (execucao de contrato) |
-| `startDate`, `endDate`, `totalDays` | Periodo de locacao | Dado transacional | Art. 7 V |
-| `dailyPrice`, `totalPrice` | Valores contratados | Dado financeiro | Art. 7 V + art. 7 II (retencao fiscal) |
-| `platformFeeAmount`, `ownerNetAmount` | Retencao e repasse financeiro | Dado financeiro | Art. 7 V + art. 7 II |
-| `pixDeclaredAt` | Declaracao de pagamento via PIX | Dado financeiro/transacional | Art. 7 V |
-| `borrowerNote`, `ownerNote` | Notas textuais entre as partes | Dado pessoal | Art. 7 V |
-| `cancelReason` | Motivo de cancelamento | Dado pessoal | Art. 7 V |
-| `pickupToken` | Codigo de retirada segura (6 digitos) | Dado operacional de seguranca | Art. 7 V |
-| `lateFeeAmount` | Taxa de atraso na devolucao | Dado financeiro | Art. 7 V |
-| `returnRequestedAt`, `returnedAt` | Timestamps do fluxo de devolucao | Dado transacional | Art. 7 V |
-| `contractSignedAt` | Aceite eletronico do contrato | Dado juridico | Art. 7 V + art. 7 II |
-
-### C.6 Dados de pagamento (models `owner_payment_accounts`, `platform_transactions`, `payouts`)
-
-| Campo no banco | Descricao | Classificacao | Base legal provavel |
-|---|---|---|---|
-| `pixKey` | Chave PIX do proprietario (CPF/CNPJ/e-mail/telefone/aleatoria) | Dado financeiro sensivel | Art. 7 V (execucao de contrato — repasse) + art. 7 II (fiscal) |
-| `pixKeyType` | Tipo da chave PIX | Dado financeiro | Art. 7 V |
-| `holderName`, `bankName` | Dados da conta bancaria do proprietario | Dado financeiro | Art. 7 V + art. 7 II |
-| `amount`, `status`, `processedAt` | Valores e status de repasse | Dado financeiro | Art. 7 V + art. 7 II |
-
-### C.7 Dados de comunicacao (models `conversations`, `messages`)
-
-| Campo no banco | Descricao | Classificacao | Base legal provavel |
-|---|---|---|---|
-| Identificadores dos participantes | Vinculo usuario-conversa | Dado pessoal | Art. 7 V (execucao de contrato) |
-| `content` | Conteudo das mensagens de chat | Dado pessoal potencialmente sensivel | Art. 7 V (execucao de contrato) |
-| `readAt`, `createdAt` | Metadados de comunicacao | Dado pessoal | Art. 7 V |
-| `deletedAt` | Soft delete de mensagem (LGPD) | Dado de controle | Art. 18 LGPD (exclusao pelo titular) |
-
-> **Nota para o DPO:** mensagens privadas entre usuarios sao potencialmente sensiveis. Formalizar na Politica de Privacidade as circunstancias em que a equipe interna pode acessar conversas (ex.: resolucao de disputas) e garantir que o acesso seja logado em `admin_logs`.
-
-### C.8 Dados de avaliacao e reputacao (model `reviews`)
-
-| Campo no banco | Descricao | Classificacao | Base legal provavel |
-|---|---|---|---|
-| `rating`, `comment` | Nota e comentario da avaliacao | Dado pessoal | Art. 7 V (execucao de contrato) + interesse legitimo (confianca no marketplace) |
-| `sentiment`, criterios de avaliacao | Criterios multidimensionais | Dado pessoal | Art. 7 V |
-| `photoUrl` | Foto do item em uso (opcional, enviada pelo locatario) | Dado pessoal / imagem | Consentimento implicito pela acao + art. 7 V |
-
-### C.9 Dados do Programa Fundadores e marketing (models `founder_leads`, `users`)
-
-| Campo no banco | Descricao | Classificacao | Base legal provavel |
-|---|---|---|---|
-| `email`, `name` (FounderLead) | Dados do interessado na lista de espera | Dado pessoal | Art. 7 I (consentimento explicito — opt-in) |
-| `intent`, `city`, `state` | Interesse e localizacao do lead | Dado pessoal | Art. 7 I (consentimento) |
-| `marketingConsentAt`, `consentVersion`, `consentIp` | Auditoria do consentimento de marketing | Dado de auditoria | Obrigacao legal (registro do consentimento — art. 7 I LGPD) |
-| `utmSource`, `utmMedium`, `utmCampaign` | Origem da campanha de marketing | Dado de comportamento | Art. 7 I (consentimento) |
-| `signupSource`, `signupSourceMeta` | Canal de cadastro do usuario | Dado de comportamento | Art. 7 V + interesse legitimo |
-
-### C.10 Dados do Programa de Embaixadores (models `ambassador_profiles`, `referrals`, `ambassador_commissions`)
-
-| Campo no banco | Descricao | Classificacao | Base legal provavel |
-|---|---|---|---|
-| `consentAt`, `consentVersion`, `consentIp` (AmbassadorProfile) | Opt-in auditavel do programa | Dado de auditoria | Art. 7 I (consentimento explicito) |
-| `pixKey`, `pixKeyType` (AmbassadorProfile) | Chave PIX para pagamento de comissoes | Dado financeiro | Art. 7 V (execucao de contrato — comissoes) |
-| `revokedAt` | Revogacao do opt-in | Dado de controle | Art. 18 LGPD |
-| Identificadores de Referral e Commission | Vinculo entre embaixador, indicado e reserva | Dado pessoal | Art. 7 V |
-
-### C.11 Dados de controle de acesso e auditoria administrativa (models `admin_logs`, `contract_acceptances`)
-
-| Campo no banco | Descricao | Classificacao | Base legal provavel |
-|---|---|---|---|
-| `action`, `entityType`, `entityId`, `metadata` (AdminLog) | Registro de acoes administrativas | Dado operacional de auditoria | Art. 7 II (obrigacao legal) + interesse legitimo |
-| `acceptedAt`, `ipAddress`, `userAgent` (ContractAcceptance) | Aceite eletronico do contrato de locacao | Dado de auditoria juridica | Art. 7 II + art. 7 V |
-| `cnpjDeclaracaoAt`, `cnpjDeclaracaoIp`, `cnpjDeclaracaoVersion` | Auditoria da declaracao KYB PJ | Dado de auditoria | Art. 7 II + art. 7 IX |
+| Finalidade | Descrição | Base legal (LGPD) |
+|---|---|---|
+| **Cadastro e autenticação** | Criar conta, autenticar sessões. Administradores usam também um segundo fator (2FA) | Art. 7º, V (execução de contrato) |
+| **Perfil e busca** | Nome, cidade, avatar, vitrine do proprietário; busca por proximidade com coordenadas do endereço informado | Art. 7º, V |
+| **Verificação de identidade — documento** | Foto de RG/CNH para permitir anunciar ou alugar; prevenção a fraude | Art. 7º, V e IX (interesse legítimo) |
+| **Verificação de identidade — selfie (biometria)** | Confirmar que o titular do documento é quem opera a conta | **Art. 11, II, "a" — consentimento específico e destacado.** Decisão jurídica C1 de 30/06/2026. Só será tratada com esse consentimento; ver risco F-09 |
+| **Verificação de PJ (KYB leve)** | Consulta do CNPJ à Receita (BrasilAPI / MinhaReceita) e declaração do responsável | Art. 7º, V e IX |
+| **Intermediação da locação** | Reservas, contrato eletrônico, pagamento pela Stripe, repasse, taxa de atraso, extensão de prazo | Art. 7º, V |
+| **Chat** | Mensagens entre locatário e proprietário sobre a locação | Art. 7º, V |
+| **Avaliações** | Notas e comentários mútuos após a locação | Art. 7º, V e IX |
+| **Disputas** | Fotos de retirada e devolução, abertura e mediação de reclamação | Art. 7º, V e IX; art. 7º, VI (exercício de direitos em processo) |
+| **Notificações e e-mails transacionais** | Status de reserva, pagamento, devolução, cobrança | Art. 7º, V |
+| **Reengajamento por e-mail** | Resumo de favoritos, lembretes. Tem opt-out em `/perfil/notificacoes` | Art. 7º, IX, com descadastro |
+| **Obrigações fiscais** | Retenção de registros financeiros por 5 anos; **Relatório de Intermediações mensal** enviado à Contabilizei (exigência do contador) | Art. 7º, II (obrigação legal) |
+| **Prevenção à fraude e PLD/FT** | Verificação de identidade, teto de R$ 500 por transação; KYC do recebedor feito pela Stripe | Art. 7º, II e IX |
+| **Captação de interessados (Programa Fundadores, landing)** | E-mail, nome, cidade, intenção e origem da campanha (UTM), com registro de IP, versão do texto e data do consentimento | Art. 7º, I (consentimento, com opt-in destacado) |
+| **Programa de Embaixadores** | Link de indicação, comissão, chave PIX para pagamento | Art. 7º, I e V |
+| **Medição da landing** | Contagem agregada por dia (sem IP, sem cookie) e Google Tag Manager (ver risco F-13) | Contagem própria: art. 7º, IX. GTM: em análise |
+| **Administração e auditoria** | Registro de ações de administradores (`admin_logs`), registros de acesso (Marco Civil, art. 15) | Art. 7º, II e IX |
 
 ---
 
-## Secao D — Fluxo de Dados
+## Seção C — Inventário de dados pessoais
 
-### D.1 Coleta
+Conferido contra `prisma/schema.prisma` em 21/09/2026.
 
-| Momento | Dados coletados | Meio |
+### C.1 Cadastro e identificação (`users`)
+
+| Campo | Descrição | Classificação | Proteção |
+|---|---|---|---|
+| `name`, `email`, `phone` | Identificação e contato | Pessoal | — |
+| `passwordHash` | Senha (bcrypt) | Pessoal derivado | Hash |
+| `cpfEncrypted`, `cnpjEncrypted`, `cnpjResponsavelLegalEncrypted` | Documentos | Pessoal (documento) | **AES-256-GCM** |
+| `cpfHash`, `cnpjHash` | Unicidade sem guardar o número | Derivado | HMAC-SHA256, chave separada |
+| `avatarUrl`, `bio`, `slug` | Perfil público | Pessoal | Público por natureza |
+| `referralCode`, `referredById` | Indicação | Pessoal | — |
+| `engagementEmailsOptOut` | Descadastro de e-mail de reengajamento | Controle | — |
+| `reputationPoints` | Pontuação de reputação | Pessoal derivado | — |
+
+### C.2 Localização (`users`, `items`)
+
+`cep`, `street`, `neighborhood`, `city`, `state`, `latitude`, `longitude`. O endereço informado é convertido em coordenadas (Mapbox). **Ao público, as coordenadas saem truncadas (cerca de 110 m) e o endereço é omitido**; o endereço exato só é entregue ao dono do anúncio e a administradores.
+
+### C.3 Verificação de identidade (`users`)
+
+| Campo | Descrição | Classificação | Base legal |
+|---|---|---|---|
+| `idDocumentUrl` | Caminho do documento no bucket **privado** `id-docs` | Pessoal (documento) | Art. 7º, V e IX |
+| `idSelfieUrl` | Caminho da selfie no bucket **privado** `id-docs` | **Sensível — biométrico (art. 5º, II)** | **Art. 11, II, "a"** |
+| `idVerificationStatus`, `idSubmittedAt`, `idVerifiedAt`, `idRejectionReason` | Andamento da verificação | Pessoal derivado | Art. 7º, V e IX |
+| `idSelfieConsentAt`, `idSelfieConsentVersion`, `idSelfieConsentTextHash`, `idSelfieConsentIp` | **Prova do consentimento biométrico** | Auditoria | Art. 11, II, "a" |
+| `cnpjRazaoSocial`, `cnpjSituacao` e afins | Resultado da consulta KYB | Empresarial | Art. 7º, IX |
+
+### C.4 Consentimento e auditoria (`users`)
+
+`consentAt`, `consentIp`, `consentVersion`, `ageDeclaredAt` (declaração de maioridade), `profileCompletedAt`, `legalHoldConsent*` (retenção legal por ordem judicial).
+
+### C.5 Segundo fator dos administradores (`users`) — **novo desde o rascunho anterior**
+
+| Campo | Descrição | Proteção |
 |---|---|---|
-| Cadastro inicial | Nome, e-mail, senha, cidade, UF, tipo de usuario | Formulario web (Next.js) |
-| Conclusao do cadastro | CPF/CNPJ, endereco completo, telefone | Formulario web (progressivo) |
-| Verificacao de identidade | Foto do documento, selfie | Upload via UI — armazenado no Supabase Storage (`id-docs`, privado) |
-| Anuncio de item | Titulo, descricao, fotos, precos, localizacao do item | Formulario web — fotos no Supabase Storage (`item-images`, publico) |
-| Solicitacao de locacao | Periodo, nota ao proprietario, aceitacao do contrato | Plataforma web |
-| Pagamento | Declaracao de PIX (fase MVP); chave PIX do proprietario (para repasse) | Plataforma web |
-| Chat | Mensagens entre as partes | Supabase Realtime |
-| Fotos de check-in/check-out | Registro visual do estado do item | Upload via UI — Supabase Storage (`booking-photos`, publico) |
-| Lista de Fundadores | E-mail, nome, cidade, intencao, consentimento de marketing | Formulario web |
+| `totpSecretEnc` | Segredo do aplicativo autenticador | AES-256-GCM |
+| `totpEnabledAt`, `totpLastStep` | Ativação e último código aceito (anti-reuso) | — |
+| `totpRecoveryHashes` | Códigos de recuperação | Só o hash SHA-256; o código em claro é mostrado uma única vez |
 
-### D.2 Uso e processamento
+Só existe para quem tem `role=ADMIN`.
 
-Os dados sao processados pelo backend da plataforma (Next.js API Routes rodando na Vercel) e armazenados no PostgreSQL via Supabase (regiao sa-east-1, Brasil). O processamento ocorre em servidores da Vercel (EUA/global), com os dados persistidos no banco localizado no Brasil.
+### C.6 Locação e financeiro (`bookings`, `platform_transactions`, `payouts`, `owner_payment_accounts`)
 
-Transmissao para terceiros:
-- **Geocoding:** CEP/endereco convertido em coordenadas via Mapbox Geocoding API (EUA) — apenas o texto do endereco e transmitido, sem identificadores do usuario.
-- **Notificacoes transacionais:** nome, e-mail e informacoes minimas sobre o status da reserva transmitidos via Resend (EUA).
-- **Monitoramento de erros:** stacktraces e contexto de erros transmitidos via Sentry (EUA), com filtro ativo de PII — nenhum dado pessoal identificavel deve constar nos eventos.
-
-### D.3 Armazenamento
-
-| Tipo de dado | Local | Protecao |
+| Dado | Descrição | Observação |
 |---|---|---|
-| Dados cadastrais e transacionais | PostgreSQL — Supabase sa-east-1 (Brasil) | Criptografia em repouso (Supabase); AES-256-GCM para campos sensiveis (CPF/CNPJ/responsavel legal) no nivel de aplicacao |
-| Fotos de itens | Supabase Storage — bucket `item-images` (publico) | Acesso publico; sem dados pessoais diretos |
-| Fotos de check-in/check-out | Supabase Storage — bucket `booking-photos` (publico) | Acesso publico; contexto de locacao especifico |
-| Documentos de identidade e selfies | Supabase Storage — bucket `id-docs` (privado) | Acesso apenas via service role key server-side; URLs pre-assinadas com expiracao de curto prazo |
-| Sessoes de autenticacao | JWT em cookie HTTP-only `__Secure-authjs.session-token` (HTTPS) | Nao persistido no banco (estrategia sem PrismaAdapter); expira automaticamente |
+| Partes, datas, valores, taxa, repasse | Dados da locação | Retenção fiscal de 5 anos |
+| `stripeSessionId`, `stripePaymentIntentId`, `stripeConnectedAccountId`, `stripeFee` | Identificadores na Stripe | **Nenhum dado de cartão** na ShareO |
+| `stripeAccountId`, `stripeConnectStatus`, flags de habilitação | Situação do Connect do proprietário | Documentos e conta bancária ficam **só na Stripe** |
+| `pixKey`, `pixKeyType`, `holderName`, `bankName` | Chave PIX para repasse manual | **Chave PIX em texto claro no banco** (risco F-14) |
+| `lateFeeAmount`, datas de cálculo | Taxa de atraso | — |
+| `disputeStatus`, datas, `cancelReason` | Disputa e cancelamento | Texto livre pode conter dado pessoal |
+| Campos de extensão de prazo | Pedido e pagamento de extensão | — |
+| `contractSignedAt`, `contract_acceptances` (`ipAddress`, `userAgent`) | Aceite eletrônico do contrato | Atrás de flag, desligada até o go-live |
+| `stripe_event_queue` | Eventos recebidos da Stripe (com `payload`) | Fila técnica |
 
-### D.4 Eliminacao e anonimizacao
+### C.7 Comunicação, avaliações e fotos
 
-| Dado | Gatilho de eliminacao | Tratamento |
-|---|---|---|
-| Conta de usuario (art. 18) | Requisicao pelo titular via `DELETE /api/users/me` | Soft delete (`deletedAt`) + anonimizacao de PII (nome, e-mail, CPF/CNPJ, documentos, avatar) |
-| Mensagens privadas | Exclusao pelo remetente | Soft delete (`deletedAt`); eliminacao fisica pos-prazo fiscal |
-| Dados fiscais/transacionais | Expirado o prazo de 5 anos | Eliminacao fisica pos-cumprimento da retencao |
-| Lead da lista Fundadores | Solicitacao de descadastro (`UNSUBSCRIBED`) | `deletedAt` + remocao da lista de envios |
-| Opt-out do programa de embaixadores | Revogacao do opt-in | `revokedAt` preenchido; dados de comissoes historicas retidos para auditoria fiscal |
-| Documentos de identidade | Exclusao da conta (salvo disputa ou obrigacao legal pendente) | Eliminacao dos arquivos no Supabase Storage + anonimizacao dos campos no banco |
+- `messages.content` — conteúdo do chat, **sem cifra em repouso** (a cifra quebraria o Supabase Realtime; decisão de arquitetura registrada). Apagado na exclusão da conta.
+- `reviews` — nota, comentário, foto opcional.
+- `booking_photos` — fotos de retirada e devolução do item, **prova das disputas**. O bucket `booking-photos` é **público** (risco F-15).
+- `notifications`, `email_queue` (`to`, `payloadJson`), `engagement_emails` — filas e histórico de e-mail. **A fila de e-mail guarda destinatário e conteúdo; o prazo de limpeza dela não está definido** (risco F-16).
+
+### C.8 Captação e programas (`founder_leads`, `ambassador_*`, `referrals`)
+
+`founder_leads`: e-mail, nome, telefone, cidade, UF, CEP, bairro, intenção, `utm_*`, `referrerUrl`, `marketingConsentAt`, `consentVersion`, **`consentIp`, `consentUserAgent`**. Embaixadores: consentimento, chave PIX, comissões.
+
+### C.9 Auditoria e acesso
+
+- `admin_logs` — ação, entidade, metadados. Inclui, desde 21/09/2026, ativação e reinício do 2FA e uso de código de recuperação.
+- `access_logs` — IP, usuário, caminho, método, status (Marco Civil, art. 15). **Gravação atrás da flag `accessLogsEnabled`, desligada.** O Encarregado deve confirmar o estado antes da assinatura.
+- `founder_audit_logs`, `outbound_webhooks` (URL e **segredo em claro**, risco F-14).
 
 ---
 
-## Secao E — Medidas de Seguranca Implementadas
+## Seção D — Fluxo de dados
 
-| Medida | Descricao | Alcance |
+### D.1 Onde os dados vivem
+
+- **Banco:** PostgreSQL no Supabase, região **sa-east-1 (São Paulo)**.
+- **Arquivos:** Supabase Storage — `item-images` (público), `booking-photos` (**público**), `id-docs` (**privado**, acesso só pelo servidor, com URL assinada de curta duração).
+- **Execução:** funções na Vercel (EUA/global).
+- **Sessões:** JWT em cookie HTTP-only (30 dias), sem tabela de sessões. A troca de senha ou de e-mail encerra as sessões anteriores.
+
+### D.2 Fornecedores e transferência internacional (LGPD, art. 33)
+
+A Resolução CD/ANPD nº 19/2024 tornou **obrigatórias e inalteráveis** as Cláusulas-Padrão Contratuais (CPC) da ANPD. O prazo de adequação terminou em **23/08/2025**. Medição feita em 03/09/2026 nas páginas públicas dos fornecedores (não nos contratos assinados):
+
+| Fornecedor | Dados que recebe | Local | Adota as CPC? |
+|---|---|---|---|
+| **Stripe** | Identidade e dados de pagamento; documentos e conta bancária do proprietário | EUA | **Sim** (adendo de 18/11/2025, Módulos 1 e 2) |
+| **Vercel** | Tráfego e logs de execução | EUA | Não publica |
+| **Resend** | Nome, e-mail, conteúdo de e-mails transacionais | EUA | Não publica |
+| **Sentry** | Erros, com filtro de dados pessoais (retenção de 30 dias) | EUA | Não publica |
+| **Mapbox** | Texto do endereço (geocodificação) e coordenadas (mapa) | EUA | Não publica |
+| **Upstash** | IP e identificadores para limite de acessos; contadores | EUA | Não publica (evidência de fonte única) |
+| **Supabase** | Todo o banco e os arquivos | Brasil (repouso) | A definir se o acesso lógico pela matriz configura transferência |
+| **Google Tag Manager** | Dados de navegação da **landing** (desde 15/09/2026) | EUA | **Não** — não publica CPC para esse produto |
+| BrasilAPI / MinhaReceita | Apenas o **CNPJ** consultado | Brasil | Não se aplica (dado empresarial) |
+| Google (planilhas) | URL de planilha informada pelo usuário na importação de itens PJ | EUA | Não medido; dado do anúncio, não do titular |
+| Zenvia (SMS) | Telefone | Brasil | **Integração ainda não ativa** |
+| Meta Pixel | — | — | **Desligado** (sem variável de ambiente; exigiria parecer antes) |
+| Google Analytics | — | — | **Nunca esteve ligado**; travado no código |
+
+**Já feito:** documento da **Cláusula 14** publicado na Política (04/09/2026). A Política foi corrigida em 04/09 (o Analytics deixou de ser declarado, porque nunca carregou).
+**Decisão da advogada, pendente:** o caminho para **Vercel, Resend, Sentry, Mapbox e Upstash**, e a situação do Supabase.
+**Pendência nossa:** a **Política de Privacidade ainda não declara o Google Tag Manager** (risco F-13).
+
+### D.3 Eliminação e anonimização
+
+| Dado | Gatilho | O que acontece |
 |---|---|---|
-| **Criptografia de campos sensiveis** | AES-256-GCM para CPF, CNPJ e dados do responsavel legal PJ | Banco de dados (nivel de aplicacao) |
-| **Hash para unicidade** | HMAC-SHA256 para indexacao de CPF/CNPJ sem armazenar o dado em claro | Banco de dados |
-| **Bucket privado de documentos** | `id-docs` acessivel somente via service role server-side; URLs pre-assinadas com TTL curto | Supabase Storage |
-| **Autenticacao JWT HTTP-only** | Cookie `__Secure-authjs.session-token` em HTTPS — nao acessivel por JavaScript no navegador | Sessoes de usuario |
-| **Guards server-side** | Toda requisicao de dado verifica `resource.ownerId === session.user.id` — retorna 403 em caso de divergencia | API Routes (Next.js) |
-| **Mascaramento de PII em logs** | PII nao e registrada em logs de aplicacao, nem em URLs, nem em localStorage | Toda a stack |
-| **Filtro de PII no Sentry** | Eventos enviados ao Sentry passam por filtro para remover dados pessoais identificaveis | Monitoramento de erros |
-| **CSP (Content Security Policy)** | Headers restritivos no middleware Next.js; dominios externos explicitamente listados em `connect-src` | Frontend |
-| **Consentimento versionado** | `consentVersion` registrada com IP e timestamp no cadastro e em cada opt-in especifico | Banco de dados |
-| **Soft delete obrigatorio** | `deletedAt` em usuarios, reservas, itens e mensagens — dados nao sao apagados fisicamente antes do prazo legal | Banco de dados |
-| **RLS desabilitado com guards equivalentes** | RLS incompativel com PgBouncer; seguranca equivalente implementada por guards server-side (documentado em ADR) | Banco de dados / API |
-| **Verificacao de e-mail** | Token SHA-256 com expiracao de 48h exigido antes de habilitar o uso pleno da conta | Autenticacao |
-| **Validacao de tipo MIME em uploads** | Uploads verificam tipo de arquivo no servidor antes de armazenar no Storage | Supabase Storage |
+| **Conta do usuário** | Clique do titular em "Excluir conta" (`DELETE /api/users/me`) | **Imediato**, em uma transação: anonimiza nome, e-mail, telefone, bio, avatar, localização, documentos (hash e cifra), senha, comentários e mensagens; apaga os arquivos de `id-docs`. Recusada se houver locação em andamento. Registros financeiros dos últimos 5 anos ficam **anonimizados**, com o titular informado na hora |
+| **Registros financeiros** | 5 anos | `purge-fiscal-records` (mensal). **Só apaga quando todos os titulares do registro excluíram a conta** — uma transação tem duas partes |
+| **`admin_logs`** | 5 anos | `purge-admin-logs` |
+| **IPs de consentimento** | 5 anos | `purge-consent-ips` |
+| **`access_logs`** | 180 dias | `purge-access-logs` (a gravação está desligada) |
+| **Retenção legal** | Ordem judicial, litígio, investigação | Coluna `legalHold` suspende o expurgo do registro |
+| **Backup do banco** | 7 backups diários (Supabase Pro) | Rotação natural |
+| **Lead da landing** | Descadastro | Marcado como excluído e removido dos envios |
+
+**Lacunas:** o **Storage não tem backup automático** (só o banco tem); a fila de e-mail não tem prazo de limpeza definido; a restauração do banco **nunca foi ensaiada**.
 
 ---
 
-## Secao F — Riscos aos Titulares e Mitigacoes
+## Seção E — Medidas de segurança em vigor
 
-| # | Risco identificado | Probabilidade | Impacto | Mitigacao existente | Lacuna / acao necessaria |
+Todas conferidas no código e nos registros do projeto.
+
+| Medida | Descrição |
+|---|---|
+| **Cifra de campos sensíveis** | CPF, CNPJ, responsável legal e segredo do 2FA em AES-256-GCM; chave de hash separada |
+| **Bucket privado de identidade** | `id-docs` só pelo servidor, URL assinada de curta duração; visualização da selfie pelo admin é **registrada** (`kyc.selfie.view`) |
+| **Guards de acesso no servidor** | Como o RLS está desabilitado (incompatível com o PgBouncer), cada rota verifica quem chama. Duas rotas administrativas que ignoravam o tipo de administrador foram corrigidas em 02/09/2026 |
+| **2FA obrigatório para administradores** | **Implementado (PR #488), aguardando deploy e verificação em staging.** Até o deploy, o painel é protegido só por senha |
+| **Sessões** | Cookie HTTP-only; troca de senha ou e-mail invalida as anteriores; usuário desativado perde acesso |
+| **Tokens de uso único** | Verificação de e-mail e redefinição de senha guardados **como hash** (correção de 11/09/2026) |
+| **Limite de tentativas** | Login, cadastro, redefinição, upload, exportação e códigos do 2FA |
+| **Entrada e saída** | Escape de HTML em e-mails; escape no JSON-LD; escape de fórmula em CSV; validação de tipo e assinatura de arquivo em uploads; proteção contra SSRF nos webhooks de PJ |
+| **Pagamentos** | Assinatura e idempotência dos eventos da Stripe; dados de cartão só na Stripe |
+| **Cabeçalhos** | CSP com nonce, HSTS, X-Frame-Options, Permissions-Policy |
+| **Logs e erros** | Máscara de dados pessoais em logs e no Sentry |
+| **Cron** | Todas as rotas agendadas exigem segredo, sem falha aberta |
+| **Consentimento versionado** | Versão, data e IP em cada opt-in |
+| **Exclusão suave** | `deletedAt` em usuários, reservas, itens e mensagens |
+| **Dependências** | Varredura e correção de vulnerabilidades com alcance real (RCE do Next corrigido em 10/09/2026) |
+| **Backup** | 7 diários do banco. **Storage sem backup automático** |
+
+---
+
+## Seção F — Riscos aos titulares e mitigações
+
+Escala: probabilidade e impacto em Baixo / Médio / Alto.
+
+| # | Risco | Prob. | Impacto | Mitigação existente | O que falta |
 |---|---|---|---|---|---|
-| F-01 | Vazamento de CPF/CNPJ por falha no banco | Baixa | Alto | AES-256-GCM no nivel da aplicacao; acesso via service role | Avaliar rotacao periodica das chaves de criptografia; plano de resposta a incidentes (art. 48 LGPD) |
-| F-02 | Acesso nao autorizado a documentos de identidade | Baixa | Alto | Bucket `id-docs` privado; URLs pre-assinadas com TTL curto | Definir TTL maximo das URLs pre-assinadas; implementar log de acessos ao bucket |
-| F-03 | Exposicao de PII em logs ou relatorios de erro | Baixa | Medio | Filtro Sentry; PII nao gravada em logs | Auditar periodicamente a efetividade do filtro; testar com dados sinteticos |
-| F-04 | Uso de dados para finalidade diversa da declarada | Baixa | Alto | Consentimento versionado; finalidades declaradas na Politica | Nao ampliar finalidades sem nova coleta de consentimento especifico |
-| F-05 | Dificuldade do titular em exercer direitos (art. 18) | Medio | Medio | `DELETE /api/users/me`; `GET /api/users/me/export` implementados | Publicar canal de atendimento destacado na Politica; definir SLA de resposta (15 dias — ANPD) |
-| F-06 | Transferencia internacional sem adequacao formal | Medio | Alto | Dados persistidos em sa-east-1 (Brasil); subprocessadores EUA para funcoes auxiliares limitadas | **Revisto em 03/09/2026 — a mitigacao anterior nao satisfaz a norma vigente.** As **CPC da ANPD** (Res. CD/ANPD 19/2024) sao obrigatorias e o prazo venceu em **23/08/2025**; DPA com SCC da UE nao basta. Situacao real, medidos os sete em 03/09: **so a Stripe adota as CPC**; **Vercel, Resend, Sentry, Mapbox e Upstash nao publicam** (decisao pendente da advogada); o **Google Analytics saiu do inventario em 04/09** — nunca esteve ligado; **Supabase** depende de definir se ha transferencia. Pendencia adicional: publicar o **documento da Clausula 14** (obrigacao do exportador). Ver `docs/juridico/dpa-apuracao-2026-09-03.md` |
-| F-07 | Retencao excessiva de dados apos prazo legal | Baixo | Medio | Politica de retencao definida (5 anos fiscal; demais na exclusao de conta) | Implementar processo automatizado de eliminacao pos-prazo |
-| F-08 | Acesso interno injustificado a mensagens privadas | Baixo | Alto | Acesso restrito a roles ADMIN_SUPERADMIN e ADMIN_OPERACIONAL (disputas) | Formalizar politica interna de acesso a conversas; garantir log em `admin_logs` de todo acesso |
-| F-09 | Imagens de selfie classificadas como dado biometrico | Medio | Alto | Bucket privado; acesso restrito server-side | Confirmar com DPO/advogada se exige base legal art. 11 LGPD (dado sensivel) em vez de art. 7 IX |
-| F-10 | Dados de menores de 18 anos | Baixo | Alto | Declaracao de maioridade (`ageDeclaredAt`) no cadastro | Verificar se a autodeclaracao e suficiente perante a ANPD ou se exige verificacao adicional (art. 14 LGPD) |
-| F-11 | Incidente de seguranca sem notificacao tempestiva | Baixo | Alto | Monitoramento via Sentry | Formalizar plano de resposta a incidentes e procedimento de notificacao a ANPD e titulares (art. 48 LGPD — 72h) |
+| F-01 | Vazamento de CPF/CNPJ | Baixa | Alto | Cifra AES-256-GCM; acesso só pelo servidor | Rotação periódica de chaves; **plano de incidentes** (F-11) |
+| F-02 | Acesso indevido a documentos de identidade | Baixa | Alto | Bucket privado, URL assinada, log de visualização da selfie | TTL máximo definido; log de acesso ao bucket |
+| F-03 | Dado pessoal em log ou no Sentry | Baixa | Médio | Filtro e máscara | Auditoria periódica do filtro |
+| F-04 | Uso para finalidade diversa | Baixa | Alto | Finalidades declaradas; consentimento versionado | Não ampliar finalidade sem novo consentimento |
+| F-05 | Titular não consegue exercer direitos | Média | Médio | Exclusão imediata, exportação, edição, canal publicado | Procedimento escrito de resposta (**Cláusula 15**) |
+| **F-06** | **Transferência internacional sem o mecanismo exigido** | **Alta** | **Alto** | Só a **Stripe** adota as CPC; **Cláusula 14** publicada | **Prazo vencido em 23/08/2025.** Cinco fornecedores sem CPC e o Supabase em definição. **Decisão da advogada.** Ver seção D.2 |
+| F-07 | Retenção além do necessário | Baixa | Médio | Exclusão imediata; expurgos automáticos; retenção legal | Prazo da fila de e-mail; confirmar o estado da flag `accessLogsEnabled` |
+| F-08 | Acesso interno indevido a mensagens | Baixa | Alto | Só papéis administrativos de disputa | Política interna escrita; log de todo acesso a conversas |
+| **F-09** | **Selfie (biometria) sem consentimento específico** | Média | **Alto** | Consentimento específico **implementado atrás de flag** (`biometricConsentRequired`, desligada): 412 sem consentimento, registro de versão/data/IP/hash do texto, revogação com eliminação | **O texto de consentimento cita "ShareO Marketplace de Aluguel Ltda.", nome que nunca existiu.** Corrigir (exige nova versão e revisão jurídica) **antes** de ligar a flag. Enquanto isso, o tratamento real da selfie fica só em teste e uso interno |
+| F-10 | Dados de menores | Baixa | Alto | Declaração de maioridade | A advogada confirma se a autodeclaração basta |
+| **F-11** | **Incidente sem comunicação no prazo** | Baixa | Alto | Monitoramento pelo Sentry | **Não existe plano de resposta a incidentes** nem procedimento de comunicação à ANPD e aos titulares (Cláusula 16) |
+| **F-12** | **Painel administrativo protegido só por senha** | Média | Alto | Guards por rota; 2FA implementado | **Deploy e verificação do 2FA em staging.** Após o deploy, todos os admins precisam cadastrar o autenticador |
+| **F-13** | **Google Tag Manager na landing, sem declaração na Política** | Alta | Médio | Contagem própria sem cookie; GA4 e Meta Pixel desligados | Declarar na Política **ou** desligar (é uma linha, `GTM_LIBERADO`). Sem etiqueta que capture formulário sem parecer. Risco de acesso: quem publica no GTM injeta script sem passar pelo código |
+| F-14 | Chave PIX e segredo de webhook em texto claro no banco | Baixa | Médio | Acesso só pelo servidor | Cifrar (migração dos dados existentes) |
+| F-15 | Fotos de locação em bucket público | Baixa | Médio | Nenhuma específica; o bucket é público por desenho | Confirmar se devem ser privadas, com URL assinada |
+| F-16 | Fila de e-mail com destinatário e conteúdo sem prazo de limpeza | Baixa | Médio | Acesso só pelo servidor | Definir prazo e expurgo |
+| F-17 | Cópia local de documentos de identidade de usuários reais | Baixa | Alto | Pasta fora do controle de versão | Definir destino do backup do Storage (BKP-01) e apagar a cópia local |
 
 ---
 
-## Secao G — Direitos dos Titulares
+## Seção G — Direitos dos titulares
 
-A LGPD (arts. 17 a 22) garante ao titular os seguintes direitos, todos operacionalizados na plataforma:
+| Direito (art. 18) | Como é atendido | Canal |
+|---|---|---|
+| Confirmação e acesso | Tela "Minha Conta" e exportação em JSON (`/api/users/me/export`, art. 20) | App e site |
+| Correção | Edição de perfil | App e site |
+| Eliminação | `DELETE /api/users/me` — **imediata** (seção D.3) | App e site |
+| Portabilidade | Exportação estruturada | App e site |
+| Revogação do consentimento de marketing | Link de descadastro; `UNSUBSCRIBED` | E-mail |
+| Revogação do consentimento **biométrico** | Botão na tela de documentos (com a flag ligada); elimina a selfie | App e site |
+| Informação sobre compartilhamento | Política de Privacidade, com a Cláusula 14 | `/privacidade` |
+| Petição à ANPD | Informada na Política | Externo |
 
-| Direito | Base legal | Implementacao no ShareO | Canal |
+**Prazo de resposta:** o prazo de 15 dias (art. 19, §2º) vale para **pedido de acesso**. A eliminação é imediata e não depende de prazo.
+
+---
+
+## Seção H — Retenção
+
+| Categoria | Prazo | Base |
+|---|---|---|
+| Registros financeiros e fiscais | 5 anos | CTN, art. 173 |
+| `admin_logs`, aceites de contrato | 5 anos | Interesse legítimo (defesa em juízo) |
+| IPs de consentimento | 5 anos | Prova do consentimento |
+| Registros de acesso (Marco Civil, art. 15) | 180 dias | Marco Civil (a gravação depende da flag) |
+| Mensagens e dados de perfil | Até a exclusão da conta | Art. 18 |
+| Documentos e selfie | Até a exclusão da conta ou a revogação do consentimento | Art. 18; art. 11, II, "a" |
+| Leads da landing | Até o descadastro | Art. 7º, I |
+| Backup do banco | 7 dias | Rotação |
+
+---
+
+## Seção I — Avaliação geral e pendências que o Encarregado assina ciente
+
+**Avaliação.** O tratamento é de **risco moderado a alto**, principalmente porque envolve documentos de identidade, dado biométrico (ainda não em uso real), dados financeiros e fornecedores nos EUA. As proteções técnicas centrais (cifra, bucket privado, guards, exclusão imediata, expurgo automático) estão em vigor. **A ShareO não deve abrir o marketplace ao público enquanto as pendências marcadas "bloqueia go-live" estiverem abertas.**
+
+| # | Pendência | Responsável | Bloqueia go-live? |
 |---|---|---|---|
-| Confirmacao de existencia de tratamento | Art. 18 I | Painel "Minha Conta" exibe dados cadastrais | App + privacidade@shareo.com.br |
-| Acesso aos dados | Art. 18 II | `GET /api/users/me` + exportacao de perfil | App |
-| Correcao de dados incompletos ou inexatos | Art. 18 III | Edicao de perfil no App | App |
-| Anonimizacao, bloqueio ou eliminacao | Art. 18 IV | `DELETE /api/users/me` com soft delete + anonimizacao | App + privacidade@shareo.com.br |
-| Portabilidade | Art. 20 | `GET /api/users/me/export` (JSON estruturado) | App |
-| Eliminacao dos dados tratados com consentimento | Art. 18 VI | `DELETE /api/users/me` — elimina dados nao sujeitos a retencao legal | App + privacidade@shareo.com.br |
-| Revogacao do consentimento de marketing | Art. 18 IX | Descadastro de newsletter; status `UNSUBSCRIBED` no FounderLead | App + link de descadastro no e-mail |
-| Informacao sobre compartilhamento | Art. 18 VII | Politica de Privacidade + `docs/juridico/transferencia-internacional-dados.md` | /privacidade |
-| Peticao a ANPD | Art. 18 VIII | Informado na Politica de Privacidade | Externo (ANPD) |
+| 1 | Decisão sobre os 5 fornecedores sem CPC e sobre o Supabase (F-06) | Advogada | **Sim** |
+| 2 | Enquadramento legal do fluxo do dinheiro pela Stripe (seção B) e efeito neste relatório | Advogada | **Parcialmente respondido em 21/09/2026** — a ShareO não precisaria de autorização do Banco Central, condicionado à redação dos Termos (ver [`parecer-lei-12865-2026-09-21.md`](parecer-lei-12865-2026-09-21.md)). |
+| 3 | Declarar ou desligar o Google Tag Manager (F-13) | Fundadores + advogada | **Sim** |
+| 4 | Deploy e verificação do 2FA de administradores (F-12) | Técnico | **Sim** |
+| 5 | Plano de resposta a incidentes e procedimentos das Cláusulas 15 e 16 (F-11) | Encarregado | **Sim** |
+| 6 | Corrigir o texto de consentimento biométrico antes de ligar a flag (F-09) | Advogada + técnico | Sim, se a selfie for usada |
+| 7 | Publicar o nome do Encarregado na Política | Técnico | No go-live |
+| 8 | Backup do Storage e destino das cópias (F-17) | Fundadores | Antes da 1ª locação real |
+| 9 | Cifrar chave PIX e segredo de webhook (F-14); prazo da fila de e-mail (F-16); política do bucket de fotos (F-15) | Técnico | Não |
+| 10 | Confirmar se a ShareO é agente de pequeno porte (nota da capa) | Advogada | Não |
 
-> **Nota para o DPO:** definir e publicar SLA interno de resposta a requisicoes de titulares. A ANPD recomenda 15 dias corridos (prorrogavel por igual periodo mediante justificativa). O canal `privacidade@shareo.com.br` deve estar monitorado e com resposta garantida.
-
----
-
-## Secao H — Politica de Retencao de Dados
-
-| Categoria de dado | Prazo de retencao | Base legal | Tratamento apos o prazo |
-|---|---|---|---|
-| **Dados fiscais e transacionais** (valores, taxas, repassses, NF, splits) | **5 anos** contados do ano seguinte ao lancamento fiscal | CTN art. 173 (prescricao tributaria) | Eliminacao fisica ou anonimizacao irreversivel |
-| **Registros de acoes de usuarios e admins** (`admin_logs`, `contract_acceptances`) | **5 anos** | Interesse legitimo (defesa em juizo) + CTN art. 173 | Eliminacao fisica |
-| **Logs de conexao e acesso** (IP de consentimento, IP de declaracao KYB) | **6 meses** (minimo legal) a **5 anos** (fiscal) | Marco Civil art. 15 + CTN art. 173 | Eliminacao fisica |
-| **Dados de comunicacao (mensagens de chat)** | Ate exclusao de conta ou solicitacao do titular; minimo 6 meses (Marco Civil) | Art. 18 LGPD + Marco Civil art. 15 | Soft delete imediato; eliminacao fisica pos-prazo |
-| **Dados de verificacao de identidade** | Ate exclusao de conta (salvo disputa ou obrigacao legal pendente) | Art. 18 LGPD | Eliminacao dos arquivos no Supabase Storage + anonimizacao dos campos no banco |
-| **Dados de marketing / leads (FounderLead)** | Ate revogacao do consentimento ou status `UNSUBSCRIBED` | Art. 7 I LGPD (revogavel pelo titular) | Soft delete + remocao das listas de envio |
-| **Registros de consentimento** (audit trail dos opt-ins) | **5 anos** apos a revogacao | Prova de cumprimento legal (defesa judicial) | Eliminacao fisica |
-| **Demais dados de perfil** (nome, cidade, bio, avatar) | Ate exclusao de conta pelo titular | Art. 18 LGPD | Anonimizacao irreversivel via `DELETE /api/users/me` |
+**Revisão deste relatório.** Refazer quando houver: novo fornecedor ou troca de fornecedor; ativação da biometria; mudança no fluxo do dinheiro (por exemplo, pagamento direto ao proprietário); nova finalidade; resposta da advogada às pendências 1 e 2. **No mínimo, uma vez por ano.**
 
 ---
 
-## Proximos Passos (acoes necessarias antes do go-live)
+## Seção J — Aprovação
 
-1. **Revisao e validacao pelo DPO/advogada** — este rascunho deve ser revisado, complementado (CNPJ/endereco do controlador) e assinado antes de ter valor formal.
-2. **Confirmar base legal para selfies/dados biometricos** (Secao C.3, risco F-09) — verificar se exige art. 11 LGPD.
-3. **Adotar as CPC da ANPD por subprocessador** (Res. 19/2024 — nao e "assinar DPA"; prazo vencido em 23/08/2025) e **publicar o documento da Clausula 14**. Ver `docs/juridico/dpa-apuracao-2026-09-03.md`.
-4. **Publicar canal de atendimento a titulares** de forma destacada na Politica de Privacidade (`/privacidade`).
-5. **Definir SLA de resposta** a requisicoes de titulares (art. 18) — recomendado 15 dias.
-6. **Elaborar plano de resposta a incidentes** com procedimento de notificacao a ANPD e titulares (art. 48 — 72h).
-7. **Implementar processo de eliminacao pos-prazo** para dados que atingirem o fim do periodo de retencao.
-8. **Arquivar o RIPD finalizado** internamente conforme exigencia da ANPD (Resolucao CD/ANPD no 02/2022).
+| | |
+|---|---|
+| **Encarregado (DPO)** | Raimundo Gomes da Silva |
+| **Assinatura** | ✅ Assinado — PDF recebido em 22/09/2026, mantido fora do repositório |
+| **Data e local** | 21 / 09 / 2026 — São Paulo |
+
+| | |
+|---|---|
+| **Representante legal do controlador** | ____________________________________ |
+| **Assinatura** | ____________________________________ |
+| **Data e local** | ____ / ____ / 2026 — ____________________ |
+
+| | |
+|---|---|
+| **Ciência da assessoria jurídica** (recomendado) | ____________________________________ |
+| **Assinatura** | ____________________________________ |
+| **Data** | ____ / ____ / 2026 |
 
 ---
 
-*Documento preparado pela equipe de Produto/Tecnologia — ShareO Marketplace de Aluguel.*
-*Versao para revisao juridica — nao publicar nem distribuir sem aprovacao do DPO.*
+## Seção K — Depois da assinatura
+
+1. **Arquivar a via assinada** num local privado da empresa (pasta corporativa com acesso restrito), em PDF, com a data e a versão (2.0). **Não colocar no repositório do código: ele é público.**
+2. **Gerar o hash SHA-256 do PDF assinado** e anotá-lo no registro. Assim é possível provar depois que o documento não mudou.
+3. **Registrar no checklist de conformidade** (`checklist-conformidade-juridica.md`, linha C3) com a data e a versão.
+4. **Transformar as pendências da seção I em plano de ação**, com responsável e data. O RIPD assinado não as resolve, só as torna conhecidas e assumidas.
+5. **Manter o relatório à disposição da ANPD.** Não se envia por iniciativa própria; a ANPD pode pedi-lo (art. 38).
+6. **Publicar o nome do Encarregado** na Política de Privacidade no go-live.
+7. **Nova versão e nova assinatura** sempre que ocorrer um dos gatilhos de revisão da seção I.
+
+*Documento preparado pela equipe de Produto e Tecnologia da ShareO. Não publicar. Não distribuir fora do Encarregado, dos sócios e da assessoria jurídica.*

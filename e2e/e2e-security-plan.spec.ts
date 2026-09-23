@@ -224,8 +224,10 @@ test.describe('Plano E2E Segurança — ShareO', () => {
             await dialog.dismiss()
           })
 
-          // ── Teste 1: campo de busca na homepage ───────────────────────────
-          await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+          // ── Teste 1: campo de busca em /itens ───────────────────────────────
+          // A home deixou de ter busca própria (virou landing transcrita da
+          // campanha, 22/09/2026) — a busca real do produto vive em /itens.
+          await page.goto(`${BASE_URL}/itens`, { waitUntil: 'domcontentloaded' })
 
           const searchInput = page.getByRole('searchbox').or(page.locator('input[name="search"]'))
           await expect(searchInput).toBeVisible({ timeout: 10_000 })

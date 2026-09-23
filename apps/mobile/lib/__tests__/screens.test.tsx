@@ -68,52 +68,34 @@ function wrap(ui: React.ReactElement, qc = makeQC()) {
   )
 }
 
-// ── Testes da tela Home (Início / hero) ────────────────────────────────────────
-describe("HomeScreen (Início / hero)", () => {
-  it("exibe H1 verbatim do site — 'Ganhe dinheiro com o que'", () => {
+// ── Testes da tela Home (landing da campanha transcrita, 22/09/2026) ──────────
+// A home deixou de ser a tela de marketplace (busca, CTAs de anunciar/alugar
+// direto) — virou a landing de pré-lançamento transcrita de
+// components/home/landing/*, com todo CTA levando pra /(auth)/register.
+describe("HomeScreen (landing transcrita)", () => {
+  it("exibe H1 verbatim do site — 'Tem algo parado?'", () => {
     wrap(<HomeScreen />)
-    expect(screen.getByText(/Ganhe dinheiro com o que/i)).toBeTruthy()
+    expect(screen.getByText(/Tem algo parado\?/)).toBeTruthy()
   })
 
-  it("exibe 'está parado na sua casa.' (texto accent do H1)", () => {
+  it("exibe 'Faça isso virar dinheiro.' (texto accent do H1)", () => {
     wrap(<HomeScreen />)
-    expect(screen.getByText(/está parado na sua casa\./i)).toBeTruthy()
+    expect(screen.getByText(/Faça isso virar dinheiro\./)).toBeTruthy()
   })
 
-  it("exibe subtítulo 'Tudo perto de você.' — verbatim app/page.tsx linha 169", () => {
+  it("exibe o CTA principal 'Quero ser um dos primeiros'", () => {
     wrap(<HomeScreen />)
-    expect(screen.getByText("Tudo perto de você.")).toBeTruthy()
+    expect(screen.getByLabelText("Quero ser um dos primeiros")).toBeTruthy()
   })
 
-  it("exibe CTA 'QUERO GANHAR DINHEIRO' — verbatim app/page.tsx linha 198", () => {
+  it("exibe a seção 'Você está de qual lado?'", () => {
     wrap(<HomeScreen />)
-    expect(screen.getByText("QUERO GANHAR DINHEIRO")).toBeTruthy()
+    expect(screen.getByText("Você está de qual lado?")).toBeTruthy()
   })
 
-  it("exibe CTA 'QUERO ALUGAR' — verbatim app/page.tsx linha 219", () => {
+  it("exibe a seção 'Perguntas frequentes'", () => {
     wrap(<HomeScreen />)
-    expect(screen.getByText("QUERO ALUGAR")).toBeTruthy()
-  })
-
-  it("exibe placeholder de busca 'O que você precisa alugar?' — verbatim HeroSearch.tsx", () => {
-    wrap(<HomeScreen />)
-    // placeholder pode não estar visível via getByText — usamos getByPlaceholderText
-    expect(screen.getByPlaceholderText("O que você precisa alugar?")).toBeTruthy()
-  })
-
-  it("exibe botão 'BUSCAR' — verbatim HeroSearch.tsx", () => {
-    wrap(<HomeScreen />)
-    expect(screen.getByText("BUSCAR")).toBeTruthy()
-  })
-
-  it("CTA Ganhar Dinheiro tem accessibilityLabel correto", () => {
-    wrap(<HomeScreen />)
-    expect(screen.getByLabelText("Quero ganhar dinheiro anunciando meus itens")).toBeTruthy()
-  })
-
-  it("CTA Alugar tem accessibilityLabel correto", () => {
-    wrap(<HomeScreen />)
-    expect(screen.getByLabelText("Quero alugar um item")).toBeTruthy()
+    expect(screen.getByText("Perguntas frequentes")).toBeTruthy()
   })
 })
 

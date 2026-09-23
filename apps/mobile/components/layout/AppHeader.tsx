@@ -101,14 +101,24 @@ export function AppHeader({ menuOpen, onToggleMenu, notificationCount = 0, isLog
           )}
         </Pressable>
       ) : (
-        <Pressable
-          onPress={() => router.push("/(auth)/login")}
-          accessibilityRole="button"
-          accessibilityLabel="Entrar"
-          style={styles.entrarBtn}
-        >
-          <Text style={styles.entrarText}>Entrar</Text>
-        </Pressable>
+        <>
+          <Pressable
+            onPress={() => router.push("/(auth)/login")}
+            accessibilityRole="button"
+            accessibilityLabel="Entrar"
+            style={styles.entrarBtn}
+          >
+            <Text style={styles.entrarText}>Entrar</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => router.push("/(auth)/register")}
+            accessibilityRole="button"
+            accessibilityLabel="Cadastre-se"
+            style={styles.cadastreSeBtn}
+          >
+            <Text style={styles.cadastreSeText}>Cadastre-se</Text>
+          </Pressable>
+        </>
       )}
 
       {/* Hambúrguer — "md:hidden" no site, aqui sempre visível (app mobile-only) */}
@@ -196,6 +206,20 @@ const styles = StyleSheet.create({
     borderColor:       "rgba(255,255,255,0.3)",
   },
   entrarText: {
+    fontSize:   14,
+    fontWeight: "600",
+    color:      "#FFFFFF",
+  },
+  // "bg-brand text-white" — botão "Cadastre-se" adicionado ao lado de "Entrar" (AppHeader.tsx do site)
+  cadastreSeBtn: {
+    height:            44,
+    alignItems:        "center",
+    justifyContent:    "center",
+    paddingHorizontal: 16,
+    borderRadius:      8,
+    backgroundColor:   "#007B3C",
+  },
+  cadastreSeText: {
     fontSize:   14,
     fontWeight: "600",
     color:      "#FFFFFF",
