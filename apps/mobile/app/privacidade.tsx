@@ -208,6 +208,9 @@ export default function PrivacidadeScreen() {
             Upstash (Estados Unidos) — proteção contra uso abusivo, contagem de visualizações e cache das consultas de CNPJ. Recebe seu endereço IP, o identificador da sua conta, o e-mail usado no login e, no cadastro de empresa, os dados públicos do CNPJ consultado.
           </Text>
           <Text style={[s.paragraph, { color: tokens.muted }]}>
+            Google LLC (Google Tag Manager) (Estados Unidos) — medição de acesso na página de divulgação do ShareO. Recebe seu endereço IP e dados do navegador quando você abre a página.
+          </Text>
+          <Text style={[s.paragraph, { color: tokens.muted }]}>
             O que permanece no Brasil: o banco de dados, os documentos e fotos que você envia e as mensagens do chat ficam armazenados em servidores na região de São Paulo.
           </Text>
           <Text style={[s.paragraph, { color: tokens.muted }]}>
@@ -268,7 +271,7 @@ export default function PrivacidadeScreen() {
         <View style={[s.section, { borderColor: tokens.border }]}>
           <Text style={[s.sectionTitle, { color: tokens.navy }]}>7. Cookies</Text>
           <Text style={[s.paragraph, { color: tokens.muted }]}>
-            Utilizamos apenas cookies essenciais ao funcionamento da plataforma (autenticação e preferências). Não usamos cookies analíticos nem de publicidade.
+            Utilizamos cookies essenciais ao funcionamento da plataforma (autenticação e preferências). Na página de divulgação do ShareO carregamos o Google Tag Manager (Google LLC, Estados Unidos), que recebe seu endereço IP e dados do navegador e pode gravar cookies de medição por meio das etiquetas publicadas nele. Não usamos o Google Analytics 4 e não configuramos etiquetas que leiam o que você digita nos formulários. O aplicativo e as áreas logadas não carregam o Google Tag Manager.
           </Text>
         </View>
 

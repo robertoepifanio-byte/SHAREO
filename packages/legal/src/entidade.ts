@@ -24,8 +24,9 @@ export const POLICY_UPDATED_AT = "setembro de 2026"
  * reembolso. Avaliar com a advogada se exige bump de CONSENT_VERSION.
  * 04/09/2026: §2.3 (Vercel e Upstash entram, Google Analytics sai) e §5.2
  * (analytics de terceiros não existe; contagem agregada de visualizações existe).
+ * 23/09/2026: §5.2 declara o Google Tag Manager da landing (F-13 do RIPD).
  */
-export const POLITICAS_UPDATED_AT = "4 de setembro de 2026"
+export const POLITICAS_UPDATED_AT = "23 de setembro de 2026"
 
 /**
  * Identificação da pessoa jurídica que opera a plataforma.

@@ -40,6 +40,11 @@
 - Confirmar se falta a assinatura do "representante legal do controlador" no RIPD — o PDF recebido só trouxe a do Encarregado.
 - As pendências que a própria seção I do RIPD lista como bloqueadoras do go-live (fornecedores sem cláusula da ANPD, GTM sem declaração na Política, deploy do 2FA em staging, plano de resposta a incidentes) continuam abertas — assinar o RIPD as reconhece, não as resolve.
 - Perguntas 4-7 da pauta (fornecedores sem CPC, Supabase, Cláusulas 15/16, GTM) seguem sem resposta.
+- **23/09/2026 — preparado pelo técnico, nada fechado:**
+  - 🟡 **GTM declarado** nas duas Políticas (site, campanha e app) e teste que reprova se o GTM ficar ligado sem declaração. Aguardando merge/deploy; **a advogada ainda decide se basta**.
+  - 🟡 **Plano de incidentes e Cláusula 15** em rascunho: `docs/juridico/plano-resposta-incidentes-e-direitos-titular.md`. Faltam adoção do Encarregado, exercício de mesa e a recifragem da `ENCRYPTION_KEY` (não existe; está como P2/H2 no ADR-005, o plano propõe subir para antes do go-live).
+  - 🔴 **Art. 33:** releitura em `docs/juridico/art33-fornecedores-recheck-2026-09-23.md`. Nenhum fornecedor mudou; o **Google (GTM)** entra como sexto sem CPC. Depende da advogada.
+  - ❓ Política §2.7 publica Roberto como Encarregado; o RIPD diz Raimundo. Confirmar.
 
 ---
 

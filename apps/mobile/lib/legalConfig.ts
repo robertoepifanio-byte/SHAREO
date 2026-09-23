@@ -49,6 +49,9 @@ export const MARKETING_CONSENT_TEXT =
 /** Espelha POLICY_UPDATED_AT de lib/legal-config.ts. */
 export const POLICY_UPDATED_AT = "setembro de 2026"
 
+/** Espelha POLITICAS_UPDATED_AT de packages/legal/src/entidade.ts (a tela /politicas tem ciclo próprio). */
+export const POLITICAS_UPDATED_AT = "23 de setembro de 2026"
+
 /**
  * Espelha PJ_DECLARATION_TEXT de lib/legal-config.ts.
  *

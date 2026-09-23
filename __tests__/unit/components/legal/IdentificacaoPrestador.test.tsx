@@ -16,7 +16,7 @@ import { render, screen } from "@testing-library/react"
 import fs from "node:fs"
 import path from "node:path"
 import { IdentificacaoPrestador } from "@/components/legal/IdentificacaoPrestador"
-import { LEGAL_ENTITY, CONSENT_VERSION, DPO_EMAIL, PJ_DECLARATION_TEXT, MARKETING_CONSENT_VERSION, MARKETING_CONSENT_TEXT } from "@/lib/legal-config"
+import { LEGAL_ENTITY, CONSENT_VERSION, DPO_EMAIL, PJ_DECLARATION_TEXT, MARKETING_CONSENT_VERSION, MARKETING_CONSENT_TEXT, POLICY_UPDATED_AT, POLITICAS_UPDATED_AT } from "@/lib/legal-config"
 
 const RAIZ = path.resolve(__dirname, "../../../..")
 const lerFonte = (arquivo: string) => fs.readFileSync(path.join(RAIZ, arquivo), "utf8")
@@ -147,6 +147,10 @@ describe("espelho do app", () => {
     // divergia do site — o lead ficava arquivado sob um texto que ninguém viu.
     ["versão do consentimento de marketing", MARKETING_CONSENT_VERSION],
     ["texto do consentimento de marketing", MARKETING_CONSENT_TEXT],
+    // Carimbo de data que o app copia: bump de um lado sem o outro faz o titular
+    // ler "atualizado em" de uma versão que não é a que está na tela.
+    ["data da Política de Privacidade", POLICY_UPDATED_AT],
+    ["data das Políticas", POLITICAS_UPDATED_AT],
   ])("mantém o mesmo %s do site", (_rotulo, valor) => {
     expect(espelho).toContain(valor)
   })

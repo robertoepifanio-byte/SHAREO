@@ -82,7 +82,7 @@ describe("PoliticasScreen — rótulos verbatim (transcrição de app/politicas/
   it("exibe o título principal e a data de atualização", () => {
     wrap(<PoliticasScreen />)
     expect(screen.getAllByText("Políticas do ShareO").length).toBeGreaterThan(0)
-    expect(screen.getByText(/Última atualização: 4 de setembro de 2026/)).toBeTruthy()
+    expect(screen.getByText(/Última atualização: 23 de setembro de 2026/)).toBeTruthy()
   })
 
   it("exibe o parágrafo de introdução verbatim", () => {
@@ -257,23 +257,13 @@ describe("PoliticasScreen — valores dinâmicos vêm de usePlatformConfig()", (
   })
 })
 
-describe("seção 5.2 — a tela não pode declarar analytics que não existe", () => {
-  // 🪤 Este bloco testava o LINK DE OPT-OUT do Google Analytics, e estava certo
-  // enquanto o GA4 existisse: num documento de privacidade o link não é enfeite,
-  // é o MEIO de exercer o direito descrito no parágrafo.
-  //
-  // Em 04/09/2026 apurou-se que o GA4 **nunca esteve ligado** — variável ausente
-  // em GitHub Secrets e na Vercel, zero `gtag` nos dois sites no ar. A tela
-  // declarava ao titular um compartilhamento internacional que não acontecia.
-  //
-  // A trava inverteu de sentido: em vez de garantir que o opt-out esteja lá,
-  // garante que nada de analytics seja declarado enquanto não houver analytics.
-  // Se o GA4 voltar, `GA4_LIBERADO` volta a `true`, o texto do site é reescrito,
-  // este bloco volta ao que era — e o teste do site
-  // (`__tests__/unit/app/analytics-declaracao.test.ts`) reprova quem esquecer.
-  it("renderiza a negativa, sem menção ao Google Analytics nem opt-out", () => {
+describe("seção 5.2 — a tela declara o analytics que existe", () => {
+  // O GTM entrou na landing em 15/09/2026; a tela dizia "sem analytics de
+  // terceiros" até 23/09. A trava do interruptor (GTM_LIBERADO) mora em
+  // `__tests__/unit/app/analytics-declaracao.test.ts`, que reprova o texto
+  // do app se ele deixar de declarar o GTM. GA4 segue desligado (04/09).
+  it("declara o Google Tag Manager da landing", () => {
     wrap(<PoliticasScreen />)
-    expect(screen.getByText(/não utiliza ferramentas de analytics/)).toBeTruthy()
-    expect(screen.queryByText(/Google Analytics/)).toBeNull()
+    expect(screen.getByText(/carregamos o Google Tag Manager/)).toBeTruthy()
   })
 })

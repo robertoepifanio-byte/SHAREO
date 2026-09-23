@@ -20,9 +20,7 @@ import {
   formatMaxLabel,
 } from "@/lib/platformConfig"
 import { IdentificacaoPrestador } from "@/components/legal/IdentificacaoPrestador"
-
-// Verbatim de app/politicas/page.tsx linha 23
-const LAST_UPDATED = "4 de setembro de 2026"
+import { POLITICAS_UPDATED_AT } from "@/lib/legalConfig"
 
 // ── Componentes internos ───────────────────────────────────────────────────────
 
@@ -117,7 +115,7 @@ export default function PoliticasScreen() {
             Políticas do ShareO
           </Text>
           <Text style={[s.updatedAt, { color: tokens.muted }]}>
-            Última atualização: {LAST_UPDATED}
+            Última atualização: {POLITICAS_UPDATED_AT}
           </Text>
           <Text style={[s.intro, { color: tokens.muted }]}>
             Estas políticas regem o uso da plataforma ShareO e o tratamento de dados pessoais de seus usuários. Ao criar uma conta ou utilizar os serviços, você confirma que leu, compreendeu e concorda com estes termos.
@@ -278,8 +276,8 @@ export default function PoliticasScreen() {
             <Text style={s.bold}>Resend</Text> (envio de e-mails transacionais);{" "}
             <Text style={s.bold}>Sentry</Text> (monitoramento de erros — dados de sessão anonimizados);{" "}
             <Text style={s.bold}>Mapbox</Text> (mapas e geocodificação — coordenadas aproximadas);{" "}
-            <Text style={s.bold}>Vercel</Text> (hospedagem e execução da plataforma — dados das requisições enquanto você usa o site ou o app); e{" "}
-            <Text style={s.bold}>Upstash</Text> (proteção contra uso abusivo, contagem de visualizações e cache das consultas de CNPJ — endereço IP, o identificador da sua conta, o e-mail usado no login e, no cadastro de empresa, os dados públicos do CNPJ consultado). Não vendemos dados pessoais a terceiros.
+            <Text style={s.bold}>Vercel</Text> (hospedagem e execução da plataforma — dados das requisições enquanto você usa o site ou o app);{" "}
+            <Text style={s.bold}>Upstash</Text> (proteção contra uso abusivo, contagem de visualizações e cache das consultas de CNPJ — endereço IP, o identificador da sua conta, o e-mail usado no login e, no cadastro de empresa, os dados públicos do CNPJ consultado); e <Text style={s.bold}>Google Tag Manager</Text> (medição de acesso na página de divulgação — endereço IP e dados do navegador de quem abre a página; Google LLC, Estados Unidos). Não vendemos dados pessoais a terceiros.
           </Text>
         </PolicyBlock>
 
@@ -413,7 +411,7 @@ export default function PoliticasScreen() {
             de exercer o direito, não enfeite.
           */}
           <Text style={[s.body, { color: tokens.muted }]}>
-            A plataforma <Text style={s.bold}>não utiliza ferramentas de analytics de terceiros</Text>: não usamos cookies analíticos e não enviamos seus dados de navegação a terceiros para essa finalidade. Contamos <Text style={s.bold}>visualizações por anúncio</Text>, de forma agregada, para mostrar o desempenho a quem anuncia — esse número não identifica quem visitou.
+            Na <Text style={s.bold}>página de divulgação</Text> do ShareO (a landing page da campanha) carregamos o <Text style={s.bold}>Google Tag Manager</Text>, do Google LLC (Estados Unidos), que gerencia as etiquetas de medição de acesso. Ao abrir a página, seu navegador se conecta aos servidores do Google, que recebem seu endereço IP e dados do navegador, e as etiquetas publicadas ali podem gravar cookies de medição. Não usamos o Google Analytics 4 e não configuramos etiquetas que leiam o que você digita nos formulários. O aplicativo e as áreas logadas do marketplace não carregam o Google Tag Manager. Contamos <Text style={s.bold}>visualizações por anúncio</Text>, de forma agregada, para mostrar o desempenho a quem anuncia — esse número não identifica quem visitou.
           </Text>
         </PolicyBlock>
 

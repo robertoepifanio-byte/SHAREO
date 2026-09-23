@@ -125,7 +125,8 @@ const MAPA_TELAS: [string, string][] = [
   // Guarda que não morde é pior que guarda nenhuma: ela dá a impressão de que o
   // texto jurídico das Políticas está coberto quando não está.
   ["packages/legal/src/PoliticasConteudo.tsx", "apps/mobile/app/politicas.tsx"],
-  ["app/suporte/page.tsx",         "apps/mobile/app/suporte.tsx"],
+  ["packages/legal/src/PrivacidadeConteudo.tsx", "apps/mobile/app/privacidade.tsx"],
+  ["app/suporte/page.tsx",        "apps/mobile/app/suporte.tsx"],
   ["app/loja/[slug]/page.tsx",     "apps/mobile/app/loja/[slug].tsx"],
 ]
 

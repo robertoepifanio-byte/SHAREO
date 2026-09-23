@@ -188,10 +188,12 @@ export function PoliticasConteudo({
                 e-mails transacionais); <strong>Sentry</strong> (monitoramento de erros — dados
                 de sessão anonimizados); <strong>Mapbox</strong> (mapas e geocodificação —
                 coordenadas aproximadas); <strong>Vercel</strong> (hospedagem e execução da
-                plataforma — dados das requisições enquanto você usa o site ou o app); e{" "}
+                plataforma — dados das requisições enquanto você usa o site ou o app);{" "}
                 <strong>Upstash</strong> (proteção contra uso abusivo, contagem de visualizações e
                 cache das consultas de CNPJ — endereço IP, o identificador da sua conta, o e-mail
-                usado no login e, no cadastro de empresa, os dados públicos do CNPJ consultado).
+                usado no login e, no cadastro de empresa, os dados públicos do CNPJ consultado);
+                e <strong>Google Tag Manager</strong> (medição de acesso na página de divulgação —
+                endereço IP e dados do navegador de quem abre a página; Google LLC, Estados Unidos).
                 Não vendemos dados pessoais a terceiros.
               </PolicyBlock>
 
@@ -352,11 +354,15 @@ export function PoliticasConteudo({
               </PolicyBlock>
 
               <PolicyBlock title="5.2 Analytics">
-                A plataforma <strong>não utiliza ferramentas de analytics de terceiros</strong>:
-                não usamos cookies analíticos e não enviamos seus dados de navegação a terceiros
-                para essa finalidade. Contamos <strong>visualizações por anúncio</strong>, de forma
-                agregada, para mostrar o desempenho a quem anuncia — esse número não identifica
-                quem visitou.
+                Na <strong>página de divulgação</strong> do ShareO (a landing page da campanha)
+                carregamos o <strong>Google Tag Manager</strong>, do Google LLC (Estados Unidos),
+                que gerencia as etiquetas de medição de acesso. Ao abrir a página, seu navegador
+                se conecta aos servidores do Google, que recebem seu endereço IP e dados do
+                navegador, e as etiquetas publicadas ali podem gravar cookies de medição. Não
+                usamos o Google Analytics 4 e não configuramos etiquetas que leiam o que você
+                digita nos formulários. O aplicativo e as áreas logadas do marketplace não
+                carregam o Google Tag Manager. Contamos <strong>visualizações por anúncio</strong>, de forma agregada, para mostrar o
+                desempenho a quem anuncia — esse número não identifica quem visitou.
               </PolicyBlock>
             </div>
           </section>
