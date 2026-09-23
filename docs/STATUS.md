@@ -1,5 +1,37 @@
 # ShareO — Status do Projeto
 
+**Atualizado em**: 2026-09-23 — **⚖️ D4: a advogada respondeu a pergunta da Lei 12.865 e a de PLD/FT, o RIPD foi assinado, e o 2FA de administradores e as seções 6/7 dos Termos estão implementados, mas nada disso está no ar ainda.** Quatro PRs abertos, nenhum mesclado.
+
+**Respostas jurídicas (PR [#493](https://github.com/robertoepifanio-byte/SHAREO/pull/493), só documentação):**
+- **Lei 12.865:** a ShareO não precisa de autorização do Banco Central — a Stripe gerencia a conta de pagamento, a ShareO intermedeia e retém a comissão. Condição: os Termos dizerem que o dinheiro pertence ao proprietário desde o início. Confirmada de novo em 23/09 com processador estrangeiro: **o risco está na redação, não na operação.**
+- **Lei 9.613 (PLD/FT):** responsabilidade primária da Stripe; a ShareO só mantém compliance mínimo. A resposta não usa a expressão "sujeito obrigado", mas confirma o raciocínio de 30/06. **A frente A da pauta de 21/09 ficou sem pergunta jurídica em aberto.**
+- **Autoria:** o parecer veio sem nome/OAB, só com a assinatura de Raimundo; ele confirmou que é a advogada amiga que o apoia sem cobrar. Assunto encerrado.
+- **RIPD v2.0 assinado pelo Encarregado (Raimundo) em 21/09.** O PDF assinado não entra no repositório (é público). No PDF só a assinatura do Encarregado foi identificada; o campo "representante legal do controlador" não veio preenchido — a confirmar. As pendências da Seção I do RIPD seguem abertas (assinar reconhece, não resolve).
+
+**Código:**
+- **[#494](https://github.com/robertoepifanio-byte/SHAREO/pull/494) — seções 6 e 7 dos Termos** (texto da advogada) no site, na campanha e no app. Taxa e repasse vêm da config (nunca cravados); mantidos janela de repasse e teto por transação. Testes de paridade site↔app verdes; **não verificado ao vivo** (sem deploy). `CONSENT_VERSION` não alterado — a advogada avalia se o go-live exige reaceite. Ponto a mostrar a ela: quem paga a taxa (6.2 × Políticas 1.7 × Ajuda).
+- **[#488](https://github.com/robertoepifanio-byte/SHAREO/pull/488) — 2FA (TOTP) obrigatório para administradores.** Admin sem 2FA vira usuário comum na sessão; 10 códigos de recuperação; reset por outro superadmin. Suíte, `tsc`, lint e build verdes; **migração e fluxo ponta a ponta nunca rodaram contra um banco real** (sem banco local). **Ao mergear, todo admin entra de novo e cadastra o autenticador.** Secret `FIXTURE_ADMIN_TOTP_SECRET` já criado.
+- **[#495](https://github.com/robertoepifanio-byte/SHAREO/pull/495)** — esta atualização de status e a entrada da multa por atraso.
+
+**Ainda bloqueando o go-live público:** fornecedores sem cláusula da ANPD (Vercel, Resend, Sentry, Mapbox, Upstash; Supabase em definição) — decisão da advogada, **sem resposta**; Google Tag Manager ligado na landing sem declaração na Política; plano de resposta a incidentes (Cláusulas 15/16); deploy e verificação do 2FA e dos Termos em staging.
+
+**Achado colateral, não corrigido:** 2 testes de `IdentificacaoPrestador.test.tsx` ("endereço da sede") reprovam em `origin/main` puro.
+
+---
+
+**Atualizado em**: 2026-09-21/22 — **🧾 Multa por atraso passa a somar no resumo financeiro da reserva (usuário, app e admin); repasse ao locador para de ser prometido antes do pagamento.** [#489](https://github.com/robertoepifanio-byte/SHAREO/pull/489), mesclado e confirmado saudável em staging (`db/storage/storage_private: ok`).
+
+Print do fundador de uma reserva com multa de R$ 45,00 sobre locação de R$ 5,00: o resumo dizia "Total da locação R$ 5,00 / Você recebe R$ 4,25" — a multa só aparecia numa caixa separada abaixo das fotos, sem somar em lugar nenhum. A mesma caixa dizia "Do valor da taxa você recebe R$ 38,25" **antes** de o locatário ter pago, prometendo repasse como certo.
+
+- **`app/reservas/[id]/page.tsx` + `apps/mobile/app/reservas/[id].tsx`:** resumo ganha bloco de taxa de atraso — locatário vê "Total com a taxa de atraso"; locador vê a taxa da plataforma sobre a multa e "Você recebe no total" (locação + líquido da multa). Antes do pagamento a nota diz "Inclui a taxa de atraso, repassada quando o locatário pagar." A caixa vermelha existente passa a dizer "Quando o locatário pagar, você recebe …" até a multa ser quitada.
+- **`app/admin/reservas/[id]/page.tsx`:** mesma lacuna — "Repasse ao proprietário" ignorava a multa. Ganhou "Taxa ShareO sobre a multa", "Repasse da multa ao proprietário" e "Repasse total ao proprietário" (com ressalva "se a multa for paga" enquanto não quitada).
+- Sem mudança de cálculo — tudo via `calcSplit`/`getPlatformFeeRate()` já existentes, taxa sempre dinâmica.
+- `/simplify` (4 agentes) rodou antes do commit: só simplificação teve achados reais (ternário partido em 3 fragmentos → 1; `taxaAtraso` duplicava `temTaxaAtraso` no app), aplicados. Reuso/eficiência/altitude sem achados — a duplicação site↔app é o `calcSplit` local do mobile, que já existia (app não importa módulo server-only).
+- Verificação: 60 testes RNTL verdes (4 novos: locatário, locador com multa a pagar, multa paga, sem multa), `tsc` limpo, `paridade-site-app` 28/28. Deploy de staging (`Deploy - ShareO` run) `success`, `/api/health` `healthy`.
+- **Não verificado:** a tela renderizada no staging (exige login) nem o app em device (precisa build novo). Ponto aberto da conversa original: se "atraso calculado até" reflete a data real de devolução quando `returnRequestedAt`/`returnedAt` estão vazios — não investigado.
+
+---
+
 **Atualizado em**: 2026-09-11 — **📉 6.771 visitas do YouTube viraram só 6 leads (4 de teste interno, antes da UTM entrar no link) — atrito real encontrado e corrigido, contador de funil no ar em staging.**
 
 Investigando a conversão baixíssima da campanha ([#477](https://github.com/robertoepifanio-byte/SHAREO/pull/477)): o CTA "Entrar na lista" da landing (`shareo.com.br`, `apps/campanha`) exigia um clique extra num botão verde idêntico ao de envio final ("Quero ser avisado no lançamento") só para revelar o formulário de verdade — atrito sem nenhuma instrumentação para provar, porque o GA4 segue desligado (Art. 33/CPC vencido). O formulário agora abre direto.
