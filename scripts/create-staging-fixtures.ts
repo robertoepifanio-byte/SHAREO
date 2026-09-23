@@ -28,7 +28,6 @@ import { chromium } from '@playwright/test'
 import { PrismaClient } from '@prisma/client'
 import * as fs from 'fs'
 import * as path from 'path'
-import { encryptPII } from '../lib/crypto'
 import { assertNotEnrollment, completeTwoFactorIfAsked } from '../e2e/fixtures/totp'
 import { FIXTURE_LOCATARIO, FIXTURE_PROPRIETARIO, FIXTURE_ADMIN, SESSION_PATHS } from '../e2e/fixtures/test-credentials'
 
@@ -172,17 +171,25 @@ async function promoteToAdmin(email: string): Promise<void> {
  *
  * Idempotente (reaplica o mesmo segredo). Sem o segredo no ambiente, não mexe em
  * nada — o login do admin então cai no cadastro do 2FA e `loginAndSaveSession` avisa.
+ *
+ * 🪤 Passa pela rota de teste do APP, não pelo banco: o segredo vai cifrado com a
+ * ENCRYPTION_KEY do runtime, que o CI não conhece (a do GitHub Secret é a do build). Gravar
+ * daqui deixava o login do admin com "Ocorreu um erro" — `decryptPII` lançava no servidor.
  */
 async function enrollFixtureTotp(email: string, secret: string | undefined): Promise<void> {
   if (!secret) {
     console.log('  ⚠️  FIXTURE_ADMIN_TOTP_SECRET ausente — admin fixture ficará sem 2FA e sem acesso ao painel.')
     return
   }
-  const { count } = await db().user.updateMany({
-    where: { email },
-    data:  { totpSecretEnc: encryptPII(secret), totpEnabledAt: new Date(), totpLastStep: null, totpRecoveryHashes: [] },
+  const e2eSecret = process.env.E2E_SECRET
+  if (!e2eSecret) throw new Error('E2E_SECRET ausente — a rota /api/test/enroll-admin-totp exige o token.')
+
+  const res = await fetch(`${STAGING_URL}/api/test/enroll-admin-totp`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', 'x-e2e-token': e2eSecret },
+    body:    JSON.stringify({ email, secret }),
   })
-  if (count === 0) throw new Error(`Nenhum usuário encontrado com email ${email} para cadastrar o 2FA.`)
+  if (!res.ok) throw new Error(`Cadastro do 2FA de ${email} falhou: HTTP ${res.status} ${await res.text().catch(() => '')}`)
   console.log(`  ✅ 2FA cadastrado (segredo conhecido): ${email}`)
 }
 
