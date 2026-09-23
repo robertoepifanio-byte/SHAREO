@@ -16,6 +16,26 @@ import { ScreenHeader } from "@/components/layout/ScreenHeader"
 import { usePlatformConfig, formatPayoutWindow, formatMaxLabel } from "@/lib/platformConfig"
 import { IdentificacaoPrestador } from "@/components/legal/IdentificacaoPrestador"
 import { POLICY_UPDATED_AT } from "@/lib/legalConfig"
+import { clausulasIntermediacaoPagamento, clausulasPld, formatPercentValue, type SubClausula } from "@/lib/termosClausulas"
+
+// Subcláusulas 6.x / 7.x: título em negrito + parágrafos (TermosConteudo.tsx → <Subclausulas />).
+function Subclausulas({ itens }: { itens: SubClausula[] }) {
+  const { tokens } = useTheme()
+  return (
+    <>
+      {itens.map((sub) => (
+        <View key={sub.titulo} style={s.subclausula}>
+          <Text style={[s.subTitle, { color: tokens.text }]}>{sub.titulo}</Text>
+          {sub.paragrafos.map((p) => (
+            <Text key={p} style={[s.paragraph, s.subParagraph, { color: tokens.muted }]}>
+              {p}
+            </Text>
+          ))}
+        </View>
+      ))}
+    </>
+  )
+}
 
 export default function TermosScreen() {
   const { tokens } = useTheme()
@@ -25,7 +45,7 @@ export default function TermosScreen() {
   // — é a mesma classe de defasagem que fez esta tela e a Ajuda divergirem do
   // site. Agora tudo vem da config, por um hook compartilhado.
   const cfg = usePlatformConfig()
-  const feePct          = String(cfg.feeRateBps / 100)
+  const feePct          = formatPercentValue(cfg.feeRateBps / 100)
   const payoutLabel     = formatPayoutWindow(cfg.payoutWindowDays)
   const maxPorTransacao = formatMaxLabel(cfg.checkoutMaxCents)
 
@@ -120,23 +140,30 @@ export default function TermosScreen() {
 
         <View style={[s.divider, { backgroundColor: tokens.border }]} />
 
-        {/* ── Seção 6 — verbatim de page.tsx linhas 71-76 ── */}
-        {/* Taxa: buscada de /api/platform-config/public, nunca hardcodada. */}
+        {/* ── Seções 6 e 7 — TermosConteudo.tsx, texto em termos-clausulas.ts (redação jurídica de 21/09/2026) ── */}
+        {/* Taxa, janela e teto: da config da plataforma, nunca hardcodados. */}
         <View style={[s.section, { backgroundColor: tokens.bg }]}>
           <Text style={[s.sectionTitle, { color: tokens.navy }]}>
-            6. Pagamentos e Taxa de Serviço
+            6. Da Intermediação e do Pagamento das Locações
           </Text>
-          <Text style={[s.paragraph, { color: tokens.muted }]}>
-              Os pagamentos são processados de forma segura pela plataforma, que intermedia o valor da locação entre locatário e locador. O locatário paga o valor da locação; sobre esse valor, o ShareO retém uma taxa de serviço de {feePct}% e repassa o restante ao locador. O repasse aos locadores fica elegível {payoutLabel} após a confirmação da devolução e é processado diariamente — sem vinculação a um dia fixo da semana. Essa janela cobre o prazo de abertura de disputa. Cada transação está sujeita a um limite de {maxPorTransacao}. A taxa de serviço vigente é informada no momento da contratação e pode ser alterada mediante atualização destes Termos.
-          </Text>
+          <Subclausulas itens={clausulasIntermediacaoPagamento({ feePct, payoutLabel, maxPorTransacao })} />
         </View>
 
         <View style={[s.divider, { backgroundColor: tokens.border }]} />
 
-        {/* ── Seção 7 — verbatim de page.tsx linhas 78-83 ── */}
         <View style={[s.section, { backgroundColor: tokens.bg }]}>
           <Text style={[s.sectionTitle, { color: tokens.navy }]}>
-            7. Condutas Proibidas
+            7. Prevenção à Lavagem de Dinheiro, Fraudes e Outras Atividades Ilícitas
+          </Text>
+          <Subclausulas itens={clausulasPld()} />
+        </View>
+
+        <View style={[s.divider, { backgroundColor: tokens.border }]} />
+
+        {/* ── Seção 8 — verbatim de TermosConteudo.tsx ── */}
+        <View style={[s.section, { backgroundColor: tokens.bg }]}>
+          <Text style={[s.sectionTitle, { color: tokens.navy }]}>
+            8. Condutas Proibidas
           </Text>
           <Text style={[s.paragraph, { color: tokens.muted }]}>
             É proibido: usar a plataforma para fins ilegais; anunciar itens de origem ilícita; assediar outros usuários; fornecer informações falsas; tentar burlar o sistema de pagamento da plataforma.
@@ -145,10 +172,10 @@ export default function TermosScreen() {
 
         <View style={[s.divider, { backgroundColor: tokens.border }]} />
 
-        {/* ── Seção 8 — verbatim de page.tsx linhas 85-90 ── */}
+        {/* ── Seção 9 — verbatim de TermosConteudo.tsx ── */}
         <View style={[s.section, { backgroundColor: tokens.bg }]}>
           <Text style={[s.sectionTitle, { color: tokens.navy }]}>
-            8. Limitação de Responsabilidade
+            9. Limitação de Responsabilidade
           </Text>
           <Text style={[s.paragraph, { color: tokens.muted }]}>
             O ShareO não se responsabiliza por danos diretos ou indiretos decorrentes do uso da plataforma, incluindo disputas entre usuários, danos aos itens ou indisponibilidade temporária do serviço.
@@ -157,10 +184,10 @@ export default function TermosScreen() {
 
         <View style={[s.divider, { backgroundColor: tokens.border }]} />
 
-        {/* ── Seção 9 — verbatim de page.tsx linhas 92-97 ── */}
+        {/* ── Seção 10 — verbatim de TermosConteudo.tsx ── */}
         <View style={[s.section, { backgroundColor: tokens.bg }]}>
           <Text style={[s.sectionTitle, { color: tokens.navy }]}>
-            9. Alterações nos Termos
+            10. Alterações nos Termos
           </Text>
           <Text style={[s.paragraph, { color: tokens.muted }]}>
             O ShareO pode atualizar estes Termos a qualquer momento. Notificaremos os usuários sobre alterações significativas. O uso continuado da plataforma após as alterações implica aceitação dos novos termos.
@@ -169,11 +196,11 @@ export default function TermosScreen() {
 
         <View style={[s.divider, { backgroundColor: tokens.border }]} />
 
-        {/* ── Seção 10 — verbatim de page.tsx linhas 99-107 ── */}
+        {/* ── Seção 11 — verbatim de TermosConteudo.tsx ── */}
         {/* Link mailto: abre client de e-mail nativo via Linking.openURL. */}
         <View style={[s.section, { backgroundColor: tokens.bg }]}>
           <Text style={[s.sectionTitle, { color: tokens.navy }]}>
-            10. Contato
+            11. Contato
           </Text>
           <Text style={[s.paragraph, { color: tokens.muted }]}>
             Dúvidas sobre estes Termos? Entre em contato:{" "}
@@ -265,6 +292,10 @@ const s = StyleSheet.create({
   bold: {
     fontWeight: "700",
   },
+  // Subcláusulas 6.x / 7.x (text-sm font-semibold no site).
+  subclausula: { marginTop: 16 },
+  subTitle: { fontSize: 14, fontWeight: "600", lineHeight: 22 },
+  subParagraph: { marginTop: 8 },
 
   // ── Loader (taxa sendo buscada) ───────────────────────────────────────────────
   loader: {
