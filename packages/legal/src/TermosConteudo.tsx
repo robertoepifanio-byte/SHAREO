@@ -1,4 +1,22 @@
 import { IdentificacaoPrestador } from "./IdentificacaoPrestador"
+import { clausulasIntermediacaoPagamento, clausulasPld, type SubClausula } from "./termos-clausulas"
+
+function Subclausulas({ itens }: { itens: SubClausula[] }) {
+  return (
+    <>
+      {itens.map((s) => (
+        <div key={s.titulo} className="mt-4">
+          <h3 className="text-sm font-semibold text-foreground">{s.titulo}</h3>
+          {s.paragrafos.map((p) => (
+            <p key={p} className="text-muted-foreground leading-relaxed mt-2">
+              {p}
+            </p>
+          ))}
+        </div>
+      ))}
+    </>
+  )
+}
 
 /**
  * Corpo dos Termos de Uso. Fonte única: renderizado pelo marketplace
@@ -81,36 +99,40 @@ export function TermosConteudo({
           </p>
         </section>
 
+        {/* Seções 6 e 7: redação da assessoria jurídica (21/09/2026), em termos-clausulas.ts. */}
         <section>
-          <h2 className="text-lg font-bold text-primary">6. Pagamentos e Taxa de Serviço</h2>
-          <p className="text-muted-foreground leading-relaxed">
-            Os pagamentos são processados de forma segura pela plataforma, que intermedia o valor da locação entre locatário e locador. O locatário paga o valor da locação; sobre esse valor, o ShareO retém uma taxa de serviço de {feePct}% e repassa o restante ao locador. O repasse aos locadores fica elegível {payoutLabel} após a confirmação da devolução e é processado diariamente — sem vinculação a um dia fixo da semana. Essa janela cobre o prazo de abertura de disputa. Cada transação está sujeita a um limite de {maxPorTransacao}. A taxa de serviço vigente é informada no momento da contratação e pode ser alterada mediante atualização destes Termos.
-          </p>
+          <h2 className="text-lg font-bold text-primary">6. Da Intermediação e do Pagamento das Locações</h2>
+          <Subclausulas itens={clausulasIntermediacaoPagamento({ feePct, payoutLabel, maxPorTransacao })} />
         </section>
 
         <section>
-          <h2 className="text-lg font-bold text-primary">7. Condutas Proibidas</h2>
+          <h2 className="text-lg font-bold text-primary">7. Prevenção à Lavagem de Dinheiro, Fraudes e Outras Atividades Ilícitas</h2>
+          <Subclausulas itens={clausulasPld()} />
+        </section>
+
+        <section>
+          <h2 className="text-lg font-bold text-primary">8. Condutas Proibidas</h2>
           <p className="text-muted-foreground leading-relaxed">
             É proibido: usar a plataforma para fins ilegais; anunciar itens de origem ilícita; assediar outros usuários; fornecer informações falsas; tentar burlar o sistema de pagamento da plataforma.
           </p>
         </section>
 
         <section>
-          <h2 className="text-lg font-bold text-primary">8. Limitação de Responsabilidade</h2>
+          <h2 className="text-lg font-bold text-primary">9. Limitação de Responsabilidade</h2>
           <p className="text-muted-foreground leading-relaxed">
             O ShareO não se responsabiliza por danos diretos ou indiretos decorrentes do uso da plataforma, incluindo disputas entre usuários, danos aos itens ou indisponibilidade temporária do serviço.
           </p>
         </section>
 
         <section>
-          <h2 className="text-lg font-bold text-primary">9. Alterações nos Termos</h2>
+          <h2 className="text-lg font-bold text-primary">10. Alterações nos Termos</h2>
           <p className="text-muted-foreground leading-relaxed">
             O ShareO pode atualizar estes Termos a qualquer momento. Notificaremos os usuários sobre alterações significativas. O uso continuado da plataforma após as alterações implica aceitação dos novos termos.
           </p>
         </section>
 
         <section>
-          <h2 className="text-lg font-bold text-primary">10. Contato</h2>
+          <h2 className="text-lg font-bold text-primary">11. Contato</h2>
           <p className="text-muted-foreground leading-relaxed">
             Dúvidas sobre estes Termos? Entre em contato:{" "}
             <a href="mailto:suporte@shareo.com.br" className="text-brand hover:underline">
