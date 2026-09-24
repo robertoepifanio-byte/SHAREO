@@ -8,7 +8,10 @@
 - A advogada que orienta o projeto é amiga do Raimundo e o apoia **sem cobrar**. Ela **não assinará nenhum documento até o projeto "Decolar"** (informação do Roberto).
 - O Raimundo (Encarregado/DPO e sócio) foi informado das implicações e **quer assumir o risco**.
 - **E-mail enviado pelo Roberto em 24/09/2026, às 12:07** (horário de Brasília), ao Raimundo e a `marketing@shareo.com.br`, com o assunto "Go-live de 01/10: o que segue em aberto e o risco assumido sem parecer jurídico". Texto em [`email-raimundo-desbloqueio-d4-2026-09-24.md`](email-raimundo-desbloqueio-d4-2026-09-24.md).
-- **Aceite escrito do Raimundo: AGUARDANDO resposta ao e-mail.** Anexar a resposta (data, hora e texto) a esta pasta quando chegar. Enquanto não chegar, o aceite **não** está registrado.
+- **Aceite escrito do Raimundo: RECEBIDO em 24/09/2026, às 16:15** (horário de Brasília), como resposta ao e-mail acima, no mesmo fio, para o Roberto e `marketing@shareo.com.br`. Texto, na íntegra: "Li, entendi as pendências acima e assumo o risco do go-live em 01/10 sem parecer jurídico assinado."
+  - **O que é:** resposta por e-mail, de uma linha, sobre as pendências listadas no e-mail das 12:07. **Não é documento assinado** e não substitui o parecer nem a assinatura do RIPD (pendência 7).
+  - **Fonte:** captura de tela do Gmail do Roberto (24/09). O e-mail original fica na caixa dele; **guardar o fio completo (PDF ou .eml) no dossiê fora do repositório**, porque contém dados pessoais e a análise de risco.
+  - **O que o aceite cobre:** o go-live de 01/10 sem parecer assinado, com as 11 pendências abaixo abertas. Não cobre pendência nova nem mudança de escopo (por exemplo, abrir a divulgação pública antes de 01/10): nesses casos, novo registro.
 - O RIPD que ele assinou em 21/09 (Seção I) diz que a ShareO **não deve abrir o marketplace ao público** enquanto as pendências "bloqueia go-live" estiverem abertas. Esta decisão **excepciona** essa frase: registrar a exceção e refazer o RIPD conforme a Seção I ("refazer quando houver… resposta da advogada às pendências 1 e 2").
 - Cada passo de produção **com efeito público** (apontar `shareo.com.br` para o app, Stripe em modo live, tag `web-v*`) continua exigindo instrução explícita do fundador.
 
