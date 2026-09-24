@@ -153,7 +153,7 @@ do repositório, e a Política virava falsa sem nenhum commit mostrar isso. Agor
 `GA4_LIBERADO = false` no código e o teste `__tests__/unit/app/analytics-declaracao.test.ts`, que
 reprova quem religar o GA sem reescrever a seção 5.2. Provado por mutação: 3 testes falham.
 
-✅ **A medição da campanha foi resolvida sem reabrir o art. 33.** Não há analytics de terceiro —
+⚠️ **Superado em 15/09/2026 (GTM na landing; ver `art33-fornecedores-recheck-2026-09-23.md`).** Estava: ✅ **A medição da campanha foi resolvida sem reabrir o art. 33.** Não há analytics de terceiro —
 nem GA, nem Plausible, nem Vercel Analytics. Em vez de instalar um, passamos a gravar a **origem do
 lead no próprio banco** (`SignupSource`, que ganhou YouTube e LinkedIn em 04/09; a persistência de
 primeiro toque já existia). Isso responde "qual canal traz cadastro" sem transferência

@@ -2,7 +2,7 @@
 ## Subprocessadores e Mecanismos de Adequação (LGPD art. 33)
 
 > **RASCUNHO — pendente de revisão do DPO/advogada (D4); nao e documento final.**
-> Este rascunho foi elaborado pela equipe de produto/tecnologia como insumo para o parecer juridico (D4). Nao substitui a formalizacao legal das transferencias internacionais. A versao final deve ser validada e assinada pela Encarregada (DPO) e pela assessoria juridica responsavel.
+> Este rascunho foi elaborado pela equipe de produto/tecnologia como insumo para o parecer juridico (D4). Nao substitui a formalizacao legal das transferencias internacionais. A versao final deve ser validada e assinada pelo Encarregado (DPO) e pela assessoria juridica responsavel.
 
 > ⚠️ **REVISADO EM 2026-09-03 — a classificação anterior estava INVERTIDA.** O
 > inventário descrevia a Stripe como "código preservado, oculto na UI", risco

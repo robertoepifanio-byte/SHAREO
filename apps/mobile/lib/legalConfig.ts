@@ -28,6 +28,9 @@ export const CONSENT_VERSION = "v1.1"
 /** Espelha DPO_EMAIL de lib/legal-config.ts — LGPD art. 41. */
 export const DPO_EMAIL = "privacidade@shareo.com.br"
 
+/** Espelha DPO_NOME de packages/legal/src/entidade.ts — LGPD art. 41, §1º. */
+export const DPO_NOME = "Raimundo Gomes da Silva"
+
 /**
  * Espelha MARKETING_CONSENT_VERSION de lib/legal-config.ts.
  *
@@ -48,6 +51,9 @@ export const MARKETING_CONSENT_TEXT =
 
 /** Espelha POLICY_UPDATED_AT de lib/legal-config.ts. */
 export const POLICY_UPDATED_AT = "setembro de 2026"
+
+/** Espelha POLITICAS_UPDATED_AT de packages/legal/src/entidade.ts (a tela /politicas tem ciclo próprio). */
+export const POLITICAS_UPDATED_AT = "23 de setembro de 2026"
 
 /**
  * Espelha PJ_DECLARATION_TEXT de lib/legal-config.ts.

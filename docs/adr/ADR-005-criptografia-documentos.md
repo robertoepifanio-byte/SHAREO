@@ -144,6 +144,6 @@ Na exclusão da conta (LGPD):
 
 ## Itens em Aberto
 
-- [ ] Processo de rotação da `ENCRYPTION_KEY` (re-criptografar todos os documentos) — P2, H2
+- [ ] Processo de rotação da `ENCRYPTION_KEY` (re-criptografar todos os documentos) — P2, H2. **23/09/2026:** script e runbook escritos (`scripts/rotate-encryption-key.ts`, `docs/runbook-rotacao-encryption-key.md`, PR #500), testados só com banco falso; falta ensaio em staging, e a rotação da `HMAC_KEY` não está coberta.
 - [ ] Auditoria de acesso: registrar quando dados de documento são descriptografados — P2
 - [ ] Avaliar migração para Supabase Vault quando sair de Beta — H2

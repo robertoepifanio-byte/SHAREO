@@ -9,6 +9,7 @@
 - **Lei 9.613 (PLD/FT):** responsabilidade primária da Stripe; a ShareO só mantém compliance mínimo. A resposta não usa a expressão "sujeito obrigado", mas confirma o raciocínio de 30/06. **A frente A da pauta de 21/09 ficou sem pergunta jurídica em aberto.**
 - **Autoria:** o parecer veio sem nome/OAB, só com a assinatura de Raimundo; ele confirmou que é a advogada amiga que o apoia sem cobrar. Assunto encerrado.
 - **RIPD v2.0 assinado pelo Encarregado (Raimundo) em 21/09.** O PDF assinado não entra no repositório (é público). No PDF só a assinatura do Encarregado foi identificada; o campo "representante legal do controlador" não veio preenchido — a confirmar. As pendências da Seção I do RIPD seguem abertas (assinar reconhece, não resolve).
+- **23/09 — GTM declarado, plano de incidentes em rascunho, art. 33 relido (nada disso fecha o D4):** detalhe e o que falta em `docs/backlog-atividades-priorizadas.md` (seção da frente jurídica).
 
 **Código:**
 - **[#494](https://github.com/robertoepifanio-byte/SHAREO/pull/494) — seções 6 e 7 dos Termos** (texto da advogada) no site, na campanha e no app. Taxa e repasse vêm da config (nunca cravados); mantidos janela de repasse e teto por transação. Testes de paridade site↔app verdes; **não verificado ao vivo** (sem deploy). `CONSENT_VERSION` não alterado — a advogada avalia se o go-live exige reaceite. Ponto a mostrar a ela: quem paga a taxa (6.2 × Políticas 1.7 × Ajuda).

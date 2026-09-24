@@ -103,6 +103,7 @@ export function PrivacidadeConteudo({ atualizadoEm }: { atualizadoEm: string }) 
             <li><strong>Functional Software, Inc. (Sentry)</strong> (Estados Unidos) — monitoramento de erros. Recebe informações técnicas da falha, com filtro que remove dados pessoais, mantidas por 30 dias.</li>
             <li><strong>Mapbox, Inc.</strong> (Estados Unidos) — conversão de endereços em coordenadas. Recebe o endereço informado, sem seu nome, no momento da consulta.</li>
             <li><strong>Upstash</strong> (Estados Unidos) — proteção contra uso abusivo, contagem de visualizações e cache das consultas de CNPJ. Recebe seu endereço IP, o identificador da sua conta, o e-mail usado no login e, no cadastro de empresa, os dados públicos do CNPJ consultado.</li>
+            <li><strong>Google LLC (Google Tag Manager)</strong> (Estados Unidos) — medição de acesso na página de divulgação do ShareO. Recebe seu endereço IP e dados do navegador quando você abre a página.</li>
           </ul>
           <p className="mt-3 text-muted-foreground leading-relaxed">
             <strong>O que permanece no Brasil:</strong> o banco de dados, os documentos e fotos que você envia e as mensagens do chat ficam armazenados em servidores na região de São Paulo.
@@ -156,7 +157,7 @@ export function PrivacidadeConteudo({ atualizadoEm }: { atualizadoEm: string }) 
         <section>
           <h2 className="text-lg font-bold text-primary">7. Cookies</h2>
           <p className="text-muted-foreground leading-relaxed">
-            Utilizamos apenas cookies essenciais ao funcionamento da plataforma (autenticação e preferências). Não usamos cookies analíticos nem de publicidade.
+            Utilizamos cookies essenciais ao funcionamento da plataforma (autenticação e preferências). Na página de divulgação do ShareO carregamos o Google Tag Manager (Google LLC, Estados Unidos), que recebe seu endereço IP e dados do navegador e pode gravar cookies de medição por meio das etiquetas publicadas nele. Não usamos o Google Analytics 4 e não configuramos etiquetas que leiam o que você digita nos formulários. O aplicativo e as áreas logadas não carregam o Google Tag Manager.
           </p>
         </section>
 

@@ -27,11 +27,13 @@ const COMPONENTES = [
  * seria mais curto, mas passaria verde se alguém escrevesse
  * `GA4_LIBERADO = process.env.X === "1"` — que é o defeito que a trava impede.
  */
-function lerTrava(rel: string): boolean {
-  const m = ler(rel).match(/export const GA4_LIBERADO\s*=\s*(true|false)\b/)
-  if (!m) throw new Error(`GA4_LIBERADO não é literal em ${rel} — trava removida?`)
+function lerTrava(rel: string, nome = "GA4_LIBERADO"): boolean {
+  const m = ler(rel).match(new RegExp(`export const ${nome}\\s*=\\s*(true|false)\\b`))
+  if (!m) throw new Error(`${nome} não é literal em ${rel} — trava removida?`)
   return m[1] === "true"
 }
+
+const GTM_LIGADO = lerTrava("apps/campanha/components/analytics/GoogleTagManager.tsx", "GTM_LIBERADO")
 
 describe("declaração de analytics", () => {
   it("a trava está desligada, e igual nas duas cópias", () => {
@@ -43,13 +45,25 @@ describe("declaração de analytics", () => {
   // igual pelo marketplace e pela landing da campanha. A declaração precisa
   // estar travada lá, não na página que só monta o chrome em volta.
   it.each(["packages/legal/src/PoliticasConteudo.tsx", "apps/mobile/app/politicas.tsx"])(
-    "%s afirma que não há analytics de terceiros, e não oferece opt-out",
+    "%s não oferece opt-out do GA",
     (rel) => {
-      const texto = ler(rel)
-      expect(texto).toMatch(/não utiliza ferramentas de analytics de terceiros/)
-      expect(texto).not.toMatch(/gaoptout/)
+      expect(ler(rel)).not.toMatch(/gaoptout/)
     },
   )
+
+  // 🪤 Em 15/09/2026 o GTM entrou na landing (`GTM_LIBERADO = true`) e a Política
+  // seguiu dizendo "não utilizamos analytics de terceiros" até 23/09 — a mesma
+  // falha do GA4 em 04/09, com o sinal trocado. Ligado, o GTM tem de estar
+  // declarado nos quatro textos, site e app; desligado, a declaração sobra
+  // (declarar a mais não induz o titular a erro, declarar a menos induz).
+  it.each([
+    "packages/legal/src/PoliticasConteudo.tsx",
+    "packages/legal/src/PrivacidadeConteudo.tsx",
+    "apps/mobile/app/politicas.tsx",
+    "apps/mobile/app/privacidade.tsx",
+  ])("%s declara o GTM enquanto GTM_LIBERADO for true", (rel) => {
+    if (GTM_LIGADO) expect(ler(rel)).toMatch(/Google Tag Manager/)
+  })
 
   it("não carrega o GA nem com a variável de ambiente definida", () => {
     const antes = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
