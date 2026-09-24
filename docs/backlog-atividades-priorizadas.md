@@ -42,11 +42,14 @@
 - Perguntas 4-7 da pauta (fornecedores sem CPC, Supabase, Cláusulas 15/16, GTM) seguem sem resposta.
 - **23/09/2026 — preparado pelo técnico, nada fechado:**
   - 🟡 **GTM declarado** nas duas Políticas (site, campanha e app) e teste que reprova se o GTM ficar ligado sem declaração. Aguardando merge/deploy; **a advogada ainda decide se basta**.
-  - 🟡 **Plano de incidentes e Cláusula 15** em rascunho: `docs/juridico/plano-resposta-incidentes-e-direitos-titular.md`. Faltam adoção do Encarregado, exercício de mesa e a recifragem da `ENCRYPTION_KEY` (não existe; está como P2/H2 no ADR-005, o plano propõe subir para antes do go-live).
+  - 🟡 **Plano de incidentes e Cláusula 15** em rascunho: `docs/juridico/plano-resposta-incidentes-e-direitos-titular.md`. Faltam adoção do Encarregado, exercício de mesa e o **ensaio em staging** da recifragem da `ENCRYPTION_KEY` (script e runbook no PR #500, aberto, testados só com banco falso; a rotação da `HMAC_KEY` não está implementada e o procedimento tem janela de indisponibilidade).
   - 🔴 **Art. 33:** releitura em `docs/juridico/art33-fornecedores-recheck-2026-09-23.md`. Nenhum fornecedor mudou; o **Google (GTM)** entra como sexto sem CPC. Depende da advogada.
   - 🟡 **Encarregado unificado:** a Política §2.7 (site, campanha e app) passa a publicar **Raimundo Gomes da Silva**, como no RIPD, por uma constante única (`DPO_NOME`) ligada ao RIPD por teste. Aguardando merge e deploy (#498).
     - O RIPD assinado não foi alterado: a Seção A ("a Política ainda não publica o nome") e o item 7 da Seção I ficam desatualizados.
     - Os textos de consentimento biométrico ainda dizem "Encarregada" (texto hasheado; corrigir junto com o F-09).
+  - 🟡 **Trava do GTM no código (#499, aberto):** teste na suíte da raiz que pinha, por tabela fechada, o que cada `trackEvent` da landing envia e confina `dataLayer`/`gtag`/hosts do Google a `components/analytics/`. **Não cobre o console do GTM** (gatilho de formulário, Enhanced Conversions): o container `GTM-5TQLGHFT` segue precisando de revisão humana. `uf` é o único valor de campo enviado; se o jurídico quiser zero, é uma linha.
+  - 🟡 **`accessLogsEnabled` (só investigado, nada ligado):** registra `ts`, IP, `userId`, `path` sem query, método e status; retenção de 180 dias com `legalHold`; purge agendado (segunda 04:00 UTC) nunca exercitado com linhas reais. Cobre só 8 pares rota/método e grava status fixo de sucesso, então **mesmo ligada não responde "quem leu o quê"** do RIPD. Sem testes de `logAccess`/purge. A Política §2.1/§2.4 já declara logs por 6 meses com a gravação desligada (o inverso do caso do GA4). Recomendação: escrever os testes, ligar em staging com seu sim (após confirmar a Data API fechada) e decidir o escopo no D4. `lib/audit.ts` usa promise solta sem `after()` (bug da mesma classe já corrigido no access-log).
+  - ℹ️ **Check "Vercel" da campanha vermelho em todo PR desde 31/08:** o build de preview falha sem `NEXT_PUBLIC_SHAREO_API_URL` (guard de `lib/config.ts`); hipótese: a variável só existe no escopo Production. Não bloqueia merge nem afeta a produção. Ação no dashboard da Vercel (marcar Preview); não confirmado.
 
 ---
 

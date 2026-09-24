@@ -179,7 +179,10 @@ UPDATE users
 | Flag de controle | `PlatformConfig.accessLogsEnabled` (default `"false"`) | Pronto |
 
 Para ativar em staging (teste): inserir `accessLogsEnabled = "true"` em `PlatformConfig` via
-`/admin/financeiro` (ou via SQL direto no Supabase Dashboard do shareo-staging).
+`PATCH /api/admin/platform-config?key=accessLogsEnabled` com `{"value":"true"}` (ADMIN_SUPERADMIN;
+a rota não valida a lista de chaves, então uma chave digitada errada vira linha silenciosa) ou via
+SQL direto no Supabase Dashboard do shareo-staging. Não há tela em `/admin/financeiro` para isso
+(conferido em 23/09/2026). A flag tem cache de 60 s por instância.
 
 ---
 

@@ -49,7 +49,7 @@ Como o **Módulo 2 das CPC atribui a comunicação de incidente ao exportador (n
 | **Todas** as sessões | Trocar `AUTH_SECRET` na Vercel e redeployar | Derruba todo JWT. **Nunca exercitado** — testar em staging antes de precisar |
 | Admin sem acesso ao autenticador / conta suspeita | "Reiniciar 2FA" por outro superadmin (`PATCH /api/admin/users/admins/:id`) ou `scripts/reset-admin-2fa.ts` | O script **não** derruba sessões abertas |
 | Segredo vazado (`CRON_SECRET`, `E2E_SECRET`, chaves Stripe, `RESEND_API_KEY`, service role do Supabase) | Rotacionar no provedor, na Vercel **e** nos GitHub Secrets (os dois lados, como no CLAUDE.md) | Na Vercel, usar o nome da variável que o **código** lê, não o do secret |
-| `ENCRYPTION_KEY` vazada (CPF/CNPJ, segredo TOTP) | 🔴 **Não existe procedimento nem script de recifragem** — rotacionar a chave sem recifrar torna os dados ilegíveis | Já aberta como **P2/H2** no `ADR-005` (linha 147) e no RIPD F-01. Este plano propõe **subir para antes do go-live**: sem ela, o incidente mais grave não tem contenção |
+| `ENCRYPTION_KEY` vazada (CPF/CNPJ, segredo TOTP) | 🟡 **Script e runbook escritos em 23/09 (PR #500), nunca exercitados em banco** — rotacionar a chave sem recifrar torna os dados ilegíveis. Falta o ensaio em staging; a rotação da HMAC não está implementada; o procedimento tem janela de indisponibilidade | Runbook: `docs/runbook-rotacao-encryption-key.md`. Era **P2/H2** no `ADR-005` e no RIPD F-01; este plano propõe **fechar o ensaio antes do go-live**: sem ele, o incidente mais grave não tem contenção comprovada |
 | Perda ou corrupção de dado (indisponibilidade) | Restaurar conforme `docs/runbook-restauracao-backup.md` | ⚠️ Restauração **nunca testada**; o Storage não entra no backup do banco |
 | Vazamento por bucket (`booking-photos` é público por desenho; `id-docs` é privado) | Tornar o bucket privado / revogar URLs assinadas no painel do Supabase | — |
 | Fornecedor avisa violação | Pedir por escrito o escopo (quais dados, quais titulares, quando) | Sem isso não há como decidir a comunicação |
@@ -110,7 +110,7 @@ O RIPD lista o que já existe: **exclusão imediata, exportação (`/api/users/m
 2. ☐ Advogada confirma os itens 🔎 (prazo de 3 dias úteis, canal da ANPD, prazo de 15 dias).
 3. ☐ **Exercício de mesa** com um cenário real: *"`SUPABASE_SERVICE_ROLE_KEY` apareceu num commit público."* Cronometrar: quanto até o registro aberto, a chave rotacionada nos três lugares e a decisão do Encarregado. Anotar o que travou.
 4. ☐ Testar em **staging**: trocar `AUTH_SECRET` derruba as sessões (nunca exercitado).
-5. ☐ Construir e testar a **recifragem** de `ENCRYPTION_KEY` (hoje inexistente).
+5. ☐ **Ensaiar em staging** a recifragem de `ENCRYPTION_KEY` (script e runbook prontos no PR #500, testados só com banco falso) e decidir sobre `ENCRYPTION_KEY_PREVIOUS` (evita a janela) e a rotação da HMAC.
 6. ☐ Decidir a flag `accessLogsEnabled` (sem ela não há trilha de acesso).
 7. ☐ Criar o arquivo de contatos de emergência **fora** do repositório.
 
