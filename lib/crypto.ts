@@ -2,6 +2,7 @@ import crypto from "crypto"
 
 const ALGORITHM = "aes-256-gcm"
 const IV_LENGTH = 12
+const TAG_LENGTH = 16 // bytes — tag padrão do GCM no Node (`getAuthTag()`)
 
 /**
  * Decodifica uma chave hex de 32 bytes. `null` = ausente ou tamanho errado.
@@ -15,7 +16,7 @@ const IV_LENGTH = 12
  * `Buffer.from(_, "hex")` trunca em caractere não-hex em vez de lançar, então o
  * teste de tamanho também pega valor mal colado.
  */
-function parseHexKey(v: string | undefined): Buffer | null {
+export function parseHexKey(v: string | undefined): Buffer | null {
   if (!v || v.trim().length === 0) return null
   const buf = Buffer.from(v, "hex")
   return buf.length === 32 ? buf : null
@@ -114,38 +115,67 @@ export function hashToken(token: string): string {
   return crypto.createHash("sha256").update(token).digest("hex")
 }
 
-export function encryptDocument(doc: string): string {
+/**
+ * Cifra com uma chave EXPLÍCITA (não lê o ambiente). Formato: `iv:tag:ciphertext`,
+ * tudo em hex — sem id/versão de chave, então quem lê só descobre a chave certa
+ * por tentativa (o tag do GCM reprova a errada).
+ *
+ * Fonte única do formato: `encryptDocument`/`encryptPII` e a recifragem
+ * (`lib/crypto-rotation.ts`, ver docs/runbook-rotacao-encryption-key.md) passam
+ * por aqui. Se o formato mudasse em um só lugar, a rotação gravaria dado que a
+ * aplicação não sabe ler.
+ */
+export function encryptWithKey(key: Buffer, plaintext: string): string {
   const iv = crypto.randomBytes(IV_LENGTH)
-  const cipher = crypto.createCipheriv(ALGORITHM, getKey(), iv)
-  const encrypted = Buffer.concat([
-    cipher.update(doc.replace(/\D/g, ""), "utf8"),
-    cipher.final(),
-  ])
+  const cipher = crypto.createCipheriv(ALGORITHM, key, iv)
+  const encrypted = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()])
   const tag = cipher.getAuthTag()
   return `${iv.toString("hex")}:${tag.toString("hex")}:${encrypted.toString("hex")}`
 }
 
-export function decryptDocument(stored: string): string {
+/** Inverso de `encryptWithKey`. Lança se o formato for inválido ou a chave não for a que cifrou. */
+export function decryptWithKey(key: Buffer, stored: string): string {
   const parts = stored.split(":")
   if (parts.length !== 3) throw new Error("Formato de dado criptografado inválido")
   const [ivHex, tagHex, cipherHex] = parts
   const iv = Buffer.from(ivHex, "hex")
   const tag = Buffer.from(tagHex, "hex")
   const ciphertext = Buffer.from(cipherHex, "hex")
-  const decipher = crypto.createDecipheriv(ALGORITHM, getKey(), iv)
+  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv)
   decipher.setAuthTag(tag)
   return decipher.update(ciphertext).toString("utf8") + decipher.final("utf8")
+}
+
+/**
+ * `iv:tag:ciphertext` exatamente como `encryptWithKey` produz (IV e tag nos
+ * tamanhos fixos, tudo hex, corpo par). Separa "isto nem é um ciphertext nosso"
+ * de "é, mas não com esta chave" — só o segundo se resolve trocando de chave.
+ */
+export function isWellFormedCiphertext(stored: string): boolean {
+  const parts = stored.split(":")
+  if (parts.length !== 3) return false
+  const [iv, tag, body] = parts
+  return (
+    iv.length === IV_LENGTH * 2 &&
+    tag.length === TAG_LENGTH * 2 &&
+    body.length % 2 === 0 &&
+    [iv, tag, body].every((p) => /^[0-9a-f]*$/i.test(p))
+  )
+}
+
+export function encryptDocument(doc: string): string {
+  return encryptWithKey(getKey(), doc.replace(/\D/g, ""))
+}
+
+export function decryptDocument(stored: string): string {
+  return decryptWithKey(getKey(), stored)
 }
 
 // PII textual genérica (nome de responsável legal etc.) — AES-256-GCM, mesmo
 // formato/chave de encryptDocument, mas SEM o `.replace(/\D/g, "")`, que
 // destruiria texto não-numérico. Ver ADR-024 / parecer de Segurança.
 export function encryptPII(plaintext: string): string {
-  const iv = crypto.randomBytes(IV_LENGTH)
-  const cipher = crypto.createCipheriv(ALGORITHM, getKey(), iv)
-  const encrypted = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()])
-  const tag = cipher.getAuthTag()
-  return `${iv.toString("hex")}:${tag.toString("hex")}:${encrypted.toString("hex")}`
+  return encryptWithKey(getKey(), plaintext)
 }
 
 // Inverso de encryptPII. Idêntico a decryptDocument (que não filtra dígitos);
