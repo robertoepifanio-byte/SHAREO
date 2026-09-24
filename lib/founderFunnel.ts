@@ -13,7 +13,7 @@
  * caso de falha parcial e criaria uma segunda "verdade" para conciliar.
  */
 
-import { upstashUrl, upstashFetch } from "./upstash"
+import { upstashUrl, upstashFetch, upstashKey } from "./upstash"
 
 type FunnelEvent = "view" | "submit_attempt"
 
@@ -23,7 +23,7 @@ function today(): string {
 }
 
 function dayKey(event: FunnelEvent, day: string): string {
-  return `funnel:${event}:${day}`
+  return upstashKey(`funnel:${event}:${day}`)
 }
 
 export async function incrementFunnelEvent(event: FunnelEvent): Promise<void> {

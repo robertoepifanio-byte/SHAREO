@@ -5,42 +5,23 @@
  * O cron /api/cron/flush-view-counts faz o flush periódico pro Postgres.
  *
  * Fail-open: Upstash não configurado ou erro → console.warn, nunca lança.
- * Segue o padrão de upstashFetch de lib/redis-admin-blocklist.ts.
+ * Cliente REST e namespace de chave vêm de lib/upstash.ts.
  *
  * NFR-BL2
  */
 
-const PENDING_ITEMS_SET = "viewcount:pending-items"
+import { upstashUrl, upstashFetch, upstashKey } from "./upstash"
 
-function upstashUrl(): string | null {
-  return process.env.UPSTASH_REDIS_REST_URL ?? null
-}
-
-function upstashToken(): string | null {
-  return process.env.UPSTASH_REDIS_REST_TOKEN ?? null
-}
-
-async function upstashFetch(command: string[]): Promise<unknown> {
-  const url   = upstashUrl()
-  const token = upstashToken()
-  if (!url || !token) return null
-
-  const res = await fetch(url, {
-    method:  "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body:    JSON.stringify(command),
-  })
-
-  if (!res.ok) throw new Error(`Upstash ${res.status}`)
-  const json = await res.json() as { result: unknown }
-  return json.result
-}
+// Fonte única dos nomes: o cron `flush-view-counts` importa estas duas funções.
+// Se os dois lados divergirem no nome, as views somem em silêncio.
+export const pendingItemsSetKey = () => upstashKey("viewcount:pending-items")
+export const pendingCountKey = (itemId: string) => upstashKey(`viewcount:pending:${itemId}`)
 
 export async function incrementViewCount(itemId: string): Promise<void> {
   if (!upstashUrl()) return
   try {
-    await upstashFetch(["INCR", `viewcount:pending:${itemId}`])
-    await upstashFetch(["SADD", PENDING_ITEMS_SET, itemId])
+    await upstashFetch(["INCR", pendingCountKey(itemId)])
+    await upstashFetch(["SADD", pendingItemsSetKey(), itemId])
   } catch (e) {
     console.warn("[viewCounter] falhou:", e instanceof Error ? e.message : e)
   }

@@ -45,6 +45,8 @@ async function upstashFetch(command: string[]): Promise<unknown> {
 
 // ─── Invalidação de sessão por epoch (SEC-CRIT-04) ──────────────────────────
 
+// Global de propósito (sem `upstashKey`): o cuid do usuário é único ENTRE bancos,
+// então staging e produção não colidem. Ver `upstashNamespace` em lib/upstash.ts.
 function epochKey(userId: string) {
   return `session:epoch:${encodeURIComponent(userId)}`
 }
