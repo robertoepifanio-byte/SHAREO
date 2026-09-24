@@ -7,7 +7,8 @@
 - Em **24/09/2026** os fundadores decidiram **desbloquear o D4** e seguir para o **go-live em 01/10/2026**, **sem parecer jurídico assinado**.
 - A advogada que orienta o projeto é amiga do Raimundo e o apoia **sem cobrar**. Ela **não assinará nenhum documento até o projeto "Decolar"** (informação do Roberto).
 - O Raimundo (Encarregado/DPO e sócio) foi informado das implicações e **quer assumir o risco**.
-- **Aceite escrito do Raimundo: aguardando resposta à mensagem de 24/09/2026.** Anexar aqui quando chegar.
+- **E-mail enviado pelo Roberto em 24/09/2026, às 12:07** (horário de Brasília), ao Raimundo e a `marketing@shareo.com.br`, com o assunto "Go-live de 01/10: o que segue em aberto e o risco assumido sem parecer jurídico". Texto em [`email-raimundo-desbloqueio-d4-2026-09-24.md`](email-raimundo-desbloqueio-d4-2026-09-24.md).
+- **Aceite escrito do Raimundo: AGUARDANDO resposta ao e-mail.** Anexar a resposta (data, hora e texto) a esta pasta quando chegar. Enquanto não chegar, o aceite **não** está registrado.
 - O RIPD que ele assinou em 21/09 (Seção I) diz que a ShareO **não deve abrir o marketplace ao público** enquanto as pendências "bloqueia go-live" estiverem abertas. Esta decisão **excepciona** essa frase: registrar a exceção e refazer o RIPD conforme a Seção I ("refazer quando houver… resposta da advogada às pendências 1 e 2").
 - Cada passo de produção **com efeito público** (apontar `shareo.com.br` para o app, Stripe em modo live, tag `web-v*`) continua exigindo instrução explícita do fundador.
 
