@@ -4,6 +4,21 @@
 
 > Legenda: ✅ verificado por quem levantou · 🟡 feito, sem verificação · 🔨 em andamento · ⬜ aberto · ❓ só o Roberto sabe (painel) · **Bloqueia** = permite dano no dia 1 se ficar aberto.
 
+## 0. O que mudou depois do levantamento (24/09, à noite)
+
+O levantamento acima era só leitura. Depois dele, foram executados e **verificados**; onde o restante do documento disser o contrário (❓ ou ⬜ nesses itens), vale esta seção:
+
+| Item | Antes | Agora | Evidência |
+|---|---|---|---|
+| Categorias em produção | ⬜ lista vazia | ✅ 6 categorias (mesmas de `prisma/seed.ts`), inseridas por SQL idempotente no SQL Editor do Supabase `jdxd…` | `/api/categories` da produção devolve 6, com nome e ícone |
+| Domínio do app (decisão 2) | ⬜ indefinido | ✅ `app.shareo.com.br`: CNAME na GoDaddy (sem mexer em NS nem MX), certificado da Vercel, produção atribuída | HTTPS 200 em `/api/health`, HTTP redireciona 308; preflight CORS da campanha responde 204 nos dois endereços; o alias `*.vercel.app` segue sem redirecionamento |
+| `AUTH_URL`/`NEXTAUTH_URL` (bloqueador 5) | ❓ desconhecido | ✅ **não existiam** no `shareo-prod` (confirmado por busca no painel); criadas com `https://app.shareo.com.br` e o deploy de produção refeito (run 36063882381: migração sem pendência, health check pelo domínio novo) | `/api/auth/providers` já devolve `callbackUrl` no domínio novo; o e-mail de "Esqueci a senha" da produção traz link em `app.shareo.com.br` |
+| Fallback de `lib/app-url.ts` | staging | 🔨 PR #505: `NEXT_PUBLIC_APP_URL` entra antes do staging, com teste que falha no código antigo | ainda não mesclado |
+| Upstash de produção | ❓ desconhecido | ⬜ **não existe** (confirmado: `shareo-prod` sem `UPSTASH_REDIS_REST_*`; a conta tem um único banco, do staging). Rate limit fica em memória por instância e o bloqueio de admin fica inerte | precisa criar um banco só da produção e as duas variáveis |
+| Segredos do incidente da Vercel de abril | ⬜ | ✅ rotacionados um a um e provados por uso real; filtro "Needs Attention" = 0 nos dois projetos | ver memória e o histórico do dia |
+
+**Continua aberto e não mudou:** Stripe live e webhook (agora em `https://app.shareo.com.br/api/webhooks/stripe`), interruptor de cobrança, conta de recebimento do proprietário, chat sem RLS, 2º admin sem 2FA, Data API, textos com afirmações falsas, oferta zero no dia 1, troca da URL da API da campanha (`NEXT_PUBLIC_SHAREO_API_URL`, decisão sua: afeta a mídia paga) e o aceite escrito do Raimundo.
+
 ## 1. Veredito
 
 **Como está hoje, o go-live "aberto ao público com pagamento" NÃO está pronto para 01/10.** A base técnica funciona (deploy, banco migrado, endpoints sensíveis autenticados, 2FA de admin verificado, textos legais no ar), mas há itens de segurança ainda abertos (seção 3 e Anexo). O que mais falta é operacional e de dinheiro:
