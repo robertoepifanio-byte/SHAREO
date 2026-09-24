@@ -26,6 +26,8 @@ import {
 } from "@/lib/crypto-rotation"
 import {
   checkDatabaseConfirmation,
+  connectionFailureHint,
+  connectionSummary,
   describeDatabase,
   fingerprintKey,
   formatReport,
@@ -409,6 +411,13 @@ describe("o que sai (log, relatório) nunca contém claro, ciphertext nem chave"
     expect(safeErrorLabel(e)).toBe("PrismaClientKnownRequestError:P2028")
     expect(safeErrorLabel("texto solto")).toBe("erro-desconhecido")
   })
+
+  it("safeErrorLabel: erro de inicialização traz o `errorCode` (P1000 = credencial recusada)", () => {
+    const e = Object.assign(new Error(`credencial ${SENTINEL} recusada`), { errorCode: "P1000" })
+    e.name = "PrismaClientInitializationError"
+    expect(safeErrorLabel(e)).toBe("PrismaClientInitializationError:P1000")
+    expect(safeErrorLabel(e)).not.toContain(SENTINEL)
+  })
 })
 
 // ─── Configuração de chaves ───────────────────────────────────────────────────
@@ -629,5 +638,49 @@ describe("guardas contra lista desatualizada", () => {
     // Falhou? Um código novo cifra dado com a ENCRYPTION_KEY. Conferir se a coluna onde ele grava
     // está em ENCRYPTED_COLUMNS (lib/crypto-rotation.ts) e no runbook, e só então acrescentar aqui.
     expect(escritores).toEqual(CONHECIDOS)
+  })
+})
+
+// O diagnóstico de conexão roda contra a PRODUÇÃO e a saída vai para conversa/terminal:
+// nem a senha nem a mensagem do Prisma podem aparecer nele.
+describe("diagnóstico de conexão (connectionSummary / connectionFailureHint)", () => {
+  const initError = (message: string) => {
+    const e = new Error(message)
+    e.name = "PrismaClientInitializationError"
+    return e
+  }
+
+  it("resumo: usuário, porta e parâmetros, nunca a senha", () => {
+    const resumo = connectionSummary(`postgresql://postgres.abc:${SENTINEL}@host.pooler.supabase.com:6543/postgres?pgbouncer=true`)
+    expect(resumo).toBe("usuário=postgres.abc porta=6543 senha=presente parâmetros=pgbouncer")
+    expect(resumo).not.toContain(SENTINEL)
+  })
+
+  it("resumo: acusa aspas ou espaço nas pontas da senha (colagem suja) e senha ausente", () => {
+    expect(connectionSummary("postgresql://u:%22segredo%22@h:5432/db")).toContain("aspas ou espaço nas pontas")
+    expect(connectionSummary("postgresql://u@h:5432/db")).toContain("senha=AUSENTE")
+  })
+
+  it("resumo: senha com % cru não derruba o diagnóstico; URL ilegível vira null sem vazar a entrada", () => {
+    expect(connectionSummary("postgresql://u:ab%zz@h/db")).toContain("senha=presente")
+    expect(connectionSummary(`DATABASE_URL=${SENTINEL}`)).toBeNull()
+  })
+
+  it.each([
+    ["The provided database string is invalid. The scheme is not recognized in database URL.", "URL malformada"],
+    ["Can't reach database server at `db.abc.supabase.co:5432`", "servidor inalcançável"],
+    ["FATAL: (ENOTFOUND) tenant/user postgres.abc not found", "usuário ou projeto não encontrado"],
+    ["Authentication failed against database server, the provided database credentials for `postgres` are not valid.", "credencial recusada"],
+    ["algo que ninguém previu", "fora da lista"],
+  ])("dica de conexão: %s", (mensagem, esperado) => {
+    const dica = connectionFailureHint(initError(`${mensagem} ${SENTINEL}`))
+    expect(dica).toContain(esperado)
+    // texto FIXO por categoria: nada da mensagem original passa
+    expect(dica).not.toContain(SENTINEL)
+  })
+
+  it("só erros de inicialização do Prisma ganham dica", () => {
+    expect(connectionFailureHint(new Error("Can't reach database server"))).toBeNull()
+    expect(connectionFailureHint("texto solto")).toBeNull()
   })
 })

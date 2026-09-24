@@ -14,6 +14,7 @@ import { PrismaClient } from "@prisma/client"
 import { createPrismaStore, runRotation, safeErrorLabel } from "../lib/crypto-rotation"
 import {
   checkDatabaseConfirmation,
+  connectionFailureHint,
   describeDatabase,
   fingerprintKey,
   formatReport,
@@ -84,5 +85,7 @@ main()
   .catch((e) => {
     // Só o nome do erro: a mensagem do Prisma pode trazer os valores da consulta.
     console.error(`Falha inesperada: ${safeErrorLabel(e)}`)
+    const dica = connectionFailureHint(e)
+    if (dica) console.error(`Motivo: ${dica}`)
     process.exit(1)
   })

@@ -150,11 +150,16 @@ export interface RotationReport {
  * Só o NOME e o código do erro. A mensagem de um erro do Prisma pode trazer os
  * argumentos da consulta — aqui, o ciphertext lido e o novo — e por isso nunca
  * é registrada.
+ *
+ * O código vem de `code` (erros de requisição, ex. P2022) ou de `errorCode`
+ * (erros de inicialização: P1000 credencial recusada, P1001 host inalcançável,
+ * P1013 URL malformada). Sem o segundo, "falhou ao conectar" não diz por quê.
  */
 export function safeErrorLabel(e: unknown): string {
   if (!(e instanceof Error)) return "erro-desconhecido"
-  const code = (e as { code?: unknown }).code
-  return typeof code === "string" ? `${e.name}:${code}` : e.name
+  const { code, errorCode } = e as { code?: unknown; errorCode?: unknown }
+  const codigo = typeof code === "string" ? code : typeof errorCode === "string" ? errorCode : null
+  return codigo ? `${e.name}:${codigo}` : e.name
 }
 
 function noteFailure(rep: ColumnReport, id: string, motivo: ColumnFailureReason): void {

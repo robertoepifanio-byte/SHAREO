@@ -119,6 +119,55 @@ export function describeDatabase(databaseUrl: string | undefined): DatabaseIdent
   }
 }
 
+const decodificaOuMantem = (s: string) => {
+  try {
+    return decodeURIComponent(s)
+  } catch {
+    return s
+  }
+}
+
+/**
+ * O que ajuda a achar o defeito de uma DATABASE_URL, SEM a senha: usuário, porta, parâmetros e
+ * se a senha veio presente e limpa (aspas ou espaço nas pontas são o erro clássico de colagem).
+ */
+export function connectionSummary(databaseUrl: string): string | null {
+  try {
+    const u = new URL(databaseUrl)
+    const senha = decodificaOuMantem(u.password)
+    const suja = /^["'\s]|["'\s]$/.test(senha)
+    const params = [...u.searchParams.keys()].join(",") || "(nenhum)"
+    return (
+      `usuário=${decodificaOuMantem(u.username)} porta=${u.port || "(padrão)"} ` +
+      `senha=${senha ? "presente" : "AUSENTE"}${suja ? " (com aspas ou espaço nas pontas!)" : ""} parâmetros=${params}`
+    )
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Motivo de uma falha de CONEXÃO em texto FIXO por categoria. Nunca repassa a mensagem do
+ * Prisma: ela cita host, usuário e argumentos, e a regra deste módulo é não registrá-la.
+ */
+export function connectionFailureHint(e: unknown): string | null {
+  if (!(e instanceof Error) || e.name !== "PrismaClientInitializationError") return null
+  const m = e.message
+  if (/scheme is not recognized|database string is invalid/i.test(m)) {
+    return "URL malformada: veio junto o prefixo `DATABASE_URL=`, aspas ou espaço?"
+  }
+  if (/Can't reach database server/i.test(m)) {
+    return "servidor inalcançável: use o pooler (`…pooler.supabase.com`), não `db.<ref>.supabase.co` (só IPv6)"
+  }
+  if (/tenant\/user .* not found/i.test(m)) {
+    return "usuário ou projeto não encontrado: no pooler o usuário é `postgres.<ref>`, com o ref de um projeto que exista"
+  }
+  if (/Authentication failed|password authentication failed/i.test(m)) {
+    return "credencial recusada: a senha da URL não é a que o Supabase guardou"
+  }
+  return "conexão falhou (motivo fora da lista)"
+}
+
 /** `--apply` só vale se o operador digitou o ref (ou, sem ref identificável, o host) do banco em que está mirando. */
 export function checkDatabaseConfirmation(db: DatabaseIdentity, confirm: string | null): boolean {
   if (!confirm) return false

@@ -35,6 +35,7 @@ Um teste (`guardas contra lista desatualizada`) reprova a CI se surgir coluna `*
 
 ## Antes de começar
 
+0. **Contar o que depende das chaves** (só leitura): `node --env-file=<arquivo> --import tsx scripts/contar-dados-cifrados.ts`. Imprime o banco alvo (confira o ref), usuários, quantas linhas de cada coluna cifrada e de cada hash de busca, sem nenhum valor. **Tudo zero** (ou coluna "ausente") ⇒ não há o que recifrar nem hash a recalcular: basta trocar `ENCRYPTION_KEY` e `HMAC_KEY` juntas (valores DIFERENTES), sem este script nem a janela abaixo. Foi o caso de `shareo-prod` em 24/09/2026 (2 usuários, nenhum CPF/CNPJ/2FA). Se houver 2FA de admin confirmado, ele passa a ser ilegível com a chave nova: recifrar (este runbook) ou recadastrar o 2FA. **Recontar logo antes de trocar as chaves**: um cadastro entre a contagem e a troca invalida o "tudo zero".
 1. **HMAC_KEY fixada — pré-condição, não opcional.** `hashDocument` usa `HMAC_KEY || ENCRYPTION_KEY`. Se `HMAC_KEY` estiver vazia, trocar a `ENCRYPTION_KEY` troca **em silêncio** a chave dos hashes: as checagens de unicidade (`findFirst({ cpfHash })` no cadastro, `findUnique({ cnpjHash })` no `upgrade-pj`) passam a não achar ninguém e o mesmo CPF/CNPJ pode ser cadastrado de novo. Conferir em `GET /api/health` → `flags.crypto.hmac`:
    - `"ok"` → já distinta da `ENCRYPTION_KEY`; nada a fazer.
    - `"igual-a-encryption"` → está no fallback. **Antes** de rotacionar: definir `HMAC_KEY` com o valor **atual** da `ENCRYPTION_KEY` (Vercel + GitHub Secret), redeployar e reconferir `hmac: "ok"`. Nenhum dado muda. (No workflow de staging só `ENCRYPTION_KEY` é injetada — `deploy.yml`, passo de build; é provável que o staging use o fallback. Confirmar, não presumir.)
@@ -48,6 +49,8 @@ DATABASE_URL=...
 ENCRYPTION_KEY_OLD=<a chave em uso hoje>
 ENCRYPTION_KEY_NEW=<a chave nova>
 ```
+
+   🪤 `DATABASE_URL` é a string do **pooler** (`…pooler.supabase.com`, usuário `postgres.<ref>`, porta 6543 + `?pgbouncer=true`), nunca a conexão direta `db.<ref>.supabase.co`, que só resolve por IPv6 e "Can't reach" daqui. Sem aspas nem prefixo `DATABASE_URL=` ao COPIAR o valor para a Vercel ou o GitHub: `P1013 scheme not recognized` aparece só no Prisma do CI. Para copiar o valor limpo: `node --env-file=<arquivo> -e "process.stdout.write(process.env.DATABASE_URL)" | clip` — e depois **limpar a área de transferência** (`Set-Clipboard -Value ' '`; o histórico do Windows, Win+V, também guarda o valor).
 
 ## Passo a passo
 
