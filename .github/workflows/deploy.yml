@@ -489,25 +489,29 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL_PROD }}
           DIRECT_URL: ${{ secrets.DIRECT_URL_PROD }}
 
-      # Health check contra a URL real do deployment (não www.shareo.com.br —
-      # o domínio fica no placeholder Netlify até B1 resolver). Deployment
-      # Protection do Vercel responde 302 (redirect pro login) pra requests
-      # não-autenticadas — CONFIRMADO em teste real (run 31012928956, 2026-08-05)
-      # — isso é ESPERADO (confirma que o acesso está restrito), não é falha.
+      # Health check contra o ALIAS PÚBLICO de produção (https://shareo-prod.vercel.app),
+      # o que um usuário de fato acessa. Exige HTTP 200 + "status":"healthy".
       #
-      # Enquanto shareo-prd for só uso interno, EXIGE 302/401 (proteção ativa) —
-      # um 200 aqui significa que a Deployment Protection caiu (acidente, ou
-      # alguém trocou pra "Standard Protection" errado) e o app ficou público
-      # sem querer, o que deve quebrar o deploy, não passar silencioso. Sem
-      # continue-on-error: o guard precisa valer de verdade.
-      # QUANDO O D4 FECHAR E O GO-LIVE PÚBLICO FOR ATIVADO: trocar pra exigir 200.
+      # ⚠️ A Deployment Protection (Standard) cobre só as URLs de DEPLOYMENT
+      # (`shareo-prod-<hash>-…vercel.app`, sempre 302), NÃO o alias de produção, que é
+      # PÚBLICO (verificado com curl em 24/09/2026: /api/health, /cadastro e /login
+      # respondem 200). A versão anterior deste passo testava a URL do deployment e
+      # exigia 302 "proteção ativa": nunca provou proteção nem saúde do que está no ar.
+      # Tentativas repetidas porque o alias pode levar alguns segundos para apontar
+      # para o deployment novo.
       - name: Post-deploy health check
         run: |
-          echo "Aguardando 30s para o deploy propagar..."
-          sleep 30
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.deploy.outputs.deploy-url }}/api/health")
-          echo "Status: $STATUS (esperado: 302 ou 401 — Deployment Protection ativa, uso interno)"
-          if [ "$STATUS" != "302" ] && [ "$STATUS" != "401" ]; then
-            echo "Health check falhou com status $STATUS — se for 200, a Deployment Protection pode ter caído. Verifique o Vercel Dashboard."
-            exit 1
-          fi
+          URL="https://shareo-prod.vercel.app/api/health"
+          for i in 1 2 3 4 5 6; do
+            RESP=$(curl -s --max-time 20 -w '\n%{http_code}' "$URL" || true)
+            STATUS=$(printf '%s' "$RESP" | tail -n1)
+            echo "tentativa $i: HTTP $STATUS"
+            if [ "$STATUS" = "200" ] && printf '%s' "$RESP" | grep -q '"status":"healthy"'; then
+              echo "Produção saudável."
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "Health check falhou: $URL não respondeu 200 com status healthy em 6 tentativas."
+          printf '%s\n' "$RESP" | head -c 200
+          exit 1
