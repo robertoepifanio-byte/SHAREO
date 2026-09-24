@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { NOINDEX_ENABLED } from "@/lib/seo-flags"
 import { isEmailProviderConfigured } from "@/lib/email"
 import { cryptoKeyStatus } from "@/lib/crypto"
+import { upstashStatus } from "@/lib/upstash"
 import { codigoDeFalha, codigoDeFalhaStorage } from "@/lib/health/failure-codes"
 
 export const runtime    = "nodejs"
@@ -39,6 +40,9 @@ export async function GET() {
   const checks: Record<string, "ok" | "error"> = {}
   const errors: Record<string, string> = {}
   const codes:  Record<string, string> = {}
+
+  // Começa já, em paralelo ao banco e ao storage (nunca rejeita).
+  const upstash = upstashStatus()
 
   // ── 1. Banco de dados ────────────────────────────────────────────────────
   try {
@@ -111,6 +115,11 @@ export async function GET() {
         noindex: NOINDEX_ENABLED,
         email:   isEmailProviderConfigured() ? "ok" : "sem-chave",
         crypto:  cryptoKeyStatus(),
+        // Fora de `checks` pela mesma razão do `email` e do `crypto`. É a primeira
+        // flag com I/O: PING com timeout de 2 s e cache de 5 min (lib/upstash.ts).
+        // Em produção diz a quem olha de fora que o rate limit está degradado;
+        // aceito: o mesmo já se vê martelando o login.
+        upstash: await upstash,
       },
       // Só quando o banco falha — é diagnóstico, não telemetria de rotina.
       ...(checks.db === "error" && { dbUrl: await digitalDaUrl() }),
