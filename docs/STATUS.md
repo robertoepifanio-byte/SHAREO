@@ -647,7 +647,7 @@ Próximo passo: resolver P0 sem bloqueador externo (hardcoded + scripts) → agu
 |---|---|---|
 | Local dev | 🗑️ excluído 2026-08-04 (era `kehbrjlllfkooauaswtp`) | Recriar quando precisar de `next dev` com banco local |
 | Staging | `zythygwvmrwrqmnrdufq` | Validação CI/CD — dados de fixture |
-| **Produção** | ✅ `jdxdndrhjxtkaifbpagr` (`shareo-prd`), criado 2026-08-05 | **Uso interno only** (equipe técnica + fundadores, atrás de Vercel Deployment Protection) — dados reais de usuários **só pós-D4 + domínio real**, nunca misturar |
+| **Produção** | ✅ `jdxdndrhjxtkaifbpagr` (`shareo-prd`), criado 2026-08-05 | Pensada como uso interno, mas **o alias `shareo-prod.vercel.app` é PÚBLICO** (200 sem login, verificado em 24/09/2026; a Deployment Protection cobre só URLs de deployment/preview). Hoje 2 usuários (admins). D4 desbloqueado em 24/09 (ver `docs/juridico/decisao-desbloqueio-d4-2026-09-24.md`) |
 
 Staging na org corporativa `Shareo Marketplace de aluguel` (**PRO** desde 04/08, NANO, sa-east-1), migrada em 2026-06-27. Os refs antigos da org pessoal (`jtianehxosfdrhjzqvqj` dev / `fflpuoluiqmhpvcxubqi` staging) foram **deletados em 2026-07-22** — se aparecerem em doc ou script, é resíduo. Org já em Pro → sem limite de contagem de projetos; custo é ~US$25/mês de base + ~US$10/mês por projeto além do incluído na base (confirmado 04/08).
 

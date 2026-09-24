@@ -6,7 +6,7 @@ Marketplace de economia circular para aluguel local de itens. Lançamento nacion
 
 - **Código:** `C:\Users\Roberto\Documents\2026\ShareO`
 - **Staging:** `https://shareo-rouge.vercel.app` — NÃO é produção
-- **Produção:** projeto `shareo-prd`/`shareo-prod` **criado em 2026-08-05** (exceção autorizada pelo fundador em 04/08) — mas é **só para uso interno** (equipe técnica + fundadores, atrás de Vercel Deployment Protection). **`shareo.com.br` continua apontando pro placeholder** e **nenhum go-live público acontece antes de D4** (consulta jurídica) + validação total staging. Ver `docs/juridico/checklist-conformidade-juridica.md` e memória `project-d4-juridico`.
+- **Produção:** projeto `shareo-prd`/`shareo-prod` **criado em 2026-08-05** (exceção autorizada pelo fundador em 04/08) — ⚠️ **o alias `https://shareo-prod.vercel.app` é PÚBLICO** (200 sem login em `/api/health`, `/cadastro` e `/login`, verificado com curl em 24/09/2026; `noindex` ligado; endpoints de cron e admin respondem 401): a Vercel Deployment Protection cobre só as URLs de *deployment* e de preview, não o alias de produção, ao contrário do que estava escrito aqui. Hoje há só 2 usuários (os admins). **`shareo.com.br` serve a landing da campanha** (não o marketplace). **D4 desbloqueado pelos fundadores em 24/09/2026** (risco assumido, sem parecer jurídico assinado; go-live previsto para **01/10/2026**) — as pendências jurídicas seguem ABERTAS em `docs/juridico/decisao-desbloqueio-d4-2026-09-24.md`. Cada passo de produção com efeito público (apontar o domínio para o app, Stripe live, tag `web-v*`) continua exigindo instrução explícita do fundador. Ver também `docs/juridico/checklist-conformidade-juridica.md` e memória `project-d4-juridico`.
 
 ## Stack
 
@@ -102,7 +102,7 @@ SQL de manutenção/migration para staging → sempre usar `zythygwvmrwrqmnrdufq
 
 - **D1 (pagamentos):** decisão evoluiu — PIX manual da plataforma (MVP inicial) → Mercado Pago Modelo B (ADR-026, 2026-06-28) → reversão para Stripe Connect (ADR-028, 2026-08-19) → **Mercado Pago descartado por completo (2026-08-24)**. **PSP único: Stripe Connect.** O código do MP foi **removido** em 24/08 (rotas `/api/mp/*` e `/api/payments/mp/*`, `lib/mercadopago.ts`, `MpPayButton`, flag `mercadoPagoEnabled`, dependência `mercadopago`). Os campos de banco saíram na migração `20260824190000_remove_mercado_pago`. PIX manual da plataforma removido do código (a chave pessoal do fundador não existe mais); o PIX que resta em `/perfil/recebimentos` é o caminho **manual** de repasse, usado quando o Connect do proprietário não está `ACTIVE`.
 - **D2:** Sem caução no MVP. Teto R$500 por transação.
-- **D4 (BLOQUEADOR):** Consulta jurídica em análise — **nenhum go-live em produção antes do retorno.**
+- **D4 (desbloqueado em 24/09/2026 por decisão dos fundadores, risco assumido):** a advogada orienta sem cobrar e não assina nada até o projeto "Decolar"; o Raimundo (Encarregado) assumiu o risco. As pendências seguem abertas, listadas em `docs/juridico/decisao-desbloqueio-d4-2026-09-24.md`. Não reportar nenhuma delas como resolvida.
 - Taxa plataforma: 15% (`DEFAULT_FEE_RATE = 1500` basis points em `lib/platform-config.ts`)
 - Models financeiros: `OwnerPaymentAccount`, `PlatformTransaction`, `Payout`, `PlatformConfig`, `StripeEventQueue`, `ExportJob`
 
