@@ -453,7 +453,7 @@ jobs:
           NEXT_PUBLIC_SENTRY_ENV: production
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           NEXT_PUBLIC_MAPBOX_TOKEN: ${{ secrets.NEXT_PUBLIC_MAPBOX_TOKEN }}
-          NEXT_PUBLIC_APP_URL: https://shareo-prod.vercel.app
+          NEXT_PUBLIC_APP_URL: https://app.shareo.com.br
           # SEC-CRIT-02/03 kill-switch: garante que o bypass de rate limit (SKIP_RATE_LIMIT/
           # E2E_SECRET) fica inerte em produção mesmo que um valor vaze por cópia de env.
           E2E_BYPASS_DISABLED: "true"
@@ -489,8 +489,10 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL_PROD }}
           DIRECT_URL: ${{ secrets.DIRECT_URL_PROD }}
 
-      # Health check contra o ALIAS PÚBLICO de produção (https://shareo-prod.vercel.app),
-      # o que um usuário de fato acessa. Exige HTTP 200 + "status":"healthy".
+      # Health check contra o DOMÍNIO PÚBLICO de produção (https://app.shareo.com.br,
+      # desde 24/09/2026), o que um usuário de fato acessa. Exige HTTP 200 +
+      # "status":"healthy". Se o DNS ou o certificado do domínio quebrarem, o deploy
+      # reprova — é o que se quer, mesmo com o alias *.vercel.app ainda saudável.
       #
       # ⚠️ A Deployment Protection (Standard) cobre só as URLs de DEPLOYMENT
       # (`shareo-prod-<hash>-…vercel.app`, sempre 302), NÃO o alias de produção, que é
@@ -501,7 +503,7 @@ jobs:
       # para o deployment novo.
       - name: Post-deploy health check
         run: |
-          URL="https://shareo-prod.vercel.app/api/health"
+          URL="https://app.shareo.com.br/api/health"
           for i in 1 2 3 4 5 6; do
             RESP=$(curl -s --max-time 20 -w '\n%{http_code}' "$URL" || true)
             STATUS=$(printf '%s' "$RESP" | tail -n1)
