@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { NOINDEX_ENABLED } from "@/lib/seo-flags"
 import { isEmailProviderConfigured } from "@/lib/email"
 import { cryptoKeyStatus } from "@/lib/crypto"
-import { upstashStatus } from "@/lib/upstash"
+import { upstashStatus, upstashNamespace } from "@/lib/upstash"
 import { codigoDeFalha, codigoDeFalhaStorage } from "@/lib/health/failure-codes"
 
 export const runtime    = "nodejs"
@@ -120,6 +120,10 @@ export async function GET() {
         // Em produção diz a quem olha de fora que o rate limit está degradado;
         // aceito: o mesmo já se vê martelando o login.
         upstash: await upstash,
+        // Namespace das chaves do Redis que ESTE artefato resolveu (o ref do
+        // Supabase, já público nas URLs do Storage). "local" em produção = URL
+        // do Supabase fora do padrão: ver `upstashNamespace`.
+        upstashNs: upstashNamespace(),
       },
       // Só quando o banco falha — é diagnóstico, não telemetria de rotina.
       ...(checks.db === "error" && { dbUrl: await digitalDaUrl() }),

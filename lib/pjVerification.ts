@@ -177,6 +177,8 @@ async function getRedis() {
   return redisClient
 }
 
+// Global de propósito (sem `upstashKey`): é dado da Receita, o mesmo nos dois
+// ambientes. Ver `upstashNamespace` em lib/upstash.ts.
 const cacheKey = (cnpj: string) => `cnpj:lookup:${cnpj}`
 
 // ─── API pública ────────────────────────────────────────────────────────────────

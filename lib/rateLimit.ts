@@ -13,6 +13,7 @@
 
 import { Ratelimit } from "@upstash/ratelimit"
 import { Redis } from "@upstash/redis"
+import { upstashKey } from "./upstash"
 
 // ─── In-memory fallback ───────────────────────────────────────────────────────
 
@@ -51,6 +52,9 @@ function getUpstashLimiter(limit: number, windowMs: number): Ratelimit {
         redis:     Redis.fromEnv(),
         limiter:   Ratelimit.slidingWindow(limit, `${windowMs}ms`),
         analytics: false,
+        // Staging e produção dividem o Redis: sem o namespace, o limite por IP
+        // (`login:ip:<ip>`) contava tentativas dos dois ambientes juntas.
+        prefix:    upstashKey("@upstash/ratelimit"),
       }),
     )
   }

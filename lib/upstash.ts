@@ -2,13 +2,12 @@
  * Cliente mínimo do Upstash Redis via REST — Edge-compatível (não usa o SDK
  * @upstash/redis, que depende de jose/CompressionStream, Node.js only).
  *
- * Extraído porque o mesmo trio `upstashUrl`/`upstashToken`/`upstashFetch` já
- * vivia repetido em `lib/viewCounter.ts` e `lib/redis-admin-blocklist.ts` — um
- * terceiro contador (`lib/founderFunnel.ts`) reimplementá-lo de novo seria a
- * mesma duplicação pela terceira vez. Os dois arquivos antigos não foram
- * tocados (fora do escopo desta mudança); código novo usa este módulo.
+ * Extraído porque o mesmo trio `upstashUrl`/`upstashToken`/`upstashFetch` vivia
+ * repetido em `lib/viewCounter.ts`, no cron `flush-view-counts` e em
+ * `lib/redis-admin-blocklist.ts`. Os dois primeiros já usam este módulo; a cópia
+ * da blocklist segue como está (fora do escopo, tem teste próprio).
  *
- * Também expõe `upstashStatus`, a sonda do /api/health.
+ * Também expõe `upstashStatus` (a sonda do /api/health) e `upstashKey`.
  */
 
 export function upstashUrl(): string | null {
@@ -34,6 +33,37 @@ export async function upstashFetch(command: string[], timeoutMs?: number): Promi
   if (!res.ok) throw new Error(`Upstash ${res.status}`)
   const json = await res.json() as { result: unknown }
   return json.result
+}
+
+/**
+ * Namespace das chaves que citam dados de UM banco: o ref do projeto Supabase
+ * (primeiro rótulo de NEXT_PUBLIC_SUPABASE_URL). Cai em "local" quando a URL está
+ * ausente, vazia ou não é `*.supabase.co`; nesse caso os ambientes que também
+ * caírem em "local" voltam a dividir chaves, sem erro. O `flags.upstashNs` do
+ * /api/health mostra o valor que o artefato deployado resolveu.
+ *
+ * Existe porque staging e produção dividem o mesmo Redis (plano free, decisão do
+ * fundador em 24/09/2026, até o uso chegar a 90% da cota; a saída é trocar as
+ * duas variáveis UPSTASH_* do `shareo-prod`, sem mudar código). Sem o namespace,
+ * o contador de views (`viewcount:pending:<itemId>`) era lido e apagado (GETDEL)
+ * pelo cron dos DOIS ambientes: o de um destruía as views do outro e o `update`
+ * falhava em item que não existe no banco dele. O funil da campanha e o limite
+ * por IP somavam tentativas dos dois.
+ *
+ * Pelo projeto Supabase, e não pelo domínio: a chave cita ids daquele banco, e o
+ * domínio pode mudar sem migrar dado.
+ *
+ * Globais de propósito: `session:epoch:<userId>` (o cuid é único ENTRE bancos) e
+ * `cnpj:lookup:<cnpj>` (dado da Receita, o mesmo nos dois). Chave nova nasce
+ * global se não passar por `upstashKey`: decida e anote.
+ */
+export function upstashNamespace(): string {
+  const ref = /^https?:\/\/([a-z0-9]+)\.supabase\.co/i.exec((process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").trim())
+  return ref ? ref[1].toLowerCase() : "local"
+}
+
+export function upstashKey(chave: string): string {
+  return `${upstashNamespace()}:${chave}`
 }
 
 type UpstashStatus = "ok" | "sem-chave" | "erro-rede" | "erro-resposta" | `erro-${number}`
