@@ -23,6 +23,22 @@ O levantamento acima era só leitura. Depois dele, foram executados e **verifica
 
 **Continua aberto e não mudou:** Stripe live e webhook (agora em `https://app.shareo.com.br/api/webhooks/stripe`), verificação do interruptor de cobrança e da guarda do proprietário (código pronto, ver a seção 0), chat sem RLS, 2º admin sem 2FA, Data API, textos com afirmações falsas e oferta zero no dia 1. **Novo:** monitorar a cota do Upstash toda semana no começo (a suíte E2E do staging e o `PING` do health também gastam a cota compartilhada), e as pendências do D4 listadas em `docs/juridico/decisao-desbloqueio-d4-2026-09-24.md` seguem abertas.
 
+## 0.1 O que mudou em 25/09 (D-6)
+
+Vale sobre as seções seguintes nos itens abaixo. Produção em `79c1bf53` desde 21:49 UTC; `/api/health` passou a trazer `build.commit` (#516), então "qual commit está no ar" deixou de ser inferência.
+
+| Item | Antes | Agora | Evidência |
+|---|---|---|---|
+| Interruptor de cobrança e guarda do proprietário (#510) | 🟡 | 🟡 **guarda do proprietário ✅ no staging** (checkout de dono sem conta de recebimento → 409 `OWNER_NOT_READY`); **interruptor ainda não visto ao vivo**: o 403 `BILLING_CLOSED` só aparece com reserva `CONFIRMED` (a guarda roda depois da validação da reserva) e fica para a locação assistida | verificação no staging de 25/09; produção com chave live e `billingEnabled` ausente = **fechada** |
+| Limite de login (#512) | 🟡 | ✅ no staging: 6ª tentativa → 429; e-mail repetido no corpo conta no alvo; web e app dividem o contador | verificação no staging de 25/09 |
+| Exclusão de conta e Storage (#511) | 🟡 | ✅ no staging: usuário de teste excluído e a pasta dele sumiu de `id-docs/id-verification` | banco `zythy…` (`deletedAt` preenchido) + painel do Storage |
+| Stripe live (Pag 1, 2 e 6) | ❓/⬜ | ✅ conta ativa (pagamentos e repasses, 0 tarefas), só cartão habilitado, 2FA obrigatório para a equipe; **Connect live com o onboarding da plataforma concluído** (identidade do representante verificada; compradores compram da plataforma, vendedores pagos individualmente, onboarding hospedado, Express, plataforma responde por reembolsos e estornos; conformidade contínua com a Stripe); destinos `/api/webhooks/stripe` (snapshot, 7 eventos) e `/api/webhooks/stripe-connect` (contas conectadas, mínimo, 2 eventos); 3 variáveis só em Production; `stripeConnectEnabled = "true"` | os dois webhooks respondem 400 "Missing stripe-signature"; ping do destino do Connect = 200 `{"received":true}`; `/api/stripe/connect/return` → 307 para `https://app.shareo.com.br/perfil/recebimentos`; um proprietário da equipe concluiu o cadastro Express live ("Conta verificada e pronta para receber") |
+| Stub de pagamento em produção (Pag 12) | 🟡 | ✅ `E2E_BYPASS_DISABLED` existe; `E2E_SECRET` e `SKIP_RATE_LIMIT` não existem no `shareo-prod` | conferido por nome no painel em 25/09 |
+| Guard de migração destrutiva | ⬜ | ✅ #520 + #522: compara com o `build.commit` do ambiente de destino; bloqueia DROP/RENAME/TRUNCATE novos sem `DESTRUTIVA-APROVADA.md` | deploys de staging e produção de 25/09 com "Base: <commit no ar>" e "Nenhuma migration nova" |
+| Pontos de retorno | 1 tag | `prod-ok-2026-09-25-1322`, `-1408` e `-2149` | todos com P1 a P6 verdes |
+
+**Aberto depois de 25/09:** locação assistida live (backlog STRIPE-04), eventos de conta do Connect que não chegam (STRIPE-01), aviso ao proprietário (STRIPE-02), dados públicos da conta Stripe (STRIPE-03), 2º admin sem 2FA e Data API/Realtime sem RLS (com o outro fundador), textos do #513.
+
 ## 1. Veredito
 
 **Como está hoje, o go-live "aberto ao público com pagamento" NÃO está pronto para 01/10.** A base técnica funciona (deploy, banco migrado, endpoints sensíveis autenticados, 2FA de admin verificado, textos legais no ar), mas há itens de segurança ainda abertos (seção 3 e Anexo). O que mais falta é operacional e de dinheiro:

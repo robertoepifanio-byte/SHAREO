@@ -1,5 +1,15 @@
 # ShareO — Status do Projeto
 
+**Atualizado em**: 2026-09-25 (D-6) — **💳 Stripe live ligada em produção com a cobrança FECHADA; staging e produção em `79c1bf53`.** Detalhe e evidências em `docs/checklist-go-live-2026-10-01.md`, seção 0.1.
+
+- **Mesclados e no ar (staging e produção):** #516 (`/api/health` traz `build.commit` e o deploy exige o commit certo), #517 (links dos runbooks do D0), #518 (limite por e-mail no esqueci-a-senha), #519 (exclusão de conta apaga fotos de anúncio e de reserva, alerta de falha do Storage aos superadmins, sessão encerrada, revogação biométrica completa), #520 + #522 (guard de migração destrutiva, com base no commit em produção), #521 (scripts de varredura de Storage órfão e de limpeza de dados de teste). Pendências da Stripe live registradas no backlog como STRIPE-01 a 04 (#523).
+- **Verificado no staging:** limite de login (#512), guarda do proprietário sem recebimento (#510, 409), exclusão de conta limpando o Storage (#511). Varredura de órfãos no staging: 0 órfãos com o autoteste de listagem passando.
+- **Stripe live:** conta ativa só com cartão, Connect live pronto, destinos de pagamento e do Connect criados, ping do Connect 200, cadastro para receber aberto e já concluído por um proprietário da equipe. `billingEnabled` ausente = cobrança **fechada**.
+- **Não verificado:** o 403 `BILLING_CLOSED` com a Stripe real (precisa de reserva confirmada), os eventos de conta do Connect (só o ping chegou), e as mudanças #518/#519 em produção.
+- **Próximo:** locação assistida live (backlog STRIPE-04); freeze em 28/09.
+
+---
+
 **Atualizado em**: 2026-09-23 — **⚖️ D4: a advogada respondeu a pergunta da Lei 12.865 e a de PLD/FT, o RIPD foi assinado, e o 2FA de administradores e as seções 6/7 dos Termos foram mesclados e estão no staging.** PRs #488, #493, #494, #495 e #496 mesclados em 23/09 (o texto abaixo foi escrito antes dos merges).
 
 **Desfecho dos merges (23/09, deploy de staging `8728e46` verde):** migração `20260921120000_admin_2fa_totp` aplicada limpa e `/api/health` saudável. O login do admin fixture com 2FA **falhou** no 1º deploy (o CI gravava o segredo TOTP cifrado com a `ENCRYPTION_KEY` do build, diferente da do runtime); corrigido no #496 com uma rota de teste, e o deploy seguinte registrou "Sessão salva: session-admin.json". **Ainda não verificado por um humano:** o cadastro do 2FA pela UI (QR → código → login → recuperação) e a tela `/termos` renderizada. Todo admin precisa cadastrar o autenticador para abrir o painel. **A campanha não tem staging: o texto novo dos Termos (#494) já está em shareo.com.br.**
