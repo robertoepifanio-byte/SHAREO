@@ -4,7 +4,9 @@
  * + art. 18 — direito de revogação). Decisão C1 (2026-06-30).
  *
  * Efeitos:
- *   - apaga o arquivo de selfie no bucket privado `id-docs` (best-effort);
+ *   - apaga TODAS as selfies do titular em `id-docs/id-verification/<userId>/selfie-*`
+ *     (decisão do fundador 25/09/2026 — o reenvio após rejeição acumula selfies; o
+ *     comportamento anterior apagava só a última, `idSelfieUrl`);
  *   - zera `idSelfieUrl` e `idSelfieConsentAt`; rebaixa `idVerificationStatus` a UNVERIFIED;
  *   - MANTÉM `idSelfieConsentVersion/TextHash/Ip` como prova de cumprimento (retenção 5a);
  *   - NÃO apaga o documento (`idDocumentUrl`) — só a biometria facial.
@@ -17,6 +19,7 @@ import { NextResponse, after } from "next/server"
 import { withUser } from "@/lib/withUser"
 import { prisma } from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { idVerificationPrefix } from "@/lib/supabase/user-storage-paths"
 
 export async function DELETE(req: NextRequest) {
   try {
@@ -34,8 +37,6 @@ export async function DELETE(req: NextRequest) {
         { status: 404 }
       )
 
-    const selfiePath = user.idSelfieUrl
-
     // Rebaixa a verificação e remove a imagem do banco; a PROVA do consentimento
     // (versão/hash/IP) é preservada por obrigação legal (5 anos).
     await prisma.user.update({
@@ -47,17 +48,30 @@ export async function DELETE(req: NextRequest) {
       },
     })
 
-    // Best-effort: apagar o arquivo do bucket privado. Não bloqueia a resposta.
-    if (selfiePath) {
-      after(async () => {
-        try {
-          const supabase = createAdminClient()
-          await supabase.storage.from("id-docs").remove([selfiePath])
-        } catch (e) {
-          console.warn("[DELETE biometric-consent] limpeza da selfie falhou:", e instanceof Error ? e.message : e)
+    // Best-effort: apagar TODAS as selfies do prefixo do titular no bucket privado.
+    // Reenvios após rejeição acumulam arquivos selfie-<ts>.<ext>; apagar só `idSelfieUrl`
+    // (o anterior) deixava as selfies antigas para trás. Não bloqueia a resposta.
+    after(async () => {
+      try {
+        const supabase  = createAdminClient()
+        const prefixo   = idVerificationPrefix(userId)
+        const { data, error } = await supabase.storage.from("id-docs").list(prefixo)
+        if (error) {
+          console.warn("[DELETE biometric-consent] listagem das selfies falhou:", error.message)
+          return
         }
-      })
-    }
+        const selfiePaths = (data ?? [])
+          .filter((item) => item.id !== null && item.name.startsWith("selfie-"))
+          .map((item) => `${prefixo}/${item.name}`)
+        if (selfiePaths.length === 0) return
+        const { error: removeError } = await supabase.storage.from("id-docs").remove(selfiePaths)
+        if (removeError) {
+          console.warn("[DELETE biometric-consent] remoção das selfies falhou:", removeError.message)
+        }
+      } catch (e) {
+        console.warn("[DELETE biometric-consent] limpeza das selfies falhou:", e instanceof Error ? e.message : e)
+      }
+    })
 
     return new NextResponse(null, { status: 204 })
   } catch (e) {

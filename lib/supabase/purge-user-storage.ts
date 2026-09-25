@@ -16,12 +16,13 @@
  *                                               (a disputa aberta por _BookingActions também
  *                                               sobe por POST /api/upload, então cai aqui)
  *
- * O que NÃO é apagado, de propósito — a limpeza é PARCIAL por desenho, não "completa":
- *   item-images     <itemId>/…                  fotos dos anúncios
- *   booking-photos  bookings/<id>/<fase>/…      fotos de check-in/out e prova de disputa
- * Esses caminhos são chaveados por anúncio/reserva e a outra parte da locação ainda
- * depende deles. A decisão de retenção segue pendente: docs/checklist-go-live-2026-10-01.md,
- * item 6 (inclui a foto de disputa que este helper apaga e a que ele retém).
+ * Limpeza ADICIONAL (decisão do fundador 25/09/2026):
+ *   item-images     <itemId>/…                  fotos dos anúncios do titular (cada anúncio =
+ *                                               um AlvoStorage passado via `alvosExtras`)
+ *   booking-photos  bookings/<id>/<fase>/…      somente as fotos de check-in/out que o próprio
+ *                                               titular carregou (BookingPhoto.uploadedBy == userId),
+ *                                               apagadas via `apagarPathsExplicitos`; as fotos da
+ *                                               outra parte são preservadas (proprietário/locatário).
  *
  * Suposições sobre o Storage ainda NÃO confirmadas em staging: `list` marca pasta com
  * `id: null` e `remove` devolve o caminho completo em `name`. Se a segunda estiver
@@ -179,12 +180,58 @@ async function apagarPrefixo(
 export async function apagarArquivosDoUsuario(
   client: StorageClient,
   userId: string,
+  /** Alvos extras além dos prefixos chaveados por userId (ex: pastas de anúncios). */
+  alvosExtras: AlvoStorage[] = [],
 ): Promise<ResultadoPurge> {
   // Buckets independentes: em paralelo. `partes` mantém a ordem dos alvos, então o
   // relatório de falhas sai sempre na mesma ordem.
-  const partes = await Promise.all(alvosDoUsuario(userId).map((alvo) => apagarPrefixo(client, alvo)))
+  const alvos = [...alvosDoUsuario(userId), ...alvosExtras]
+  const partes = await Promise.all(alvos.map((alvo) => apagarPrefixo(client, alvo)))
   return {
     apagados: partes.reduce((n, p) => n + p.apagados, 0),
     falhas:   partes.flatMap((p) => p.falhas),
   }
+}
+
+/**
+ * Apaga caminhos explícitos num bucket — sem listagem, para caminhos já conhecidos
+ * (ex: `BookingPhoto.url` → path extraído via `storagePathFromUrl`).
+ * Segue o mesmo contrato de `apagarArquivosDoUsuario`: nunca lança, devolve falhas detalhadas.
+ */
+export async function apagarPathsExplicitos(
+  client: StorageClient,
+  bucket: string,
+  paths: string[],
+): Promise<{ apagados: number; falhas: FalhaPurge[] }> {
+  if (paths.length === 0) return { apagados: 0, falhas: [] }
+
+  const prefixo = `${bucket}:(${paths.length} caminhos explícitos)`
+  let apagados = 0
+  const falhas: FalhaPurge[] = []
+
+  try {
+    const api = client.storage.from(bucket)
+    for (let i = 0; i < paths.length; i += LOTE_REMOCAO) {
+      const lote = paths.slice(i, i + LOTE_REMOCAO)
+      try {
+        const { data, error } = await api.remove(lote)
+        const confirmados = new Set((data ?? []).map((o) => o.name))
+        const restantes   = lote.filter((p) => !confirmados.has(p))
+        apagados += lote.length - restantes.length
+        if (restantes.length > 0) {
+          falhas.push({
+            bucket, prefixo, etapa: "remove",
+            erro: error?.message ?? `remove confirmou ${lote.length - restantes.length} de ${lote.length}`,
+            sobraram: restantes,
+          })
+        }
+      } catch (e) {
+        falhas.push({ bucket, prefixo, etapa: "remove", erro: msg(e), sobraram: lote })
+      }
+    }
+  } catch (e) {
+    falhas.push({ bucket, prefixo, etapa: "remove", erro: msg(e), sobraram: paths })
+  }
+
+  return { apagados, falhas }
 }
