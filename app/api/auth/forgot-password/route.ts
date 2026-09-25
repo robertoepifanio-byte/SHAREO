@@ -4,12 +4,16 @@ import crypto from "crypto"
 import { prisma } from "@/lib/prisma"
 import { z } from "zod"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
+import { checkForgotPasswordEmailLimit } from "@/lib/forgotPasswordRateLimit"
+import { emailField } from "@/lib/validations/auth"
 import { sendPasswordResetEmail } from "@/lib/email"
 import { PASSWORD_RESET_TOKEN_TTL_MS } from "@/lib/auth-config"
 import { hashToken } from "@/lib/crypto"
 
+// emailField(): trim + lowercase — mesma normalização que o limite por e-mail usa,
+// garantindo que espaços e maiúsculas não contornem nem esgotem indevidamente o contador.
 const Schema = z.object({
-  email: z.string().email("E-mail inválido"),
+  email: emailField(),
 })
 
 // Sempre retorna 200 para não vazar quais e-mails existem.
@@ -33,7 +37,14 @@ export async function POST(req: NextRequest) {
     const rl = await checkRateLimit(`forgot-password:${ip}`, RATE_LIMITS.forgotPassword.limit, RATE_LIMITS.forgotPassword.windowMs, req)
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
-    const body   = await req.json()
+    const body = await req.json()
+
+    // Limite por e-mail — aplicado ANTES da consulta ao banco para não revelar
+    // se o endereço está cadastrado: qualquer e-mail válido (existente ou não)
+    // consome a mesma cota e recebe o mesmo 429 ao esgotar.
+    const emailRl = await checkForgotPasswordEmailLimit(body?.email, req)
+    if (emailRl) return emailRl
+
     const parsed = Schema.safeParse(body)
     if (!parsed.success) return ok()  // não vaza info sobre e-mails
 
