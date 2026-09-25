@@ -4,7 +4,7 @@
 
 > **Estado: a sequência é NÃO ENSAIADO** (ninguém a percorreu; o ensaio é o D-2). As **sondas** da seção 3 foram validadas em 24/09/2026 segundo o registro do checklist principal (seção 0 e PRs #503, #505, #507 e #508); esta página **não as reexecutou** e não hospeda evidência nova. O que é **inferência minha** (derivada do código, não visto rodar) vem marcado **[INFERIDO]**, e a ordem dos passos públicos do D0 é **proposta minha, NÃO ENSAIADO**.
 >
-> **Donos** são os do checklist principal: **Roberto**, **técnico** ou **Roberto + técnico**. Os **papéis** da escala das 72 h (acompanhamento, disputa e rollback) foram decididos pelo Roberto em 25/09; o **horário** ainda falta (checklist, Infra 19 e lacuna 4). Nomes e contatos ficam no arquivo fora do repositório (este é público): este documento os deixa em branco de propósito.
+> **Donos** são os do checklist principal: **Roberto**, **técnico** ou **Roberto + técnico**. Os **papéis** e o **horário** da escala das 72 h (acompanhamento, disputa e rollback) foram decididos pelo Roberto em 25/09; falta só preencher os contatos (checklist, Infra 19 e lacuna 4). Nomes e contatos ficam no arquivo fora do repositório (este é público): este documento os deixa em branco de propósito.
 
 ---
 
@@ -136,7 +136,7 @@ Objetivo (§6): provar deploy, rollback e o smoke **enquanto a produção só te
 | 7 | **Selfie do KYC**: aplicar a decisão 5 (texto aprovado e `biometricConsentRequired` ligada, ou o caminho da selfie desligado). | Roberto + técnico | Estado escrito e testado no site e no app | Seg 7 |
 | 8 | **Registros de acesso** (`accessLogsEnabled`): ligar em produção (superadmin, com 2FA) e provar a 1ª linha depois de um login de teste, **ou** ajustar a Política. | Roberto + técnico | 1ª linha em `access_logs`, ou Política ajustada | Seg 8 |
 | 9 | **Comunicar ao time e aos testadores:** produção é outro banco; contas do staging não migram; onde reportar bug; ninguém testa com cartão real sem combinar. | Roberto | Mensagem enviada | §6; §5 lacuna 1 |
-| 10 | Escala das primeiras 72 h **publicada**: quem olha Sentry, Dashboard da Stripe, `suporte@` e `/admin/financeiro/repasses`, em que horário, e quem executa o rollback (hoje só o Roberto acessa a Vercel). | Roberto | Nomes e contatos de emergência em arquivo **fora do repositório**. **Papéis decididos em 25/09:** o acompanhamento (Sentry, Stripe, `suporte@`, repasses) e o rollback ficam com o Roberto, e a disputa com o outro fundador; o rollback com uma pessoa só é ponto único de falha, aceito no início, com a intenção de preparar uma segunda pessoa. **Falta o horário** de cada verificação e gravar o arquivo externo. | Infra 19; lacuna 4 |
+| 10 | Escala das primeiras 72 h **publicada**: quem olha Sentry, Dashboard da Stripe, `suporte@` e `/admin/financeiro/repasses`, em que horário, e quem executa o rollback (hoje só o Roberto acessa a Vercel). | Roberto | Nomes e contatos de emergência em arquivo **fora do repositório**. **Papéis decididos em 25/09:** o acompanhamento (Sentry, Stripe, `suporte@`, repasses) e o rollback ficam com o Roberto, e a disputa com o outro fundador; o rollback com uma pessoa só é ponto único de falha, aceito no início, com a intenção de preparar uma segunda pessoa. **Horário decidido:** das 08h às 22h (BRT), a cada 2 horas (8 verificações por dia); das 22h às 08h não há verificação ativa. O arquivo externo foi criado em 25/09; **falta preencher os contatos**. | Infra 19; lacuna 4 |
 | 11 | **1ª locação real assistida**, aqui **ou** de D+3 a D+7, conforme a decisão 1. | Roberto + técnico | Conforme `docs/guias/roteiro-teste-stripe-ponta-a-ponta.md` e Pag 10 | §6 |
 
 ## 6. D0 · quinta 01/10 · só passos de efeito público
@@ -197,6 +197,6 @@ O estado provisório fica **só aqui**. Os procedimentos dos outros documentos d
 
 1. **Escopo do D0 e cobrança** (decisão 1): define o passo 11 do smoke, o item 10 de D-2 e o item **a** do D0.
 2. ~~Número da tag~~ **Decidido em 25/09:** `web-v1.14.0`.
-3. **Escala e contatos das 72 h**: papéis decididos em 25/09 (item 10 de D-1); falta o **horário** e gravar nomes e contatos no arquivo fora do repositório.
+3. **Escala e contatos das 72 h**: papéis e horário decididos em 25/09 (item 10 de D-1); falta preencher os contatos no arquivo fora do repositório (criado em 25/09).
 4. ~~`noindex` no D0 ou na abertura por cidade~~ **Decidido em 25/09:** ligado no D0; desligar na abertura por cidade, depois das 72 h estáveis (item **d** do D0).
 5. **Quando abrir a cobrança.** O gate `billingEnabled` já está no ar (#510, `b17c1308`; padrão fechado com chave live, documentado no runbook, seção 3.1). Falta decidir o momento (decisão 1) e ensaiar o interruptor (ficha do runbook, linha 10). Com chave de teste ele não age.
