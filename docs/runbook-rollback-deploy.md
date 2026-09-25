@@ -193,7 +193,7 @@ O checklist pede "critério objetivo de rollback" (lacuna 4). Ponto de partida, 
 | Fila de e-mail parada | Cron `email-retry` sem 200 no painel; `flags.email` ≠ `ok` | 2 execuções sem 200 | Árvore A/B |
 | Cobrança duplicada ou split errado | Dashboard Stripe x reserva | Qualquer | Árvore C |
 
-**Quem decide e quem executa** (checklist, Infra 19: hoje só o Roberto acessa a Vercel; sem plantão definido): os **papéis** (quem decide, quem executa o rollback, quem é acionado) e os contatos de emergência vão até 30/09 para o arquivo **fora do repositório** do item 10 de D-1 de `docs/checklist-dia-d0.md`. O repositório é público: **não escreva aqui nome, telefone nem e-mail.**
+**Quem decide e quem executa** (checklist, Infra 19: hoje só o Roberto acessa a Vercel e é ele quem executa o rollback no início: ponto único de falha aceito em 25/09, com a intenção de preparar uma segunda pessoa; papéis decididos, horário ainda pendente): os **papéis** (quem decide, quem executa o rollback, quem é acionado) e os contatos de emergência vão até 30/09 para o arquivo **fora do repositório** do item 10 de D-1 de `docs/checklist-dia-d0.md`. O repositório é público: **não escreva aqui nome, telefone nem e-mail.**
 
 ---
 
