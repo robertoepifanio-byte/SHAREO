@@ -116,7 +116,7 @@ Fonte: jornada viva completa (deslogado) + auditorias.
 | **P1 (verificar)** | Sentry `beforeSend` scrubbing de PII — confirmar. (Arquitetura viu `scrubEvent` configurado; Segurança pediu confirmação do alcance.) | `sentry.*.config.ts` |
 
 > ✅ **Resolvido (fonte da verdade = código, decisão do fundador 2026-08-19) — DELETE de conta / LGPD art. 18.**
-> O código atual (`app/api/users/me/route.ts`) faz DELETE **atômico** com scrub de `cpfEncrypted`, `cnpjEncrypted`, `idDocumentUrl`, mensagens (soft-delete + placeholder), notas e chave PIX, com remoção best-effort dos arquivos de `id-docs`, preservando apenas o exigido pela retenção fiscal (CTN 173, 5 anos) com aviso claro ao titular. **Não há violação.** O item de backlog SEC-MAJ-06 (que dizia persistir selfie/KYC/comentários) está **desatualizado** — dar baixa. A auditoria de Negócio partiu do backlog velho; prevalece o código.
+> O código atual (`app/api/users/me/route.ts`) faz DELETE **atômico** com scrub de `cpfEncrypted`, `cnpjEncrypted`, `idDocumentUrl`, mensagens (soft-delete + placeholder), notas e chave PIX, com remoção best-effort dos arquivos de `id-docs`, preservando apenas o exigido pela retenção fiscal (CTN 173, 5 anos) com aviso claro ao titular. **Não há violação.** *(⚠️ Correção de 24/09/2026: a remoção dos arquivos de `id-docs` procurava o prefixo errado e nunca apagou nada; o conserto está implementado e aguarda verificação em staging, item 6 de `docs/checklist-go-live-2026-10-01.md`. O resto da conclusão, sobre os campos do banco, não foi reexaminado.)* O item de backlog SEC-MAJ-06 (que dizia persistir selfie/KYC/comentários) está **desatualizado** — dar baixa. A auditoria de Negócio partiu do backlog velho; prevalece o código.
 
 ### 4.2 Técnico / Arquitetura & Operação
 

@@ -17,6 +17,7 @@ import type { NextRequest } from "next/server"
 import { NextResponse }     from "next/server"
 import { resolveUserId }    from "@/lib/resolveUserId"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { uploadPrefix }      from "@/lib/supabase/user-storage-paths"
 import { getUploadLimits } from "@/lib/platform-config"
 import { isImageType, isMagicBytesValid, EXT_BY_MIME } from "@/lib/imageUpload"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
@@ -82,7 +83,8 @@ export async function POST(req: NextRequest) {
     // SEC-ALTO-06 / A2: extensão derivada do EXT_BY_MIME compartilhado (lib/imageUpload.ts),
     // NUNCA do nome do arquivo do cliente (evita salvar .php/.exe no bucket público).
     const ext      = EXT_BY_MIME[file.type.toLowerCase()] ?? "jpg"
-    const path     = `uploads/${userId}/${Date.now()}.${ext}`
+    // Prefixo compartilhado com a exclusão de conta (lib/supabase/user-storage-paths.ts).
+    const path     = `${uploadPrefix(userId)}/${Date.now()}.${ext}`
     const arrayBuf = await file.arrayBuffer()
     if (!(await isMagicBytesValid(arrayBuf))) {
       return NextResponse.json(

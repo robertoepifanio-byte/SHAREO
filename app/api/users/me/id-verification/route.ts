@@ -16,6 +16,7 @@ import { NextResponse }     from "next/server"
 import { resolveUserId }    from "@/lib/resolveUserId"
 import { prisma }           from "@/lib/prisma"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { idVerificationPrefix } from "@/lib/supabase/user-storage-paths"
 import { getUploadLimits, getBiometricConsentConfig } from "@/lib/platform-config"
 import { isImageType, isMagicBytesValid, EXT_BY_MIME } from "@/lib/imageUpload"
 import { BIOMETRIC_CONSENT_VERSION } from "@/lib/legal-config"
@@ -181,8 +182,10 @@ export async function POST(req: NextRequest) {
   // (evita salvar .php/.exe no bucket privado). Paridade com app/api/upload/route.ts.
   const docExt    = EXT_BY_MIME[docFile.type.toLowerCase()] ?? "jpg"
   const selfieExt = EXT_BY_MIME[selfie.type.toLowerCase()]  ?? "jpg"
-  const docPath   = `id-verification/${userId}/document-${now}.${docExt}`
-  const selfiePath = `id-verification/${userId}/selfie-${now}.${selfieExt}`
+  // Prefixo compartilhado com a exclusão de conta (lib/supabase/user-storage-paths.ts).
+  const prefixo    = idVerificationPrefix(userId)
+  const docPath    = `${prefixo}/document-${now}.${docExt}`
+  const selfiePath = `${prefixo}/selfie-${now}.${selfieExt}`
 
   const [docUpload, selfieUpload] = await Promise.all([
     supabase.storage.from("id-docs").upload(docPath,    docBuf,    { contentType: docFile.type }),

@@ -5,6 +5,7 @@ import { resolveUserId } from "@/lib/resolveUserId"
 import { UpdateProfileSchema } from "@/lib/validations/users"
 import { geocodeUserLocation } from "@/lib/geocodeUser"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { apagarArquivosDoUsuario } from "@/lib/supabase/purge-user-storage"
 import { logAccess, extractClientIp } from "@/lib/access-log"
 
 // Janela de retenção fiscal: 5 anos a partir da data da transação (ADR-017 / CTN art.173)
@@ -121,10 +122,12 @@ export async function DELETE(req: NextRequest) {
         },
       }),
 
-      // Texto livre escrito pelo usuário em avaliações
+      // Texto livre e foto das avaliações escritas pelo usuário. A foto (booking-photos,
+      // `uploads/<userId>`) é apagada do Storage logo abaixo: sem zerar `photoUrl`, a
+      // avaliação — que continua pública — passaria a exibir uma imagem quebrada.
       prisma.review.updateMany({
         where: { reviewerId: userId },
-        data:  { comment: null },
+        data:  { comment: null, photoUrl: null },
       }),
 
       // Mensagens privadas enviadas pelo usuário (content é obrigatório → placeholder + soft-delete)
@@ -151,19 +154,31 @@ export async function DELETE(req: NextRequest) {
       }),
     ])
 
-    // Best-effort: remover os documentos privados de identidade do Storage.
-    // Não bloqueia a resposta; falha de Storage não deve impedir a exclusão.
+    // Remove do Storage o que leva o userId no caminho: documento e selfie do KYC
+    // (id-docs) e os uploads dele (item-images e booking-photos, `uploads/<userId>`).
+    // PARCIAL por desenho: fotos de anúncio e de reserva/disputa ficam (retenção
+    // pendente, ver o cabeçalho de lib/supabase/purge-user-storage.ts).
+    // Não bloqueia a resposta: a conta já foi anonimizada, e falha de Storage não a
+    // desfaz. Mas NÃO é silenciosa — o que sobrou vai para o log de erro, com bucket
+    // e caminho, para dar pra apagar à mão.
     after(async () => {
       try {
-        const supabase = createAdminClient()
-        const { data: files } = await supabase.storage.from("id-docs").list(userId)
-        if (files && files.length > 0) {
-          await supabase.storage
-            .from("id-docs")
-            .remove(files.map((f) => `${userId}/${f.name}`))
+        const r = await apagarArquivosDoUsuario(createAdminClient(), userId)
+        if (r.falhas.length === 0) {
+          // Sucesso também deixa rastro: é a evidência para conferir a limpeza em staging.
+          // eslint-disable-next-line no-console
+          console.info("[DELETE /api/users/me] arquivos do usuário removidos do Storage:", JSON.stringify({ userId, apagados: r.apagados }))
+        } else {
+          console.error(
+            "[DELETE /api/users/me] arquivos do Storage NÃO removidos (LGPD art. 18):",
+            JSON.stringify({ userId, apagados: r.apagados, falhas: r.falhas }),
+          )
         }
       } catch (e) {
-        console.warn("[DELETE /api/users/me] limpeza id-docs falhou:", e instanceof Error ? e.message : e)
+        console.error(
+          "[DELETE /api/users/me] limpeza do Storage nem começou:",
+          JSON.stringify({ userId, erro: e instanceof Error ? e.message : String(e) }),
+        )
       }
     })
 
