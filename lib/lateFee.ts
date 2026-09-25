@@ -21,6 +21,7 @@ import { getStripe } from "@/lib/stripe"
 import { APP_URL } from "@/lib/app-url"
 import { sendLateFeeEmail } from "@/lib/email"
 import { STRIPE_CHARGE_EXPIRES_SECONDS } from "@/lib/platform-config"
+import { isBillingOpen } from "@/lib/payments/charge-guards"
 
 /** Data por extenso curta no fuso do Brasil — o servidor roda em UTC. */
 export function fmtData(d: Date): string {
@@ -160,7 +161,7 @@ export function diasParaCalculo(diasReais: number): number {
 
 export type ResultadoCobranca =
   | { emitida: true;  reemissao: boolean; valor: number; anterior: number | null }
-  | { emitida: false; motivo: "JA_QUITADA" | "COBRANCA_ATUAL_VIVA" | "SEM_VALOR" }
+  | { emitida: false; motivo: "JA_QUITADA" | "COBRANCA_ATUAL_VIVA" | "SEM_VALOR" | "COBRANCA_FECHADA" }
 
 /**
  * Cria a Checkout Session da multa pelo valor ATUAL, grava o vínculo e avisa o
@@ -206,6 +207,16 @@ export async function emitirCobrancaTaxaAtraso(
   if (temCobrancaViva(b, agora) && b.lateFeeAmount === valor) {
     return { emitida: false, motivo: "COBRANCA_ATUAL_VIVA" }
   }
+
+  // Cobrança real fechada (chave Stripe live sem `billingEnabled`): não cria
+  // sessão nem expira a anterior. Não é erro — o cron tenta de novo amanhã, e a
+  // dívida continua calculável quando o interruptor abrir.
+  //
+  // 🪤 Só a guarda 1 (interruptor) vale aqui; a de "proprietário com caminho de
+  // repasse" NÃO. A multa incide sobre uma locação que já foi paga (e passou
+  // pela guarda 2 no checkout), e recusá-la porque o dono, depois, ficou sem
+  // conta deixaria o locatário atrasado livre de uma dívida que é dele.
+  if (!(await isBillingOpen())) return { emitida: false, motivo: "COBRANCA_FECHADA" }
 
   const reemissao = b.lateFeeAmount != null
   const stripe    = getStripe()
