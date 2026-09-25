@@ -662,7 +662,7 @@ Staging na org corporativa `Shareo Marketplace de aluguel` (**PRO** desde 04/08,
 | `NEXTAUTH_SECRET` | Qualquer string | Secret staging | Secret produção — **diferente** |
 | `NEXT_PUBLIC_MAPBOX_TOKEN` | Token dev | Token staging | Token produção — quota separada |
 | `RESEND_API_KEY` | Opcional | Key staging | Key produção |
-| `STRIPE_SECRET_KEY` | `sk_test_...` | `sk_test_...` | `sk_live_...` — só após D4 |
+| `STRIPE_SECRET_KEY` | `sk_test_...` | `sk_test_...` | `sk_live_...` — só após D4. Com chave live a cobrança real nasce FECHADA: abrir em `/admin/financeiro` (`billingEnabled`, SUPERADMIN); implementado, aguardando verificação |
 | `CRON_SECRET` | *(em env/GitHub Secrets — nunca versionar; repo público)* | Staging value | Novo secret produção |
 | `ENCRYPTION_KEY` | 64 hex chars | Staging value | **Novo** — rotacionar antes de prod |
 

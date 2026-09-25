@@ -388,6 +388,33 @@ export async function getStripeConnectConfig(): Promise<StripeConnectConfig> {
   }
 }
 
+// ─── Interruptor de cobrança REAL (go-live 01/10/2026) ───────────────────────
+// Chave PlatformConfig.billingEnabled — editável pelo SuperAdmin em /admin/financeiro.
+//
+// Ausente ou banco fora do ar = FECHADO. O default é o mesmo das outras flags,
+// mas aqui ele é carga de segurança: errar significa cobrar dinheiro real.
+// Só vale com chave Stripe live — ver lib/payments/charge-guards.ts.
+
+export interface BillingConfig {
+  enabled: boolean // chave billingEnabled ("true"/"false")
+}
+
+const DEFAULT_BILLING: BillingConfig = { enabled: false }
+
+/**
+ * Lê o interruptor de cobrança real. Nunca lança exceção; falha de banco = fechado.
+ * Só a string exata "true" abre — "True", "1" ou " true" não abrem, e o PATCH
+ * de /api/admin/platform-config recusa qualquer valor fora de "true"/"false".
+ */
+export async function getBillingConfig(): Promise<BillingConfig> {
+  try {
+    const map = await loadConfig()
+    return { enabled: map.billingEnabled === "true" }
+  } catch {
+    return DEFAULT_BILLING
+  }
+}
+
 const DEFAULT_WEEKLY_MULTIPLIER  = 3   // preço semanal = 3× diária
 const DEFAULT_MONTHLY_MULTIPLIER = 15  // preço mensal  = 15× diária
 

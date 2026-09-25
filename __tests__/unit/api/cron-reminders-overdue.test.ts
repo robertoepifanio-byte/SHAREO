@@ -85,6 +85,16 @@ function mockQueries({ overdue = [] as unknown[], multasEmAberto = [] as unknown
     .mockResolvedValueOnce(multasEmAberto) // multasEmAberto
 }
 
+// Chave de TESTE = cobrança aberta (interruptor de lib/payments/charge-guards.ts).
+// Sem isto, emitirCobrancaTaxaAtraso voltaria COBRANCA_FECHADA e este arquivo
+// deixaria de exercitar o caminho de reemissão que o comentário do mock supõe.
+const CHAVE_ORIGINAL = process.env.STRIPE_SECRET_KEY
+beforeAll(() => { process.env.STRIPE_SECRET_KEY = "sk_test_jest" })
+afterAll(() => {
+  if (CHAVE_ORIGINAL === undefined) delete process.env.STRIPE_SECRET_KEY
+  else process.env.STRIPE_SECRET_KEY = CHAVE_ORIGINAL
+})
+
 beforeEach(() => {
   jest.clearAllMocks()
   jest.useFakeTimers().setSystemTime(new Date("2026-09-13T11:00:00Z"))
@@ -92,6 +102,45 @@ beforeEach(() => {
 
 afterEach(() => {
   jest.useRealTimers()
+})
+
+describe("cron de lembretes — cobrança real fechada não some em silêncio", () => {
+  it("🪤 chave LIVE sem billingEnabled: a multa NÃO sai, mas o cron conta e loga como adiada", async () => {
+    const warn = jest.spyOn(console, "warn").mockImplementation(() => undefined)
+    // O mock de prisma deste arquivo não tem `platformConfig`: a leitura do
+    // interruptor cai no catch de getBillingConfig e resulta em FECHADO.
+    process.env.STRIPE_SECRET_KEY = "sk_live_jest"
+    try {
+      mockQueries({
+        overdue: [{ ...BOOKING_BASE, lateFeePaymentIntentId: null }],
+      })
+
+      const res  = await GET(req())
+      const body = await res.json()
+
+      expect(body.adiadas).toBe(1)
+      expect(body.adiadasIds).toEqual([`late_fee:${BOOKING_BASE.id}`])
+      expect(body.ids).not.toContainEqual(expect.stringContaining("late_fee"))
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining("NÃO emitida(s): cobrança real fechada"),
+        { adiadas: [`late_fee:${BOOKING_BASE.id}`] },
+      )
+    } finally {
+      process.env.STRIPE_SECRET_KEY = "sk_test_jest"
+      warn.mockRestore()
+    }
+  })
+
+  it("chave de TESTE: emite a multa e não marca nada como adiada", async () => {
+    mockQueries({
+      overdue: [{ ...BOOKING_BASE, lateFeePaymentIntentId: null }],
+    })
+
+    const body = await (await GET(req())).json()
+
+    expect(body.adiadas).toBe(0)
+    expect(body.ids).toContainEqual(expect.stringContaining("late_fee"))
+  })
 })
 
 describe("cron de lembretes — não avisa atraso de quem já pagou a multa", () => {

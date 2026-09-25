@@ -17,10 +17,10 @@ const PatchSchema = z.object({
 })
 
 /**
- * Validadores de faixa por chave conhecida.
+ * Validadores por chave conhecida (faixa numérica ou valores permitidos).
  * Retorna string de erro se inválido, undefined se ok.
  */
-const KEY_RANGE_VALIDATORS: Record<string, (v: string) => string | undefined> = {
+const KEY_VALIDATORS: Record<string, (v: string) => string | undefined> = {
   autoCancelPendingHours: (v) => {
     const n = parseInt(v, 10)
     // String(n) !== v.trim() rejeita decimais ("12.5") e strings com lixo ("12abc")
@@ -29,6 +29,13 @@ const KEY_RANGE_VALIDATORS: Record<string, (v: string) => string | undefined> = 
       return `autoCancelPendingHours deve ser um inteiro entre ${AUTO_CANCEL_PENDING_HOURS_MIN} e ${AUTO_CANCEL_PENDING_HOURS_MAX}.`
     return undefined
   },
+  // Interruptor da cobrança real. getBillingConfig() só abre com a string exata
+  // "true"; sem esta trava, "True" ou "1" gravariam com sucesso e o admin
+  // acharia que abriu — a cobrança continuaria fechada, sem nenhum aviso.
+  billingEnabled: (v) =>
+    v === "true" || v === "false"
+      ? undefined
+      : 'billingEnabled deve ser exatamente "true" ou "false".',
 }
 
 export async function GET() {
@@ -64,10 +71,10 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Dados inválidos", details: parsed.error.flatten() }, { status: 400 })
   }
 
-  // Valida faixas para chaves conhecidas com restrição numérica.
-  const rangeError = KEY_RANGE_VALIDATORS[key]?.(parsed.data.value)
-  if (rangeError) {
-    return NextResponse.json({ error: rangeError }, { status: 422 })
+  // Valida o valor das chaves conhecidas (faixa numérica ou valores permitidos).
+  const valueError = KEY_VALIDATORS[key]?.(parsed.data.value)
+  if (valueError) {
+    return NextResponse.json({ error: valueError }, { status: 422 })
   }
 
   const config = await prisma.platformConfig.upsert({
