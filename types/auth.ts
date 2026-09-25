@@ -36,5 +36,12 @@ declare module "next-auth/jwt" {
     mfa?: boolean
     /** epoch (s) fixado no login — invalidação de sessão (SEC-CRIT-04) */
     loginAt?: number
+    /**
+     * epoch (s) da última verificação periódica de deletedAt/isActive no banco
+     * (SEC-CRIT-04c). Gravado pelo jwt callback; atualizado a cada
+     * PERIODIC_CHECK_INTERVAL_S. Reduz a janela de sessão web aberta para uma
+     * conta excluída de 30d para no máximo 5 min (sem depender do Redis).
+     */
+    checkedAt?: number
   }
 }
