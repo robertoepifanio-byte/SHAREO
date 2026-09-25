@@ -110,6 +110,9 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL_STAGING }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY_STAGING }}
           NEXT_PUBLIC_NOINDEX: "true"
+          # Commit exposto em /api/health (next.config.ts). Em PR, github.sha é o
+          # merge sintético, que não existe em branch nenhuma: usar o head do PR.
+          BUILD_COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           # DSN inlinado também no preview (o staging já fazia isso na linha ~214).
           # Sem isto o Sentry.init roda sem DSN e os eventos são capturados mas
           # nunca entregues — previews ficavam sem observabilidade. Sem
@@ -211,6 +214,7 @@ jobs:
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          BUILD_COMMIT_SHA: ${{ github.sha }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL_STAGING }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY_STAGING }}
           DATABASE_URL: ${{ secrets.DATABASE_URL_STAGING }}
@@ -271,7 +275,13 @@ jobs:
             echo "Health check falhou com status $STATUS"
             exit 1
           fi
-          echo "Health check OK: $STATUS"
+          # O alias pode seguir no deployment anterior: 200 sozinho não prova que
+          # ESTE commit está no ar.
+          if ! printf '%s' "$RESPONSE" | grep -q '"commit":"${{ github.sha }}"'; then
+            echo "Health 200, mas o staging não serve ${{ github.sha }}"
+            exit 1
+          fi
+          echo "Health check OK: $STATUS, commit ${{ github.sha }}"
 
   # ─────────────────────────────────────────────────────────────────
   # JOB 3: E2E Staging — regressão contínua após cada deploy na main
@@ -442,6 +452,7 @@ jobs:
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_PROD }}
+          BUILD_COMMIT_SHA: ${{ github.sha }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL_PROD }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY_PROD }}
           DATABASE_URL: ${{ secrets.DATABASE_URL_PROD }}
@@ -508,12 +519,12 @@ jobs:
             RESP=$(curl -s --max-time 20 -w '\n%{http_code}' "$URL" || true)
             STATUS=$(printf '%s' "$RESP" | tail -n1)
             echo "tentativa $i: HTTP $STATUS"
-            if [ "$STATUS" = "200" ] && printf '%s' "$RESP" | grep -q '"status":"healthy"'; then
-              echo "Produção saudável."
+            if [ "$STATUS" = "200" ] && printf '%s' "$RESP" | grep -q '"status":"healthy"' && printf '%s' "$RESP" | grep -q '"commit":"${{ github.sha }}"'; then
+              echo "Produção saudável, servindo ${{ github.sha }}."
               exit 0
             fi
             sleep 15
           done
-          echo "Health check falhou: $URL não respondeu 200 com status healthy em 6 tentativas."
+          echo "Health check falhou: $URL não respondeu 200, healthy e commit ${{ github.sha }} em 6 tentativas."
           printf '%s\n' "$RESP" | head -c 200
           exit 1

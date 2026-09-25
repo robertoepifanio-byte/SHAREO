@@ -6,8 +6,11 @@ import pkg from "../package.json"
  */
 export const APP_VERSION = pkg.version
 
-/** SHA curto do commit do build (injetado pelo Vercel) ou "local" em dev. */
-export const BUILD_SHA = (process.env.VERCEL_GIT_COMMIT_SHA || "local").slice(0, 7)
+/** SHA completo do commit do build (inlinado por next.config.ts) ou "local". */
+export const BUILD_COMMIT = process.env.BUILD_COMMIT_SHA || "local"
+
+/** SHA curto do commit do build ou "local" em dev. */
+export const BUILD_SHA = BUILD_COMMIT.slice(0, 7)
 
 /** Ambiente do build: "production" (staging do ShareO), "preview" ou "local". */
 export const BUILD_ENV = process.env.VERCEL_ENV || "local"

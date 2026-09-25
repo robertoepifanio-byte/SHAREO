@@ -6,6 +6,7 @@ import { isEmailProviderConfigured } from "@/lib/email"
 import { cryptoKeyStatus } from "@/lib/crypto"
 import { upstashStatus, upstashNamespace } from "@/lib/upstash"
 import { codigoDeFalha, codigoDeFalhaStorage } from "@/lib/health/failure-codes"
+import { APP_VERSION, BUILD_COMMIT } from "@/lib/version"
 
 export const runtime    = "nodejs"
 export const dynamic    = "force-dynamic"
@@ -95,6 +96,8 @@ export async function GET() {
       status:    allOk ? "healthy" : "degraded",
       timestamp: new Date().toISOString(),
       checks,
+      // Commit que ESTE artefato serve; o deploy.yml o confere após cada deploy.
+      build: { version: APP_VERSION, commit: BUILD_COMMIT },
       // Flag inlinada em build-time. Exposta aqui porque é a única forma barata
       // de conferir o valor no ARTEFATO DEPLOYADO — marcada como Sensitive no
       // Vercel, ela chega vazia no build do staging (que usa `vercel pull`) e o
