@@ -111,13 +111,19 @@ describe("DicasScreen — Dicas para Anfitriões", () => {
   // ── Destaques das dicas ──────────────────────────────────────────────────
   it("exibe o destaque da dica 01 verbatim", () => {
     expect(
-      screen.getByText("💡 Itens com boas fotos recebem 3× mais visualizações.")
+      screen.getByText("💡 Boas fotos ajudam o locatário a decidir com mais confiança.")
     ).toBeTruthy()
   })
 
   it("exibe o destaque da dica 04 verbatim", () => {
     expect(
-      screen.getByText("💡 Anfitriões que respondem em até 1h têm 2× mais reservas confirmadas.")
+      screen.getByText("💡 Depois das primeiras reservas, seu tempo e sua taxa de resposta aparecem no anúncio.")
+    ).toBeTruthy()
+  })
+
+  it("exibe o destaque da dica 05 verbatim", () => {
+    expect(
+      screen.getByText("💡 A nota média das suas avaliações aparece nos seus anúncios.")
     ).toBeTruthy()
   })
 

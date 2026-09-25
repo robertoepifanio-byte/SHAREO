@@ -48,7 +48,7 @@ export default async function EstimativaPage() {
         <div className="mt-8 rounded-xl border border-border bg-muted/40 px-5 py-4 flex items-center justify-between gap-4">
           <div>
             <p className="text-sm font-semibold text-foreground">Quer maximizar seus ganhos?</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Veja as dicas de quem já aluga com sucesso no ShareO.</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Veja dicas para anunciar melhor no ShareO.</p>
           </div>
           <Link
             href="/anunciar/dicas"

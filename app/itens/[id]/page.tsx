@@ -637,8 +637,8 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
                 <ul className="space-y-2">
                   {[
                     "Cancelamento com reembolso de 100% — menos a taxa do pagamento, se você cancelar",
-                    "Item protegido durante a locação",
-                    "Suporte ShareO disponível 7 dias por semana",
+                    "Disputa analisada pela equipe ShareO se algo der errado",
+                    "Suporte ShareO de segunda a sexta, das 09h às 17h",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2 text-xs text-foreground">
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#007B3C" strokeWidth="2.5" className="mt-0.5 shrink-0" aria-hidden="true">

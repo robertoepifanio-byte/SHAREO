@@ -97,7 +97,7 @@ export function AppFooter() {
             </Link>
             <Link href="/seguranca" className="flex items-center gap-1.5 rounded-md border border-white/20 px-3 py-1 text-xs font-semibold text-white hover:border-white/40 transition-colors">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
-              Usuários verificados
+              Verificação de identidade
             </Link>
             <span className="flex items-center gap-1.5 rounded-md border border-white/20 px-3 py-1 text-xs font-semibold text-white">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 22c-4-2-8-6-8-11V5l8-3 8 3v6c0 5-4 9-8 11z"/></svg>

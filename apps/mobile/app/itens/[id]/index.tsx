@@ -1165,9 +1165,9 @@ export default function ItemDetailScreen() {
             <View style={[s.trustBox, { borderColor: tokens.green, backgroundColor: themeMode === "dark" ? "#0A2A1A" : "#F0FDF4" }]}>
               <Text style={[s.trustBoxTitle, { color: tokens.green }]}>🔒 Sua locação está protegida</Text>
               {[
-                "Reembolso integral se você cancelar",
-                "Item protegido durante a locação",
-                "Suporte ShareO disponível 7 dias por semana",
+                "Cancelamento com reembolso de 100% — menos a taxa do pagamento, se você cancelar",
+                "Disputa analisada pela equipe ShareO se algo der errado",
+                "Suporte ShareO de segunda a sexta, das 09h às 17h",
               ].map((line) => (
                 <View key={line} style={s.trustBoxRow}>
                   <Text style={{ color: tokens.green, fontSize: 13 }}>✓</Text>

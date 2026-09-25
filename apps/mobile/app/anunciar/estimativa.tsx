@@ -290,7 +290,7 @@ export default function EstimativaScreen() {
         <View style={s.tipsText}>
           <Text style={[s.tipsTitle, { color: tokens.text }]}>Quer maximizar seus ganhos?</Text>
           <Text style={[s.tipsSub, { color: tokens.muted }]}>
-            Veja as dicas de quem já aluga com sucesso no ShareO.
+            Veja dicas para anunciar melhor no ShareO.
           </Text>
         </View>
         <TouchableOpacity

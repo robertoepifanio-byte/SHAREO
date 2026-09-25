@@ -8,10 +8,11 @@
 //   - 3 seções: Central de Ajuda, Atendimento, Segurança
 //   - itens de cada seção (label + description) verbatim
 //   - botões CTA verbatim
-//   - navegação dos botões usa router.push (não Linking)
+//   - "Central de Ajuda" navega via router.push; "Escrever para o suporte" abre o mailto via Linking
 //   - botão Voltar chama router.back()
 
 import React from "react"
+import { Linking } from "react-native"
 import { render, screen, fireEvent } from "@testing-library/react-native"
 import { router } from "expo-router"
 
@@ -119,22 +120,22 @@ describe("SuporteScreen — seção Atendimento verbatim", () => {
     expect(screen.getByText("Atendimento")).toBeTruthy()
   })
 
-  it("exibe item 'Chat integrado' verbatim", () => {
+  it("exibe item 'Chat da reserva' verbatim (o chat que existe é entre locatário e proprietário)", () => {
     wrap(<SuporteScreen />)
-    expect(screen.getByText(/Chat integrado/)).toBeTruthy()
-    expect(screen.getByText(/Suporte direto dentro da plataforma\./)).toBeTruthy()
+    expect(screen.getByText(/Chat da reserva/)).toBeTruthy()
+    expect(screen.getByText(/Converse com o proprietário ou o locatário pelo chat da própria reserva\./)).toBeTruthy()
   })
 
-  it("exibe item 'E-mail' verbatim", () => {
+  it("exibe item 'E-mail' verbatim, com o endereço", () => {
     wrap(<SuporteScreen />)
     expect(screen.getByText(/E-mail/)).toBeTruthy()
-    expect(screen.getByText(/Contato para questões específicas\./)).toBeTruthy()
+    expect(screen.getByText(/suporte@shareo\.com\.br, para questões específicas\./)).toBeTruthy()
   })
 
   it("exibe item 'Disponibilidade' verbatim", () => {
     wrap(<SuporteScreen />)
     expect(screen.getByText(/Disponibilidade/)).toBeTruthy()
-    expect(screen.getByText(/Equipe ativa 7 dias por semana para resolver problemas\./)).toBeTruthy()
+    expect(screen.getByText(/Atendimento de segunda a sexta, das 09h às 17h\./)).toBeTruthy()
   })
 
 })
@@ -171,10 +172,10 @@ describe("SuporteScreen — botões CTA verbatim", () => {
     ).toBeTruthy()
   })
 
-  it("exibe botão 'Abrir Chat de Suporte →' acessível", () => {
+  it("exibe botão 'Escrever para o suporte →' acessível", () => {
     wrap(<SuporteScreen />)
     expect(
-      screen.getByRole("button", { name: /Abrir Chat de Suporte →/i })
+      screen.getByRole("button", { name: /Escrever para o suporte →/i })
     ).toBeTruthy()
   })
 
@@ -185,10 +186,10 @@ describe("SuporteScreen — botões CTA verbatim", () => {
     // Garantia de que NÃO usa Linking (seria regressão para navegação nativa)
   })
 
-  it("botão 'Abrir Chat de Suporte →' navega via router.push('/mensagens') — não via Linking", () => {
+  it("botão 'Escrever para o suporte →' abre o e-mail do suporte via Linking (mailto)", () => {
     wrap(<SuporteScreen />)
-    fireEvent.press(screen.getByRole("button", { name: /Abrir Chat de Suporte →/i }))
-    expect(router.push).toHaveBeenCalledWith("/mensagens")
+    fireEvent.press(screen.getByRole("button", { name: /Escrever para o suporte →/i }))
+    expect(Linking.openURL).toHaveBeenCalledWith("mailto:suporte@shareo.com.br")
   })
 
 })

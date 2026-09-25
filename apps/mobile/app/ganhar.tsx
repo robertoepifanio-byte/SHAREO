@@ -27,8 +27,6 @@ const CATEGORY_DATA: Record<string, { name: string; avgRetailPrice: number; dail
   construcao:    { name: "Construção",        avgRetailPrice: 900,   dailyRate: 45  },
   esporte:       { name: "Esporte/Lazer",     avgRetailPrice: 1200,  dailyRate: 60  },
   festas:        { name: "Festas & Eventos",  avgRetailPrice: 1600,  dailyRate: 80  },
-  veiculos:      { name: "Veículos & Motos",  avgRetailPrice: 8000,  dailyRate: 150 },
-  bebes:         { name: "Bebês & Crianças",  avgRetailPrice: 800,   dailyRate: 40  },
 }
 
 const DAYS_OPTIONS = [
@@ -87,7 +85,7 @@ export default function GanharScreen() {
     },
     {
       q: "E se o item for danificado?",
-      a: "O locatário passa por verificação de identidade antes de alugar. Caso haja dano, você abre uma disputa na plataforma com as fotos de check-in e check-out como evidência. A equipe ShareO medeia o caso em até 3 dias úteis.",
+      a: "Ao anunciar, você pode exigir que o locatário tenha a identidade verificada. Caso haja dano, você abre uma disputa na plataforma com as fotos de check-in e check-out como evidência, e a equipe ShareO analisa o caso.",
     },
   ]
 
@@ -271,7 +269,7 @@ export default function GanharScreen() {
               ]}
             >
               <Text style={[s.recoveryTitle, { color: tokens.success }]}>
-                🎯 Em {Math.ceil(100 / returnVsRetail)} meses você recupera o valor do item!
+                🎯 Nesse ritmo, você recuperaria o valor do item em {Math.ceil(100 / returnVsRetail)} meses
               </Text>
               <Text style={[s.recoverySubtitle, { color: tokens.muted }]}>
                 Retorno de ~{returnVsRetail}% do valor de compra por mês
@@ -335,29 +333,7 @@ export default function GanharScreen() {
           </View>
         </View>
 
-        {/* ── Depoimento — verbatim de page.tsx linhas 39–54 ─────────────── */}
-        <View
-          style={[
-            s.testimonialCard,
-            { borderColor: tokens.border, backgroundColor: tokens.surface },
-          ]}
-        >
-          <View style={s.testimonialInner}>
-            <View style={[s.testimonialAvatar, { backgroundColor: tokens.navy }]}>
-              <Text style={s.testimonialAvatarText}>M</Text>
-            </View>
-            <View style={s.testimonialTexts}>
-              <Text style={[s.testimonialQuote, { color: tokens.text }]}>
-                {"“"}Anunciei minha furadeira e câmera fotográfica. Em 2 meses já paguei metade do valor que gastei nelas.{"”"}
-              </Text>
-              <Text style={[s.testimonialAttrib, { color: tokens.muted }]}>
-                — Marcelo S., Porto Alegre/RS
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* ── FAQ — verbatim de page.tsx linhas 56–88 ─────────────────────── */}
+        {/* ── FAQ — transcrito de app/ganhar/page.tsx ─────────────────────── */}
         {/* Adaptação: <details>/<summary> HTML → TouchableOpacity + useState  */}
         <View style={s.faqSection}>
           {FAQ_ITEMS.map((item, idx) => {
@@ -658,32 +634,6 @@ const s = StyleSheet.create({
   compColValue:          { fontSize: 11, textAlign: "center" },
   compColTitleHighlight: { fontSize: 13, fontWeight: "700", textAlign: "center" },
   compColValueHighlight: { fontSize: 11, fontWeight: "600", textAlign: "center" },
-
-  // ── Depoimento ───────────────────────────────────────────────────────────────
-  testimonialCard: {
-    marginHorizontal: 16,
-    marginBottom:     16,
-    borderRadius:     12,
-    borderWidth:      1,
-    padding:          20,
-    ...Platform.select({
-      ios:     { shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 3 },
-      android: { elevation: 1 },
-    }),
-  },
-  testimonialInner: { flexDirection: "row", gap: 12 },
-  testimonialAvatar: {
-    width:          40,
-    height:         40,
-    borderRadius:   20,
-    alignItems:     "center",
-    justifyContent: "center",
-    flexShrink:     0,
-  },
-  testimonialAvatarText: { color: "#FFFFFF", fontWeight: "700", fontSize: 16 },
-  testimonialTexts:      { flex: 1 },
-  testimonialQuote:      { fontSize: 14, lineHeight: 20 },
-  testimonialAttrib:     { fontSize: 12, marginTop: 4 },
 
   // ── FAQ ──────────────────────────────────────────────────────────────────────
   faqSection: {

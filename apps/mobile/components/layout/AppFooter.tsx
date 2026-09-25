@@ -230,15 +230,15 @@ export function AppFooter() {
             <Text style={s.badgeText}>Pagamento seguro</Text>
           </TouchableOpacity>
 
-          {/* Usuários verificados → /seguranca */}
+          {/* Verificação de identidade → /seguranca */}
           <TouchableOpacity
             onPress={() => openLink("/seguranca")}
             style={s.badge}
             accessibilityRole="link"
-            accessibilityLabel="Usuários verificados"
+            accessibilityLabel="Verificação de identidade"
           >
             <CheckIcon />
-            <Text style={s.badgeText}>Usuários verificados</Text>
+            <Text style={s.badgeText}>Verificação de identidade</Text>
           </TouchableOpacity>
 
           {/* Economia circular — <span> (sem link) no site */}

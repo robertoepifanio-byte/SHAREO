@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Platform,
+  Linking,
 } from "react-native"
 import { router } from "expo-router"
 import { useTheme } from "@/lib/theme"
@@ -27,9 +28,9 @@ const SECTIONS = [
     icon:  "💬",
     title: "Atendimento",
     items: [
-      { label: "Chat integrado",  description: "Suporte direto dentro da plataforma." },
-      { label: "E-mail",          description: "Contato para questões específicas." },
-      { label: "Disponibilidade", description: "Equipe ativa 7 dias por semana para resolver problemas." },
+      { label: "Chat da reserva", description: "Converse com o proprietário ou o locatário pelo chat da própria reserva." },
+      { label: "E-mail",          description: "suporte@shareo.com.br, para questões específicas." },
+      { label: "Disponibilidade", description: "Atendimento de segunda a sexta, das 09h às 17h." },
     ],
   },
   {
@@ -123,8 +124,7 @@ export default function SuporteScreen() {
         </View>
 
         {/* ── Botões CTA — verbatim de page.tsx linhas 86-99 ── */}
-        {/* /ajuda      → router.push("/ajuda")      (tela nativa: app/ajuda.tsx)      */}
-        {/* /mensagens  → router.push("/mensagens")  (tela nativa: app/mensagens/)     */}
+        {/* /ajuda → router.push (tela nativa: app/ajuda.tsx); o <a mailto> do site vira Linking.openURL */}
         <View style={s.ctaSection}>
           <TouchableOpacity
             style={[
@@ -145,11 +145,11 @@ export default function SuporteScreen() {
 
           <TouchableOpacity
             style={[s.ctaBtnPrimary, { backgroundColor: tokens.green }]}
-            onPress={() => router.push("/mensagens" as never)}
+            onPress={() => Linking.openURL("mailto:suporte@shareo.com.br")}
             accessibilityRole="button"
-            accessibilityLabel="Abrir Chat de Suporte →"
+            accessibilityLabel="Escrever para o suporte →"
           >
-            <Text style={s.ctaBtnPrimaryText}>Abrir Chat de Suporte →</Text>
+            <Text style={s.ctaBtnPrimaryText}>Escrever para o suporte →</Text>
           </TouchableOpacity>
         </View>
 

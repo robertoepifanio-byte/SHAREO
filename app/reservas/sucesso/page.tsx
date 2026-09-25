@@ -170,7 +170,7 @@ export default async function BookingSuccessPage({ searchParams }: Props) {
             <ul className="space-y-1.5 text-xs text-foreground">
               {[
                 "Cancelamento com reembolso de 100% — menos a taxa do pagamento, se você cancelar",
-                "Suporte ShareO disponível 7 dias por semana",
+                "Suporte ShareO de segunda a sexta, das 09h às 17h",
               ].map((item) => (
                 <li key={item} className="flex items-start gap-2">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#007B3C" strokeWidth="2.5" className="mt-0.5 shrink-0" aria-hidden="true">
