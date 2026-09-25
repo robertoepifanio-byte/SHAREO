@@ -9,6 +9,7 @@
  */
 import {
   apagarArquivosDoUsuario,
+  apagarPathsExplicitos,
   LOTE_REMOCAO,
   PAGINA_LISTAGEM,
   type StorageClient,
@@ -377,5 +378,105 @@ describe("apagarArquivosDoUsuario — falha parcial nunca fica escondida", () =>
 
     expect(r.falhas[0]).toMatchObject({ etapa: "list", sobraram: [`uploads/${USER}/antigo/`] })
     expect(fs.restantes("item-images")).toEqual([`uploads/${USER}/antigo/2.jpg`])
+  })
+})
+
+// ─── alvosExtras ─────────────────────────────────────────────────────────────
+
+describe("apagarArquivosDoUsuario — alvosExtras (fotos de anúncio)", () => {
+  it("🪤 apaga pastas de itens do titular passadas como alvosExtras", async () => {
+    const fs = fakeStorage({
+      "item-images": [
+        `uploads/${USER}/avatar.jpg`,
+        `item-abc/foto1.jpg`,
+        `item-abc/foto2.jpg`,
+        `item-xyz/capa.jpg`,
+        `outro-user/foto.jpg`, // pertence a outro usuário, não deve ser apagado
+      ],
+    })
+
+    const r = await apagarArquivosDoUsuario(fs.client, USER, [
+      { bucket: "item-images", prefixo: "item-abc" },
+      { bucket: "item-images", prefixo: "item-xyz" },
+    ])
+
+    expect(fs.restantes("item-images")).toEqual(["outro-user/foto.jpg"])
+    expect(r.falhas).toEqual([])
+    expect(r.apagados).toBe(4) // avatar + item-abc×2 + item-xyz×1
+  })
+
+  it("sem alvosExtras: comportamento idêntico ao original (compatibilidade retroativa)", async () => {
+    const fs = fakeStorage({ "item-images": [`uploads/${USER}/avatar.jpg`, "item-abc/foto.jpg"] })
+
+    const r = await apagarArquivosDoUsuario(fs.client, USER)
+
+    // Sem alvosExtras, item-abc NÃO deve ser apagado.
+    expect(fs.restantes("item-images")).toEqual(["item-abc/foto.jpg"])
+    expect(r.apagados).toBe(1)
+  })
+
+  it("alvosExtras vazio é idêntico a omitir o parâmetro", async () => {
+    const fs = fakeStorage({ "item-images": [`uploads/${USER}/1.jpg`] })
+    const r = await apagarArquivosDoUsuario(fs.client, USER, [])
+    expect(r).toEqual({ apagados: 1, falhas: [] })
+  })
+})
+
+// ─── apagarPathsExplicitos ───────────────────────────────────────────────────
+
+describe("apagarPathsExplicitos — fotos de check-in/out da reserva", () => {
+  it("🪤 apaga caminhos explícitos no bucket informado", async () => {
+    const paths = [
+      `bookings/b1/checkin/100-${USER}.jpg`,
+      `bookings/b2/checkout/200-${USER}.jpg`,
+    ]
+    const fs = fakeStorage({ "booking-photos": [...paths, `bookings/b3/checkin/300-${OUTRO}.jpg`] })
+
+    const r = await apagarPathsExplicitos(fs.client, "booking-photos", paths)
+
+    expect(r).toEqual({ apagados: 2, falhas: [] })
+    expect(fs.restantes("booking-photos")).toEqual([`bookings/b3/checkin/300-${OUTRO}.jpg`])
+  })
+
+  it("lista vazia retorna imediatamente sem chamar o Storage", async () => {
+    const fs = fakeStorage({ "booking-photos": ["bookings/b1/checkin/x.jpg"] })
+    const r = await apagarPathsExplicitos(fs.client, "booking-photos", [])
+    expect(r).toEqual({ apagados: 0, falhas: [] })
+    expect(fs.removeCalls).toHaveLength(0)
+  })
+
+  it("remove em lotes de LOTE_REMOCAO", async () => {
+    const paths = Array.from({ length: LOTE_REMOCAO + 10 }, (_, i) => `bookings/b${i}/checkin/${i}.jpg`)
+    const fs = fakeStorage({ "booking-photos": paths })
+
+    await apagarPathsExplicitos(fs.client, "booking-photos", paths)
+
+    expect(fs.removeCalls).toHaveLength(2)
+    expect(fs.removeCalls[0].paths).toHaveLength(LOTE_REMOCAO)
+    expect(fs.removeCalls[1].paths).toHaveLength(10)
+    expect(fs.restantes("booking-photos")).toHaveLength(0)
+  })
+
+  it("🪤 falha num lote reporta os caminhos que sobraram e não lança", async () => {
+    const paths = [`bookings/b1/checkin/${USER}.jpg`, `bookings/b2/checkout/${USER}.jpg`]
+    const fs = fakeStorage(
+      { "booking-photos": paths },
+      { removeErro: (b) => (b === "booking-photos" ? "timeout" : undefined) },
+    )
+    const r = await apagarPathsExplicitos(fs.client, "booking-photos", paths)
+
+    expect(r.falhas).toHaveLength(1)
+    expect(r.falhas[0]).toMatchObject({ bucket: "booking-photos", etapa: "remove", erro: "timeout", sobraram: paths })
+    expect(r.apagados).toBe(0)
+  })
+
+  it("🪤 `storage.from()` que lança: falha registrada, função não lança", async () => {
+    const paths = ["bookings/b1/checkin/x.jpg"]
+    const client: StorageClient = {
+      storage: { from: () => { throw new Error("sem config") } },
+    }
+    const r = await apagarPathsExplicitos(client, "booking-photos", paths)
+    expect(r.falhas).toHaveLength(1)
+    expect(r.falhas[0]).toMatchObject({ etapa: "remove", erro: "sem config", sobraram: paths })
   })
 })

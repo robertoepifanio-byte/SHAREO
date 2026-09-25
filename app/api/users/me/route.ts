@@ -1,11 +1,14 @@
 import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
+import * as Sentry from "@sentry/nextjs"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
 import { UpdateProfileSchema } from "@/lib/validations/users"
 import { geocodeUserLocation } from "@/lib/geocodeUser"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { apagarArquivosDoUsuario } from "@/lib/supabase/purge-user-storage"
+import { apagarArquivosDoUsuario, apagarPathsExplicitos } from "@/lib/supabase/purge-user-storage"
+import { itemImagesPrefixo, storagePathFromUrl } from "@/lib/supabase/user-storage-paths"
+import { invalidateUserSessions } from "@/lib/redis-admin-blocklist"
 import { logAccess, extractClientIp } from "@/lib/access-log"
 
 // Janela de retenção fiscal: 5 anos a partir da data da transação (ADR-017 / CTN art.173)
@@ -154,31 +157,75 @@ export async function DELETE(req: NextRequest) {
       }),
     ])
 
-    // Remove do Storage o que leva o userId no caminho: documento e selfie do KYC
-    // (id-docs) e os uploads dele (item-images e booking-photos, `uploads/<userId>`).
-    // PARCIAL por desenho: fotos de anúncio e de reserva/disputa ficam (retenção
-    // pendente, ver o cabeçalho de lib/supabase/purge-user-storage.ts).
-    // Não bloqueia a resposta: a conta já foi anonimizada, e falha de Storage não a
-    // desfaz. Mas NÃO é silenciosa — o que sobrou vai para o log de erro, com bucket
-    // e caminho, para dar pra apagar à mão.
+    // SEC-CRIT-04: invalida sessões web e tokens Bearer do titular imediatamente
+    // (epoch no Redis — o middleware rejeita qualquer token com loginAt anterior a agora).
+    // Falha do Upstash não aborta a exclusão (a conta já foi anonimizada e o token
+    // expira naturalmente em até 15 min), mas fica no log.
+    await invalidateUserSessions(userId).catch((e) =>
+      console.error("[DELETE /api/users/me] invalidateUserSessions falhou:", e instanceof Error ? e.message : e),
+    )
+
+    // Remove do Storage TODOS os arquivos do titular (decisão do fundador 25/09/2026):
+    //   • id-docs         id-verification/<userId>/…  documento e selfie do KYC
+    //   • item-images     uploads/<userId>/…          avatar; + <itemId>/… para cada anúncio
+    //   • booking-photos  uploads/<userId>/…          fotos de avaliação e de relatar problema;
+    //                     bookings/<id>/<fase>/…      apenas as fotos que o titular carregou
+    //                                                 (BookingPhoto.uploadedBy == userId) — as da
+    //                                                 outra parte são preservadas.
+    // Não bloqueia a resposta: a conta já foi anonimizada e falha de Storage não a
+    // desfaz. NÃO silenciosa: falhas vão para log + Sentry para intervenção manual.
     after(async () => {
       try {
-        const r = await apagarArquivosDoUsuario(createAdminClient(), userId)
-        if (r.falhas.length === 0) {
-          // Sucesso também deixa rastro: é a evidência para conferir a limpeza em staging.
+        // Busca anúncios e fotos de reserva do titular ANTES de usá-los,
+        // pois ownerId/uploadedBy ainda estão no banco (só deletedAt foi preenchido).
+        const [itens, bookingPhotos] = await Promise.all([
+          prisma.item.findMany({ where: { ownerId: userId }, select: { id: true } }),
+          prisma.bookingPhoto.findMany({ where: { uploadedBy: userId }, select: { url: true } }),
+        ])
+
+        const alvosExtras = itens.map((item) => ({
+          bucket:  "item-images" as const,
+          prefixo: itemImagesPrefixo(item.id),
+        }))
+
+        const bookingPaths = bookingPhotos
+          .map((p) => storagePathFromUrl(p.url, "booking-photos"))
+          .filter((p): p is string => p !== null)
+
+        const adminClient = createAdminClient()
+
+        // Prefixos chaveados por userId + pastas de anúncios (r1) e caminhos
+        // explícitos de fotos de check-in/out (r2) são independentes: paralelo.
+        const [r1, r2] = await Promise.all([
+          apagarArquivosDoUsuario(adminClient, userId, alvosExtras),
+          apagarPathsExplicitos(adminClient, "booking-photos", bookingPaths),
+        ])
+
+        const todasFalhas   = [...r1.falhas, ...r2.falhas]
+        const totalApagados = r1.apagados + r2.apagados
+
+        if (todasFalhas.length === 0) {
+          // Sucesso também deixa rastro: evidência para conferir a limpeza em staging.
           // eslint-disable-next-line no-console
-          console.info("[DELETE /api/users/me] arquivos do usuário removidos do Storage:", JSON.stringify({ userId, apagados: r.apagados }))
+          console.info("[DELETE /api/users/me] arquivos do usuário removidos do Storage:", JSON.stringify({ userId, apagados: totalApagados }))
         } else {
           console.error(
             "[DELETE /api/users/me] arquivos do Storage NÃO removidos (LGPD art. 18):",
-            JSON.stringify({ userId, apagados: r.apagados, falhas: r.falhas }),
+            JSON.stringify({ userId, apagados: totalApagados, falhas: todasFalhas }),
+          )
+          // Alerta para operadores: falha de Storage é visível no Sentry com userId (não-PII).
+          Sentry.captureException(
+            new Error("[LGPD] limpeza de Storage falhou na exclusão de conta"),
+            { extra: { userId, apagados: totalApagados, falhas: todasFalhas }, tags: { lgpd: "purge-failure" } },
           )
         }
       } catch (e) {
+        const erro = e instanceof Error ? e.message : String(e)
         console.error(
           "[DELETE /api/users/me] limpeza do Storage nem começou:",
-          JSON.stringify({ userId, erro: e instanceof Error ? e.message : String(e) }),
+          JSON.stringify({ userId, erro }),
         )
+        Sentry.captureException(e, { extra: { userId }, tags: { lgpd: "purge-failure" } })
       }
     })
 
