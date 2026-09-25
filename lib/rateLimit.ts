@@ -70,7 +70,14 @@ export const RATE_LIMITS = {
   loginEmail:     { limit: 5,  windowMs: 5 * 60_000 },          // 5/5min por e-mail
   mobileLogin:    { limit: 10, windowMs: 60_000 },              // 10/min por IP
   mobileRefresh:  { limit: 30, windowMs: 60_000 },              // 30/min por IP (SEC-CRIT-05)
-  forgotPassword: { limit: 3,  windowMs: 60_000 },              // 3/min por IP
+  forgotPassword:      { limit: 3,  windowMs: 60_000 },              // 3/min por IP
+  // Limite por E-MAIL do esqueci-senha. Menor que o loginEmail (5/5min) porque
+  // cada requisição dispara um e-mail — vetor de spam de e-mails transacionais.
+  // 3/15min = 12 envios por hora no pior caso legítimo (muito além do que qualquer
+  // usuário precisa), mas difícil de usar como canhão de spam contra uma conta.
+  // Contador SEPARADO do login (prefixo `forgot:email:`) para que um flood de
+  // esqueci-senha não bloqueie o login do usuário real, nem vice-versa.
+  forgotPasswordEmail: { limit: 3,  windowMs: 15 * 60_000 },         // 3/15min por e-mail
   resetPassword:  { limit: 10, windowMs: 60_000 },              // 10/min por IP
   resendVerify:   { limit: 3,  windowMs: 3_600_000 },           // 3/h por usuário
   emailChange:    { limit: 3,  windowMs: 60 * 60 * 1000 },      // 3/h por usuário
