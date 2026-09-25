@@ -1020,7 +1020,7 @@ export default function EditarAnuncioScreen() {
             Máximo 10 MB por foto · JPEG, PNG, WebP ou HEIC
           </Text>
           <Text style={[s.helper, { color: tokens.green }]}>
-            Anúncios com 3 fotos recebem 4× mais contatos.
+            Mostre o item de vários ângulos: boas fotos ajudam o locatário a decidir.
           </Text>
 
           {/* Dicas colapsáveis — fonte: ItemForm.tsx linhas 1036-1047 (<details>) */}

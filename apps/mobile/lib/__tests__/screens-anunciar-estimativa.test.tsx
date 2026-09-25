@@ -154,7 +154,7 @@ describe("EstimativaScreen — textos verbatim", () => {
     renderEstimativa()
     await waitFor(() => {
       expect(screen.getByText("Quer maximizar seus ganhos?")).toBeTruthy()
-      expect(screen.getByText(/Veja as dicas de quem já aluga/i)).toBeTruthy()
+      expect(screen.getByText(/Veja dicas para anunciar melhor/i)).toBeTruthy()
       expect(screen.getByText("Ver dicas →")).toBeTruthy()
     })
   })

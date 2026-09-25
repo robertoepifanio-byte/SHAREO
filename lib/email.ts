@@ -413,7 +413,7 @@ function bookingCancelledHtml(firstName: string, itemTitle: string, role: "borro
     </div>` : ""}
     <div style="text-align:center;">${ctaButton(bookingUrl, "Ver reserva")}</div>
     <p style="margin:20px 0 0;font-size:13px;color:#64748B;line-height:1.6;">
-      Se tiver dúvidas, entre em contato com o suporte pelo chat da plataforma.
+      Se tiver dúvidas, escreva para <a href="mailto:suporte@shareo.com.br" style="color:#007B3C;">suporte@shareo.com.br</a> (de segunda a sexta, das 09h às 17h).
     </p>
   `)
 }
@@ -760,7 +760,7 @@ function idVerifiedHtml(firstName: string) {
 
     <div style="margin-bottom:24px;padding:16px 20px;background:#F0FDF4;border-radius:8px;border:1px solid #BBF7D0;">
       <p style="margin:0;font-size:14px;color:#15803D;">
-        <strong>✓ Conta verificada</strong> — Usuários verificados têm maior credibilidade e mais chances de fechar locações.
+        <strong>✓ Conta verificada</strong> — Agora você também pode reservar os anúncios que exigem identidade verificada.
       </p>
     </div>
 

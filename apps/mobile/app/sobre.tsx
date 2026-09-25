@@ -45,7 +45,7 @@ const VALORES = [
   {
     id:          "seguranca",
     title:       "Segurança",
-    description: "Garantir transações protegidas e usuários verificados.",
+    description: "Garantir transações protegidas e oferecer verificação de identidade aos usuários.",
   },
   {
     id:          "acessibilidade",

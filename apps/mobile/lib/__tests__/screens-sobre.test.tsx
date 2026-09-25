@@ -190,7 +190,7 @@ describe("SobreScreen — seção Valores verbatim (4 cards)", () => {
     wrap(<SobreScreen />)
     expect(screen.getByText("Segurança")).toBeTruthy()
     expect(
-      screen.getByText("Garantir transações protegidas e usuários verificados.")
+      screen.getByText("Garantir transações protegidas e oferecer verificação de identidade aos usuários.")
     ).toBeTruthy()
   })
 

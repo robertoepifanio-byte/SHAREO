@@ -4,6 +4,9 @@ import { useState } from "react"
 import Link from "next/link"
 
 // Valor estimado médio por categoria (R$)
+// Só as categorias do seed (prisma/seed.ts): a calculadora não pode simular uma
+// categoria em que o proprietário não consegue anunciar. A produção só as terá
+// depois do seed de categorias.
 const CATEGORY_DATA: Record<string, { name: string; avgRetailPrice: number; dailyRate: number }> = {
   ferramentas:  { name: "Ferramentas",       avgRetailPrice: 700,   dailyRate: 35  },
   eletronicos:  { name: "Eletrônicos",        avgRetailPrice: 2000,  dailyRate: 100 },
@@ -11,8 +14,6 @@ const CATEGORY_DATA: Record<string, { name: string; avgRetailPrice: number; dail
   construcao:   { name: "Construção",         avgRetailPrice: 900,   dailyRate: 45  },
   esporte:      { name: "Esporte/Lazer",      avgRetailPrice: 1200,  dailyRate: 60  },
   festas:       { name: "Festas & Eventos",   avgRetailPrice: 1600,  dailyRate: 80  },
-  veiculos:     { name: "Veículos & Motos",   avgRetailPrice: 8000,  dailyRate: 150 },
-  bebes:        { name: "Bebês & Crianças",   avgRetailPrice: 800,   dailyRate: 40  },
 }
 
 const DAYS_OPTIONS = [
@@ -137,7 +138,7 @@ export function EarningsCalc() {
         {returnVsRetail > 0 && (
           <div className="mt-4 rounded-lg border border-success/25 bg-success/10 px-4 py-3 text-center">
             <p className="text-sm font-semibold text-success">
-              🎯 Em {Math.ceil(100 / returnVsRetail)} meses você recupera o valor do item!
+              🎯 Nesse ritmo, você recuperaria o valor do item em {Math.ceil(100 / returnVsRetail)} meses
             </p>
             <p className="mt-0.5 text-xs text-muted-foreground">
               Retorno de ~{returnVsRetail}% do valor de compra por mês

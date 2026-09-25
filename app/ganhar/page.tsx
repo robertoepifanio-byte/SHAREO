@@ -36,25 +36,8 @@ export default async function EarningsPage() {
           {/* Calculadora interativa */}
           <EarningsCalc />
 
-          {/* Depoimento / prova social */}
-          <div className="mt-8 rounded-xl border border-border bg-surface p-5">
-            <div className="flex gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary font-bold text-white">
-                M
-              </div>
-              <div>
-                <p className="text-sm text-foreground">
-                  &ldquo;Anunciei minha furadeira e câmera fotográfica. Em 2 meses já paguei metade do valor que gastei nelas.&rdquo;
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  — Marcelo S., Porto Alegre/RS
-                </p>
-              </div>
-            </div>
-          </div>
-
           {/* FAQ rápido */}
-          <div className="mt-6 space-y-3">
+          <div className="mt-8 space-y-3">
             {[
               {
                 q: "O ShareO cobra alguma taxa?",
@@ -66,7 +49,7 @@ export default async function EarningsPage() {
               },
               {
                 q: "E se o item for danificado?",
-                a: "O locatário passa por verificação de identidade antes de alugar. Caso haja dano, você abre uma disputa na plataforma com as fotos de check-in e check-out como evidência. A equipe ShareO medeia o caso em até 3 dias úteis.",
+                a: "Ao anunciar, você pode exigir que o locatário tenha a identidade verificada. Caso haja dano, você abre uma disputa na plataforma com as fotos de check-in e check-out como evidência, e a equipe ShareO analisa o caso.",
               },
             ].map(({ q, a }) => (
               <details key={q} className="group rounded-lg border border-border bg-surface">

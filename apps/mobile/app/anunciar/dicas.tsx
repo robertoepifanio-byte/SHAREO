@@ -34,9 +34,9 @@ const DICAS = [
       "Use luz natural — abra as janelas e fotografe durante o dia.",
       "Mostre o item limpo, organizado e de vários ângulos.",
       "Inclua foto com escala (segure o item ou coloque ao lado de algo conhecido).",
-      "Mínimo 3 fotos; itens com 5+ fotos têm 40% mais reservas.",
+      "Mínimo 3 fotos; quanto mais ângulos, menos dúvidas do locatário.",
     ],
-    destaque: "Itens com boas fotos recebem 3× mais visualizações.",
+    destaque: "Boas fotos ajudam o locatário a decidir com mais confiança.",
   },
   {
     numero: "02",
@@ -70,9 +70,9 @@ const DICAS = [
       "Locatários escolhem quem responde primeiro — mire em menos de 2h.",
       "Ative notificações do ShareO no celular.",
       "Se não puder alugar em certa data, marque como indisponível antes.",
-      "Uma resposta rápida aumenta sua posição nos resultados de busca.",
+      "Depois das primeiras reservas, seu tempo de resposta aparece no anúncio e ajuda o locatário a decidir.",
     ],
-    destaque: "Anfitriões que respondem em até 1h têm 2× mais reservas confirmadas.",
+    destaque: "Depois das primeiras reservas, seu tempo e sua taxa de resposta aparecem no anúncio.",
   },
   {
     numero: "05",
@@ -84,7 +84,7 @@ const DICAS = [
       "Seja pontual na entrega e retirada.",
       "Após a devolução, avalie o locatário — isso incentiva avaliações de volta.",
     ],
-    destaque: "Anfitriões com nota ≥ 4,5 aparecem primeiro na busca.",
+    destaque: "A nota média das suas avaliações aparece nos seus anúncios.",
   },
   {
     numero: "06",

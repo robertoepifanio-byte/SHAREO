@@ -859,7 +859,7 @@ export default function AnunciarScreen() {
 
           {/* Dica geral de fotos — fonte: ItemForm.tsx linha 1034 (FIELD_TIPS.photos) */}
           <Text style={[s.helper, { color: tokens.green }]}>
-            Anúncios com 3 fotos recebem 4× mais contatos.
+            Mostre o item de vários ângulos: boas fotos ajudam o locatário a decidir.
           </Text>
 
           {/* Dicas colapsáveis — fonte: ItemForm.tsx linhas 1036-1047 (<details>) */}

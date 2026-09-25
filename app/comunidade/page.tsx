@@ -28,9 +28,7 @@ const SECTIONS = [
     icon: "🗣️",
     title: "Participação",
     items: [
-      "Fóruns e grupos de discussão para trocar ideias.",
-      "Eventos e campanhas de consumo consciente e sustentabilidade.",
-      "Espaço para feedback e sugestões de melhorias na plataforma.",
+      "Sugestões e feedback sobre a plataforma: escreva para suporte@shareo.com.br.",
     ],
   },
 ]
@@ -83,7 +81,7 @@ export default function ComunidadePage() {
           <div className="mt-10 rounded-xl bg-primary px-8 py-10 text-center text-white">
             <h2 className="font-display text-xl font-bold">Faça parte da comunidade</h2>
             <p className="mt-2 text-sm text-white/80">
-              Cadastre-se e junte-se a milhares de pessoas que já compartilham e alugam itens no ShareO.
+              Cadastre-se e comece a compartilhar e alugar itens no ShareO.
             </p>
             <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <Link

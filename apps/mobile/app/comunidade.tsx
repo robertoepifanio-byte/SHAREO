@@ -35,9 +35,7 @@ const SECTIONS = [
     icon:  "🗣️",
     title: "Participação",
     items: [
-      "Fóruns e grupos de discussão para trocar ideias.",
-      "Eventos e campanhas de consumo consciente e sustentabilidade.",
-      "Espaço para feedback e sugestões de melhorias na plataforma.",
+      "Sugestões e feedback sobre a plataforma: escreva para suporte@shareo.com.br.",
     ],
   },
 ] as const
@@ -124,7 +122,7 @@ export default function ComunidadeScreen() {
               Faça parte da comunidade
             </Text>
             <Text style={s.ctaSubtitle}>
-              Cadastre-se e junte-se a milhares de pessoas que já compartilham e alugam itens no ShareO.
+              Cadastre-se e comece a compartilhar e alugar itens no ShareO.
             </Text>
             <View style={s.ctaButtons}>
               <TouchableOpacity

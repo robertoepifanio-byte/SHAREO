@@ -565,8 +565,8 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
   const FIELD_TIPS: Record<string, string> = {
     title:      "Use palavras que as pessoas buscariam (ex: 'Câmera Sony A6400')",
     description:"Seja específico: estado de conservação, inclui acessórios, como usar.",
-    photos:     "Anúncios com 3 fotos recebem 4× mais contatos.",
-    pricePerDay:"Itens com preço justo aluguem 2× mais rápido.",
+    photos:     "Mostre o item de vários ângulos: boas fotos ajudam o locatário a decidir.",
+    pricePerDay:"Compare com itens parecidos na sua cidade antes de definir o preço.",
   }
 
   return (

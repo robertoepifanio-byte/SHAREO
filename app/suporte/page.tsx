@@ -20,9 +20,9 @@ const SECTIONS = [
     icon: "💬",
     title: "Atendimento",
     items: [
-      { label: "Chat integrado", description: "Suporte direto dentro da plataforma." },
-      { label: "E-mail", description: "Contato para questões específicas." },
-      { label: "Disponibilidade", description: "Equipe ativa 7 dias por semana para resolver problemas." },
+      { label: "Chat da reserva", description: "Converse com o proprietário ou o locatário pelo chat da própria reserva." },
+      { label: "E-mail", description: "suporte@shareo.com.br, para questões específicas." },
+      { label: "Disponibilidade", description: "Atendimento de segunda a sexta, das 09h às 17h." },
     ],
   },
   {
@@ -90,12 +90,12 @@ export default function SuportePage() {
             >
               Acessar Central de Ajuda →
             </Link>
-            <Link
-              href="/mensagens"
+            <a
+              href="mailto:suporte@shareo.com.br"
               className="flex-1 rounded-xl bg-brand px-5 py-4 text-center text-sm font-semibold text-white hover:opacity-90 transition-opacity"
             >
-              Abrir Chat de Suporte →
-            </Link>
+              Escrever para o suporte →
+            </a>
           </div>
         </div>
       </main>

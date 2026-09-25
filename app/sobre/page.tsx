@@ -43,7 +43,7 @@ const VALORES = [
       </svg>
     ),
     title: "Segurança",
-    description: "Garantir transações protegidas e usuários verificados.",
+    description: "Garantir transações protegidas e oferecer verificação de identidade aos usuários.",
   },
   {
     icon: (
