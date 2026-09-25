@@ -28,9 +28,23 @@
  *   COM --confirm  → cria de verdade via API e imprime o signing_secret.
  *
  * Uso:
- *   pnpm tsx scripts/create-stripe-connect-event-destination.ts                                    # dry-run, URL default (staging)
- *   pnpm tsx scripts/create-stripe-connect-event-destination.ts --confirm                           # cria
- *   pnpm tsx scripts/create-stripe-connect-event-destination.ts --confirm --url=https://outro.com   # outra URL
+ *   pnpm tsx scripts/create-stripe-connect-event-destination.ts                                         # dry-run, URL default (staging), lê .env.local
+ *   pnpm tsx scripts/create-stripe-connect-event-destination.ts --confirm                                # cria
+ *   pnpm tsx scripts/create-stripe-connect-event-destination.ts --confirm --url=https://outro.com        # outra URL
+ *   pnpm tsx scripts/create-stripe-connect-event-destination.ts --confirm \
+ *     --url=https://app.shareo.com.br --env-file=.env.production                                         # produção (chave live em arquivo separado)
+ *
+ * Para produção (URL https://app.shareo.com.br):
+ *   1. Crie um arquivo temporário (ex.: .env.production) com STRIPE_SECRET_KEY=sk_live_...
+ *      Nunca versione — adicione ao .gitignore se precisar manter.
+ *   2. Execute:
+ *        pnpm tsx scripts/create-stripe-connect-event-destination.ts \
+ *          --confirm --url=https://app.shareo.com.br --env-file=.env.production
+ *   3. Copie o STRIPE_CONNECT_WEBHOOK_SECRET impresso e adicione no Vercel (Production) + GitHub Secrets.
+ *
+ * Precedência do arquivo de env: --env-file prevalece sobre .env.local.
+ * Se nenhum dos dois for encontrado, o script falha (evita usar variáveis do
+ * shell que podem ser do ambiente errado sem avisar).
  */
 import { loadEnvFile } from "./lib/sim-shared"
 import { getStripe } from "../lib/stripe"
@@ -56,8 +70,16 @@ const ENABLED_EVENTS = [...STRIPE_CONNECT_EVENT_TYPES]
 // plataforma.
 const EVENTS_FROM = ["@self", "@accounts"] as const
 
-if (!loadEnvFile(".env.local")) {
-  console.error("✗ .env.local não encontrado. Necessário para STRIPE_SECRET_KEY.")
+// --env-file=<caminho> tem precedência sobre .env.local.
+// Se nenhum dos dois existir, o script para: nunca depender de variáveis
+// que já estiverem no shell (podem ser do ambiente errado sem avisar).
+const envFileArg = process.argv.find((a) => a.startsWith("--env-file="))
+const envFile    = envFileArg ? envFileArg.slice("--env-file=".length) : ".env.local"
+
+if (!loadEnvFile(envFile)) {
+  console.error(`✗ Arquivo de env "${envFile}" não encontrado.`)
+  console.error("  Use --env-file=<caminho> para apontar para o arquivo correto.")
+  console.error("  Exemplo de produção: --env-file=.env.production")
   process.exit(1)
 }
 
