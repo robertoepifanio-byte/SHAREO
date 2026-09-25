@@ -26,6 +26,11 @@ const staticCacheHeaders = [
 
 const config: NextConfig = {
   poweredByHeader: false,
+  // Commit do artefato, exposto em /api/health. O deploy.yml injeta
+  // BUILD_COMMIT_SHA nos `vercel build`; VERCEL_GIT_COMMIT_SHA cobre deploy via Git.
+  env: {
+    BUILD_COMMIT_SHA: process.env.BUILD_COMMIT_SHA || process.env.VERCEL_GIT_COMMIT_SHA || "local",
+  },
   // Headers de segurança em todas as rotas
   async headers() {
     return [
