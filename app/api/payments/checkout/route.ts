@@ -4,6 +4,7 @@ import { z } from "zod"
 import { withUser } from "@/lib/withUser"
 import { prisma } from "@/lib/prisma"
 import { getStripe } from "@/lib/stripe"
+import { checkChargeGuards } from "@/lib/payments/charge-guards"
 import { APP_URL } from "@/lib/app-url"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { getPlatformFeeRate, calcSplitComDesconto, CHECKOUT_MAX_CENTS, STRIPE_CHECKOUT_EXPIRES_SECONDS } from "@/lib/platform-config"
@@ -37,6 +38,7 @@ export async function POST(req: NextRequest) {
       select: {
         id:            true,
         borrowerId:    true,
+        ownerId:       true,
         status:        true,
         paymentStatus: true,
         totalPrice:    true,
@@ -84,6 +86,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: { code: "EXCEEDS_MVP_LIMIT", message: "Locações acima de R$ 500 não estão disponíveis nesta versão. Entre em contato com o suporte." } },
         { status: 422 },
+      )
+    }
+
+    // Guardas da cobrança real (go-live 01/10): interruptor `billingEnabled` (só
+    // vale com chave Stripe live) e proprietário com caminho de repasse. Ficam
+    // DEPOIS das validações da reserva — quem já pagou vê ALREADY_PAID, não
+    // "pagamentos fechados" — e imediatamente ANTES de a Stripe ser chamada.
+    const blocked = await checkChargeGuards(booking.ownerId)
+    if (blocked) {
+      return NextResponse.json(
+        { error: { code: blocked.code, message: blocked.message } },
+        { status: blocked.status },
       )
     }
 

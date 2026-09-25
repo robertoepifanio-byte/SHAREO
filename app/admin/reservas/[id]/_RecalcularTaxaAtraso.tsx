@@ -64,7 +64,9 @@ export function RecalcularTaxaAtraso({ bookingId }: { bookingId: string }) {
             ? `Valor anterior: ${ok.anterior != null ? brl(ok.anterior) : "—"}. O locatário recebeu o novo link por e-mail.`
             : ok.motivo === "COBRANCA_ATUAL_VIVA"
               ? "A cobrança em aberto já está pelo valor correto."
-              : `Não emitida (${ok.motivo}).`}
+              : ok.motivo === "COBRANCA_FECHADA"
+                ? "A cobrança real está fechada (Financeiro › Cobrança real): nada foi emitido nem enviado ao locatário."
+                : `Não emitida (${ok.motivo}).`}
         </p>
         <button onClick={() => setOk(null)} className="mt-2 text-muted-foreground hover:text-foreground">
           Fechar

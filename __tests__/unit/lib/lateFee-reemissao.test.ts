@@ -55,6 +55,16 @@ function makeBooking(over: Partial<{
   }
 }
 
+// Este arquivo mede a MECÂNICA da emissão, não o interruptor de cobrança real
+// (lib/payments/charge-guards.ts, com teste próprio em charge-guards.test.ts).
+// Chave Stripe de TESTE = cobrança sempre aberta, e é o que o staging usa.
+const CHAVE_ORIGINAL = process.env.STRIPE_SECRET_KEY
+beforeAll(() => { process.env.STRIPE_SECRET_KEY = "sk_test_jest" })
+afterAll(() => {
+  if (CHAVE_ORIGINAL === undefined) delete process.env.STRIPE_SECRET_KEY
+  else process.env.STRIPE_SECRET_KEY = CHAVE_ORIGINAL
+})
+
 beforeEach(() => {
   jest.clearAllMocks()
   mockSessionCreate.mockResolvedValue({ id: "cs_novo", url: "https://checkout/novo" })

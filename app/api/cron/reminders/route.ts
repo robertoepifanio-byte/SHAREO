@@ -150,6 +150,10 @@ export async function GET(req: NextRequest) {
 
   const sent:   string[] = []
   const failed: string[] = []
+  // Multa que NÃO saiu porque a cobrança real está fechada (chave live sem
+  // `billingEnabled`). Não é falha nem envio: sem este registro, o go-live com o
+  // interruptor fechado não emitiria multa nenhuma e nada no log diria por quê.
+  const adiadas: string[] = []
 
   const startStats = await processInBatches(startReminders, BATCH_SIZE, async (b) => {
     try {
@@ -231,6 +235,7 @@ export async function GET(req: NextRequest) {
           today,
         )
         if (r.emitida) sent.push(`late_fee${r.reemissao ? ":reemitida" : ""}:${b.id}`)
+        else if (r.motivo === "COBRANCA_FECHADA") adiadas.push(`late_fee:${b.id}`)
       } catch (e) {
         console.error("[cron] late fee charge", b.id, e instanceof Error ? e.message : e)
         failed.push(`late_fee:${b.id}`)
@@ -320,12 +325,21 @@ export async function GET(req: NextRequest) {
         fimDoAtraso,
       )
       if (r.emitida) sent.push(`late_fee:reemitida:${b.id}`)
+      else if (r.motivo === "COBRANCA_FECHADA") adiadas.push(`late_fee:reemissao:${b.id}`)
     } catch (e) {
       console.error("[cron] reemissão de multa", b.id, e instanceof Error ? e.message : e)
       failed.push(`late_fee:reemissao:${b.id}`)
       throw e
     }
   })
+
+  if (adiadas.length > 0) {
+    console.warn(
+      `[cron/reminders] ${adiadas.length} multa(s) de atraso NÃO emitida(s): cobrança real fechada ` +
+      `(billingEnabled em /admin/financeiro). Tenta de novo no próximo ciclo.`,
+      { adiadas },
+    )
+  }
 
   console.warn(
     `[cron/reminders] start=${startStats.ok}ok/${startStats.failed}fail` +
@@ -341,5 +355,7 @@ export async function GET(req: NextRequest) {
     failed:    failed.length,
     ids:       sent,
     failedIds: failed,
+    adiadas:    adiadas.length,
+    adiadasIds: adiadas,
   })
 }

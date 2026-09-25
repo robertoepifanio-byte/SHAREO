@@ -17,6 +17,7 @@ import { prisma } from "@/lib/prisma"
 import { assertCronAuth } from "@/lib/auth/cron-guard"
 import { getStripe, idOf } from "@/lib/stripe"
 import { createOwnerTransfer } from "@/lib/payments/owner-transfer"
+import { hasActiveConnect } from "@/lib/payments/charge-guards"
 
 export const runtime    = "nodejs"
 export const maxDuration = 60
@@ -78,7 +79,9 @@ export async function GET(req: NextRequest) {
     const intentId  = payout.sourcePaymentIntentId ?? payout.booking.stripePaymentIntentId
 
     try {
-      if (account.stripeAccountId && account.stripeConnectStatus === "ACTIVE" && intentId) {
+      // Mesma pergunta da guarda de checkout (lib/payments/charge-guards.ts): só
+      // cobra quem o repasse automático sabe pagar.
+      if (hasActiveConnect(account) && intentId) {
         const paymentIntent = await getStripe().paymentIntents.retrieve(intentId)
         const chargeId = idOf(paymentIntent.latest_charge)
 

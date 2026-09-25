@@ -6,7 +6,9 @@ import { requireAdminPage } from "@/lib/auth/require-admin"
 import { PayoutActions } from "./_PayoutActions"
 import { FeeRateForm } from "./_FeeRateForm"
 import { PricingMultipliersForm } from "./_PricingMultipliersForm"
-import { getPlatformFeeRate, getPricingMultipliers } from "@/lib/platform-config"
+import { getPlatformFeeRate, getPricingMultipliers, getBillingConfig } from "@/lib/platform-config"
+import { isStripeTestMode } from "@/lib/payments/charge-guards"
+import { BillingSwitch } from "./_BillingSwitch"
 import { formatPrice, formatDateShort, formatDateTime } from "@/utils/format"
 import { StatCard } from "@/components/ui/StatCard"
 
@@ -20,6 +22,7 @@ export default async function AdminFinanceiroPage() {
   const [
     currentFeeRate,
     pricingMultipliers,
+    billingConfig,
     gmvResult,
     feeResult,
     payoutStats,
@@ -31,6 +34,7 @@ export default async function AdminFinanceiroPage() {
 
     getPlatformFeeRate(),
     getPricingMultipliers(),
+    getBillingConfig(),
     // GMV — volume total de aluguéis concluídos
     prisma.booking.aggregate({
       where: { status: "COMPLETED" },
@@ -277,6 +281,10 @@ export default async function AdminFinanceiroPage() {
           <div>
             <p className="mb-2 text-xs text-muted-foreground font-medium">Taxa da plataforma</p>
             <FeeRateForm currentRate={currentFeeRate} />
+          </div>
+          <div>
+            <p className="mb-2 text-xs text-muted-foreground font-medium">Cobrança real</p>
+            <BillingSwitch enabled={billingConfig.enabled} testMode={isStripeTestMode()} />
           </div>
           <div>
             <p className="mb-1 text-xs text-muted-foreground font-medium">Multiplicadores de precificação sugerida</p>

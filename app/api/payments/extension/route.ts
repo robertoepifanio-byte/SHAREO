@@ -19,6 +19,7 @@ import { z } from "zod"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
 import { getStripe } from "@/lib/stripe"
+import { checkChargeGuards } from "@/lib/payments/charge-guards"
 import { APP_URL } from "@/lib/app-url"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { CHECKOUT_MAX_CENTS, STRIPE_CHARGE_EXPIRES_SECONDS } from "@/lib/platform-config"
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
     const booking = await prisma.booking.findUnique({
       where:  { id: bookingId },
       select: {
-        id: true, borrowerId: true, status: true,
+        id: true, borrowerId: true, ownerId: true, status: true,
         extensionStatus: true, extensionAmountCents: true, extensionRequestedEndDate: true,
         item:     { select: { title: true, images: { select: { url: true }, orderBy: { order: "asc" }, take: 1 } } },
         borrower: { select: { email: true } },
@@ -85,6 +86,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: { code: "EXCEEDS_MVP_LIMIT", message: "Valor acima do limite desta versão. Entre em contato com o suporte." } },
         { status: 422 },
+      )
+    }
+
+    // Guardas da cobrança real (go-live 01/10) — as mesmas do checkout comum: a
+    // extensão é uma cobrança independente, então também não pode ser o caminho
+    // que passa por fora do interruptor ou de um proprietário sem como receber.
+    const blocked = await checkChargeGuards(booking.ownerId)
+    if (blocked) {
+      return NextResponse.json(
+        { error: { code: blocked.code, message: blocked.message } },
+        { status: blocked.status },
       )
     }
 
