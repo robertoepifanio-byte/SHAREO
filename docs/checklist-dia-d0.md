@@ -114,7 +114,7 @@ Objetivo (§6): provar deploy, rollback e o smoke **enquanto a produção só te
 | 3 | Confirmar no painel do Supabase de produção que existe o **backup do dia**, antes de um deploy com migração. | Roberto | Print ou data do backup anotada | Seg 15 |
 | 4 | **Ensaio de deploy**: `gh workflow run deploy.yml --ref main`, acompanhar com `gh run watch <id>`. Cronometrar. | Roberto + técnico | Passos build, deploy, migração e health check verdes; duração anotada (a ordem da migração no workflow muda com o Infra 9: ver 8.1) | §6; Infra 9 e 10 |
 | 5 | Repetir **P1 a P6** contra a produção depois do ensaio. | técnico | Seis sondas conforme a seção 3 | Infra 22 |
-| 6 | **Ensaio de rollback e de interruptores**: a ficha da seção 8 do `docs/runbook-rollback-deploy.md` **inteira** (rollback, refazer por ref, `PlatformConfig`, gate de cobrança quando existir, `STRIPE_SECRET_KEY` só se a chave já existir na produção), com a tag `prod-ok-2026-09-29-HHMM` criada no deploy verde. A ficha é a única fonte do procedimento. | Roberto + técnico | Ficha preenchida, com efeito e tempo de cada interruptor; sondas verdes depois de voltar e depois de avançar | Infra 10; §6; Pag 2 |
+| 6 | **Ensaio de rollback e de interruptores**: a ficha da seção 8 do `docs/runbook-rollback-deploy.md` **inteira** (rollback, refazer por ref, `PlatformConfig`, gate de cobrança `billingEnabled`, que só age com chave live, `STRIPE_SECRET_KEY` só se a chave já existir na produção), com a tag `prod-ok-2026-09-29-HHMM` criada no deploy verde. A ficha é a única fonte do procedimento. | Roberto + técnico | Ficha preenchida, com efeito e tempo de cada interruptor; sondas verdes depois de voltar e depois de avançar | Infra 10; §6; Pag 2 |
 | 7 | **Smoke de 15 passos** em produção. Registrar antes o estado da cobrança. Apagar o que der (seção 3 do roteiro). O passo 1 do smoke só acrescenta `/api/stats` às sondas: se P1 a P6 acabaram de rodar, não as repita. | Roberto + técnico | Ficha do roteiro preenchida; nada `[TESTE D0]` ativo no fim | Prod 22 |
 | 8 | **Restauração do banco ensaiada num projeto descartável** (não no staging), cronometrada. | Roberto + técnico | Tempo e passos anotados em `docs/runbook-restauracao-backup.md`; **projeto descartável apagado no mesmo dia**, com data e hora anotadas (esquecido, custa ~US$10/mês e guarda uma cópia de dados pessoais, incluindo KYC, fora do controle) | §6; Infra 12; Seg 15 |
 | 9 | **Recifragem da `ENCRYPTION_KEY` (#500)**: mesclar depois de ensaiar em staging, ou **adiar por escrito**. Até lá, não trocar a chave em produção. | Roberto | Decisão registrada | Seg 14 |
@@ -191,7 +191,6 @@ O estado provisório fica **só aqui**. Os procedimentos dos outros documentos d
 | Fato de hoje (`839e7176`) | O que o muda | O que atualizar |
 |---|---|---|
 | A migração roda **depois** do deploy. | Infra 9 (D-4). | **Runbook de rollback:** seção 1 (item 3), seção 2 (ordem dos passos e "janela entre os passos 3 e 4"), árvore A2 (seção 7), seção 4.3 (`migrate deploy` contra banco à frente), seção 4.4 (item 4) e seção 5. **Esta página:** D-2 item 4. |
-| Não existe gate de cobrança. | Gate de cobrança (D-4). | **Runbook de rollback:** seção 1 (item 4), seção 3.3 (bullet do gate: acrescentar a chave e o efeito), árvore C1 (passa a primeiro interruptor) e ficha, linha 10. **Roteiro do smoke:** passo 11 (aviso e tabela de estados da cobrança). **Esta página:** seção 9, item 5. |
 | O ambiente `production` do GitHub aceita qualquer ref. | Infra 8 (restringe a `main` + `web-v*`). | **Runbook de rollback:** seção 2 (bullet "Sem aprovação"), seção 4.3 (nota do filtro) e ficha, linha 4 (reensaiar `--ref prod-ok-…`). **Esta página:** a linha do README, acima. |
 
 ## 9. Decisões que continuam abertas e travam esta sequência
@@ -200,4 +199,4 @@ O estado provisório fica **só aqui**. Os procedimentos dos outros documentos d
 2. **Número da tag** (`web-v1.14.0` é só sugestão).
 3. **Escala e contatos das 72 h** (nomes; contatos fora do repositório).
 4. **`noindex` no D0** ou na abertura por cidade.
-5. **Gate de cobrança** (PR previsto para D-4): sem ele, o único interruptor é remover a `STRIPE_SECRET_KEY`, com os efeitos colaterais do runbook de rollback (seção 3.2). Estado e onde atualizar: 8.1.
+5. **Quando abrir a cobrança.** O gate `billingEnabled` já está no ar (#510, `b17c1308`; padrão fechado com chave live, documentado no runbook, seção 3.1). Falta decidir o momento (decisão 1) e ensaiar o interruptor (ficha do runbook, linha 10). Com chave de teste ele não age.

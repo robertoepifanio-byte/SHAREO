@@ -12,7 +12,7 @@
 >
 > Este documento não repete os vizinhos: restaurar o banco está em `docs/runbook-restauracao-backup.md`; vazamento da **`ENCRYPTION_KEY`** (recifragem de CPF/TOTP), em `docs/runbook-rotacao-encryption-key.md`; vazamento de **qualquer outra credencial** (`AUTH_SECRET`, `CRON_SECRET`, service role, chaves Stripe), na ordem de rotação do item 14 da Infra do checklist (escrita para o staging; a sequência é a mesma na produção, com os nomes `_PROD`): gerar o valor uma vez, testar no `.env` local, gravar na Vercel e no GitHub e só então invalidar o antigo; vazamento de dados pessoais, em `docs/juridico/plano-resposta-incidentes-e-direitos-titular.md`. As sondas de saúde (P1 a P6) estão em `docs/checklist-dia-d0.md`.
 >
-> **Fatos que mudam quando PRs pendentes forem mesclados** (ordem da migração no deploy, gate de cobrança, restrição de ref do ambiente `production`) estão registrados **uma só vez**, com a lista das seções de cada documento a atualizar, em `docs/checklist-dia-d0.md`, seção 8.1. Este runbook descreve o estado do commit `839e7176`.
+> **Fatos que mudam quando PRs pendentes forem mesclados** (ordem da migração no deploy, restrição de ref do ambiente `production`) estão registrados **uma só vez**, com a lista das seções de cada documento a atualizar, em `docs/checklist-dia-d0.md`, seção 8.1. Este runbook descreve o estado do commit `839e7176`, mais o gate de cobrança (`billingEnabled`), que entrou em `b17c1308` (#510) e está na seção 3.1. Esse gate ainda não foi exercitado em produção (ficha, linha 10).
 
 ---
 
@@ -21,7 +21,7 @@
 1. **Reverter um PR na `main` NÃO corrige a produção.** [CÓDIGO] Push na `main` só dispara o job `staging` do `deploy.yml`. A produção só sai por tag `web-v*` ou por `workflow_dispatch`.
 2. **O banco não volta.** `prisma migrate deploy` só anda para frente; não existe `down`. Rollback é de **código**. O que a migração já mudou fica (seção 5).
 3. **No workflow de hoje a migração roda DEPOIS do deploy** [CÓDIGO]: o código novo passa a atender, e só então `prisma migrate deploy` roda (o checklist, Infra 9, propõe inverter; ver 8.1 do checklist do D0).
-4. **Não existe modo manutenção, modo somente leitura nem gate de cobrança** no commit `839e7176` (seção 3.3). Os interruptores que existem são poucos e têm efeito colateral.
+4. **Não existe modo manutenção nem modo somente leitura** (seção 3.3). Existe um gate de cobrança, `billingEnabled` (seção 3.1), que só age com chave Stripe **live** e nunca foi exercitado. Os interruptores que existem são poucos e têm efeito colateral.
 5. **A produção é pública**: o alias `shareo-prod.vercel.app` responde 200 sem login [CHECKLIST]. A Deployment Protection cobre só URLs de deployment; não serve para "fechar o site".
 6. **A campanha posta os leads no alias** `shareo-prod.vercel.app` [CHECKLIST]. Nenhum passo deste runbook pode redirecionar esse endereço nem deixá-lo fora do ar sem avisar: a captação da mídia paga para junto.
 
@@ -62,11 +62,12 @@ Levantados lendo `lib/`, `middleware.ts`, `app/api/` e `deploy.yml` neste commit
 
 ### 3.1 Sem redeploy: chaves de `PlatformConfig` (efeito em até ~60 s)
 
-[CÓDIGO] `lib/platform-config.ts` mantém um cache de 60 s por instância (`CONFIG_TTL_MS`); a escrita limpa o cache só da instância que a recebeu, e as outras propagam dentro do TTL. Escrever: `PATCH /api/admin/platform-config?key=<chave>` com `{"value":"true"|"false"}`, **só `ADMIN_SUPERADMIN` com sessão de 2FA**. Só algumas chaves têm formulário em `/admin` (taxa, multiplicadores de preço, raio de busca, auto-cancelamento, embaixadores); as chaves abaixo são só por `PATCH`, feito do console do navegador logado como superadmin. NÃO ENSAIADO em produção (ficha, linha 10).
+[CÓDIGO] `lib/platform-config.ts` mantém um cache de 60 s por instância (`CONFIG_TTL_MS`); a escrita limpa o cache só da instância que a recebeu, e as outras propagam dentro do TTL. Escrever: `PATCH /api/admin/platform-config?key=<chave>` com `{"value":"true"|"false"}`, **só `ADMIN_SUPERADMIN` com sessão de 2FA**. Só algumas chaves têm formulário em `/admin` (taxa, multiplicadores de preço, raio de busca, auto-cancelamento, embaixadores); as chaves abaixo (exceto `billingEnabled`, que tem interruptor em `/admin/financeiro`) são só por `PATCH`, feito do console do navegador logado como superadmin. NÃO ENSAIADO em produção (ficha, linha 10).
 
 | Chave | O que faz de fato | Serve de emergência? |
 |---|---|---|
 | `stripeConnectEnabled` | Com `false`, o onboarding Connect (`/api/stripe/connect/return`, `/refresh`, `/api/payments/stripe/connect`) responde 404 e a UI "Conectar recebimento" some. | **Parcial.** Fecha só o cadastro de novos recebedores. **Não** bloqueia checkout e **não** bloqueia o cron de repasse (que olha o `stripeConnectStatus` da conta, não a flag). |
+| `billingEnabled` (#510) | Gate da cobrança **real**. Com chave Stripe de teste (`sk_test_` ou `rk_test_`) ele não age. Com chave live (ou ausente, ou de formato desconhecido) só o valor exato `"true"` abre; ausente, outro valor ou banco fora do ar = **fechada**: checkout e extensão respondem `403 BILLING_CLOSED` antes de chamar a Stripe, e a taxa de atraso não emite cobrança (`COBRANCA_FECHADA`; o cron de lembretes a conta em `adiadas`). Webhook e estorno **não** passam pelo gate. Ligar e desligar: `/admin/financeiro` (SuperAdmin) ou `PATCH` com `"true"` ou `"false"` (qualquer outro valor dá 422). | **Sim, é o interruptor de cobrança**, sem efeito em pagamento já feito. Não cancela link de pagamento já emitido: vale até expirar (30 min no checkout; até 24 h em extensão e multa). O mesmo PR trouxe a guarda `OWNER_NOT_READY` (409): o checkout recusa quando o proprietário não tem Connect `ACTIVE` nem PIX cadastrado. Não verificado ao vivo. |
 
 **As demais chaves não seguram nada em emergência:** `payoutWindowDays` só vale para repasses futuros (lida ao criar o `Payout`, em `eligibleAfter`); `platformFeeRate` (pontos-base, padrão 1500; aceita 0 a 10000) e `rentalContractAcceptanceEnabled` só valem para reservas e cobranças novas; `accessLogsEnabled` (gravação de `access_logs`, Marco Civil, art. 15) não afeta o usuário e só se mexe com o jurídico. **Não mexa em `biometricConsentRequired`:** com `false` (padrão hoje) a selfie do KYC é gravada sem registrar consentimento, e desligar a chave, se ela estiver ligada, só piora esse quadro.
 
@@ -76,7 +77,7 @@ Variável de runtime muda só depois de um **novo deployment**. Caminho: editar 
 
 | Interruptor | Efeito real | Efeitos colaterais que pegam de surpresa |
 |---|---|---|
-| **Remover `STRIPE_SECRET_KEY`** (único jeito de parar cobrança hoje) | `POST /api/payments/checkout` devolve 500 `INTERNAL_ERROR` "Erro interno." (`getStripe()` lança dentro do `try`). Onboarding Connect vira 404. | (1) **Webhook:** `getStripe()` também roda na verificação, então a rota responde 400 e o pagamento já feito não é registrado enquanto a chave estiver ausente (a Stripe reenvia; por quanto tempo, NÃO ENSAIADO, ficha, linha 9). (2) **Cron de repasse:** os `Payout` PENDING elegíveis de contas Connect caem em **FAILED**, e não há caminho de volta (o cron lê só PENDING; a rota admin só aceita PROCESSING) [CHECKLIST, Pagamentos 8]. (3) **Estorno:** cancelar reserva paga não emite o estorno; só grava `refundAmount` para reprocesso manual (`lib/payments/refund.ts`). Antes de remover a chave, olhar `/admin/financeiro/repasses`: havendo `Payout` elegível, esperar o cron das 13:00 UTC rodar antes de remover a chave, ou aplicar também a linha seguinte. |
+| **Remover `STRIPE_SECRET_KEY`** (só quando o gate `billingEnabled` não bastar: com chave live, fechar o gate para a cobrança sem estes efeitos colaterais) | Com o gate aberto, `POST /api/payments/checkout` devolve 500 `INTERNAL_ERROR` "Erro interno." (`getStripe()` lança dentro do `try`); com o gate fechado, a chave ausente conta como live e o checkout já responde 403 `BILLING_CLOSED` antes de chegar lá. Onboarding Connect vira 404. | (1) **Webhook:** `getStripe()` também roda na verificação, então a rota responde 400 e o pagamento já feito não é registrado enquanto a chave estiver ausente (a Stripe reenvia; por quanto tempo, NÃO ENSAIADO, ficha, linha 9). (2) **Cron de repasse:** os `Payout` PENDING elegíveis de contas Connect caem em **FAILED**, e não há caminho de volta (o cron lê só PENDING; a rota admin só aceita PROCESSING) [CHECKLIST, Pagamentos 8]. (3) **Estorno:** cancelar reserva paga não emite o estorno; só grava `refundAmount` para reprocesso manual (`lib/payments/refund.ts`). Antes de remover a chave, olhar `/admin/financeiro/repasses`: havendo `Payout` elegível, esperar o cron das 13:00 UTC rodar antes de remover a chave, ou aplicar também a linha seguinte. |
 | **Remover `CRON_SECRET`** | Todos os 17 crons passam a responder 401 (`assertCronAuth`; conferido: todas as rotas de `app/api/cron/` o usam). Para o repasse. | Para **tudo**: `email-retry` (a cada 5 min), `expire-bookings`, `auto-cancel`, `reminders`, `flush-view-counts`, os purges. E-mail que falhou no primeiro envio não é reenviado. Só como última opção e por pouco tempo (ficha, linha 11). |
 | `E2E_BYPASS_DISABLED=true` | **Já está ligado no build**, fixo no `deploy.yml`, mas o valor do build só vale para o `middleware.ts` (inlinado: apaga `/api/test/*` com 404). Os handlers (`withE2EGuard`) e o bypass de rate limit (`lib/rateLimit.ts`) o leem em **runtime**, do painel; `SKIP_RATE_LIMIT` e `E2E_SECRET` também. | **Nunca remova.** Sonda: `GET /api/test/enroll-admin-totp` deve dar 404 com `{"error":"Not found"}` [CHECKLIST]; ela prova o `middleware`, não o handler. Por isso confira no painel de produção os **nomes** (`E2E_BYPASS_DISABLED=true` existe; `E2E_SECRET` e `SKIP_RATE_LIMIT` não): Pagamentos 12, ficha linha 13. |
 | `NEXT_PUBLIC_NOINDEX=true` | **Já está ligado**, fixo no build (`NEXT_PUBLIC_*` é inlinado). Estado seguro: `robots.txt` = `Disallow: /`. | Vale o do `deploy.yml`, **não** o do painel (o comentário no workflow explica). Trocar exige PR e novo deploy. Confira em `flags.noindex` do `/api/health`. |
@@ -85,7 +86,7 @@ Variável de runtime muda só depois de um **novo deployment**. Caminho: editar 
 
 Busca (sem diferenciar maiúsculas) por `maintenance`, `manutenção`, `readOnly`, `checkoutEnabled`, `signupsEnabled` e `paymentsEnabled` em `lib/`, `app/`, `middleware.ts`, `prisma/schema.prisma` e `packages/` no commit `839e7176`: nenhuma ocorrência é interruptor da plataforma. (`stripeChargesEnabled` existe, mas espelha a capacidade da conta Connect de **cada proprietário**; não liga nem desliga nada no site.)
 
-- **Gate de cobrança:** não existe. O checkout só depende de `getStripe()`, isto é, de `STRIPE_SECRET_KEY`. O checklist prevê o gate para D-4 (27/09), com padrão desligado. Existindo, a chave dele é o primeiro interruptor do ramo C da árvore (o que atualizar: 8.1 do checklist do D0).
+- **Fechar só a cobrança com chave de teste:** não existe. Com `sk_test_` a cobrança está sempre aberta; o gate `billingEnabled` (3.1) só fecha chave live. Com a cobrança fechada, pedido de reserva, cadastro e o botão "Pagar agora" seguem disponíveis: o locatário só vê a mensagem de `BILLING_CLOSED` ao pagar.
 - **Modo manutenção / somente leitura / página de status:** não existem.
 - **Fechar o cadastro ou exigir convite:** não existe (checklist, decisão 3).
 - **Pausar um único módulo** (mensagens, anúncios, reservas): não existe.
@@ -238,8 +239,9 @@ Relógio: **0 a 1 min** confirmar · **1 a 3 min** decidir · **3 a 5 min** exec
 
 [C] Dinheiro (NÃO reverter código como primeiro reflexo)
     C1. Cobrança errada, duplicada ou de quem não devia: parar cobranças.
-        Se existir gate de cobrança (3.3): desligar a flag (~60 s).
-        Senão, a única alavanca é remover STRIPE_SECRET_KEY + dispatch (3.2), com decisão
+        Chave live: pôr billingEnabled em "false" (3.1; ~60 s; links já emitidos valem até
+        expirar). Chave de teste: o gate não age, e a única alavanca é remover
+        STRIPE_SECRET_KEY + dispatch (3.2), com decisão
         EXPLÍCITA do Roberto, e ela tem três efeitos que não voltam sozinhos: (1) o webhook
         responde 400 e o pagamento já feito não é registrado; (2) Payout Connect elegível cai
         em FAILED, sem caminho de volta; (3) cancelar reserva paga não emite estorno (fica em
@@ -279,7 +281,7 @@ O ensaio é o que transforma este documento de hipótese em runbook. Cronometre 
 | 7 | `vercel rollback --help`, `vercel promote --help` e `vercel inspect --help` na versão 54.6.1: a sintaxe das seções 4.2 e 4.4 confere? |  |  |  |
 | 8 | Ref antiga com banco à frente: `migrate deploy` passa ou reclama? |  |  |  |
 | 9 | Remover `STRIPE_SECRET_KEY` (**só se a chave existir na produção**): checkout dá 500 como descrito? webhook dá 400? Devolver a chave e conferir |  |  |  |
-| 10 | Interruptores de `PlatformConfig` (3.1): `PATCH` de uma chave gravando o **mesmo valor** que ela já tem (status 200 e o tempo até o efeito, esperado ~60 s). Gate de cobrança **quando existir**: flipar e medir |  |  |  |
+| 10 | Interruptores de `PlatformConfig` (3.1): `PATCH` de uma chave gravando o **mesmo valor** que ela já tem (status 200 e o tempo até o efeito, esperado ~60 s). `billingEnabled` (3.1): flipar e medir; com chave de teste o gate não age, então só se mede o `PATCH` e o tempo do cache |  |  |  |
 | 11 | Remover `CRON_SECRET` (**opcional**; só com o valor à mão para devolver e fora de 11:00 a 14:00 UTC): os crons dão 401? Devolver e conferir que voltaram a 200 |  |  |  |
 | 12 | Landing da campanha (3.4): **só ler, não executar.** O projeto dela tem Instant Rollback? Quem tem acesso? (há mídia paga no ar: um rollback real tem efeito público) |  |  |  |
 | 13 | Painel de produção, só os **nomes**: `E2E_BYPASS_DISABLED=true` existe; `E2E_SECRET` e `SKIP_RATE_LIMIT` não existem (Pagamentos 12) |  |  |  |

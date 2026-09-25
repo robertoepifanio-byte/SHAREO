@@ -85,13 +85,13 @@ Na página do item, 1 diária. Preencha a observação com `[TESTE D0]`.
 
 **Passo 11. B paga, conforme o estado da cobrança.**
 
-> **Não existe gate de cobrança no commit `839e7176`** [CÓDIGO]: `POST /api/payments/checkout` só depende de `STRIPE_SECRET_KEY`. O gate está previsto para D-4 (27/09); o que atualizar aqui quando ele existir está em `docs/checklist-dia-d0.md`, seção 8.1.
+> **O gate de cobrança existe desde `b17c1308` (#510)** [CÓDIGO]: com chave Stripe **live**, `POST /api/payments/checkout` só abre com `PlatformConfig.billingEnabled = "true"` (ausente = fechada); com `sk_test_` fica sempre aberto. O checkout também recusa (409 `OWNER_NOT_READY`) quando o proprietário não tem Connect `ACTIVE` nem PIX cadastrado. Nada disso foi exercitado em produção.
 
 | Estado (campo da seção 4) | Como se reconhece | O que fazer e o que esperar |
 |---|---|---|
-| **Fechada** (sem `STRIPE_SECRET_KEY` no runtime, ou gate novo desligado) | Clicar "Pagar agora" não abre a Stripe. | Pelo código, o checkout devolve **500 "Erro interno."** (a chave ausente lança dentro do `try`; NÃO ENSAIADO em produção). **Registre o que B vê na tela.** Se a tela mostra "Pagar agora" enquanto a cobrança está fechada, é achado de produto (checklist, decisão 1): o usuário é empurrado a um erro. **Passos 12 a 15 não são executáveis** (retirada exige `PAID`: 402 `PAYMENT_REQUIRED`). Feche o ciclo cancelando a reserva (seção 3). |
+| **Fechada** (chave live com `billingEnabled` ausente ou diferente de `"true"`, ou sem `STRIPE_SECRET_KEY`) | Clicar "Pagar agora" não abre a Stripe. | Pelo código, o checkout devolve **403 `BILLING_CLOSED`** ("Os pagamentos ainda não estão abertos. Nenhuma cobrança foi feita…"); NÃO ENSAIADO em produção. **Registre o que B vê na tela.** O botão "Pagar agora" continua visível com a cobrança fechada e mostra essa mensagem; se isso for inaceitável, é achado de produto (checklist, decisão 1). Se A não tiver recebimento, a resposta é 409 `OWNER_NOT_READY`. **Passos 12 a 15 não são executáveis** (retirada exige `PAID`: 402 `PAYMENT_REQUIRED`). Feche o ciclo cancelando a reserva (seção 3). |
 | **Teste** (`sk_test_` em produção) | A sessão de checkout tem prefixo `cs_test_`. | Cartão `4242 4242 4242 4242`, validade futura, CVC qualquer, **por fora da Link**. Esperado: volta em `/reservas/sucesso`; a reserva vira `PAID` **pelo webhook**, não pela tela. Confira `paymentStatus`, `paidAt`, o código de retirada (agora visível para B) e `platformFeeAmount + ownerNetAmount = totalPrice`. |
-| **Live** (`sk_live_`) | A sessão tem prefixo `cs_live_`. | **Só com instrução explícita e separada do Roberto** (CLAUDE.md; checklist, seção 6, D0). Cobrança **real** de R$ 1,00, cartão real de pessoa da equipe. Comissão de 15% sobre 100 centavos = R$ 0,15 e R$ 0,85 ao proprietário (`calcSplit`); a tarifa da Stripe supera a comissão nesse valor, aceito de antemão (checklist, decisão 6). |
+| **Live** (`sk_live_`) | A sessão tem prefixo `cs_live_`. | **Só com instrução explícita e separada do Roberto** (CLAUDE.md; checklist, seção 6, D0), e só depois de ele ligar `billingEnabled` (sem isso o checkout dá 403 `BILLING_CLOSED`). Cobrança **real** de R$ 1,00, cartão real de pessoa da equipe. Comissão de 15% sobre 100 centavos = R$ 0,15 e R$ 0,85 ao proprietário (`calcSplit`); a tarifa da Stripe supera a comissão nesse valor, aceito de antemão (checklist, decisão 6). |
 
 *Sempre:* `paymentStatus = PAID` só vale se veio do webhook. Em qualquer estado pago, confira a linha de `checkout.session.completed` no Dashboard da Stripe correspondente (teste ou live).
 
@@ -107,7 +107,7 @@ B mostra o código de 6 dígitos da reserva; A o informa na reserva.
 
 **Passo 14. Repasse ao proprietário (Admin).**
 Em `/admin/financeiro/repasses`, procure o `Payout` da reserva `[TESTE D0]`.
-*Esperado:* um `Payout` `PENDING` de **85 centavos** (R$ 0,85) com `eligibleAfter` = agora + `payoutWindowDays` (3 dias em produção, `/api/platform-config/public`). Se A **não** tinha conta de recebimento, **nenhum `Payout` nasce** e há um aviso `SEM CONTA DE RECEBIMENTO` nos logs da Vercel: registre como achado (Pag 4 do checklist).
+*Esperado:* um `Payout` `PENDING` de **85 centavos** (R$ 0,85) com `eligibleAfter` = agora + `payoutWindowDays` (3 dias em produção, `/api/platform-config/public`). Se A **não** tinha conta de recebimento, o passo 11 já deve ter dado 409 `OWNER_NOT_READY` e o pagamento nem começa: registre como achado (Pag 4 do checklist). Se A tem só PIX (sem Connect `ACTIVE`), o `Payout` vai para `PROCESSING` quando o cron rodar e o financeiro paga na mão.
 *Não aprove nem rejeite* esse `Payout` como se um PIX tivesse saído: "aprovar" grava `COMPLETED` sem provar que o dinheiro foi (`app/api/admin/payouts/[id]/route.ts`). Se A tiver Connect `ACTIVE` em live, o cron de 13:00 UTC do dia em que ele ficar elegível fará **um Transfer real**; avise o financeiro (seção 3).
 
 **Passo 15. Avaliar.**
