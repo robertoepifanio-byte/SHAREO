@@ -129,6 +129,13 @@ enum NotificationType {
   EXTENSION_REQUESTED // locatário pediu mais prazo (notifica o proprietário)
   EXTENSION_APPROVED // proprietário aceitou
   EXTENSION_REJECTED // proprietário recusou
+  // Stripe Connect — mudança de status da connected account do proprietário
+  // (requirements vencidos, capability suspensa, etc.). Não cabe em nenhum
+  // tipo existente: não é booking, não é ID, não é extensão. O deep-link vai
+  // para /perfil/recebimentos, não para nenhuma tela de booking ou verificação.
+  // Um filtro por tipo equivocado (ex.: usar ID_REJECTED) causaria falsos
+  // positivos em dashboards e futuras preferências de e-mail por categoria.
+  STRIPE_CONNECT_NEEDS_ACTION
 }
 
 enum CheckPhase {

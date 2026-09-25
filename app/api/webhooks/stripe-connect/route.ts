@@ -23,7 +23,7 @@
 import type { Stripe } from "stripe"
 import { getStripe } from "@/lib/stripe"
 import { verifyStripeWebhookRequest } from "@/lib/payments/stripe-webhook"
-import { fetchAndSyncConnectAccount } from "@/lib/stripe-connect"
+import { fetchAndSyncConnectAccount, deriveStripeConnectStatus } from "@/lib/stripe-connect"
 import { withStripeEventQueue } from "@/lib/payments/stripe-event-queue"
 
 const LOG = "[stripe-connect webhook]"
@@ -51,8 +51,9 @@ export async function POST(req: Request) {
           const accountId = notification.related_object?.id
           if (!accountId) break
 
-          const account = await fetchAndSyncConnectAccount(accountId)
-          console.warn(`${LOG} ${notification.type} → conta ${account.id} sincronizada`)
+          const { account, prevStatus } = await fetchAndSyncConnectAccount(accountId)
+          const newStatus = deriveStripeConnectStatus(account)
+          console.warn(`${LOG} ${notification.type} → conta ${account.id} ${prevStatus ?? "?"} → ${newStatus}`)
           break
         }
 
