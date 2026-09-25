@@ -8,6 +8,19 @@
 
 ---
 
+## 💳 Stripe live em produção — pendências abertas na ativação (25/09/2026)
+
+Em 25/09 a produção passou a ter chave live, os dois destinos de evento (`/api/webhooks/stripe` e `/api/webhooks/stripe-connect`) e o `stripeConnectEnabled` ligado. A cobrança real (`billingEnabled`) segue **fechada**. O ping do destino do Connect respondeu 200 e um proprietário concluiu o cadastro Express live, mas a locação assistida ainda não rodou.
+
+| # | Item | Por que importa | Esforço |
+|---|---|---|---|
+| **STRIPE-01** 🟠 | **Eventos de conta do Connect não chegam à produção.** Depois de um cadastro Express live concluído, o destino `shareo-prod-connect` (escopo "Contas conectadas") recebeu só o ping, nenhum `v2.core.account[...]`. Hipótese: contas v2 criadas pela plataforma emitem no escopo "Sua conta" (aviso da própria tela de criação do destino), e o painel só deixa um escopo por destino; o script `scripts/create-stripe-connect-event-destination.ts` cria com `events_from: ["@self", "@accounts"]`, mas lê a chave de `.env.local` (a do staging). Primeiro passo: Workbench → Eventos, buscar `v2.core.account` e ver se foram emitidos e de qual escopo. | Sem o evento, o status da conta do dono só atualiza quando ele volta à tela de recebimentos. Se a Stripe suspender uma conta, o ShareO não fica sabendo e o cron segue tentando repassar. | Baixo a médio: recriar o destino com os dois escopos (o script precisa aceitar a chave por outro arquivo de env) ou aceitar dois segredos na rota |
+| **STRIPE-02** | **Proprietário não é avisado quando a Stripe pede dados novos.** Ao ativar o Connect, a plataforma reconheceu as responsabilidades de "comunicação com vendedores" e "remediação de vendedores" (a conformidade contínua ficou com a Stripe). Hoje o webhook só sincroniza o status; nenhum e-mail nem notificação sai para o dono. | Depende de STRIPE-01 (sem evento não há gatilho). Com poucos donos no início, dá para cumprir manualmente. | Médio: gatilho no webhook do Connect + e-mail em `lib/email.ts` |
+| **STRIPE-03** | **Dados públicos da conta Stripe para revisar** (decisão dos fundadores, sem código): o nome jurídico está com uma palavra colada na frente e não bate com o registro da Receita (`SHAREO MARKETPLACE DE INTERMEDIACAO DE NEGOCIOS LTDA`, ver LEGAL-02); o nome comercial público difere da marca; o telefone de suporte é o celular pessoal de um sócio; a marca (logo e cor) do cadastro Express está vazia; a chave secreta live antiga continua ativa depois da criação da chave nova usada na Vercel. | É o que o cliente vê no recibo e o dono vê no cadastro. A chave antiga é uma credencial live a mais sem uso conhecido. | Baixo, no painel da Stripe |
+| **STRIPE-04** | **Locação assistida live ainda não rodou.** Falta: anúncio `[TESTE D0]`, reserva por outra pessoa com cartão real, prova do 403 `BILLING_CLOSED` com a cobrança fechada, abrir a cobrança, pagamento, conferência do webhook (reserva PAID, `PlatformTransaction`, `available_on` da cobrança), estorno de uma segunda reserva e fechar a cobrança de novo. O 403 só aparece com reserva `CONFIRMED` (a guarda roda depois da validação da reserva). | É a única prova de ponta a ponta do dinheiro real antes do D0. | Uma sessão com duas pessoas |
+
+---
+
 ## 🏠 Home do site transcrita da campanha — implementada, AGUARDANDO verificação em staging (22/09/2026)
 
 **Origem:** revisão pré-go-live (22/09). Fundador pediu para levar o layout/copy da landing de campanha (`apps/campanha`, hoje publicada em shareo.com.br) para a home do site principal, mobile-first.
