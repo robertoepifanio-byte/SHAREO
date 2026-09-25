@@ -14,7 +14,8 @@ on:
       - "**.md"
       - ".gitattributes"
 
-  # Staging deploy (automático) e Production deploy (com aprovação):
+  # Staging deploy (automático) e Production deploy (sem gate de aprovação — qualquer
+  # tag web-v* ou workflow_dispatch publica produção diretamente):
   # ambos disparam em push na main OU em tags de release web (web-v*).
   # ⚠️ NÃO adicionar paths-ignore aqui: filtro de path não funciona de forma
   # confiável em push de TAG (quebraria o deploy de produção). O gate por
@@ -224,6 +225,13 @@ jobs:
           # shareo.com.br antes mesmo do go-live.
           NEXT_PUBLIC_NOINDEX: "true"
 
+      - name: Guard — migrations destrutivas (staging)
+        # Bloqueia o deploy se alguma migration nova contiver SQL destrutivo
+        # (DROP TABLE/COLUMN, ALTER COLUMN TYPE, TRUNCATE, DELETE sem WHERE, RENAME)
+        # sem arquivo DESTRUTIVA-APROVADA.md na mesma pasta.
+        # Compara HEAD~1..HEAD; em push inicial (sem historico) verifica todas.
+        run: node scripts/ci/check-destructive-migration.js
+
       - name: Deploy to staging (--prod → atualiza shareo-rouge.vercel.app)
         id: deploy
         run: |
@@ -402,7 +410,8 @@ jobs:
   # (workflow_dispatch — uso interno, equipe técnica + fundadores, atrás de
   # Vercel Deployment Protection; shareo.com.br fica no placeholder até B1).
   # Para fazer deploy público real (só pós-D4): git tag web-v1.12.0 && git push origin web-v1.12.0
-  # Requer aprovação no ambiente "production" do GitHub (Required reviewers)
+  # ⚠️ NÃO existe gate de aprovação: qualquer tag web-v* ou workflow_dispatch publica
+  # produção diretamente (gh api confirma protection_rules [] em 24/09/2026 — Infra 8).
   # ─────────────────────────────────────────────────────────────────
   production:
     name: Deploy Production
@@ -473,6 +482,20 @@ jobs:
           #
           # Desligar quando a operação abrir ao público de fato (Etapa 4).
           NEXT_PUBLIC_NOINDEX: "true"
+
+      - name: Guard — migrations destrutivas (production)
+        # Mesmo gate do staging, com base na tag anterior de producao (web-v*) se
+        # disponivel, senao HEAD~1. Em producao qualquer SQL destrutivo sem opt-in
+        # pode ser irreversivel — o banco nao tem PITR contratado.
+        run: |
+          BASE=$(git tag --list 'web-v*' --sort=-version:refname | sed -n '2p')
+          if [ -n "$BASE" ]; then
+            echo "Base: $BASE"
+            node scripts/ci/check-destructive-migration.js --base "$BASE"
+          else
+            echo "Sem tag anterior web-v*; usando HEAD~1"
+            node scripts/ci/check-destructive-migration.js
+          fi
 
       - name: Deploy to production
         id: deploy
