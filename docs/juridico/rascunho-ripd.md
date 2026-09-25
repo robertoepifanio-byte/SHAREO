@@ -185,7 +185,7 @@ A Resolução CD/ANPD nº 19/2024 tornou **obrigatórias e inalteráveis** as Cl
 
 | Dado | Gatilho | O que acontece |
 |---|---|---|
-| **Conta do usuário** | Clique do titular em "Excluir conta" (`DELETE /api/users/me`) | **Imediato**, em uma transação: anonimiza nome, e-mail, telefone, bio, avatar, localização, documentos (hash e cifra), senha, comentários e mensagens; apaga os arquivos de `id-docs`. Recusada se houver locação em andamento. Registros financeiros dos últimos 5 anos ficam **anonimizados**, com o titular informado na hora |
+| **Conta do usuário** | Clique do titular em "Excluir conta" (`DELETE /api/users/me`) | **Imediato**, em uma transação: anonimiza nome, e-mail, telefone, bio, avatar, localização, documentos (hash e cifra), senha, comentários e mensagens; em segundo plano, logo após a resposta, apaga do Storage o documento e a selfie (`id-docs`) e os uploads do titular em `uploads/<id>` (avatar e fotos de avaliação ou de relato de problema). **Não** são apagadas por essa rotina as fotos de anúncio e as de reserva/disputa (retenção a decidir; ver `docs/checklist-go-live-2026-10-01.md`, item 6). *Correção de 24/09: até aqui a remoção de `id-docs` procurava o prefixo errado e não apagava nada; o conserto está implementado, aguardando verificação em staging.* Recusada se houver locação em andamento. Registros financeiros dos últimos 5 anos ficam **anonimizados**, com o titular informado na hora |
 | **Registros financeiros** | 5 anos | `purge-fiscal-records` (mensal). **Só apaga quando todos os titulares do registro excluíram a conta** — uma transação tem duas partes |
 | **`admin_logs`** | 5 anos | `purge-admin-logs` |
 | **IPs de consentimento** | 5 anos | `purge-consent-ips` |
