@@ -5,6 +5,7 @@ import { SignJWT } from "jose"
 import { prisma } from "@/lib/prisma"
 import { LoginSchema } from "@/lib/validations/auth"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
+import { checkLoginEmailLimit } from "@/lib/loginRateLimit"
 
 function secret() {
   const key = process.env.AUTH_SECRET
@@ -36,6 +37,11 @@ export async function POST(req: NextRequest) {
     }
 
     const { email, password } = parsed.data
+
+    // Limite por e-mail, o mesmo contador do login web. Vem ANTES da consulta
+    // ao banco: o 429 é igual exista o e-mail ou não.
+    const bloqueada = await checkLoginEmailLimit(email, req)
+    if (bloqueada) return bloqueada
 
     const user = await prisma.user.findUnique({
       where: { email },

@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server"
 import { handlers } from "@/lib/auth"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
+import { checkLoginEmailLimit } from "@/lib/loginRateLimit"
 
 export const { GET } = handlers
 
@@ -25,16 +26,27 @@ export async function POST(req: NextRequest) {
 
     // Rate limit por email (protege conta específica contra ataques direcionados)
     try {
-      const body  = await req.clone().text()
-      const email = new URLSearchParams(body).get("email")?.toLowerCase()
-      if (email) {
-        const rlEmail = await checkRateLimit(`login:email:${email}`, RATE_LIMITS.loginEmail.limit, RATE_LIMITS.loginEmail.windowMs, req)
-        if (!rlEmail.allowed) return rateLimitResponse(rlEmail.resetAt)
-      }
+      const bloqueada = await checkLoginEmailLimit(await credentialsEmail(req), req)
+      if (bloqueada) return bloqueada
     } catch {
       // Se não conseguir ler o body, continua sem rate limit por email
     }
   }
 
   return handlers.POST(req)
+}
+
+/**
+ * E-mail do body: JSON ou formulário, como o @auth/core (aceita os dois; em
+ * chave repetida fica com a ÚLTIMA). Formulário é o fallback para qualquer outro
+ * content-type, um superconjunto do que o NextAuth lê.
+ * 🪤 Ler a PRIMEIRA chave deixava o limite cego a `email=lixo&email=vitima@x.com`:
+ * contava `lixo`, e o NextAuth autenticava `vitima@x.com`.
+ */
+async function credentialsEmail(req: NextRequest): Promise<unknown> {
+  const body = await req.clone().text()
+  const contentType = req.headers.get("content-type") ?? ""
+  if (contentType.includes("application/json")) return JSON.parse(body)?.email
+  const emails = new URLSearchParams(body).getAll("email")
+  return emails[emails.length - 1]
 }
