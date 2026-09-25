@@ -37,8 +37,11 @@ export async function withUser(
 
   if (!opts?.select) return { id: userId }
 
+  // deletedAt: null — rejeita contas excluídas mesmo quando o Redis está fora
+  // (isSessionStale é fail-open; authorize() só checa no login). Zero queries extras:
+  // a coluna está no índice primário, sem overhead de leitura.
   const user = await prisma.user.findUnique({
-    where:  { id: userId },
+    where:  { id: userId, deletedAt: null },
     select: { id: true, ...opts.select },
   })
   return user ?? unauth()

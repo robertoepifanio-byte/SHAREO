@@ -213,10 +213,30 @@ export async function DELETE(req: NextRequest) {
             "[DELETE /api/users/me] arquivos do Storage NÃO removidos (LGPD art. 18):",
             JSON.stringify({ userId, apagados: totalApagados, falhas: todasFalhas }),
           )
-          // Alerta para operadores: falha de Storage é visível no Sentry com userId (não-PII).
+          // Alerta para operadores — dois canais:
+          // 1. Sentry (observabilidade): falha visível com userId (não-PII).
           Sentry.captureException(
             new Error("[LGPD] limpeza de Storage falhou na exclusão de conta"),
             { extra: { userId, apagados: totalApagados, falhas: todasFalhas }, tags: { lgpd: "purge-failure" } },
+          )
+          // 2. Notificação in-app para todos os ADMIN_SUPERADMIN (mesmo padrão
+          //    do webhook Stripe para disputas — nenhum PII, apenas userId e contagem).
+          prisma.user.findMany({
+            where:  { role: "ADMIN", adminRole: "ADMIN_SUPERADMIN" },
+            select: { id: true },
+          }).then((admins) => {
+            if (admins.length === 0) return
+            return prisma.notification.createMany({
+              data: admins.map((admin) => ({
+                userId: admin.id,
+                type:   "BOOKING_CANCELLED" as never, // reuse — body esclarece o contexto
+                title:  "[LGPD] Falha na limpeza do Storage",
+                body:   `${todasFalhas.length} arquivo(s) não removido(s) na exclusão de conta. Intervenção manual necessária.`,
+                data:   { userId, apagados: totalApagados, falhas: todasFalhas.length },
+              })),
+            })
+          }).catch((e) =>
+            console.error("[DELETE /api/users/me] notificação de admins falhou:", e instanceof Error ? e.message : e),
           )
         }
       } catch (e) {
@@ -226,6 +246,24 @@ export async function DELETE(req: NextRequest) {
           JSON.stringify({ userId, erro }),
         )
         Sentry.captureException(e, { extra: { userId }, tags: { lgpd: "purge-failure" } })
+        // Notifica admins mesmo quando o Storage nem chegou a ser chamado.
+        prisma.user.findMany({
+          where:  { role: "ADMIN", adminRole: "ADMIN_SUPERADMIN" },
+          select: { id: true },
+        }).then((admins) => {
+          if (admins.length === 0) return
+          return prisma.notification.createMany({
+            data: admins.map((admin) => ({
+              userId: admin.id,
+              type:   "BOOKING_CANCELLED" as never,
+              title:  "[LGPD] Falha na limpeza do Storage",
+              body:   `Limpeza do Storage não iniciou na exclusão de conta. Intervenção manual necessária.`,
+              data:   { userId, erro },
+            })),
+          })
+        }).catch((e2) =>
+          console.error("[DELETE /api/users/me] notificação de admins (catch externo) falhou:", e2 instanceof Error ? e2.message : e2),
+        )
       }
     })
 
@@ -271,7 +309,9 @@ export async function GET(req: NextRequest) {
     // no app mobile sem duplicar a query em dois shapes diferentes.
     const [user, reviewStats] = await Promise.all([
       prisma.user.findUnique({
-        where:  { id: userId },
+        // deletedAt: null — mesma defesa do withUser: Redis fail-open não deve
+        // permitir que conta excluída leia o próprio perfil anonimizado.
+        where:  { id: userId, deletedAt: null },
         select: {
           id:           true,
           name:         true,
@@ -374,7 +414,9 @@ export async function PATCH(req: NextRequest) {
 
     const d       = parsed.data
     const updated = await prisma.user.update({
-      where: { id: userId },
+      // deletedAt: null — se o Redis estava fora na exclusão, Prisma lança P2025
+      // (record not found) → catch → 500, prevenindo escrita sobre dados anonimizados.
+      where: { id: userId, deletedAt: null },
       data:  {
         ...(d.name         !== undefined && { name:         d.name }),
         ...(d.bio          !== undefined && { bio:          d.bio }),

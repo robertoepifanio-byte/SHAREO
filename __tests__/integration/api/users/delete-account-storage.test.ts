@@ -14,16 +14,18 @@
  */
 import { NextRequest } from "next/server"
 
-const mockUserId              = jest.fn()
-const mockCreateAdmin         = jest.fn()
-const mockList                = jest.fn()
-const mockRemove              = jest.fn()
-const mockFindBooking         = jest.fn()
-const mockReviewUpdateMany    = jest.fn()
-const mockItemFindMany        = jest.fn()
+const mockUserId               = jest.fn()
+const mockCreateAdmin          = jest.fn()
+const mockList                 = jest.fn()
+const mockRemove               = jest.fn()
+const mockFindBooking          = jest.fn()
+const mockReviewUpdateMany     = jest.fn()
+const mockItemFindMany         = jest.fn()
 const mockBookingPhotoFindMany = jest.fn()
-const mockInvalidateSessions  = jest.fn().mockResolvedValue(true)
-const mockSentryCapture       = jest.fn()
+const mockUserFindMany         = jest.fn().mockResolvedValue([]) // admins superadmin
+const mockNotificationCreateMany = jest.fn().mockResolvedValue({ count: 0 })
+const mockInvalidateSessions   = jest.fn().mockResolvedValue(true)
+const mockSentryCapture        = jest.fn()
 const mockAfterTasks: Array<() => unknown> = []
 
 jest.mock("@/lib/resolveUserId",         () => ({ resolveUserId: (...a: unknown[]) => mockUserId(...a) }))
@@ -41,12 +43,13 @@ jest.mock("@/lib/prisma", () => ({
     booking:             { findFirst: (...a: unknown[]) => mockFindBooking(...a), updateMany: jest.fn() },
     platformTransaction: { count: jest.fn().mockResolvedValue(0) },
     payout:              { count: jest.fn().mockResolvedValue(0) },
-    user:                { update: jest.fn() },
+    user:                { update: jest.fn(), findMany: (...a: unknown[]) => mockUserFindMany(...a) },
     review:              { updateMany: (...a: unknown[]) => mockReviewUpdateMany(...a) },
     message:             { updateMany: jest.fn() },
     ownerPaymentAccount: { updateMany: jest.fn() },
     item:                { findMany: (...a: unknown[]) => mockItemFindMany(...a) },
     bookingPhoto:        { findMany: (...a: unknown[]) => mockBookingPhotoFindMany(...a) },
+    notification:        { createMany: (...a: unknown[]) => mockNotificationCreateMany(...a) },
   },
 }))
 // after() precisa de request scope; aqui capturamos a tarefa para rodá-la e AGUARDÁ-LA.
@@ -97,6 +100,9 @@ beforeEach(() => {
   // Sem itens nem fotos de reserva por padrão
   mockItemFindMany.mockResolvedValue([])
   mockBookingPhotoFindMany.mockResolvedValue([])
+  // Por padrão: 0 admins superadmin (não dispara notificações em testes existentes)
+  mockUserFindMany.mockResolvedValue([])
+  mockNotificationCreateMany.mockResolvedValue({ count: 0 })
   errSpy  = jest.spyOn(console, "error").mockImplementation(() => {})
   infoSpy = jest.spyOn(console, "info").mockImplementation(() => {})
 })
@@ -289,5 +295,51 @@ describe("DELETE /api/users/me — invalidação de sessão", () => {
       expect.stringMatching(/invalidateUserSessions/),
       expect.stringMatching(/redis down/),
     )
+  })
+})
+
+describe("DELETE /api/users/me — notificação in-app de admins em falha do Storage", () => {
+  it("🪤 falha do Storage cria notificação para todos os ADMIN_SUPERADMIN (userId sem PII)", async () => {
+    storageCom({ "id-docs": { [`id-verification/${USER}`]: ["selfie-1.jpg"] } })
+    mockRemove.mockResolvedValue({ data: null, error: { message: "storage down" } })
+    mockUserFindMany.mockResolvedValue([{ id: "admin1" }, { id: "admin2" }])
+
+    await DELETE(req())
+    await rodarTarefasPosResposta()
+
+    // findMany deve filtrar ADMIN_SUPERADMIN
+    expect(mockUserFindMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { role: "ADMIN", adminRole: "ADMIN_SUPERADMIN" } }),
+    )
+    // createMany deve incluir ambos os admins
+    expect(mockNotificationCreateMany).toHaveBeenCalledTimes(1)
+    const [{ data }] = mockNotificationCreateMany.mock.calls[0] as [{ data: { userId: string; title: string; data: { userId: string } }[] }][]
+    expect(data.map((n) => n.userId)).toEqual(expect.arrayContaining(["admin1", "admin2"]))
+    // Notificação NÃO contém PII — só userId do titular e contagem
+    expect(data[0].title).toMatch(/LGPD/)
+    expect((data[0].data as { userId: string }).userId).toBe(USER)
+    expect(data[0]).not.toHaveProperty("email")
+    expect(data[0]).not.toHaveProperty("name")
+  })
+
+  it("sem ADMIN_SUPERADMIN no banco: createMany não é chamado", async () => {
+    storageCom({ "id-docs": { [`id-verification/${USER}`]: ["selfie-1.jpg"] } })
+    mockRemove.mockResolvedValue({ data: null, error: { message: "storage down" } })
+    mockUserFindMany.mockResolvedValue([]) // nenhum superadmin
+
+    await DELETE(req())
+    await rodarTarefasPosResposta()
+
+    expect(mockNotificationCreateMany).not.toHaveBeenCalled()
+  })
+
+  it("🪤 limpeza que nem começa (catch externo) também notifica os superadmins", async () => {
+    mockCreateAdmin.mockImplementation(() => { throw new Error("supabaseUrl is required.") })
+    mockUserFindMany.mockResolvedValue([{ id: "admin1" }])
+
+    await DELETE(req())
+    await rodarTarefasPosResposta()
+
+    expect(mockNotificationCreateMany).toHaveBeenCalledTimes(1)
   })
 })
