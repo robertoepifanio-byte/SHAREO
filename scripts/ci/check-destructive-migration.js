@@ -80,26 +80,20 @@ function getMigrationFolders({ all = false, base = 'HEAD~1' } = {}) {
       });
   }
 
-  try {
-    const raw = execSync(
-      `git diff --name-status "${base}" HEAD -- prisma/migrations/`,
-      { encoding: 'utf8', cwd: path.join(__dirname, '../..') }
-    );
-    const added = raw
-      .split('\n')
-      .filter((line) => /^[AM]\t/.test(line))
-      .map((line) => line.replace(/^[AM]\t/, '').trim())
-      .filter((f) => f.endsWith('migration.sql'));
+  // Sem try/catch de propósito: base inexistente (checkout raso, SHA desconhecido)
+  // tem de parar o deploy com o erro do git. O fallback antigo verificava TODAS as
+  // migrations e bloqueou o staging em 25/09 por DROPs aplicados em agosto.
+  const raw = execSync(
+    `git diff --name-status "${base}" HEAD -- prisma/migrations/`,
+    { encoding: 'utf8', cwd: path.join(__dirname, '../..') }
+  );
+  const added = raw
+    .split('\n')
+    .filter((line) => /^[AM]\t/.test(line))
+    .map((line) => line.replace(/^[AM]\t/, '').trim())
+    .filter((f) => f.endsWith('migration.sql'));
 
-    return [...new Set(added.map((f) => path.basename(path.dirname(f))))];
-  } catch {
-    // Sem historico (primeiro commit) ou fora de um repo — verifica todas
-    return fs.readdirSync(MIGRATIONS_DIR)
-      .filter((d) => {
-        const full = path.join(MIGRATIONS_DIR, d);
-        return fs.statSync(full).isDirectory() && fs.existsSync(path.join(full, 'migration.sql'));
-      });
-  }
+  return [...new Set(added.map((f) => path.basename(path.dirname(f))))];
 }
 
 function main() {

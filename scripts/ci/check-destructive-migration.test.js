@@ -10,7 +10,7 @@
 
 'use strict';
 
-const { findDestructiveStatements } = require('./check-destructive-migration');
+const { findDestructiveStatements, getMigrationFolders } = require('./check-destructive-migration');
 
 describe('findDestructiveStatements', () => {
   // ── Deve DETECTAR ─────────────────────────────────────────────────────────
@@ -143,5 +143,17 @@ describe('findDestructiveStatements', () => {
         DROP COLUMN "mercadoPagoId";
     `;
     expect(findDestructiveStatements(sql)).toContain('DROP COLUMN');
+  });
+});
+
+describe('getMigrationFolders', () => {
+  it('base inexistente PARA o guard em vez de verificar todas as migrations', () => {
+    // Regressao de 25/09: com checkout raso o `git diff` falhava e o fallback
+    // verificava o historico inteiro, bloqueando o deploy por DROPs de agosto.
+    expect(() => getMigrationFolders({ base: 'ref-que-nao-existe-0000' })).toThrow();
+  });
+
+  it('diff vazio (base = HEAD) nao devolve migration nenhuma', () => {
+    expect(getMigrationFolders({ base: 'HEAD' })).toEqual([]);
   });
 });

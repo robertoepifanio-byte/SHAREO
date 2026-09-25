@@ -186,6 +186,9 @@ jobs:
       url: ${{ env.STAGING_URL }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Histórico e tags: o guard de migrations compara com o commit no ar.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -233,8 +236,14 @@ jobs:
         # Bloqueia o deploy se alguma migration nova contiver SQL destrutivo
         # (DROP TABLE/COLUMN, ALTER COLUMN TYPE, TRUNCATE, DELETE sem WHERE, RENAME)
         # sem arquivo DESTRUTIVA-APROVADA.md na mesma pasta.
-        # Compara HEAD~1..HEAD; em push inicial (sem historico) verifica todas.
-        run: node scripts/ci/check-destructive-migration.js
+        # Base = commit que o staging SERVE (build.commit do /api/health): as
+        # migrations novas desde ele são as pendentes. Sem health, o commit
+        # anterior do push. Base desconhecida para o job (o script não adivinha).
+        run: |
+          BASE=$(curl -s --max-time 20 https://staging.shareo.com.br/api/health | grep -o '"commit":"[0-9a-f]\{40\}"' | cut -d'"' -f4 || true)
+          BASE=${BASE:-${{ github.event.before }}}
+          echo "Base: $BASE"
+          node scripts/ci/check-destructive-migration.js --base "$BASE"
 
       - name: Deploy to staging (--prod → atualiza shareo-rouge.vercel.app)
         id: deploy
@@ -437,6 +446,9 @@ jobs:
       name: production
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Histórico e tags: o guard de migrations compara com o commit no ar.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
@@ -498,15 +510,13 @@ jobs:
         # Mesmo gate do staging, com base na tag anterior de producao (web-v*) se
         # disponivel, senao HEAD~1. Em producao qualquer SQL destrutivo sem opt-in
         # pode ser irreversivel — o banco nao tem PITR contratado.
+        # Base = commit que a produção SERVE (build.commit do /api/health); sem
+        # health, a última tag prod-ok-* (deploy verde verificado).
         run: |
-          BASE=$(git tag --list 'web-v*' --sort=-version:refname | sed -n '2p')
-          if [ -n "$BASE" ]; then
-            echo "Base: $BASE"
-            node scripts/ci/check-destructive-migration.js --base "$BASE"
-          else
-            echo "Sem tag anterior web-v*; usando HEAD~1"
-            node scripts/ci/check-destructive-migration.js
-          fi
+          BASE=$(curl -s --max-time 20 https://app.shareo.com.br/api/health | grep -o '"commit":"[0-9a-f]\{40\}"' | cut -d'"' -f4 || true)
+          BASE=${BASE:-$(git tag --list 'prod-ok-*' --sort=-refname | head -n1)}
+          echo "Base: $BASE"
+          node scripts/ci/check-destructive-migration.js --base "$BASE"
 
       - name: Deploy to production
         id: deploy
