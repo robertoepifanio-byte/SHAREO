@@ -6,15 +6,20 @@
  *
  * ## Pré-requisitos
  *
- *   npx supabase login   (uma vez por máquina — armazena o token em ~/.supabase)
+ *   SUPABASE_SERVICE_ROLE_KEY=<jwt>  obrigatório em TODOS os modos (leitura + escrita).
+ *
+ *   ⚠️  A chave deve ser no formato JWT antigo (`eyJh…`), NÃO o formato `sb_secret_*`.
+ *   O endpoint `/storage/v1/object/list` do Supabase rejeita `sb_secret_*` com
+ *   "Invalid Compact JWS". Use a chave JWT que aparece em:
+ *     Supabase Dashboard → Project Settings → API → service_role (legacy).
  *
  * ## Uso
  *
  *   # modo seco (padrão) — imprime contagens e grava lista em arquivo temporário
- *   npx tsx --env-file=".env.staging-new" scripts/storage-orfaos.ts --ref zythygwvmrwrqmnrdufq
+ *   npx tsx --env-file=".env.staging-migrate" scripts/storage-orfaos.ts --ref zythygwvmrwrqmnrdufq
  *
  *   # execução real — apaga de verdade (só com --execute)
- *   npx tsx --env-file=".env.staging-new" scripts/storage-orfaos.ts --ref zythygwvmrwrqmnrdufq --execute
+ *   npx tsx --env-file=".env.staging-migrate" scripts/storage-orfaos.ts --ref zythygwvmrwrqmnrdufq --execute
  *
  * ## Estratégia de varredura
  *
@@ -44,8 +49,8 @@
 import os   from "node:os"
 import fs   from "node:fs"
 import path from "node:path"
-import { spawnSync } from "node:child_process"
-import { PrismaClient }   from "@prisma/client"
+import { PrismaClient }       from "@prisma/client"
+import { createAdminClient }  from "../lib/supabase/admin"
 import {
   validarRef,
   validarRefSupabaseUrl,
@@ -85,12 +90,21 @@ if (!SUPABASE_URL) {
   console.error("ERRO: NEXT_PUBLIC_SUPABASE_URL não definida no ambiente.")
   process.exit(1)
 }
-if (!SUPABASE_SERVICE_KEY && EXECUTAR) {
-  console.error("ERRO: SUPABASE_SERVICE_ROLE_KEY não definida — obrigatória para --execute.")
+if (!SUPABASE_SERVICE_KEY) {
+  console.error("ERRO: SUPABASE_SERVICE_ROLE_KEY não definida.")
+  console.error("A chave é obrigatória para TODOS os modos — listagem de Storage exige autenticação.")
+  console.error("⚠️  Use a chave JWT legada (eyJh…) do Supabase Dashboard → Project Settings → API → service_role.")
+  console.error("    Chaves no formato sb_secret_* são INCOMPATÍVEIS com o endpoint /storage/v1/object/list.")
   process.exit(1)
 }
-if (!SUPABASE_SERVICE_KEY) {
-  console.log("Nota: SUPABASE_SERVICE_ROLE_KEY não definida — ok para simulação; obrigatória com --execute.")
+
+// Detectar chaves no novo formato sb_* que o Storage v1 rejeita com "Invalid Compact JWS"
+if (/^sb_(secret|publishable)_/.test(SUPABASE_SERVICE_KEY)) {
+  console.error("ERRO: SUPABASE_SERVICE_ROLE_KEY está no novo formato sb_*.")
+  console.error("O endpoint Storage v1 rejeita esse formato com 'Invalid Compact JWS'.")
+  console.error("Gere a chave JWT legada em: Supabase Dashboard → Project Settings → API → service_role (JWT).")
+  console.error("A chave JWT começa com 'eyJh…'.")
+  process.exit(1)
 }
 
 const checkDb  = validarRef(DATABASE_URL, argRef)
@@ -118,61 +132,102 @@ console.log(`modo: ${EXECUTAR ? "EXECUÇÃO — arquivos serão apagados" : "SIM
 console.log()
 
 // ────────────────────────────────────────────────────────────────────────────
-// Supabase CLI helper — lista prefixo não-recursivo
-//
-// 🪤 `shell: true` é obrigatório no Windows (npx é um .cmd; sem shell o Node
-// recusa com EINVAL — CVE-2024-27980). Todos os argumentos são literais do
-// código — nenhum vem de input externo não-sanitizado.
+// Cliente Supabase (service role) — para listagem e deleção
 // ────────────────────────────────────────────────────────────────────────────
 
-function cliListar(bucket: string, prefixo: string): string[] {
-  const url = `ss:///${bucket}/${prefixo}`
-  const r   = spawnSync("npx", ["supabase", "storage", "ls", "--experimental", "--project-ref", argRef!, url], {
-    encoding: "utf-8",
-    env:      { ...process.env },
-    shell:    true,
-    cwd:      "./",
+const supabase = createAdminClient()
+
+// Contador de erros de listagem: qualquer falha durante a varredura marca o
+// resultado como incompleto — nunca reportar "0 órfãos" quando uma lista falhou.
+let errosListagem = 0
+
+// ────────────────────────────────────────────────────────────────────────────
+// apiListar — lista um prefixo não-recursivo via Supabase Storage SDK.
+//
+// Retorna caminhos completos relativos ao bucket: "<prefixo><nome-arquivo>".
+// Subdiretórios (entries onde metadata é null) são ignorados — a varredura
+// é profunda o suficiente para os padrões conhecidos do Shareo.
+// ────────────────────────────────────────────────────────────────────────────
+
+async function apiListar(bucket: string, prefixo: string): Promise<string[]> {
+  const { data, error } = await supabase.storage.from(bucket).list(prefixo, {
+    limit: 1000,
+    offset: 0,
   })
 
-  if (r.status !== 0 || !r.stdout) return []
-
-  let data: { paths?: string[] }
-  try {
-    data = JSON.parse(r.stdout)
-  } catch {
+  if (error) {
+    // Nunca engolir erros silenciosamente: incrementar contador para que o
+    // script encerre com exit 1 e reporte "resultado incompleto".
+    errosListagem++
+    console.error(`  [ERRO LISTAGEM] apiListar(${bucket}, "${prefixo}") → ${error.message}`)
     return []
   }
 
-  // Normalização determinística: strip opcional "/" inicial, depois strip opcional "<bucket>/" inicial.
-  const reBucket = new RegExp(`^/?(?:${bucket}/)?`)
-  return (data.paths ?? [])
-    .filter((p) => !p.endsWith("/"))
-    .map((p) => p.replace(reBucket, ""))
-    .filter(Boolean)
+  const base = prefixo === "" || prefixo.endsWith("/") ? prefixo : `${prefixo}/`
+  return (data ?? [])
+    .filter((item) => item.id !== null && item.name !== ".emptyFolderPlaceholder")
+    .map((item) => `${base}${item.name}`)
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// Remoção via HTTP direto
+// autoTesteListagem — verifica que a listagem realmente retorna arquivos.
+//
+// Consulta o banco para encontrar um item ativo com fotos e lista esse prefixo.
+// Se retornar 0 arquivos (sem erro de API), a listagem está quebrada.
+// ────────────────────────────────────────────────────────────────────────────
+
+async function autoTesteListagem(prismaClient: PrismaClient): Promise<void> {
+  console.log("Teste de sanidade: verificando que a listagem de Storage funciona...")
+
+  // Tenta os 5 itens ativos com fotos mais recentes — usa o primeiro cujo prefixo
+  // retorna > 0 arquivos no Storage.  Se nenhum retornar arquivos, a listagem está
+  // quebrada e abortamos (throw, capturado no main).
+  const candidatos = await prismaClient.item.findMany({
+    where:   { deletedAt: null, images: { some: {} } },
+    select:  { id: true },
+    orderBy: { createdAt: "desc" },
+    take:    5,
+  })
+
+  if (candidatos.length === 0) {
+    console.log("  Sem itens ativos com fotos no banco — teste de sanidade pulado.")
+    return
+  }
+
+  // Resets any erros counted during the self-test so they don't pollute the main scan
+  const errosAntes = errosListagem
+
+  for (const item of candidatos) {
+    const prefixo  = `${item.id}/`
+    const arquivos = await apiListar("item-images", prefixo)
+    if (arquivos.length > 0) {
+      console.log(`  OK — item "${item.id}" → ${arquivos.length} arquivo(s) listado(s). Listagem funcional.\n`)
+      // Descarta erros de listagem do próprio self-test (podem ser prefixos vazios)
+      errosListagem = errosAntes
+      return
+    }
+  }
+
+  // Nenhum dos 5 itens retornou arquivos
+  throw new Error(
+    `Teste de sanidade FALHOU — nenhum dos ${candidatos.length} item(ns) ativos com fotos ` +
+    `retornou arquivos em item-images. ` +
+    `Causas prováveis: (1) SUPABASE_SERVICE_ROLE_KEY sem permissão de leitura, ` +
+    `(2) chave JWT expirada, (3) Storage inacessível. ` +
+    `A listagem está quebrada — nada foi lido nem apagado.`,
+  )
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Remoção via Supabase Storage SDK
 // ────────────────────────────────────────────────────────────────────────────
 
 async function removerArquivos(bucket: string, paths: string[]): Promise<{ apagados: number; erro?: string }> {
-  const url = `${SUPABASE_URL}/storage/v1/object/${bucket}`
-  const r   = await fetch(url, {
-    method: "DELETE",
-    headers: {
-      "apikey":        SUPABASE_SERVICE_KEY,
-      "Authorization": `Bearer ${SUPABASE_SERVICE_KEY}`,
-      "Content-Type":  "application/json",
-    },
-    body: JSON.stringify({ prefixes: paths }),
-  })
-
-  if (!r.ok) {
-    const txt = await r.text().catch(() => "")
-    return { apagados: 0, erro: `HTTP ${r.status}: ${txt.slice(0, 200)}` }
+  const { data, error } = await supabase.storage.from(bucket).remove(paths)
+  if (error) {
+    return { apagados: 0, erro: error.message }
   }
-
-  return { apagados: paths.length }
+  return { apagados: (data ?? []).length }
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -202,6 +257,9 @@ type ArquivoIndeterminado = {
 
 async function main() {
   console.log("Estratégia: DB-first — consulta usuários/itens excluídos, verifica prefixos no Storage.\n")
+
+  // ── Teste de sanidade: confirma que a listagem funciona antes de prosseguir ──
+  await autoTesteListagem(prisma)
 
   const orfaos:          ArquivoOrfao[]          = []
   const indeterminados:  ArquivoIndeterminado[]  = []
@@ -238,28 +296,28 @@ async function main() {
   console.log()
 
   // ── 1. Usuários com deletedAt (soft-deleted) ──────────────────────────────
+  // Os 3 buckets por usuário são independentes — listar em paralelo com Promise.all.
 
   for (const u of usuariosExcluidos) {
     const uid = u.id
+    const [arquivosImg, arquivosPhoto, arquivosId] = await Promise.all([
+      apiListar("item-images",    `uploads/${uid}/`),
+      apiListar("booking-photos", `uploads/${uid}/`),
+      apiListar("id-docs",        `id-verification/${uid}/`),
+    ])
 
-    // item-images: uploads/<userId>/
-    const arquivosImg = cliListar("item-images", `uploads/${uid}/`)
     contagemPorBucket["item-images"].verificados += arquivosImg.length
     for (const arq of arquivosImg) {
       orfaos.push({ bucket: "item-images", path: arq, motivo: `usuário ${uid} tem deletedAt` })
       contagemPorBucket["item-images"].orfaos++
     }
 
-    // booking-photos: uploads/<userId>/
-    const arquivosPhoto = cliListar("booking-photos", `uploads/${uid}/`)
     contagemPorBucket["booking-photos"].verificados += arquivosPhoto.length
     for (const arq of arquivosPhoto) {
       orfaos.push({ bucket: "booking-photos", path: arq, motivo: `usuário ${uid} tem deletedAt` })
       contagemPorBucket["booking-photos"].orfaos++
     }
 
-    // id-docs: id-verification/<userId>/
-    const arquivosId = cliListar("id-docs", `id-verification/${uid}/`)
     contagemPorBucket["id-docs"].verificados += arquivosId.length
     for (const arq of arquivosId) {
       orfaos.push({ bucket: "id-docs", path: arq, motivo: `usuário ${uid} tem deletedAt` })
@@ -270,7 +328,7 @@ async function main() {
   // ── 2. Itens cujo dono tem deletedAt — fotos do item em item-images/<itemId>/ ──
 
   for (const item of itensDeDonos) {
-    const arquivos = cliListar("item-images", `${item.id}/`)
+    const arquivos = await apiListar("item-images", `${item.id}/`)
     contagemPorBucket["item-images"].verificados += arquivos.length
     for (const arq of arquivos) {
       orfaos.push({
@@ -284,8 +342,7 @@ async function main() {
   // ── 3. Reservas cujos dois participantes têm deletedAt ────────────────────
 
   for (const b of reservasDuplas) {
-    // Uma única chamada cliListar — se retornar vazio, não há nada a fazer.
-    const arquivos = cliListar("booking-photos", `bookings/${b.id}/`)
+    const arquivos = await apiListar("booking-photos", `bookings/${b.id}/`)
     contagemPorBucket["booking-photos"].verificados += arquivos.length
     for (const arq of arquivos) {
       orfaos.push({
@@ -348,6 +405,21 @@ async function main() {
   // Execução (somente com --execute)
   // ────────────────────────────────────────────────────────────────────────
 
+  // ────────────────────────────────────────────────────────────────────────
+  // Verificação de integridade: qualquer erro de listagem invalida o resultado.
+  // Nunca reportar "0 órfãos" se a listagem falhou para algum prefixo.
+  // ────────────────────────────────────────────────────────────────────────
+
+  if (errosListagem > 0) {
+    console.error(
+      `\nRESULTADO INCOMPLETO — ${errosListagem} erro(s) de listagem ocorreram durante a varredura.`,
+    )
+    console.error(
+      "Alguns prefixos podem não ter sido verificados. Corrija os erros e rode novamente.",
+    )
+    process.exit(1)
+  }
+
   if (!EXECUTAR) {
     console.log("Modo seco — nada foi apagado.")
     console.log()
@@ -359,6 +431,8 @@ async function main() {
     )
     return
   }
+
+  // errosListagem já verificado acima — se chegou aqui, está zerado.
 
   if (orfaos.length === 0) {
     console.log("Nada a apagar.")
@@ -420,7 +494,7 @@ async function main() {
   let confirmados    = 0
   let aindaPresentes = 0
   for (const { bucket, prefixo } of prefixosVerificar) {
-    const restantes = cliListar(bucket, prefixo)
+    const restantes = await apiListar(bucket, prefixo)
     for (const p of restantes) {
       if (orfaosSet.has(`${bucket}::${p}`)) aindaPresentes++
     }
