@@ -127,7 +127,7 @@ Objetivo (§6): provar deploy, rollback e o smoke **enquanto a produção só te
 
 | # | Ação | Dono | Pronto quando | Ref. |
 |---|---|---|---|---|
-| 1 | Confirmar o SHA congelado e a CI verde nele; conferir o **número da tag** (o checklist sugere `web-v1.14.0`; `package.json` ainda diz `1.13.0`, e a última tag é `v1.13.0`). | Roberto + técnico | Número decidido; CI verde | Infra 15 |
+| 1 | Confirmar o SHA congelado e a CI verde nele; conferir a tag **`web-v1.14.0`** (número decidido pelo Roberto em 25/09; `package.json` ainda diz `1.13.0`, alinhar antes da tag, e a última tag é `v1.13.0`). | Roberto + técnico | `package.json` e tag com o mesmo número; CI verde | Infra 15 |
 | 2 | Rodar **um** backup do Storage de produção: `node scripts/backup-manual.mjs prod` (a pasta tem documentos de identidade: guardar cifrado, não em nuvem pessoal sincronizada). | Roberto | Backup feito; destino registrado | Seg 10; Infra 11 |
 | 3 | **Deploy final por tag** `web-v*` no SHA congelado, **fora de 11:00 a 14:00 UTC**. Só com a instrução explícita do Roberto: **publica em produção na hora, sem aprovação.** | Roberto | Run verde nos passos de build, deploy, migração e health check do job `production` | §6; Infra 15 |
 | 4 | Repetir **P1 a P6**; comparar com o ensaio de D-2. Criar `prod-ok-2026-09-30-HHMM` (hora UTC) no deploy verde. | técnico | Seis sondas conforme a seção 3 | Infra 22 |
@@ -150,7 +150,7 @@ Objetivo (§6): provar deploy, rollback e o smoke **enquanto a produção só te
 | a | *(só se decidido)* **Stripe live**: chave live e os dois webhooks no runtime da Vercel, novo deploy, `flags` e sonda conforme o roteiro do dinheiro. | Roberto + técnico | Vem primeiro para o 1º convidado poder pagar. Estado da cobrança volta ao campo do smoke. |
 | b | **Convidar os 7 leads**, envio manual e conferido. | Roberto | Antes da campanha: o e-mail de boas-vindas prometeu acesso antecipado (Prod 11). O checklist diz D-1 no item de Produto e D0 no §6; vale o §6 (precedência das seções 1 a 7). Resend Pro antes (Infra 4). |
 | c | **Publicar a copy nova da campanha**, com CTA para o cadastro do app. | Roberto | Por último: é o passo que traz tráfego pago ao funil. Publica direto, sem staging. |
-| d | *(só se decidido)* Desligar `NEXT_PUBLIC_NOINDEX`: PR no `deploy.yml`, tag, e conferir `flags.noindex=false`, `robots.txt` com `Allow` e ausência da meta `noindex`. | Roberto + técnico | Exige **outro** deploy: respeitar a janela 11 a 14 UTC. O checklist deixa a decisão para D-3 (Infra 16). |
+| d | **Fora do D0** (decidido pelo Roberto em 25/09): o `noindex` fica **ligado** no D0; desligar `NEXT_PUBLIC_NOINDEX` só na abertura por cidade, depois das 72 h estáveis. Quando chegar: PR no `deploy.yml`, tag, e conferir `flags.noindex=false`, `robots.txt` com `Allow` e ausência da meta `noindex`. | Roberto + técnico | Exige **outro** deploy: respeitar a janela 11 a 14 UTC. No D0 o P1 continua esperando `flags.noindex=true`. |
 | Fim do dia | Repetir P1 a P6; olhar Sentry; conferir cadastros novos e o funil de leads. | técnico | |
 
 **Crons do dia 1** (`vercel.json`; a Vercel dispara os crons em UTC). Em 01/10 rodam, além dos diários, **os seis mensais**:
@@ -196,7 +196,7 @@ O estado provisório fica **só aqui**. Os procedimentos dos outros documentos d
 ## 9. Decisões que continuam abertas e travam esta sequência
 
 1. **Escopo do D0 e cobrança** (decisão 1): define o passo 11 do smoke, o item 10 de D-2 e o item **a** do D0.
-2. **Número da tag** (`web-v1.14.0` é só sugestão).
+2. ~~Número da tag~~ **Decidido em 25/09:** `web-v1.14.0`.
 3. **Escala e contatos das 72 h** (nomes; contatos fora do repositório).
-4. **`noindex` no D0** ou na abertura por cidade.
+4. ~~`noindex` no D0 ou na abertura por cidade~~ **Decidido em 25/09:** ligado no D0; desligar na abertura por cidade, depois das 72 h estáveis (item **d** do D0).
 5. **Quando abrir a cobrança.** O gate `billingEnabled` já está no ar (#510, `b17c1308`; padrão fechado com chave live, documentado no runbook, seção 3.1). Falta decidir o momento (decisão 1) e ensaiar o interruptor (ficha do runbook, linha 10). Com chave de teste ele não age.
