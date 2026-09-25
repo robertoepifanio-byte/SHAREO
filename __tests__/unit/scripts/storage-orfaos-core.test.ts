@@ -12,6 +12,7 @@
 import {
   extrairPadrao,
   classificarArquivo,
+  extrairUserIdDoNomeArquivo,
   validarRef,
   validarRefSupabaseUrl,
   REFS_CONHECIDOS,
@@ -37,7 +38,8 @@ function makeDB(overrides: DBOverrides = {}): LookupDB {
 }
 
 // IDs realistas (cuid-like)
-const UID     = "cluser123456789ab"
+const UID     = "cluser123456789ab"   // usado como usuário excluído nos testes
+const UID2    = "cluser987654321ba"   // segundo usuário (ativo nos testes de booking)
 const ITEM_ID = "clitem123456789ab"
 const BKNG_ID = "clbook123456789ab"
 
@@ -195,6 +197,93 @@ describe("classificarArquivo — erro de lookup", () => {
     const res = await classificarArquivo("id-docs", `id-verification/${UID}/selfie.jpg`, db)
     expect(res.status).toBe("indeterminado")
     expect(res.motivo).toMatch(/erro de lookup/)
+  })
+})
+
+// ────────────────────────────────────────────────────────────────────────────
+// extrairUserIdDoNomeArquivo
+// ────────────────────────────────────────────────────────────────────────────
+
+describe("extrairUserIdDoNomeArquivo", () => {
+  it("extrai userId do padrão <timestamp>-<userId>.<ext>", () => {
+    expect(extrairUserIdDoNomeArquivo(`1727280000000-${UID}.jpg`)).toBe(UID)
+  })
+
+  it("extrai userId de arquivo sem extensão", () => {
+    expect(extrairUserIdDoNomeArquivo(`1727280000000-${UID}`)).toBe(UID)
+  })
+
+  it("retorna null para arquivo sem traço", () => {
+    expect(extrairUserIdDoNomeArquivo("foto.jpg")).toBeNull()
+  })
+
+  it("retorna null para string vazia", () => {
+    expect(extrairUserIdDoNomeArquivo("")).toBeNull()
+  })
+
+  it("retorna null quando candidato tem menos de 4 caracteres (muito curto para ser ID)", () => {
+    expect(extrairUserIdDoNomeArquivo("1234567890-ab.jpg")).toBeNull()
+  })
+
+  it("🪤 retorna null para ID acima de 36 caracteres (RE_ID máximo)", () => {
+    const longo = "a".repeat(37)
+    expect(extrairUserIdDoNomeArquivo(`1727280000000-${longo}.jpg`)).toBeNull()
+  })
+
+  it("usa o ÚLTIMO traço como separador (não o primeiro)", () => {
+    // "1234-5678-cluser123456789ab.jpg" → candidato = "cluser123456789ab"
+    expect(extrairUserIdDoNomeArquivo(`1234-5678-${UID}.jpg`)).toBe(UID)
+  })
+})
+
+// ────────────────────────────────────────────────────────────────────────────
+// classificarArquivo — bookingId com uploader excluído (decisão 25/09/2026)
+// ────────────────────────────────────────────────────────────────────────────
+
+describe("classificarArquivo — uploader excluído com participante ativo", () => {
+  // Cenário: ownerId = UID (excluído), borrowerId = UID2 (ativo), uploader no arquivo = UID.
+  // O arquivo deve ser classificado como órfão porque quem fez o upload foi excluído,
+  // mesmo que o outro participante (UID2) ainda tenha conta ativa.
+  it("🪤 órfão quando uploader (sufixo do arquivo) foi excluído — participante ativo persiste", async () => {
+    const db = makeDB({
+      ownerOfBooking: jest.fn().mockResolvedValue({ ownerId: UID, borrowerId: UID2 }),
+      // UID excluído → false; UID2 ativo → true (cobre ownerAtivo, borrowerAtivo e uploaderAtivo)
+      userExists: jest.fn().mockImplementation((id: string) =>
+        Promise.resolve(id !== UID),
+      ),
+    })
+    const path = `bookings/${BKNG_ID}/checkin/1727280000000-${UID}.jpg`
+    const res  = await classificarArquivo("booking-photos", path, db)
+    expect(res.status).toBe("orfao")
+    expect(res.motivo).toMatch(/conta excluída/)
+  })
+
+  it("ativo quando uploader (sufixo do arquivo) tem conta ativa mesmo com outro participante excluído", async () => {
+    const db = makeDB({
+      ownerOfBooking: jest.fn().mockResolvedValue({ ownerId: UID, borrowerId: UID2 }),
+      // UID excluído → false; UID2 ativo → true
+      userExists: jest.fn().mockImplementation((id: string) =>
+        Promise.resolve(id !== UID),
+      ),
+    })
+    // Uploader = UID2 (ativo), não UID
+    const path = `bookings/${BKNG_ID}/checkin/1727280000000-${UID2}.jpg`
+    const res  = await classificarArquivo("booking-photos", path, db)
+    expect(res.status).toBe("ativo")
+  })
+
+  it("ativo quando sufixo do arquivo não contém userId reconhecível (sem dados para decidir)", async () => {
+    const db = makeDB({
+      ownerOfBooking: jest.fn().mockResolvedValue({ ownerId: UID, borrowerId: UID2 }),
+      // UID excluído; UID2 ativo
+      userExists: jest.fn().mockImplementation((id: string) =>
+        Promise.resolve(id !== UID),
+      ),
+    })
+    // "f.jpg" → extrairUserIdDoNomeArquivo retorna null → não há userId → ativo
+    const path = `bookings/${BKNG_ID}/checkin/f.jpg`
+    const res  = await classificarArquivo("booking-photos", path, db)
+    expect(res.status).toBe("ativo")
   })
 })
 

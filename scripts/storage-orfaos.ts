@@ -51,10 +51,12 @@ import fs   from "node:fs"
 import path from "node:path"
 import { PrismaClient }       from "@prisma/client"
 import { createAdminClient }  from "../lib/supabase/admin"
+import { storagePathFromUrl } from "../lib/supabase/user-storage-paths"
 import {
   validarRef,
   validarRefSupabaseUrl,
   REFS_CONHECIDOS,
+  extrairUserIdDoNomeArquivo,
 } from "./lib/storage-orfaos-core"
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -270,14 +272,19 @@ async function main() {
     "id-docs":        { verificados: 0, orfaos: 0 },
   }
 
-  // ── Queries ao banco em paralelo ─────────────────────────────────────────
+  // ── Queries ao banco ─────────────────────────────────────────────────────
+  // Passo 1: usuários excluídos — base para as queries dependentes.
 
-  console.log("Consultando banco (usuários, itens e reservas excluídos em paralelo)...")
-  const [usuariosExcluidos, itensDeDonos, reservasDuplas] = await Promise.all([
-    prisma.user.findMany({
-      where:  { deletedAt: { not: null } },
-      select: { id: true, deletedAt: true },
-    }),
+  console.log("Consultando banco (usuários, itens e reservas excluídos)...")
+  const usuariosExcluidos = await prisma.user.findMany({
+    where:  { deletedAt: { not: null } },
+    select: { id: true, deletedAt: true },
+  })
+  const deletedUserIds    = usuariosExcluidos.map(u => u.id)
+  const deletedUserIdSet  = new Set(deletedUserIds)
+
+  // Passo 2: queries que dependem dos IDs acima, executadas em paralelo.
+  const [itensDeDonos, reservasDuplas, fotosDeExcluidos, reservasComUmExcluido] = await Promise.all([
     prisma.item.findMany({
       where:  { owner: { deletedAt: { not: null } } },
       select: { id: true, ownerId: true },
@@ -289,10 +296,39 @@ async function main() {
       },
       select: { id: true, ownerId: true, borrowerId: true },
     }),
+    // Fotos enviadas por usuário excluído (independente de quem é o outro participante).
+    deletedUserIds.length === 0
+      ? Promise.resolve([] as Array<{ url: string; uploadedBy: string; bookingId: string }>)
+      : prisma.bookingPhoto.findMany({
+          where:  { uploadedBy: { in: deletedUserIds } },
+          select: { url: true, uploadedBy: true, bookingId: true },
+        }),
+    // Reservas em que APENAS UM participante foi excluído (as com ambos excluídos já estão
+    // em reservasDuplas e são tratadas separadamente para evitar duplicação).
+    deletedUserIds.length === 0
+      ? Promise.resolve([] as Array<{ id: string }>)
+      : prisma.booking.findMany({
+          where: {
+            OR: [
+              { ownerId: { in: deletedUserIds } },
+              { borrowerId: { in: deletedUserIds } },
+            ],
+            NOT: {
+              AND: [
+                { ownerId: { in: deletedUserIds } },
+                { borrowerId: { in: deletedUserIds } },
+              ],
+            },
+          },
+          select: { id: true },
+        }),
   ])
+
   console.log(`  ${usuariosExcluidos.length} usuário(s) com deletedAt`)
   console.log(`  ${itensDeDonos.length} item(ns) com dono excluído`)
   console.log(`  ${reservasDuplas.length} reserva(s) com ambos os participantes excluídos`)
+  console.log(`  ${fotosDeExcluidos.length} foto(s) de reserva enviada(s) por usuário excluído`)
+  console.log(`  ${reservasComUmExcluido.length} reserva(s) com exatamente um participante excluído`)
   console.log()
 
   // ── 1. Usuários com deletedAt (soft-deleted) ──────────────────────────────
@@ -353,11 +389,106 @@ async function main() {
     }
   }
 
-  // ── 4. Usuários que não existem mais no banco (deleção física ou limpeza antiga) ──
-  // Se houver caminhos cujo userId não existe no banco, classificamos como indeterminado
-  // (não podemos saber se o dono autorizou a exclusão sem um registro).
-  // Por ora, listamos como "indeterminado" apenas — não deletamos automaticamente.
-  // (Implementação futura: aceitar --include-inexistentes para deletar esses também.)
+  // ── 4. Fotos de reservas enviadas por usuário excluído (DB-first via BookingPhoto) ──
+  //
+  // Cobre o caso em que o outro participante ainda é ativo — sem esta seção, essas fotos
+  // só seriam limpas quando o segundo participante também fosse excluído.
+  // As fotos cujo bookingId está em reservasDuplas já foram capturadas na seção 3
+  // (todos os arquivos do prefixo bookings/<id>/ são marcados); filtramos para não duplicar.
+  //
+  // O caminho no Storage é extraído da URL pública gravada no banco:
+  //   https://<ref>.supabase.co/storage/v1/object/public/booking-photos/<path>
+
+  const reservasDuplasIds = new Set(reservasDuplas.map(b => b.id))
+  // Rastreia "bucket::path" entre seções 3/4/5 para segurança contra reordenações futuras.
+  // As seções são mutuamente exclusivas por design (guards explícitos), mas o Set
+  // garante idempotência caso a ordem mude.
+  const orfaosAdicionados = new Set<string>(
+    orfaos.map(o => `${o.bucket}::${o.path}`),
+  )
+
+  // Helper: registra um arquivo como órfão em booking-photos, sem duplicar.
+  function adicionarOrfaoBp(storagePath: string, motivo: string): void {
+    const chave = `booking-photos::${storagePath}`
+    if (orfaosAdicionados.has(chave)) return
+    orfaosAdicionados.add(chave)
+    orfaos.push({ bucket: "booking-photos", path: storagePath, motivo })
+    contagemPorBucket["booking-photos"].orfaos++
+  }
+
+  for (const foto of fotosDeExcluidos) {
+    // Reservas com ambos excluídos já foram tratadas na seção 3 (todos os arquivos do prefixo).
+    if (reservasDuplasIds.has(foto.bookingId)) continue
+
+    // Extrai o path do Storage a partir da URL pública usando storagePathFromUrl (lib).
+    const storagePath = storagePathFromUrl(foto.url, "booking-photos")
+    if (!storagePath) {
+      console.warn(`  [AVISO] Não foi possível extrair path de Storage da URL: ${foto.url}`)
+      continue
+    }
+    adicionarOrfaoBp(
+      storagePath,
+      `foto enviada por ${foto.uploadedBy} (conta excluída) em reserva ${foto.bookingId}`,
+    )
+  }
+
+  // ── 5. Arquivos sem linha BookingPhoto — verificação pelo sufixo -<userId> ──
+  //
+  // Para reservas em que exatamente um participante foi excluído, lista os arquivos do
+  // Storage e verifica se cada um possui linha na tabela BookingPhoto.
+  // Arquivos sem linha são classificados pelo userId embutido no sufixo do nome de arquivo:
+  //   <timestamp>-<userId>.<ext>
+  // Se esse userId pertencer a um usuário excluído → órfão; caso contrário → mantém.
+  //
+  // Pré-carga dos paths de BookingPhoto para as reservas em questão (evita N queries).
+
+  let pathsFotosExistentes = new Set<string>()
+  if (reservasComUmExcluido.length > 0) {
+    const fotosExistentes = await prisma.bookingPhoto.findMany({
+      where:  { bookingId: { in: reservasComUmExcluido.map(b => b.id) } },
+      select: { url: true },
+    })
+    // Extrai o path do Storage de cada URL com a mesma lib da seção 4.
+    pathsFotosExistentes = new Set(
+      fotosExistentes
+        .map(f => storagePathFromUrl(f.url, "booking-photos"))
+        .filter((p): p is string => p !== null),
+    )
+  }
+
+  // Listas independentes: paralelize todas as chamadas de Storage de uma vez.
+  const listagensFases = reservasComUmExcluido.flatMap(reserva =>
+    (["checkin", "checkout"] as const).map(fase => ({
+      reservaId: reserva.id,
+      prefixo:   `bookings/${reserva.id}/${fase}/`,
+    })),
+  )
+  const resultadosListagens = await Promise.all(
+    listagensFases.map(({ prefixo }) => apiListar("booking-photos", prefixo)),
+  )
+  for (let i = 0; i < listagensFases.length; i++) {
+    const { reservaId } = listagensFases[i]
+    const arquivos      = resultadosListagens[i]
+    contagemPorBucket["booking-photos"].verificados += arquivos.length
+
+    for (const arq of arquivos) {
+      // Arquivo já tem linha no BookingPhoto: tratado na seção 4 se uploadedBy excluído.
+      if (pathsFotosExistentes.has(arq)) continue
+
+      // Sem linha: classificar pelo sufixo -<userId> do nome de arquivo.
+      const segmentos   = arq.split("/")
+      const nomeArquivo = segmentos[segmentos.length - 1] ?? ""
+      const uploaderIdNoNome = extrairUserIdDoNomeArquivo(nomeArquivo)
+
+      if (uploaderIdNoNome !== null && deletedUserIdSet.has(uploaderIdNoNome)) {
+        adicionarOrfaoBp(
+          arq,
+          `arquivo sem linha BookingPhoto, uploader ${uploaderIdNoNome} excluído, reserva ${reservaId}`,
+        )
+      }
+      // Uploader ativo ou userId não identificável → mantém o arquivo.
+    }
+  }
 
   // ────────────────────────────────────────────────────────────────────────
   // Gravar lista em arquivo temporário

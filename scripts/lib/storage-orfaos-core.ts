@@ -25,6 +25,13 @@
  *
  * Nunca lança: retorna o resultado mesmo que alguns lookups falhem (classificados como
  * "indeterminado" para não deletar sem certeza).
+ *
+ * ## Decisão do fundador (25/09/2026)
+ *
+ *   Fotos enviadas por usuário excluído devem ser removidas mesmo quando o outro
+ *   participante da reserva ainda é ativo.  Para booking-photos com o padrão
+ *   bookings/<id>/<fase>/<ts>-<userId>.<ext>, o userId no nome de arquivo é o
+ *   uploader; se esse usuário foi excluído, o arquivo é órfão.
  */
 
 /** Representa um arquivo listado no Storage (pasta vira id: null). */
@@ -54,6 +61,27 @@ export interface LookupDB {
 
 /** Regex de cuid/uuid aceito como segmento de ID. */
 export const RE_ID = /^[A-Za-z0-9_-]{4,36}$/
+
+/**
+ * Extrai o userId embutido no nome de arquivo de uma foto de reserva.
+ *
+ * Formato esperado: <timestamp>-<userId>.<ext>
+ * Exemplo:          1727280000000-cluser123456789ab.jpg  → "cluser123456789ab"
+ *
+ * Retorna null se o nome não seguir o padrão ou o candidato não passar em RE_ID.
+ * Nunca lança.
+ */
+export function extrairUserIdDoNomeArquivo(filename: string): string | null {
+  // Remove extensão (tudo a partir do último ponto)
+  const semExt = filename.includes(".")
+    ? filename.slice(0, filename.lastIndexOf("."))
+    : filename
+  // Extrai o trecho após o último traço
+  const dashIdx = semExt.lastIndexOf("-")
+  if (dashIdx < 0) return null
+  const candidato = semExt.slice(dashIdx + 1)
+  return RE_ID.test(candidato) ? candidato : null
+}
 
 /**
  * Extrai o userId (ou outra chave) do caminho e retorna a categoria do padrão.
@@ -144,8 +172,6 @@ export async function classificarArquivo(
       if (booking === null) {
         return { status: "indeterminado", bucket, path, motivo: `reserva ${padrao.bookingId} não encontrada no banco` }
       }
-      // Órfão somente se AMBOS os participantes não existem. Se ainda há um ativo,
-      // o arquivo pode ser importante para auditoria/disputa.
       const [ownerAtivo, borrowerAtivo] = await Promise.all([
         db.userExists(booking.ownerId),
         db.userExists(booking.borrowerId),
@@ -154,6 +180,22 @@ export async function classificarArquivo(
         return {
           status: "orfao", bucket, path,
           motivo: `reserva ${padrao.bookingId} → proprietário ${booking.ownerId} e locatário ${booking.borrowerId} ambos sem conta ativa`,
+        }
+      }
+      // Ao menos um participante ativo: verificar o userId do sufixo do nome de arquivo.
+      // Formato: bookings/<id>/<fase>/<ts>-<userId>.<ext>  — o userId é o uploader.
+      // Decisão do fundador (25/09/2026): foto enviada por usuário excluído deve ser
+      // removida mesmo quando o outro participante ainda tem conta ativa.
+      const segmentos   = path.split("/")
+      const nomeArquivo = segmentos[segmentos.length - 1] ?? ""
+      const uploaderIdNoNome = extrairUserIdDoNomeArquivo(nomeArquivo)
+      if (uploaderIdNoNome !== null) {
+        const uploaderAtivo = await db.userExists(uploaderIdNoNome)
+        if (!uploaderAtivo) {
+          return {
+            status: "orfao", bucket, path,
+            motivo: `foto enviada por ${uploaderIdNoNome} (conta excluída) em reserva ${padrao.bookingId}`,
+          }
         }
       }
       return { status: "ativo", bucket, path }
