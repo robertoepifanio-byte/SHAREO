@@ -1,10 +1,88 @@
 import NextAuth from "next-auth"
+import type { JWT } from "next-auth/jwt"
 import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { LoginSchema } from "@/lib/validations/auth"
 import { checkAdminSecondFactor } from "@/lib/auth/mfa"
 import { sessionAccess } from "@/lib/auth/mfa-gate"
+
+/**
+ * SEC-CRIT-04c: intervalo (s) da verificação periódica de deletedAt/isActive.
+ *
+ * isSessionStale (Redis) é fail-open: se o Upstash falha exatamente durante a
+ * exclusão de conta, o cookie web permaneceria válido pelo maxAge completo (30d).
+ * A cada PERIODIC_CHECK_INTERVAL_S o jwt callback consulta o banco e invalida o
+ * token se a conta foi excluída ou desativada — reduzindo a janela de 30d para
+ * no máximo 5 min, sem depender do Redis.
+ *
+ * Custo: ~1 query/5 min por sessão ativa, 0 no hot-path.
+ * Bearer mobile (access 15 min): NÃO passa por aqui — janela máxima = tempo de
+ * vida do access token; o refresh já checa deletedAt ao emitir novo token.
+ *
+ * Exportado para permitir override no teste unitário.
+ */
+export const PERIODIC_CHECK_INTERVAL_S = 5 * 60 // 5 minutos
+
+/**
+ * Lógica do jwt callback extraída para função testável.
+ *
+ * Exportada para os testes unitários de SEC-CRIT-04c; o NextAuth recebe a
+ * referência da função, não um inline — comportamento idêntico em runtime.
+ */
+export async function jwtCallback({
+  token,
+  user,
+}: {
+  token: JWT
+  user?: unknown
+}): Promise<JWT | null> {
+  // Calculado antes do bloco de login para reutilizar em loginAt e checkedAt
+  // (evita dois Date.now() no mesmo request).
+  const now = Math.floor(Date.now() / 1000)
+
+  if (user) {
+    const u = user as {
+      id: string
+      role: "USER" | "ADMIN"
+      userType: "PF" | "PJ"
+      adminRole?: "ADMIN_SUPERADMIN" | "ADMIN_FINANCEIRO" | "ADMIN_OPERACIONAL"
+      mfa?: boolean
+    }
+    token.id        = u.id
+    token.role      = u.role
+    token.userType  = u.userType
+    token.adminRole = u.adminRole
+    token.mfa       = u.mfa
+    token.loginAt   = now  // SEC-CRIT-04: fixado no login, preservado nos refreshes
+    token.checkedAt = now  // SEC-CRIT-04c: marca o login como verificação inicial
+  }
+
+  // SEC-CRIT-04c: verificação periódica de conta excluída (sem Redis).
+  // isSessionStale é fail-open — Redis fora durante a exclusão deixaria o
+  // cookie web ativo por até 30d. Este bloco consulta o banco a cada
+  // PERIODIC_CHECK_INTERVAL_S e retorna null (invalidando o token) se a
+  // conta foi excluída ou desativada.
+  //
+  // Rotas que NÃO chamam auth() (ex.: Bearer via resolveUserId) não passam
+  // aqui; para Bearer mobile (access 15 min) a janela é aceitável e o
+  // refresh já checa deletedAt ao emitir novo token.
+  const lastCheck = token.checkedAt ?? 0
+  const userId    = token.id ?? null
+
+  if (userId && now - lastCheck > PERIODIC_CHECK_INTERVAL_S) {
+    const dbUser = await prisma.user.findUnique({
+      where:  { id: userId },
+      select: { deletedAt: true, isActive: true },
+    })
+    if (!dbUser || dbUser.deletedAt || !dbUser.isActive) {
+      return null  // token nulo → auth() retorna null → 401/redirect no handler
+    }
+    token.checkedAt = now
+  }
+
+  return token
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET,
@@ -60,18 +138,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    jwt({ token, user }) {
-      if (user) {
-        const u = user as typeof user & { role: "USER" | "ADMIN"; userType: "PF" | "PJ"; adminRole?: string; mfa?: boolean }
-        token.id        = u.id as string
-        token.role      = u.role
-        token.userType  = u.userType
-        token.adminRole = u.adminRole ?? undefined
-        token.mfa       = u.mfa === true
-        token.loginAt   = Math.floor(Date.now() / 1000)  // SEC-CRIT-04: fixado no login, preservado nos refreshes
-      }
-      return token
-    },
+    jwt: jwtCallback,
     session({ session, token }) {
       if (session.user) {
         session.user.id        = token.id as string
