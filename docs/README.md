@@ -14,6 +14,7 @@ Reorganizado em 2026-07-07 (diagnóstico de estrutura). Regra: **documentos vivo
 | `checklist-dia-d0.md` | Sondas, ordem de passos e escala para o dia D0 (01/10/2026) |
 | `runbook-rollback-deploy.md` | Procedimento de rollback de deploy de produção (Vercel Instant Rollback + CLI) |
 | `roteiro-smoke-d0.md` | Roteiro de smoke de 15 passos a executar em D-2 (ensaio) e D0 (abertura) |
+| `ensaio-d2-2026-09-29.md` | Ficha de 14 linhas do ensaio de rollback e roteiro STRIPE-04 (locação assistida live) — executar em 29/09 |
 | `promessas-nao-implementadas.md` | Auditoria viva de promessas de UI |
 | `estrutura-projeto.md`, `component-spec.md`, `prototype-to-implementation.md` | Referências de arquitetura/design |
 | `lighthouse-baseline-mobile.md` | Baseline de performance |
