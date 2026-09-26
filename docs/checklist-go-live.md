@@ -109,7 +109,7 @@
 
 - ⬜ Smokes E2E contra produção (com cuidado para **não poluir dados reais**).
 - ⬜ Lighthouse (LCP<2,5s / CLS<0,1 / INP<200ms).
-- ⬜ **Tag `web-v1.12.0` + GitHub Release** (convenção web-v*, ver ADR-027).
+- ⬜ **Tag `web-v1.14.0` + GitHub Release** (convenção web-v*, ver ADR-027).
 
 ---
 
