@@ -35,14 +35,14 @@ export async function withUser(
   const userId = await resolveUserId(req)
   if (!userId) return unauth()
 
-  if (!opts?.select) return { id: userId }
-
-  // deletedAt: null — rejeita contas excluídas mesmo quando o Redis está fora
-  // (isSessionStale é fail-open; authorize() só checa no login). Zero queries extras:
-  // a coluna está no índice primário, sem overhead de leitura.
+  // SEC-CRIT-04c (withUser): sempre consulta o banco para rejeitar contas excluídas
+  // ou desativadas — independente de Redis. isSessionStale é fail-open: se o Upstash
+  // falha, tokens Bearer de contas excluídas passariam pelo resolveUserId e chegariam
+  // aqui com userId válido. A query é mínima (só id + deletedAt + isActive); quando
+  // `select` tem campos extras, a mesma query os busca sem overhead adicional.
   const user = await prisma.user.findUnique({
-    where:  { id: userId, deletedAt: null },
-    select: { id: true, ...opts.select },
+    where:  { id: userId, deletedAt: null, isActive: true },
+    select: { id: true, ...(opts?.select ?? {}) },
   })
   return user ?? unauth()
 }
