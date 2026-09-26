@@ -230,7 +230,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                 <span className="font-medium text-foreground">{counterpart.name}</span>
               </p>
             </div>
-            <BookingStatusBadge status={booking.status} disputeStatus={booking.disputeStatus} size="md" />
+            <BookingStatusBadge status={booking.status} paymentStatus={booking.paymentStatus} disputeStatus={booking.disputeStatus} size="md" />
           </div>
 
           {/* Story B — itens desta locação (só quando há mais de um) */}
@@ -724,6 +724,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
           <BookingActions
             bookingId={booking.id}
             status={booking.status}
+            paymentStatus={booking.paymentStatus}
             isOwner={isOwner}
             isBorrower={isBorrower}
             conversationId={booking.conversation?.id}
