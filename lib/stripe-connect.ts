@@ -53,6 +53,7 @@ import { APP_URL } from "@/lib/app-url"
 import { getStripeConnectConfig } from "@/lib/platform-config"
 import { STRIPE_CONNECT_ACCOUNT_INCLUDES } from "@/lib/stripe-connect-events"
 import { connectCallbackSig } from "@/lib/stripe-connect-callback"
+import { notifyConnectStatusIfNeeded } from "@/lib/stripe-connect-notify"
 
 export const STRIPE_CONNECT_RETURN_PATH  = "/api/stripe/connect/return"
 export const STRIPE_CONNECT_REFRESH_PATH = "/api/stripe/connect/refresh"
@@ -220,7 +221,12 @@ export function deriveStripeConnectStatus(account: StripeConnectAccount): Stripe
  * `payouts`), não uma distinção charges-vs-payouts de verdade.
  * `stripeDetailsSubmitted` vira "sem nenhuma pendência de requirement".
  */
-export async function syncStripeConnectAccount(account: StripeConnectAccount): Promise<void> {
+/**
+ * Retorna o status ANTERIOR (antes da gravação) para que o caller possa
+ * detectar transições sem precisar re-consultar o banco depois do update.
+ * Retorna `null` quando a conta ainda não existe no banco (corrida de criação).
+ */
+export async function syncStripeConnectAccount(account: StripeConnectAccount): Promise<StripeConnectStatus | null> {
   const status = deriveStripeConnectStatus(account)
   const balance   = account.configuration?.recipient?.capabilities?.stripe_balance
   const transfersActive = balance?.stripe_transfers?.status === "active"
@@ -236,7 +242,7 @@ export async function syncStripeConnectAccount(account: StripeConnectAccount): P
     // Corrida rara: sync chamado antes do upsert em getOrCreateConnectedAccount
     // terminar. Nada a sincronizar ainda; a próxima chamada (refresh/retorno) cobre.
     console.warn(`[stripe-connect] sync para ${account.id} sem OwnerPaymentAccount correspondente`)
-    return
+    return null
   }
 
   const data: Prisma.OwnerPaymentAccountUpdateInput = {
@@ -255,11 +261,14 @@ export async function syncStripeConnectAccount(account: StripeConnectAccount): P
     where: { stripeAccountId: account.id },
     data,
   })
+
+  return existing.stripeConnectStatus
 }
 
 /**
- * Único ponto de leitura de um Account v2 — busca com os includes certos e já
- * sincroniza. NÃO usar `stripe.v2.core.accounts.retrieve()`/
+ * Único ponto de leitura de um Account v2 — busca com os includes certos, já
+ * sincroniza e notifica o proprietário se a conta perdeu o status ACTIVE.
+ * NÃO usar `stripe.v2.core.accounts.retrieve()`/
  * `notification.fetchRelatedObject()` direto num call site: sem
  * `STRIPE_CONNECT_ACCOUNT_INCLUDES`, `configuration.recipient`/`requirements`
  * (opt-in na v2) voltam vazios e deriveStripeConnectStatus() REBAIXARIA uma
@@ -267,10 +276,12 @@ export async function syncStripeConnectAccount(account: StripeConnectAccount): P
  * (app/api/stripe/connect/return/route.ts) e pelo webhook de Connect
  * (app/api/webhooks/stripe-connect/route.ts).
  */
-export async function fetchAndSyncConnectAccount(accountId: string): Promise<StripeConnectAccount> {
-  const account = await getStripe().v2.core.accounts.retrieve(accountId, {
+export async function fetchAndSyncConnectAccount(accountId: string): Promise<{ account: StripeConnectAccount; prevStatus: StripeConnectStatus | null }> {
+  const account    = await getStripe().v2.core.accounts.retrieve(accountId, {
     include: [...STRIPE_CONNECT_ACCOUNT_INCLUDES],
   })
-  await syncStripeConnectAccount(account)
-  return account
+  const prevStatus = await syncStripeConnectAccount(account)
+  const newStatus  = deriveStripeConnectStatus(account)
+  await notifyConnectStatusIfNeeded(account.id, newStatus, prevStatus)
+  return { account, prevStatus }
 }

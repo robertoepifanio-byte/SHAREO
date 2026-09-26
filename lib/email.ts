@@ -1070,3 +1070,62 @@ export async function sendReminderOverdue(
     }),
   ])
 }
+
+/**
+ * Notifica o proprietário quando a Stripe suspende ou restringe a conta
+ * de recebimento (requirements vencidos, capability suspensa, etc.).
+ *
+ * O link vai direto para /perfil/recebimentos onde o proprietário inicia
+ * ou retoma o onboarding Express.
+ *
+ * Contas de teste são filtradas automaticamente: getResend() intercepta
+ * emails.send e descarta entregas para domínios @shareo.test / @shareo-test.com —
+ * o chamador não precisa verificar antes de chamar esta função.
+ * Nunca logar `to` nem `name` — PII.
+ */
+export async function sendStripeConnectNeedsActionEmail(
+  to:       string,
+  name:     string,
+  reason:   "restricted" | "rejected",
+): Promise<void> {
+  const resend    = getResend()
+  if (!resend) return
+  const firstName = name.trim().split(" ")[0]
+  const recUrl    = `${APP_URL}/perfil/recebimentos`
+
+  const [subject, heading, body] = reason === "rejected"
+    ? [
+        "Conta de recebimento encerrada — ShareO",
+        "Conta de recebimento encerrada",
+        "A Stripe encerrou sua conta de recebimento. Isso geralmente ocorre após tentativas de adequação sem sucesso. Para continuar anunciando na plataforma, entre em contato com o nosso suporte.",
+      ]
+    : [
+        "Ação necessária na sua conta de recebimento — ShareO",
+        "Ação necessária na sua conta de recebimento",
+        "A Stripe identificou pendências que precisam ser resolvidas para manter os repasses ativos. Acesse sua conta de recebimento para ver o que é necessário.",
+      ]
+
+  const html = baseLayout(`
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
+      ${escapeHtml(firstName ? `Olá, ${firstName}!` : "Olá!")}
+    </h1>
+    <h2 style="margin:0 0 16px;font-size:18px;font-weight:700;color:#B91C1C;">
+      ${heading}
+    </h2>
+    <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
+      ${body}
+    </p>
+    <div style="text-align:center;">${ctaButton(recUrl, "Verificar conta de recebimento")}</div>
+    <p style="margin:24px 0 0;font-size:13px;color:#94A3B8;line-height:1.5;">
+      Se precisar de ajuda, responda este e-mail ou acesse a Central de Ajuda.
+    </p>
+  `)
+
+  const { error } = await resend.emails.send({
+    from:    `ShareO <${FROM}>`,
+    to,
+    subject,
+    html,
+  })
+  if (error) throw new Error(`Resend error: ${error.message}`)
+}

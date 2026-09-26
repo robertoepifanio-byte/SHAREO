@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
   if (error) return error
 
   try {
-    const stripeAccount = await fetchAndSyncConnectAccount(accountId)
+    const { account: stripeAccount } = await fetchAndSyncConnectAccount(accountId)
 
     const noPendingRequirements = (stripeAccount.requirements?.entries?.length ?? 0) === 0
     return NextResponse.redirect(
