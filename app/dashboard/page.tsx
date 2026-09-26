@@ -12,7 +12,7 @@ import { MonthlyGoalProgress } from "@/components/dashboard/MonthlyGoalProgress"
 import { UpcomingReturns } from "@/components/dashboard/UpcomingReturns"
 import { calcCO2Savings } from "@/lib/co2"
 import { formatPrice, formatDateNumeric } from "@/utils/format"
-import { BOOKING_STATUS_LABEL } from "@/components/ui/BookingStatusBadge"
+import { bookingStatusLabel } from "@/components/ui/BookingStatusBadge"
 
 export const metadata: Metadata = { title: "Dashboard" }
 
@@ -72,7 +72,7 @@ export default async function DashboardPage() {
       orderBy: { createdAt: "desc" },
       take:    3,
       select: {
-        id: true, status: true, startDate: true, endDate: true, totalPrice: true,
+        id: true, status: true, paymentStatus: true, startDate: true, endDate: true, totalPrice: true,
         item: {
           select: {
             title:  true,
@@ -264,7 +264,7 @@ export default async function DashboardPage() {
                       b.status === "PENDING"   ? "bg-amber-100 text-amber-700" :
                       "bg-muted text-muted-foreground"
                     }`}>
-                      {BOOKING_STATUS_LABEL[b.status] ?? b.status}
+                      {bookingStatusLabel(b.status, b.paymentStatus)}
                     </span>
                   </Link>
                 ))}

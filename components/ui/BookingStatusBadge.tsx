@@ -25,13 +25,27 @@ const STATUS_COLOR: Record<string, string> = {
   DISPUTED:  "bg-orange-light text-orange-link",
 }
 
+/**
+ * CONFIRMED cobre dois momentos: antes e depois do pagamento. Com o
+ * `paymentStatus`, o selo diz o que falta — igual à barra de progresso —
+ * em vez de "Confirmada" ao lado de "Aguardando retirada".
+ */
+export function bookingStatusLabel(status: string, paymentStatus?: string | null): string {
+  if (status === "CONFIRMED" && paymentStatus != null)
+    return paymentStatus === "PAID" ? "Aguardando retirada" : "Aguardando pagamento"
+  return BOOKING_STATUS_LABEL[status] ?? status
+}
+
 export function BookingStatusBadge({
   status,
+  paymentStatus,
   disputeStatus,
   size = "md",
   className = "",
 }: {
   status: string
+  /** Opcional: refina o rótulo de CONFIRMED (ver bookingStatusLabel). */
+  paymentStatus?: string | null
   /**
    * Disputa é PARALELA ao status: a reserva em disputa continua "Em andamento"
    * ou "Devolução em andamento". Por isso o selo de disputa é um segundo selo,
@@ -44,7 +58,7 @@ export function BookingStatusBadge({
 }) {
   const sizeCls = size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-0.5 text-xs"
   const color   = STATUS_COLOR[status] ?? "bg-muted text-muted-foreground"
-  const label   = BOOKING_STATUS_LABEL[status] ?? status
+  const label   = bookingStatusLabel(status, paymentStatus)
   const base    = "inline-flex items-center rounded-full font-semibold"
   return (
     <>

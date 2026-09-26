@@ -10,6 +10,8 @@ import { toDatetimeLocalValue, toDateInputValue, addDaysToDateInput } from "@/ut
 interface Props {
   bookingId:                  string
   status:                     BookingStatus
+  /** "Marcar como ativo" só com pagamento confirmado — a API responde 402 antes disso. */
+  paymentStatus:              string
   isOwner:                    boolean
   isBorrower:                 boolean
   conversationId?:            string
@@ -56,7 +58,7 @@ const fmtDate = (iso: string) =>
   new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(new Date(iso))
 
 export function BookingActions({
-  bookingId, status, isOwner, isBorrower,
+  bookingId, status, paymentStatus, isOwner, isBorrower,
   conversationId, disputeStatus, disputeOpenedById, currentUserId,
   extensionStatus, extensionRequestedEndDate, endDate,
   hideReturnActions,
@@ -248,7 +250,7 @@ export function BookingActions({
   if (isOwner) {
     if (status === "PENDING")
       buttons.push({ emoji: "✅", label: "Confirmar reserva",    variant: "primary", onClick: () => execCore("confirm") })
-    if (status === "CONFIRMED")
+    if (status === "CONFIRMED" && paymentStatus === "PAID")
       buttons.push({ emoji: "▶️", label: "Marcar como ativo",    variant: "primary", onClick: () => { const v = toDatetimeLocalValue(); pickupSeedRef.current = v; setPickupTime(v); setPanel("pickup_time") } })
     if (status === "RETURNED" && !hideReturnActions)
       buttons.push({ emoji: "📦", label: "Confirmar recebimento", variant: "primary", onClick: () => execCore("confirm_return") })

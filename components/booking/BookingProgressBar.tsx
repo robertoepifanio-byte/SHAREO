@@ -8,6 +8,8 @@
  * todos os rótulos aparecem sob cada indicador.
  */
 
+import { bookingStatusLabel } from "@/components/ui/BookingStatusBadge"
+
 type BookingStatus =
   | "PENDING"
   | "CONFIRMED"
@@ -68,8 +70,10 @@ export function BookingProgressBar({ status, paymentStatus }: Props) {
   // Paga mas ainda não retirada cai na etapa 4, cujo rótulo é "Em uso" — que
   // ainda não é verdade. Nomear o que de fato falta evita trocar um rótulo
   // errado por outro.
-  const aguardandoRetirada = status === "CONFIRMED" && isPaid
-  const currentLabel = aguardandoRetirada ? "Aguardando retirada" : STEPS[currentStep - 1]?.label
+  // Rótulo vem do selo (bookingStatusLabel) para barra e selo não divergirem.
+  const currentLabel = status === "CONFIRMED" && isPaid
+    ? bookingStatusLabel(status, paymentStatus)
+    : STEPS[currentStep - 1]?.label
   const fillWidth    = `${((currentStep - 1) / (STEPS.length - 1)) * 100}%`
 
   return (
