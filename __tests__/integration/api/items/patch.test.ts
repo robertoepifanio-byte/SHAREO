@@ -30,6 +30,8 @@ const mockImageCount     = jest.fn()
 
 jest.mock("@/lib/prisma", () => ({
   prisma: {
+    // withUser consulta o usuario (deletedAt/isActive) em toda chamada
+    user: { findUnique: async ({ where }: { where: { id: string } }) => ({ id: where.id }) },
     item: {
       findFirst:  (...args: unknown[]) => mockItemFindFirst(...args),
       findUnique: (...args: unknown[]) => mockItemFindUnique(...args),

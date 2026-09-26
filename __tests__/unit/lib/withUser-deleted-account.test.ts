@@ -49,12 +49,13 @@ describe("withUser com select — proteção contra conta excluída (Redis fail-
     expect(callArg.where).toMatchObject({ id: "cuser-normal", deletedAt: null })
   })
 
-  it("sem select: não consulta o banco (nenhum deletedAt a checar — comportamento intacto)", async () => {
+  it("sem select: também consulta o banco com deletedAt: null (SEC-CRIT-04c)", async () => {
     mockResolveUserId.mockResolvedValue("cuser-qualquer")
+    mockFindUnique.mockResolvedValue({ id: "cuser-qualquer" })
 
     const result = await withUser(req())
 
-    expect(mockFindUnique).not.toHaveBeenCalled()
+    expect(mockFindUnique).toHaveBeenCalledTimes(1)
     expect(result).toEqual({ id: "cuser-qualquer" })
   })
 
