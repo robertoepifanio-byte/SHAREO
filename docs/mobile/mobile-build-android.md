@@ -155,3 +155,74 @@ Ver `docs/mobile/mobile-build-android-hipoteses-gradle.md` para analise completa
 ---
 
 *Fase 1 do plano `docs/planos/meta-app-android-build.md`. O disparo do build e externo — requer acesso a conta Expo dos fundadores.*
+
+---
+
+## 10. Build AAB via GitHub Actions (sem EAS pago)
+
+O workflow `.github/workflows/aab-build.yml` gera o AAB de producao diretamente
+no runner do GitHub (expo prebuild + Gradle bundleRelease), sem consumir cota do EAS.
+
+### 10.1 Gerar a upload keystore (uma unica vez)
+
+A upload key identifica os builds do ShareO na Play Store. Guarde o arquivo
+`.jks` e as senhas num gerenciador de senhas seguro — quem perder a chave nao
+consegue publicar atualizacoes no mesmo app.
+
+```bash
+keytool -genkey -v \
+  -keystore shareo-upload.jks \
+  -keyalg RSA \
+  -keysize 2048 \
+  -validity 10000 \
+  -alias shareo-upload \
+  -dname "CN=ShareO, OU=Mobile, O=Shareo Marketplace, L=Brasil, ST=Brasil, C=BR"
+# Anote: senha do keystore, alias (shareo-upload), senha da chave
+```
+
+Depois encode em base64 para o secret:
+
+```bash
+base64 -w 0 shareo-upload.jks > shareo-upload.jks.b64
+# Conteudo de shareo-upload.jks.b64 vai no secret ANDROID_UPLOAD_KEYSTORE_BASE64
+```
+
+### 10.2 Cadastrar os secrets no GitHub
+
+No repositorio, acesse Settings > Secrets and variables > Actions e crie:
+
+| Secret | Valor |
+|---|---|
+| `ANDROID_UPLOAD_KEYSTORE_BASE64` | Conteudo de `shareo-upload.jks.b64` |
+| `ANDROID_UPLOAD_KEYSTORE_PASSWORD` | Senha do keystore definida no keytool |
+| `ANDROID_UPLOAD_KEY_ALIAS` | `shareo-upload` (ou o alias escolhido) |
+| `ANDROID_UPLOAD_KEY_PASSWORD` | Senha da chave (pode ser igual a do keystore) |
+
+Opcional (para habilitar o mapa nativo):
+
+| Secret | Valor |
+|---|---|
+| `MAPBOX_DOWNLOADS_TOKEN` | Token `sk.` do Mapbox para download do SDK nativo |
+
+### 10.3 Disparar o build
+
+```bash
+gh workflow run aab-build.yml --ref main
+# ou no GitHub UI: Actions > AAB Build (Google Play) > Run workflow
+```
+
+O AAB gerado fica disponivel em Actions > run > Artifacts > `shareo-release-aab`
+por 14 dias. Baixar e fazer upload manual na Google Play Console.
+
+### 10.4 Regra de versionamento
+
+- `version` em `app.json`: bumpar a cada release (ex.: 1.1.0 → 1.2.0).
+- `android.versionCode`: incrementar em 1 a cada release publicado na Play Store.
+- `runtimeVersion`: manter em sincronia com `version` quando nao usar expo-updates
+  (o valor literal atual nao requer OTA — qualquer mudanca de bundle exige novo build).
+
+| Campo | Quando incrementar |
+|---|---|
+| `versionCode` | Todo build enviado para a Play Store |
+| `version` | Toda release nova (semver) |
+| `runtimeVersion` | Junto com `version` (valor literal) |

@@ -1,0 +1,149 @@
+name: AAB Build (Google Play)
+
+# Gera o Android App Bundle assinado com a upload key (release signing),
+# pronto para upload manual na Google Play Console (Internal Testing → Production).
+#
+# NÃO usa EAS — roda no runner do GitHub via expo prebuild + Gradle bundleRelease.
+# Disparo: manual (workflow_dispatch), base main por padrão.
+#
+# Pré-requisito: gerar a upload keystore e cadastrar os 4 secrets listados abaixo.
+# Veja docs/mobile/mobile-build-android.md para o passo a passo completo.
+#
+# Secrets necessários:
+#   ANDROID_UPLOAD_KEYSTORE_BASE64  — keystore codificada em base64 (keytool → base64)
+#   ANDROID_UPLOAD_KEYSTORE_PASSWORD — senha do keystore
+#   ANDROID_UPLOAD_KEY_ALIAS        — alias da chave dentro da keystore
+#   ANDROID_UPLOAD_KEY_PASSWORD     — senha da chave (pode ser igual à do keystore)
+#
+# Opcional (para Mapbox nativo):
+#   MAPBOX_DOWNLOADS_TOKEN — token sk. para baixar o SDK nativo do Mapbox
+#
+# Variáveis de ambiente de produção EXPO_PUBLIC_* que requerem valores de
+# produção (ex.: EXPO_PUBLIC_SUPABASE_URL/ANON_KEY para prod) devem ser
+# adicionadas como secrets e referenciados abaixo — NÃO inline em texto claro.
+
+on:
+  workflow_dispatch:
+    inputs:
+      include_mapbox:
+        description: "Incluir mapa nativo (Mapbox)? Requer secret MAPBOX_DOWNLOADS_TOKEN"
+        type: boolean
+        default: false
+
+env:
+  NODE_VERSION: "22"
+  PNPM_VERSION: "11"
+
+jobs:
+  build-aab:
+    name: Build AAB (${{ inputs.include_mapbox == true && 'com Mapbox' || 'sem Mapbox' }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # para upload do artefato no Release (se desejado)
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - run: npm install -g pnpm@${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Instalar dependências (root workspace)
+        run: pnpm install --frozen-lockfile
+
+      - name: Decodificar upload keystore
+        env:
+          ANDROID_UPLOAD_KEYSTORE_BASE64: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}
+        run: |
+          echo "$ANDROID_UPLOAD_KEYSTORE_BASE64" | base64 --decode > /tmp/upload.keystore
+          echo "Keystore decodificada em /tmp/upload.keystore"
+
+      - name: Excluir Mapbox nativo do build (variante padrão)
+        if: ${{ inputs.include_mapbox != true }}
+        working-directory: apps/mobile
+        run: |
+          node -e "
+            const fs = require('fs');
+            const p = 'app.json';
+            const j = JSON.parse(fs.readFileSync(p, 'utf8'));
+            j.expo.plugins = (j.expo.plugins || []).filter(
+              pl => !(Array.isArray(pl) && pl[0] === '@rnmapbox/maps')
+            );
+            fs.writeFileSync(p, JSON.stringify(j, null, 2));
+            console.log('plugin @rnmapbox/maps removido do app.json');
+          "
+          printf "module.exports = { dependencies: { '@rnmapbox/maps': { platforms: { android: null } } } };\n" \
+            > react-native.config.js
+          echo "autolinking @rnmapbox/maps desligado no Android"
+
+      - name: expo prebuild (gera android/)
+        working-directory: apps/mobile
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Configurar release signing com upload keystore
+        working-directory: apps/mobile
+        env:
+          ANDROID_UPLOAD_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_UPLOAD_KEYSTORE_PASSWORD }}
+          ANDROID_UPLOAD_KEY_ALIAS:         ${{ secrets.ANDROID_UPLOAD_KEY_ALIAS }}
+          ANDROID_UPLOAD_KEY_PASSWORD:      ${{ secrets.ANDROID_UPLOAD_KEY_PASSWORD }}
+        run: |
+          # Copia a keystore para dentro do projeto Android
+          cp /tmp/upload.keystore android/app/upload.keystore
+
+          # Escreve gradle.properties com as credenciais (NÃO versionar este arquivo)
+          cat >> android/gradle.properties <<EOF
+          MYAPP_UPLOAD_STORE_FILE=upload.keystore
+          MYAPP_UPLOAD_STORE_PASSWORD=${ANDROID_UPLOAD_KEYSTORE_PASSWORD}
+          MYAPP_UPLOAD_KEY_ALIAS=${ANDROID_UPLOAD_KEY_ALIAS}
+          MYAPP_UPLOAD_KEY_PASSWORD=${ANDROID_UPLOAD_KEY_PASSWORD}
+          EOF
+
+          # Garante que o build.gradle de release use signingConfigs.release
+          # (não debug). O template do Expo usa debug por padrão para release;
+          # precisamos reconfigurar para a upload key real.
+          BG=android/app/build.gradle
+
+          # Adicionar bloco signingConfigs.release se ainda não existir
+          if ! grep -q "signingConfigs.release" "$BG"; then
+            sed -i '/signingConfigs {/a\        release {\n            storeFile file(MYAPP_UPLOAD_STORE_FILE)\n            storePassword MYAPP_UPLOAD_STORE_PASSWORD\n            keyAlias MYAPP_UPLOAD_KEY_ALIAS\n            keyPassword MYAPP_UPLOAD_KEY_PASSWORD\n        }' "$BG" || true
+          fi
+
+          # Garantir que buildTypes.release use signingConfigs.release
+          sed -i 's/signingConfig signingConfigs.debug/signingConfig signingConfigs.release/g' "$BG" || true
+
+          echo "Release signing configurado."
+
+      - name: Gradle bundleRelease (AAB — todas as ABIs)
+        working-directory: apps/mobile/android
+        env:
+          EXPO_PUBLIC_API_URL: https://shareo-prod.vercel.app
+          EXPO_PUBLIC_MAPBOX_TOKEN: ${{ secrets.NEXT_PUBLIC_MAPBOX_TOKEN }}
+          MAPBOX_DOWNLOADS_TOKEN:   ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}
+        # bundleRelease gera um único AAB com todas as ABIs (arm64, armeabi-v7a,
+        # x86_64) — a Play Store faz o split por ABI na entrega (Dynamic Delivery).
+        run: ./gradlew bundleRelease --no-daemon -x lint
+
+      - name: Localizar AAB
+        id: aab
+        working-directory: apps/mobile
+        run: |
+          AAB=$(find android/app/build/outputs/bundle/release -name "*.aab" | head -1)
+          if [ -z "$AAB" ]; then echo "::error::AAB não encontrado"; exit 1; fi
+          cp "$AAB" shareo-release.aab
+          echo "path=apps/mobile/shareo-release.aab" >> "$GITHUB_OUTPUT"
+          ls -lh shareo-release.aab
+
+      - name: Upload como artifact (para download manual)
+        uses: actions/upload-artifact@v4
+        with:
+          name: shareo-release-aab
+          path: ${{ steps.aab.outputs.path }}
+          retention-days: 14
+          if-no-files-found: error

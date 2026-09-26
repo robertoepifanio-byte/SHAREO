@@ -10,8 +10,15 @@ import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { getPlatformFeeRate, calcSplitComDesconto, CHECKOUT_MAX_CENTS, STRIPE_CHECKOUT_EXPIRES_SECONDS } from "@/lib/platform-config"
 import { formatDateMonthDay } from "@/utils/format"
 
+/** Compõe a URL de retorno do Checkout: deep link para mobile, URL web para outros clientes. */
+function returnUrl(client: "web" | "mobile", appUrl: string, path: string) {
+  return client === "mobile" ? `shareo://${path}` : `${appUrl}/${path}`
+}
+
 const Schema = z.object({
   bookingId: z.string().min(1),
+  /** "mobile" → URLs de sucesso/cancelamento usam o deep link shareo:// */
+  client: z.enum(["web", "mobile"]).optional().default("web"),
 })
 
 export async function POST(req: NextRequest) {
@@ -31,7 +38,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { bookingId } = parsed.data
+    const { bookingId, client } = parsed.data
 
     const booking = await prisma.booking.findUnique({
       where:  { id: bookingId },
@@ -157,8 +164,10 @@ export async function POST(req: NextRequest) {
       payment_intent_data: {
         transfer_group: bookingId,
       },
-      success_url: `${appUrl}/reservas/sucesso?bookingId=${bookingId}`,
-      cancel_url:  `${appUrl}/reservas/${bookingId}?payment=cancelled`,
+      // Quando chamado pelo app mobile (client="mobile"), usa deep links shareo://
+      // para fechar o SafariViewController/Chrome Custom Tab e retornar ao app.
+      success_url: returnUrl(client, appUrl, `reservas/sucesso?bookingId=${bookingId}`),
+      cancel_url:  returnUrl(client, appUrl, `reservas/${bookingId}?payment=cancelled`),
       expires_at:  Math.floor(Date.now() / 1000) + STRIPE_CHECKOUT_EXPIRES_SECONDS,
     })
 
