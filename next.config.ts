@@ -89,6 +89,9 @@ export default process.env.SENTRY_AUTH_TOKEN
       org:       process.env.SENTRY_ORG     ?? "shareo-ow",
       project:   process.env.SENTRY_PROJECT ?? "shareo-web",
       authToken: process.env.SENTRY_AUTH_TOKEN,
+      // Usa o mesmo SHA que os Sentry.init() das três configs para que os source
+      // maps enviados aqui correspondam exatamente aos eventos do runtime.
+      release: { name: process.env.BUILD_COMMIT_SHA || process.env.VERCEL_GIT_COMMIT_SHA || "local" },
       sourcemaps: { disable: false },
       // hideSourceMaps removido no @sentry/nextjs v10 — ocultar sourcemaps do
       // client bundle passou a ser o comportamento padrão.
