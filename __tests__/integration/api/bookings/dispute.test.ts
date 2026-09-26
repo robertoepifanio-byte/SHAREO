@@ -19,6 +19,8 @@ const mockNotificationCreate = jest.fn().mockResolvedValue({})
 
 jest.mock("@/lib/prisma", () => ({
   prisma: {
+    // withUser consulta o usuario (deletedAt/isActive) em toda chamada
+    user: { findUnique: async ({ where }: { where: { id: string } }) => ({ id: where.id }) },
     booking: {
       findUnique: (...a: unknown[]) => mockBookingFindUnique(...a),
       update:     (...a: unknown[]) => mockBookingUpdate(...a),

@@ -30,6 +30,8 @@ const mockAplicarExtensao = jest.fn().mockResolvedValue(undefined)
 
 jest.mock("@/lib/prisma", () => ({
   prisma: {
+    // withUser consulta o usuario (deletedAt/isActive) em toda chamada
+    user: { findUnique: async ({ where }: { where: { id: string } }) => ({ id: where.id }) },
     $queryRaw:   (...a: unknown[]) => mockQueryRaw(...a),
     $executeRaw: (...a: unknown[]) => mockExecuteRaw(...a),
     notification: { create: (...a: unknown[]) => mockNotifCreate(...a) },
