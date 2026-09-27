@@ -18,6 +18,7 @@ import { useTheme } from "@/lib/theme"
 import { formatPickupAddress } from "@/lib/ownerAddress"
 import { deriveBookingHistory } from "@/lib/bookingHistory"
 import { usePlatformConfig } from "@/lib/platformConfig"
+import { PayButton } from "@/components/bookings/PayButton"
 
 interface BookingDetail {
   id:            string
@@ -1581,17 +1582,11 @@ export default function BookingDetailScreen() {
         ]}
       >
         {/* Pagamento (locatário + CONFIRMED + não pago).
-            O botão de pagar saiu do app junto com o Mercado Pago (24/08/2026): ele
-            chamava /api/payments/mp/checkout, e com a flag desligada só produzia
-            "pagamento indisponível". O checkout da Stripe ainda não foi portado
-            para o app — ver PSP-03 no backlog. Até lá, o aviso diz onde pagar em
-            vez de oferecer um botão que não paga. */}
+            Transcrito de: components/bookings/PayButton.tsx + app/reservas/[id]/page.tsx
+            Abre Checkout Stripe via expo-web-browser (openAuthSessionAsync) com
+            deep link shareo:// de retorno — ao fechar, invalida a query da reserva. */}
         {canPay && (
-          <View style={[s.actionBtnOutline, { borderColor: tokens.border }]}>
-            <Text style={[s.actionBtnOutlineText, { color: tokens.muted }]}>
-              Pagamento disponível no site
-            </Text>
-          </View>
+          <PayButton bookingId={booking.id} totalPrice={booking.totalPrice} />
         )}
 
         {/* Devolver item (locatário + ACTIVE) — suprimido: ReturnChecklist exibe o botão no scroll.
