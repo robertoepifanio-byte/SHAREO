@@ -322,6 +322,7 @@ export async function GET(req: NextRequest) {
           state:        true,
           neighborhood: true,
           street:       true,
+          cep:          true,  // ItemForm usa para geocodificar pelo CEP (lib/geocodeBR.ts)
           avatarUrl:     true,
           userType:      true,
           isVerified:    true,
@@ -446,7 +447,7 @@ export async function PATCH(req: NextRequest) {
 
     // Geocodificar endereço completo do perfil — NÃO bloqueia a resposta.
     // S14-M-19: after() mantém a lambda viva até concluir (antes era await, ~3-5s no PATCH).
-    const addressChanged = d.city !== undefined || d.state !== undefined
+    const addressChanged = d.city !== undefined || d.state !== undefined || d.cep !== undefined
                         || d.street !== undefined || d.neighborhood !== undefined
     if (addressChanged) {
       const city  = d.city  ?? updated.city
@@ -454,6 +455,7 @@ export async function PATCH(req: NextRequest) {
       if (city && state) {
         after(() =>
           geocodeUserLocation(userId, {
+            cep:          d.cep          ?? updated.cep,
             street:       d.street       ?? updated.street,
             neighborhood: d.neighborhood ?? updated.neighborhood,
             city,
