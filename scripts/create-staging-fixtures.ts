@@ -30,63 +30,17 @@ import * as fs from 'fs'
 import * as path from 'path'
 import { assertNotEnrollment, completeTwoFactorIfAsked } from '../e2e/fixtures/totp'
 import { FIXTURE_LOCATARIO, FIXTURE_PROPRIETARIO, FIXTURE_ADMIN, SESSION_PATHS } from '../e2e/fixtures/test-credentials'
+import { registerUser, markEmailVerified, completeProfile } from './lib/provision-staging-user'
 
 const STAGING_URL =
   process.env.STAGING_URL ??
   'https://shareo-git-main-robertoepifanio-bytes-projects.vercel.app'
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Helpers específicos deste script (registro/verificação/cadastro genéricos
+// vivem em scripts/lib/provision-staging-user.ts, compartilhados com
+// scripts/create-pentest-account.ts)
 // ---------------------------------------------------------------------------
-
-async function registerUser(user: typeof FIXTURE_LOCATARIO, retries = 3): Promise<string | null> {
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    const res = await fetch(`${STAGING_URL}/api/auth/register`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name:           user.name,
-        email:          user.email,
-        password:       user.password,
-        cpf:            user.cpf,
-        phone:          user.phone,
-        userType:       'PF',
-        city:           user.city,
-        state:          user.state,
-        // 🪤 Endereço completo é obrigatório para o proprietário confirmar
-        // reserva desde 22/08/2026 (422 OWNER_ADDRESS_REQUIRED). Enviamos para
-        // todos os fixtures porque qualquer um pode virar locador num smoke.
-        cep:            user.cep,
-        street:         user.street,
-        neighborhood:   user.neighborhood,
-        consentVersion: user.consentVersion,
-      }),
-    })
-
-    const json = await res.json()
-
-    if (res.ok) {
-      console.log(`  ✅ Criado: ${user.email} (id: ${json.data.id})`)
-      return json.data.id as string
-    }
-
-    const code = json.error?.code
-    if (code === 'EMAIL_ALREADY_EXISTS' || code === 'CPF_ALREADY_EXISTS') {
-      console.log(`  ℹ️  Já existe: ${user.email}`)
-      return null
-    }
-
-    if (code === 'RATE_LIMITED' && attempt < retries) {
-      console.log(`  ⏳ Rate limit — aguardando 75s (tentativa ${attempt}/${retries})...`)
-      await new Promise((r) => setTimeout(r, 75_000))
-      continue
-    }
-
-    console.error(`  ❌ Erro ao registrar ${user.email}:`, json.error)
-    throw new Error(`register failed: ${JSON.stringify(json.error)}`)
-  }
-  return null
-}
 
 async function loginAndSaveSession(
   email: string,
@@ -193,49 +147,6 @@ async function enrollFixtureTotp(email: string, secret: string | undefined): Pro
   console.log(`  ✅ 2FA cadastrado (segredo conhecido): ${email}`)
 }
 
-/**
- * Marca os e-mails dos fixtures como verificados.
- *
- * 🪤 `POST /api/bookings` lê `emailVerified` do BANCO a cada requisição e responde 403
- * EMAIL_NOT_VERIFIED quando é null; `registerUser()` cria a conta sem verificação.
- * Não conflita com e2e/email-verification.spec.ts, que registra usuário próprio.
- */
-async function markEmailVerified(emails: string[]): Promise<void> {
-  const { count } = await db().user.updateMany({
-    where: { email: { in: emails }, emailVerified: null },
-    data:  { emailVerified: new Date() },
-  })
-  console.log(`  ✅ E-mails verificados: ${count} de ${emails.length} (o resto já estava)`)
-}
-
-/**
- * Completa o cadastro dos fixtures que ficaram pela metade.
- *
- * 🪤 `registerUser()` é idempotente e NÃO reenvia dados de conta já existente, então uma
- * conta criada por outro caminho fica sem `profileCompletedAt` — e `POST /api/bookings`
- * responde 403 REGISTRATION_INCOMPLETE. Espelha o `commonData` de
- * app/api/users/me/complete-registration/route.ts (manter os campos em sincronia).
- */
-async function completeProfile(users: Array<typeof FIXTURE_LOCATARIO>): Promise<void> {
-  const now = new Date()
-  for (const user of users) {
-    const { count } = await db().user.updateMany({
-      where: { email: user.email, profileCompletedAt: null },
-      data: {
-        phone:              user.phone,
-        cep:                user.cep,
-        street:             user.street,
-        neighborhood:       user.neighborhood,
-        city:               user.city,
-        state:              user.state,
-        profileCompletedAt: now,
-        ageDeclaredAt:      now,
-      },
-    })
-    console.log(count ? `  ✅ Cadastro completado: ${user.email}` : `  ℹ️  Cadastro já completo: ${user.email}`)
-  }
-}
-
 // ---------------------------------------------------------------------------
 
 async function main() {
@@ -244,27 +155,27 @@ async function main() {
 
   // --- Locatário ---
   console.log('👤 Locatário:')
-  await registerUser(FIXTURE_LOCATARIO)
+  await registerUser(STAGING_URL, FIXTURE_LOCATARIO)
   await loginAndSaveSession(FIXTURE_LOCATARIO.email, FIXTURE_LOCATARIO.password, SESSION_PATHS.locatario)
 
   // --- Proprietário ---
   console.log('\n👤 Proprietário:')
-  await registerUser(FIXTURE_PROPRIETARIO)
+  await registerUser(STAGING_URL, FIXTURE_PROPRIETARIO)
   await loginAndSaveSession(FIXTURE_PROPRIETARIO.email, FIXTURE_PROPRIETARIO.password, SESSION_PATHS.proprietario)
 
   // --- Admin ---
   console.log('\n👤 Admin:')
-  await registerUser(FIXTURE_ADMIN)
+  await registerUser(STAGING_URL, FIXTURE_ADMIN)
   await promoteToAdmin(FIXTURE_ADMIN.email)
   await enrollFixtureTotp(FIXTURE_ADMIN.email, process.env.FIXTURE_ADMIN_TOTP_SECRET)
   await loginAndSaveSession(FIXTURE_ADMIN.email, FIXTURE_ADMIN.password, SESSION_PATHS.admin, process.env.FIXTURE_ADMIN_TOTP_SECRET)
 
   // --- Guards de reserva: e-mail verificado + cadastro completo (os três) ---
   console.log('\n📧 Verificação de e-mail:')
-  await markEmailVerified([FIXTURE_LOCATARIO.email, FIXTURE_PROPRIETARIO.email, FIXTURE_ADMIN.email])
+  await markEmailVerified(db(), [FIXTURE_LOCATARIO.email, FIXTURE_PROPRIETARIO.email, FIXTURE_ADMIN.email])
 
   console.log('\n📝 Cadastro completo:')
-  await completeProfile([FIXTURE_LOCATARIO, FIXTURE_PROPRIETARIO, FIXTURE_ADMIN])
+  await completeProfile(db(), [FIXTURE_LOCATARIO, FIXTURE_PROPRIETARIO, FIXTURE_ADMIN])
 
   console.log('\n✨ Fixtures criados. Agora rode os smoke tests autenticados:')
   console.log('   pnpm playwright test e2e/admin.spec.ts --config=playwright.staging.config.ts')

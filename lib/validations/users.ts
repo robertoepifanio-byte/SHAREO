@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { isValidSlug } from "@/lib/slugify"
+import { stripHtml } from "@/lib/sanitize"
 
 const BR_STATES = [
   "AC","AL","AM","AP","BA","CE","DF","ES","GO","MA",
@@ -8,19 +9,24 @@ const BR_STATES = [
 ] as const
 
 export const UpdateProfileSchema = z.object({
-  name:         z.string().min(3, "Nome: mínimo 3 caracteres").max(100).optional(),
-  bio:          z.string().max(500, "Bio: máximo 500 caracteres").nullable().optional(),
+  name:         z.string().min(3, "Nome: mínimo 3 caracteres").max(100).transform(stripHtml).optional(),
+  bio:          z.string().max(500, "Bio: máximo 500 caracteres").transform(stripHtml).nullable().optional(),
   phone:        z
     .string()
     .regex(/^\+55\d{10,11}$/, "Telefone inválido (ex: +5584999999999)")
     .nullable()
     .optional(),
   cep:          z.string().regex(/^\d{8}$/, "CEP inválido").nullable().optional(),
-  street:       z.string().max(200).nullable().optional(),
-  neighborhood: z.string().max(100).nullable().optional(),
+  street:       z.string().max(200).transform(stripHtml).nullable().optional(),
+  neighborhood: z.string().max(100).transform(stripHtml).nullable().optional(),
   city:         z.string().min(2, "Cidade: mínimo 2 caracteres").max(100).optional(),
   state:        z.enum(BR_STATES, { errorMap: () => ({ message: "Estado inválido" }) }).nullable().optional(),
-  avatarUrl:    z.string().url("URL de avatar inválida").max(500).nullable().optional(),
+  // SEC-BAIXO — Strix (29/09) achou que .url() sozinho aceita qualquer esquema
+  // (`javascript:`, `file://`); nenhum caminho de render alcançável hoje, mas
+  // trava aqui em vez de depender disso continuar verdade para sempre.
+  avatarUrl:    z.string().url("URL de avatar inválida").max(500)
+    .refine((v) => v.startsWith("https://"), "URL de avatar deve ser https")
+    .nullable().optional(),
   slug:         z
     .string()
     .max(50, "Slug: máximo 50 caracteres")
