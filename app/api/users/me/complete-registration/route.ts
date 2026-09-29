@@ -162,12 +162,13 @@ export async function PATCH(req: NextRequest) {
     const updated = await prisma.user.update({
       where: { id: userId },
       data,
-      select: { id: true, userType: true, city: true, state: true, street: true, neighborhood: true, profileCompletedAt: true },
+      select: { id: true, userType: true, cep: true, city: true, state: true, street: true, neighborhood: true, profileCompletedAt: true },
     })
 
     // Geocodifica com o endereço completo — não bloqueia a resposta.
     after(() =>
       geocodeUserLocation(userId, {
+        cep:          updated.cep,
         street:       updated.street,
         neighborhood: updated.neighborhood,
         city:         updated.city!,

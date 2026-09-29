@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/Textarea"
 import { ListingQualityIndicator } from "./ListingQualityIndicator"
 import { ItemCardPreview } from "./ItemCardPreview"
 import { BRAZIL_DEFAULT } from "@/lib/geo-constants"
+import { geocodeBR } from "@/lib/geocodeBR"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -316,7 +317,7 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
           // latitude/longitude ficam presas no fallback hardcoded (ex.: centro
           // do Brasil) e viram permanentes no item, quebrando o filtro de
           // distância. Geocodifica aqui, uma vez, assim que o endereço chega.
-          if (mode === "create") void geocodeFromAddress(addr.neighborhood, c, s)
+          if (mode === "create") void geocodeFromAddress(addr.neighborhood, c, s, data?.cep)
         }
         setProfileAddressLoaded(true)
       })
@@ -344,9 +345,10 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
 
   // ─── Location ──────────────────────────────────────────────────────────────
 
-  async function geocodeFromAddress(nb: string, cty: string, uf: string) {
+  // Mesma regra do servidor (lib/geocodeBR.ts): o POST confia nas coordenadas
+  // enviadas aqui, então uma busca diferente no navegador anularia a correção.
+  async function geocodeFromAddress(nb: string, cty: string, uf: string, cep?: string | null) {
     if (gpsUsedRef.current) return
-    const query = [nb.trim(), cty.trim(), uf, "Brasil"].filter(Boolean).join(", ")
     if (cty.trim().length < 2) return
     const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
     if (!token || token.endsWith("...")) return
@@ -354,15 +356,10 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
     setGeocoding(true)
     setGeocodeResult(null)
     try {
-      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json` +
-        `?access_token=${token}&country=BR&language=pt&limit=1&types=place,locality,neighborhood,address`
-      const res  = await fetch(url)
-      const data = await res.json() as { features?: { center: [number, number] }[] }
-      const feature = data?.features?.[0]
-      if (feature) {
-        const [lng, lat] = feature.center
-        setLatitude(lat)
-        setLongitude(lng)
+      const coords = await geocodeBR({ cep, neighborhood: nb, city: cty, state: uf })
+      if (coords) {
+        setLatitude(coords.lat)
+        setLongitude(coords.lng)
         setGeocodeResult("ok")
       } else {
         setGeocodeResult("not_found")

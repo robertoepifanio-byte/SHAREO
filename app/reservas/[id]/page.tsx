@@ -511,7 +511,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                     <p className="font-semibold text-success">Pago com sucesso</p>
                     {booking.paidAt && (
                       <p className="text-xs text-success/80">
-                        {formatDate(booking.paidAt, { dateStyle: "short", timeStyle: "short" })}
+                        {formatDate(booking.paidAt, { dateStyle: "short", timeStyle: "short", timeZone: "America/Fortaleza" })}
                       </p>
                     )}
                   </div>

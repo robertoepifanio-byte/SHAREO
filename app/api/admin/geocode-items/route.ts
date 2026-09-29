@@ -1,29 +1,18 @@
 /**
  * POST /api/admin/geocode-items
  * Geocodifica itens que ainda não têm latitude/longitude via Mapbox Geocoding API.
+ * `?todos=1` recalcula TODOS os itens (lote de 100; continuar com `&depois=<último id>`)
+ * — usado depois da troca da regra em lib/geocodeBR.ts (CEP primeiro, 27/09/2026).
  * Protegido por CRON_SECRET ou sessão de admin.
  */
 import { NextResponse, type NextRequest } from "next/server"
 import { requireAdminApi } from "@/lib/auth/require-admin"
 import { assertCronAuth } from "@/lib/auth/cron-guard"
 import { prisma } from "@/lib/prisma"
+import { geocodeItem } from "@/lib/geocodeItem"
 
 export const runtime   = "nodejs"
 export const maxDuration = 60
-
-async function geocode(query: string, token: string): Promise<{ lat: number; lng: number } | null> {
-  const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${token}&country=BR&language=pt&limit=1&types=place,locality,neighborhood,address`
-  try {
-    const res  = await fetch(url)
-    const data = await res.json() as { features?: { center: [number, number] }[] }
-    const feat = data.features?.[0]
-    if (!feat) return null
-    const [lng, lat] = feat.center
-    return { lat, lng }
-  } catch {
-    return null
-  }
-}
 
 export async function POST(req: NextRequest) {
   // Aceita CRON_SECRET (guard com comparação em tempo constante) ou sessão
@@ -39,8 +28,7 @@ export async function POST(req: NextRequest) {
     if (error) return error
   }
 
-  const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
-  if (!token) {
+  if (!process.env.NEXT_PUBLIC_MAPBOX_TOKEN) {
     return NextResponse.json({ error: "NEXT_PUBLIC_MAPBOX_TOKEN não configurado" }, { status: 500 })
   }
 
@@ -51,47 +39,32 @@ export async function POST(req: NextRequest) {
   // Item.latitude/longitude são Float NÃO-nulos; o sentinela de "sem coordenadas"
   // é 0,0 (mesmo critério do create em app/api/items/route.ts) — o antigo filtro
   // `== null` em JS nunca casava (no-op latente).
-  const BATCH_SIZE = 100
+  const BATCH_SIZE = 40  // até 3 consultas Mapbox por item (CEP → bairro → cidade, 4 s cada no máximo)
+  const todos  = req.nextUrl.searchParams.get("todos") === "1"
+  const depois = req.nextUrl.searchParams.get("depois")
+  const filtro = !todos ? { OR: [{ latitude: 0 }, { longitude: 0 }] }
+               : depois ? { id: { gt: depois } }
+               : {}
   const items = await prisma.item.findMany({
-    where:  { deletedAt: null, OR: [{ latitude: 0 }, { longitude: 0 }] },
-    select: { id: true, title: true, neighborhood: true, city: true, state: true },
-    take:   BATCH_SIZE,
+    where:   { deletedAt: null, ...filtro },
+    select:  { id: true, neighborhood: true, city: true, state: true },
+    orderBy: { id: "asc" },
+    take:    BATCH_SIZE,
   })
 
   if (items.length === 0) {
-    return NextResponse.json({ ok: true, processed: 0, message: "Nenhum item sem coordenadas." })
+    return NextResponse.json({ ok: true, processed: 0, message: "Nenhum item a geocodificar." })
   }
 
-  let updated = 0
-  let failed  = 0
-  const results: string[] = []
-
+  // geocodeItem grava lat/lng e o status (OK / PENDING / FAILED) do próprio item.
   for (const item of items) {
-    const parts = [item.neighborhood?.trim(), item.city?.trim(), item.state, "Brasil"].filter(Boolean)
-    if (parts.length < 2) { failed++; continue }
-
-    const coords = await geocode(parts.join(", "), token)
-    if (!coords) {
-      // Tenta só cidade + estado como fallback
-      const fallback = await geocode(`${item.city}, ${item.state}, Brasil`, token)
-      if (!fallback) {
-        results.push(`❌ ${item.id} — ${item.title}`)
-        failed++
-        continue
-      }
-      await prisma.item.update({ where: { id: item.id }, data: { latitude: fallback.lat, longitude: fallback.lng } })
-      results.push(`✅ ${item.id} — ${item.title} (fallback cidade)`)
-    } else {
-      await prisma.item.update({ where: { id: item.id }, data: { latitude: coords.lat, longitude: coords.lng } })
-      results.push(`✅ ${item.id} — ${item.title}`)
-    }
-    updated++
-
+    await geocodeItem(item.id, { neighborhood: item.neighborhood, city: item.city, state: item.state })
     // Pequena pausa para não estourar rate limit da Mapbox (free tier: 600 req/min)
     await new Promise((r) => setTimeout(r, 120))
   }
 
   const hasMore = items.length === BATCH_SIZE
-  console.warn(`[geocode-items] updated=${updated} failed=${failed} hasMore=${hasMore}`)
-  return NextResponse.json({ ok: true, processed: items.length, updated, failed, hasMore, results })
+  const ultimo  = items[items.length - 1].id
+  console.warn(`[geocode-items] processed=${items.length} todos=${todos} hasMore=${hasMore}`)
+  return NextResponse.json({ ok: true, processed: items.length, hasMore, ...(todos && hasMore && { depois: ultimo }) })
 }
