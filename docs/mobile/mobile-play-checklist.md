@@ -1,15 +1,17 @@
 # ShareO — Checklist de Submissão à Google Play Store
 
 **Documento:** Prep de loja (Fase 3 da meta `docs/planos/meta-app-android-build.md`)
-**Data:** 2026-07-01
-**App:** `apps/mobile/` — Expo + React Native · Package: `com.shareo.app`
+**Criado:** 2026-07-01 · **Revisado:** 2026-09-27 — cenário Stripe Connect (Mercado Pago removido em 24/08; ADR-028), D4 desbloqueado em 24/09 e PR #537 mesclado.
+**App:** `apps/mobile/` — Expo + React Native · Package: `com.shareo.app` · versão `1.1.0` / `versionCode 2`
 **EAS Project ID:** `77b68688-0ceb-486f-8af7-a54ca55dbfb2`
 
 Legenda:
 - ✅ Pronto / já existe
 - 🔨 A fazer (ação técnica interna)
 - 🔵 Externo (ação humana, conta, serviço de terceiro)
-- 🔴 Gated D4 (não executar antes do cumprimento das 4 condições de go-live)
+- ⚖️ Pendência jurídica ABERTA — o D4 foi desbloqueado em 24/09/2026 com risco assumido pelos fundadores, mas as pendências seguem abertas em `docs/juridico/decisao-desbloqueio-d4-2026-09-24.md`. Não marcar como resolvida.
+
+> **Pagamentos:** PSP único = **Stripe Connect**, checkout **só cartão**, teto R$ 500 por transação. O app abre o Checkout hospedado da Stripe no navegador (`expo-web-browser`) e volta por deep link `shareo://`. Dados de cartão nunca passam pelo app nem pelos servidores do ShareO.
 
 ---
 
@@ -17,10 +19,11 @@ Legenda:
 
 | # | Item | Status | Detalhe / Ação |
 |---|---|---|---|
-| 1.1 | Conta Google Play Developer criada | 🔵 | Taxa única de US$ 25. Acessar: play.google.com/console. Usar e-mail corporativo da ShareO PJ — gated D4 (conta PJ necessária para registrar como organização). |
-| 1.2 | Conta registrada como organização (não pessoal) | 🔵 🔴 | Exige CNPJ e conta PJ ativa. Gated D4 (condição 2 — contrato MP + conta PJ). |
-| 1.3 | Aceite dos termos do Google Play Developer | 🔵 | Feito no momento de criação da conta. |
-| 1.4 | Verificação de identidade da conta (D-U-N-S ou verificação Google) | 🔵 🔴 | O Google pode solicitar verificação da empresa para publicar. Gated D4. |
+| 1.1 | Conta Google Play Developer criada | 🔵 | Taxa única de US$ 25 em play.google.com/console. Usar e-mail corporativo da ShareO. |
+| 1.2 | Conta registrada como organização (não pessoal) | 🔵 | Exige CNPJ e **D-U-N-S**. Conta de organização dispensa a regra de 12 testadores por 14 dias exigida de contas pessoais novas. |
+| 1.3 | D-U-N-S da PJ | 🔵 | Consultar em `developer.apple.com/enroll/duns-lookup` (aceita Brasil). A busca `my.dnb.com/lookup` é **só EUA** — "no results" lá não significa que não existe. Se não existir, solicitar pela D&B Brasil (gratuito, alguns dias úteis). Usar a razão social exata do cartão CNPJ. |
+| 1.4 | Verificação da conta aprovada pelo Google | 🔵 | Conferir em Play Console → Configurações → Detalhes da conta de desenvolvedor. Enquanto não verificada, o Console não permite publicar. |
+| 1.5 | Aceite dos termos do Google Play Developer | 🔵 | Feito na criação da conta. |
 
 ---
 
@@ -28,10 +31,11 @@ Legenda:
 
 | # | Item | Status | Detalhe / Ação |
 |---|---|---|---|
-| 2.1 | App criado no Play Console (`com.shareo.app`) | 🔵 | Criar em: Play Console → Todos os apps → Criar app. Package name: `com.shareo.app`. |
-| 2.2 | Idioma padrão definido como Português (Brasil) | 🔵 | Selecionar `pt-BR` como idioma principal ao criar o app. |
-| 2.3 | Tipo de app: app (não jogo) | 🔵 | Selecionar "App" no criação. |
-| 2.4 | Distribuição: gratuito | 🔵 | App é gratuito; a monetização ocorre via transações internas (Mercado Pago). |
+| 2.1 | App criado no Play Console (`com.shareo.app`) | 🔵 | Play Console → Todos os apps → Criar app. |
+| 2.2 | Idioma padrão Português (Brasil) | 🔵 | `pt-BR`. |
+| 2.3 | Tipo: app (não jogo) | 🔵 | |
+| 2.4 | Distribuição: gratuito | 🔵 | Monetização por taxa de plataforma nas locações, cobrada via Stripe. |
+| 2.5 | Play App Signing ativado | 🔵 | O Google guarda a chave de assinatura do app; o ShareO assina o AAB com a **upload key** (Bloco 8). Perder a upload key é recuperável pelo suporte do Google; perder a chave do app não seria. |
 
 ---
 
@@ -39,41 +43,31 @@ Legenda:
 
 | # | Item | Status | Detalhe / Ação |
 |---|---|---|---|
-| 3.1 | Título definido (≤ 30 chars) | 🔨 | Ver `docs/mobile/mobile-play-listing.md` — fundadores escolhem entre opções A, B ou C. |
-| 3.2 | Descrição curta (≤ 80 chars) | ✅ | Texto pronto em `docs/mobile/mobile-play-listing.md`. |
-| 3.3 | Descrição longa (≤ 4.000 chars) | ✅ | Texto pronto em `docs/mobile/mobile-play-listing.md`. Revisão de fundadores recomendada. |
-| 3.4 | Nome do desenvolvedor | 🔴 🔵 | Nome jurídico da PJ. Gated D4 (conta PJ). |
-| 3.5 | E-mail de suporte | 🔵 | Usar `atendimento@shareo.com.br` (Zoho Mail já ativo). |
-| 3.6 | Site do app | 🔴 | URL pública (`shareo.com.br`). Gated D4 (site de produção). |
-| 3.7 | Política de privacidade (URL pública) | 🔴 | **Obrigatório.** Publicar `/privacidade` em produção. Gated D4 (condição 3 — Termos/Política publicados). O conteúdo revisado já existe (`docs/juridico/draft-clausulas-mp-termos-privacidade.md`); só publicar após D4. |
-| 3.8 | Categoria: Compras (Shopping) | 🔵 | Selecionar ao configurar a ficha. |
+| 3.1 | Título definido (≤ 30 chars) | 🔨 | Ver `docs/mobile/mobile-play-listing.md` — fundadores escolhem entre A, B ou C. |
+| 3.2 | Descrição curta (≤ 80 chars) | ✅ | Pronta em `mobile-play-listing.md`. |
+| 3.3 | Descrição longa (≤ 4.000 chars) | 🔨 | Pronta em `mobile-play-listing.md`, mas **revisar menções a Mercado Pago/PIX** → Stripe, cartão. |
+| 3.4 | Nome do desenvolvedor | 🔵 | Razão social exata da PJ (conferir no cartão CNPJ, não em rascunho). |
+| 3.5 | E-mail de suporte | 🔵 | `atendimento@shareo.com.br`. |
+| 3.6 | Site do app | 🔵 | Hoje `shareo.com.br` serve a **landing da campanha**, não o marketplace. Decidir qual URL informar; apontar o domínio para o app exige instrução explícita do fundador. |
+| 3.7 | Política de privacidade (URL pública) | 🔨 ⚖️ | `https://shareo-prod.vercel.app/privacidade` responde 200 (conferido 27/09). Usar a URL definitiva do domínio de produção quando existir. Conteúdo segue com pendências jurídicas abertas. |
+| 3.8 | Categoria: Compras (Shopping) | 🔵 | |
 
 ---
 
 ## Bloco 4 — Assets visuais da loja
 
-Todos os assets devem ser produzidos pelo designer com o app buildado e instalado num Android real.
-
 | # | Item | Status | Especificação técnica |
 |---|---|---|---|
-| 4.1 | Ícone do app (Hi-res icon) | ✅ | 512×512px PNG, sem alpha (fundo sólido). Usar versão do logo sem transparência. Fonte: `apps/mobile/assets/icon.png` (verificar se é 512px; gerar versão 512px se necessário). |
-| 4.2 | Feature Graphic | 🔨 | 1024×500px JPG ou PNG (sem alpha). Exibido no topo do listing. Composição sugerida: logotipo ShareO à esquerda + screenshot da tela de busca à direita + fundo na cor navy `#003366`. Produzir no Figma. |
-| 4.3 | Screenshots — Smartphone (obrigatório, mín. 2, máx. 8) | 🔵 | JPEG ou PNG, 16:9 ou 9:16. Tamanho mín. 320px, máx. 3840px. Produzir com o app buildado num Android físico ou emulador. Ver telas recomendadas abaixo. |
-| 4.4 | Screenshots — Tablet 7" (opcional mas recomendado) | 🔵 | Mesmo spec de smartphone; capturar em tablet ou emulador 7". |
-| 4.5 | Screenshots — Tablet 10" (opcional) | 🔵 | Idem. |
+| 4.1 | Ícone hi-res | 🔨 | 512×512 PNG sem alpha. Conferir se `apps/mobile/assets/icon.png` atende; gerar se não. |
+| 4.2 | Feature Graphic | 🔨 | 1024×500 JPG/PNG sem alpha. Logo à esquerda + tela de busca à direita + fundo navy `#003366`. |
+| 4.3 | Screenshots smartphone (mín. 2, máx. 8) | 🔵 | 9:16, capturados do app 1.1.0 num Android real (`scripts/adb-device.sh shot`). |
+| 4.4 | Screenshots tablet 7"/10" | 🔵 | Opcional. |
 
-### Telas recomendadas para screenshots (smartphone, 9:16)
+### Telas recomendadas (smartphone, 9:16)
 
-Ordem sugerida para máximo impacto no listing:
+1. Busca com itens próximos · 2. Detalhe do item · 3. Seleção de datas e preço (diária/semanal/mensal) · 4. Chat com o proprietário · 5. Reserva com **Pagar agora** · 6. Anunciar item.
 
-1. **Tela de busca com itens próximos** — mostra o core do produto (localização + resultados).
-2. **Detalhe de um item** — foto do item, preço por dia, avaliações, botão "Reservar".
-3. **Tela de seleção de datas e cálculo de preço** — mostra o fluxo de reserva (diária/semanal/mensal).
-4. **Chat com o proprietário** — diferencial de segurança/comunicação.
-5. **Tela de reservas ativas** — painel do locatário.
-6. **Tela de anúncio (proprietário)** — para atrair o perfil anunciante.
-
-**Instrução para o designer:** adicionar banners/captions em português sobre cada screenshot para contextualizar o benefício (ex.: "Itens a poucos km de você", "Reserve em segundos", "Pague com segurança pelo Mercado Pago"). Ferramenta sugerida: Figma com template de device frame Android.
+Captions sugeridas: "Itens a poucos km de você", "Reserve em segundos", "Pagamento seguro com cartão pela Stripe". **Não** citar Mercado Pago nem PIX de checkout.
 
 ---
 
@@ -81,12 +75,13 @@ Ordem sugerida para máximo impacto no listing:
 
 | # | Item | Status | Detalhe / Ação |
 |---|---|---|---|
-| 5.1 | Rascunho do Data Safety elaborado | ✅ | Ver `docs/mobile/mobile-data-safety.md`. |
-| 5.2 | Confirmação: permissão RECORD_AUDIO necessária? | 🔨 | devops-shareo deve verificar e remover de `app.json` se desnecessária. |
-| 5.3 | Confirmação: Sentry instalado no mobile? | 🔨 | devops-shareo deve verificar `apps/mobile/package.json` e `apps/mobile/app/_layout.tsx`. |
-| 5.4 | Confirmação jurídica: CPF no fluxo Mercado Pago | 🔴 | DPO / jurídico. Gated D4. |
-| 5.5 | Confirmação jurídica: selfie = dado biométrico? | 🔴 | DPO / jurídico. Gated D4. |
-| 5.6 | Formulário Data Safety preenchido no Console | 🔵 🔴 | Preencher no Play Console após confirmações acima. Submeter antes do primeiro AAB para revisão. |
+| 5.1 | Rascunho do Data Safety | 🔨 | `docs/mobile/mobile-data-safety.md` foi escrito para o Mercado Pago — **atualizar**: dados de pagamento (cartão) são coletados pela **Stripe** no checkout hospedado, não pelo app; o app só recebe status de pagamento. Repasse ao proprietário: Stripe Connect (dados bancários coletados pela Stripe) ou chave PIX informada no app (caminho manual). |
+| 5.2 | Permissão RECORD_AUDIO | ✅ | Removida em `app.json` (PR #537). `expo-camera`/`expo-image-picker` já com `microphonePermission: false`. |
+| 5.3 | Sentry no mobile | ✅ | Não instalado em `apps/mobile/package.json` (conferido 27/09) — não declarar coleta de diagnóstico por Sentry. |
+| 5.4 | CPF: finalidade e compartilhamento | ⚖️ | Antes era "CPF → Mercado Pago". Revisar se o CPF vai para a Stripe (KYC Connect) e declarar conforme. DPO. |
+| 5.5 | Selfie = dado biométrico? | ⚖️ | DPO / jurídico. |
+| 5.6 | Exclusão de conta pelo app | ✅ | Existe em `apps/mobile/app/perfil/` (dados/segurança). O Google também exige **URL web** de exclusão de conta — informar no formulário. |
+| 5.7 | Formulário Data Safety no Console | 🔵 | Preencher após 5.1, 5.4 e 5.5. |
 
 ---
 
@@ -94,37 +89,38 @@ Ordem sugerida para máximo impacto no listing:
 
 | # | Item | Status | Detalhe / Ação |
 |---|---|---|---|
-| 6.1 | Questionário IARC respondido no Console | 🔵 | O Google Play usa o sistema IARC (International Age Rating Coalition). O responsável deve responder o questionário no Console. Duração estimada: 10–15 minutos. |
-| 6.2 | Classificação esperada | 🔨 | Livre (sem violência, conteúdo adulto ou linguagem inapropriada). O questionário confirmará. |
-| 6.3 | Declaração de conteúdo gerado pelo usuário (UGC) | 🔨 | O app tem UGC (fotos de itens, avaliações, mensagens no chat). Declarar e descrever o processo de moderação no questionário. |
+| 6.1 | Questionário IARC | 🔵 | 10–15 min no Console. |
+| 6.2 | Classificação esperada | 🔨 | Livre. |
+| 6.3 | Declaração de UGC | 🔨 | Fotos de itens, avaliações, chat. Descrever moderação e denúncia. |
 
 ---
 
 ## Bloco 7 — Permissões sensíveis (justificativa)
 
-O Google Play pode solicitar justificativa para permissões classificadas como sensíveis. Preparar as declarações abaixo:
-
 | Permissão | Justificativa para o Google Play |
 |---|---|
-| `CAMERA` | Usada para fotos de check-in e checkout de itens alugados (documentar o estado do item na retirada e na devolução) e para fotos do anúncio do item. |
-| `ACCESS_FINE_LOCATION` | Usada para ordenar os itens disponíveis por distância do usuário, melhorando a relevância dos resultados de busca. |
-| `ACCESS_COARSE_LOCATION` | Fallback para quando a localização precisa não está disponível; mesma finalidade. |
-| `RECORD_AUDIO` | Confirmar necessidade — ver item 5.2. Se desnecessária, remover antes da submissão. |
+| `CAMERA` | Fotos de retirada e devolução (estado do item) e fotos do anúncio. |
+| `ACCESS_FINE_LOCATION` | Ordenar itens por distância do usuário. |
+| `ACCESS_COARSE_LOCATION` | Fallback da localização precisa; mesma finalidade. |
+
+`RECORD_AUDIO` não é mais declarada (PR #537).
 
 ---
 
 ## Bloco 8 — Build AAB assinado
 
+Caminho escolhido: **GitHub Actions** (`.github/workflows/aab-build.yml`), grátis em repo público — sem depender da cota do EAS. Passo a passo em `docs/mobile/mobile-build-android.md` §10.
+
 | # | Item | Status | Detalhe / Ação |
 |---|---|---|---|
-| 8.1 | Conta Expo (EAS) existente | ✅ | EAS Project ID: `77b68688-0ceb-486f-8af7-a54ca55dbfb2`. |
-| 8.2 | Perfil `production` configurado em `eas.json` | ✅ | Gera AAB (`app-bundle`) necessário para a Play Store. |
-| 8.3 | `appVersionSource: "remote"` configurado em `eas.json` | 🔨 | PR #152 (s41) documentou o ajuste; verificar se foi aplicado em `apps/mobile/eas.json`. |
-| 8.4 | Variáveis de ambiente configuradas no painel EAS | 🔨 | `EXPO_PUBLIC_API_URL=https://shareo.com.br` (produção). Hoje aponta para staging (PR #152). Ajustar para o domínio de produção antes do build de produção. Gated D4 (domínio de produção). |
-| 8.5 | Keystore gerenciada pelo Expo | ✅ | Keystore `wVVAayBbVZ default` gerenciada pelo EAS (não local). NÃO perder acesso à conta Expo — a keystore é necessária para todas as atualizações futuras do app. |
-| 8.6 | Build `eas build --platform android --profile production` executado | 🔵 | Requer créditos EAS ou plano pago. O último build (`preview`) falhou em 2026-06-03; recomenda-se primeiro refazer o build `preview` (APK) para validar, depois fazer o `production` (AAB). |
-| 8.7 | AAB de produção gerado sem erros | 🔵 | Dependente do item 8.6. |
-| 8.8 | Versão do app definida (`versionCode` e `versionName`) | 🔨 | `version: "1.0.0"` em `app.json`. O `versionCode` (inteiro crescente) deve ser gerenciado via `appVersionSource: "remote"` (item 8.3). |
+| 8.1 | Workflow `aab-build.yml` (`bundleRelease`, todas as ABIs) | ✅ | PR #537. Disparo: `gh workflow run aab-build.yml --ref main`. Artefato do workflow (14 dias), não release público. |
+| 8.2 | Upload keystore gerada | 🔵 | `keytool` (§10.1). Guardar a keystore e as senhas fora do repositório, com backup. |
+| 8.3 | 4 secrets no GitHub | 🔵 | `ANDROID_UPLOAD_KEYSTORE_BASE64`, `ANDROID_UPLOAD_KEYSTORE_PASSWORD`, `ANDROID_UPLOAD_KEY_ALIAS`, `ANDROID_UPLOAD_KEY_PASSWORD` (§10.2). |
+| 8.4 | API de produção no build | ✅ | `EXPO_PUBLIC_API_URL=https://shareo-prod.vercel.app` no perfil `production` (PR #537). **Não** usar `shareo.com.br` enquanto ele servir a campanha. |
+| 8.5 | Versão | ✅ | `1.1.0` / `versionCode 2` / `runtimeVersion` literal `1.1.0`. Regra: `versionCode` +1 a cada envio; `version` e `runtimeVersion` sobem juntos. |
+| 8.6 | Mapa (Mapbox nativo) | 🔵 | Desligado no build. Opcional para o MVP: cadastrar secret `MAPBOX_DOWNLOADS_TOKEN` (token `sk.`) e disparar com `include_mapbox=true`. |
+| 8.7 | AAB de produção gerado sem erros | 🔵 | Depende de 8.2 e 8.3. Ainda **não** executado. |
+| 8.8 | APK de teste da versão 1.1.0 | ✅ | Compilou (run 36294459833) e instalou/abriu num Android real em 27/09. |
 
 ---
 
@@ -132,31 +128,26 @@ O Google Play pode solicitar justificativa para permissões classificadas como s
 
 | # | Item | Status | Detalhe / Ação |
 |---|---|---|---|
-| 9.1 | AAB carregado na faixa "Teste interno" | 🔵 | Faixa de teste interna permite até 100 testadores sem revisão do Google. Disponível imediatamente após o upload. |
-| 9.2 | Testadores adicionados (e-mails das contas Google) | 🔵 | Adicionar os fundadores e testers confiáveis. Usar contas Google dos testers (@gmail.com). |
-| 9.3 | Link de teste enviado para os testers | 🔵 | O Console gera um link de opt-in. Cada tester deve abrir no Android com a conta Google cadastrada. |
-| 9.4 | Validação do ciclo completo em teste interno | 🔵 🔴 | Testar busca → reserva → checkout Mercado Pago → retorno por deep-link. Gated D4 (pagamento real ativo). |
-| 9.5 | Faixa fechada (closed testing) ou aberta (open testing) | 🔵 🔴 | Opcional antes da produção. Permite mais testadores externos. Gated D4 para pagamento real. |
+| 9.1 | AAB carregado em "Teste interno" | 🔵 | Até 100 testadores, sem revisão do Google. |
+| 9.2 | Testadores adicionados | 🔵 | Contas Google dos fundadores e testers. |
+| 9.3 | Link de opt-in enviado | 🔵 | |
+| 9.4 | Pagamento Stripe no app validado (modo teste) | 🔨 | **Ainda não testado.** No APK de staging: reserva confirmada → **Pagar agora** → cartão `4242 4242 4242 4242` → app volta sozinho para a reserva, que aparece como paga. ⚠️ Risco não verificado: a Stripe pode recusar `success_url` com esquema `shareo://`; se recusar, voltar por página `https` que redireciona ao app. |
+| 9.5 | Ciclo completo no AAB de produção | 🔵 | Busca → reserva → confirmação → pagamento → devolução → repasse. Pagamento real em produção exige Stripe live (instrução explícita do fundador). |
+| 9.6 | Faixa fechada/aberta | 🔵 | Opcional. |
 
 ---
 
-## Bloco 10 — Go-live em produção (gated D4)
+## Bloco 10 — Go-live em produção
 
-Estes itens só podem ser executados após o cumprimento das 4 condições de go-live do D4:
-1. Parecer jurídico formal ✅ (recebido 2026-06-30)
-2. Contrato Mercado Pago assinado + conta PJ ativa (em andamento)
-3. Termos de Uso e Política de Privacidade publicados em URL pública
-4. Checklist de conformidade 100% (ver `docs/juridico/checklist-conformidade-juridica.md`)
+Cada passo com efeito público exige instrução explícita do fundador.
 
 | # | Item | Status | Detalhe / Ação |
 |---|---|---|---|
-| 10.1 | Política de Privacidade publicada em URL pública | 🔴 | Publicar `/privacidade` no domínio de produção. Conteúdo já redigido. |
-| 10.2 | Flag `mercadoPagoEnabled` ON em produção | 🔴 | Ativar via `/admin/financeiro`. Só após contrato MP assinado + conta PJ. |
-| 10.3 | Override de sandbox MP removido | 🔴 | `MP_SANDBOX_SELLER_TOKEN` e o helper `sandboxSellerTokenOverride()` devem ser removidos antes do go-live (PR #122 deixou marcado com 🔴 REMOVER). |
-| 10.4 | `EXPO_PUBLIC_API_URL` apontando para produção | 🔴 | Atualizar no painel EAS para `https://shareo.com.br`. |
-| 10.5 | Build AAB de produção com URL correta | 🔴 | Recriar o build `production` com as variáveis de produção. |
-| 10.6 | App promovido da faixa de teste para produção | 🔴 | No Play Console: "Promover para produção". O Google Play pode levar de 2 horas a 7 dias para revisar e publicar. |
-| 10.7 | Monitoramento pós-publicação ativo | 🔴 | Acompanhar ANRs, crashes e avaliações nas primeiras 48 horas via Play Console + Sentry. |
+| 10.1 | Política de Privacidade e Termos públicos | ✅ ⚖️ | Publicados em produção (200 em 27/09); pendências jurídicas seguem abertas. |
+| 10.2 | Stripe live no backend de produção | 🔵 | Estado e decisão no handoff do go-live web; não alterar sem instrução do fundador. |
+| 10.3 | Proprietários com Connect `ACTIVE` ou PIX de repasse cadastrado | 🔵 | Sem Connect ativo o repasse cai no caminho manual por PIX. |
+| 10.4 | App promovido para produção | 🔵 | Revisão do Google: de horas a 7 dias. |
+| 10.5 | Monitoramento pós-publicação | 🔵 | ANRs, crashes e avaliações no Play Console nas primeiras 48 h (sem Sentry no mobile). |
 
 ---
 
@@ -164,11 +155,11 @@ Estes itens só podem ser executados após o cumprimento das 4 condições de go
 
 | # | Item | Status | Detalhe / Ação |
 |---|---|---|---|
-| 11.1 | App não contém conteúdo adulto, violência ou discurso de ódio | ✅ | Marketplace de aluguel de itens. Sem risco de rejeição por conteúdo. |
-| 11.2 | App não facilita transações fora da Play Billing para bens digitais | ✅ | Os pagamentos são por bens físicos (aluguel de itens reais) — não sujeito à Play Billing. |
-| 11.3 | Conformidade com a Política de Dados do Usuário do Google Play | 🔴 | Depende do Data Safety completo (itens 5.x) e da Política de Privacidade publicada. |
-| 11.4 | Conformidade com a política de permissões sensíveis | 🔨 | Ver Bloco 7. Remover RECORD_AUDIO se desnecessária (item 5.2). |
-| 11.5 | Conformidade com LGPD (dados de usuários brasileiros) | 🔴 | Gated D4 — DPO, RIPD e Política de Privacidade. |
+| 11.1 | Sem conteúdo adulto, violência ou ódio | ✅ | |
+| 11.2 | Fora da Play Billing | ✅ | Pagamento por aluguel de bens físicos, via Stripe — não sujeito à Play Billing. |
+| 11.3 | Política de Dados do Usuário do Google Play | 🔨 | Depende do Data Safety atualizado (Bloco 5). |
+| 11.4 | Política de permissões sensíveis | ✅ | Só câmera e localização, justificadas no Bloco 7. |
+| 11.5 | LGPD | ⚖️ | DPO, RIPD e política — pendências abertas. |
 
 ---
 
@@ -176,13 +167,11 @@ Estes itens só podem ser executados após o cumprimento das 4 condições de go
 
 | Responsável | Ações |
 |---|---|
-| **Fundadores** | Criar conta Play Developer (1.1); escolher título do app (3.1); escolher e-mail de suporte (3.5); registrar a organização (1.2); assinar contrato MP (10.2). |
-| **devops-shareo** | Verificar/remover RECORD_AUDIO (5.2); verificar Sentry no mobile (5.3); confirmar `appVersionSource` no `eas.json` (8.3); executar build EAS (8.6). |
-| **designer-shareo** | Feature Graphic 1024×500px (4.2); screenshots das 6 telas recomendadas (4.3); banners/captions sobre screenshots. |
-| **fullstack-dev-shareo** | Expor botão "Excluir conta" no app mobile (Fase 5) (5.5 indireto). |
-| **DPO / jurídico** | Confirmar CPF no fluxo MP (5.4); confirmar selfie biométrica (5.5); aprovar Política de Privacidade para publicação (10.1). |
-| **product-owner-shareo** | Este documento. Aprovar listing com fundadores. Coordenar sequência de publicação. |
+| **Fundadores** | Conta Play de organização + D-U-N-S + verificação (1.x); título (3.1); URL do site (3.6); upload keystore + 4 secrets (8.2, 8.3); testar o pagamento no app (9.4); autorizar Stripe live e publicação (10.x). |
+| **Dev** | Revisar textos do listing (3.3); atualizar `mobile-data-safety.md` para Stripe (5.1); corrigir o retorno `shareo://` se a Stripe recusar (9.4); gerar o AAB quando houver secrets (8.7). |
+| **Designer** | Feature Graphic (4.2); screenshots da versão 1.1.0 (4.3). |
+| **DPO / jurídico** | CPF na Stripe (5.4); selfie biométrica (5.5); LGPD (11.5). |
 
 ---
 
-*Documento de trabalho — gated D4 nos itens marcados. Go-live de produção segue bloqueado até cumprimento das 4 condições. Ver `docs/juridico/checklist-conformidade-juridica.md` e `docs/checklist-go-live.md`.*
+*Pendências jurídicas: `docs/juridico/decisao-desbloqueio-d4-2026-09-24.md` e `docs/juridico/checklist-conformidade-juridica.md`.*

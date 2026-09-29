@@ -1,5 +1,14 @@
 # ShareO — Status do Projeto
 
+**Atualizado em**: 2026-09-27 — **📱 App Android: as 6 pendências de código para a Google Play foram mescladas (#537, `1c7d8b17`, staging verde + E2E de regressão ok).**
+
+- **Entregue no #537:** botão **Pagar agora** no app (Checkout Stripe via `expo-web-browser`, volta por `shareo://`; a rota `/api/payments/checkout` aceita `client: "mobile"`, o site segue igual), `RECORD_AUDIO` removida, workflow `aab-build.yml` (AAB assinado com upload key de GitHub Secrets, sem EAS pago), API de produção `shareo-prod.vercel.app` no perfil `production`, versão `1.1.0` / `versionCode 2`. Mapa segue desligado (falta o secret `MAPBOX_DOWNLOADS_TOKEN`).
+- **Verificado:** testes do app e da rota verdes, APK da branch compilou (run 36294459833) e foi instalado e aberto num Android real.
+- **Não verificado:** o pagamento pelo app. Risco em aberto: a Stripe pode recusar `success_url` com esquema `shareo://`. O fundador não tem reserva confirmada e não paga no staging; o teste exige montar uma.
+- **Pendências externas:** upload keystore + 4 secrets `ANDROID_UPLOAD_*`, conta Play de organização + D-U-N-S, Data Safety atualizado para Stripe. Checklist revisado em `docs/mobile/mobile-play-checklist.md`.
+
+---
+
 **Atualizado em**: 2026-09-25 (D-6) — **💳 Stripe live ligada em produção com a cobrança FECHADA; staging e produção em `79c1bf53`.** Detalhe e evidências em `docs/checklist-go-live-2026-10-01.md`, seção 0.1.
 
 - **Mesclados e no ar (staging e produção):** #516 (`/api/health` traz `build.commit` e o deploy exige o commit certo), #517 (links dos runbooks do D0), #518 (limite por e-mail no esqueci-a-senha), #519 (exclusão de conta apaga fotos de anúncio e de reserva, alerta de falha do Storage aos superadmins, sessão encerrada, revogação biométrica completa), #520 + #522 (guard de migração destrutiva, com base no commit em produção), #521 (scripts de varredura de Storage órfão e de limpeza de dados de teste). Pendências da Stripe live registradas no backlog como STRIPE-01 a 04 (#523).
