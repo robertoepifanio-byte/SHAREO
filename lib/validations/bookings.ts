@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { stripHtml } from "@/lib/sanitize"
 
 // Início do dia CORRENTE no fuso do Brasil (America/Fortaleza, UTC-3 sem DST),
 // expresso como instante UTC. Permite locação no MESMO dia e bloqueia datas
@@ -20,7 +21,7 @@ export const CreateBookingSchema = z
     additionalItemIds: z.array(z.string().cuid("itemId inválido")).max(9, "Máximo 10 itens por locação").optional(),
     startDate:   z.string().datetime({ message: "startDate inválida" }),
     endDate:     z.string().datetime({ message: "endDate inválida" }),
-    borrowerNote: z.string().max(500, "Nota: máximo 500 caracteres").optional(),
+    borrowerNote: z.string().max(500, "Nota: máximo 500 caracteres").transform(stripHtml).optional(),
     couponCode:   z.string().trim().min(4).max(30).optional(),
     // Aceite eletrônico do contrato de locação (D4 Jurídico — Questão #6).
     // Obrigatório quando a feature flag rentalContractAcceptanceEnabled=true.
@@ -55,7 +56,9 @@ export type ListBookingsQuery = z.infer<typeof ListBookingsQuerySchema>
 export const PatchBookingSchema = z
   .object({
     action:      z.enum(["confirm", "cancel", "mark_active", "mark_returned", "confirm_return", "open_dispute", "cancel_dispute"]),
-    reason:      z.string().max(500).optional(),
+    // SEC — Strix (29/09) achou que fica gravado cru no banco, só escapado no
+    // front hoje; mesmo padrão de title/description de item e name/bio de perfil.
+    reason:      z.string().max(500).transform(stripHtml).optional(),
     // Horário real de retirada (mark_active) ou devolução (mark_returned/confirm_return)
     actualTime:  z.string().datetime({ message: "actualTime inválido" }).optional(),
     // Token de segurança obrigatório no mark_active

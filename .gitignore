@@ -134,3 +134,6 @@ backups/
 
 # Lixo da CLI do Supabase (npx supabase ... cria isto)
 supabase/.temp/
+
+# Output do Strix (pentest) quando rodado de dentro do repo — relatórios/logs locais
+strix_runs/
