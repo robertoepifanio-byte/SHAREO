@@ -1,5 +1,24 @@
 # ShareO — Status do Projeto
 
+**Atualizado em**: 2026-09-29 (D-2) — **🛡️ Pentest ativo (Strix) em staging e produção: 0 vulnerabilidades exploráveis confirmadas. 6 achados de hardening corrigidos, produção redeployada em `387f1115`.**
+
+Revisão de segurança em duas camadas antes do go-live. **11/09 — revisão estática (OWASP Top 10):** 3 achados corrigidos e deployados (commit `64425f5`) — token de reset de senha em texto puro no banco, HTML de usuário não escapado em e-mails transacionais, `title`/`description` de item sem sanitização.
+
+**29/09 — pentest ativo com o Strix** (agente autônomo, ataca a aplicação de verdade), 3 rodadas:
+1. **Staging, escopo amplo** (US$17,41) — IDOR, XSS, admin, SSRF, upload: 0 achados. 6 áreas fora de alcance (gate `EMAIL_NOT_VERIFIED`). 2 achados de hardening corrigidos (`c17f6e6f`): `avatarUrl` aceitava `javascript:`/`file://`; `name`/`bio`/`street`/`neighborhood` sem sanitização server-side.
+2. **Staging, cobertura completa** com 2 contas de teste verificadas (US$25,26) — reserva paga, chat, e-mail real de ponta a ponta. As 6 áreas da rodada 1 fecharam limpas. 1 achado corrigido (`387f1115`): motivo de cancelamento/disputa de reserva gravado sem sanitização.
+3. **Produção, escopo direcionado** (US$10,16) — só o que é específico de prod: guard `BILLING_CLOSED` contra Stripe live, headers/config, reconfirmação de IDOR, rate limiting. 0 achados, inclusive sob tentativa ativa de bypass.
+
+**Antes da rodada 3:** produção estava 2 commits atrás — deploy de `387f1115` para produção via `workflow_dispatch` (sem tag), confirmado saudável no `/api/health` antes de liberar o teste.
+
+🪤 **Incidente durante a preparação:** reset da senha do banco de produção sem atualizar Vercel/GitHub Secrets antes → produção `degraded`/`db:error` por ~15min, sem impacto real de usuário (`noindex` ligado, tráfego mínimo). Resolvido (credenciais atualizadas + redeploy); lição de connection-string registrada no backlog — senha com `?`/`@`/`:` sem `encodeURIComponent()` quebra o parser de URL do Prisma com um erro de host enganoso.
+
+**Custo total do pentest:** ~US$53. Resumo executivo publicado para o Raimundo (artifact HTML, `docs/pentest-resumo-raimundo.html`). Detalhe completo em `docs/backlog-atividades-priorizadas.md`.
+
+**Em aberto (não são achados de segurança):** checkout com cupom R$0 não testado (sem cupom válido disponível); confirmação em nível de infraestrutura do bucket KYC; 2 testes de autorização mais finos (BFLA dentro de uma reserva; IDOR de chat com estranho total) que colidiram entre agentes concorrentes do Strix, não com falha real. 4 contas de teste (`pentest.strix.a/b@shareo-test.com`, 2 em staging + 2 em produção) seguem nos bancos — decidir manter ou remover.
+
+---
+
 **Atualizado em**: 2026-09-25 (D-6) — **💳 Stripe live ligada em produção com a cobrança FECHADA; staging e produção em `79c1bf53`.** Detalhe e evidências em `docs/checklist-go-live-2026-10-01.md`, seção 0.1.
 
 - **Mesclados e no ar (staging e produção):** #516 (`/api/health` traz `build.commit` e o deploy exige o commit certo), #517 (links dos runbooks do D0), #518 (limite por e-mail no esqueci-a-senha), #519 (exclusão de conta apaga fotos de anúncio e de reserva, alerta de falha do Storage aos superadmins, sessão encerrada, revogação biométrica completa), #520 + #522 (guard de migração destrutiva, com base no commit em produção), #521 (scripts de varredura de Storage órfão e de limpeza de dados de teste). Pendências da Stripe live registradas no backlog como STRIPE-01 a 04 (#523).

@@ -89,19 +89,31 @@ Em 25/09 a produção passou a ter chave live, os dois destinos de evento (`/api
 ---
 
 
-## 🔒 Pentest ativo com Strix contra produção (`app.shareo.com.br`) — pré-go-live 01/10 (atualizado 29/09/2026)
+## ✅ Pentest com Strix — staging + produção — CONCLUÍDO (29/09/2026, pré-go-live 01/10)
 
-**Contexto:** revisão de segurança OWASP no código (11/09, read-only) fechou 3 achados — token de reset de senha em texto puro, HTML não escapado em e-mails transacionais, `title`/`description` de item sem sanitização — corrigidos e deployados em staging no mesmo dia (commit `64425f5`). Para complementar com teste ativo (dinâmico), decidiu-se usar o [Strix](https://github.com/usestrix/strix), agente de pentest autônomo open-source.
+**Contexto:** revisão de segurança OWASP no código (11/09, read-only) fechou 3 achados — token de reset de senha em texto puro, HTML não escapado em e-mails transacionais, `title`/`description` de item sem sanitização — corrigidos e deployados no mesmo dia (commit `64425f5`). Para complementar com teste ativo (dinâmico), usou-se o [Strix](https://github.com/usestrix/strix), agente de pentest autônomo open-source, em 3 rodadas.
 
-**29/09 — desbloqueado e escopo definido pelo fundador:** alvo é a **produção**, `https://app.shareo.com.br` (não `shareo-prod.vercel.app`, não staging). Strix já instalado no ambiente Pratika IA, chave de API pronta. Confirmado ao vivo: `/api/health` → 200, `db:ok`, `storage:ok`, `noindex:true` (ainda fora de índice, sem tráfego público real), Supabase ref `jdxdndrhjxtkaifbpagr` (produção), build `1.13.0`/`793060e`. Janela boa para testar: pré-go-live (01/10), tráfego real baixíssimo hoje.
+### Rodada 1 — staging, escopo amplo (commit `793060e`)
+0 vulnerabilidades confirmadas (US$17.41). IDOR de item/perfil, admin guard, XSS, SSRF, upload — todos `ruled_out`. **6 áreas não testadas** (bloqueadas por `EMAIL_NOT_VERIFIED`): IDOR de reserva, XSS de item/chat, token de e-mail, endpoints de repasse, bucket KYC. 2 achados de hardening corrigidos no mesmo dia (commit `c17f6e6f`): `avatarUrl` aceitava `javascript:`/`file://`, `name`/`bio`/`street`/`neighborhood` sem sanitização server-side.
 
-**Cuidados por ser produção, ativos hoje:**
-- Stripe já está **live** (`billingEnabled=false` — cobrança ainda fechada, ver STRIPE-01..04 acima). Um fluxo de checkout tentado pelo agente pode esbarrar no 403 `BILLING_CLOSED` — não é bug, é o freeze funcionando. Não reativar `billingEnabled` para "destravar" o teste sem falar com o fundador.
-- **Não usar as 2 contas admin reais de produção** para testes autenticados — criar conta sintética nova pelo cadastro normal.
-- PII: nenhum dado de usuário real deve ir para o provedor de LLM do Strix — a ShareO segue fora do prazo do Art. 33 CPC/ANPD (ver [[project-art33-cpc-anpd]]).
-- Cota do Resend — cadastro/reset de senha disparam e-mail de verdade contra endereço real; usar domínio de teste (`@shareo-test.com`, filtrado em `lib/email.ts`) quando possível.
-- Coordenar horário para não colidir com o teste D0 (locação assistida com cartão real, ainda não rodada) nem com o restante do freeze pré-go-live.
-- `--max-budget-usd` do Strix: setar um teto explícito antes de rodar (evita fatura surpresa — scans "quick" ficam ~US$3-5, "deep" ~US$10-20 em tokens, mas um agente que entra num loop pode passar disso).
+### Rodada 2 — staging, cobertura completa com contas verificadas (commit `c17f6e6f`)
+Criadas 2 contas dedicadas `pentest.strix.a/b@shareo-test.com` (`scripts/create-pentest-account.ts`, lógica compartilhada com `create-staging-fixtures.ts` via `scripts/lib/provision-staging-user.ts`). 0 vulnerabilidades confirmadas (US$25.26), agora com reserva paga (cartão de teste Stripe), chat real e e-mail real testados de ponta a ponta — os 6 itens da rodada 1 todos `ruled_out`. **1 achado real corrigido** (commit `387f1115`): `reason` de cancelamento/disputa de reserva gravava HTML cru no banco (só escapado no front) — mesmo padrão aplicado a `borrowerNote`.
+
+### Rodada 3 — produção, escopo reduzido e direcionado (commit `387f1115`, após deploy)
+Antes do teste: **deploy de `387f1115` para produção** (workflow_dispatch, sem tag) — prod estava 2 commits atrás, sem os fixes de segurança do dia. Escopo restrito a 4 itens específicos de prod (o resto já validado em staging no mesmo commit): guard `BILLING_CLOSED` contra Stripe live, headers/config de produção, reconfirmação de IDOR de reserva, rate limiting de auth. **0 vulnerabilidades** (US$10.16) — os 4 seguraram, inclusive contra tentativas ativas de bypass (manipulação de parâmetros, race condition, webhook forjado, open-redirect). 1 item não testável (checkout com cupom R$0, sem cupom válido disponível) — baixa prioridade, não é achado.
+
+**Custo total do pentest: ~US$52.83** (3 rodadas).
+
+### 🪤 Incidente ao vivo durante a preparação da Rodada 3 — reset de senha do banco de produção
+Para rodar o script de contas em prod, o fundador resetou a senha do banco (`jdxdndrhjxtkaifbpagr`) no painel do Supabase **sem atualizar Vercel/GitHub Secrets antes** — produção ficou `degraded`/`db:error` (P1000) por ~15min até `DATABASE_URL`/`DIRECT_URL` serem atualizados no Vercel (produção) e `DATABASE_URL_PROD`/`DIRECT_URL_PROD` no GitHub Secrets, seguido de redeploy (`workflow_dispatch`). Lições:
+- **Resetar a senha do banco tem efeito em cascata imediato** — Vercel (runtime) e GitHub Secrets (migrations do próximo deploy) precisam ser atualizados **antes ou junto**, não depois.
+- **Senha com caractere especial não-codificado quebra a connection string** — `?`, `/`, `@`, `:` no meio da senha viram delimitadores da própria sintaxe da URL (`?` = query string, `@`/`:` = separador de credencial/host) e o Prisma falha com um erro de host genérico e enganoso (`Can't reach database server at <usuário>:5432`) em vez de apontar pra senha. Corrigir com `encodeURIComponent()` só na senha (não na URL inteira).
+- **Logo após resetar, até o SQL Editor do próprio Supabase falha por alguns minutos** (`FATAL: password authentication failed... wait a moment and try again`) — é propagação normal da infra deles, não config errada.
+- **String de conexão "Direct" (`db.<ref>.supabase.co`) exige IPv6/add-on pago** — usar a variante do pooler (`*.pooler.supabase.com`, porta 5432 = session mode pra scripts, 6543 = transaction mode pro app) evita o problema, é IPv4, e é o padrão que o projeto já usa em staging.
+
+**Limpeza feita:** `.env.staging-migrate`/`.env.prod-migrate` tiveram `DATABASE_URL`/`DIRECT_URL` esvaziados (chaves mantidas, valores apagados) após o uso. `strix_runs/` (output local do Strix) adicionado ao `.gitignore`.
+
+**Em aberto:** as 4 contas de teste (`pentest.strix.a/b@shareo-test.com`, 2 em staging + 2 em produção) continuam nos bancos — manter para a próxima rodada de verificação ou remover, a decidir.
 
 **Próximo passo:** Roberto obtém a chave de API; então definir escopo final e rodar.
 
