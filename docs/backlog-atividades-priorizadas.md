@@ -89,18 +89,19 @@ Em 25/09 a produção passou a ter chave live, os dois destinos de evento (`/api
 ---
 
 
-## 🔒 Pentest ativo com Strix no staging — bloqueado por falta de chave de LLM (registrado 11/09/2026)
+## 🔒 Pentest ativo com Strix contra produção (`app.shareo.com.br`) — pré-go-live 01/10 (atualizado 29/09/2026)
 
-**Contexto:** revisão de segurança OWASP no código (11/09, read-only) fechou 3 achados — token de reset de senha em texto puro, HTML não escapado em e-mails transacionais, `title`/`description` de item sem sanitização — corrigidos e deployados em staging no mesmo dia (commit `64425f5`). Para complementar com teste ativo (dinâmico) contra `https://shareo-rouge.vercel.app`, avaliou-se o [Strix](https://github.com/usestrix/strix), agente de pentest autônomo open-source.
+**Contexto:** revisão de segurança OWASP no código (11/09, read-only) fechou 3 achados — token de reset de senha em texto puro, HTML não escapado em e-mails transacionais, `title`/`description` de item sem sanitização — corrigidos e deployados em staging no mesmo dia (commit `64425f5`). Para complementar com teste ativo (dinâmico), decidiu-se usar o [Strix](https://github.com/usestrix/strix), agente de pentest autônomo open-source.
 
-**Bloqueador:** Roberto ainda não tem chave de API de nenhum provedor de LLM (`LLM_API_KEY` — OpenAI, Anthropic, Google, Bedrock/Vertex, OpenRouter ou modelo local via Ollama/vLLM), exigida para rodar o Strix.
+**29/09 — desbloqueado e escopo definido pelo fundador:** alvo é a **produção**, `https://app.shareo.com.br` (não `shareo-prod.vercel.app`, não staging). Strix já instalado no ambiente Pratika IA, chave de API pronta. Confirmado ao vivo: `/api/health` → 200, `db:ok`, `storage:ok`, `noindex:true` (ainda fora de índice, sem tráfego público real), Supabase ref `jdxdndrhjxtkaifbpagr` (produção), build `1.13.0`/`793060e`. Janela boa para testar: pré-go-live (01/10), tráfego real baixíssimo hoje.
 
-**Antes de rodar, decidir (registrado na mesma sessão):**
-- Qual provedor de LLM usar — custo e, mais importante, qual dado sai da ShareO para um quarto fornecedor.
-- Escopo travado em `shareo-rouge.vercel.app` — nunca `shareo-prd` (uso interno, D4 não fechou).
-- Risco de PII passando por mais um processador sem DPA: a ShareO já está fora do prazo do Art. 33 CPC/ANPD (ver [[project-art33-cpc-anpd]]) — usar só contas de teste sintéticas, nunca dado de usuário real.
-- Coordenar horário para não colidir com o robô de validação diária nem sujar a base demo de staging (nenhum dos dois leva `--reset` por causa disso).
-- Cota do Resend — fluxos de cadastro/reset de senha disparam e-mail de verdade, a menos que usem endereços do domínio de teste (`@shareo-test.com`, já filtrado em `lib/email.ts`).
+**Cuidados por ser produção, ativos hoje:**
+- Stripe já está **live** (`billingEnabled=false` — cobrança ainda fechada, ver STRIPE-01..04 acima). Um fluxo de checkout tentado pelo agente pode esbarrar no 403 `BILLING_CLOSED` — não é bug, é o freeze funcionando. Não reativar `billingEnabled` para "destravar" o teste sem falar com o fundador.
+- **Não usar as 2 contas admin reais de produção** para testes autenticados — criar conta sintética nova pelo cadastro normal.
+- PII: nenhum dado de usuário real deve ir para o provedor de LLM do Strix — a ShareO segue fora do prazo do Art. 33 CPC/ANPD (ver [[project-art33-cpc-anpd]]).
+- Cota do Resend — cadastro/reset de senha disparam e-mail de verdade contra endereço real; usar domínio de teste (`@shareo-test.com`, filtrado em `lib/email.ts`) quando possível.
+- Coordenar horário para não colidir com o teste D0 (locação assistida com cartão real, ainda não rodada) nem com o restante do freeze pré-go-live.
+- `--max-budget-usd` do Strix: setar um teto explícito antes de rodar (evita fatura surpresa — scans "quick" ficam ~US$3-5, "deep" ~US$10-20 em tokens, mas um agente que entra num loop pode passar disso).
 
 **Próximo passo:** Roberto obtém a chave de API; então definir escopo final e rodar.
 
