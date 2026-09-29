@@ -397,10 +397,11 @@ test.describe('upload de fotos — limite MVP 3', () => {
   test('13. /itens/novo exibe aviso de limite de 3 fotos', async ({ page }) => {
     await page.goto('/itens/novo')
     await expect(page).toHaveURL(/\/itens\/novo/, { timeout: 15000 })
-    // Texto de dica de limite (pode ser "3 fotos", "máximo 3", etc.)
-    await expect(
-      page.getByText(/3 foto|máximo.*3|até 3/i).first(),
-    ).toBeVisible({ timeout: 10000 })
+    // O limite aparece como contador "N/3" ao lado do título "Fotos" (ItemForm).
+    // O regex antigo (/3 foto|máximo.*3|até 3/) não casa com nada da tela e
+    // reprovou em 29/09 — só passava ao pegar texto solto de outra parte da página.
+    await expect(page.getByRole('heading', { name: 'Fotos' })).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText(/^\d\/3$/).first()).toBeVisible()
   })
 })
 

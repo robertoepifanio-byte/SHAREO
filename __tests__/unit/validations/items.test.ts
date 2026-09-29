@@ -152,6 +152,11 @@ describe("CreateItemSchema", () => {
     it("aceita title com exatamente 5 caracteres", () => {
       expect(CreateItemSchema.safeParse({ ...BASE_ITEM, title: "Abcde" }).success).toBe(true)
     })
+
+    it("confere o mínimo DEPOIS de tirar o HTML (tags não contam como texto)", () => {
+      expect(CreateItemSchema.safeParse({ ...BASE_ITEM, title: "<b></b>Abc" }).success).toBe(false)
+      expect(CreateItemSchema.safeParse({ ...BASE_ITEM, description: "<p><b><i><u><s></s></u></i></b></p>curta" }).success).toBe(false)
+    })
   })
 
   describe("validação de description", () => {

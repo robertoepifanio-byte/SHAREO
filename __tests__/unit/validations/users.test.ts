@@ -18,6 +18,11 @@ describe("UpdateProfileSchema", () => {
     it("aceita objeto vazio", () => {
       expect(UpdateProfileSchema.safeParse({}).success).toBe(true)
     })
+
+    it("confere o mínimo do nome DEPOIS de tirar o HTML", () => {
+      expect(UpdateProfileSchema.safeParse({ name: "<b></b>ab" }).success).toBe(false)
+      expect(UpdateProfileSchema.safeParse({ name: "<b>Ana</b>" })).toMatchObject({ success: true, data: { name: "Ana" } })
+    })
   })
 
   describe("campo name", () => {

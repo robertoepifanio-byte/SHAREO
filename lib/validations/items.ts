@@ -10,8 +10,8 @@ const BR_STATES = [
 ] as const
 
 export const CreateItemSchema = z.object({
-  title:         z.string().min(5, "Título: mínimo 5 caracteres").max(120, "Título muito longo").transform(stripHtml),
-  description:   z.string().min(20, "Descrição: mínimo 20 caracteres").max(2000, "Descrição muito longa").transform(stripHtml),
+  title:         z.string().max(120, "Título muito longo").transform(stripHtml).pipe(z.string().min(5, "Título: mínimo 5 caracteres")),
+  description:   z.string().max(2000, "Descrição muito longa").transform(stripHtml).pipe(z.string().min(20, "Descrição: mínimo 20 caracteres")),
   categoryId:    z.string().min(1, "Selecione uma categoria"),
   condition:     z.enum(["NEW", "EXCELLENT", "GOOD", "FAIR"], {
     errorMap: () => ({ message: "Estado de conservação inválido" }),

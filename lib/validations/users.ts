@@ -9,7 +9,8 @@ const BR_STATES = [
 ] as const
 
 export const UpdateProfileSchema = z.object({
-  name:         z.string().min(3, "Nome: mínimo 3 caracteres").max(100).transform(stripHtml).optional(),
+  // Mínimo conferido DEPOIS do stripHtml: "<b></b>ab" não pode virar nome de 2 letras.
+  name:         z.string().max(100).transform(stripHtml).pipe(z.string().min(3, "Nome: mínimo 3 caracteres")).optional(),
   bio:          z.string().max(500, "Bio: máximo 500 caracteres").transform(stripHtml).nullable().optional(),
   phone:        z
     .string()
