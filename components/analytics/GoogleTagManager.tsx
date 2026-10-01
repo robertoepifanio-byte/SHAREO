@@ -12,7 +12,11 @@
 
 import Script from "next/script"
 
-export const GTM_LIBERADO = true
+// DESLIGADO em 01/10/2026, horas depois de ligar (#548): o container
+// GTM-5TQLGHFT dispara GA4 (G-WSVD7LXNGQ) e remarketing do Google Ads, e os
+// dados saíram de produção - contra a decisão C2.9 (04/09, art. 33). Religar só
+// depois do parecer, com o container restrito ao que a Política declarar.
+export const GTM_LIBERADO = false
 
 // O ID do container não é segredo (vai em texto puro em todo HTML publicado).
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID || "GTM-5TQLGHFT"
