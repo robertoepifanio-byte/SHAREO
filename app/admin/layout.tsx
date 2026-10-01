@@ -2,6 +2,13 @@ import Link from "next/link"
 import { requireAdminPage } from "@/lib/auth/require-admin"
 import { APP_VERSION, BUILD_SHA, BUILD_ENV } from "@/lib/version"
 
+// Os dois projetos Vercel (staging e produção) rodam com VERCEL_ENV=production;
+// quem distingue é a URL pública. Antes, a produção aparecia como "staging".
+const AMBIENTE =
+  BUILD_ENV !== "production" ? BUILD_ENV
+  : process.env.NEXT_PUBLIC_APP_URL?.includes("app.shareo.com.br") ? "produção"
+  : "staging"
+
 type AdminRole = "ADMIN_SUPERADMIN" | "ADMIN_FINANCEIRO" | "ADMIN_OPERACIONAL"
 
 const NAV: { href: string; label: string; roles: AdminRole[]; icon: React.ReactNode }[] = [
@@ -177,7 +184,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
         {/* Build info — referência para QA/suporte ("bug em qual build?") */}
         <p className="mt-10 border-t border-border pt-4 text-center text-xs text-muted-foreground">
-          ShareO v{APP_VERSION} · <code className="font-mono">{BUILD_SHA}</code> · {BUILD_ENV === "production" ? "staging" : BUILD_ENV}
+          ShareO v{APP_VERSION} · <code className="font-mono">{BUILD_SHA}</code> · {AMBIENTE}
         </p>
       </div>
     </div>
