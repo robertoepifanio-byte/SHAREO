@@ -7,6 +7,7 @@ import Link from "next/link"
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
 import { CONSENT_VERSION, DPO_EMAIL } from "@/lib/legal-config"
+import { gtmEvent } from "@/components/analytics/GoogleTagManager"
 
 interface FormErrors {
   name?:         string
@@ -132,6 +133,9 @@ export function RegisterForm() {
       setErrors({ form: MSG[code] ?? "Erro ao criar conta. Tente novamente." })
       return
     }
+
+    // Conta criada — conversão da mídia paga (sem parâmetro: tudo aqui é PII)
+    gtmEvent("sign_up")
 
     // Conta criada — auto-login
     try {

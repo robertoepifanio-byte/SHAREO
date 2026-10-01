@@ -7,6 +7,7 @@ import { AppFooter } from "@/components/layout/AppFooter"
 import { ServiceWorkerRegister } from "@/components/layout/ServiceWorkerRegister"
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics"
 import { MetaPixel } from "@/components/analytics/MetaPixel"
+import { GoogleTagManager } from "@/components/analytics/GoogleTagManager"
 import { Providers } from "@/components/layout/Providers"
 import { jsonLdScript } from "@/lib/jsonLd"
 import { NOINDEX_ENABLED } from "@/lib/seo-flags"
@@ -132,6 +133,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               ⚠️ Ligar exige parecer jurídico antes: compartilha dados com terceiro
               para uso publicitário dele. Ver components/analytics/MetaPixel.tsx. */}
           <MetaPixel nonce={nonce} />
+          {/* GTM — ligado no go-live; ver o aviso da §5.2 no componente. */}
+          <GoogleTagManager nonce={nonce} />
         </Providers>
     </body>
     </html>

@@ -65,7 +65,7 @@ function buildCsp(nonce: string): string {
     // connect.facebook.net: Meta Pixel, inerte enquanto NEXT_PUBLIC_META_PIXEL_ID
     // não existir. Liberado aqui porque bloqueio de pixel falha em SILÊNCIO: a
     // campanha rodaria cega sem nada aparecer quebrado na tela.
-    `script-src 'self' 'nonce-${nonce}' 'wasm-unsafe-eval' blob: https://www.googletagmanager.com https://connect.facebook.net`,
+    `script-src 'self' 'nonce-${nonce}' 'wasm-unsafe-eval' blob: https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://connect.facebook.net`,
     "worker-src blob: 'self'",
     // unsafe-inline para styles permanece por dependência de duas bibliotecas:
     //  • Tailwind CSS (JIT) injeta <style> inline no documento em runtime.
@@ -75,8 +75,8 @@ function buildCsp(nonce: string): string {
     // em build-time e incluí-los explicitamente aqui. Rastreado como item de
     // hardening pós-MVP (follow-up CSP style-src sem unsafe-inline).
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: *.supabase.co *.mapbox.com https://www.google-analytics.com https://www.facebook.com",
-    "connect-src 'self' wss://*.supabase.co api.mapbox.com events.mapbox.com *.tiles.mapbox.com *.sentry.io https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://viacep.com.br https://www.facebook.com",
+    "img-src 'self' data: blob: *.supabase.co *.mapbox.com https://www.googletagmanager.com https://www.google-analytics.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.google.com https://www.google.com.br https://www.facebook.com",
+    "connect-src 'self' wss://*.supabase.co api.mapbox.com events.mapbox.com *.tiles.mapbox.com *.sentry.io https://www.googletagmanager.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://www.google.com https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://viacep.com.br https://www.facebook.com",
     "font-src 'self' data:",
     // Defesa em profundidade — 3 diretivas de risco zero (nada legítimo usa
     // <base>, <object>/<embed>, nem form POST cross-origin; verificado):

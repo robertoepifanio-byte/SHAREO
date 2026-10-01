@@ -33,7 +33,10 @@ function lerTrava(rel: string, nome = "GA4_LIBERADO"): boolean {
   return m[1] === "true"
 }
 
-const GTM_LIGADO = lerTrava("apps/campanha/components/analytics/GoogleTagManager.tsx", "GTM_LIBERADO")
+// Ligado na campanha OU no marketplace (este desde o go-live, 01/10/2026).
+const GTM_LIGADO =
+  lerTrava("apps/campanha/components/analytics/GoogleTagManager.tsx", "GTM_LIBERADO") ||
+  lerTrava("components/analytics/GoogleTagManager.tsx", "GTM_LIBERADO")
 
 describe("declaração de analytics", () => {
   it("a trava está desligada, e igual nas duas cópias", () => {
@@ -63,6 +66,20 @@ describe("declaração de analytics", () => {
     "apps/mobile/app/privacidade.tsx",
   ])("%s declara o GTM enquanto GTM_LIBERADO for true", (rel) => {
     if (GTM_LIGADO) expect(ler(rel)).toMatch(/Google Tag Manager/)
+  })
+
+  // No marketplace o GTM fica carregado em telas com CPF, e-mail e chat: todo
+  // gtmEvent leva SÓ o nome do evento, nunca um valor da tela.
+  it("gtmEvent só é chamado com um literal, sem parâmetros", () => {
+    const fontes = (dir: string): string[] =>
+      fs.readdirSync(path.join(RAIZ, dir), { withFileTypes: true }).flatMap((e) =>
+        e.isDirectory() ? fontes(path.join(dir, e.name)) : /\.tsx?$/.test(e.name) ? [path.join(dir, e.name)] : [],
+      )
+    const chamadas = ["app", "components", "lib"].flatMap(fontes)
+      .flatMap((rel) => [...ler(rel).matchAll(/\bgtmEvent\(([^)]*)\)/g)].map((m) => `${rel}: ${m[1]}`))
+      .filter((c) => !c.includes("GoogleTagManager.tsx"))
+    expect(chamadas.length).toBeGreaterThan(0)
+    for (const c of chamadas) expect(c).toMatch(/: "[a-z_]+"$/)
   })
 
   it("não carrega o GA nem com a variável de ambiente definida", () => {
