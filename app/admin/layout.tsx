@@ -6,7 +6,7 @@ import { APP_VERSION, BUILD_SHA, BUILD_ENV } from "@/lib/version"
 // quem distingue é a URL pública. Antes, a produção aparecia como "staging".
 const AMBIENTE =
   BUILD_ENV !== "production" ? BUILD_ENV
-  : process.env.NEXT_PUBLIC_APP_URL?.includes("app.shareo.com.br") ? "produção"
+  : process.env.NEXT_PUBLIC_APP_URL?.includes("shareo.com.br") ? "produção"
   : "staging"
 
 type AdminRole = "ADMIN_SUPERADMIN" | "ADMIN_FINANCEIRO" | "ADMIN_OPERACIONAL"

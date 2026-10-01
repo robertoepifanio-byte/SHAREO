@@ -18,7 +18,7 @@ import { verifyStripeWebhookRequest } from "@/lib/payments/stripe-webhook"
 function makeRequest(body: string, signature: string | null): Request {
   const headers: Record<string, string> = { "content-type": "application/json" }
   if (signature !== null) headers["stripe-signature"] = signature
-  return new Request("https://app.shareo.com.br/api/webhooks/stripe-connect", {
+  return new Request("https://www.shareo.com.br/api/webhooks/stripe-connect", {
     method: "POST",
     body,
     headers,

@@ -7,7 +7,7 @@
  */
 
 const STAGING = "https://shareo-rouge.vercel.app"
-const PROD = "https://app.shareo.com.br"
+const PROD = "https://www.shareo.com.br"
 const CHAVES = ["AUTH_URL", "NEXTAUTH_URL", "NEXT_PUBLIC_APP_URL"]
 
 // O módulo lê a env no import: cada caso zera as três chaves e reimporta.
