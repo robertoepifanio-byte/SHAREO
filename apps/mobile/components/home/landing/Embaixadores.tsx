@@ -10,7 +10,7 @@ export function Embaixadores() {
     <View style={[s.section, { backgroundColor: tokens.bg }]}>
       <Text style={[s.titulo, { color: tokens.navy }]}>Indique um amigo e seja um Embaixador</Text>
       <Text style={[s.lead, { color: tokens.muted }]}>
-        Quando a plataforma abrir, quem convidar amigos vai receber uma parte da comissão das
+        Em breve: quem convidar amigos vai receber uma parte da comissão das
         locações de quem indicou. Quanto mais indicados ativos, maior a faixa.
       </Text>
 

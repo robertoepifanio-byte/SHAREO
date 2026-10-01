@@ -2,12 +2,11 @@
 // Cópia, não import: apps/mobile é independente (sem alias de workspace pra
 // raiz), mesmo padrão de apps/campanha/lib/landing-content.ts.
 //
-// Copiado literal a pedido do fundador (revisão pré-go-live, 2026-09-22) —
-// inclusive a copy no futuro ("o ShareO vai...") e o FAQ de pré-lançamento,
-// mesmo a home aqui já sendo o marketplace ativo.
+// Copiado literal em 2026-09-22; no go-live (01/10/2026) a copy passou do
+// futuro ("o ShareO vai...") para o presente, junto com o site.
 import type { ProcuradoIconName } from "@/components/home/ProcuradoIcon"
 
-export const CTA_MICROCOPY = "Cadastro gratuito · Sem compromisso · Acesso antecipado"
+export const CTA_MICROCOPY = "Cadastro gratuito · Sem mensalidade · Pagamento seguro no app"
 
 export const HERO_BENEFICIOS = [
   {
@@ -88,7 +87,7 @@ export const TRILHAS = {
 } as const
 
 export const PILARES = [
-  { icone: "estrela" as const, titulo: "Avaliações", texto: "Você vai conhecer a reputação de quem está do outro lado antes de fechar negócio." },
+  { icone: "estrela" as const, titulo: "Avaliações", texto: "Você conhece a reputação de quem está do outro lado antes de fechar negócio." },
   { icone: "perfil" as const, titulo: "Perfis verificados", texto: "Mais informações sobre quem aluga e quem anuncia, para decidir com segurança." },
   { icone: "suporte" as const, titulo: "Suporte", texto: "Uma equipe acompanhando as locações e disponível quando algo fugir do combinado." },
   { icone: "escudo" as const, titulo: "Registro por fotos", texto: "Fotos na entrega e na devolução documentam o estado do item nos dois momentos." },
@@ -101,7 +100,6 @@ export const FUNDADORES_CHAMADA =
   "Os primeiros usuários ajudam a construir o marketplace. Faça parte dessa jornada."
 
 export const FUNDADORES_BENEFICIOS = [
-  "Conheça o ShareO antes do lançamento oficial",
   "Teste novas funcionalidades em primeira mão",
   "Ajude a definir melhorias do produto",
   "Condições especiais de lançamento",
@@ -121,26 +119,26 @@ export const EMBAIXADORES_NOTA =
 export const FAQ = [
   {
     p: "O ShareO já está funcionando?",
-    r: "Ainda não. Estamos em pré-lançamento e abrindo as cidades por etapas. Quem entra na lista agora é avisado assim que os cadastros abrirem na sua região.",
+    r: "Sim. O cadastro está aberto e você já pode anunciar e alugar. Estamos começando agora, então o catálogo da sua região ainda está crescendo — anunciar o que você tem parado ajuda a sua cidade a ter opções desde o primeiro dia.",
   },
   {
     p: "Vou pagar alguma coisa para anunciar?",
-    r: "Não. Criar anúncios, receber solicitações e conversar pelo chat serão gratuitos. A ShareO só é remunerada quando uma locação é concluída com sucesso.",
+    r: "Não. Criar anúncios, receber solicitações e conversar pelo chat é gratuito. A ShareO só é remunerada quando uma locação é concluída com sucesso.",
   },
   {
     p: "Como vou definir o preço do meu item?",
-    r: "Você define o preço por dia. A referência que sugerimos é uma diária entre 3% e 5% do valor do bem; o preço semanal equivale a 3 diárias e o mensal a 15. O formulário de anúncio vai calcular isso para você.",
+    r: "Você define o preço por dia. A referência que sugerimos é uma diária entre 3% e 5% do valor do bem; o preço semanal equivale a 3 diárias e o mensal a 15. O formulário de anúncio calcula isso para você.",
   },
   {
-    p: "Como o pagamento vai funcionar?",
+    p: "Como funciona o pagamento?",
     r: "O locatário paga pela plataforma e o valor fica retido — não vai direto para o proprietário. Ele só é liberado depois que a devolução é confirmada, o que protege os dois lados.",
   },
   {
-    p: "Vai existir caução?",
-    r: "Não nesta primeira versão. A proteção será feita por fotos de check-in e check-out vinculadas à reserva e por um canal de disputas em que a equipe ShareO media casos de dano.",
+    p: "Existe caução?",
+    r: "Não nesta primeira versão. A proteção é feita por fotos de check-in e check-out vinculadas à reserva e por um canal de disputas em que a equipe ShareO media casos de dano.",
   },
   {
-    p: "Entrar na lista me compromete com alguma coisa?",
-    r: "Não. É gratuito, não pedimos dados de pagamento e você pode sair da lista quando quiser.",
+    p: "Criar conta me compromete com alguma coisa?",
+    r: "Não. O cadastro é gratuito, sem mensalidade, e você pode excluir sua conta quando quiser em Meu Perfil.",
   },
 ] as const

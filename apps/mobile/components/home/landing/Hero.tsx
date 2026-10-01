@@ -2,7 +2,6 @@
 import React from "react"
 import { View, Text, Image, StyleSheet } from "react-native"
 import { useTheme } from "@/lib/theme"
-import { PrelaunchBadge } from "../PrelaunchBadge"
 import { UiIcon } from "../UiIcon"
 import { CtaCadastro } from "./CtaCadastro"
 import { HERO_BENEFICIOS, CTA_MICROCOPY } from "@/lib/landing-content"
@@ -16,15 +15,13 @@ export function Hero() {
   const { tokens } = useTheme()
   return (
     <View style={[s.section, { backgroundColor: tokens.navyDeep }]}>
-      <PrelaunchBadge />
-
       <Text style={s.h1}>
         {"Tem algo parado?\n"}
         <Text style={s.h1Accent}>Faça isso virar dinheiro.</Text>
       </Text>
 
       <Text style={s.lead}>
-        O ShareO vai conectar pessoas que têm coisas sem uso com{" "}
+        O ShareO conecta pessoas que têm coisas sem uso com{" "}
         <Text style={s.leadAccent}>quem precisa delas</Text> — perto de você, de forma
         simples e segura.
       </Text>
@@ -43,7 +40,7 @@ export function Hero() {
         ))}
       </View>
 
-      <CtaCadastro>Quero ser um dos primeiros</CtaCadastro>
+      <CtaCadastro>Anunciar grátis</CtaCadastro>
       <Text style={s.microcopy}>{CTA_MICROCOPY}</Text>
 
       <Image

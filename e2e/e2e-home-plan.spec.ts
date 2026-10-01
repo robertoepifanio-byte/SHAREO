@@ -92,9 +92,9 @@ test.describe('Plano E2E Homepage — ShareO', () => {
         runStep(STEPS[1], async () => {
           await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
 
-          // CTA "Quero ser um dos primeiros" → /cadastro (todo CTA da home aponta
+          // CTA "Anunciar grátis" → /cadastro (todo CTA da home aponta
           // para o cadastro de conta real, não para um formulário de lead)
-          const ctaCadastro = page.getByRole('link', { name: /quero ser um dos primeiros/i })
+          const ctaCadastro = page.getByRole('link', { name: /anunciar grátis/i })
           await expect(ctaCadastro).toBeVisible()
           const href = await ctaCadastro.getAttribute('href')
           expect(href, 'CTA do hero deve apontar para /cadastro').toContain('/cadastro')
@@ -107,7 +107,7 @@ test.describe('Plano E2E Homepage — ShareO', () => {
 
           test.info().annotations.push({
             type: 'cta-hero',
-            description: `Quero ser um dos primeiros → ${href} ✓`,
+            description: `Anunciar grátis → ${href} ✓`,
           })
         })
       )

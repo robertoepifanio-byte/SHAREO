@@ -26,7 +26,7 @@ export function ItensParados() {
       </Text>
 
       <Text style={[s.paragrafoForte, { color: tokens.text }]}>
-        O ShareO vai conectar essas duas pessoas.
+        O ShareO conecta essas duas pessoas.
       </Text>
 
       <View style={s.grid}>

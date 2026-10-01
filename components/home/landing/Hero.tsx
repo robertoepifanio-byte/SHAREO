@@ -1,5 +1,4 @@
 // Fonte: apps/campanha/components/landing/Hero.tsx — CtaAncora vira CtaCadastro (/cadastro)
-import { PrelaunchBadge } from "@/components/home/PrelaunchBadge"
 import { CtaCadastro } from "./CtaCadastro"
 import { UiIcon } from "./icons/UiIcon"
 import { CTA_MICROCOPY, HERO_BENEFICIOS } from "@/lib/landing-content"
@@ -20,8 +19,6 @@ export function Hero() {
     >
       <div className="mx-auto grid max-w-[1360px] items-center gap-10 xl:grid-cols-[minmax(0,0.62fr)_1fr]">
         <div>
-          <PrelaunchBadge className="mb-5" />
-
           <h1
             id="hero-titulo"
             className="mb-3 font-display text-[30px] font-extrabold leading-[1.15] text-white sm:text-[38px] xl:text-[42px]"
@@ -32,7 +29,7 @@ export function Hero() {
           </h1>
 
           <p className="mb-6 max-w-[540px] text-[15px] leading-relaxed text-white/85 xl:text-base">
-            O ShareO vai conectar pessoas que têm coisas sem uso com{" "}
+            O ShareO conecta pessoas que têm coisas sem uso com{" "}
             <span className="font-semibold text-accent">quem precisa delas</span> — perto de
             você, de forma simples e segura.
           </p>
@@ -54,7 +51,7 @@ export function Hero() {
             ))}
           </ul>
 
-          <CtaCadastro className="w-full sm:w-auto">Quero ser um dos primeiros</CtaCadastro>
+          <CtaCadastro className="w-full sm:w-auto">Anunciar grátis</CtaCadastro>
 
           <p className="mt-3 text-xs text-white/70">{CTA_MICROCOPY}</p>
         </div>

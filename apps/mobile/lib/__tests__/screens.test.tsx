@@ -83,9 +83,9 @@ describe("HomeScreen (landing transcrita)", () => {
     expect(screen.getByText(/Faça isso virar dinheiro\./)).toBeTruthy()
   })
 
-  it("exibe o CTA principal 'Quero ser um dos primeiros'", () => {
+  it("exibe o CTA principal 'Anunciar grátis'", () => {
     wrap(<HomeScreen />)
-    expect(screen.getByLabelText("Quero ser um dos primeiros")).toBeTruthy()
+    expect(screen.getByLabelText("Anunciar grátis")).toBeTruthy()
   })
 
   it("exibe a seção 'Você está de qual lado?'", () => {

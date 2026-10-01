@@ -10,7 +10,7 @@ export function ComoFunciona() {
   const { tokens } = useTheme()
   return (
     <View style={[s.section, { backgroundColor: tokens.navyDeep }]}>
-      <Text style={s.titulo}>Como vai funcionar</Text>
+      <Text style={s.titulo}>Como funciona</Text>
       <Text style={s.lead}>É simples. Você tem algo. Alguém precisa. O ShareO conecta os dois.</Text>
 
       {(["tem", "precisa"] as const).map((chave) => {

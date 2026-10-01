@@ -18,11 +18,11 @@ export function Fundadores() {
         <Text style={[s.titulo, { color: tokens.navy }]}>Faça parte do grupo fundador do ShareO</Text>
         <Text style={[s.chamada, { color: tokens.muted }]}>{FUNDADORES_CHAMADA}</Text>
         <Text style={[s.vagas, { color: tokens.text }]}>
-          São {FUNDADORES_VAGAS.toLocaleString("pt-BR")} vagas para os primeiros usuários a entrar
-          na lista.
+          São {FUNDADORES_VAGAS.toLocaleString("pt-BR")} vagas para os primeiros usuários a criar
+          conta.
         </Text>
 
-        <CtaCadastro style={{ marginBottom: 24 }}>Quero ser um fundador</CtaCadastro>
+        <CtaCadastro style={{ marginBottom: 24 }}>Criar minha conta</CtaCadastro>
 
         <Text style={[s.subtitulo, { color: tokens.muted }]}>Você vai ter</Text>
         {FUNDADORES_BENEFICIOS.map((beneficio) => (

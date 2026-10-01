@@ -10,7 +10,7 @@ export function Embaixadores() {
           Indique um amigo e seja um Embaixador
         </TituloSecao>
         <p className="text-[15px] leading-relaxed text-muted-foreground">
-          Quando a plataforma abrir, quem convidar amigos vai receber uma parte da comissão das
+          Em breve: quem convidar amigos vai receber uma parte da comissão das
           locações de quem indicou. Quanto mais indicados ativos, maior a faixa.
         </p>
       </div>

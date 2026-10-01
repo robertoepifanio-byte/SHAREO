@@ -40,9 +40,9 @@ export function Faq() {
       <View style={[s.aside, { backgroundColor: tokens.surface, borderColor: tokens.border }]}>
         <Text style={[s.asideTitulo, { color: tokens.navy }]}>Estamos começando agora.</Text>
         <Text style={[s.asideTexto, { color: tokens.muted }]}>
-          E queremos você entre os primeiros. Entrar na lista leva menos de um minuto.
+          Anuncie seus itens e ajude a sua região a ter um catálogo desde o primeiro dia. Criar a conta leva menos de um minuto.
         </Text>
-        <CtaCadastro larguraTotal>Quero ser um fundador</CtaCadastro>
+        <CtaCadastro larguraTotal>Criar minha conta</CtaCadastro>
         <Text style={[s.microcopy, { color: tokens.muted }]}>{CTA_MICROCOPY}</Text>
       </View>
     </View>
