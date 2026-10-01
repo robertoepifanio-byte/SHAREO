@@ -1,5 +1,4 @@
 // Fonte: apps/campanha/components/landing/Hero.tsx — CtaAncora vira CtaCadastro (/cadastro)
-import { PrelaunchBadge } from "@/components/home/PrelaunchBadge"
 import { CtaCadastro } from "./CtaCadastro"
 import { UiIcon } from "./icons/UiIcon"
 import { CTA_MICROCOPY, HERO_BENEFICIOS } from "@/lib/landing-content"
@@ -20,8 +19,6 @@ export function Hero() {
     >
       <div className="mx-auto grid max-w-[1360px] items-center gap-10 xl:grid-cols-[minmax(0,0.62fr)_1fr]">
         <div>
-          <PrelaunchBadge className="mb-5" />
-
           <h1
             id="hero-titulo"
             className="mb-3 font-display text-[30px] font-extrabold leading-[1.15] text-white sm:text-[38px] xl:text-[42px]"
