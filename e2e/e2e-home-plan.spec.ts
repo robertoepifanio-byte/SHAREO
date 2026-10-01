@@ -169,7 +169,7 @@ test.describe('Plano E2E Homepage — ShareO', () => {
           // Todo CTA da home aponta para /cadastro — checagem por amostragem em
           // seções diferentes do hero, para pegar um CtaCadastro esquecido
           // apontando pra âncora antiga da campanha.
-          const rotulos = [/quero ganhar dinheiro/i, /quero anunciar meu item/i, /quero ser um fundador/i]
+          const rotulos = [/quero ganhar dinheiro/i, /quero anunciar meu item/i, /criar minha conta/i]
 
           for (const rotulo of rotulos) {
             const cta = page.getByRole('link', { name: rotulo }).first()
