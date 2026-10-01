@@ -21,9 +21,9 @@ describe("Home — landing da campanha transcrita (22/09/2026)", () => {
     expect(screen.getByText(/Faça isso virar dinheiro\./)).toBeTruthy()
   })
 
-  it('CTA principal "Quero ser um dos primeiros" navega para /(auth)/register', () => {
+  it('CTA principal "Anunciar grátis" navega para /(auth)/register', () => {
     render(<HomeScreen />)
-    fireEvent.press(screen.getByLabelText("Quero ser um dos primeiros"))
+    fireEvent.press(screen.getByLabelText("Anunciar grátis"))
     expect(mockPush).toHaveBeenCalledWith("/(auth)/register")
   })
 
@@ -31,7 +31,7 @@ describe("Home — landing da campanha transcrita (22/09/2026)", () => {
     render(<HomeScreen />)
     expect(screen.getByText(/Quantas coisas você tem que ficam/)).toBeTruthy()
     expect(screen.getByText("Você está de qual lado?")).toBeTruthy()
-    expect(screen.getByText("Como vai funcionar")).toBeTruthy()
+    expect(screen.getByText("Como funciona")).toBeTruthy()
     expect(screen.getByText("Quanto vale o que está parado?")).toBeTruthy()
     expect(screen.getByText("E se eu emprestar meu item para um desconhecido?")).toBeTruthy()
     expect(screen.getByText("Faça parte do grupo fundador do ShareO")).toBeTruthy()
