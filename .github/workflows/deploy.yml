@@ -485,7 +485,7 @@ jobs:
           NEXT_PUBLIC_SENTRY_ENV: production
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           NEXT_PUBLIC_MAPBOX_TOKEN: ${{ secrets.NEXT_PUBLIC_MAPBOX_TOKEN }}
-          NEXT_PUBLIC_APP_URL: https://app.shareo.com.br
+          NEXT_PUBLIC_APP_URL: https://www.shareo.com.br
           # SEC-CRIT-02/03 kill-switch: garante que o bypass de rate limit (SKIP_RATE_LIMIT/
           # E2E_SECRET) fica inerte em produção mesmo que um valor vaze por cópia de env.
           E2E_BYPASS_DISABLED: "true"
@@ -513,7 +513,7 @@ jobs:
         # Base = commit que a produção SERVE (build.commit do /api/health); sem
         # health, a última tag prod-ok-* (deploy verde verificado).
         run: |
-          BASE=$(curl -s --max-time 20 https://app.shareo.com.br/api/health | grep -o '"commit":"[0-9a-f]\{40\}"' | cut -d'"' -f4 || true)
+          BASE=$(curl -s --max-time 20 https://www.shareo.com.br/api/health | grep -o '"commit":"[0-9a-f]\{40\}"' | cut -d'"' -f4 || true)
           BASE=${BASE:-$(git tag --list 'prod-ok-*' --sort=-refname | head -n1)}
           echo "Base: $BASE"
           node scripts/ci/check-destructive-migration.js --base "$BASE"
@@ -533,7 +533,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL_PROD }}
           DIRECT_URL: ${{ secrets.DIRECT_URL_PROD }}
 
-      # Health check contra o DOMÍNIO PÚBLICO de produção (https://app.shareo.com.br,
+      # Health check contra o DOMÍNIO PÚBLICO de produção (https://www.shareo.com.br desde 01/10/2026; antes app.shareo.com.br,
       # desde 24/09/2026), o que um usuário de fato acessa. Exige HTTP 200 +
       # "status":"healthy". Se o DNS ou o certificado do domínio quebrarem, o deploy
       # reprova — é o que se quer, mesmo com o alias *.vercel.app ainda saudável.
@@ -547,7 +547,7 @@ jobs:
       # para o deployment novo.
       - name: Post-deploy health check
         run: |
-          URL="https://app.shareo.com.br/api/health"
+          URL="https://www.shareo.com.br/api/health"
           for i in 1 2 3 4 5 6; do
             RESP=$(curl -s --max-time 20 -w '\n%{http_code}' "$URL" || true)
             STATUS=$(printf '%s' "$RESP" | tail -n1)

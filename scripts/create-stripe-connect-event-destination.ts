@@ -32,14 +32,14 @@
  *   pnpm tsx scripts/create-stripe-connect-event-destination.ts --confirm                                # cria
  *   pnpm tsx scripts/create-stripe-connect-event-destination.ts --confirm --url=https://outro.com        # outra URL
  *   pnpm tsx scripts/create-stripe-connect-event-destination.ts --confirm \
- *     --url=https://app.shareo.com.br --env-file=.env.production                                         # produção (chave live em arquivo separado)
+ *     --url=https://www.shareo.com.br --env-file=.env.production                                         # produção (chave live em arquivo separado)
  *
- * Para produção (URL https://app.shareo.com.br):
+ * Para produção (URL https://www.shareo.com.br):
  *   1. Crie um arquivo temporário (ex.: .env.production) com STRIPE_SECRET_KEY=sk_live_...
  *      Nunca versione — adicione ao .gitignore se precisar manter.
  *   2. Execute:
  *        pnpm tsx scripts/create-stripe-connect-event-destination.ts \
- *          --confirm --url=https://app.shareo.com.br --env-file=.env.production
+ *          --confirm --url=https://www.shareo.com.br --env-file=.env.production
  *   3. Copie o STRIPE_CONNECT_WEBHOOK_SECRET impresso e adicione no Vercel (Production) + GitHub Secrets.
  *
  * Precedência do arquivo de env: --env-file prevalece sobre .env.local.
