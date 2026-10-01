@@ -19,6 +19,17 @@ const nextConfig: NextConfig = {
   // de public/campanha por <picture>. Nenhum host remoto é necessário.
   images: { remotePatterns: [] },
 
+  // Go-live (01/10/2026): o marketplace abriu e a home dele já é esta landing
+  // transcrita (#490/#545). shareo.com.br passa a levar tudo para o app,
+  // mantendo o caminho (/termos, /privacidade e /politicas existem lá também).
+  // Feito aqui porque o redirect de domínio da Vercel só aponta para domínios
+  // do MESMO projeto, e app.shareo.com.br é do shareo-prod.
+  async redirects() {
+    return [
+      { source: "/:path*", destination: "https://app.shareo.com.br/:path*", permanent: true },
+    ]
+  },
+
   async headers() {
     return [
       {
