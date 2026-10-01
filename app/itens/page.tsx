@@ -361,7 +361,9 @@ export default async function ExplorarPage({ searchParams }: Props) {
             sidebar, que segue filtrando por categoria; decisão do fundador, 26/09/2026) */}
         {categories.length > 0 && (
           <div
-            className="mb-5 flex gap-2 overflow-x-auto scrollbar-hide pb-1"
+            // Celular: rola com o dedo. Desktop: quebra linha — com a barra de rolagem
+            // escondida, o mouse não alcançava Ferramentas/Festas (relato de 01/10/2026).
+            className="mb-5 flex gap-2 overflow-x-auto scrollbar-hide pb-1 md:flex-wrap md:overflow-visible"
             role="list"
             aria-label="Filtrar por categoria"
           >
@@ -392,7 +394,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
                 }`}
               >
                 <CategoryIcon name={cat.name} slug={cat.slug} size={96} />
-                <span className="flex flex-col items-center leading-tight text-center max-w-[72px]">
+                <span className="flex flex-col items-center leading-tight text-center max-w-[112px]">
                   {cat.name.split(" ").length > 1
                     ? (() => {
                         const words = cat.name.split(" ")
