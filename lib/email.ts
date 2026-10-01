@@ -900,11 +900,11 @@ export async function sendFounderWelcomeEmail(to: string, name: string): Promise
 function founderInviteHtml(firstName: string, setPasswordUrl: string) {
   return baseLayout(`
     <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
-      Bem-vindo ao piloto do ShareO, ${escapeHtml(firstName)}!
+      O ShareO abriu, ${escapeHtml(firstName)}!
     </h1>
     <p style="margin:0 0 20px;font-size:15px;color:#475569;line-height:1.6;">
-      Sua vaga no piloto está confirmada. Para começar a explorar, defina sua senha de acesso
-      no primeiro acesso — leva menos de um minuto.
+      Você está entre os primeiros a entrar. Para começar, defina sua senha de acesso —
+      leva menos de um minuto.
     </p>
 
     <div style="text-align:center;">
@@ -927,7 +927,7 @@ function founderInviteHtml(firstName: string, setPasswordUrl: string) {
   `)
 }
 
-/** Convite-piloto: cria a conta do interessado e o leva a definir a senha no 1º acesso. */
+/** Convite de lançamento (lista de fundadores): cria a conta do interessado e o leva a definir a senha no 1º acesso. */
 export async function sendFounderInviteEmail(
   to: string,
   name: string,
@@ -943,7 +943,7 @@ export async function sendFounderInviteEmail(
   const { error } = await sendWithRetry(resend, {
     from:    `ShareO <${FROM}>`,
     to,
-    subject: "Seu acesso ao piloto do ShareO — defina sua senha",
+    subject: "O ShareO abriu — defina sua senha e comece",
     html:    founderInviteHtml(firstName, setPasswordUrl),
   }, "founder-invite")
 

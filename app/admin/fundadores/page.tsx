@@ -419,7 +419,7 @@ export default async function AdminFundadoresPage(
 
       <p className="mt-4 text-xs text-muted-foreground">
         &quot;Convidar&quot; envia, para cada interessado PENDING do recorte, um e-mail com link
-        para definir a senha e acessar o piloto (cadastro simples — CPF/endereço só ao
+        para definir a senha e acessar o ShareO (cadastro simples — CPF/endereço só ao
         Anunciar/Alugar). O filtro usa a chave normalizada, então grafias diferentes da
         mesma cidade entram juntas. Comissões de indicação seguem bloqueadas até o sign-off D4.
       </p>

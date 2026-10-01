@@ -86,7 +86,7 @@ export function SetPasswordForm({ token }: { token: string }) {
   return (
     <div className="rounded-lg border border-border bg-surface p-8 shadow-card">
       <div className="mb-6 text-center">
-        <h1 className="text-2xl font-bold text-primary">Bem-vindo ao piloto!</h1>
+        <h1 className="text-2xl font-bold text-primary">Bem-vindo ao ShareO!</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Defina sua senha de acesso para começar a explorar o ShareO.
         </p>

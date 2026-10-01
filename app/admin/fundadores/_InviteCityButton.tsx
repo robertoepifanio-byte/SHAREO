@@ -32,7 +32,7 @@ export function InviteCityButton({ city, cityNorm, state, pending, neighborhoodN
   async function invite() {
     if (!window.confirm(
       `Convidar ${pending} interessado(s) de ${city}${state ? `/${state}` : ""}?\n\n` +
-      "Cada um recebe um e-mail para definir a senha e acessar o piloto. Esta ação envia e-mails reais."
+      "Cada um recebe um e-mail para definir a senha e acessar o ShareO. Esta ação envia e-mails reais."
     )) return
 
     setLoading(true)
