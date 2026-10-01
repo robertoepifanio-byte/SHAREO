@@ -51,7 +51,10 @@ export function InviteCityButton({ city, cityNorm, state, pending, neighborhoodN
       })
       const json = await res.json()
       if (!res.ok) { setError(json.error?.message ?? "Falha ao convidar."); return }
-      setMsg(`${json.data.invited} convidado(s).`)
+      // Sem o motivo, "0 convidado(s)" parecia falha do botão (01/10/2026):
+      // os dois leads já tinham conta com o mesmo e-mail.
+      const jaTemConta = (json.data.results as { code?: string }[]).filter((r) => r.code === "EMAIL_IN_USE").length
+      setMsg(`${json.data.invited} convidado(s).${jaTemConta ? ` ${jaTemConta} já tem(têm) conta no ShareO com o mesmo e-mail — não precisa convidar.` : ""}`)
       router.refresh()
     } catch {
       setError("Falha de conexão.")
