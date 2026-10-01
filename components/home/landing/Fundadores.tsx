@@ -33,10 +33,10 @@ export function Fundadores() {
 
           <p className="mb-6 text-[15px] font-semibold text-foreground">
             São {FUNDADORES_VAGAS.toLocaleString("pt-BR")} vagas para os primeiros usuários a
-            entrar na lista.
+            criar conta.
           </p>
 
-          <CtaCadastro className="w-full sm:w-auto">Quero ser um fundador</CtaCadastro>
+          <CtaCadastro className="w-full sm:w-auto">Criar minha conta</CtaCadastro>
         </div>
 
         <div>

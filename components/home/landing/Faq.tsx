@@ -41,9 +41,9 @@ export function Faq() {
             Estamos começando agora.
           </h3>
           <p className="mb-5 text-sm leading-relaxed text-muted-foreground">
-            E queremos você entre os primeiros. Entrar na lista leva menos de um minuto.
+            Anuncie seus itens e ajude a sua região a ter um catálogo desde o primeiro dia. Criar a conta leva menos de um minuto.
           </p>
-          <CtaCadastro larguraTotal>Quero ser um fundador</CtaCadastro>
+          <CtaCadastro larguraTotal>Criar minha conta</CtaCadastro>
           <p className="mt-3 text-xs text-muted-foreground">{CTA_MICROCOPY}</p>
         </aside>
       </div>

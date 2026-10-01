@@ -27,7 +27,7 @@ export function ItensParados() {
           </p>
 
           <p className="text-[15px] font-bold text-foreground">
-            O ShareO vai conectar essas duas pessoas.
+            O ShareO conecta essas duas pessoas.
           </p>
         </div>
 

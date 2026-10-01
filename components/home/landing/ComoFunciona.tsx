@@ -12,7 +12,7 @@ export function ComoFunciona() {
     <Secao id={ANCORAS.comoFunciona} variante="navy" rotuladoPor="como-titulo">
       <div className="mb-9 max-w-[560px]">
         <TituloSecao id="como-titulo" sobreNavy className="mb-3">
-          Como vai funcionar
+          Como funciona
         </TituloSecao>
         <p className="text-[15px] leading-relaxed text-white/85">
           É simples. Você tem algo. Alguém precisa. O ShareO conecta os dois.
