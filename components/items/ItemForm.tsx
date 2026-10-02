@@ -480,11 +480,17 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
           if (details) {
             const mapped: Record<string, string> = {}
             for (const [k, msgs] of Object.entries(details)) mapped[k] = msgs[0]
+            // Campo sem mensagem inline no formulário (ex.: condition) cairia
+            // no vazio — sobe para o aviso geral.
+            const inline = new Set(["title", "description", "categoryId", "pricePerDay", "estimatedRetailPrice", "city", "state"])
+            const orphan = Object.entries(mapped).filter(([k]) => !inline.has(k)).map(([, m]) => m)
+            if (orphan.length > 0) mapped.form = orphan.join(" ")
             setErrors(mapped)
           } else {
             setErrors({ form: json.error?.message ?? "Erro ao criar anúncio." })
           }
           setLoading(false)
+          submittingRef.current = false
           return
         }
         itemId = json.data.id
@@ -500,6 +506,7 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
         if (!res.ok) {
           setErrors({ form: json.error?.message ?? "Erro ao atualizar anúncio." })
           setLoading(false)
+          submittingRef.current = false
           return
         }
 
