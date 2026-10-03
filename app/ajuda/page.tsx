@@ -68,8 +68,8 @@ function buildLocatarioSteps(v: HelpVars): Step[] { return [
   },
   {
     step: 4, icon: "📅", title: "Solicitar a reserva",
-    desc: `Abra o anúncio e use a calculadora de locação. Selecione a modalidade (diário, semanal ou mensal), a data de retirada e a duração. O valor total — incluindo a taxa de serviço — aparece antes de você confirmar. Escreva uma mensagem apresentando-se ao proprietário e clique em 'Solicitar locação'. Você ainda não paga nada nesta etapa. O valor máximo por locação é ${v.maxLabel}.`,
-    example: `Item: R$ 80/dia. Aluguel de 3 dias = ${formatPriceShort(24000)}. Taxa de serviço (${v.feeLabel}) = ${formatPriceShort(calcSplit(24000, v.feeRateBps).platformFeeAmount)}. Total cobrado ao confirmar: ${formatPriceShort(24000 + calcSplit(24000, v.feeRateBps).platformFeeAmount)}.`,
+    desc: `Abra o anúncio e use a calculadora de locação. Selecione a modalidade (diário, semanal ou mensal), a data de retirada e a duração. O valor total da locação aparece antes de você confirmar. Escreva uma mensagem apresentando-se ao proprietário e clique em 'Solicitar locação'. Você ainda não paga nada nesta etapa. O valor máximo por locação é ${v.maxLabel}.`,
+    example: `Item: R$ 80/dia. Aluguel de 3 dias = ${formatPriceShort(24000)}. Total cobrado ao confirmar: ${formatPriceShort(24000)}. A taxa de serviço (${v.feeLabel}) = ${formatPriceShort(calcSplit(24000, v.feeRateBps).platformFeeAmount)} é descontada do repasse ao proprietário, que recebe ${formatPriceShort(calcSplit(24000, v.feeRateBps).ownerNetAmount)}.`,
   },
   {
     step: 5, icon: "💳", title: "Aguardar confirmação e pagar",
@@ -135,7 +135,7 @@ function buildLocadorSteps(v: HelpVars): Step[] { return [
 /* ── Dados — Taxas ──────────────────────────────────────────────── */
 
 function buildFeeTable(v: HelpVars) { return [
-  { label: "Taxa de serviço (cobrada do locatário)", value: `${v.feeLabel} do total`,        when: "Na confirmação do pagamento" },
+  { label: "Taxa de serviço (descontada do repasse)", value: `${v.feeLabel} do total`,        when: "Retida do valor pago pelo locatário" },
   { label: "Anunciar na plataforma (locador)",       value: "Gratuito",                      when: "Sempre, sem mensalidade" },
   { label: "Repasse ao locador",                     value: "Valor líquido da locação",      when: `${v.payoutLabel} após a confirmação da devolução` },
   // Validado na CRIAÇÃO desde 22/08/2026 (MAX_ITEM_VALUE_CENTS). Na edição não —
@@ -265,7 +265,7 @@ function buildSections(v: HelpVars) { return [
       { q: "Qual é a taxa de serviço do ShareO?",
         a: `O ShareO retém ${v.feeLabel} sobre o valor total da locação e repassa o restante ao proprietário. Na prática: o locatário paga o preço anunciado, e o proprietário recebe o valor da locação menos a taxa. Os dois veem essa conta detalhada na página da reserva, antes e depois de confirmar. A taxa cobre o pagamento seguro, o suporte, a mediação de disputas e a manutenção da plataforma.` },
       { q: "Existe algum custo para anunciar?",
-        a: "Não. Anunciar no ShareO é 100% gratuito. Você não paga nada para criar anúncios, receber reservas ou usar o chat. O ShareO só cobra a taxa de serviço (do locatário) quando uma locação é concluída com sucesso. Se a reserva for cancelada antes da entrega, nenhuma taxa é cobrada." },
+        a: "Não. Anunciar no ShareO é 100% gratuito. Você não paga nada para criar anúncios, receber reservas ou usar o chat. O ShareO só cobra a taxa de serviço (descontada do repasse, nunca cobrada por cima do locatário) quando uma locação é concluída com sucesso. Se a reserva for cancelada antes da entrega, nenhuma taxa é cobrada." },
       { q: "Como funciona a taxa por atraso na devolução?",
         a: `Passado o prazo combinado, o app gera automaticamente uma cobrança de ${v.lateMultLabel} o preço diário do item por dia de atraso, enviada ao locatário por e-mail como link de pagamento. Exemplo: se o aluguel é R$ 50/dia e o atraso foi de 2 dias, a taxa é de ${formatPriceShort(calcLateFee(5000, v.lateMult, 2))}. Você recebe uma notificação de aviso 1 dia antes do prazo vencer. Para evitar a taxa, solicite uma extensão antes do prazo — e não depois.` },
       { q: "Existe limite no valor do bem anunciado?",

@@ -127,7 +127,7 @@ export function PoliticasConteudo({
                 Os pagamentos das locações são processados pela <strong>Stripe</strong>, provedor de
                 pagamentos contratado pelo ShareO, responsável pelo processamento da cobrança e pelo
                 repasse ao Locador. Sobre o valor da locação, o ShareO cobra uma <strong>taxa de
-                serviço de {feeLabel}</strong>, devida pelo Locatário e exibida no resumo antes da
+                serviço de {feeLabel}</strong>, descontada do valor da locação no repasse ao Locador (o Locatário paga apenas o valor da locação) e exibida no resumo antes da
                 confirmação do pagamento; o valor restante é destinado ao Locador. Nesta versão da
                 plataforma, o checkout aceita <strong>cartão de crédito à vista, sem parcelamento</strong>,
                 e cada locação está sujeita ao limite de <strong>{maxLabel} por transação</strong>.
