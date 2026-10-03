@@ -41,7 +41,7 @@ export default async function EarningsPage() {
             {[
               {
                 q: "O ShareO cobra alguma taxa?",
-                a: `Sim, uma taxa de serviço de ${feeLabel} sobre o valor da locação, cobrada do locatário. Você recebe o valor líquido diretamente via PIX, sem nenhuma mensalidade ou custo para anunciar.`,
+                a: `Sim, uma taxa de serviço de ${feeLabel} sobre o valor da locação, descontada do seu repasse — o locatário paga apenas o preço anunciado. Você recebe o valor líquido diretamente via PIX, sem nenhuma mensalidade ou custo para anunciar.`,
               },
               {
                 q: "Preciso estar disponível para entregas?",
