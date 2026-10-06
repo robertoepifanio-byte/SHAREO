@@ -15,6 +15,15 @@ Sentry.init({
   ignoreErrors: [
     "ResizeObserver loop limit exceeded",
     "Non-Error promise rejection captured",
+    // Extensão de carteira cripto injetando inpage.js — não é código do ShareO.
+    /MetaMask/i,
+  ],
+  // Scripts de extensões do navegador (nunca são código do app).
+  denyUrls: [
+    /^chrome-extension:\/\//i,
+    /^moz-extension:\/\//i,
+    /^safari-extension:\/\//i,
+    /^app:\/\/\/scripts\//i,
   ],
   beforeSend(event) {
     if (process.env.NODE_ENV === "test") return null
