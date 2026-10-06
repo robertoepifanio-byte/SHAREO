@@ -11,9 +11,11 @@ export function ServiceWorkerRegister() {
     if (process.env.NODE_ENV !== "production") return
     if (!("serviceWorker" in navigator)) return
 
-    navigator.serviceWorker
-      .register("/sw.js")
-      .catch((err) => console.error("[SW] registration failed:", err))
+    // Promise.resolve: bots/monitores que stubbam a API devolvem undefined em
+    // register() e `.catch` direto estourava (Sentry, HeadlessChrome, 05/10).
+    Promise.resolve(navigator.serviceWorker.register("/sw.js")).catch((err) =>
+      console.error("[SW] registration failed:", err)
+    )
   }, [])
 
   return null
