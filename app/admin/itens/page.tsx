@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import type { Prisma } from "@prisma/client"
 import { requireAdminPage } from "@/lib/auth/require-admin"
 import { hasAdminRole } from "@/lib/auth/admin-guards"
 import { prisma } from "@/lib/prisma"
@@ -9,7 +10,27 @@ import { getSearchMaxDistanceKm, SEARCH_MAX_DISTANCE_LIMIT_KM } from "@/lib/plat
 
 export const metadata: Metadata = { title: "Admin — Itens" }
 
-export default async function AdminItensPage() {
+// Filtro por GET (?q=&status=): Server Component puro, sem JS no cliente, e o
+// link filtrado pode ser compartilhado. Antes a página listava os 100 mais
+// recentes sem busca — achar os itens "[TESTE D0]" para pausar exigia rolar.
+const FILTROS_STATUS = {
+  todos:     { label: "Todos",      where: {} },
+  pendentes: { label: "Pendentes",  where: { isApproved: false } },
+  AVAILABLE: { label: "Publicados", where: { isApproved: true, status: "AVAILABLE" } },
+  PAUSED:    { label: "Pausados",   where: { status: "PAUSED" } },
+  DRAFT:     { label: "Rascunhos",  where: { status: "DRAFT" } },
+} satisfies Record<string, { label: string; where: Prisma.ItemWhereInput }>
+type FiltroStatus = keyof typeof FILTROS_STATUS
+
+export default async function AdminItensPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; status?: string }>
+}) {
+  const sp     = await searchParams
+  const q      = (sp.q ?? "").trim().slice(0, 100)
+  const status = (sp.status && Object.hasOwn(FILTROS_STATUS, sp.status) ? sp.status : "todos") as FiltroStatus
+
   const session = await requireAdminPage("ADMIN_SUPERADMIN", "ADMIN_OPERACIONAL")
 
   const maxDistanceKm = await getSearchMaxDistanceKm()
@@ -20,7 +41,17 @@ export default async function AdminItensPage() {
   const podeEditarConfig = hasAdminRole(session, "ADMIN_SUPERADMIN")
 
   const items = await prisma.item.findMany({
-    where:   { deletedAt: null },
+    where:   {
+      deletedAt: null,
+      ...FILTROS_STATUS[status].where,
+      ...(q && {
+        OR: [
+          { title: { contains: q, mode: "insensitive" } },
+          { owner: { name:  { contains: q, mode: "insensitive" } } },
+          { owner: { email: { contains: q, mode: "insensitive" } } },
+        ],
+      }),
+    },
     orderBy: [{ isApproved: "asc" }, { createdAt: "desc" }],
     take:    100,
     select: {
@@ -36,8 +67,11 @@ export default async function AdminItensPage() {
     },
   })
 
-  const pending  = items.filter((i) => !i.isApproved)
-  const approved = items.filter((i) =>  i.isApproved)
+  // Com filtro ativo, uma tabela só: a divisão pendentes/aprovados esvaziava
+  // "Todos os itens" ao filtrar por Pendentes.
+  const filtrado = Boolean(q) || status !== "todos"
+  const pending  = filtrado ? [] : items.filter((i) => !i.isApproved)
+  const approved = filtrado ? items : items.filter((i) =>  i.isApproved)
 
   const ItemRow = ({ item }: { item: typeof items[number] }) => (
     <tr className="border-b border-border last:border-0">
@@ -100,6 +134,39 @@ export default async function AdminItensPage() {
         )}
       </section>
 
+      <form method="get" className="mb-6 flex flex-wrap items-end gap-2">
+        <label className="flex min-w-[200px] flex-1 flex-col gap-1 text-xs font-semibold text-muted-foreground">
+          Buscar
+          <input
+            type="search"
+            name="q"
+            defaultValue={q}
+            placeholder="Título, nome ou e-mail do proprietário"
+            className="min-h-11 rounded-lg border border-border bg-background px-3 text-sm font-normal text-foreground"
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-xs font-semibold text-muted-foreground">
+          Status
+          <select
+            name="status"
+            defaultValue={status}
+            className="min-h-11 rounded-lg border border-border bg-background px-3 text-sm font-normal text-foreground"
+          >
+            {Object.entries(FILTROS_STATUS).map(([valor, f]) => (
+              <option key={valor} value={valor}>{f.label}</option>
+            ))}
+          </select>
+        </label>
+        <button type="submit" className="min-h-11 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground">
+          Filtrar
+        </button>
+        {filtrado && (
+          <a href="/admin/itens" className="flex min-h-11 items-center px-2 text-sm text-muted-foreground underline">
+            Limpar
+          </a>
+        )}
+      </form>
+
       {pending.length > 0 && (
         <section className="mb-8">
           <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-orange-link">
@@ -119,7 +186,9 @@ export default async function AdminItensPage() {
       <section>
         <h2 className="mb-3 text-sm font-semibold text-foreground">Todos os itens</h2>
         {approved.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">Nenhum item cadastrado.</p>
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            {filtrado ? "Nenhum item encontrado com esse filtro." : "Nenhum item cadastrado."}
+          </p>
         ) : (
           <div className="overflow-hidden rounded-xl border border-border bg-surface">
             <table className="w-full">
