@@ -538,7 +538,10 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
           const res  = await fetch(`/api/items/${itemId}/images`, { method: "POST", body: fd })
           const json = await res.json().catch(() => ({}))
           if (!res.ok) {
-            uploadErrors.push(`Foto ${i + 1}: ${json.error?.message ?? "falha no upload"}`)
+            // `stage` (só no 500) diz em qual etapa da rota a foto falhou — vai na mensagem
+            // para o print de quem reporta já trazer o diagnóstico.
+            const etapa = json.error?.stage ? ` (etapa: ${json.error.stage})` : ""
+            uploadErrors.push(`Foto ${i + 1}: ${json.error?.message ?? "falha no upload"}${etapa}`)
           } else {
             uploadedFilesRef.current.add(img.file)
           }
