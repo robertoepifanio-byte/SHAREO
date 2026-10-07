@@ -197,6 +197,10 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
 
   // Prevents double-submit: ref is synchronous (no re-render delay)
   const submittingRef = useRef(false)
+  // Anúncio já criado nesta sessão + fotos já enviadas: se o upload das fotos falha,
+  // o reenvio não pode criar um 2º anúncio nem reenviar as fotos que subiram.
+  const createdItemIdRef = useRef<string | null>(null)
+  const uploadedFilesRef  = useRef(new Set<File>())
 
   // UI state
   const [categories,    setCategories]    = useState<Category[]>([])
@@ -468,7 +472,7 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
     try {
       let itemId: string
 
-      if (mode === "create") {
+      if (mode === "create" && !createdItemIdRef.current) {
         const res  = await fetch("/api/items", {
           method:  "POST",
           headers: { "Content-Type": "application/json" },
@@ -494,9 +498,10 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
           return
         }
         itemId = json.data.id
+        createdItemIdRef.current = itemId
       } else {
-        // Edit mode
-        itemId = initialData!.id
+        // Edit mode (ou reenvio de uma criação cujas fotos falharam)
+        itemId = createdItemIdRef.current ?? initialData!.id
         const res  = await fetch(`/api/items/${itemId}`, {
           method:  "PUT",
           headers: { "Content-Type": "application/json" },
@@ -526,6 +531,7 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
 
       for (let i = 0; i < newImages.length; i++) {
         const img = newImages[i]
+        if (uploadedFilesRef.current.has(img.file)) continue
         const fd = new FormData()
         fd.append("file", img.file)
         try {
@@ -533,6 +539,8 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
           const json = await res.json().catch(() => ({}))
           if (!res.ok) {
             uploadErrors.push(`Foto ${i + 1}: ${json.error?.message ?? "falha no upload"}`)
+          } else {
+            uploadedFilesRef.current.add(img.file)
           }
         } catch {
           uploadErrors.push(`Foto ${i + 1}: erro de rede`)
@@ -540,8 +548,9 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
       }
 
       if (uploadErrors.length > 0) {
-        setErrors({ form: `Anúncio salvo, mas ${uploadErrors.length} foto(s) não foram enviadas: ${uploadErrors.join("; ")}. Tente editar o anúncio e adicionar novamente.` })
+        setErrors({ form: `Anúncio salvo, mas ${uploadErrors.length} foto(s) não foram enviadas: ${uploadErrors.join("; ")}. Toque em "${mode === "create" ? "Publicar anúncio" : "Salvar alterações"}" para tentar de novo — o anúncio não será duplicado.` })
         setLoading(false)
+        submittingRef.current = false
         return
       }
 
