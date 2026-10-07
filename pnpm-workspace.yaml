@@ -63,7 +63,10 @@ overrides:
   #
   # shell-quote (GHSA — DoS quadrático no parse()) — cópia 1.8.4 via
   # react-devtools-core, só dev. Patch de folha, sem dependente afetado.
-  shell-quote: "^1.9.0"
+  # 2026-10-06: GHSA-pqg4-j6r4-53mv (critical — quote() command injection) afeta
+  # >=1.8.4 <1.11.0; o piso ^1.9.0 deixava o lockfile em 1.10.0 e reprovava o
+  # `pnpm audit --audit-level=critical` do CI. Piso subiu p/ 1.11.0.
+  shell-quote: "^1.11.0"
   # postcss (4 alertas: 3/40/41/58 — leitura arbitrária de .map por
   # sourceMappingURL + XSS no stringify) — a cópia 8.4.49 vem do
   # @expo/metro-config. É a "trilha Expo" que a triagem de 19/08 evitou forçar,
