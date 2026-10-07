@@ -35,6 +35,8 @@ interface BookingDetail {
   depositAmount: number | null
   borrowerNote:  string | null
   cancelReason:  string | null
+  /** Centavos estornados ao locatário no cancelamento (null = não cancelada). */
+  refundAmount?: number | null
   lateFeeAmount: number | null
   lateFeeCalculatedUntil: string | null
   /** Derivado no servidor a partir do PaymentIntent da multa. */
@@ -883,10 +885,38 @@ export default function BookingDetailScreen() {
               <Text style={[s.finValue, { color: mode === "dark" ? "#FBBF77" : "#B45309" }]}>{fmt(booking.depositAmount)}</Text>
             </View>
           )}
+          {/* Reserva cancelada não tem repartição: não há repasse nem taxa Shareo.
+              Fonte: app/reservas/[id]/page.tsx (bloco "Reserva cancelada" do resumo financeiro). */}
+          {booking.status === "CANCELLED" && (booking.refundAmount ?? 0) > 0 && (
+            <View style={[s.splitBox, { backgroundColor: tokens.bg }]}>
+              {booking.refundAmount! < booking.totalPrice && (
+                <View style={s.finRow}>
+                  <Text style={[s.finLabel, { color: tokens.muted }]}>Taxa da Stripe (não devolvida)</Text>
+                  <Text style={[s.finValue, { color: tokens.error }]}>− {fmt(booking.totalPrice - booking.refundAmount!)}</Text>
+                </View>
+              )}
+              <View style={s.finRow}>
+                <Text style={[s.finTotalLabel, { color: tokens.text, fontSize: 13 }]}>
+                  {isBorrower ? "Reembolso para você" : "Reembolso ao locatário"}
+                </Text>
+                <Text style={[s.finTotalValue, { color: tokens.green, fontSize: 13 }]}>{fmt(booking.refundAmount!)}</Text>
+              </View>
+              <Text style={[s.finLabel, { color: tokens.muted, fontSize: 12 }]}>
+                Reserva cancelada: não há repasse ao proprietário nem taxa Shareo.
+              </Text>
+            </View>
+          )}
+          {booking.status === "CANCELLED" && !((booking.refundAmount ?? 0) > 0) && !booking.paidAt && (
+            <View style={[s.splitBox, { backgroundColor: tokens.bg }]}>
+              <Text style={[s.finLabel, { color: tokens.muted, fontSize: 12 }]}>
+                Reserva cancelada antes do pagamento: nenhum valor foi cobrado.
+              </Text>
+            </View>
+          )}
           {/* Repartição — taxa retida do repasse, não somada ao locatário.
               Fonte: app/reservas/[id]/page.tsx linhas 303-313. feeRateBps
               SEMPRE dinâmico (nunca hardcode — regra do CLAUDE.md). */}
-          {split && feeRateLabel != null && (
+          {booking.status !== "CANCELLED" && split && feeRateLabel != null && (
             <View style={[s.splitBox, { backgroundColor: tokens.bg }]}>
               <View style={s.finRow}>
                 <Text style={[s.finLabel, { color: tokens.muted }]}>Taxa Shareo ({feeRateLabel}%)</Text>

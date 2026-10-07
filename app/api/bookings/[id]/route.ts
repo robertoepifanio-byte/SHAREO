@@ -52,6 +52,8 @@ export async function GET(req: NextRequest, { params }: Params) {
         ownerNote:     true,
         cancelledAt:   true,
         cancelReason:  true,
+        // Resumo financeiro da reserva cancelada no app (espelha app/reservas/[id]/page.tsx).
+        refundAmount:  true,
         createdAt:     true,
         updatedAt:     true,
         // Fonte: app/reservas/[id]/page.tsx linhas 84-96 — mesmos timestamps de
