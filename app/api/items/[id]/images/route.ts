@@ -30,11 +30,17 @@ type RouteContext = { params: Promise<{ id: string }> }
 // A checagem de propriedade (ownerId === userId || isAdmin) é feita localmente
 // porque assertOwnerOrAdmin requer um objeto Session completo do NextAuth.
 export async function POST(req: NextRequest, { params }: RouteContext) {
+  // Etapa em andamento + contexto do arquivo: só alimentam o log do `catch`. O 500
+  // "Erro interno." de produção (06/10, Thiago) não dizia QUAL das etapas lançou.
+  let stage = "auth"
+  let itemId: string | undefined
+  let fileInfo: { type: string; size: number } | undefined
   try {
     const reqUser = await withUser(req)
     if (reqUser instanceof NextResponse) return reqUser
     const userId = reqUser.id
 
+    stage = "rate-limit"
     const rl = await checkRateLimit(
       `upload:${userId}`,
       RATE_LIMITS.upload.limit,
@@ -44,6 +50,8 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const { id } = await params
+    itemId = id
+    stage = "item-lookup"
     const item = await prisma.item.findFirst({
       where: { id, deletedAt: null },
       select: { ownerId: true, status: true, _count: { select: { images: true } } },
@@ -70,6 +78,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       }
     }
 
+    stage = "limits"
     const { maxImagesPerItem, maxUploadSizeMB } = await getUploadLimits()
     const maxBytes = maxUploadSizeMB * 1024 * 1024
 
@@ -80,6 +89,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       )
     }
 
+    stage = "form-data"
     const formData = await req.formData() as globalThis.FormData
     const file = formData.get("file")
 
@@ -89,6 +99,8 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
         { status: 400 }
       )
     }
+
+    fileInfo = { type: file.type, size: file.size }
 
     if (file.size > maxBytes) {
       return NextResponse.json(
@@ -104,6 +116,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       )
     }
 
+    stage = "magic-bytes"
     const buffer = await file.arrayBuffer()
     if (!(await isMagicBytesValid(buffer))) {
       return NextResponse.json(
@@ -116,6 +129,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
     const path     = `${id}/${filename}`
 
+    stage = "storage-upload"
     const supabase = createAdminClient()
     const { error: uploadError } = await supabase.storage
       .from(BUCKET)
@@ -131,6 +145,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
 
     const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(path)
 
+    stage = "db-image-create"
     const image = await prisma.itemImage.create({
       data: { itemId: id, url: publicUrl, order: item._count.images },
       select: { id: true, url: true, order: true },
@@ -145,15 +160,24 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
       // voltou ao catálogo" para todos que favoritaram o item, por causa de uma
       // edição corriqueira. O carimbo fica só nas transições que o dono (ou o
       // admin) pede de verdade: pausar e despausar.
+      stage = "db-item-publish"
       await prisma.item.update({ where: { id }, data: { status: "AVAILABLE" } })
       finalStatus = "AVAILABLE"
     }
 
     return NextResponse.json({ data: { ...image, itemStatus: finalStatus } }, { status: 201 })
   } catch (e) {
-    console.error("[POST /api/items/[id]/images]", e instanceof Error ? e.message : e)
+    // Sem PII: só ids, tipo/tamanho do arquivo e a pilha (3 primeiras linhas).
+    console.error("[POST /api/items/[id]/images] falhou", {
+      stage,
+      itemId,
+      file:  fileInfo,
+      name:  e instanceof Error ? e.name : typeof e,
+      error: e instanceof Error ? e.message : String(e),
+      stack: e instanceof Error ? e.stack?.split("\n").slice(0, 3).join(" | ") : undefined,
+    })
     return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "Erro interno." } },
+      { error: { code: "INTERNAL_ERROR", message: "Erro interno.", stage } },
       { status: 500 }
     )
   }
