@@ -494,6 +494,52 @@ describe("Resumo financeiro — taxa de atraso soma ao total", () => {
   })
 })
 
+// ── Resumo financeiro da reserva cancelada ────────────────────────────────────
+// Prod, 07/10/2026: reserva paga (R$ 7,50) cancelada pelo locatário e estornada
+// (R$ 6,81) seguia dizendo "Você recebe R$ 6,37" ao locador. Aqui: 17500 pagos,
+// 16800 estornados → 700 de taxa da Stripe que não volta.
+
+describe("Resumo financeiro — reserva cancelada", () => {
+  it("locador: mostra o reembolso e some o 'Você recebe'", async () => {
+    mockAuthUserId   = "user-owner"
+    mockAuthUserName = "Carlos Proprietário"
+    setApiFetch({ status: "CANCELLED", paidAt: "2026-07-05T10:00:00Z", refundAmount: 16800 })
+    wrap(<BookingDetailScreen />)
+    await waitFor(() => expect(screen.getByText("Reembolso ao locatário")).toBeTruthy(), { timeout: 4000 })
+    expect(screen.getByText(/R\$\s168,00/)).toBeTruthy()
+    expect(screen.getByText("Taxa da Stripe (não devolvida)")).toBeTruthy()
+    expect(screen.getByText(/R\$\s7,00/)).toBeTruthy()
+    expect(screen.getByText("Reserva cancelada: não há repasse ao proprietário nem taxa Shareo.")).toBeTruthy()
+    expect(screen.queryByText("Você recebe")).toBeNull()
+    expect(screen.queryByText(/^Taxa Shareo \(/)).toBeNull()
+  })
+
+  it("locatário: 'Reembolso para você' e nada de 'Proprietário recebe'", async () => {
+    setApiFetch({ status: "CANCELLED", paidAt: "2026-07-05T10:00:00Z", refundAmount: 17500 })
+    wrap(<BookingDetailScreen />)
+    await waitFor(() => expect(screen.getByText("Reembolso para você")).toBeTruthy(), { timeout: 4000 })
+    // Reembolso integral (locador cancelou): sem linha de taxa da Stripe.
+    expect(screen.queryByText("Taxa da Stripe (não devolvida)")).toBeNull()
+    expect(screen.queryByText("Proprietário recebe")).toBeNull()
+  })
+
+  it("cancelada antes do pagamento: diz que nada foi cobrado", async () => {
+    setApiFetch({ status: "CANCELLED", refundAmount: 0 })
+    wrap(<BookingDetailScreen />)
+    await waitFor(() => expect(screen.getByText("Reserva cancelada antes do pagamento: nenhum valor foi cobrado.")).toBeTruthy(), { timeout: 4000 })
+    expect(screen.queryByText(/^Reembolso/)).toBeNull()
+    expect(screen.queryByText("Proprietário recebe")).toBeNull()
+  })
+
+  it("reserva não cancelada segue com a repartição", async () => {
+    setApiFetch({ status: "COMPLETED" })
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Concluída")
+    await waitFor(() => expect(screen.getByText("Proprietário recebe")).toBeTruthy())
+    expect(screen.queryByText(/^Reembolso/)).toBeNull()
+  })
+})
+
 // ── ReturnChecklist — rótulos dos 4 checkboxes ───────────────────────────────
 
 describe("ReturnChecklist — 4 checkboxes verbatim (ReturnChecklist.tsx linhas 30-36)", () => {

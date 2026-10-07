@@ -82,6 +82,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
       returnedAt:           true,
       cancelledAt:          true,
       cancelReason:         true,
+      refundAmount:         true,
       extensionRequestedAt: true,
       extensionRespondedAt: true,
       lateFeeAmount: true,
@@ -310,17 +311,45 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                   </div>
                 )}
 
-                {/* Repartição — a taxa é retida do repasse ao proprietário, não somada ao locatário */}
-                <div className="mt-3 space-y-1.5 rounded-lg bg-background p-3">
-                  <div className="flex justify-between text-muted-foreground">
-                    <span>Taxa Shareo ({feeRateLabel}%)</span>
-                    <span className="text-destructive">− {formatPrice(platformFee)}</span>
+                {/* Repartição — a taxa é retida do repasse ao proprietário, não somada ao locatário.
+                    🪤 Reserva cancelada não tem repartição: não há repasse nem taxa
+                    Shareo. Antes este bloco seguia dizendo "Você recebe R$ 6,37" ao
+                    locador de uma reserva cancelada e estornada (prod, 07/10/2026),
+                    e o locatário não via quanto voltava para o cartão. */}
+                {booking.status === "CANCELLED" ? (
+                  (booking.refundAmount ?? 0) > 0 ? (
+                    <div className="mt-3 space-y-1.5 rounded-lg bg-background p-3">
+                      {booking.refundAmount! < booking.totalPrice && (
+                        <div className="flex justify-between text-muted-foreground">
+                          <span>Taxa da Stripe (não devolvida)</span>
+                          <span className="text-destructive">− {formatPrice(booking.totalPrice - booking.refundAmount!)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between font-semibold text-foreground">
+                        <span>{isBorrower ? "Reembolso para você" : "Reembolso ao locatário"}</span>
+                        <span className="text-brand">{formatPrice(booking.refundAmount!)}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Reserva cancelada: não há repasse ao proprietário nem taxa Shareo.
+                      </p>
+                    </div>
+                  ) : !booking.paidAt ? (
+                    <p className="mt-3 rounded-lg bg-background p-3 text-xs text-muted-foreground">
+                      Reserva cancelada antes do pagamento: nenhum valor foi cobrado.
+                    </p>
+                  ) : null
+                ) : (
+                  <div className="mt-3 space-y-1.5 rounded-lg bg-background p-3">
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Taxa Shareo ({feeRateLabel}%)</span>
+                      <span className="text-destructive">− {formatPrice(platformFee)}</span>
+                    </div>
+                    <div className="flex justify-between font-semibold text-foreground">
+                      <span>{isOwner ? "Você recebe" : "Proprietário recebe"}</span>
+                      <span className="text-brand">{formatPrice(ownerNet)}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between font-semibold text-foreground">
-                    <span>{isOwner ? "Você recebe" : "Proprietário recebe"}</span>
-                    <span className="text-brand">{formatPrice(ownerNet)}</span>
-                  </div>
-                </div>
+                )}
 
                 {/* Taxa de atraso — soma ao resumo. A caixa colorida mais abaixo
                     explica o motivo; aqui entra só o número, para que o total
