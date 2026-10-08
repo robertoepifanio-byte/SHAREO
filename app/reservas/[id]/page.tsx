@@ -214,7 +214,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
               ...e,
               at: e.at.toISOString(),
             }))
-            return <BookingHistory events={serialized} />
+            return <BookingHistory events={serialized} motivoId={booking.cancelReason ? "motivo-cancelamento" : undefined} />
           })()}
 
           {/* Header do booking */}
@@ -400,7 +400,7 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                   fazia a tela dizer "Motivo do cancelamento" numa reserva marcada
                   "Em disputa". O painel do admin já distinguia; esta tela não. */}
               {booking.cancelReason && (
-                <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm">
+                <div id="motivo-cancelamento" className="mt-4 scroll-mt-24 rounded-lg bg-red-50 p-3 text-sm">
                   <p className="mb-1 font-semibold text-red-700">
                     {booking.disputeStatus !== "NONE" ? "Motivo da disputa:" : "Motivo do cancelamento:"}
                   </p>
