@@ -160,9 +160,10 @@ export function deriveBookingHistory(b: BookingForHistory): BookingHistoryEvent[
     events.push({
       key:       "cancelled",
       at:        b.cancelledAt,
-      label:     b.cancelReason
-        ? `Locação cancelada — ${b.cancelReason.slice(0, 80)}`
-        : "Locação cancelada",
+      // Só o status: o motivo cortado em 80 caracteres confundia status com
+      // mensagem (relato do Thiago, 01/10/2026). O motivo inteiro fica no
+      // quadro "Motivo do cancelamento", que o histórico linka.
+      label:     "Locação cancelada",
       actor:     null,
       actorRole: "system",
     })

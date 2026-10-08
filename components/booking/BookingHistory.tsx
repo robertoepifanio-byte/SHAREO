@@ -17,6 +17,8 @@ import type { BookingHistoryEvent } from "@/lib/bookingHistory"
 
 interface Props {
   events: SerializedBookingHistoryEvent[]
+  /** id do quadro com o motivo do cancelamento na página; mostra "Ver o motivo". */
+  motivoId?: string
 }
 
 /** Versão serializada (datas como string ISO) — necessária para passar de Server → Client Component */
@@ -45,7 +47,7 @@ function fmtEventDateTime(iso: string): string {
   }).format(new Date(iso))
 }
 
-export function BookingHistory({ events }: Props) {
+export function BookingHistory({ events, motivoId }: Props) {
   const [expanded, setExpanded] = useState(false)
 
   if (events.length === 0) return null
@@ -107,6 +109,14 @@ export function BookingHistory({ events }: Props) {
           <p className="text-xs text-muted-foreground">Último evento</p>
           <p className="mt-0.5 text-sm font-medium text-brand">{latest.label}</p>
           <p className="text-xs text-muted-foreground">{fmtEventDateTime(latest.at)}</p>
+          {motivoId && latest.key === "cancelled" && (
+            <a
+              href={`#${motivoId}`}
+              className="mt-1 inline-flex min-h-[44px] items-center text-sm font-semibold text-brand hover:underline"
+            >
+              Ver o motivo
+            </a>
+          )}
         </div>
       )}
 

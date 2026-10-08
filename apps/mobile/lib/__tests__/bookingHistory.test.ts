@@ -66,7 +66,7 @@ describe("deriveBookingHistory (mobile)", () => {
     const keys = events.map((e) => e.key)
     expect(keys).not.toContain("responded")
     expect(keys).toContain("cancelled")
-    expect(events.find((e) => e.key === "cancelled")?.label).toContain("Item indisponível")
+    expect(events.find((e) => e.key === "cancelled")?.label).toBe("Locação cancelada") // motivo fica no quadro próprio, não no rótulo
   })
 
   it("usa label 'Devolução registrada' quando não houve solicitação de devolução", () => {

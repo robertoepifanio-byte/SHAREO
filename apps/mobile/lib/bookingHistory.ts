@@ -135,9 +135,7 @@ export function deriveBookingHistory(b: BookingForHistory): BookingHistoryEvent[
     events.push({
       key:       "cancelled",
       at:        b.cancelledAt,
-      label:     b.cancelReason
-        ? `Locação cancelada — ${b.cancelReason.slice(0, 80)}`
-        : "Locação cancelada",
+      label:     "Locação cancelada",
       actor:     null,
       actorRole: "system",
     })
