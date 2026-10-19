@@ -194,12 +194,12 @@ export function atrasoParaCobrar(
   b: { endDate: Date } & DatasDeDevolucao,
   agora: Date,
   opcoes: { aplicarTeto?: boolean } = {},
-): { fimDoAtraso: Date; dias: number } | null {
+): { fimDoAtraso: Date; diasReais: number; dias: number } | null {
   const fim = fimDoAtrasoDe(b, agora)
   if (!houveAtraso(b.endDate, fim)) return null
   const diasReais   = diasDeAtraso(b.endDate, fim)
   const aplicarTeto = opcoes.aplicarTeto ?? (b.returnRequestedAt ?? b.returnedAt) == null
-  return { fimDoAtraso: fim, dias: aplicarTeto ? diasParaCalculo(diasReais) : diasReais }
+  return { fimDoAtraso: fim, diasReais, dias: aplicarTeto ? diasParaCalculo(diasReais) : diasReais }
 }
 
 export type ResultadoCobranca =

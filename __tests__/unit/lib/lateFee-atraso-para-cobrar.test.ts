@@ -14,6 +14,7 @@ const D45    = new Date("2026-02-15T12:00:00Z") // 45 dias depois
 it("item ainda fora: corre até agora, com teto de 30 dias", () => {
   const r = atrasoParaCobrar({ endDate: FIM }, AGORA)!
   expect(r.fimDoAtraso).toEqual(AGORA)
+  expect(r.diasReais).toBe(59)
   expect(r.dias).toBe(30)
 })
 

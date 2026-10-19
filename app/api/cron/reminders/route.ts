@@ -15,7 +15,7 @@ import {
 import { getLateFeeMultiplier, calcLateFee } from "@/lib/platform-config"
 import { getStripe } from "@/lib/stripe"
 import {
-  emitirCobrancaTaxaAtraso, precisaCobrar, diasDeAtraso, diasParaCalculo, fimDoAtrasoDe, atrasoParaCobrar,
+  emitirCobrancaTaxaAtraso, precisaCobrar, fimDoAtrasoDe, atrasoParaCobrar,
   taxaDeAtrasoQuitada, TETO_DIAS_CALCULO_AUTOMATICO, DIAS_MAX_REEMISSAO_APOS_DEVOLUCAO,
 } from "@/lib/lateFee"
 
@@ -187,8 +187,12 @@ export async function GET(req: NextRequest) {
   })
 
   const overdueStats = await processInBatches(overdueBookings, BATCH_SIZE, async (b) => {
-    // Item ainda não voltou: o atraso corre até hoje.
-    const daysLate = diasDeAtraso(b.endDate, today)
+    // Item ainda não voltou: o atraso corre até hoje, com o teto de 30 dias
+    // (padrão de atrasoParaCobrar). `null` não acontece: a consulta já exige
+    // endDate < hoje, e isso é pelo menos 1 dia de atraso.
+    const atraso = atrasoParaCobrar(b, today)
+    if (!atraso) return
+    const { diasReais: daysLate, dias: diasCobrados } = atraso
     const itemsLabel = bookingItemsLabel(b.item.title, b._count.bookingItems || 1)
 
     // Cobrança da multa: primeira emissão OU reemissão, quando a anterior
@@ -204,7 +208,6 @@ export async function GET(req: NextRequest) {
     // O item ainda não voltou, então a multa cresce: o valor é recalculado com
     // os dias de atraso de HOJE — até o teto de 30 dias (decisão de Roberto,
     // 01/09). Passado o teto o valor congela no do 30º dia e só o admin move.
-    const diasCobrados = diasParaCalculo(daysLate)
     const valorHoje    = calcLateFee(b.dailyPrice, lateFeeMultiplier, diasCobrados)
 
     // Aviso único, no dia em que o teto é atingido: as duas partes precisam
