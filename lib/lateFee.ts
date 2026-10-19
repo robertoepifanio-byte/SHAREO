@@ -159,8 +159,24 @@ export function diasParaCalculo(diasReais: number): number {
   return Math.min(diasReais, TETO_DIAS_CALCULO_AUTOMATICO)
 }
 
+/**
+ * Atraso a cobrar AGORA, ou null se não houve. Devolvida → congela na devolução
+ * e sem teto (como a reemissão do cron); ainda com o locatário → corre até
+ * `agora`, com o teto de 30 dias. Usado pela cobrança sob demanda do locatário.
+ */
+export function atrasoParaCobrar(
+  b: { endDate: Date; returnRequestedAt: Date | null; returnedAt: Date | null },
+  agora: Date,
+): { fimDoAtraso: Date; dias: number } | null {
+  const devolvida   = b.returnRequestedAt ?? b.returnedAt
+  const fimDoAtraso = devolvida ?? agora
+  if (!houveAtraso(b.endDate, fimDoAtraso)) return null
+  const diasReais = diasDeAtraso(b.endDate, fimDoAtraso)
+  return { fimDoAtraso, dias: devolvida ? diasReais : diasParaCalculo(diasReais) }
+}
+
 export type ResultadoCobranca =
-  | { emitida: true;  reemissao: boolean; valor: number; anterior: number | null }
+  | { emitida: true;  reemissao: boolean; valor: number; anterior: number | null; url: string }
   | { emitida: false; motivo: "JA_QUITADA" | "COBRANCA_ATUAL_VIVA" | "SEM_VALOR" | "COBRANCA_FECHADA" }
 
 /**
@@ -195,6 +211,11 @@ export async function emitirCobrancaTaxaAtraso(
    * `agora` (ver precisaCobrar); esta era a exceção.
    */
   agora:            Date = new Date(),
+  /**
+   * `false` quando o próprio locatário pediu a cobrança (botão "Pagar taxa de
+   * atraso"): ele recebe o link na resposta, e-mail seria ruído.
+   */
+  enviarEmail:      boolean = true,
 ): Promise<ResultadoCobranca> {
 
   if (taxaDeAtrasoQuitada(b)) return { emitida: false, motivo: "JA_QUITADA" }
@@ -264,12 +285,14 @@ export async function emitirCobrancaTaxaAtraso(
     },
   })
 
-  await sendLateFeeEmail(
-    b.borrower.email, b.borrower.name,
-    itemsLabel, b.id,
-    valor, session.url!,
-    true, fmtData(calculadoAte),
-  )
+  if (enviarEmail) {
+    await sendLateFeeEmail(
+      b.borrower.email, b.borrower.name,
+      itemsLabel, b.id,
+      valor, session.url!,
+      true, fmtData(calculadoAte),
+    )
+  }
 
-  return { emitida: true, reemissao, valor, anterior: b.lateFeeAmount }
+  return { emitida: true, reemissao, valor, anterior: b.lateFeeAmount, url: session.url! }
 }
