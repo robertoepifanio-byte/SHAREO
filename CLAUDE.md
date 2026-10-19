@@ -27,30 +27,7 @@ Marketplace de economia circular para aluguel local de itens. Lançamento nacion
 
 ## 📱 App mobile — REGRA DE TRANSCRIÇÃO LITERAL (fundador, 2026-07-02)
 
-**Qualquer trabalho de UI/funcionalidade em `apps/mobile/` TRANSCREVE o site responsivo em 375px — nunca "adapta", "melhora" ou inventa.** O resultado final deve ser IGUAL ao site mobile. Regra criada após 2 rejeições do fundador a protótipos que reinterpretaram o design.
-
-1. Rótulos, textos, ordem, ícones (SVG exato), cores e espaçamentos vêm **verbatim** dos componentes do site (`components/layout/AppHeader.tsx`, `BottomNav.tsx`, `MobileMenu.tsx`, `app/itens/page.tsx`, `app/(auth)/login`, `_PriceCalc.tsx`...). Ler o JSX-fonte ANTES de escrever qualquer tela.
-2. Todo arquivo novo/alterado em `apps/mobile/` começa com `// Fonte: <arquivo(s) do site transcrito(s)>`.
-3. PR mobile inclui tabela de auditoria componente/tela → arquivo-fonte na descrição.
-4. Testes RNTL fixam os rótulos exatos (rótulo inventado = CI quebra).
-5. Na dúvida entre "padrão nativo" e "copiar o site mobile": **copiar o site**.
-
-Spec visual aprovada: `docs/design/mobile-app-prototipo-v1.html` + `docs/design/mobile-app-handoff.md` (rastreabilidade frame→fonte). Fundação do design system do app: `apps/mobile/lib/theme.tsx` (tokens light/dark transcritos de `app/globals.css`) + `apps/mobile/components/ui|layout/`.
-
-### Padrão de estilo: `StyleSheet` + `useTheme()`, não `className`
-
-As classes Tailwind do site **não** se transcrevem para `className` no app. O padrão é ler o token equivalente do `lib/theme.tsx` e aplicá-lo via `StyleSheet`:
-
-```tsx
-const { tokens, mode } = useTheme()
-<Text style={[s.sectionTitle, { color: tokens.navy }]}>Sobre o item</Text>
-```
-
-Medido em 2026-07-22: **58 arquivos** usam `StyleSheet.create` e **57** usam `useTheme()`, contra **5** com `className` — e 3 desses concentram 144 das 147 ocorrências (`app/perfil/editar|endereco|recebimentos.tsx`), que são a exceção divergente, não o modelo a copiar.
-
-O NativeWind segue instalado e ligado (`babel.config.js` com `jsxImportSource: "nativewind"`, `metro.config.js` com `withNativeWind`) — não é config morta, mas escrever tela nova em `className` destoa de ~58 arquivos.
-
-Para implementar/corrigir tela do app: usar `/shareo-transcrever-tela <rota>` (encapsula esta regra + gotchas). Device testing: `scripts/adb-device.sh` (resolve adb do winget + converte coordenadas ×1.2).
+**Qualquer trabalho em `apps/mobile/` TRANSCREVE o site responsivo em 375px — nunca "adapta", "melhora" ou inventa.** Regras detalhadas, padrão `StyleSheet` + `useTheme()` e gotchas estão em `apps/mobile/CLAUDE.md` (carrega ao trabalhar na pasta). Para tela do app: `/shareo-transcrever-tela <rota>`. Device: `scripts/adb-device.sh`.
 
 ## ✅ Regra de verificação antes de reportar "resolvido"
 
@@ -108,11 +85,7 @@ SQL de manutenção/migration para staging → sempre usar `zythygwvmrwrqmnrdufq
 
 ## Roles de admin
 
-| AdminRole | Acesso |
-|---|---|
-| `ADMIN_SUPERADMIN` | Tudo, incluindo gestão de admins |
-| `ADMIN_FINANCEIRO` | Financeiro + Disputas + Usuários |
-| `ADMIN_OPERACIONAL` | Itens + Usuários + Disputas + Verificações |
+Papéis: `ADMIN_SUPERADMIN` (tudo, inclusive gestão de admins), `ADMIN_FINANCEIRO` e `ADMIN_OPERACIONAL` (áreas distintas, não hierárquicas) — o que cada um acessa está em `prisma/schema.prisma` e nos guards.
 
 Admins em staging (conferido no banco em 2026-09-01):
 - `roberto.epifanio@gmail.com` — **`ADMIN_SUPERADMIN`**. É a conta para validar o painel completo.
@@ -148,35 +121,10 @@ Se fetch client-side cair no `catch` com "Erro de conexão" sem erro de rede apa
 - RLS policies bloqueiam `DROP COLUMN` → dropar policies antes do DROP
 - SQL de reparo vai nos **dois** projetos Supabase (local e staging)
 
-## Navegação atual
-
-**Desktop:** `[Logo→/]  Início  Explorar  Anunciar  [?]  Olá, Nome!  [🔔]  [Avatar]`
-- `AppHeader` permanece Server Component — links diretos sem dropdown (Início → `/`, Explorar → `/itens`, Anunciar → `/itens/novo`)
-- Únicos popups mantidos: `HelpButton` e `UserDropdown` (ATIVIDADE + MINHA CONTA)
-
-**Mobile:** BottomNav 4 tabs + MobileMenu com Explorar▾ / Anunciar▾ expansíveis + seção Atividade rotulada
-
-## UX da locação (PriceCalc)
-
-Arquivo: `app/itens/[id]/_PriceCalc.tsx`
-- Modalidade **diária:** cliente informa quantidade de dias (input +/-); devolução = retirada + N dias
-- Modalidade **semanal:** devolução = retirada + 7 dias (campo read-only)
-- Modalidade **mensal:** devolução = retirada + 30 dias (campo read-only)
-- Tabs de modalidade só aparecem se item tiver `pricePerWeek`/`pricePerMonth`
-
 ## Precificação de referência (seed e formulários)
 
 Diária ≈ 3–5% do valor do produto. Semana = 3× diária. Mês = 15× diária.
 Multiplicadores configuráveis pelo SuperAdmin em `/admin/financeiro` (chaves `pricingWeeklyMultiplier` e `pricingMonthlyMultiplier`).
-
-| Slug categoria | Diária padrão |
-|---|---|
-| ferramentas | R$35 |
-| eletronicos | R$100 |
-| casa-jardim | R$30 |
-| construcao | R$45 |
-| esporte | R$60 |
-| festas | R$80 |
 
 ## Arquivos de referência
 
