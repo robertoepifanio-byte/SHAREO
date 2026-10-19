@@ -75,6 +75,13 @@ overrides:
   # nada da árvore do Expo. Se o bundle Metro reclamar, é este override que sai.
   "@expo/metro-config>postcss": "^8.5.26"
 
+  # ── 2026-10-19 ─────────────────────────────────────────────────────────────
+  # handlebars (GHSA-8r5x-fm3f-whwj / GHSA-p8wg-vrv2-v86f — critical, injeção de
+  # JS no compile) <=4.7.9 via ts-jest (dev/test). Corrigido em 4.7.10; reprovava
+  # o `pnpm audit --audit-level=critical` do CI em todo PR. Remover quando o
+  # ts-jest subir sozinho.
+  handlebars: "^4.7.10"
+
 allowBuilds:
   '@prisma/client': true
   '@prisma/engines': true
