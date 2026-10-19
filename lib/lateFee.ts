@@ -159,20 +159,36 @@ export function diasParaCalculo(diasReais: number): number {
   return Math.min(diasReais, TETO_DIAS_CALCULO_AUTOMATICO)
 }
 
+type DatasDeDevolucao = { returnRequestedAt?: Date | null; returnedAt?: Date | null }
+
 /**
- * Atraso a cobrar AGORA, ou null se não houve. Devolvida → congela na devolução
- * e sem teto (como a reemissão do cron); ainda com o locatário → corre até
- * `agora`, com o teto de 30 dias. Usado pela cobrança sob demanda do locatário.
+ * Até quando o atraso corre: a devolução (`returnRequestedAt` é quando o
+ * locatário devolveu, `returnedAt` quando o locador confirmou — vale o
+ * primeiro), ou `agora` se o item ainda não voltou.
+ */
+export function fimDoAtrasoDe(b: DatasDeDevolucao, agora: Date): Date {
+  return b.returnRequestedAt ?? b.returnedAt ?? agora
+}
+
+/**
+ * Atraso a cobrar, ou null se não houve. ÚNICO lugar da regra
+ * fim → houveAtraso → dias (cron, admin e cobrança sob demanda do locatário).
+ *
+ * `aplicarTeto` (padrão: só enquanto o item ainda não voltou): o teto de 30 dias
+ * existe para a multa não ser recalculada todo dia com o item fora. Depois da
+ * devolução o devido é o atraso real (45 dias = 45 dias), e o admin também
+ * calcula sem teto — é o único caminho que passa dos 30.
  */
 export function atrasoParaCobrar(
-  b: { endDate: Date; returnRequestedAt: Date | null; returnedAt: Date | null },
+  b: { endDate: Date } & DatasDeDevolucao,
   agora: Date,
+  opcoes: { aplicarTeto?: boolean } = {},
 ): { fimDoAtraso: Date; dias: number } | null {
-  const devolvida   = b.returnRequestedAt ?? b.returnedAt
-  const fimDoAtraso = devolvida ?? agora
-  if (!houveAtraso(b.endDate, fimDoAtraso)) return null
-  const diasReais = diasDeAtraso(b.endDate, fimDoAtraso)
-  return { fimDoAtraso, dias: devolvida ? diasReais : diasParaCalculo(diasReais) }
+  const fim = fimDoAtrasoDe(b, agora)
+  if (!houveAtraso(b.endDate, fim)) return null
+  const diasReais   = diasDeAtraso(b.endDate, fim)
+  const aplicarTeto = opcoes.aplicarTeto ?? (b.returnRequestedAt ?? b.returnedAt) == null
+  return { fimDoAtraso: fim, dias: aplicarTeto ? diasParaCalculo(diasReais) : diasReais }
 }
 
 export type ResultadoCobranca =
