@@ -57,6 +57,17 @@ export type BookingParaCobranca = {
 export const TETO_DIAS_CALCULO_AUTOMATICO = 30
 
 /**
+ * Quantos dias depois da devolução o cron ainda REEMITE a cobrança (e manda
+ * e-mail) de uma multa não paga.
+ *
+ * 🪤 Sem teto, cada sessão expirada (24h) gerava novo e-mail "Taxa de atraso"
+ * para sempre: pedido do Thiago, 19/10 — devolução confirmada em 21/09 e
+ * e-mails de cobrança ainda chegando em 09, 11, 13 e 15/10. Passado o prazo, a
+ * dívida segue registrada e só o admin a reemite (`recalcular_taxa_atraso`).
+ */
+export const DIAS_MAX_REEMISSAO_APOS_DEVOLUCAO = 7
+
+/**
  * Dias de atraso — inteiro, mínimo 1.
  *
  * 🪤 `referencia` é o que faz a multa PARAR de crescer: enquanto o item não

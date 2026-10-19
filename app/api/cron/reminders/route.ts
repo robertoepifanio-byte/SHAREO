@@ -17,6 +17,7 @@ import { getStripe } from "@/lib/stripe"
 import {
   emitirCobrancaTaxaAtraso, precisaCobrar, diasDeAtraso, diasParaCalculo,
   houveAtraso, taxaDeAtrasoQuitada, TETO_DIAS_CALCULO_AUTOMATICO,
+  DIAS_MAX_REEMISSAO_APOS_DEVOLUCAO,
 } from "@/lib/lateFee"
 
 export const runtime = "nodejs"
@@ -311,6 +312,11 @@ export async function GET(req: NextRequest) {
         `dentro do prazo (${b.endDate.toISOString().slice(0, 10)}) — não havia atraso`,
       )
       sent.push(`late_fee:zerada:${b.id}`)
+      return
+    }
+
+    // Janela de reemissão esgotada: para de reenviar e-mail de cobrança.
+    if (today.getTime() - fimDoAtraso.getTime() > DIAS_MAX_REEMISSAO_APOS_DEVOLUCAO * 86_400_000) {
       return
     }
 
