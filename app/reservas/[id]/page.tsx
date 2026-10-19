@@ -10,6 +10,7 @@ import { BookingActions }      from "./_BookingActions"
 import { ReviewForm }          from "./_ReviewForm"
 import { PayButton }           from "@/components/bookings/PayButton"
 import { ExtensionPayButton }  from "@/components/bookings/ExtensionPayButton"
+import { LateFeePayButton }    from "@/components/bookings/LateFeePayButton"
 import { ContractBanner }      from "./_ContractBanner"
 import { CheckInOut }          from "./_CheckInOut"
 import { BookingProgressBar }  from "@/components/booking/BookingProgressBar"
@@ -703,6 +704,11 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
                       : <>Quando o locatário pagar, você recebe <strong>{formatPrice(taxaSplit.ownerNetAmount)}</strong> do valor da taxa</>},
                     já descontada a taxa da plataforma de {feeRateLabel}%.
                   </p>
+                )}
+                {/* Só o locatário paga; reserva cancelada não tem multa a cobrar.
+                    O valor cobrado é recalculado no servidor. */}
+                {isBorrower && !taxaQuitada && booking.status !== "CANCELLED" && (
+                  <LateFeePayButton bookingId={booking.id} amount={taxaAtraso} />
                 )}
               </div>
             </div>
