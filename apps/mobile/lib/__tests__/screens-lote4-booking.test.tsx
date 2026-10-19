@@ -427,6 +427,29 @@ describe("Prazo encerrado — coerência com a taxa de atraso", () => {
     expect(screen.queryByText("Taxa de atraso aplicada")).toBeNull()
   })
 
+  it("locatário com multa a pagar vê o botão 'Pagar taxa de atraso'", async () => {
+    setApiFetch({ status: "RETURNED", lateFeeAmount: 4500 })
+    wrap(<BookingDetailScreen />)
+    await waitFor(() => expect(screen.getByText(/Pagar taxa de atraso \(R\$\s45,00\)/)).toBeTruthy(), { timeout: 4000 })
+  })
+
+  it("sem botão: multa já paga", async () => {
+    setApiFetch({ status: "COMPLETED", lateFeeAmount: 4500, lateFeePaid: true })
+    wrap(<BookingDetailScreen />)
+    await waitFor(() => expect(screen.getByText("Taxa de atraso paga")).toBeTruthy())
+    expect(screen.queryByText(/Pagar taxa de atraso/)).toBeNull()
+  })
+
+  it("para o locador não há botão de pagar a multa", async () => {
+    mockAuthUserId   = "user-owner"
+    mockAuthUserName = "Carlos Proprietário"
+    setApiFetch({ status: "RETURNED", lateFeeAmount: 4500 })
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Devolução em andamento")
+    await waitFor(() => expect(screen.getByText("Taxa de atraso aplicada")).toBeTruthy())
+    expect(screen.queryByText(/Pagar taxa de atraso/)).toBeNull()
+  })
+
   it("para o locador, o aviso de prazo encerrado não manda ele devolver", async () => {
     mockAuthUserId   = "user-owner"
     mockAuthUserName = "Carlos Proprietário"

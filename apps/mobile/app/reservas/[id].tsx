@@ -19,6 +19,7 @@ import { formatPickupAddress } from "@/lib/ownerAddress"
 import { deriveBookingHistory } from "@/lib/bookingHistory"
 import { usePlatformConfig } from "@/lib/platformConfig"
 import { PayButton } from "@/components/bookings/PayButton"
+import { LateFeePayButton } from "@/components/bookings/LateFeePayButton"
 
 interface BookingDetail {
   id:            string
@@ -1000,6 +1001,11 @@ export default function BookingDetailScreen() {
                     : <>Quando o locatário pagar, você recebe <Text style={{ fontWeight: "700" }}>{fmt(taxaSplit.ownerNetAmount)}</Text> do valor da taxa</>}
                   {`, já descontada a taxa da plataforma de ${feeRateLabel}%.`}
                 </Text>
+              )}
+              {/* Pagar a multa — fonte: app/reservas/[id]/page.tsx (LateFeePayButton).
+                  Só o locatário; reserva cancelada não tem multa a cobrar. */}
+              {isBorrower && !taxaQuitada && booking.status !== "CANCELLED" && (
+                <LateFeePayButton bookingId={booking.id} amount={taxaAtraso} />
               )}
             </View>
           </View>
