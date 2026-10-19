@@ -143,6 +143,41 @@ describe("cron de lembretes — cobrança real fechada não some em silêncio", 
   })
 })
 
+describe("cron de lembretes — reemissão de multa em reserva já devolvida tem prazo", () => {
+  const DEVOLVIDA = {
+    ...BOOKING_BASE,
+    status: "COMPLETED",
+    lateFeePaymentIntentId: null,
+    returnedAt: null,
+  }
+
+  it("🪤 devolvida há mais de 7 dias: NÃO reemite nem manda e-mail de cobrança (pedido do Thiago, 19/10)", async () => {
+    mockQueries({
+      // Hoje é 13/09; prazo 25/08, devolvida em 05/09 (houve atraso) = 8 dias atrás.
+      multasEmAberto: [{
+        ...DEVOLVIDA,
+        endDate: new Date("2026-08-25T00:00:00Z"),
+        returnRequestedAt: new Date("2026-09-05T12:00:00Z"),
+      }],
+    })
+
+    const body = await (await GET(req())).json()
+
+    expect(body.ids).not.toContainEqual(expect.stringContaining("late_fee"))
+  })
+
+  it("devolvida há poucos dias: ainda reemite a cobrança", async () => {
+    mockQueries({
+      // Devolvida em 10/09 = 3 dias atrás, com 5 dias de atraso (prazo 05/09).
+      multasEmAberto: [{ ...DEVOLVIDA, returnRequestedAt: new Date("2026-09-10T12:00:00Z") }],
+    })
+
+    const body = await (await GET(req())).json()
+
+    expect(body.ids).toContain(`late_fee:reemitida:${BOOKING_BASE.id}`)
+  })
+})
+
 describe("cron de lembretes — não avisa atraso de quem já pagou a multa", () => {
   it("NÃO envia o lembrete quando a multa já foi paga (lateFeePaymentIntentId preenchido)", async () => {
     mockQueries({
