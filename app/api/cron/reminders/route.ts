@@ -15,9 +15,8 @@ import {
 import { getLateFeeMultiplier, calcLateFee } from "@/lib/platform-config"
 import { getStripe } from "@/lib/stripe"
 import {
-  emitirCobrancaTaxaAtraso, precisaCobrar, diasDeAtraso, diasParaCalculo,
-  houveAtraso, taxaDeAtrasoQuitada, TETO_DIAS_CALCULO_AUTOMATICO,
-  DIAS_MAX_REEMISSAO_APOS_DEVOLUCAO,
+  emitirCobrancaTaxaAtraso, precisaCobrar, diasDeAtraso, diasParaCalculo, fimDoAtrasoDe, atrasoParaCobrar,
+  taxaDeAtrasoQuitada, TETO_DIAS_CALCULO_AUTOMATICO, DIAS_MAX_REEMISSAO_APOS_DEVOLUCAO,
 } from "@/lib/lateFee"
 
 export const runtime = "nodejs"
@@ -279,7 +278,7 @@ export async function GET(req: NextRequest) {
     // concluída aumentar todo dia, para sempre, enquanto não fosse paga.
     // `returnRequestedAt` é quando o locatário devolveu; `returnedAt`, quando o
     // locador confirmou. O atraso termina no primeiro.
-    const fimDoAtraso = b.returnRequestedAt ?? b.returnedAt ?? today
+    const fimDoAtraso = fimDoAtrasoDe(b, today)
 
     // 🪤 A multa gravada pode não corresponder a atraso nenhum. Este caminho
     // confiava no `lateFeeAmount` e nunca perguntava se o atraso existia — em
@@ -289,7 +288,9 @@ export async function GET(req: NextRequest) {
     //
     // Zerar, e não só deixar de cobrar: a multa segue aparecendo na tela do
     // proprietário e do locatário enquanto o campo tiver valor.
-    if (!houveAtraso(b.endDate, fimDoAtraso)) {
+    // Reserva já devolvida: o devido é o atraso real, sem o teto de 30 dias.
+    const atraso = atrasoParaCobrar(b, today, { aplicarTeto: false })
+    if (!atraso) {
       // 🪤 Zerar o valor sem matar a cobrança deixaria um link VIVO e pagável
       // de uma multa que a plataforma acabou de reconhecer como indevida —
       // dinheiro entrando por engano, com estorno manual depois.
@@ -320,13 +321,12 @@ export async function GET(req: NextRequest) {
       return
     }
 
-    const diasAtraso = diasDeAtraso(b.endDate, fimDoAtraso)
     try {
       const r = await emitirCobrancaTaxaAtraso(
         b,
         bookingItemsLabel(b.item.title, b._count.bookingItems || 1),
-        calcLateFee(b.dailyPrice, lateFeeMultiplier, diasAtraso),
-        diasAtraso,
+        calcLateFee(b.dailyPrice, lateFeeMultiplier, atraso.dias),
+        atraso.dias,
         // Contado ate a devolucao: o atraso terminou quando o item voltou.
         fimDoAtraso,
       )
