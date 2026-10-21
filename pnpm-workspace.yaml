@@ -18,23 +18,31 @@ overrides:
   # cookie: override removido — @supabase/ssr subiu p/ ^0.12.4 (SEC-MAJ-04), que
   # já puxa cookie ^1.0.2 (corrigido) nativamente. Não precisa mais forçar.
   # brace-expansion (GHSA-mh99-v99m-4gvg / GHSA-rgw5-rvv9-x895) — cópia 1.1.14
-  # via minimatch@3 (eslint/jest, dev). Escopado à linha 1.x p/ não colidir com
-  # as cópias 2.x/5.x (que já estão em versão corrigida).
-  "brace-expansion@1": "^1.1.18"
+  # via minimatch@3 (eslint/jest, dev). Um override POR MAJOR (1/2/5) — um piso
+  # único arrastaria as linhas entre si.
+  # 2026-10-21: GHSA-6j4f / GHSA-qhr7 / GHSA-q2hr (ReDoS) — pisos 1.1.21 e 2.1.7;
+  # a 2.1.4 vem de minimatch@5/9 (glob em build/dev). O @5 fica mais abaixo.
+  "brace-expansion@1": "^1.1.21"
+  "brace-expansion@2": "^2.1.7"
   # sharp — cópia que o next puxa p/ otimização de imagem (next/image, roda em
   # produção de verdade). Alinha com a dep direta que já declaramos.
   # 2026-09-10: GHSA libheif (0.35.2 já era vulnerável) — subiu p/ 0.35.4.
-  sharp: "^0.35.4"
+  # 2026-10-21: GHSA-wq5f-xc86-pv6w — subiu p/ 0.35.5.
+  sharp: "^0.35.5"
   # fast-uri (build web via ajv/webpack do @sentry + expo) — patch folha.
   # 2026-09-10: 3.1.5 tinha SSRF/host-confusion (GHSA várias) — subiu p/ 3.1.6+.
-  fast-uri: "^3.1.7"
+  # 2026-10-21: GHSA-hrr3-gc8f-f4qj — piso 3.1.8.
+  fast-uri: "^3.1.8"
   # form-data (dev/test, jsdom/jest) — patch folha.
   form-data: "^4.0.6"
   # ip-address (dev, lighthouse/puppeteer) — patch folha.
-  ip-address: "^10.3.1"
-  # js-yaml — cópia 4.1.1 do eslint (dev). Escopado: a 3.15.1 do jest usa API v3
-  # (safeLoad) e não pode ir p/ v4; a 4.3.1 do expo é interna do mobile.
-  "@eslint/eslintrc>js-yaml": "^4.3.1"
+  # 2026-10-21: GHSA-2vr4 / GHSA-rpw4 / GHSA-j6r3 — piso 10.7.1.
+  ip-address: "^10.7.1"
+  # js-yaml (GHSA-2883-xcg3-v3hh, 2026-10-21) — escopado POR MAJOR: a 3.x do
+  # jest (istanbul) usa API v3 (safeLoad) e não pode ir p/ v4. Ambas são patch:
+  # 3.15.1 → 3.15.2 (jest, dev) e 4.3.1 → 4.3.2 (eslint dev + @expo/xcpretty).
+  "js-yaml@3": "^3.15.2"
+  "js-yaml@4": "^4.3.2"
   # postcss — cópia 8.4.31 que o next embute (build CSS web/campanha). Escopado
   # p/ não tocar a 8.4.49 do metro (mobile build).
   "next>postcss": "^8.5.26"
@@ -51,9 +59,10 @@ overrides:
   # arrastar nada que venha a pedir 4.x/5.x.
   "nanoid@3": "^3.3.18"
   # brace-expansion (GHSA-v6h2-p8h4-qcjw) — cópia 5.0.6 via minimatch@10.2.5;
-  # a 5.0.9 (corrigida) já vinha por minimatch@10.2.6. Escopado ao major 5:
-  # a linha 1.x tem override próprio acima e a 2.x já está corrigida.
-  "brace-expansion@5": "^5.0.9"
+  # a 5.0.9 (corrigida) já vinha por minimatch@10.2.6. Escopado ao major 5
+  # (as linhas 1.x e 2.x têm override próprio acima).
+  # 2026-10-21: GHSA-q2hr-2g5m-vwhr — piso 5.0.12 (já presente via minimatch@10.2.6).
+  "brace-expansion@5": "^5.0.12"
 
   # ── Triagem Dependabot 2026-08-20, 2ª leva ─────────────────────────────────
   # Os dois alertas restantes que TÊM patch e não exigem major. Os outros 6
@@ -81,6 +90,30 @@ overrides:
   # o `pnpm audit --audit-level=critical` do CI em todo PR. Remover quando o
   # ts-jest subir sozinho.
   handlebars: "^4.7.10"
+
+  # ── Triagem Dependabot 2026-10-21 ──────────────────────────────────────────
+  # Todos patch dentro da mesma linha. Ficaram de fora (sem patch ou só com
+  # major): image-size, extract-zip, node-forge, deepmerge-ts, decode-uri-component,
+  # sprintf-js, uuid, @opentelemetry/instrumentation-* (lighthouse) e a GHSA-rj75
+  # do postcss-selector-parser.
+  #
+  # @xmldom/xmldom — 0.8.14 via @expo/plist e 0.9.11 via plist (xcode): prebuild
+  # do Expo, lê o Info.plist do próprio projeto. Um override por linha 0.x.
+  "@xmldom/xmldom@0.8": "^0.8.15"
+  "@xmldom/xmldom@0.9": "^0.9.12"
+  # undici (GHSA-rfgv / GHSA-3wwx / GHSA-r53p) e compression (GHSA-vc2v) — via
+  # @expo/cli (dev server do Metro, máquina do dev). Patch folha.
+  "undici@6": "^6.28.1"
+  compression: "^1.8.2"
+  # source-map-js (GHSA-68fv-2mgg-jv7q) — via postcss (build CSS web/campanha).
+  source-map-js: "^1.2.2"
+  # browserslist (GHSA-73wf-gq98-2v4g) — só a cópia 4.28.2 do autoprefixer
+  # (build CSS) é vulnerável; as 4.28.8/4.29.x já estão corrigidas. Sobe junto
+  # a baseline-browser-mapping 2.10.x (GHSA-w5vr-8v7q-w6rv).
+  "browserslist@<4.28.7": "^4.28.7"
+  # postcss-selector-parser (GHSA-w9m9-85wc-3x92) — 6.1.2 via tailwindcss 3
+  # (build CSS). A GHSA-rj75 exige 7.x, que o tailwind 3 não aceita: fica.
+  "postcss-selector-parser@6": "^6.1.3"
 
 allowBuilds:
   '@prisma/client': true
