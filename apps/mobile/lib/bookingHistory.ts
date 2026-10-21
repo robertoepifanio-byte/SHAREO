@@ -1,3 +1,4 @@
+// Fonte: lib/bookingHistory.ts
 /**
  * bookingHistory.ts (mobile) — espelho do lib/bookingHistory.ts do projeto web.
  * Mantido separado porque apps/mobile é um projeto Expo independente com seu
@@ -22,7 +23,6 @@ interface BookingForHistory {
   returnRequestedAt:    Date | null
   returnedAt:           Date | null
   cancelledAt:          Date | null
-  cancelReason:         string | null
   extensionRequestedAt: Date | null
   extensionRespondedAt: Date | null
   extensionStatus:      string | null
