@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition, useMemo, useEffect, useRef } from "react"
+import { useState, useTransition, useMemo, useEffect, useRef, type KeyboardEvent } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { calcBookingTotal } from "@/lib/pricing"
@@ -146,6 +146,17 @@ export function PriceCalc({
     if (m === "daily") setNumDays(1)
   }
 
+  // Contrato de teclado do role="tablist": setas trocam a aba e levam o foco junto
+  // (só a aba ativa fica no Tab — roving tabindex).
+  function handleTabKey(e: KeyboardEvent<HTMLDivElement>) {
+    const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0
+    if (!step) return
+    e.preventDefault()
+    const next = (availableModes.indexOf(mode) + step + availableModes.length) % availableModes.length
+    handleModeChange(availableModes[next])
+    e.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus()
+  }
+
   function handleStartChange(val: string) {
     setStartDate(val)
     setError("")
@@ -233,7 +244,7 @@ export function PriceCalc({
         </div>
       ) : (
         /* Múltiplas modalidades — tabs clicáveis com preço */
-        <div className="mb-5 flex gap-2">
+        <div role="tablist" aria-label="Modalidade de locação" className="mb-5 flex gap-2" onKeyDown={handleTabKey}>
           {availableModes.map((m) => {
             const { label, price, unit } = MODE_PRICE[m]
             const active = mode === m
@@ -241,6 +252,9 @@ export function PriceCalc({
               <button
                 key={m}
                 type="button"
+                role="tab"
+                aria-selected={active}
+                tabIndex={active ? 0 : -1}
                 onClick={() => handleModeChange(m)}
                 className={`flex flex-1 flex-col items-center rounded-xl border py-3 px-2 transition-all ${
                   active
@@ -468,7 +482,7 @@ export function PriceCalc({
       )}
 
       {error && (
-        <div className="mb-3 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
+        <div role="alert" className="mb-3 rounded-lg bg-destructive/10 px-3 py-2 text-xs text-destructive">
           <p>{error}</p>
           {needsComplete && (
             <Link

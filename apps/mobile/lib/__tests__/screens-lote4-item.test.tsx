@@ -12,7 +12,7 @@
 // componente quebrará o CI e sinaliza regressão de transcrição.
 
 import React from "react"
-import { render, screen, waitFor } from "@testing-library/react-native"
+import { render, screen, waitFor, fireEvent } from "@testing-library/react-native"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 import { useRentalCart } from "@/lib/rentalCart"
@@ -427,5 +427,28 @@ describe("Grid 'Você também pode gostar' — rótulo e filtro", () => {
     // item-nível aparece UMA vez (em ownerItems) — nunca duplicado em similarItems
     const all = screen.queryAllByTestId("itemcard-item-nível")
     expect(all).toHaveLength(1)
+  })
+})
+
+// ── Tabs de modalidade — semântica (EVAL-P1-01, espelho do _PriceCalc.tsx) ─────
+
+describe("Tabs de modalidade — tablist/tab com selected", () => {
+  it("modalidades são tabs dentro de um tablist e a escolhida fica selected", async () => {
+    mockDefault({ pricePerWeek: 9000 })
+    wrap(<ItemDetailScreen />)
+    await waitForItemLoad()
+
+    // getByRole só casa elementos `accessible`; marcar o container assim
+    // agruparia as abas num único foco — por isso o tablist é lido pelo rótulo.
+    expect(screen.getByLabelText("Modalidade de locação").props.accessibilityRole).toBe("tablist")
+    const diario  = screen.getByRole("tab", { name: "Diário" })
+    const semanal = screen.getByRole("tab", { name: "Semanal" })
+    expect(diario.props.accessibilityState).toEqual({ selected: true })
+    expect(semanal.props.accessibilityState).toEqual({ selected: false })
+
+    fireEvent.press(semanal)
+    await waitFor(() =>
+      expect(screen.getByRole("tab", { name: "Semanal" }).props.accessibilityState).toEqual({ selected: true })
+    )
   })
 })

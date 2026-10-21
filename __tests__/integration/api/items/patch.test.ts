@@ -15,6 +15,7 @@
 import { NextRequest } from "next/server"
 import { PUT }    from "@/app/api/items/[id]/route"
 import { POST as POST_IMAGE, DELETE as DELETE_IMAGE } from "@/app/api/items/[id]/images/route"
+import { geocodeItem } from "@/lib/geocodeItem"
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -53,6 +54,14 @@ jest.mock("@/lib/auth", () => ({
 
 jest.mock("@/lib/geocodeItem", () => ({
   geocodeItem: jest.fn().mockResolvedValue(undefined),
+}))
+
+// Por padrão executa o callback na hora (o DELETE de foto depende disso); o
+// teste do EVAL-P1-02 segura o callback para provar que o geocode passa por ele.
+const mockAfter = jest.fn((cb: () => unknown) => { void cb() })
+jest.mock("next/server", () => ({
+  ...jest.requireActual("next/server"),
+  after: (cb: () => unknown) => mockAfter(cb),
 }))
 
 // file-type é ESM puro — o Jest não transforma node_modules por padrão
@@ -317,5 +326,30 @@ describe("Regra de status DRAFT/AVAILABLE por fotos", () => {
         })
       )
     })
+  })
+})
+
+// ---------------------------------------------------------------------------
+// EVAL-P1-02 — regeocodificação no PUT não pode ser promessa solta
+// ---------------------------------------------------------------------------
+describe("PUT /api/items/[id] — mudança de endereço regeocodifica via after()", () => {
+  it("geocodeItem só roda dentro do callback de after(), nunca solto na resposta", async () => {
+    mockItemFindFirst.mockResolvedValue({ id: ITEM_ID, ownerId: OWNER_ID })
+    mockItemUpdate.mockResolvedValue({
+      id: ITEM_ID, title: "Furadeira", status: "AVAILABLE", updatedAt: new Date(), pricePerDay: 5000,
+    })
+    mockItemFindUnique.mockResolvedValue({ city: "Recife", state: "PE", neighborhood: "Boa Viagem" })
+    mockAfter.mockImplementationOnce(() => undefined)
+
+    const res = await PUT(makePutReq({ city: "Recife" }), makeParams())
+    expect(res.status).toBe(200)
+
+    // Drena a fila de microtasks: uma promessa solta já teria chamado o geocode aqui.
+    await new Promise((r) => setImmediate(r))
+    expect(geocodeItem).not.toHaveBeenCalled()
+    expect(mockAfter).toHaveBeenCalledTimes(1)
+
+    await mockAfter.mock.calls[0][0]()
+    expect(geocodeItem).toHaveBeenCalledWith(ITEM_ID, { city: "Recife", state: "PE", neighborhood: "Boa Viagem" })
   })
 })

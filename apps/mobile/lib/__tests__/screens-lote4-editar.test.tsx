@@ -14,6 +14,7 @@ import React from "react"
 import { render, screen, waitFor } from "@testing-library/react-native"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { SafeAreaProvider } from "react-native-safe-area-context"
+import { StyleSheet } from "react-native"
 
 import EditarAnuncioScreen from "@/app/itens/[id]/editar"
 
@@ -353,5 +354,24 @@ describe("EditarAnuncioScreen — pré-preenchimento verbatim do item", () => {
     await waitFor(() =>
       expect(screen.getByText("Centro, São Paulo, SP")).toBeTruthy()
     )
+  })
+})
+
+// ── Sugestões de preço — tamanho mínimo (EVAL-P1-07, espelho do ItemForm.tsx) ──
+
+describe("EditarAnuncioScreen — sugestões de preço com no mínimo 12px", () => {
+  it("'Sugerido: R$', a nota de desconto e 'Aplicar (…)' não ficam abaixo de 12px", async () => {
+    wrap(<EditarAnuncioScreen />)
+    await waitForFormReady()
+
+    const textos = [
+      ...screen.getAllByText(/Sugerido: R\$/),
+      ...screen.getAllByText(/Desconto para locações/),
+      ...screen.getAllByText(/^(Aplicar|Recalcular) \(/),
+    ]
+    expect(textos.length).toBeGreaterThanOrEqual(4)
+    for (const t of textos) {
+      expect(StyleSheet.flatten(t.props.style).fontSize).toBeGreaterThanOrEqual(12)
+    }
   })
 })
