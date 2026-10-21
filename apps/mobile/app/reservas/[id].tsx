@@ -396,7 +396,6 @@ export default function BookingDetailScreen() {
     returnRequestedAt:    booking.returnRequestedAt    ? new Date(booking.returnRequestedAt)    : null,
     returnedAt:           booking.returnedAt           ? new Date(booking.returnedAt)           : null,
     cancelledAt:          booking.cancelledAt          ? new Date(booking.cancelledAt)          : null,
-    cancelReason:         booking.cancelReason,
     extensionRequestedAt: booking.extensionRequestedAt ? new Date(booking.extensionRequestedAt) : null,
     extensionRespondedAt: booking.extensionRespondedAt ? new Date(booking.extensionRespondedAt) : null,
     extensionStatus:      booking.extensionStatus,

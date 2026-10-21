@@ -10,7 +10,6 @@ function makeBooking(overrides: Partial<Parameters<typeof deriveBookingHistory>[
     returnRequestedAt:    null,
     returnedAt:           null,
     cancelledAt:          null,
-    cancelReason:         null,
     extensionRequestedAt: null,
     extensionRespondedAt: null,
     extensionStatus:      null,
@@ -59,7 +58,6 @@ describe("deriveBookingHistory (mobile)", () => {
       makeBooking({
         respondedAt:  at,
         cancelledAt:  at,
-        cancelReason: "Item indisponível",
         status:       "CANCELLED",
       }),
     )

@@ -202,7 +202,6 @@ export default async function BookingDetailPage({ params, searchParams }: Props)
               returnRequestedAt:    booking.returnRequestedAt,
               returnedAt:           booking.returnedAt,
               cancelledAt:          booking.cancelledAt,
-              cancelReason:         booking.cancelReason,
               extensionRequestedAt: booking.extensionRequestedAt,
               extensionRespondedAt: booking.extensionRespondedAt,
               extensionStatus:      booking.extensionStatus ?? null,
