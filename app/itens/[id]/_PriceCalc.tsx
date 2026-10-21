@@ -147,14 +147,15 @@ export function PriceCalc({
   }
 
   // Contrato de teclado do role="tablist": setas trocam a aba e levam o foco junto
-  // (só a aba ativa fica no Tab — roving tabindex).
-  function handleTabKey(e: KeyboardEvent<HTMLDivElement>) {
+  // (só a aba ativa fica no Tab — roving tabindex). O handler fica em cada aba,
+  // não no tablist: o tablist não é focável (jsx-a11y/interactive-supports-focus).
+  function handleTabKey(e: KeyboardEvent<HTMLButtonElement>) {
     const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0
     if (!step) return
     e.preventDefault()
     const next = (availableModes.indexOf(mode) + step + availableModes.length) % availableModes.length
     handleModeChange(availableModes[next])
-    e.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus()
+    e.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus()
   }
 
   function handleStartChange(val: string) {
@@ -244,7 +245,7 @@ export function PriceCalc({
         </div>
       ) : (
         /* Múltiplas modalidades — tabs clicáveis com preço */
-        <div role="tablist" aria-label="Modalidade de locação" className="mb-5 flex gap-2" onKeyDown={handleTabKey}>
+        <div role="tablist" aria-label="Modalidade de locação" className="mb-5 flex gap-2">
           {availableModes.map((m) => {
             const { label, price, unit } = MODE_PRICE[m]
             const active = mode === m
@@ -255,6 +256,7 @@ export function PriceCalc({
                 role="tab"
                 aria-selected={active}
                 tabIndex={active ? 0 : -1}
+                onKeyDown={handleTabKey}
                 onClick={() => handleModeChange(m)}
                 className={`flex flex-1 flex-col items-center rounded-xl border py-3 px-2 transition-all ${
                   active
