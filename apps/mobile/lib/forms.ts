@@ -1,4 +1,4 @@
-// Fonte: lib/forms/masks.ts + lib/forms/address.ts (site)
+// Fonte: lib/forms/masks.ts + lib/forms/address.ts + lib/validations/auth.ts (site)
 //
 // Espelho dos helpers de formulário do site. Mesmo motivo de lib/legalConfig.ts:
 // o app não importa do pacote web (`@/*` do apps/mobile/tsconfig.json resolve só
@@ -8,6 +8,19 @@
 // copiados DENTRO das telas (app/perfil/endereco.tsx, app/perfil/editar.tsx).
 // Cada tela nova que pedisse endereço fazia a próxima cópia — e foi assim que a
 // captação de leads acabou com um formulário diferente do site.
+
+/**
+ * Espelha emailField() de lib/validations/auth.ts — o MESMO critério do servidor:
+ * trim + a regex do `.email()` do zod 3.25 (copiada de zod/v3/types.js). O teste
+ * antigo, `includes("@")`, aceitava "a@". Regex em vez de importar o zod: nenhuma
+ * outra tela do app usa zod, e ele entraria inteiro no bundle por uma linha.
+ * forms-email.test.ts compara esta regex com o zod — se o zod mudar, reprova.
+ */
+const EMAIL_RE = /^(?!\.)(?!.*\.\.)([A-Z0-9_'+\-.]*)[A-Z0-9_+-]@([A-Z0-9][A-Z0-9-]*\.)+[A-Z]{2,}$/i
+
+export function isValidEmail(value: string): boolean {
+  return EMAIL_RE.test(value.trim())
+}
 
 /** Espelha maskCPF de lib/forms/masks.ts. Formata XXX.XXX.XXX-XX. */
 export function maskCPF(value: string): string {

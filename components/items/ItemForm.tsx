@@ -786,7 +786,7 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
               const matches      = toCents(pricePerWeek) === suggestCents
               return (
                 <div className="flex flex-col gap-0.5">
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     Sugerido: R$ {suggestStr}
                     <span className="ml-1 opacity-70">({weeklyMultiplier}× diária{basedOnDaily ? "" : " mín."}) — Desconto para locações ≥ 7 dias</span>
                   </p>
@@ -795,7 +795,7 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
                       type="button"
                       onClick={autoWeekly}
                       disabled={loading}
-                      className="self-start text-[11px] text-brand hover:underline disabled:opacity-50"
+                      className="self-start text-xs text-brand hover:underline disabled:opacity-50"
                     >
                       {toCents(pricePerWeek) > 0 ? "Recalcular" : "Aplicar"} ({weeklyMultiplier}× diária = R$ {suggestStr})
                     </button>
@@ -826,7 +826,7 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
               const matches      = toCents(pricePerMonth) === suggestCents
               return (
                 <div className="flex flex-col gap-0.5">
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     Sugerido: R$ {suggestStr}
                     <span className="ml-1 opacity-70">({monthlyMultiplier}× diária{basedOnDaily ? "" : " mín."}) — Desconto para locações ≥ 30 dias</span>
                   </p>
@@ -835,7 +835,7 @@ export function ItemForm({ mode, initialData, weeklyMultiplier = 3, monthlyMulti
                       type="button"
                       onClick={autoMonthly}
                       disabled={loading}
-                      className="self-start text-[11px] text-brand hover:underline disabled:opacity-50"
+                      className="self-start text-xs text-brand hover:underline disabled:opacity-50"
                     >
                       {toCents(pricePerMonth) > 0 ? "Recalcular" : "Aplicar"} ({monthlyMultiplier}× diária = R$ {suggestStr})
                     </button>

@@ -328,17 +328,17 @@ do Raimundo. Ver `docs/juridico/pauta-promessas-remanescentes-2026-09-02.md`.
 
 ### 🟠 P1 — melhorias incrementais (antes de escalar aquisição)
 
-> Não reverificados em 23/08 — estado conforme apurado em 19/08.
+> Não reverificados em 23/08 — estado conforme apurado em 19/08. **P1-01, -02, -06 e -07 reverificados contra o código em 21/10/2026** (o status de cada um diz o que achou).
 
 | ID | Achado | Local |
 |---|---|---|
-| **EVAL-P1-01** | `role="alert"` ausente no erro de reserva + tabs de modalidade sem semântica ARIA (`role="tab"/radiogroup`, `aria-selected`). Corroborado por 2 auditorias. | `_PriceCalc.tsx:448,215` |
-| **EVAL-P1-02** ⚠️verificar | Void promise em `geocodeItem` no PATCH de item (`.then(...)` sem `await`/`after()`) — pode morrer se a lambda congelar. (S14-M-19 resolveu o PATCH `/me`; este é o PATCH de **item**.) | `app/api/items/[id]/route.ts:266-267` |
+| ~~**EVAL-P1-01**~~ | ~~`role="alert"` ausente no erro de reserva + tabs de modalidade sem semântica ARIA (`role="tab"/radiogroup`, `aria-selected`).~~ ✅ **RESOLVIDO em 21/10/2026** (implementado, aguardando verificação no staging) — erro com `role="alert"`; abas em `role="tablist"` + `role="tab"`/`aria-selected`, com setas ←/→ e roving tabindex (o contrato de teclado que o papel `tab` anuncia). Ainda há texto de 10px (site) / 9 (app) dentro das abas — fora deste item. App: abas viraram `accessibilityRole="tablist"/"tab"` (o erro já tinha `alert`). Testes: `PriceCalc-aria.test.tsx`, `screens-lote4-item.test.tsx`. | `_PriceCalc.tsx`, `apps/mobile/app/itens/[id]/index.tsx` |
+| ~~**EVAL-P1-02**~~ | ~~Void promise em `geocodeItem` no PATCH de item (`.then(...)` sem `await`/`after()`) — pode morrer se a lambda congelar.~~ ⚫ **JÁ ESTAVA RESOLVIDO quando foi registrado** — o PUT de item (não há PATCH) usa `after()` desde `287c64cf` (12/06/2026), e o POST também. Em 21/10 ganhou teste-guarda que reprova com promessa solta: `__tests__/integration/api/items/patch.test.ts`. | `app/api/items/[id]/route.ts` |
 | **EVAL-P1-03** | `sort=nearest` sem bbox puxa 500 itens e ordena em JS — degrada com catálogo grande. | `app/itens/page.tsx:181,258` |
 | **EVAL-P1-04** | Seção "Fotos" é a última do formulário (maior motor de conversão) + limite de 3 na UI. (Ver S14-M-15: "3 é dica" — mas a UI faz cap em 3; backend suporta 10-24.) | `ItemForm.tsx:385,956+` |
 | **EVAL-P1-05** | Sem nota (rating) no card da listagem — sinal de confiança removido por trade-off de performance. Denormalizar `avgRating`. | `ItemCard.tsx:121-125` |
-| **EVAL-P1-06** | Validação de e-mail no cliente usa `!email.includes("@")` (aceita `"a@"`). | `RegisterForm.tsx:69` |
-| **EVAL-P1-07** | Textos de sugestão de preço em `text-[11px]` (abaixo do mínimo 12px do DS). | `ItemForm.tsx:694,715-735` |
+| ~~**EVAL-P1-06**~~ | ~~Validação de e-mail no cliente usa `!email.includes("@")` (aceita `"a@"`).~~ ✅ **RESOLVIDO em 21/10/2026** (implementado, aguardando verificação no staging) — cadastro **e** "esqueci a senha" (mesmo `includes("@")`) usam no site `emailField()` de `lib/validations/auth.ts`, o mesmo do servidor; no app, `isValidEmail()` em `apps/mobile/lib/forms.ts` (regex do zod copiada para não trazer o zod ao bundle; `forms-email.test.ts` confere contra o zod). Testes: `auth-forms-email.test.tsx`, `forms-email.test.ts`, `screens-frente-b.test.tsx`. | `RegisterForm.tsx`, `_ForgotPasswordForm.tsx`, `apps/mobile/app/(auth)/register.tsx`, `forgot-password.tsx` |
+| ~~**EVAL-P1-07**~~ | ~~Textos de sugestão de preço em `text-[11px]` (abaixo do mínimo 12px do DS).~~ ✅ **RESOLVIDO em 21/10/2026** (implementado, aguardando verificação no staging) — `text-xs` (12px) no site; `fontSize: 12` em `novo.tsx` e `editar.tsx` do app (a nota de desconto estava em 10). Testes: `ItemForm-sugestao-fonte.test.tsx`, `screens-lote4-editar.test.tsx`. | `ItemForm.tsx`, `apps/mobile/app/itens/novo.tsx`, `apps/mobile/app/itens/[id]/editar.tsx` |
 | ref **SEC-BL2** | `pixKey` do locador em texto claro no banco (enquanto CPF/CNPJ são AES-256-GCM). | `prisma/schema.prisma` |
 | ref **ARQ-A-01/M-04/M-05** | Slugs nas URLs de item + ISR/SSG + `/categoria/[slug]` — pré-requisito de SEO nacional. | ADR-007 |
 

@@ -28,6 +28,7 @@ import Svg, { Path, Circle, Polyline } from "react-native-svg"
 import { useAuth } from "@/lib/auth"
 import { useTheme, type Tokens } from "@/lib/theme"
 import { API_URL } from "@/lib/api"
+import { isValidEmail } from "@/lib/forms"
 import { CONSENT_VERSION, DPO_EMAIL } from "@/lib/legalConfig"
 
 interface FormErrors {
@@ -182,7 +183,7 @@ export default function RegisterScreen() {
   function validate(): FormErrors {
     const errs: FormErrors = {}
     if (!name.trim()) errs.name = "Nome obrigatório"
-    if (!email.includes("@")) errs.email = "E-mail inválido"
+    if (!isValidEmail(email)) errs.email = "E-mail inválido"
     if (password.length < 8) errs.password = "Senha muito curta"
     else if (!/[A-Z]/.test(password)) errs.password = "Precisa de letra maiúscula"
     else if (!/[0-9]/.test(password)) errs.password = "Precisa de número"
