@@ -51,6 +51,7 @@ interface AmbassadorStats {
   totalPaidCents:    number
   payoutEnabled:     boolean
   hasBeenReferred:   boolean
+  ratesBp?:          Record<AmbassadorTier, number> // ausente em API anterior a 10/2026
 }
 
 interface AmbassadorData {
@@ -61,8 +62,14 @@ interface AmbassadorData {
 // ── Funções puras — verbatim de lib/ambassador.ts (funções exportadas) ─────────
 // Replicadas aqui para evitar import de lib do site no bundle mobile.
 
-// TIER_RATES verbatim de _AmbassadorSection.tsx linha 24
-const TIER_RATES: Record<AmbassadorTier, number> = { BRONZE: 2, SILVER: 3, GOLD: 5 }
+// Taxas vêm de stats.ratesBp (config do painel), como em _AmbassadorSection.tsx;
+// o default espelha DEFAULT_AMBASSADOR_RATES_BP para API antiga sem o campo.
+const DEFAULT_RATES_BP: Record<AmbassadorTier, number> = { BRONZE: 200, SILVER: 300, GOLD: 500 }
+
+// formatRatePct — verbatim de lib/ambassador.ts
+function formatRatePct(bp: number): string {
+  return (bp / 100).toLocaleString("pt-BR", { maximumFractionDigits: 2 })
+}
 const TIER_ORDER: AmbassadorTier[] = ["BRONZE", "SILVER", "GOLD"]
 
 // getTierLabel — verbatim de lib/ambassador.ts linha 34
@@ -145,6 +152,7 @@ export default function EmbaixadorScreen() {
   })
 
   const stats        = data?.stats
+  const ratesBp      = stats?.ratesBp ?? DEFAULT_RATES_BP
   // hasConsented: true se o servidor indicou (data) OU se o usuário acabou de consentir nesta sessão
   const hasConsented = consentedLocally || (data?.hasConsented ?? false)
   const showConsent  = !hasConsented
@@ -308,7 +316,7 @@ export default function EmbaixadorScreen() {
                       { color: active ? tierTextColors[t] : tokens.muted, opacity: 0.7 },
                     ]}
                   >
-                    · {TIER_RATES[t]}%
+                    · {formatRatePct(ratesBp[t])}%
                   </Text>
                 </View>
               )
@@ -401,7 +409,7 @@ export default function EmbaixadorScreen() {
                     </Text>
                   </Text>
                   <Text style={[s.progressNext, { color: tokens.muted }]}>
-                    Próximo: {getTierLabel(progress.nextTier)} ({TIER_RATES[progress.nextTier]}%)
+                    Próximo: {getTierLabel(progress.nextTier)} ({formatRatePct(ratesBp[progress.nextTier])}%)
                   </Text>
                 </View>
                 {/* Track da barra */}
