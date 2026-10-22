@@ -8,7 +8,12 @@
  */
 
 import { prisma } from "@/lib/prisma"
-import { getAmbassadorThresholds } from "@/lib/platform-config"
+import {
+  DEFAULT_AMBASSADOR_RATES_BP,
+  getAmbassadorRatesBp,
+  getAmbassadorThresholds,
+  type AmbassadorRatesBp,
+} from "@/lib/platform-config"
 import type { AmbassadorTier, CommissionStatus } from "@prisma/client"
 
 // ─── Tier logic (funções puras — testáveis sem banco) ─────────────────────────
@@ -25,23 +30,24 @@ export function getAmbassadorTier(
 }
 
 /**
- * Basis points por tier: 200 = 2%, 300 = 3%, 500 = 5%.
+ * Basis points por tier. As taxas vêm de PlatformConfig (editadas em
+ * /admin/embaixadores, via getAmbassadorRatesBp); o default é 2/3/5%, alinhado
+ * à arte da campanha em 2026-08-12 (antes: 3/5/7).
  *
- * Valores alinhados à arte da campanha em 2026-08-12 (antes: 3/5/7). A mudança
- * NÃO é retroativa por design: `AmbassadorCommission.tierPercentBp` é snapshot
- * imutável, gravado uma vez no momento da transação e nunca recalculado — logo
- * só comissões novas usam a taxa nova, e nenhum backfill é devido.
- *
- * ⚠️ Esta função é a ÚNICA fonte usada no cálculo. As chaves
- * `ambassadorBronzeRate/SilverRate/GoldRate` que /admin/embaixadores grava em
- * PlatformConfig NÃO são lidas por ninguém (defeito pré-existente): salvar pelo
- * painel não muda comissão alguma. Os defaults do painel foram alinhados a estes
- * números para não exibir uma taxa que a plataforma não pratica.
+ * Mudança de taxa NÃO é retroativa por design: `AmbassadorCommission.tierPercentBp`
+ * é snapshot imutável, gravado uma vez no momento da transação — só comissões
+ * novas usam a taxa nova, e nenhum backfill é devido.
  */
-export function getTierCommissionRateBp(tier: AmbassadorTier): number {
-  if (tier === "GOLD")   return 500
-  if (tier === "SILVER") return 300
-  return 200 // BRONZE
+export function getTierCommissionRateBp(
+  tier:  AmbassadorTier,
+  rates: AmbassadorRatesBp = DEFAULT_AMBASSADOR_RATES_BP,
+): number {
+  return rates[tier]
+}
+
+/** Basis points → "2", "2,5" (percentual exibido nas telas). */
+export function formatRatePct(bp: number): string {
+  return (bp / 100).toLocaleString("pt-BR", { maximumFractionDigits: 2 })
 }
 
 export function getTierLabel(tier: AmbassadorTier | null): string {
@@ -76,6 +82,7 @@ export interface AmbassadorStats {
   totalPaidCents:     number
   payoutEnabled:    boolean
   hasBeenReferred:  boolean
+  ratesBp:          AmbassadorRatesBp // taxas vigentes por tier (config do painel)
 }
 
 interface AmbassadorProfileSummary {
@@ -100,7 +107,7 @@ interface CommissionSummary {
 export async function getAmbassadorStats(userId: string): Promise<AmbassadorStats> {
   const twelveMonthsAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
 
-  const [user, profile, referrals, payoutConfig] = await Promise.all([
+  const [user, profile, referrals, payoutConfig, ratesBp] = await Promise.all([
     prisma.user.findUnique({
       where:  { id: userId },
       select: { referralCode: true, referredById: true },
@@ -122,6 +129,7 @@ export async function getAmbassadorStats(userId: string): Promise<AmbassadorStat
       select:  { id: true, status: true, activatedAt: true },
     }),
     prisma.platformConfig.findUnique({ where: { key: "ambassadorPayoutEnabled" }, select: { value: true } }),
+    getAmbassadorRatesBp(),
   ])
 
   const commissions = profile
@@ -147,6 +155,7 @@ export async function getAmbassadorStats(userId: string): Promise<AmbassadorStat
     totalPaidCents:    profile?.totalCommissionPaidCents ?? 0,
     payoutEnabled:     payoutConfig?.value === "true",
     hasBeenReferred:   !!(user?.referredById),
+    ratesBp,
   }
 }
 
@@ -241,11 +250,13 @@ export async function processAmbassadorOnBookingPaid(bookingId: string): Promise
     },
   })
 
+  // Em sequência de propósito: a 2ª leitura acerta o cache de loadConfig.
   const { silverThreshold, goldThreshold } = await getAmbassadorThresholds()
+  const rates = await getAmbassadorRatesBp()
   const currentTier = getAmbassadorTier(activeCount, silverThreshold, goldThreshold)
   if (!currentTier) return
 
-  const tierPercentBp = getTierCommissionRateBp(currentTier)
+  const tierPercentBp = getTierCommissionRateBp(currentTier, rates)
   const amountCents   = Math.round(booking.platformFeeAmount * tierPercentBp / 10000)
 
   if (amountCents <= 0) return

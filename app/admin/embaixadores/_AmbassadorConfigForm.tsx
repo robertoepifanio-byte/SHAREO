@@ -92,6 +92,12 @@ export function AmbassadorConfigForm({ bronzeRate: b0, silverRate: s0, goldRate:
         </label>
       </div>
 
+      <p className="text-xs text-muted-foreground">
+        As taxas valem para comissões novas e aparecem no painel do embaixador e em
+        /bem-vindo. A home, a landing da campanha e o regulamento continuam exibindo
+        2% · 3% · 5% — mudar aqui não os atualiza.
+      </p>
+
       {msg   && <p className="text-sm text-success">{msg}</p>}
       {error && <p className="text-sm text-destructive">{error}</p>}
 

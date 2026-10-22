@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { copyToClipboard } from "@/lib/copy-to-clipboard"
 import type { AmbassadorStats } from "@/lib/ambassador"
-import { getTierLabel, tierProgress, getAmbassadorTier } from "@/lib/ambassador"
+import { getTierLabel, tierProgress, getAmbassadorTier, formatRatePct } from "@/lib/ambassador"
 import type { AmbassadorTier } from "@prisma/client"
 
 const fmt = (cents: number) =>
@@ -20,8 +20,6 @@ const TIER_ICONS: Record<AmbassadorTier, string> = {
   SILVER: "🥈",
   GOLD:   "🥇",
 }
-
-const TIER_RATES: Record<AmbassadorTier, number> = { BRONZE: 2, SILVER: 3, GOLD: 5 }
 
 const TIER_ORDER: AmbassadorTier[] = ["BRONZE", "SILVER", "GOLD"]
 
@@ -113,7 +111,7 @@ export function AmbassadorSection({ stats: initialStats, hasConsented: initialCo
                 title={active ? "Seu nível atual" : undefined}
               >
                 {TIER_ICONS[t]} {getTierLabel(t)}
-                <span className="opacity-70">· {TIER_RATES[t]}%</span>
+                <span className="opacity-70">· {formatRatePct(stats.ratesBp[t])}%</span>
               </span>
             )
           })}
@@ -168,7 +166,7 @@ export function AmbassadorSection({ stats: initialStats, hasConsented: initialCo
                   Nível atual: <strong>{currentTier ? getTierLabel(currentTier) : "Sem nível"}</strong>
                 </span>
                 <span className="text-muted-foreground">
-                  Próximo: {getTierLabel(progress.nextTier)} ({TIER_RATES[progress.nextTier]}%)
+                  Próximo: {getTierLabel(progress.nextTier)} ({formatRatePct(stats.ratesBp[progress.nextTier])}%)
                 </span>
               </div>
               <div className="h-2 w-full overflow-hidden rounded-full bg-border">

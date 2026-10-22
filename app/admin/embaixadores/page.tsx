@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { hasAdminRole } from "@/lib/auth/admin-guards"
 import { requireAdminPage } from "@/lib/auth/require-admin"
 import { prisma } from "@/lib/prisma"
+import { getAmbassadorRatesBp } from "@/lib/platform-config"
 import { getAmbassadorAdminStats, getTierLabel } from "@/lib/ambassador"
 import { AmbassadorConfigForm } from "./_AmbassadorConfigForm"
 import { formatPrice } from "@/utils/format"
@@ -28,15 +29,12 @@ export default async function AdminEmbaixadoresPage({
   const days   = Math.max(7, Math.min(90, Number(params.period ?? "30")))
   const since  = new Date(Date.now() - days * 24 * 60 * 60 * 1000)
 
-  const [stats, configs, topAmbassadors] = await Promise.all([
+  const [stats, configs, topAmbassadors, rates] = await Promise.all([
     getAmbassadorAdminStats(since),
     prisma.platformConfig.findMany({
       where: {
         key: {
           in: [
-            "ambassadorBronzeRate",
-            "ambassadorSilverRate",
-            "ambassadorGoldRate",
             "ambassadorPayoutEnabled",
           ],
         },
@@ -54,6 +52,7 @@ export default async function AdminEmbaixadoresPage({
         user: { select: { name: true, email: true } },
       },
     }),
+    getAmbassadorRatesBp(),
   ])
 
   const configMap = Object.fromEntries(configs.map((c) => [c.key, c.value]))
@@ -162,13 +161,10 @@ export default async function AdminEmbaixadoresPage({
       {isSuperAdmin && (
         <div className="rounded-xl border border-border bg-surface p-5">
           <h2 className="mb-4 font-semibold text-foreground">Configurações do programa</h2>
-          {/* Defaults espelham getTierCommissionRateBp() — que é quem de fato
-              calcula. Ver o aviso em lib/ambassador.ts: estas chaves de
-              PlatformConfig não são lidas por nenhum cálculo. */}
           <AmbassadorConfigForm
-            bronzeRate={Number(configMap["ambassadorBronzeRate"] ?? "200")}
-            silverRate={Number(configMap["ambassadorSilverRate"] ?? "300")}
-            goldRate={Number(configMap["ambassadorGoldRate"] ?? "500")}
+            bronzeRate={rates.BRONZE}
+            silverRate={rates.SILVER}
+            goldRate={rates.GOLD}
             payoutEnabled={payoutEnabled}
           />
         </div>
