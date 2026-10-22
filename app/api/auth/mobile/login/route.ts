@@ -3,15 +3,10 @@ import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { SignJWT } from "jose"
 import { prisma } from "@/lib/prisma"
+import { authSecretKey } from "@/lib/auth-secret"
 import { LoginSchema } from "@/lib/validations/auth"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 import { checkLoginEmailLimit } from "@/lib/loginRateLimit"
-
-function secret() {
-  const key = process.env.AUTH_SECRET
-  if (!key) throw new Error("AUTH_SECRET not set")
-  return new TextEncoder().encode(key)
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -79,7 +74,7 @@ export async function POST(req: NextRequest) {
       .setProtectedHeader({ alg: "HS256" })
       .setIssuedAt()
       .setExpirationTime("15m")
-      .sign(secret())
+      .sign(authSecretKey())
 
     const refreshToken = await new SignJWT({ sub: user.id, type: "refresh" })
       .setProtectedHeader({ alg: "HS256" })
@@ -87,7 +82,7 @@ export async function POST(req: NextRequest) {
       // 7d (era 30d) — reduz a janela de exposição de um refresh roubado (~4×)
       // enquanto a prevenção de reuso (jti/blocklist) fica no backlog. Revisão s41.
       .setExpirationTime("7d")
-      .sign(secret())
+      .sign(authSecretKey())
 
     const { passwordHash: _, ...safeUser } = user
 

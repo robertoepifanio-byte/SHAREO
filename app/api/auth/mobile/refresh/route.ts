@@ -3,18 +3,13 @@ import { NextResponse } from "next/server"
 import { jwtVerify, SignJWT } from "jose"
 import { z } from "zod"
 import { prisma } from "@/lib/prisma"
+import { authSecretKey } from "@/lib/auth-secret"
 import { isSessionStale } from "@/lib/redis-admin-blocklist"
 import { checkRateLimit, rateLimitResponse, RATE_LIMITS } from "@/lib/rateLimit"
 
 const Schema = z.object({
   refreshToken: z.string().min(1),
 })
-
-function secret() {
-  const key = process.env.AUTH_SECRET
-  if (!key) throw new Error("AUTH_SECRET not set")
-  return new TextEncoder().encode(key)
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -38,7 +33,7 @@ export async function POST(req: NextRequest) {
     try {
       // Pina HS256 (defesa em profundidade — secret simétrico), consistente com
       // lib/resolveUserId.ts. Achado B-01 da revisão s41.
-      const { payload: p } = await jwtVerify(refreshToken, secret(), { algorithms: ["HS256"] })
+      const { payload: p } = await jwtVerify(refreshToken, authSecretKey(), { algorithms: ["HS256"] })
       payload = p as typeof payload
     } catch {
       return NextResponse.json(
@@ -90,14 +85,14 @@ export async function POST(req: NextRequest) {
       .setProtectedHeader({ alg: "HS256" })
       .setIssuedAt()
       .setExpirationTime("15m")
-      .sign(secret())
+      .sign(authSecretKey())
 
     const newRefreshToken = await new SignJWT({ sub: user.id, type: "refresh" })
       .setProtectedHeader({ alg: "HS256" })
       .setIssuedAt()
       // 7d (era 30d) — ver login/route.ts. Reduz a janela de um refresh roubado.
       .setExpirationTime("7d")
-      .sign(secret())
+      .sign(authSecretKey())
 
     return NextResponse.json({
       data: {

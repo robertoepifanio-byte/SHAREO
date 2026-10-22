@@ -2,6 +2,7 @@ import { getToken } from "next-auth/jwt"
 import { jwtVerify } from "jose"
 import { NextResponse, type NextRequest } from "next/server"
 import { isSessionStale } from "@/lib/redis-admin-blocklist"
+import { authSecretKey } from "@/lib/auth-secret"
 import { sessionAccess } from "@/lib/auth/mfa-gate"
 
 const PROTECTED_PREFIXES = [
@@ -169,7 +170,7 @@ export async function middleware(req: NextRequest) {
     const authHeader = req.headers.get("authorization")
     if (authHeader?.startsWith("Bearer ")) {
       try {
-        const key = new TextEncoder().encode(process.env.AUTH_SECRET ?? "")
+        const key = authSecretKey()
         // Pina HS256; rejeita refresh token (type:"refresh") — só o access token
         // pode autenticar rota protegida (ver lib/resolveUserId.ts).
         const { payload } = await jwtVerify(authHeader.slice(7), key, { algorithms: ["HS256"] })

@@ -55,6 +55,7 @@ describe("middleware", () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockIsSessionStale.mockResolvedValue(false)
+    process.env.AUTH_SECRET = "segredo-de-teste-nao-usar-em-producao"
   })
 
   describe("rotas públicas", () => {
@@ -148,6 +149,19 @@ describe("middleware", () => {
 
       expect(res.status).not.toBe(401)
       expect(res.headers.get("location")).toBeNull()
+    })
+
+    it("sem AUTH_SECRET, Bearer não é verificado com chave vazia → 401 JSON (fail-closed)", async () => {
+      delete process.env.AUTH_SECRET
+      const errorSpy = jest.spyOn(console, "error").mockImplementation(() => {})
+      mockGetToken.mockResolvedValue(null)
+      mockJwtVerify.mockResolvedValue({ payload: { sub: "vitima" } } as never)
+
+      const res = await middleware(makeReq("/api/bookings", "forjado-com-chave-vazia"))
+
+      expect(res.status).toBe(401)
+      expect(mockJwtVerify).not.toHaveBeenCalled()
+      errorSpy.mockRestore()
     })
 
     it("/api/bookings sem cookie e sem Bearer → 401 JSON", async () => {
