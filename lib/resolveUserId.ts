@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server"
 import { jwtVerify } from "jose"
 import { auth } from "@/lib/auth"
 import { isSessionStale } from "@/lib/redis-admin-blocklist"
+import { authSecretKey } from "@/lib/auth-secret"
 
 /** Resolves user ID from mobile Bearer JWT or NextAuth session cookie. */
 export async function resolveUserId(req: NextRequest): Promise<string | null> {
@@ -9,7 +10,7 @@ export async function resolveUserId(req: NextRequest): Promise<string | null> {
   if (bearer?.startsWith("Bearer ")) {
     const token = bearer.slice(7)
     try {
-      const key = new TextEncoder().encode(process.env.AUTH_SECRET ?? "")
+      const key = authSecretKey()
       // Pina HS256 (defesa em profundidade — o secret é simétrico).
       const { payload } = await jwtVerify(token, key, { algorithms: ["HS256"] })
       // SEC: refresh token (type:"refresh", 30d) NÃO pode agir como access token.
