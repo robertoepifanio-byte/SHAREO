@@ -44,6 +44,14 @@ jest.mock("@/lib/auth", () => ({
   auth: () => mockAuth(),
 }))
 
+// #6 (Red Team 2026-10-28): `?ownerId=X` só relaxa o filtro de status para o
+// PRÓPRIO dono. O endpoint resolve o solicitante via resolveUserId (Bearer ou
+// cookie); terceiros/anônimos continuam limitados a AVAILABLE.
+const mockResolveUserId = jest.fn()
+jest.mock("@/lib/resolveUserId", () => ({
+  resolveUserId: (...args: unknown[]) => mockResolveUserId(...args),
+}))
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -88,6 +96,7 @@ beforeEach(() => {
   jest.clearAllMocks()
   mockItemCount.mockResolvedValue(0)
   mockItemFindMany.mockResolvedValue([])
+  mockResolveUserId.mockResolvedValue(null) // anônimo por padrão
 })
 
 // ---------------------------------------------------------------------------
@@ -195,21 +204,51 @@ describe("GET /api/items — filtragem de itens DRAFT na listagem pública", () 
   // --------------------------------------------------------------------------
   // Listagem por ownerId — dono pode ver seus próprios itens DRAFT
   // --------------------------------------------------------------------------
-  describe("listagem por ownerId — dono vê seus próprios itens DRAFT", () => {
-    it("quando ownerId é passado, status não é forçado como AVAILABLE (dono vê DRAFTs)", async () => {
+  describe("listagem por ownerId — só o próprio dono vê seus itens DRAFT (#6)", () => {
+    it("dono autenticado (resolveUserId === ownerId): status NÃO é forçado como AVAILABLE", async () => {
+      mockResolveUserId.mockResolvedValue("owner-id-001")
       const draftItem = makePublicItem({ id: "item-006", status: "DRAFT" })
       mockItemFindMany.mockResolvedValue([draftItem])
       mockItemCount.mockResolvedValue(1)
 
-      const res  = await GET(makeGetReq({ ownerId: "owner-id-001" }))
-      const body = await res.json() as { data: Array<{ status: string }> }
+      const res = await GET(makeGetReq({ ownerId: "owner-id-001" }))
 
       expect(res.status).toBe(200)
 
-      // Com ownerId, a query não filtra por status — dono vê os seus DRAFTs
+      // Dono vê seus DRAFTs — o filtro só exclui DELETED, não força AVAILABLE
       expect(mockItemFindMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.not.objectContaining({ status: "AVAILABLE" }),
+        })
+      )
+    })
+
+    it("🪤 chamada ANÔNIMA com ?ownerId=X continua presa a AVAILABLE (não vaza DRAFT/PAUSED)", async () => {
+      mockResolveUserId.mockResolvedValue(null) // sem sessão/Bearer
+      mockItemFindMany.mockResolvedValue([])
+      mockItemCount.mockResolvedValue(0)
+
+      const res = await GET(makeGetReq({ ownerId: "owner-id-001" }))
+
+      expect(res.status).toBe(200)
+      expect(mockItemFindMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ status: "AVAILABLE" }),
+        })
+      )
+    })
+
+    it("🪤 OUTRO usuário com ?ownerId=X (não o dono) também fica preso a AVAILABLE", async () => {
+      mockResolveUserId.mockResolvedValue("outro-usuario-999")
+      mockItemFindMany.mockResolvedValue([])
+      mockItemCount.mockResolvedValue(0)
+
+      const res = await GET(makeGetReq({ ownerId: "owner-id-001" }))
+
+      expect(res.status).toBe(200)
+      expect(mockItemFindMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ status: "AVAILABLE" }),
         })
       )
     })

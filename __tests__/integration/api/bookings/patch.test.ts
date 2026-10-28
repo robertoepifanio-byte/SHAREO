@@ -484,6 +484,26 @@ describe("PATCH /api/bookings/[id]", () => {
       expect(body.data.status).toBe("ACTIVE")
     })
 
+    // 3b. CONFIRMED + mark_active com código de retirada ERRADO → 422 TOKEN_INVALID.
+    // Sem este caso, só o caminho feliz (token certo) era exercitado: inverter a
+    // guarda `booking.pickupToken !== pickupToken` passaria no CI despercebida.
+    it("CONFIRMED + mark_active com pickupToken errado → 422 TOKEN_INVALID", async () => {
+      mockAuth.mockResolvedValue(makeSession(OWNER_ID))
+      mockBookingFindUnique.mockResolvedValue({
+        ...makeBooking({ status: "CONFIRMED", paymentStatus: "PAID" }),
+        pickupToken:       "123456",
+        pickupTokenUsedAt: null,
+      })
+
+      const res  = await PATCH(makeReq({ action: "mark_active", pickupToken: "000000" }), makeParams())
+      const body = await res.json() as { error: { code: string } }
+
+      expect(res.status).toBe(422)
+      expect(body.error.code).toBe("TOKEN_INVALID")
+      // A transição NÃO pode ter acontecido.
+      expect(mockBookingUpdateMany).not.toHaveBeenCalled()
+    })
+
     // 4. CONFIRMED + cancel (owner, com reason) → 200, status CANCELLED
     it("CONFIRMED + cancel pelo owner com reason → 200, status CANCELLED", async () => {
       mockAuth.mockResolvedValue(makeSession(OWNER_ID))

@@ -3,6 +3,7 @@ import { NextResponse, after } from "next/server"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { hasAdminRole } from "@/lib/auth/admin-guards"
+import { invalidateUserSessions } from "@/lib/redis-admin-blocklist"
 import { z } from "zod"
 
 type Params = { params: Promise<{ id: string }> }
@@ -64,6 +65,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       data:   { isActive },
       select: { id: true, isActive: true, updatedAt: true },
     })
+
+    // Suspender a conta precisa derrubar as sessões ativas: sem isto o Bearer/cookie
+    // do usuário segue válido até expirar. Mesmo padrão de admins/[id] e users/me.
+    if (!isActive) {
+      await invalidateUserSessions(id).catch((e) =>
+        console.error("[PATCH /api/admin/users/:id] invalidateUserSessions falhou:", e instanceof Error ? e.message : e),
+      )
+    }
 
     after(() =>
       prisma.adminLog.create({

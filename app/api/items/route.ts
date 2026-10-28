@@ -22,6 +22,12 @@ export async function GET(req: NextRequest) {
     const { page, limit, search, categoryId, city, state, minPrice, maxPrice, ownerId, sort } = query.data
     const skip = (page - 1) * limit
 
+    // Só o próprio dono enxerga seus itens DRAFT/PAUSED. Para terceiros (sem sessão
+    // ou solicitante ≠ ownerId), `?ownerId=X` continua limitado a AVAILABLE — senão
+    // qualquer chamada anônima vazaria os rascunhos/pausados do anunciante.
+    const requesterId  = ownerId ? await resolveUserId(req) : null
+    const isOwnerQuery = ownerId != null && requesterId === ownerId
+
     // Ordenação — espelha getOrderBy() de app/itens/page.tsx (fonte: _SortSelect.tsx).
     // id como tiebreaker garante ordenação estável entre queries (evita duplicatas em offset pagination).
     function getOrderBy(s?: string) {
@@ -36,8 +42,8 @@ export async function GET(req: NextRequest) {
     }
 
     const where = {
-      // Public listings: only AVAILABLE items; owner queries exclude DELETED
-      ...(ownerId
+      // Public listings: only AVAILABLE items; the owner's own query excludes DELETED
+      ...(isOwnerQuery
         ? { status: { notIn: ["DELETED" as const] } }
         : { status: "AVAILABLE" as const }),
       isApproved: true,
