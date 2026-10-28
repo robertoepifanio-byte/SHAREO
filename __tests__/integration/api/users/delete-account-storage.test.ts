@@ -188,6 +188,52 @@ describe("DELETE /api/users/me — Storage", () => {
     expect(mockRemove).not.toHaveBeenCalled()
   })
 
+  // 🪤 #1 (Red Team 2026-10-28): sem este guard, o updateMany cancelava a reserva
+  // PAGA sem estornar, sem liberar cupom e sem avisar a contraparte — confisco do
+  // valor pago e violação de LGPD. O titular precisa cancelar a reserva (estorno
+  // automático) ANTES de excluir a conta.
+  it("🪤 reserva PAGA em aberto: 409 PAID_BOOKING, sem anonimizar nem tocar Storage", async () => {
+    storageCom({ "id-docs": { [`id-verification/${USER}`]: ["selfie-1.jpg"] } })
+    // 1ª findFirst (ACTIVE) = null; 2ª (PAID) = reserva paga
+    mockFindBooking.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: "pago1" })
+
+    const res  = await DELETE(req())
+    const body = await res.json() as { error: { code: string } }
+    await rodarTarefasPosResposta()
+
+    expect(res.status).toBe(409)
+    expect(body.error.code).toBe("PAID_BOOKING")
+    expect(mockList).not.toHaveBeenCalled()
+    expect(mockRemove).not.toHaveBeenCalled()
+    // Bloqueio é ANTES de qualquer efeito: sessão não é invalidada, nada é anonimizado.
+    expect(mockInvalidateSessions).not.toHaveBeenCalled()
+  })
+
+  it("🪤 guard PAID filtra PENDING/CONFIRMED + paymentStatus PAID do titular", async () => {
+    storageCom({})
+    mockFindBooking.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: "pago1" })
+
+    await DELETE(req())
+
+    // A 2ª chamada a findFirst é o guard PAID (a 1ª é a do ACTIVE).
+    const guardPaid = mockFindBooking.mock.calls[1][0] as { where: Record<string, unknown> }
+    expect(guardPaid.where).toMatchObject({
+      status:        { in: ["PENDING", "CONFIRMED"] },
+      paymentStatus: "PAID",
+      OR: [{ borrowerId: USER }, { ownerId: USER }],
+    })
+  })
+
+  it("sem reserva paga: exclusão segue normalmente (200)", async () => {
+    storageCom({})
+    // Ambas as findFirst (ACTIVE e PAID) retornam null pelo default do beforeEach.
+
+    const res = await DELETE(req())
+
+    expect(res.status).toBe(200)
+    expect(mockInvalidateSessions).toHaveBeenCalledWith(USER)
+  })
+
   it("🪤 falha de Storage aciona Sentry (alerta operadores) além do console.error", async () => {
     storageCom({ "id-docs": { [`id-verification/${USER}`]: ["selfie-1.jpg"] } })
     mockRemove.mockResolvedValue({ data: null, error: { message: "storage down" } })

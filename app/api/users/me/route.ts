@@ -77,6 +77,37 @@ export async function DELETE(req: NextRequest) {
       )
     }
 
+    // 🪤 Bloquear exclusão com reserva PAGA ainda não encerrada (PENDING/CONFIRMED
+    // + paymentStatus PAID). O `updateMany` abaixo cancela essas reservas SEM
+    // estornar, SEM liberar cupom e SEM avisar a contraparte — nada do que o
+    // cancelamento legítimo (PATCH /api/bookings/[id] action=cancel) faz. Para o
+    // locatário isso é confisco do valor pago; para o locador, repasse perdido —
+    // e a LGPD não permite que o direito à exclusão se torne meio de confiscar
+    // direito patrimonial de terceiro. Mesmo padrão do guard ACTIVE: o titular
+    // cancela a reserva (o estorno é automático pelo fluxo correto) e só então
+    // exclui a conta.
+    const paidBooking = await prisma.booking.findFirst({
+      where: {
+        status:        { in: ["PENDING", "CONFIRMED"] },
+        paymentStatus: "PAID",
+        OR: [{ borrowerId: userId }, { ownerId: userId }],
+      },
+      select: { id: true },
+    })
+
+    if (paidBooking) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "PAID_BOOKING",
+            message:
+              "Você tem uma reserva paga em aberto. Cancele a reserva (o estorno é automático) antes de excluir a conta.",
+          },
+        },
+        { status: 409 },
+      )
+    }
+
     // ADR-017 / CTN art. 173: verificar janela de retenção fiscal de 5 anos.
     // Se houver registros financeiros recentes, anonimizar PII mas RETER os registros.
     // O titular é informado da limitação legal (art. 18 §3º LGPD).
