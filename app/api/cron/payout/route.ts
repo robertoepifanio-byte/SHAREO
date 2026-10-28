@@ -13,6 +13,7 @@
  * idempotência) fica em lib/payments/owner-transfer.ts.
  */
 import { NextResponse, type NextRequest } from "next/server"
+import * as Sentry from "@sentry/nextjs"
 import { prisma } from "@/lib/prisma"
 import { assertCronAuth } from "@/lib/auth/cron-guard"
 import { getStripe, idOf } from "@/lib/stripe"
@@ -110,13 +111,27 @@ export async function GET(req: NextRequest) {
       processed++
     } catch (e) {
       errors++
+      // 🪤 #8 (Red Team 2026-10-28): este update pode falhar (timeout de pooler,
+      // deadlock). Antes era `.catch(() => null)`: se falhasse, o Payout ficava
+      // preso em PROCESSING (movido pelo optimistic lock acima) e a query de
+      // candidatos — que só pega PENDING — nunca o reprocessava, sem rastro
+      // nenhum. Agora a falha é VISÍVEL (log + Sentry) para reconciliação manual.
       await prisma.payout.update({
         where: { id: payout.id },
         data:  {
           status:       "FAILED",
           failureReason: e instanceof Error ? e.message : "Erro desconhecido",
         },
-      }).catch(() => null)
+      }).catch((dbErr) => {
+        console.error(
+          `[cron/payout] id=${payout.id} preso em PROCESSING — marcar FAILED falhou:`,
+          dbErr instanceof Error ? dbErr.message : dbErr,
+        )
+        Sentry.captureException(dbErr instanceof Error ? dbErr : new Error(String(dbErr)), {
+          extra: { payoutId: payout.id, amount: payout.amount, stage: "mark-failed" },
+          tags:  { pagamento: "payout-stuck-processing" },
+        })
+      })
     }
   }
 

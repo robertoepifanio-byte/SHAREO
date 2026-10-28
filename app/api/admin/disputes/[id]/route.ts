@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
+import * as Sentry from "@sentry/nextjs"
 import { requireAdminApi } from "@/lib/auth/require-admin"
 import { prisma } from "@/lib/prisma"
 import { criarPayoutDaReserva } from "@/lib/payout"
@@ -225,15 +226,27 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     // O estorno em si. Depois do update e do repasse, e com o erro registrado
     // em vez de engolido: `booking.refundAmount` fica no banco como o valor
     // devido, entao um estorno recusado pela Stripe da para reprocessar.
+    //
+    // 🪤 #7 (Red Team 2026-10-28): uma falha aqui NAO pode sumir em console.error.
+    // O banco ja marcou refundAmount/refundPercent (acima) e, no integral, nao ha
+    // reverseOwnerTransfer sem o refund — divergencia silenciosa que so aparecia
+    // por reclamacao. `onRefundFail` loga E alerta no Sentry (sem fila de
+    // reprocessamento, que fica como follow-up): o valor devido segue em
+    // booking.refundAmount para reprocessamento manual.
+    const onRefundFail = (amount: number, motivo: string) => (e: unknown) => {
+      console.error(`[disputa] estorno (${motivo}) de ${amount} em ${id} FALHOU:`, e instanceof Error ? e.message : e)
+      Sentry.captureException(e instanceof Error ? e : new Error(String(e)), {
+        extra: { bookingId: id, amount, motivo },
+        tags:  { pagamento: "refund-failure" },
+      })
+    }
     if (action === "resolve_partial") {
       await emitCancellationRefund({
         bookingId:       id,
         paymentIntentId: booking.stripePaymentIntentId!,
         amount:          refundAmount!,
         motivo:          "dispute-partial",
-      }).catch((e) =>
-        console.error(`[disputa] estorno parcial de ${refundAmount} em ${id} FALHOU:`, e instanceof Error ? e.message : e)
-      )
+      }).catch(onRefundFail(refundAmount!, "dispute-partial"))
     } else if (action === "resolve_cancelled" && booking.paymentStatus === "PAID") {
       // 🪤 Estorno INTEGRAL da disputa — não existia. O bloco acima grava
       // `refundAmount: totalPrice` / `refundPercent: 100`, mas nenhum
@@ -247,9 +260,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         paymentIntentId: booking.stripePaymentIntentId!,
         amount:          booking.totalPrice,
         motivo:          "dispute-full",
-      }).catch((e) =>
-        console.error(`[disputa] estorno integral de ${booking.totalPrice} em ${id} FALHOU:`, e instanceof Error ? e.message : e)
-      )
+      }).catch(onRefundFail(booking.totalPrice, "dispute-full"))
     }
 
     after(() =>

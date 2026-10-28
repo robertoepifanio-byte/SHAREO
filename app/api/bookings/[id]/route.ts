@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
 import { randomInt } from "node:crypto"
+import * as Sentry from "@sentry/nextjs"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
 import { taxaDeAtrasoQuitada } from "@/lib/lateFee"
@@ -619,7 +620,16 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           bookingId:       id,
           paymentIntentId: booking.stripePaymentIntentId,
           amount:          updated.refundAmount,
-        }).catch((e) => console.error("[booking.cancel] emitCancellationRefund:", e instanceof Error ? e.message : e))
+        }).catch((e) => {
+          // 🪤 #7 (Red Team 2026-10-28): falha de estorno nao pode sumir em
+          // console.error. `updated.refundAmount` fica no banco como o valor
+          // devido para reprocessamento manual; o Sentry alerta os operadores.
+          console.error("[booking.cancel] emitCancellationRefund:", e instanceof Error ? e.message : e)
+          Sentry.captureException(e instanceof Error ? e : new Error(String(e)), {
+            extra: { bookingId: id, amount: updated.refundAmount, motivo: "cancellation" },
+            tags:  { pagamento: "refund-failure" },
+          })
+        })
       } else {
         console.error(`[booking.cancel] id=${id} refundAmount=${updated.refundAmount} mas sem stripePaymentIntentId — estorno não pôde ser emitido`)
       }
