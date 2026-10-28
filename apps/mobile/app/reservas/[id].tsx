@@ -5,10 +5,11 @@
 // StyleSheet + tokens (useTheme) — migrado de className NativeWind para garantir
 // compatibilidade com todos os bundles de produção.
 
-import { View, Text, ScrollView, RefreshControl, TouchableOpacity, ActivityIndicator, Alert, StyleSheet, Modal, TextInput, Image as RNImage } from "react-native"
+import { View, Text, ScrollView, RefreshControl, TouchableOpacity, ActivityIndicator, Alert, StyleSheet, Modal, TextInput, Image as RNImage, Platform } from "react-native"
 import { useState, useEffect, useRef, useCallback } from "react"
 import { router, useLocalSearchParams } from "expo-router"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker"
 import { Image } from "expo-image"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import * as ImagePicker from "expo-image-picker"
@@ -136,6 +137,25 @@ const ACTOR_ROLE_EMOJI: Record<string, string> = {
   system:   "⚙️",
 }
 
+// Categorias do "Reportar problema" — verbatim de _BookingActions.tsx linhas 35-40.
+const REPORT_CATEGORIES = [
+  { value: "NOT_WORKING",   label: "Item não funciona" },
+  { value: "DAMAGED",       label: "Veio danificado" },
+  { value: "MISSING_PARTS", label: "Faltam acessórios" },
+  { value: "OTHER",         label: "Outro" },
+]
+
+// "AAAA-MM-DD" no fuso local — mesmo formato de app/itens/[id]/index.tsx
+// (dateToISO) e o que a rota /extend espera em `newEndDate`.
+function dateToISO(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+}
+
+// Data por extenso curta — rótulo da extensão no painel do proprietário.
+// Fonte: _BookingActions.tsx linha 57-58 (fmtDate com dateStyle "long").
+const fmtDateLong = (iso: string) =>
+  new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(new Date(iso))
+
 // ── ReturnCountdownInline ─────────────────────────────────────────────────────
 // Fonte: components/booking/ReturnCountdown.tsx linhas 44-116
 // Exibe tempo restante até endDate; atualiza a cada 60s.
@@ -237,6 +257,29 @@ export default function BookingDetailScreen() {
   const [cioPhotos, setCioPhotos] = useState<Record<string, { id: string; url: string; createdAt: string }[]>>({})
   const [cioUploading, setCioUploading] = useState<Record<string, boolean>>({})
   const [cioError, setCioError] = useState<Record<string, string>>({})
+  // Marcar como ativo (proprietário) — fonte: _BookingActions.tsx linhas 81-85, 231-240, 346-397
+  const [pickupModalVisible, setPickupModalVisible] = useState(false)
+  const [pickupTokenInput, setPickupTokenInput]     = useState("")
+  const [pickupTime, setPickupTime]                 = useState<Date>(() => new Date())
+  // "editou?" distingue "usou o horário atual" de "escolheu outro" — só envia
+  // actualTime quando editou (fonte: horarioEditado, _BookingActions.tsx linha 52).
+  const [pickupTimeEdited, setPickupTimeEdited]     = useState(false)
+  const [showPickupPicker, setShowPickupPicker]     = useState(false)
+  const [pickupError, setPickupError]               = useState<string | null>(null)
+  // Reportar problema / disputa — fonte: _BookingActions.tsx linhas 87-99, 204-229, 479-577
+  const [reportModalVisible, setReportModalVisible] = useState(false)
+  const [reportStep, setReportStep]                 = useState<"contact" | "form">("contact")
+  const [reportCategory, setReportCategory]         = useState("")
+  const [reportDesc, setReportDesc]                 = useState("")
+  const [reportPhotoUri, setReportPhotoUri]         = useState<string | null>(null)
+  const [reportSubmitting, setReportSubmitting]     = useState(false)
+  const [reportError, setReportError]               = useState<string | null>(null)
+  // Solicitar extensão de prazo (locatário) — fonte: _BookingActions.tsx linhas 75-76, 148-174, 436-456
+  const [extendModalVisible, setExtendModalVisible] = useState(false)
+  const [extendDate, setExtendDate]                 = useState("")
+  const [showExtendPicker, setShowExtendPicker]     = useState(false)
+  const [extendSubmitting, setExtendSubmitting]     = useState(false)
+  const [extendError, setExtendError]               = useState<string | null>(null)
 
   // Todos os hooks ANTES de qualquer return condicional (protocolo item 4)
   const { data, isLoading, isRefetching, refetch } = useQuery({
@@ -313,6 +356,51 @@ export default function BookingDetailScreen() {
       Alert.alert("Erro", e instanceof Error ? e.message : "Não foi possível concluir a ação."),
   })
 
+  const invalidateBooking = () => {
+    qc.invalidateQueries({ queryKey: ["booking", id] })
+    qc.invalidateQueries({ queryKey: ["bookings"] })
+  }
+
+  // Confirmar reserva (proprietário, PENDING) — fonte: _BookingActions.tsx linha 252 (execCore("confirm")).
+  const confirmBooking = useMutation({
+    mutationFn: () => apiFetch(`/api/bookings/${id}`, { method: "PATCH", body: JSON.stringify({ action: "confirm" }) }),
+    onSuccess: invalidateBooking,
+    onError: (e) =>
+      Alert.alert("Erro", e instanceof Error ? e.message : "Não foi possível confirmar a reserva."),
+  })
+
+  // Marcar como ativo (proprietário, CONFIRMED+PAID) — fonte: _BookingActions.tsx linhas 231-240.
+  const markActive = useMutation({
+    mutationFn: (vars: { pickupToken: string; actualTime?: string }) =>
+      apiFetch(`/api/bookings/${id}`, { method: "PATCH", body: JSON.stringify({ action: "mark_active", ...vars }) }),
+    onSuccess: () => {
+      setPickupModalVisible(false)
+      setPickupTokenInput("")
+      setPickupTimeEdited(false)
+      setPickupError(null)
+      invalidateBooking()
+    },
+    onError: (e) =>
+      setPickupError(e instanceof Error ? e.message : "Não foi possível confirmar a retirada."),
+  })
+
+  // Cancelar disputa (só quem abriu) — fonte: _BookingActions.tsx linha 291 (execCore("cancel_dispute")).
+  const cancelDispute = useMutation({
+    mutationFn: () => apiFetch(`/api/bookings/${id}`, { method: "PATCH", body: JSON.stringify({ action: "cancel_dispute" }) }),
+    onSuccess: invalidateBooking,
+    onError: (e) =>
+      Alert.alert("Erro", e instanceof Error ? e.message : "Não foi possível cancelar a disputa."),
+  })
+
+  // Responder extensão (proprietário) — fonte: _BookingActions.tsx linhas 176-202 (submitExtendRespond).
+  const extendRespond = useMutation({
+    mutationFn: (action: "approve" | "reject") =>
+      apiFetch(`/api/bookings/${id}/extend`, { method: "PATCH", body: JSON.stringify({ action }) }),
+    onSuccess: invalidateBooking,
+    onError: (e) =>
+      Alert.alert("Erro", e instanceof Error ? e.message : "Não foi possível responder à extensão."),
+  })
+
   // ── Guards após hooks (protocolo item 4) ──────────────────────────────────
   if (!user) {
     return (
@@ -366,6 +454,22 @@ export default function BookingDetailScreen() {
   const canReturn        = booking.status === "ACTIVE"   && isBorrower
   const canConfirmReturn = booking.status === "RETURNED" && isOwner
   const canPay           = isBorrower && booking.status === "CONFIRMED" && booking.paymentStatus !== "PAID"
+  // Ações do site transcritas — fonte: _BookingActions.tsx linhas 250-294.
+  const disputaAberta    = booking.disputeStatus === "OPEN"
+  const canConfirm       = isOwner && booking.status === "PENDING"
+  // "Marcar como ativo" só com pagamento confirmado — a API responde 402 antes.
+  const canMarkActive    = isOwner && booking.status === "CONFIRMED" && booking.paymentStatus === "PAID"
+  // Reportar não aparece com disputa já aberta (linha 277).
+  const canReport        = (booking.status === "ACTIVE" || booking.status === "RETURNED") && !disputaAberta
+  // Só quem abriu cancela — mesma regra do servidor (linha 290).
+  const canCancelDispute = disputaAberta && booking.disputeOpenedById === user.id
+  // Locatário pede extensão em ACTIVE, exceto com pedido pendente/aguardando pagto (linha 267).
+  const canRequestExtension = isBorrower && booking.status === "ACTIVE" &&
+    booking.extensionStatus !== "PENDING" && booking.extensionStatus !== "AWAITING_PAYMENT"
+  // Proprietário responde a um pedido pendente (linha 294).
+  const showExtendRespond   = isOwner && booking.extensionStatus === "PENDING"
+  // Data mínima da extensão = dia seguinte ao fim da locação (linha 302).
+  const minExtDate       = (() => { const d = new Date(booking.endDate); d.setDate(d.getDate() + 1); return d })()
   const thumb            = booking.item.images[0]?.url
   const extraItems       = booking.bookingItems.length - 1
 
@@ -623,6 +727,115 @@ export default function BookingDetailScreen() {
     )
   }
 
+  // "Marcar como ativo" — abre o modal com o horário atual pré-preenchido.
+  // Fonte: _BookingActions.tsx linha 254 (toDatetimeLocalValue + setPanel).
+  function openPickupModal() {
+    setPickupTokenInput("")
+    setPickupTime(new Date())
+    setPickupTimeEdited(false)
+    setPickupError(null)
+    setPickupModalVisible(true)
+  }
+
+  // Valida o token de 6 dígitos antes de enviar e só manda actualTime se editou.
+  // Fonte: _BookingActions.tsx linhas 231-240 (submitPickupTime).
+  function submitPickup() {
+    const token = pickupTokenInput.replace(/\s/g, "")
+    if (token.length !== 6) {
+      setPickupError("Informe o código de 6 dígitos apresentado pelo locatário.")
+      return
+    }
+    setPickupError(null)
+    markActive.mutate({ pickupToken: token, ...(pickupTimeEdited ? { actualTime: pickupTime.toISOString() } : {}) })
+  }
+
+  function onPickupTimeChange(_: DateTimePickerEvent, selected?: Date) {
+    setShowPickupPicker(Platform.OS === "ios")
+    if (selected) { setPickupTime(selected); setPickupTimeEdited(true) }
+  }
+
+  // "Reportar problema" — passo de contato antes da reclamação quando há chat.
+  // Fonte: _BookingActions.tsx linha 285 (report_contact vs report).
+  function openReportModal() {
+    setReportCategory("")
+    setReportDesc("")
+    setReportPhotoUri(null)
+    setReportError(null)
+    setReportStep(booking.conversation ? "contact" : "form")
+    setReportModalVisible(true)
+  }
+
+  async function reportPickPhoto() {
+    const asset = await pickImageAsset()
+    if (asset) setReportPhotoUri(asset.uri)
+  }
+
+  // Abre a disputa com motivo "[categoria] descrição"; a foto é opcional e, se
+  // enviada, vai via /api/upload (phase REPORT) — falha de upload não bloqueia.
+  // Fonte: _BookingActions.tsx linhas 204-229 (submitReport).
+  async function submitReport() {
+    setReportError(null)
+    setReportSubmitting(true)
+    try {
+      let photoUrl: string | undefined
+      if (reportPhotoUri) {
+        const tks = await getTokens()
+        const fd  = new FormData()
+        fd.append("file", { uri: reportPhotoUri, name: "report.jpg", type: "image/jpeg" } as unknown as Blob)
+        fd.append("bookingId", id)
+        fd.append("phase", "REPORT")
+        const up = await fetch(`${API_URL}/api/upload`, {
+          method:  "POST",
+          headers: tks ? { Authorization: `Bearer ${tks.accessToken}` } : {},
+          body:    fd,
+        })
+        if (up.ok) { const uj = await up.json().catch(() => ({})); photoUrl = (uj as { url?: string }).url }
+      }
+      const label = REPORT_CATEGORIES.find((c) => c.value === reportCategory)?.label ?? reportCategory
+      await apiFetch(`/api/bookings/${id}`, {
+        method: "PATCH",
+        body:   JSON.stringify({ action: "open_dispute", reason: `[${label}] ${reportDesc}`, ...(photoUrl ? { photoUrl } : {}) }),
+      })
+      setReportModalVisible(false)
+      invalidateBooking()
+    } catch (e) {
+      setReportError(e instanceof Error ? e.message : "Erro ao enviar relatório.")
+    } finally {
+      setReportSubmitting(false)
+    }
+  }
+
+  // "Solicitar extensão de prazo" — POST /extend { newEndDate }.
+  // Fonte: _BookingActions.tsx linhas 148-174 (submitExtendRequest).
+  function openExtendModal() {
+    setExtendDate("")
+    setExtendError(null)
+    setExtendModalVisible(true)
+  }
+
+  function onExtendDateChange(_: DateTimePickerEvent, selected?: Date) {
+    setShowExtendPicker(Platform.OS === "ios")
+    if (selected) setExtendDate(dateToISO(selected))
+  }
+
+  async function submitExtend() {
+    if (!extendDate) return
+    setExtendError(null)
+    setExtendSubmitting(true)
+    try {
+      await apiFetch(`/api/bookings/${id}/extend`, {
+        method: "POST",
+        body:   JSON.stringify({ newEndDate: extendDate }),
+      })
+      setExtendModalVisible(false)
+      invalidateBooking()
+    } catch (e) {
+      setExtendError(e instanceof Error ? e.message : "Erro ao solicitar extensão.")
+    } finally {
+      setExtendSubmitting(false)
+    }
+  }
+
   return (
     <View style={[s.root, { backgroundColor: tokens.bg }]}>
       {/* Header — ← Minhas Reservas (fonte: app/reservas/[id]/page.tsx linha 168-172) */}
@@ -674,6 +887,51 @@ export default function BookingDetailScreen() {
             style={[s.statusBadge, { backgroundColor: disputa.bgColor, borderColor: disputa.borderColor }]}
           >
             <Text style={[s.statusLabel, { color: disputa.textColor }]}>{disputa.label}</Text>
+          </View>
+        )}
+
+        {/* Aviso "Disputa em análise" — fonte: _BookingActions.tsx linhas 313-321.
+            A locação segue normalmente; o aviso só contextualiza as ações abaixo. */}
+        {disputaAberta && (
+          <View style={[s.alertBox, { borderColor: mode === "dark" ? "#FBBF7766" : "#FDBA74", backgroundColor: mode === "dark" ? "#2A1A00" : "#FFF7ED" }]}>
+            <View style={{ flex: 1 }}>
+              <Text style={[s.alertTitle, { color: mode === "dark" ? "#FBBF77" : "#C2410C" }]}>Disputa em análise</Text>
+              <Text style={[s.alertDesc, { color: tokens.muted }]}>
+                A equipe ShareO está analisando o caso. A locação segue normalmente — você pode continuar usando as ações abaixo.
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* Proprietário responde ao pedido de extensão — fonte: _BookingActions.tsx linhas 458-477. */}
+        {showExtendRespond && booking.extensionRequestedEndDate && (
+          <View style={[s.section, { borderColor: mode === "dark" ? "#FBBF7766" : "#FCD34D", backgroundColor: mode === "dark" ? "#2A1A00" : "#FFFBEB" }]}>
+            <Text style={[s.alertTitle, { color: mode === "dark" ? "#FBBF77" : "#92400E", marginBottom: 4 }]}>Solicitação de extensão de prazo</Text>
+            <Text style={[s.alertDesc, { color: mode === "dark" ? "#FBBF77" : "#92400E", marginBottom: 10 }]}>
+              O locatário solicita estender a devolução até <Text style={{ fontWeight: "700" }}>{fmtDateLong(booking.extensionRequestedEndDate)}</Text>.
+            </Text>
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <TouchableOpacity
+                style={[s.actionBtnOutline, { flex: 1, backgroundColor: tokens.green, borderColor: tokens.green, opacity: extendRespond.isPending ? 0.5 : 1 }]}
+                onPress={() => extendRespond.mutate("approve")}
+                disabled={extendRespond.isPending}
+                accessibilityRole="button"
+                accessibilityLabel="Aprovar extensão"
+                accessibilityState={{ disabled: extendRespond.isPending }}
+              >
+                <Text style={[s.actionBtnOutlineText, { color: "#FFFFFF" }]}>✅ Aprovar extensão</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.actionBtnOutline, { flex: 1, borderColor: tokens.error, opacity: extendRespond.isPending ? 0.5 : 1 }]}
+                onPress={() => extendRespond.mutate("reject")}
+                disabled={extendRespond.isPending}
+                accessibilityRole="button"
+                accessibilityLabel="Recusar"
+                accessibilityState={{ disabled: extendRespond.isPending }}
+              >
+                <Text style={[s.actionBtnOutlineText, { color: tokens.error }]}>Recusar</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 
@@ -1624,6 +1882,51 @@ export default function BookingDetailScreen() {
           <PayButton bookingId={booking.id} totalPrice={booking.totalPrice} />
         )}
 
+        {/* Confirmar reserva (proprietário + PENDING) — fonte: _BookingActions.tsx linha 252 */}
+        {canConfirm && (
+          <TouchableOpacity
+            style={[s.actionBtn, { backgroundColor: tokens.green, opacity: confirmBooking.isPending ? 0.6 : 1 }]}
+            onPress={() => confirmBooking.mutate()}
+            activeOpacity={0.85}
+            disabled={confirmBooking.isPending}
+            accessibilityRole="button"
+            accessibilityLabel="Confirmar reserva"
+            accessibilityState={{ disabled: confirmBooking.isPending }}
+          >
+            {confirmBooking.isPending ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={s.actionBtnText}>✅ Confirmar reserva</Text>
+            )}
+          </TouchableOpacity>
+        )}
+
+        {/* Marcar como ativo (proprietário + CONFIRMED + PAID) — fonte: _BookingActions.tsx linhas 253-254 */}
+        {canMarkActive && (
+          <TouchableOpacity
+            style={[s.actionBtn, { backgroundColor: tokens.green }]}
+            onPress={openPickupModal}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Marcar como ativo"
+          >
+            <Text style={s.actionBtnText}>▶️ Marcar como ativo</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Solicitar extensão de prazo (locatário + ACTIVE) — fonte: _BookingActions.tsx linhas 267-268 */}
+        {canRequestExtension && (
+          <TouchableOpacity
+            style={[s.actionBtnOutline, { borderColor: tokens.border }]}
+            onPress={openExtendModal}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Solicitar extensão de prazo"
+          >
+            <Text style={[s.actionBtnOutlineText, { color: tokens.text }]}>📅 Solicitar extensão de prazo</Text>
+          </TouchableOpacity>
+        )}
+
         {/* Devolver item (locatário + ACTIVE) — suprimido: ReturnChecklist exibe o botão no scroll.
             hideReturnActions equivalente: page.tsx linhas 613-616 */}
         {false && canReturn && (
@@ -1664,16 +1967,16 @@ export default function BookingDetailScreen() {
           </TouchableOpacity>
         )}
 
-        {/* Abrir conversa — fonte: app/reservas/[id]/page.tsx + _BookingActions.tsx */}
+        {/* Abrir chat — fonte: _BookingActions.tsx linhas 581-589 (rótulo "Abrir chat") */}
         {booking.conversation && (
           <TouchableOpacity
             style={[s.actionBtnOutline, { borderColor: tokens.green }]}
             onPress={() => router.push(`/mensagens/${booking.conversation!.id}`)}
             activeOpacity={0.85}
             accessibilityRole="button"
-            accessibilityLabel="Abrir conversa com o proprietário"
+            accessibilityLabel="Abrir chat"
           >
-            <Text style={[s.actionBtnOutlineText, { color: tokens.green }]}>Abrir conversa</Text>
+            <Text style={[s.actionBtnOutlineText, { color: tokens.green }]}>💬 Abrir chat</Text>
           </TouchableOpacity>
         )}
 
@@ -1693,6 +1996,34 @@ export default function BookingDetailScreen() {
             ) : (
               <Text style={[s.actionBtnText, { color: tokens.error }]}>Cancelar reserva</Text>
             )}
+          </TouchableOpacity>
+        )}
+
+        {/* Reportar problema (ACTIVE ou RETURNED, sem disputa aberta) — fonte: _BookingActions.tsx linhas 277-286 */}
+        {canReport && (
+          <TouchableOpacity
+            style={[s.actionBtnOutline, { borderColor: tokens.border }]}
+            onPress={openReportModal}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Reportar problema"
+          >
+            <Text style={[s.actionBtnOutlineText, { color: tokens.text }]}>⚠️ Reportar problema</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Cancelar disputa (só quem abriu) — fonte: _BookingActions.tsx linhas 290-291 */}
+        {canCancelDispute && (
+          <TouchableOpacity
+            style={[s.actionBtnOutline, { borderColor: tokens.border, opacity: cancelDispute.isPending ? 0.5 : 1 }]}
+            onPress={() => cancelDispute.mutate()}
+            activeOpacity={0.85}
+            disabled={cancelDispute.isPending}
+            accessibilityRole="button"
+            accessibilityLabel="Cancelar disputa"
+            accessibilityState={{ disabled: cancelDispute.isPending }}
+          >
+            <Text style={[s.actionBtnOutlineText, { color: tokens.text }]}>✖️ Cancelar disputa</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -1811,6 +2142,288 @@ export default function BookingDetailScreen() {
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
                   <Text style={s.modalBtnDangerText}>Confirmar cancelamento</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Modal: Confirmar retirada (Marcar como ativo) — fonte: _BookingActions.tsx linhas 346-397
+          datetime-local do site vira DateTimePicker nativo; "se não alterar, usa o horário atual". ── */}
+      <Modal
+        visible={pickupModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => { setPickupModalVisible(false); setPickupError(null) }}
+      >
+        <View style={s.modalOverlay}>
+          <View style={[s.modalSheet, { backgroundColor: tokens.surface }]}>
+            <Text style={[s.modalTitle, { color: tokens.navy }]}>Confirmar retirada do item</Text>
+            <Text style={[s.modalDesc, { color: tokens.muted }]}>
+              Solicite o código de retirada ao locatário e informe abaixo para confirmar a entrega.
+            </Text>
+
+            <Text style={[s.inputLabel, { color: tokens.text }]}>
+              Código do locatário <Text style={{ color: tokens.error }}>*</Text>
+            </Text>
+            <TextInput
+              style={[s.tokenInput, { color: tokens.navy, borderColor: tokens.border, backgroundColor: tokens.surface }]}
+              value={pickupTokenInput}
+              onChangeText={(t) => setPickupTokenInput(t.replace(/\D/g, "").slice(0, 6))}
+              keyboardType="number-pad"
+              maxLength={6}
+              placeholder="000000"
+              placeholderTextColor={tokens.muted}
+              accessibilityLabel="Código do locatário"
+            />
+
+            <Text style={[s.inputLabel, { color: tokens.text }]}>
+              Horário da retirada <Text style={{ color: tokens.error }}>*</Text>
+            </Text>
+            <TouchableOpacity
+              style={[s.dateField, { borderColor: tokens.border, backgroundColor: tokens.bg }]}
+              onPress={() => setShowPickupPicker(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Escolher horário da retirada"
+            >
+              <Text style={{ color: tokens.text, fontSize: 14 }}>{fmtEventDateTime(pickupTime.toISOString())}</Text>
+            </TouchableOpacity>
+            {showPickupPicker && (
+              <DateTimePicker
+                value={pickupTime}
+                mode="datetime"
+                display={Platform.OS === "ios" ? "spinner" : "default"}
+                maximumDate={new Date()}
+                onChange={onPickupTimeChange}
+              />
+            )}
+            <Text style={[s.inputHint, { color: tokens.muted }]}>
+              Não pode ser no futuro. Se não alterar, usa o horário atual.
+            </Text>
+
+            {pickupError ? <Text style={{ color: tokens.error, fontSize: 12 }}>{pickupError}</Text> : null}
+
+            <View style={s.modalActions}>
+              <TouchableOpacity
+                style={[s.modalBtnSecondary, { borderColor: tokens.border }]}
+                onPress={() => { setPickupModalVisible(false); setPickupError(null) }}
+                disabled={markActive.isPending}
+                accessibilityRole="button"
+                accessibilityLabel="Cancelar"
+              >
+                <Text style={[s.modalBtnSecondaryText, { color: tokens.text }]}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.modalBtnPrimary, { opacity: pickupTokenInput.length !== 6 || markActive.isPending ? 0.5 : 1 }]}
+                onPress={submitPickup}
+                disabled={pickupTokenInput.length !== 6 || markActive.isPending}
+                accessibilityRole="button"
+                accessibilityLabel="Confirmar retirada"
+                accessibilityState={{ disabled: pickupTokenInput.length !== 6 || markActive.isPending }}
+              >
+                {markActive.isPending ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={s.modalBtnPrimaryText}>Confirmar retirada</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Modal: Reportar problema — fonte: _BookingActions.tsx linhas 479-577
+          Passo de contato antes da reclamação (quando há chat), depois o formulário. ── */}
+      <Modal
+        visible={reportModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setReportModalVisible(false)}
+      >
+        <View style={s.modalOverlay}>
+          <View style={[s.modalSheet, { backgroundColor: tokens.surface }]}>
+            {reportStep === "contact" ? (
+              <>
+                <Text style={[s.modalTitle, { color: tokens.navy }]}>Antes de abrir uma reclamação</Text>
+                <Text style={[s.modalDesc, { color: tokens.muted }]}>
+                  A maior parte dos problemas se resolve conversando direto com {isOwner ? "o locatário" : "o proprietário"}.
+                  Abrir uma reclamação leva o caso à mediação da equipe ShareO, o que costuma demorar mais.
+                </Text>
+                {booking.conversation && (
+                  <TouchableOpacity
+                    style={[s.modalBtnPrimary, { minHeight: 48 }]}
+                    onPress={() => { setReportModalVisible(false); router.push(`/mensagens/${booking.conversation!.id}`) }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Falar com ${isOwner ? "o locatário" : "o proprietário"}`}
+                  >
+                    <Text style={s.modalBtnPrimaryText}>Falar com {isOwner ? "o locatário" : "o proprietário"}</Text>
+                  </TouchableOpacity>
+                )}
+                <View style={s.modalActions}>
+                  <TouchableOpacity
+                    style={[s.modalBtnSecondary, { borderColor: tokens.border }]}
+                    onPress={() => setReportStep("form")}
+                    accessibilityRole="button"
+                    accessibilityLabel="Continuar"
+                  >
+                    <Text style={[s.modalBtnSecondaryText, { color: tokens.text }]}>Continuar</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[s.modalBtnSecondary, { borderColor: tokens.border }]}
+                    onPress={() => setReportModalVisible(false)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Voltar"
+                  >
+                    <Text style={[s.modalBtnSecondaryText, { color: tokens.muted }]}>Voltar</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : (
+              <ScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: "90%" }}>
+                <Text style={[s.modalTitle, { color: tokens.navy, marginBottom: 12 }]}>Reportar problema com o item</Text>
+
+                <Text style={[s.inputLabel, { color: tokens.text }]}>
+                  Tipo de problema <Text style={{ color: tokens.error }}>*</Text>
+                </Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+                  {REPORT_CATEGORIES.map((cat) => {
+                    const sel = reportCategory === cat.value
+                    return (
+                      <TouchableOpacity
+                        key={cat.value}
+                        onPress={() => setReportCategory(cat.value)}
+                        style={[s.reportChip, {
+                          borderColor:     sel ? tokens.green : tokens.border,
+                          backgroundColor: sel ? (mode === "dark" ? "#0A2A1A" : "#ECFDF5") : tokens.surface,
+                        }]}
+                        accessibilityRole="button"
+                        accessibilityLabel={cat.label}
+                        accessibilityState={{ selected: sel }}
+                      >
+                        <Text style={{ color: sel ? tokens.green : tokens.text, fontSize: 12, fontWeight: "500" }}>{cat.label}</Text>
+                      </TouchableOpacity>
+                    )
+                  })}
+                </View>
+
+                <Text style={[s.inputLabel, { color: tokens.text }]}>
+                  Descrição <Text style={{ color: tokens.error }}>*</Text>
+                </Text>
+                <TextInput
+                  style={[s.reasonInput, { color: tokens.text, borderColor: tokens.border, backgroundColor: tokens.bg }]}
+                  value={reportDesc}
+                  onChangeText={setReportDesc}
+                  placeholder="Descreva o problema com detalhes..."
+                  placeholderTextColor={tokens.muted}
+                  multiline
+                  numberOfLines={3}
+                  maxLength={1000}
+                  textAlignVertical="top"
+                  editable={!reportSubmitting}
+                />
+
+                <Text style={[s.inputLabel, { color: tokens.text }]}>Foto do problema (opcional)</Text>
+                <TouchableOpacity
+                  style={[sChecklist.photoBtn, { borderColor: tokens.border, paddingVertical: 14 }]}
+                  onPress={reportPickPhoto}
+                  accessibilityRole="button"
+                  accessibilityLabel="Adicionar foto do problema"
+                >
+                  {reportPhotoUri ? (
+                    <RNImage source={{ uri: reportPhotoUri }} style={{ width: "100%", height: 120, borderRadius: 8 }} />
+                  ) : (
+                    <Text style={{ color: tokens.muted, fontSize: 13 }}>📷 Adicionar foto</Text>
+                  )}
+                </TouchableOpacity>
+
+                {reportError ? <Text style={{ color: tokens.error, fontSize: 12, marginBottom: 4 }}>{reportError}</Text> : null}
+
+                <View style={s.modalActions}>
+                  <TouchableOpacity
+                    style={[s.modalBtnSecondary, { borderColor: tokens.border }]}
+                    onPress={() => setReportModalVisible(false)}
+                    disabled={reportSubmitting}
+                    accessibilityRole="button"
+                    accessibilityLabel="Cancelar"
+                  >
+                    <Text style={[s.modalBtnSecondaryText, { color: tokens.text }]}>Cancelar</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[s.modalBtnPrimary, { opacity: !reportCategory || !reportDesc.trim() || reportSubmitting ? 0.5 : 1 }]}
+                    onPress={submitReport}
+                    disabled={!reportCategory || !reportDesc.trim() || reportSubmitting}
+                    accessibilityRole="button"
+                    accessibilityLabel="Enviar relatório"
+                    accessibilityState={{ disabled: !reportCategory || !reportDesc.trim() || reportSubmitting }}
+                  >
+                    {reportSubmitting ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <Text style={s.modalBtnPrimaryText}>Enviar relatório</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Modal: Solicitar extensão de prazo — fonte: _BookingActions.tsx linhas 436-456
+          <input type="date" min={endDate+1}> vira DateTimePicker com minimumDate. ── */}
+      <Modal
+        visible={extendModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setExtendModalVisible(false)}
+      >
+        <View style={s.modalOverlay}>
+          <View style={[s.modalSheet, { backgroundColor: tokens.surface }]}>
+            <Text style={[s.modalTitle, { color: tokens.navy }]}>Nova data de devolução</Text>
+            <Text style={[s.modalDesc, { color: tokens.muted }]}>O proprietário precisará aprovar a extensão.</Text>
+            <TouchableOpacity
+              style={[s.dateField, { borderColor: tokens.border, backgroundColor: tokens.bg }]}
+              onPress={() => setShowExtendPicker(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Escolher nova data de devolução"
+            >
+              <Text style={{ color: extendDate ? tokens.text : tokens.muted, fontSize: 14 }}>
+                {extendDate ? fmtDateLong(`${extendDate}T12:00:00`) : "Selecionar data"}
+              </Text>
+            </TouchableOpacity>
+            {showExtendPicker && (
+              <DateTimePicker
+                value={extendDate ? new Date(`${extendDate}T12:00:00`) : minExtDate}
+                mode="date"
+                display={Platform.OS === "ios" ? "spinner" : "default"}
+                minimumDate={minExtDate}
+                onChange={onExtendDateChange}
+              />
+            )}
+            {extendError ? <Text style={{ color: tokens.error, fontSize: 12 }}>{extendError}</Text> : null}
+            <View style={s.modalActions}>
+              <TouchableOpacity
+                style={[s.modalBtnSecondary, { borderColor: tokens.border }]}
+                onPress={() => setExtendModalVisible(false)}
+                disabled={extendSubmitting}
+                accessibilityRole="button"
+                accessibilityLabel="Cancelar"
+              >
+                <Text style={[s.modalBtnSecondaryText, { color: tokens.text }]}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.modalBtnPrimary, { opacity: !extendDate || extendSubmitting ? 0.5 : 1 }]}
+                onPress={submitExtend}
+                disabled={!extendDate || extendSubmitting}
+                accessibilityRole="button"
+                accessibilityLabel="Solicitar extensão"
+                accessibilityState={{ disabled: !extendDate || extendSubmitting }}
+              >
+                {extendSubmitting ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={s.modalBtnPrimaryText}>Solicitar extensão</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -2043,6 +2656,35 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   modalBtnDangerText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
+
+  // Campos dos modais de ação (retirada / extensão / reportar)
+  inputLabel: { fontSize: 12, fontWeight: "600", marginTop: 4 },
+  inputHint:  { fontSize: 11, lineHeight: 15 },
+  tokenInput: {
+    borderWidth:   1,
+    borderRadius:  10,
+    paddingVertical:   12,
+    paddingHorizontal: 16,
+    fontSize:      24,
+    fontWeight:    "700",
+    textAlign:     "center",
+    letterSpacing: 8,
+  },
+  dateField: {
+    minHeight:         44,
+    borderWidth:       1,
+    borderRadius:      10,
+    paddingHorizontal: 12,
+    justifyContent:    "center",
+  },
+  reportChip: {
+    borderWidth:       1,
+    borderRadius:      10,
+    paddingHorizontal: 12,
+    paddingVertical:   8,
+    minHeight:         40,
+    justifyContent:    "center",
+  },
 
   // ContractBanner styles — fonte: _ContractBanner.tsx
   contractBtn: {

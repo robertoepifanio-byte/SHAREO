@@ -44,10 +44,11 @@ export function LateFeePayButton({ bookingId, amount }: LateFeePayButtonProps) {
     try {
       const json = await apiFetch<{ data: { url: string } }>(
         `/api/bookings/${bookingId}/late-fee/pay`,
-        { method: "POST" },
+        { method: "POST", body: JSON.stringify({ client: "mobile" }) },
       )
-      // A sessão volta para a página web da reserva (não shareo://): ao pagar, o
-      // locatário fecha o navegador e a invalidação abaixo relê o estado.
+      // `client: "mobile"` faz a sessão voltar pelo deep link shareo://reservas/:id
+      // — o openAuthSessionAsync fecha o navegador in-app no success_url e a
+      // invalidação abaixo relê o estado (padrão do checkout regular, PayButton).
       await WebBrowser.openAuthSessionAsync(json.data.url, "shareo://")
       queryClient.invalidateQueries({ queryKey: ["booking", bookingId] })
     } catch (err: unknown) {

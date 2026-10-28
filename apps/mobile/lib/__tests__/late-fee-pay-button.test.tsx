@@ -50,7 +50,8 @@ describe("LateFeePayButton", () => {
     render(<Wrapper><LateFeePayButton bookingId="b1" amount={22500} /></Wrapper>)
     fireEvent.press(screen.getByLabelText(ROTULO))
     await waitFor(() => {
-      expect(apiFetch()).toHaveBeenCalledWith("/api/bookings/b1/late-fee/pay", { method: "POST" })
+      // Passa client:"mobile" → a rota gera success_url shareo://reservas/:id
+      expect(apiFetch()).toHaveBeenCalledWith("/api/bookings/b1/late-fee/pay", { method: "POST", body: JSON.stringify({ client: "mobile" }) })
       expect(openAuth()).toHaveBeenCalledWith("https://checkout.stripe.com/late", "shareo://")
     })
   })

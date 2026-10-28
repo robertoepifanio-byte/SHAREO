@@ -61,6 +61,15 @@ const DIVERGENCIAS_CONHECIDAS: Record<string, { texto: string; motivo: string }[
   "app/suporte/page.tsx": [
     { texto: "Início", motivo: "Breadcrumb do site; no app o retorno é o botão voltar do cabeçalho (mesma convenção de comunidade/sobre)." },
   ],
+  // O painel "return_time" de _BookingActions é código morto quando a tela da
+  // reserva exibe ReturnChecklist/ReturnConditionForm (page.tsx passa
+  // hideReturnActions). O app faz a devolução por esse mesmo fluxo (foto + 3/4
+  // itens no "Checklist de devolução"), não pelo seletor de horário do site —
+  // então os rótulos desse painel não existem no app, por desenho.
+  "app/reservas/[id]/_BookingActions.tsx": [
+    { texto: "Informe o horário exato da devolução. A locação ficará como", motivo: "Fluxo de devolução do app é o ReturnChecklist (foto obrigatória + 3/4 itens), não o painel de horário do site — que o próprio site esconde via hideReturnActions." },
+    { texto: "Horário da devolução", motivo: "Rótulo do painel return_time do site; a devolução no app é pelo ReturnChecklist, sem seletor de horário de devolução (a retirada, essa sim, tem seletor transcrito)." },
+  ],
 }
 
 /** Cheira a código (genérico de TS, ternário, atribuição), não a texto de tela. */
@@ -128,6 +137,10 @@ const MAPA_TELAS: [string, string][] = [
   ["packages/legal/src/PrivacidadeConteudo.tsx", "apps/mobile/app/privacidade.tsx"],
   ["app/suporte/page.tsx",        "apps/mobile/app/suporte.tsx"],
   ["app/loja/[slug]/page.tsx",     "apps/mobile/app/loja/[slug].tsx"],
+  // Ações da reserva: o site concentra os rótulos em _BookingActions e o app os
+  // espelha na tela da reserva. Pega divergência de rótulo (confirmar, retirada,
+  // disputa, extensão) — a causa do Red Team de 28/10 (ações faltando no app).
+  ["app/reservas/[id]/_BookingActions.tsx", "apps/mobile/app/reservas/[id].tsx"],
 ]
 
 /** Pares descobertos por nome de arquivo — nada de lista manual a manter. */
