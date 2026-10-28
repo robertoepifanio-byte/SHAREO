@@ -141,7 +141,7 @@ export default async function PublicProfilePage({ params }: Props) {
 
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-xl font-bold text-primary">{user.name}</h1>
+                  <h1 className="font-display text-xl font-bold text-primary">{user.name}</h1>
                   {user.isVerified && (
                     <span className="rounded-full bg-success/10 px-2 py-0.5 text-xs font-semibold text-success">
                       ✓ Verificado
@@ -205,7 +205,7 @@ export default async function PublicProfilePage({ params }: Props) {
           {/* ── P3-70/71/72/74: Reputação, badges e progresso ── */}
           {(borrowerBadge || activeReviewer || nextBadge || user.reputationPoints > 0) && (
             <div className="rounded-xl border border-border bg-surface p-6 space-y-4">
-              <h2 className="font-semibold text-foreground">Conquistas</h2>
+              <h2 className="font-display font-semibold text-foreground">Conquistas</h2>
 
               {/* Pontos de reputação */}
               {user.reputationPoints > 0 && (
@@ -249,7 +249,7 @@ export default async function PublicProfilePage({ params }: Props) {
           {/* ── Anúncios ativos ── */}
           {user.items.length > 0 && (
             <div>
-              <h2 className="mb-4 font-semibold text-foreground">
+              <h2 className="font-display mb-4 font-semibold text-foreground">
                 Anúncios de {user.name.split(" ")[0]}
               </h2>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -263,7 +263,7 @@ export default async function PublicProfilePage({ params }: Props) {
           {/* ── Avaliações recebidas ── */}
           {user.reviewsReceived.length > 0 && (
             <div className="rounded-xl border border-border bg-surface p-6">
-              <h2 className="mb-4 font-semibold text-foreground">
+              <h2 className="font-display mb-4 font-semibold text-foreground">
                 Avaliações recebidas
                 {reviewCount > 5 && (
                   <span className="ml-2 text-sm font-normal text-muted-foreground">

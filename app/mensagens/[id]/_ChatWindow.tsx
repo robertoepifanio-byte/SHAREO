@@ -260,7 +260,7 @@ export function ChatWindow({ conversationId, currentUserId, initialMessages, oth
                   key={tpl}
                   type="button"
                   onClick={() => { setInput(tpl); inputRef.current?.focus() }}
-                  className="rounded-full border border-input bg-background px-3 py-1 text-xs text-muted-foreground hover:border-brand hover:text-brand transition-colors min-h-[32px]"
+                  className="rounded-full border border-input bg-background px-3 py-1 text-xs text-muted-foreground hover:border-brand hover:text-brand transition-colors min-h-[44px]"
                 >
                   {tpl}
                 </button>

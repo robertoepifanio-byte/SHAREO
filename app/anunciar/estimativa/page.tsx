@@ -52,7 +52,7 @@ export default async function EstimativaPage() {
           </div>
           <Link
             href="/anunciar/dicas"
-            className="flex-shrink-0 inline-flex h-9 items-center rounded-lg border border-brand px-4 text-sm font-medium text-brand hover:bg-brand/5 transition-colors whitespace-nowrap"
+            className="flex-shrink-0 inline-flex h-11 items-center rounded-lg border border-brand px-4 text-sm font-medium text-brand hover:bg-brand/5 transition-colors whitespace-nowrap"
           >
             Ver dicas →
           </Link>

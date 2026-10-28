@@ -41,7 +41,7 @@ export default async function EmbaixadorPage() {
       <main className="container py-8">
         <div className="mx-auto max-w-lg">
           <div className="mb-6">
-            <h1 className="text-xl font-bold text-primary">Programa Embaixadores</h1>
+            <h1 className="font-display text-xl font-bold text-primary">Programa Embaixadores</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Bronze · Prata · Ouro — comissões sobre a taxa ShareO por cada locação dos seus indicados.
             </p>

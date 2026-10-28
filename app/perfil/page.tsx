@@ -123,7 +123,7 @@ export default async function ProfilePage() {
 
               {/* Nome + badges */}
               <div className="flex flex-wrap items-center gap-2 mb-1">
-                <h1 className="text-2xl font-bold text-primary">{user.name}</h1>
+                <h1 className="font-display text-2xl font-bold text-primary">{user.name}</h1>
                 {user.isVerified && (
                   <span className="rounded-full bg-success/10 px-2.5 py-0.5 text-xs font-semibold text-success">
                     ✓ Verificado
@@ -208,7 +208,7 @@ export default async function ProfilePage() {
           {user.reviewsReceived.length > 0 && (
             <div className="rounded-xl border border-border bg-surface p-5">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-semibold text-foreground">
+                <h2 className="font-display font-semibold text-foreground">
                   Avaliações recebidas
                   {reviewCount > 5 && (
                     <span className="ml-2 text-sm font-normal text-muted-foreground">(últimas 5 de {reviewCount})</span>
@@ -252,7 +252,7 @@ export default async function ProfilePage() {
           {/* ── Configurações ── */}
           <div className="rounded-xl border border-border bg-surface overflow-hidden">
             <div className="px-5 py-4 border-b border-border">
-              <h2 className="font-semibold text-foreground">Configurações da conta</h2>
+              <h2 className="font-display font-semibold text-foreground">Configurações da conta</h2>
             </div>
             <div>
               {CONFIG_LINKS.map((item, idx) => (

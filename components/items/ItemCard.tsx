@@ -149,7 +149,7 @@ export function ItemCard({ item, showActions = false, isFavorited = false, hotBa
           <div className="flex gap-2">
             <Link
               href={`/itens/${item.id}/editar`}
-              className="flex-1 rounded-md border border-border py-1.5 text-center text-xs font-medium text-foreground hover:bg-background transition-colors"
+              className="flex-1 rounded-md border border-border min-h-[44px] flex items-center justify-center py-1.5 text-center text-xs font-medium text-foreground hover:bg-background transition-colors"
             >
               Editar
             </Link>
@@ -158,7 +158,7 @@ export function ItemCard({ item, showActions = false, isFavorited = false, hotBa
                 onClick={() => onToggleActive(item.id, item.status ?? "AVAILABLE")}
                 disabled={toggling}
                 className={[
-                  "flex-1 rounded-md border py-1.5 text-xs font-medium transition-colors disabled:opacity-50",
+                  "flex-1 rounded-md border min-h-[44px] py-1.5 text-xs font-medium transition-colors disabled:opacity-50",
                   isAvailable
                     ? "border-amber-300 text-amber-700 hover:bg-amber-50"
                     : "border-success/40 text-success hover:bg-success/5",
@@ -171,7 +171,7 @@ export function ItemCard({ item, showActions = false, isFavorited = false, hotBa
           {onDelete && (
             <button
               onClick={() => onDelete(item.id)}
-              className="w-full rounded-md border border-destructive/30 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/5 transition-colors"
+              className="w-full rounded-md border border-destructive/30 min-h-[44px] py-1.5 text-xs font-medium text-destructive hover:bg-destructive/5 transition-colors"
             >
               Remover
             </button>
