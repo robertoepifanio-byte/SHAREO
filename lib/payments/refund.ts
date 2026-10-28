@@ -69,7 +69,7 @@ export async function emitCancellationRefund({
   paymentIntentId: string
   amount:          number
   /** Origem do estorno — separa a chave de idempotência e o registro contábil. */
-  motivo?:         "cancellation" | "dispute-partial"
+  motivo?:         "cancellation" | "dispute-partial" | "dispute-full"
 }) {
   const stripe = getStripe()
 
@@ -85,6 +85,8 @@ export async function emitCancellationRefund({
       amount,
       description: motivo === "dispute-partial"
         ? "Estorno parcial por decisão de disputa"
+        : motivo === "dispute-full"
+        ? "Estorno integral por decisão de disputa"
         : "Estorno automático por cancelamento",
       metadata:    { stripeRefundId: refund.id },
     },

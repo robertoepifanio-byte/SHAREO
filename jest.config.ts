@@ -44,6 +44,13 @@ const config: Config = {
     // Pago, depois que o pacote `mercadopago` saiu do package.json.
     "<rootDir>/.claude/",
   ],
+  // 🪤 `testPathIgnorePatterns` só tira os worktrees da COLETA de testes; o
+  // haste module map ainda varre os `package.json` deles e colide em
+  // `@shareo/legal` | `@shareo/mobile` | `@shareo/campanha` ("Haste module
+  // naming collision"), derrubando a suíte antes de qualquer teste rodar.
+  // `modulePathIgnorePatterns` exclui os worktrees também do module map.
+  // Só local — `.claude/` não existe no checkout do CI.
+  modulePathIgnorePatterns: ["<rootDir>/.claude/"],
   collectCoverageFrom: [
     "lib/**/*.{ts,tsx}",
     "utils/**/*.{ts,tsx}",
