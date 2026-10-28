@@ -243,6 +243,14 @@ export async function emitirCobrancaTaxaAtraso(
    * atraso"): ele recebe o link na resposta, e-mail seria ruído.
    */
   enviarEmail:      boolean = true,
+  /**
+   * `"mobile"` quando a cobrança nasce do app: o `success_url` vira o deep link
+   * `shareo://` para fechar o navegador in-app e voltar à tela da reserva (mesmo
+   * padrão de app/api/payments/checkout/route.ts). O cron e o e-mail chamam sem
+   * este argumento (`"web"`), e continuam com a URL web — o link de e-mail não
+   * pode ser um deep link.
+   */
+  client:           "web" | "mobile" = "web",
 ): Promise<ResultadoCobranca> {
 
   if (taxaDeAtrasoQuitada(b)) return { emitida: false, motivo: "JA_QUITADA" }
@@ -295,8 +303,8 @@ export async function emitirCobrancaTaxaAtraso(
       },
     }],
     metadata:    { bookingId: b.id, type: "late_fee" },
-    success_url: `${APP_URL}/reservas/${b.id}?late_fee=paid`,
-    cancel_url:  `${APP_URL}/reservas/${b.id}`,
+    success_url: client === "mobile" ? `shareo://reservas/${b.id}?late_fee=paid` : `${APP_URL}/reservas/${b.id}?late_fee=paid`,
+    cancel_url:  client === "mobile" ? `shareo://reservas/${b.id}` : `${APP_URL}/reservas/${b.id}`,
     // 🪤 Era `72 * 3600`, e a Stripe recusa: o teto de `expires_at` é 24h.
     expires_at:  Math.floor(agora.getTime() / 1000) + STRIPE_CHARGE_EXPIRES_SECONDS,
   })

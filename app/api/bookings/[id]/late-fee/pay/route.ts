@@ -34,6 +34,12 @@ export async function POST(req: NextRequest, { params }: Params) {
     const rl = await checkRateLimit(`checkout:${userId}`, RATE_LIMITS.checkout.limit, RATE_LIMITS.checkout.windowMs)
     if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
+    // "mobile" → success_url/cancel_url viram deep link shareo:// (fecha o
+    // navegador in-app e volta à tela da reserva). Default "web" para o caso de
+    // chamada sem corpo. Body ausente/inválido não é erro aqui.
+    const body   = await req.json().catch(() => ({})) as { client?: unknown }
+    const client = body.client === "mobile" ? "mobile" : "web"
+
     const { id } = await params
     const booking = await prisma.booking.findUnique({
       where:  { id },
@@ -70,6 +76,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       bookingItemsLabel(booking.item.title, booking._count.bookingItems || 1),
       valor, dias, fimDoAtraso, agora,
       false, // sem e-mail: o locatário acabou de pedir e recebe o link na resposta
+      client, // "mobile" → success_url shareo://; "web" mantém a URL web
     )
 
     if (r.emitida) return NextResponse.json({ data: { url: r.url } })

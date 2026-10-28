@@ -894,3 +894,229 @@ describe("CheckInOut — rótulos das fases (status ACTIVE)", () => {
     })
   })
 })
+
+// ── #3 Confirmar reserva (proprietário + PENDING) ────────────────────────────
+// Fonte: _BookingActions.tsx linha 252 (execCore("confirm")).
+
+describe("Ação do proprietário — Confirmar reserva (PENDING)", () => {
+  beforeEach(() => {
+    mockAuthUserId   = "user-owner"
+    mockAuthUserName = "Carlos"
+    setApiFetch({ status: "PENDING" })
+  })
+
+  it("exibe o botão 'Confirmar reserva' para o proprietário — verbatim _BookingActions.tsx linha 252", async () => {
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Aguardando aprovação")
+    expect(screen.getByLabelText("Confirmar reserva")).toBeTruthy()
+  })
+
+  it("o locatário NÃO vê 'Confirmar reserva' (ação exclusiva do dono)", async () => {
+    mockAuthUserId   = "user-borrower"
+    mockAuthUserName = "Ana"
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Aguardando aprovação")
+    expect(screen.queryByLabelText("Confirmar reserva")).toBeNull()
+  })
+
+  it("ao pressionar, chama a API com action 'confirm'", async () => {
+    const { apiFetch } = jest.requireMock("@/lib/api") as { apiFetch: jest.Mock }
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Aguardando aprovação")
+    fireEvent.press(screen.getByLabelText("Confirmar reserva"))
+    await waitFor(() =>
+      expect(apiFetch).toHaveBeenCalledWith("/api/bookings/booking-1", { method: "PATCH", body: JSON.stringify({ action: "confirm" }) }),
+    )
+  })
+})
+
+// ── #3 Marcar como ativo (proprietário + CONFIRMED + PAID) ───────────────────
+// Fonte: _BookingActions.tsx linhas 253-254, 346-397 (token de 6 dígitos + horário).
+
+describe("Ação do proprietário — Marcar como ativo (CONFIRMED + PAID)", () => {
+  beforeEach(() => {
+    mockAuthUserId   = "user-owner"
+    mockAuthUserName = "Carlos"
+    mockContratoExigido = false
+    setApiFetch({ status: "CONFIRMED", paymentStatus: "PAID" })
+  })
+
+  it("exibe 'Marcar como ativo' só com pagamento confirmado", async () => {
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Confirmada")
+    expect(screen.getByLabelText("Marcar como ativo")).toBeTruthy()
+  })
+
+  it("NÃO exibe 'Marcar como ativo' sem pagamento (paymentStatus null)", async () => {
+    setApiFetch({ status: "CONFIRMED", paymentStatus: null })
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Confirmada")
+    expect(screen.queryByLabelText("Marcar como ativo")).toBeNull()
+  })
+
+  it("abre o modal com os rótulos verbatim do site", async () => {
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Confirmada")
+    fireEvent.press(screen.getByLabelText("Marcar como ativo"))
+    await waitFor(() => expect(screen.getByText("Confirmar retirada do item")).toBeTruthy())
+    expect(screen.getByText("Solicite o código de retirada ao locatário e informe abaixo para confirmar a entrega.")).toBeTruthy()
+    expect(screen.getByText("Não pode ser no futuro. Se não alterar, usa o horário atual.")).toBeTruthy()
+    expect(screen.getByLabelText("Confirmar retirada")).toBeTruthy()
+  })
+
+  it("'Confirmar retirada' fica desabilitado até o token ter 6 dígitos", async () => {
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Confirmada")
+    fireEvent.press(screen.getByLabelText("Marcar como ativo"))
+    await waitFor(() => expect(screen.getByLabelText("Confirmar retirada")).toBeTruthy())
+    expect(screen.getByLabelText("Confirmar retirada").props.accessibilityState?.disabled).toBe(true)
+    fireEvent.changeText(screen.getByLabelText("Código do locatário"), "123456")
+    await waitFor(() =>
+      expect(screen.getByLabelText("Confirmar retirada").props.accessibilityState?.disabled).toBe(false),
+    )
+  })
+
+  it("envia mark_active com o pickupToken ao confirmar", async () => {
+    const { apiFetch } = jest.requireMock("@/lib/api") as { apiFetch: jest.Mock }
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Confirmada")
+    fireEvent.press(screen.getByLabelText("Marcar como ativo"))
+    await waitFor(() => expect(screen.getByLabelText("Código do locatário")).toBeTruthy())
+    fireEvent.changeText(screen.getByLabelText("Código do locatário"), "654321")
+    fireEvent.press(screen.getByLabelText("Confirmar retirada"))
+    await waitFor(() =>
+      expect(apiFetch).toHaveBeenCalledWith("/api/bookings/booking-1", { method: "PATCH", body: JSON.stringify({ action: "mark_active", pickupToken: "654321" }) }),
+    )
+  })
+})
+
+// ── #14 Solicitar extensão de prazo (locatário + ACTIVE) ─────────────────────
+// Fonte: _BookingActions.tsx linhas 267-268, 436-456.
+
+describe("Ação do locatário — Solicitar extensão de prazo (ACTIVE)", () => {
+  beforeEach(() => setApiFetch({ status: "ACTIVE", endDate: FUTURE_DATE, extensionStatus: null }))
+
+  it("exibe o botão 'Solicitar extensão de prazo'", async () => {
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Em andamento")
+    expect(screen.getByLabelText("Solicitar extensão de prazo")).toBeTruthy()
+  })
+
+  it("some com pedido já pendente (extensionStatus PENDING)", async () => {
+    setApiFetch({ status: "ACTIVE", endDate: FUTURE_DATE, extensionStatus: "PENDING" })
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Em andamento")
+    expect(screen.queryByLabelText("Solicitar extensão de prazo")).toBeNull()
+  })
+
+  it("abre o modal 'Nova data de devolução' com o aviso de aprovação", async () => {
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Em andamento")
+    fireEvent.press(screen.getByLabelText("Solicitar extensão de prazo"))
+    await waitFor(() => expect(screen.getByText("Nova data de devolução")).toBeTruthy())
+    expect(screen.getByText("O proprietário precisará aprovar a extensão.")).toBeTruthy()
+    expect(screen.getByLabelText("Solicitar extensão")).toBeTruthy()
+  })
+})
+
+// ── #14 Proprietário responde ao pedido de extensão ──────────────────────────
+// Fonte: _BookingActions.tsx linhas 294, 458-477.
+
+describe("Extensão pendente — proprietário responde", () => {
+  beforeEach(() => {
+    mockAuthUserId   = "user-owner"
+    mockAuthUserName = "Carlos"
+    setApiFetch({
+      status: "ACTIVE", endDate: FUTURE_DATE,
+      extensionStatus: "PENDING",
+      extensionRequestedEndDate: "2026-08-20T12:00:00Z",
+    })
+  })
+
+  it("exibe o painel 'Solicitação de extensão de prazo' com Aprovar/Recusar", async () => {
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Em andamento")
+    await waitFor(() => expect(screen.getByText("Solicitação de extensão de prazo")).toBeTruthy())
+    expect(screen.getByLabelText("Aprovar extensão")).toBeTruthy()
+    expect(screen.getByLabelText("Recusar")).toBeTruthy()
+  })
+
+  it("Aprovar chama PATCH /extend { action: 'approve' }", async () => {
+    const { apiFetch } = jest.requireMock("@/lib/api") as { apiFetch: jest.Mock }
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Em andamento")
+    await waitFor(() => expect(screen.getByLabelText("Aprovar extensão")).toBeTruthy())
+    fireEvent.press(screen.getByLabelText("Aprovar extensão"))
+    await waitFor(() =>
+      expect(apiFetch).toHaveBeenCalledWith("/api/bookings/booking-1/extend", { method: "PATCH", body: JSON.stringify({ action: "approve" }) }),
+    )
+  })
+})
+
+// ── #13 Reportar problema (ACTIVE/RETURNED, sem disputa aberta) ──────────────
+// Fonte: _BookingActions.tsx linhas 277-286, 479-577.
+
+describe("Ação — Reportar problema", () => {
+  beforeEach(() => setApiFetch({ status: "ACTIVE", endDate: FUTURE_DATE }))
+
+  it("exibe o botão 'Reportar problema' em ACTIVE sem disputa", async () => {
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Em andamento")
+    expect(screen.getByLabelText("Reportar problema")).toBeTruthy()
+  })
+
+  it("passo de contato antes da reclamação (há chat), depois o formulário", async () => {
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Em andamento")
+    fireEvent.press(screen.getByLabelText("Reportar problema"))
+    await waitFor(() => expect(screen.getByText("Antes de abrir uma reclamação")).toBeTruthy())
+    fireEvent.press(screen.getByLabelText("Continuar"))
+    await waitFor(() => expect(screen.getByText("Reportar problema com o item")).toBeTruthy())
+    expect(screen.getByLabelText("Enviar relatório")).toBeTruthy()
+  })
+
+  it("'Enviar relatório' desabilitado sem categoria e descrição", async () => {
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Em andamento")
+    fireEvent.press(screen.getByLabelText("Reportar problema"))
+    await waitFor(() => expect(screen.getByText("Antes de abrir uma reclamação")).toBeTruthy())
+    fireEvent.press(screen.getByLabelText("Continuar"))
+    await waitFor(() => expect(screen.getByLabelText("Enviar relatório")).toBeTruthy())
+    expect(screen.getByLabelText("Enviar relatório").props.accessibilityState?.disabled).toBe(true)
+  })
+})
+
+// ── #13 Disputa — banner e cancelamento ──────────────────────────────────────
+// Fonte: _BookingActions.tsx linhas 275-291, 313-321.
+
+describe("Disputa em análise — banner e cancelar disputa", () => {
+  it("exibe o banner 'Disputa em análise' quando disputeStatus OPEN", async () => {
+    setApiFetch({ status: "ACTIVE", endDate: FUTURE_DATE, disputeStatus: "OPEN", disputeOpenedById: "user-owner" })
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Em andamento")
+    await waitFor(() => expect(screen.getByText("Disputa em análise")).toBeTruthy())
+    expect(screen.getByText("A equipe ShareO está analisando o caso. A locação segue normalmente — você pode continuar usando as ações abaixo.")).toBeTruthy()
+  })
+
+  it("com disputa aberta, 'Reportar problema' não aparece", async () => {
+    setApiFetch({ status: "ACTIVE", endDate: FUTURE_DATE, disputeStatus: "OPEN", disputeOpenedById: "user-owner" })
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Em andamento")
+    expect(screen.queryByLabelText("Reportar problema")).toBeNull()
+  })
+
+  it("'Cancelar disputa' só para quem abriu (disputeOpenedById === user.id)", async () => {
+    // Locatário logado é quem abriu → vê o botão.
+    setApiFetch({ status: "ACTIVE", endDate: FUTURE_DATE, disputeStatus: "OPEN", disputeOpenedById: "user-borrower" })
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Em andamento")
+    expect(screen.getByLabelText("Cancelar disputa")).toBeTruthy()
+  })
+
+  it("quem NÃO abriu a disputa não vê 'Cancelar disputa'", async () => {
+    setApiFetch({ status: "ACTIVE", endDate: FUTURE_DATE, disputeStatus: "OPEN", disputeOpenedById: "user-owner" })
+    wrap(<BookingDetailScreen />)
+    await waitForBookingLoad("Em andamento")
+    expect(screen.queryByLabelText("Cancelar disputa")).toBeNull()
+  })
+})
