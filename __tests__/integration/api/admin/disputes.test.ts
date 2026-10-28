@@ -138,6 +138,50 @@ describe("PATCH /api/admin/disputes/[id]", () => {
     )
   })
 
+  // 🪤 Gravar `refundAmount: 10000` no banco não é estornar: sem este
+  // `refunds.create` o locatário via "reembolsado 100%" e o dinheiro ficava na
+  // plataforma. O teste acima confunde "gravar" com "emitir" — este MORDE a
+  // emissão de verdade. Se o `emitCancellationRefund` do cancelamento integral
+  // for removido, só ESTE caso quebra.
+  it("resolve_cancelled EMITE o estorno integral na Stripe (não só grava)", async () => {
+    mockBookingUpdate.mockResolvedValue({ id: BOOKING_ID, status: "CANCELLED", updatedAt: new Date() })
+
+    await PATCH(makeReq({ action: "resolve_cancelled" }), makeParams())
+
+    expect(mockRefund).toHaveBeenCalledWith(expect.objectContaining({
+      bookingId:       BOOKING_ID,
+      paymentIntentId: "pi_locacao",
+      amount:          10000,
+      motivo:          "dispute-full",
+    }))
+  })
+
+  // Reserva não paga não gera estorno algum — o campo grava zero (teste acima) e
+  // a Stripe não é chamada.
+  it("resolve_cancelled em reserva NÃO paga não chama a Stripe", async () => {
+    mockBookingFindUnique.mockResolvedValue({ ...makeBooking(), paymentStatus: "PENDING" })
+    mockBookingUpdate.mockResolvedValue({ id: BOOKING_ID, status: "CANCELLED", updatedAt: new Date() })
+
+    await PATCH(makeReq({ action: "resolve_cancelled" }), makeParams())
+
+    expect(mockRefund).not.toHaveBeenCalled()
+  })
+
+  // 🪤 Paga mas sem cobrança na Stripe: gravar refundAmount=10000 e não ter como
+  // emitir o refund deixaria o banco mentindo. A guarda recusa ANTES da escrita,
+  // igual ao parcial.
+  it("resolve_cancelled em reserva paga SEM cobrança na Stripe → 422 e não grava", async () => {
+    mockBookingFindUnique.mockResolvedValue({ ...makeBooking(), stripePaymentIntentId: null })
+
+    const res  = await PATCH(makeReq({ action: "resolve_cancelled" }), makeParams())
+    const body = await res.json() as { error: { code: string } }
+
+    expect(res.status).toBe(422)
+    expect(body.error.code).toBe("SEM_COBRANCA")
+    expect(mockBookingUpdate).not.toHaveBeenCalled()
+    expect(mockRefund).not.toHaveBeenCalled()
+  })
+
   // Não se estorna dinheiro que nunca entrou: um valor a devolver numa reserva
   // não paga vira trabalho real na fila de alguém (mesma regra do #345).
   it("resolve_cancelled em reserva NÃO paga grava estorno zero", async () => {

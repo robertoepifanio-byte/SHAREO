@@ -118,6 +118,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         )
       }
     }
+
+    // Mesma guarda para o estorno INTEGRAL: uma reserva paga sem cobrança na
+    // Stripe gravaria `refundAmount: totalPrice` (abaixo) e nunca teria como
+    // emitir o refund — o banco diria "reembolsado 100%" com o dinheiro retido.
+    // Fica ANTES da escrita pela mesma razão que o guard do parcial.
+    if (action === "resolve_cancelled" && booking.paymentStatus === "PAID" && !booking.stripePaymentIntentId) {
+      return NextResponse.json(
+        { error: { code: "SEM_COBRANCA", message: "A reserva não tem cobrança na Stripe para estornar." } },
+        { status: 422 },
+      )
+    }
     // Um desfecho, duas consequências: onde a RESERVA para e como a DISPUTA
     // fecha. Ficam na mesma tabela para não poderem divergir — dois ternários
     // sobre `action` são duas chances de alguém corrigir só um deles.
@@ -222,6 +233,22 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         motivo:          "dispute-partial",
       }).catch((e) =>
         console.error(`[disputa] estorno parcial de ${refundAmount} em ${id} FALHOU:`, e instanceof Error ? e.message : e)
+      )
+    } else if (action === "resolve_cancelled" && booking.paymentStatus === "PAID") {
+      // 🪤 Estorno INTEGRAL da disputa — não existia. O bloco acima grava
+      // `refundAmount: totalPrice` / `refundPercent: 100`, mas nenhum
+      // `refunds.create` era emitido: o locatário via "reembolsado 100%" e o
+      // dinheiro ficava na plataforma. Simétrico ao parcial, com o mesmo
+      // tratamento do erro (loga e segue; `refundAmount` fica no banco como o
+      // valor devido para reprocessar). O guard `SEM_COBRANCA` acima garante o
+      // paymentIntentId; o webhook `charge.refunded` reverte eventual repasse.
+      await emitCancellationRefund({
+        bookingId:       id,
+        paymentIntentId: booking.stripePaymentIntentId!,
+        amount:          booking.totalPrice,
+        motivo:          "dispute-full",
+      }).catch((e) =>
+        console.error(`[disputa] estorno integral de ${booking.totalPrice} em ${id} FALHOU:`, e instanceof Error ? e.message : e)
       )
     }
 
