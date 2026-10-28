@@ -19,6 +19,7 @@
 import fs from 'fs'
 import { test, expect } from '@playwright/test'
 import { SESSION_PATHS } from './fixtures/test-credentials'
+import { apiWithRetry } from './_support'
 
 // ─── Session paths adicionais ────────────────────────────────────────────────
 
@@ -103,6 +104,27 @@ test.describe('Grupo 2 — CRUD de admins', () => {
   test.skip(!hasAdminSession, 'Requer session-admin.json')
   test.use({ storageState: SESSION_PATHS.admin })
 
+  // Contas admin.e2e.* criadas pelo 2.1. Sem o teardown elas se acumulavam no staging a
+  // cada rodada. Não há rota de exclusão de admin: tira o papel (demote_to_user) e depois
+  // desativa — demote_to_user grava isActive: true, por isso a ordem. Roda mesmo com teste
+  // vermelho, porque o id é guardado logo que o POST responde.
+  const createdAdminIds: string[] = []
+
+  test.afterAll(async ({ playwright, baseURL, extraHTTPHeaders }) => {
+    if (createdAdminIds.length === 0) return
+    const api = await playwright.request.newContext({ baseURL, extraHTTPHeaders, storageState: SESSION_PATHS.admin })
+    try {
+      for (const id of createdAdminIds) {
+        const demote = await apiWithRetry(() => api.patch(`/api/admin/users/admins/${id}`, { data: { action: 'demote_to_user' } }))
+        const deactivate = await apiWithRetry(() => api.patch(`/api/admin/users/${id}`, { data: { action: 'deactivate' } }))
+        expect(demote.status(), `demote_to_user ${id}`).toBe(200)
+        expect(deactivate.status(), `deactivate ${id}`).toBe(200)
+      }
+    } finally {
+      await api.dispose()
+    }
+  })
+
   test('2.1 criar novo admin com dados válidos aparece na tabela', async ({ page }) => {
     await page.goto('/admin/usuarios/admins')
     await expect(page.locator('h1')).toContainText('Administradores', { timeout: 15000 })
@@ -123,6 +145,10 @@ test.describe('Grupo 2 — CRUD de admins', () => {
       page.waitForResponse((res) => res.url().includes('/api/admin/users/admins') && res.request().method() === 'POST'),
       page.getByRole('button', { name: /Criar administrador/i }).click(),
     ])
+    if (response.status() === 201) {
+      const body = await response.json() as { data: { id: string } }
+      createdAdminIds.push(body.data.id)
+    }
     expect(response.status()).toBe(201)
 
     // Tabela deve exibir o novo admin (refresh automático)

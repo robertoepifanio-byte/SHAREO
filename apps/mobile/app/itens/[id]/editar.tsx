@@ -1202,9 +1202,9 @@ function makeStyles(tokens: Tokens) {
     priceInput: { flex: 1, minHeight: 44, fontSize: 14 },
 
     suggestRow: { gap: 2 },
-    suggestText: { fontSize: 11 },
-    suggestNote: { fontSize: 10, opacity: 0.7 },
-    applyBtn:    { fontSize: 11, textDecorationLine: "underline", marginTop: 2 },
+    suggestText: { fontSize: 12 },
+    suggestNote: { fontSize: 12, opacity: 0.7 },
+    applyBtn:    { fontSize: 12, textDecorationLine: "underline", marginTop: 2 },
 
     infoBanner:     { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
     infoBannerText: { fontSize: 12 },

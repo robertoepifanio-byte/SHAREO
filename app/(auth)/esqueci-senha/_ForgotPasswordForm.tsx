@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
 import { parseRetryAfterSeconds } from "@/lib/http"
+import { emailField } from "@/lib/validations/auth"
 
 export function ForgotPasswordForm() {
   const [email,   setEmail]   = useState("")
@@ -14,7 +15,7 @@ export function ForgotPasswordForm() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    if (!email.includes("@")) { setError("E-mail inválido"); return }
+    if (!emailField().safeParse(email).success) { setError("E-mail inválido"); return }
     setError(""); setLoading(true)
 
     try {
