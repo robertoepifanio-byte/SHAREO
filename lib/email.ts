@@ -5,6 +5,7 @@ import { unsubscribeUrl } from "@/lib/founders-unsubscribe"
 import { engagementUnsubscribeUrl } from "@/lib/engagement-unsubscribe"
 import { formatPrice, formatDateLong } from "@/utils/format"
 import { prisma } from "@/lib/prisma"
+import { LEGAL_ENTITY } from "@/lib/legal-config"
 
 /**
  * Lida a CADA chamada, não uma vez na carga do módulo.
@@ -1128,4 +1129,55 @@ export async function sendStripeConnectNeedsActionEmail(
     html,
   })
   if (error) throw new Error(`Resend error: ${error.message}`)
+}
+
+/**
+ * Aviso de atualização do Contrato de Serviços da Stripe aos proprietários com
+ * conta de recebimento (Express). A Stripe exige que a plataforma avise as
+ * contas conectadas sem Dashboard completo até 07/11/2026; os termos novos
+ * valem a partir de 06/01/2027 e o aceite é por continuar usando a conta.
+ * Fonte: support.stripe.com/questions/stripe-user-terms-update-september-28-2026
+ *
+ * TRANSACIONAL, não marketing: é comunicação contratual, então sai por
+ * `sendAppEmail` (sem descadastro) e ignora `engagementEmailsOptOut`.
+ * Disparado por `scripts/avisar-termos-stripe.ts`.
+ */
+export async function sendStripeTermsUpdateEmail(
+  to:   string,
+  name: string,
+): Promise<{ error: { message: string } | null }> {
+  const firstName = name.trim().split(" ")[0]
+  const vigencia  = "6 de janeiro de 2027"
+  const suporte   = LEGAL_ENTITY.emailContato
+
+  const html = baseLayout(`
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:800;color:#003366;">
+      ${escapeHtml(firstName ? `Olá, ${firstName}!` : "Olá!")}
+    </h1>
+    <h2 style="margin:0 0 16px;font-size:18px;font-weight:700;color:#003366;">
+      A Stripe está atualizando seus termos
+    </h2>
+    <p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">
+      A Stripe, que processa os pagamentos e os repasses da ShareO, está atualizando
+      seus termos jurídicos. Como você tem uma conta de recebimento na ShareO, a
+      mudança vale para ela.
+    </p>
+    <p style="margin:0 0 16px;font-size:15px;color:#475569;line-height:1.6;">
+      Os termos atualizados entram em vigor em <strong>${vigencia}</strong>.
+      Você não precisa fazer nada, mas, ao continuar usando os serviços da Stripe a
+      partir dessa data, você concorda com os termos atualizados.
+    </p>
+    <p style="margin:0 0 4px;font-size:15px;color:#475569;line-height:1.6;">
+      Você pode ler o Contrato de Conta Conectada da Stripe, que incorpora o
+      Contrato de Serviços da Stripe:
+    </p>
+    <div style="text-align:center;">${ctaButton("https://stripe.com/legal/connect-account", "Ler os termos da Stripe")}</div>
+    <p style="margin:0;font-size:15px;color:#475569;line-height:1.6;">
+      Se não concordar, escreva para
+      <a href="mailto:${suporte}" style="color:#007B3C;">${suporte}</a>
+      antes de ${vigencia}, para encerrarmos o seu recebimento pela Stripe.
+    </p>
+  `)
+
+  return sendAppEmail({ to, subject: "Atualização nos termos da Stripe — ShareO", html })
 }

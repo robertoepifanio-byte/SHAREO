@@ -137,3 +137,6 @@ supabase/.temp/
 
 # Output do Strix (pentest) quando rodado de dentro do repo — relatórios/logs locais
 strix_runs/
+
+# Registro do aviso dos termos da Stripe (scripts/avisar-termos-stripe.ts) — userIds, nunca versionar
+avisos-termos-stripe.json*

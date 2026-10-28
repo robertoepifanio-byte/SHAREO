@@ -372,6 +372,17 @@ describe("RegisterScreen (cadastro nativo — resolve D1)", () => {
     expect(screen.getByText("Confirme que você tem 18 anos ou mais")).toBeTruthy()
   })
 
+  // EVAL-P1-06 — mesmo critério do emailField() do servidor; `includes("@")` aceitava "a@".
+  it("e-mail 'a@': mostra 'E-mail inválido' e não chama a API", () => {
+    const fetchSpy = jest.spyOn(global, "fetch")
+    wrap(<RegisterScreen />)
+    fireEvent.changeText(screen.getByPlaceholderText("seu@email.com"), "a@")
+    fireEvent.press(screen.getByLabelText("Criar conta"))
+    expect(screen.getByText("E-mail inválido")).toBeTruthy()
+    expect(fetchSpy).not.toHaveBeenCalled()
+    fetchSpy.mockRestore()
+  })
+
   it("com ?ref=CODIGO: exibe banner de indicação (verbatim RegisterForm.tsx linhas 194-206)", () => {
     const { useLocalSearchParams } = require("expo-router") as { useLocalSearchParams: jest.Mock }
     useLocalSearchParams.mockReturnValueOnce({ ref: "ana2026" })
@@ -424,10 +435,11 @@ describe("ForgotPasswordScreen (re-auditoria Frente B)", () => {
     expect(screen.getByPlaceholderText("seu@email.com")).toBeTruthy()
   })
 
-  it("exibe erro inline se e-mail sem '@' (validação verbatim do site linha 16)", async () => {
+  // EVAL-P1-06 — "a@" passava no antigo `includes("@")`; agora é o critério do servidor.
+  it("exibe erro inline se e-mail inválido ('a@') — mesmo critério do site", async () => {
     wrap(<ForgotPassword />)
     const input = screen.getByPlaceholderText("seu@email.com")
-    fireEvent.changeText(input, "invalido")
+    fireEvent.changeText(input, "a@")
     const btn = screen.getByText("Enviar link de recuperação")
     fireEvent.press(btn)
     await waitFor(() => {

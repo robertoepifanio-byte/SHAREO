@@ -25,6 +25,7 @@ import {
 import { router } from "expo-router"
 import { API_URL } from "@/lib/api"
 import { useTheme } from "@/lib/theme"
+import { isValidEmail } from "@/lib/forms"
 import Svg, { Path, Rect, Polyline } from "react-native-svg"
 
 // ── Ícone cadeado — transcrito de _ForgotPasswordForm.tsx (ícone decorativo no topo) ──
@@ -55,9 +56,9 @@ export default function ForgotPasswordScreen() {
   const [sent,    setSent]    = useState(false)
   const [error,   setError]   = useState("")
 
-  // Validação verbatim da lógica do site — _ForgotPasswordForm.tsx linha 16
+  // Mesmo critério do site (emailField() do servidor) — _ForgotPasswordForm.tsx
   async function handleSubmit() {
-    if (!email.includes("@")) {
+    if (!isValidEmail(email)) {
       setError("E-mail inválido")
       return
     }

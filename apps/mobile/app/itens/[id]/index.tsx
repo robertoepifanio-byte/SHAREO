@@ -912,7 +912,7 @@ export default function ItemDetailScreen() {
 
             {/* Tabs de modalidade — fonte: _PriceCalc.tsx linhas 205-235 */}
             {availableModes.length > 1 && (
-              <View style={s.modeTabs}>
+              <View style={s.modeTabs} accessibilityRole="tablist" accessibilityLabel="Modalidade de locação">
                 {availableModes.map((m) => {
                   const active = mode === m
                   const labels: Record<Mode, string> = { daily: "Diário", weekly: "Semanal", monthly: "Mensal" }
@@ -932,7 +932,7 @@ export default function ItemDetailScreen() {
                         { borderColor: active ? tokens.green : tokens.border },
                         active && { backgroundColor: themeMode === "dark" ? "#0A2A1A" : "#F0FDF4" },
                       ]}
-                      accessibilityRole="button"
+                      accessibilityRole="tab"
                       accessibilityState={{ selected: active }}
                       accessibilityLabel={labels[m]}
                     >

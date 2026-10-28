@@ -35,7 +35,6 @@ interface BookingForHistory {
   returnRequestedAt:    Date | null
   returnedAt:           Date | null
   cancelledAt:          Date | null
-  cancelReason:         string | null
   extensionRequestedAt: Date | null
   extensionRespondedAt: Date | null
   extensionStatus:      string | null
@@ -174,22 +173,3 @@ export function deriveBookingHistory(b: BookingForHistory): BookingHistoryEvent[
 
   return events
 }
-
-/**
- * Campos necessários para selecionar do Prisma ao usar deriveBookingHistory.
- * Use no select do Prisma para não over-fetchar.
- */
-export const BOOKING_HISTORY_SELECT = {
-  createdAt:            true,
-  respondedAt:          true,
-  paidAt:               true,
-  activatedAt:          true,
-  returnRequestedAt:    true,
-  returnedAt:           true,
-  cancelledAt:          true,
-  cancelReason:         true,
-  extensionRequestedAt: true,
-  extensionRespondedAt: true,
-  extensionStatus:      true,
-  status:               true,
-} as const

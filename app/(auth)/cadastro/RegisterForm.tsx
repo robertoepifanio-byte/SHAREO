@@ -7,6 +7,7 @@ import Link from "next/link"
 import { Input } from "@/components/ui/Input"
 import { Button } from "@/components/ui/Button"
 import { CONSENT_VERSION, DPO_EMAIL } from "@/lib/legal-config"
+import { emailField } from "@/lib/validations/auth"
 import { gtmEvent } from "@/components/analytics/GoogleTagManager"
 
 interface FormErrors {
@@ -67,7 +68,7 @@ export function RegisterForm() {
   function validate(): FormErrors {
     const errs: FormErrors = {}
     if (!name.trim())            errs.name     = "Nome obrigatório"
-    if (!email.includes("@"))    errs.email    = "E-mail inválido"
+    if (!emailField().safeParse(email).success) errs.email = "E-mail inválido"
     if (password.length < 8)     errs.password = "Senha muito curta"
     if (!/[A-Z]/.test(password)) errs.password = "Precisa de letra maiúscula"
     if (!/[0-9]/.test(password)) errs.password = "Precisa de número"
