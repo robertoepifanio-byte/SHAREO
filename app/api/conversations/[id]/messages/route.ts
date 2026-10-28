@@ -2,6 +2,7 @@ import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 import { stripHtml } from "@/lib/sanitize"
 import { z } from "zod"
 
@@ -44,6 +45,10 @@ export async function POST(req: NextRequest, { params }: Params) {
         { status: 403 },
       )
     }
+
+    // Rate limit por usuário+conversa: participante não floda mensagens/notificações.
+    const rl = await checkRateLimit(`msg:${userId}:${id}`, 20, 60_000, req)
+    if (!rl.allowed) return rateLimitResponse(rl.resetAt)
 
     const rawBody = await req.json()
     const parsed  = MessageSchema.safeParse(rawBody)
