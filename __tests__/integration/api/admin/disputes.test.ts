@@ -14,7 +14,8 @@ import { NextRequest } from "next/server"
 import { PATCH } from "@/app/api/admin/disputes/[id]/route"
 
 const mockBookingFindUnique   = jest.fn()
-const mockBookingUpdate       = jest.fn()
+const mockBookingUpdateMany   = jest.fn()
+const mockBookingFindOrThrow  = jest.fn()
 const mockPayoutFindFirst     = jest.fn()
 const mockPayoutCreate        = jest.fn()
 const mockOwnerAccountFind    = jest.fn()
@@ -24,8 +25,9 @@ const mockNotificationCreate  = jest.fn()
 jest.mock("@/lib/prisma", () => ({
   prisma: {
     booking:      {
-      findUnique: (...a: unknown[]) => mockBookingFindUnique(...a),
-      update:     (...a: unknown[]) => mockBookingUpdate(...a),
+      findUnique:        (...a: unknown[]) => mockBookingFindUnique(...a),
+      updateMany:        (...a: unknown[]) => mockBookingUpdateMany(...a),
+      findUniqueOrThrow: (...a: unknown[]) => mockBookingFindOrThrow(...a),
     },
     payout:       {
       findFirst: (...a: unknown[]) => mockPayoutFindFirst(...a),
@@ -90,7 +92,8 @@ beforeEach(() => {
   jest.clearAllMocks()
   mockAuth.mockResolvedValue({ user: { id: "admin-999", role: "ADMIN", adminRole: "ADMIN_FINANCEIRO" } })
   mockBookingFindUnique.mockResolvedValue(makeBooking())
-  mockBookingUpdate.mockResolvedValue({ id: BOOKING_ID, status: "COMPLETED", updatedAt: new Date() })
+  mockBookingUpdateMany.mockResolvedValue({ count: 1 })   // disputa ainda OPEN: escrita ganha
+  mockBookingFindOrThrow.mockResolvedValue({ id: BOOKING_ID, status: "COMPLETED", updatedAt: new Date() })
   mockPayoutFindFirst.mockResolvedValue(null)
   mockPayoutCreate.mockResolvedValue({ id: "payout-001" })
   mockOwnerAccountFind.mockResolvedValue({ id: CONTA_ID })
@@ -117,7 +120,7 @@ describe("PATCH /api/admin/disputes/[id]", () => {
   })
 
   it("resolve_cancelled NÃO cria repasse — a reserva não se completou", async () => {
-    mockBookingUpdate.mockResolvedValue({ id: BOOKING_ID, status: "CANCELLED", updatedAt: new Date() })
+    mockBookingFindOrThrow.mockResolvedValue({ id: BOOKING_ID, status: "CANCELLED", updatedAt: new Date() })
 
     const res = await PATCH(makeReq({ action: "resolve_cancelled", adminNote: "Item danificado" }), makeParams())
 
@@ -130,11 +133,11 @@ describe("PATCH /api/admin/disputes/[id]", () => {
   // retirada — a escada quase sempre daria 50% a quem acabou de ganhar o caso.
   // Decisão do fundador, 2026-08-23.
   it("resolve_cancelled grava estorno INTEGRAL quando a reserva foi paga", async () => {
-    mockBookingUpdate.mockResolvedValue({ id: BOOKING_ID, status: "CANCELLED", updatedAt: new Date() })
+    mockBookingFindOrThrow.mockResolvedValue({ id: BOOKING_ID, status: "CANCELLED", updatedAt: new Date() })
 
     await PATCH(makeReq({ action: "resolve_cancelled" }), makeParams())
 
-    expect(mockBookingUpdate).toHaveBeenCalledWith(
+    expect(mockBookingUpdateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ refundAmount: 10000, refundPercent: 100 }),
       }),
@@ -147,7 +150,7 @@ describe("PATCH /api/admin/disputes/[id]", () => {
   // emissão de verdade. Se o `emitCancellationRefund` do cancelamento integral
   // for removido, só ESTE caso quebra.
   it("resolve_cancelled EMITE o estorno integral na Stripe (não só grava)", async () => {
-    mockBookingUpdate.mockResolvedValue({ id: BOOKING_ID, status: "CANCELLED", updatedAt: new Date() })
+    mockBookingFindOrThrow.mockResolvedValue({ id: BOOKING_ID, status: "CANCELLED", updatedAt: new Date() })
 
     await PATCH(makeReq({ action: "resolve_cancelled" }), makeParams())
 
@@ -163,7 +166,7 @@ describe("PATCH /api/admin/disputes/[id]", () => {
   // a Stripe não é chamada.
   it("resolve_cancelled em reserva NÃO paga não chama a Stripe", async () => {
     mockBookingFindUnique.mockResolvedValue({ ...makeBooking(), paymentStatus: "PENDING" })
-    mockBookingUpdate.mockResolvedValue({ id: BOOKING_ID, status: "CANCELLED", updatedAt: new Date() })
+    mockBookingFindOrThrow.mockResolvedValue({ id: BOOKING_ID, status: "CANCELLED", updatedAt: new Date() })
 
     await PATCH(makeReq({ action: "resolve_cancelled" }), makeParams())
 
@@ -181,7 +184,7 @@ describe("PATCH /api/admin/disputes/[id]", () => {
 
     expect(res.status).toBe(422)
     expect(body.error.code).toBe("SEM_COBRANCA")
-    expect(mockBookingUpdate).not.toHaveBeenCalled()
+    expect(mockBookingUpdateMany).not.toHaveBeenCalled()
     expect(mockRefund).not.toHaveBeenCalled()
   })
 
@@ -189,15 +192,31 @@ describe("PATCH /api/admin/disputes/[id]", () => {
   // não paga vira trabalho real na fila de alguém (mesma regra do #345).
   it("resolve_cancelled em reserva NÃO paga grava estorno zero", async () => {
     mockBookingFindUnique.mockResolvedValue({ ...makeBooking(), paymentStatus: "PENDING" })
-    mockBookingUpdate.mockResolvedValue({ id: BOOKING_ID, status: "CANCELLED", updatedAt: new Date() })
+    mockBookingFindOrThrow.mockResolvedValue({ id: BOOKING_ID, status: "CANCELLED", updatedAt: new Date() })
 
     await PATCH(makeReq({ action: "resolve_cancelled" }), makeParams())
 
-    expect(mockBookingUpdate).toHaveBeenCalledWith(
+    expect(mockBookingUpdateMany).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ refundAmount: 0, refundPercent: 0 }),
       }),
     )
+  })
+
+  // 🪤 #9 (Red Team 2026-10-28): resolução concorrente da MESMA disputa. A escrita
+  // é um updateMany condicionado a disputeStatus=OPEN; a requisição perdedora casa
+  // 0 linhas (a 1ª já tirou a disputa de OPEN) e sai com 409, sem financeiro.
+  it("🪤 resolução concorrente: a 2ª escrita casa 0 linhas → 409 JA_RESOLVIDA, sem payout nem refund", async () => {
+    mockBookingUpdateMany.mockResolvedValue({ count: 0 })   // disputa já saiu de OPEN
+
+    const res  = await PATCH(makeReq({ action: "resolve_completed" }), makeParams())
+    const body = await res.json() as { error: { code: string } }
+
+    expect(res.status).toBe(409)
+    expect(body.error.code).toBe("JA_RESOLVIDA")
+    expect(mockBookingFindOrThrow).not.toHaveBeenCalled() // não chega a reler
+    expect(mockPayoutCreate).not.toHaveBeenCalled()
+    expect(mockRefund).not.toHaveBeenCalled()
   })
 
   // `Payout.bookingId` NÃO é único no schema: nada no banco impede dois repasses
@@ -246,7 +265,7 @@ describe("PATCH /api/admin/disputes/[id]", () => {
     // Autenticado e sem permissão é 403; 401 fica só para quem não tem sessão.
     // A regra mora em lib/auth/require-admin.ts.
     expect(res.status).toBe(403)
-    expect(mockBookingUpdate).not.toHaveBeenCalled()
+    expect(mockBookingUpdateMany).not.toHaveBeenCalled()
   })
 
   it("sem sessão nenhuma → 401", async () => {
@@ -255,7 +274,7 @@ describe("PATCH /api/admin/disputes/[id]", () => {
     const res = await PATCH(makeReq({ action: "resolve_completed" }), makeParams())
 
     expect(res.status).toBe(401)
-    expect(mockBookingUpdate).not.toHaveBeenCalled()
+    expect(mockBookingUpdateMany).not.toHaveBeenCalled()
   })
 
   it("🪤 admin SEM papel definido → 403", async () => {
@@ -267,13 +286,13 @@ describe("PATCH /api/admin/disputes/[id]", () => {
     const res = await PATCH(makeReq({ action: "resolve_completed" }), makeParams())
 
     expect(res.status).toBe(403)
-    expect(mockBookingUpdate).not.toHaveBeenCalled()
+    expect(mockBookingUpdateMany).not.toHaveBeenCalled()
   })
 
   describe("dismiss_dispute — encerrar a disputa sem cancelar a locação", () => {
     it("encerra a disputa e deixa a reserva EXATAMENTE onde estava", async () => {
       mockBookingFindUnique.mockResolvedValue(makeBooking())
-      mockBookingUpdate.mockResolvedValue({
+      mockBookingFindOrThrow.mockResolvedValue({
         id: BOOKING_ID, status: "RETURNED", disputeStatus: "DISMISSED", updatedAt: new Date(),
       })
 
@@ -283,7 +302,7 @@ describe("PATCH /api/admin/disputes/[id]", () => {
       )
       expect(res.status).toBe(200)
 
-      const [[arg]] = mockBookingUpdate.mock.calls as [[{ data: Record<string, unknown> }]]
+      const [[arg]] = mockBookingUpdateMany.mock.calls as [[{ data: Record<string, unknown> }]]
       expect(arg.data.disputeStatus).toBe("DISMISSED")
       // A correcao 4 do Thiago, ponto a ponto: nem status, nem cancelamento,
       // nem estorno. A locacao segue.
@@ -306,12 +325,12 @@ describe("PATCH /api/admin/disputes/[id]", () => {
       expect(body.error.code).toBe("VALIDATION_ERROR")
       // A mensagem generica "Acao invalida" nao dizia o que corrigir.
       expect(body.error.message).toContain("Explique por que")
-      expect(mockBookingUpdate).not.toHaveBeenCalled()
+      expect(mockBookingUpdateMany).not.toHaveBeenCalled()
     })
 
     it("avisa as partes que a locação segue — e não que foi cancelada", async () => {
       mockBookingFindUnique.mockResolvedValue(makeBooking())
-      mockBookingUpdate.mockResolvedValue({
+      mockBookingFindOrThrow.mockResolvedValue({
         id: BOOKING_ID, status: "RETURNED", disputeStatus: "DISMISSED", updatedAt: new Date(),
       })
 
@@ -336,7 +355,7 @@ describe("PATCH /api/admin/disputes/[id]", () => {
   // divergência (banco diz "reembolsado", dinheiro não saiu) só apareceria por
   // reclamação. Agora a falha vai para o Sentry.
   it("🪤 estorno recusado pela Stripe: resposta segue 200 mas a falha vai ao Sentry", async () => {
-    mockBookingUpdate.mockResolvedValue({ id: BOOKING_ID, status: "CANCELLED", updatedAt: new Date() })
+    mockBookingFindOrThrow.mockResolvedValue({ id: BOOKING_ID, status: "CANCELLED", updatedAt: new Date() })
     mockRefund.mockRejectedValueOnce(new Error("card_declined"))
 
     const res = await PATCH(makeReq({ action: "resolve_cancelled" }), makeParams())
@@ -351,7 +370,7 @@ describe("PATCH /api/admin/disputes/[id]", () => {
 
   describe("resolve_partial — desfecho proporcional", () => {
     it("estorna o valor pedido e repassa o líquido do QUE FICOU", async () => {
-      mockBookingUpdate.mockResolvedValue({
+      mockBookingFindOrThrow.mockResolvedValue({
         id: BOOKING_ID, status: "COMPLETED", disputeStatus: "RESOLVED_PARTIAL", updatedAt: new Date(),
       })
 
@@ -375,7 +394,7 @@ describe("PATCH /api/admin/disputes/[id]", () => {
         data: expect.objectContaining({ amount: 5100 }),
       }))
 
-      const [[arg]] = mockBookingUpdate.mock.calls as [[{ data: Record<string, unknown> }]]
+      const [[arg]] = mockBookingUpdateMany.mock.calls as [[{ data: Record<string, unknown> }]]
       expect(arg.data.disputeStatus).toBe("RESOLVED_PARTIAL")
       expect(arg.data.status).toBe("COMPLETED")
       expect(arg.data.refundAmount).toBe(4000)
@@ -391,7 +410,7 @@ describe("PATCH /api/admin/disputes/[id]", () => {
 
       expect(res.status).toBe(422)
       expect(body.error.code).toBe("VALOR_INVALIDO")
-      expect(mockBookingUpdate).not.toHaveBeenCalled()
+      expect(mockBookingUpdateMany).not.toHaveBeenCalled()
       expect(mockRefund).not.toHaveBeenCalled()
     })
 
@@ -409,7 +428,7 @@ describe("PATCH /api/admin/disputes/[id]", () => {
       // 🪤 As guardas rodam ANTES de qualquer escrita: marcar a disputa como
       // resolvida e so depois falhar o estorno deixaria o banco dizendo que o
       // locatario recebeu dinheiro que nunca saiu.
-      expect(mockBookingUpdate).not.toHaveBeenCalled()
+      expect(mockBookingUpdateMany).not.toHaveBeenCalled()
     })
 
     it("exige valor e justificativa", async () => {
@@ -419,11 +438,11 @@ describe("PATCH /api/admin/disputes/[id]", () => {
       const semNota = await PATCH(makeReq({ action: "resolve_partial", refundAmount: 4000 }), makeParams())
       expect(semNota.status).toBe(400)
 
-      expect(mockBookingUpdate).not.toHaveBeenCalled()
+      expect(mockBookingUpdateMany).not.toHaveBeenCalled()
     })
 
     it("avisa as partes do acordo, com o valor devolvido", async () => {
-      mockBookingUpdate.mockResolvedValue({
+      mockBookingFindOrThrow.mockResolvedValue({
         id: BOOKING_ID, status: "COMPLETED", disputeStatus: "RESOLVED_PARTIAL", updatedAt: new Date(),
       })
 

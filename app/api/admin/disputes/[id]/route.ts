@@ -148,45 +148,65 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const { nextStatus, disputeStatus } = OUTCOME[action]
     const adminId = session.user.id
 
-    const updated = await prisma.booking.update({
-      where: { id },
-      data:  {
-        // Só grava `status` quando o desfecho de fato move a locação. Em
-        // dismiss_dispute a reserva fica exatamente onde estava.
-        ...(nextStatus && { status: nextStatus }),
-        // A disputa é encerrada junto com o desfecho. Campo separado do
-        // `status` desde 01/09/2026: quem lê a fila do admin, o gate do
-        // repasse e o selo da tela olham `disputeStatus`, não `status`.
-        disputeStatus,
-        disputeResolvedAt: new Date(),
-        ...(nextStatus === "CANCELLED" && {
-          cancelledAt:   new Date(),
-          cancelledById: adminId,
-          cancelReason:  adminNote ?? "Resolvido pelo administrador.",
-          // 🪤 Estorno da disputa: INTEGRAL, e de propósito NÃO usa calcRefund.
-          //
-          // A escada do cancelamento (100% / 70% / 50% conforme a proximidade da
-          // retirada) pune quem desiste em cima da hora. Em disputa a demora é do
-          // processo de mediação, não do locatário — e a disputa só existe depois
-          // da retirada, então a escada quase sempre cairia em 50%. Dar 50% a
-          // quem o admin acabou de dar razão é indefensável.
-          // Decisão do fundador, 2026-08-23.
-          //
-          // Só grava se o dinheiro entrou: valor a devolver numa reserva nunca
-          // paga vira trabalho real na fila de alguém (mesma regra do #345).
-          ...(booking.paymentStatus === "PAID"
-            ? { refundAmount: booking.totalPrice, refundPercent: 100 }
-            : { refundAmount: 0, refundPercent: 0 }),
-        }),
-        ...(action === "resolve_partial" && {
-          refundAmount:  refundAmount!,
-          // Percentual para leitura humana; a fonte do valor e `refundAmount`.
-          refundPercent: Math.round((refundAmount! / booking.totalPrice) * 100),
-        }),
-        ...(nextStatus === "COMPLETED" && adminNote && {
-          ownerNote: adminNote,
-        }),
-      },
+    const dataResolucao = {
+      // Só grava `status` quando o desfecho de fato move a locação. Em
+      // dismiss_dispute a reserva fica exatamente onde estava.
+      ...(nextStatus && { status: nextStatus }),
+      // A disputa é encerrada junto com o desfecho. Campo separado do
+      // `status` desde 01/09/2026: quem lê a fila do admin, o gate do
+      // repasse e o selo da tela olham `disputeStatus`, não `status`.
+      disputeStatus,
+      disputeResolvedAt: new Date(),
+      ...(nextStatus === "CANCELLED" && {
+        cancelledAt:   new Date(),
+        cancelledById: adminId,
+        cancelReason:  adminNote ?? "Resolvido pelo administrador.",
+        // 🪤 Estorno da disputa: INTEGRAL, e de propósito NÃO usa calcRefund.
+        //
+        // A escada do cancelamento (100% / 70% / 50% conforme a proximidade da
+        // retirada) pune quem desiste em cima da hora. Em disputa a demora é do
+        // processo de mediação, não do locatário — e a disputa só existe depois
+        // da retirada, então a escada quase sempre cairia em 50%. Dar 50% a
+        // quem o admin acabou de dar razão é indefensável.
+        // Decisão do fundador, 2026-08-23.
+        //
+        // Só grava se o dinheiro entrou: valor a devolver numa reserva nunca
+        // paga vira trabalho real na fila de alguém (mesma regra do #345).
+        ...(booking.paymentStatus === "PAID"
+          ? { refundAmount: booking.totalPrice, refundPercent: 100 }
+          : { refundAmount: 0, refundPercent: 0 }),
+      }),
+      ...(action === "resolve_partial" && {
+        refundAmount:  refundAmount!,
+        // Percentual para leitura humana; a fonte do valor e `refundAmount`.
+        refundPercent: Math.round((refundAmount! / booking.totalPrice) * 100),
+      }),
+      ...(nextStatus === "COMPLETED" && adminNote && {
+        ownerNote: adminNote,
+      }),
+    }
+
+    // 🪤 #9 (Red Team 2026-10-28): escrita CONDICIONADA a disputeStatus ainda OPEN.
+    // O findUnique do topo + a validação `disputeStatus === "OPEN"` são um TOCTOU:
+    // duas resoluções concorrentes da mesma disputa (retry do navegador, dois
+    // admins, reprocessamento) leem OPEN e ambas escrevem, a 2ª sobrescrevendo a
+    // 1ª — estado misto (ex.: COMPLETED gravado sobre o CANCELLED do primeiro). O
+    // `updateMany` com o status no where torna a escrita atômica: a perdedora
+    // casa 0 linhas e sai com 409, sem tocar o registro.
+    const claimed = await prisma.booking.updateMany({
+      where: { id, disputeStatus: "OPEN" },
+      data:  dataResolucao,
+    })
+
+    if (claimed.count === 0) {
+      return NextResponse.json(
+        { error: { code: "JA_RESOLVIDA", message: "Esta disputa já foi resolvida." } },
+        { status: 409 },
+      )
+    }
+
+    const updated = await prisma.booking.findUniqueOrThrow({
+      where:  { id },
       select: { id: true, status: true, disputeStatus: true, updatedAt: true },
     })
 
