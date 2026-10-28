@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
+import * as Sentry from "@sentry/nextjs"
 import { requireAdminApi } from "@/lib/auth/require-admin"
 import { prisma } from "@/lib/prisma"
 import { criarPayoutDaReserva } from "@/lib/payout"
@@ -147,45 +148,65 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const { nextStatus, disputeStatus } = OUTCOME[action]
     const adminId = session.user.id
 
-    const updated = await prisma.booking.update({
-      where: { id },
-      data:  {
-        // Só grava `status` quando o desfecho de fato move a locação. Em
-        // dismiss_dispute a reserva fica exatamente onde estava.
-        ...(nextStatus && { status: nextStatus }),
-        // A disputa é encerrada junto com o desfecho. Campo separado do
-        // `status` desde 01/09/2026: quem lê a fila do admin, o gate do
-        // repasse e o selo da tela olham `disputeStatus`, não `status`.
-        disputeStatus,
-        disputeResolvedAt: new Date(),
-        ...(nextStatus === "CANCELLED" && {
-          cancelledAt:   new Date(),
-          cancelledById: adminId,
-          cancelReason:  adminNote ?? "Resolvido pelo administrador.",
-          // 🪤 Estorno da disputa: INTEGRAL, e de propósito NÃO usa calcRefund.
-          //
-          // A escada do cancelamento (100% / 70% / 50% conforme a proximidade da
-          // retirada) pune quem desiste em cima da hora. Em disputa a demora é do
-          // processo de mediação, não do locatário — e a disputa só existe depois
-          // da retirada, então a escada quase sempre cairia em 50%. Dar 50% a
-          // quem o admin acabou de dar razão é indefensável.
-          // Decisão do fundador, 2026-08-23.
-          //
-          // Só grava se o dinheiro entrou: valor a devolver numa reserva nunca
-          // paga vira trabalho real na fila de alguém (mesma regra do #345).
-          ...(booking.paymentStatus === "PAID"
-            ? { refundAmount: booking.totalPrice, refundPercent: 100 }
-            : { refundAmount: 0, refundPercent: 0 }),
-        }),
-        ...(action === "resolve_partial" && {
-          refundAmount:  refundAmount!,
-          // Percentual para leitura humana; a fonte do valor e `refundAmount`.
-          refundPercent: Math.round((refundAmount! / booking.totalPrice) * 100),
-        }),
-        ...(nextStatus === "COMPLETED" && adminNote && {
-          ownerNote: adminNote,
-        }),
-      },
+    const dataResolucao = {
+      // Só grava `status` quando o desfecho de fato move a locação. Em
+      // dismiss_dispute a reserva fica exatamente onde estava.
+      ...(nextStatus && { status: nextStatus }),
+      // A disputa é encerrada junto com o desfecho. Campo separado do
+      // `status` desde 01/09/2026: quem lê a fila do admin, o gate do
+      // repasse e o selo da tela olham `disputeStatus`, não `status`.
+      disputeStatus,
+      disputeResolvedAt: new Date(),
+      ...(nextStatus === "CANCELLED" && {
+        cancelledAt:   new Date(),
+        cancelledById: adminId,
+        cancelReason:  adminNote ?? "Resolvido pelo administrador.",
+        // 🪤 Estorno da disputa: INTEGRAL, e de propósito NÃO usa calcRefund.
+        //
+        // A escada do cancelamento (100% / 70% / 50% conforme a proximidade da
+        // retirada) pune quem desiste em cima da hora. Em disputa a demora é do
+        // processo de mediação, não do locatário — e a disputa só existe depois
+        // da retirada, então a escada quase sempre cairia em 50%. Dar 50% a
+        // quem o admin acabou de dar razão é indefensável.
+        // Decisão do fundador, 2026-08-23.
+        //
+        // Só grava se o dinheiro entrou: valor a devolver numa reserva nunca
+        // paga vira trabalho real na fila de alguém (mesma regra do #345).
+        ...(booking.paymentStatus === "PAID"
+          ? { refundAmount: booking.totalPrice, refundPercent: 100 }
+          : { refundAmount: 0, refundPercent: 0 }),
+      }),
+      ...(action === "resolve_partial" && {
+        refundAmount:  refundAmount!,
+        // Percentual para leitura humana; a fonte do valor e `refundAmount`.
+        refundPercent: Math.round((refundAmount! / booking.totalPrice) * 100),
+      }),
+      ...(nextStatus === "COMPLETED" && adminNote && {
+        ownerNote: adminNote,
+      }),
+    }
+
+    // 🪤 #9 (Red Team 2026-10-28): escrita CONDICIONADA a disputeStatus ainda OPEN.
+    // O findUnique do topo + a validação `disputeStatus === "OPEN"` são um TOCTOU:
+    // duas resoluções concorrentes da mesma disputa (retry do navegador, dois
+    // admins, reprocessamento) leem OPEN e ambas escrevem, a 2ª sobrescrevendo a
+    // 1ª — estado misto (ex.: COMPLETED gravado sobre o CANCELLED do primeiro). O
+    // `updateMany` com o status no where torna a escrita atômica: a perdedora
+    // casa 0 linhas e sai com 409, sem tocar o registro.
+    const claimed = await prisma.booking.updateMany({
+      where: { id, disputeStatus: "OPEN" },
+      data:  dataResolucao,
+    })
+
+    if (claimed.count === 0) {
+      return NextResponse.json(
+        { error: { code: "JA_RESOLVIDA", message: "Esta disputa já foi resolvida." } },
+        { status: 409 },
+      )
+    }
+
+    const updated = await prisma.booking.findUniqueOrThrow({
+      where:  { id },
       select: { id: true, status: true, disputeStatus: true, updatedAt: true },
     })
 
@@ -225,15 +246,27 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     // O estorno em si. Depois do update e do repasse, e com o erro registrado
     // em vez de engolido: `booking.refundAmount` fica no banco como o valor
     // devido, entao um estorno recusado pela Stripe da para reprocessar.
+    //
+    // 🪤 #7 (Red Team 2026-10-28): uma falha aqui NAO pode sumir em console.error.
+    // O banco ja marcou refundAmount/refundPercent (acima) e, no integral, nao ha
+    // reverseOwnerTransfer sem o refund — divergencia silenciosa que so aparecia
+    // por reclamacao. `onRefundFail` loga E alerta no Sentry (sem fila de
+    // reprocessamento, que fica como follow-up): o valor devido segue em
+    // booking.refundAmount para reprocessamento manual.
+    const onRefundFail = (amount: number, motivo: string) => (e: unknown) => {
+      console.error(`[disputa] estorno (${motivo}) de ${amount} em ${id} FALHOU:`, e instanceof Error ? e.message : e)
+      Sentry.captureException(e instanceof Error ? e : new Error(String(e)), {
+        extra: { bookingId: id, amount, motivo },
+        tags:  { pagamento: "refund-failure" },
+      })
+    }
     if (action === "resolve_partial") {
       await emitCancellationRefund({
         bookingId:       id,
         paymentIntentId: booking.stripePaymentIntentId!,
         amount:          refundAmount!,
         motivo:          "dispute-partial",
-      }).catch((e) =>
-        console.error(`[disputa] estorno parcial de ${refundAmount} em ${id} FALHOU:`, e instanceof Error ? e.message : e)
-      )
+      }).catch(onRefundFail(refundAmount!, "dispute-partial"))
     } else if (action === "resolve_cancelled" && booking.paymentStatus === "PAID") {
       // 🪤 Estorno INTEGRAL da disputa — não existia. O bloco acima grava
       // `refundAmount: totalPrice` / `refundPercent: 100`, mas nenhum
@@ -247,9 +280,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         paymentIntentId: booking.stripePaymentIntentId!,
         amount:          booking.totalPrice,
         motivo:          "dispute-full",
-      }).catch((e) =>
-        console.error(`[disputa] estorno integral de ${booking.totalPrice} em ${id} FALHOU:`, e instanceof Error ? e.message : e)
-      )
+      }).catch(onRefundFail(booking.totalPrice, "dispute-full"))
     }
 
     after(() =>
