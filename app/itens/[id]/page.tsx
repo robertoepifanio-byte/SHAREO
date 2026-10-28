@@ -339,7 +339,7 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
             <p className="text-sm font-medium text-brand">Anúncio publicado com sucesso!</p>
             <a
               href={`/itens/novo?categoriaId=${item.categoryId}&condicao=${item.condition}`}
-              className="inline-flex h-9 items-center self-start rounded-md bg-brand px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90 sm:self-auto whitespace-nowrap"
+              className="inline-flex h-11 items-center self-start rounded-md bg-brand px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90 sm:self-auto whitespace-nowrap"
             >
               Anunciar outro item
             </a>
@@ -360,7 +360,7 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
 
             {/* Descrição */}
             <div>
-              <h2 className="mb-3 text-lg font-bold text-primary">Sobre o item</h2>
+              <h2 className="font-display mb-3 text-lg font-bold text-primary">Sobre o item</h2>
               <p className="text-sm leading-relaxed text-muted-foreground">
                 {item.description}
               </p>
@@ -389,14 +389,14 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
 
               {/* P1-22 — Calendário de disponibilidade */}
               <div className="mb-6">
-                <h2 className="mb-4 text-lg font-bold text-primary">Disponibilidade</h2>
+                <h2 className="font-display mb-4 text-lg font-bold text-primary">Disponibilidade</h2>
                 <AvailabilityCalendar itemId={item.id} />
               </div>
 
               <div className="my-6 h-px bg-border" />
 
               {/* Avaliações */}
-              <h2 className="mb-4 text-lg font-bold text-primary">
+              <h2 className="font-display mb-4 text-lg font-bold text-primary">
                 Avaliações ({item._count.reviews})
               </h2>
 
@@ -686,7 +686,7 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
         {/* Story B — outros itens do mesmo anunciante (atalho p/ montar locação multi-item) */}
         {!isOwner && ownerItems.length > 0 && (
           <section className="mt-12 border-t border-border pt-10" aria-labelledby="owner-items-heading">
-            <h2 id="owner-items-heading" className="mb-1 text-lg font-bold text-primary">
+            <h2 id="owner-items-heading" className="font-display mb-1 text-lg font-bold text-primary">
               Itens do mesmo anunciante
             </h2>
             <p className="mb-6 text-sm text-muted-foreground">
@@ -703,7 +703,7 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
         {/* P1-31 — Itens similares (exclui os do mesmo anunciante p/ não duplicar o quadro acima) */}
         {similarItems.filter((si) => !ownerItems.some((oi) => oi.id === si.id)).length > 0 && (
           <section className="mt-12 border-t border-border pt-10" aria-labelledby="similar-heading">
-            <h2 id="similar-heading" className="mb-6 text-lg font-bold text-primary">
+            <h2 id="similar-heading" className="font-display mb-6 text-lg font-bold text-primary">
               Você também pode gostar
             </h2>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">

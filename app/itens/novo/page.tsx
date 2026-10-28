@@ -38,7 +38,7 @@ export default async function NovoItemPage({
       <main className="container py-8">
         <div className="mx-auto max-w-2xl">
           <div className="mb-8">
-            <h1 className="text-2xl font-bold text-primary">Criar anúncio</h1>
+            <h1 className="font-display text-2xl font-bold text-primary">Criar anúncio</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Compartilhe o que você tem para alugar e comece a ganhar
             </p>
