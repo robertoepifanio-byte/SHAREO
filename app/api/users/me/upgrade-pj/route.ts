@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     const parsed = UpgradePjSchema.safeParse(body)
 
     if (!parsed.success) {
-      const msg = parsed.error.errors.map((e) => e.message).join("; ")
+      const msg = parsed.error.issues.map((e) => e.message).join("; ")
       return NextResponse.json(
         { error: { code: "VALIDATION_ERROR", message: msg } },
         { status: 400 },

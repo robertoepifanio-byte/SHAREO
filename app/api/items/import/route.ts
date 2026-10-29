@@ -183,7 +183,7 @@ const RowSchema = z.object({
     .string()
     .transform((v) => v.toUpperCase())
     .pipe(z.enum(["NOVO", "EXCELENTE", "BOM", "REGULAR"], {
-      errorMap: () => ({ message: "Condição inválida — use: NOVO, EXCELENTE, BOM ou REGULAR" }),
+      error: "Condição inválida — use: NOVO, EXCELENTE, BOM ou REGULAR",
     }))
     .transform((v) => CONDITION_MAP[v] as ItemCondition),
   cidade: z.string().max(100).optional().default(""),
@@ -286,7 +286,7 @@ export async function POST(req: Request) {
 
       const parsed = RowSchema.safeParse(rows[i])
       if (!parsed.success) {
-        const msg = parsed.error.errors.map((e) => e.message).join("; ")
+        const msg = parsed.error.issues.map((e) => e.message).join("; ")
         errors.push({ row: rowNum, message: msg })
         continue
       }

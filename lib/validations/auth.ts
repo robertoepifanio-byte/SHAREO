@@ -178,7 +178,7 @@ export const UpgradePjSchema = z.object({
     .min(3, "Informe o nome do responsável legal")
     .max(150, "Nome muito longo"),
   declaracaoVinculo: z.literal(true, {
-    errorMap: () => ({ message: "É necessário aceitar a declaração de responsável legal." }),
+    error: "É necessário aceitar a declaração de responsável legal.",
   }),
 })
 

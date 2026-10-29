@@ -20,7 +20,7 @@ const DisputeSchema = z.object({
     "VEIO_DANIFICADO",
     "FALTAM_ACESSORIOS",
     "OUTRO",
-  ], { errorMap: () => ({ message: "Motivo inválido." }) }),
+  ], { error: "Motivo inválido." }),
   description: z
     .string()
     .min(10, "Descrição deve ter ao menos 10 caracteres.")

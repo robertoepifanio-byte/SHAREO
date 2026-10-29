@@ -29,7 +29,7 @@ const PostExtendSchema = z.object({
 // Proprietário responde à solicitação
 const PatchExtendSchema = z.object({
   action: z.enum(["approve", "reject"], {
-    errorMap: () => ({ message: "Ação inválida. Use 'approve' ou 'reject'." }),
+    error: "Ação inválida. Use 'approve' ou 'reject'.",
   }),
 })
 

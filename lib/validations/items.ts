@@ -14,7 +14,7 @@ export const CreateItemSchema = z.object({
   description:   z.string().max(2000, "Descrição muito longa").transform(stripHtml).pipe(z.string().min(20, "Descrição: mínimo 20 caracteres")),
   categoryId:    z.string().min(1, "Selecione uma categoria"),
   condition:     z.enum(["NEW", "EXCELLENT", "GOOD", "FAIR"], {
-    errorMap: () => ({ message: "Estado de conservação inválido" }),
+    error: "Estado de conservação inválido",
   }),
   pricePerDay:   z.number().int().min(100, "Preço mínimo: R$ 1,00/dia"),
   pricePerWeek:  z.number().int().min(0).nullable().optional(),
@@ -32,7 +32,7 @@ export const CreateItemSchema = z.object({
     .max(MAX_ITEM_VALUE_CENTS, `Nesta fase, o valor estimado do item não pode passar de ${formatPriceShort(MAX_ITEM_VALUE_CENTS)} — itens de maior valor serão aceitos numa fase futura`),
   address:       z.string().max(200).optional().or(z.literal("")).transform(v => v || undefined),
   city:          z.string().min(2, "Cidade obrigatória").max(100),
-  state:         z.enum(BR_STATES, { errorMap: () => ({ message: "Estado inválido" }) }),
+  state:         z.enum(BR_STATES, { error: "Estado inválido" }),
   neighborhood:  z.string().max(100).optional().or(z.literal("")).transform(v => v || undefined),
   latitude:      z.number().min(-90).max(90),
   longitude:     z.number().min(-180).max(180),
