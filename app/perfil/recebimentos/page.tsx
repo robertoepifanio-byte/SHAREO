@@ -165,6 +165,7 @@ export default async function RecebimentosPage({
               { icon: "✅", title: "Devolução confirmada", desc: "Locatário e você confirmam a devolução do item." },
               { icon: "⏳", title: "Janela de retenção", desc: `O valor fica retido por ${payoutLabel} após a devolução — janela que cobre o prazo de abertura de disputa.` },
               { icon: "💸", title: "Repasse via PIX", desc: `O valor líquido (após a taxa ShareO de ${feeLabel}) é enviado para a sua chave cadastrada.` },
+              { icon: "🏦", title: "Depósito no banco", desc: "No repasse automático pela Stripe, o depósito na sua conta bancária segue o prazo da Stripe — nos primeiros repasses de uma conta nova, pode levar até 30 dias; os seguintes são mais rápidos." },
             ].map((item) => (
               <div key={item.title} className="flex gap-3">
                 <span className="text-lg flex-shrink-0" aria-hidden="true">{item.icon}</span>
