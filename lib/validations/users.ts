@@ -21,7 +21,7 @@ export const UpdateProfileSchema = z.object({
   street:       z.string().max(200).transform(stripHtml).nullable().optional(),
   neighborhood: z.string().max(100).transform(stripHtml).nullable().optional(),
   city:         z.string().min(2, "Cidade: mínimo 2 caracteres").max(100).optional(),
-  state:        z.enum(BR_STATES, { errorMap: () => ({ message: "Estado inválido" }) }).nullable().optional(),
+  state:        z.enum(BR_STATES, { error: "Estado inválido" }).nullable().optional(),
   // SEC-BAIXO — Strix (29/09) achou que .url() sozinho aceita qualquer esquema
   // (`javascript:`, `file://`); nenhum caminho de render alcançável hoje, mas
   // trava aqui em vez de depender disso continuar verdade para sempre.

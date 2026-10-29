@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
     const parsed = CreateBookingSchema.safeParse(body)
     if (!parsed.success) {
       const details: Record<string, string[]> = {}
-      for (const e of parsed.error.errors) {
+      for (const e of parsed.error.issues) {
         const key = e.path.join(".") || "form"
         details[key] = [...(details[key] ?? []), e.message]
       }

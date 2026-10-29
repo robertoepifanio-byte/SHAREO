@@ -23,7 +23,7 @@ const Schema = z.object({
   // 400 visivel que dado torto. O DEFAULT tambem saiu da coluna (migracao
   // 20260831230000_founder_lead_intent_sem_default).
   intent:           z.enum(["proprietario", "locatario", "ambos"]),
-  marketingConsent: z.literal(true, { errorMap: () => ({ message: "Consentimento obrigatório" }) }),
+  marketingConsent: z.literal(true, { error: "Consentimento obrigatório" }),
   // Aceita apenas versões conhecidas — strings arbitrárias invalidariam a
   // trilha de auditoria LGPD (não há como provar qual texto o usuário viu).
   // Clientes desatualizados que ainda enviam "v1.1" continuam sendo aceitos

@@ -54,7 +54,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     const parsed  = MessageSchema.safeParse(rawBody)
     if (!parsed.success) {
       return NextResponse.json(
-        { error: { code: "CONTENT_REQUIRED", message: parsed.error.errors[0]?.message ?? "Conteúdo inválido." } },
+        { error: { code: "CONTENT_REQUIRED", message: parsed.error.issues[0]?.message ?? "Conteúdo inválido." } },
         { status: 400 },
       )
     }
