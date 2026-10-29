@@ -104,6 +104,11 @@ async function main() {
   console.log(`Modo:  ${confirm ? "⚠  ENVIANDO (--confirm)" : "DRY-RUN (nada é enviado)"}`)
   console.log("─".repeat(78))
 
+  // A chave da Resend vem do --env ou do ambiente; se faltar, cai no .env.local (mesmo
+  // fallback do --teste-para). Depois do loadEnvFile, para uma chave no --env ter preferência.
+  carregarChaveResend()
+  if (!process.env.RESEND_API_KEY?.trim()) fail("RESEND_API_KEY ausente (nem no --env, nem no ambiente, nem no .env.local).")
+
   // Import dinâmico: lib/email lê variáveis de ambiente ao carregar, e o env só existe depois do loadEnvFile.
   const { testAccountEmailFilter, sendStripeTermsUpdateEmail } = await import("../lib/email")
   const prisma = makePrisma()
