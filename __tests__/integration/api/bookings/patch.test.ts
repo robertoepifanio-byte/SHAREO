@@ -116,9 +116,14 @@ const mockEmitCancellationRefund = jest.fn().mockResolvedValue({ id: "re_test" }
 // (mockado abaixo com refundAmount fixo) já cobre o cálculo em si; este mock só
 // evita que a rota chame a Stripe de verdade.
 const mockGetChargeFeeCents = jest.fn().mockResolvedValue(0)
+// #7 follow-up: o catch do estorno chama recordRefundFailure (loga + Sentry +
+// enfileira PendingRefund). Mockado para resolver — a rota só precisa que ele
+// não derrube o cancelamento quando a Stripe recusa.
+const mockRecordRefundFailure = jest.fn().mockResolvedValue(undefined)
 jest.mock("@/lib/payments/refund", () => ({
   emitCancellationRefund: (...args: unknown[]) => mockEmitCancellationRefund(...args),
   getChargeFeeCents:      (...args: unknown[]) => mockGetChargeFeeCents(...args),
+  recordRefundFailure:    (...args: unknown[]) => mockRecordRefundFailure(...args),
 }))
 
 // ---------------------------------------------------------------------------
@@ -378,6 +383,11 @@ describe("PATCH /api/bookings/[id]", () => {
       const res = await PATCH(makeReq({ action: "cancel", reason: "Mudei de ideia" }), makeParams())
 
       expect(res.status).toBe(200)
+      // A falha vai para recordRefundFailure (loga + Sentry + enfileira
+      // PendingRefund para o cron refund-reconcile), não some em silêncio.
+      expect(mockRecordRefundFailure).toHaveBeenCalledWith(
+        expect.objectContaining({ bookingId: BOOKING_ID, amount: 100, motivo: "cancellation" }),
+      )
     })
 
     it("🪤 reserva PAGA sem stripePaymentIntentId não chama a Stripe (defensivo — não deveria acontecer)", async () => {

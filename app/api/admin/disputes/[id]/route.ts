@@ -1,10 +1,9 @@
 import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
-import * as Sentry from "@sentry/nextjs"
 import { requireAdminApi } from "@/lib/auth/require-admin"
 import { prisma } from "@/lib/prisma"
 import { criarPayoutDaReserva } from "@/lib/payout"
-import { emitCancellationRefund } from "@/lib/payments/refund"
+import { emitCancellationRefund, recordRefundFailure } from "@/lib/payments/refund"
 import { getPlatformFeeRate, calcSplit } from "@/lib/platform-config"
 import { formatPrice } from "@/utils/format"
 import { prazoParaContestar } from "@/lib/prazoContestacao"
@@ -250,16 +249,11 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     // 🪤 #7 (Red Team 2026-10-28): uma falha aqui NAO pode sumir em console.error.
     // O banco ja marcou refundAmount/refundPercent (acima) e, no integral, nao ha
     // reverseOwnerTransfer sem o refund — divergencia silenciosa que so aparecia
-    // por reclamacao. `onRefundFail` loga E alerta no Sentry (sem fila de
-    // reprocessamento, que fica como follow-up): o valor devido segue em
-    // booking.refundAmount para reprocessamento manual.
-    const onRefundFail = (amount: number, motivo: string) => (e: unknown) => {
-      console.error(`[disputa] estorno (${motivo}) de ${amount} em ${id} FALHOU:`, e instanceof Error ? e.message : e)
-      Sentry.captureException(e instanceof Error ? e : new Error(String(e)), {
-        extra: { bookingId: id, amount, motivo },
-        tags:  { pagamento: "refund-failure" },
-      })
-    }
+    // por reclamacao. `recordRefundFailure` loga, alerta no Sentry E enfileira um
+    // PendingRefund (follow-up do #7): o cron `refund-reconcile` reprocessa, e o
+    // valor devido segue em booking.refundAmount como rede de segurança.
+    const onRefundFail = (amount: number, motivo: "dispute-partial" | "dispute-full") => (error: unknown) =>
+      recordRefundFailure({ bookingId: id, paymentIntentId: booking.stripePaymentIntentId!, amount, motivo, error })
     if (action === "resolve_partial") {
       await emitCancellationRefund({
         bookingId:       id,

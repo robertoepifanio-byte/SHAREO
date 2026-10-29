@@ -10,8 +10,12 @@
  * módulo só cobre a ponta que faltava: emitir o `refunds.create` que dispara
  * esse webhook.
  */
+import * as Sentry from "@sentry/nextjs"
 import { getStripe } from "@/lib/stripe"
 import { prisma } from "@/lib/prisma"
+
+/** Origem do estorno — separa a chave de idempotência e o registro contábil. */
+export type RefundMotivo = "cancellation" | "dispute-partial" | "dispute-full"
 
 /**
  * Taxa REAL que a Stripe cobrou na cobrança original (não estimada).
@@ -68,8 +72,7 @@ export async function emitCancellationRefund({
   bookingId:       string
   paymentIntentId: string
   amount:          number
-  /** Origem do estorno — separa a chave de idempotência e o registro contábil. */
-  motivo?:         "cancellation" | "dispute-partial" | "dispute-full"
+  motivo?:         RefundMotivo
 }) {
   const stripe = getStripe()
 
@@ -93,4 +96,64 @@ export async function emitCancellationRefund({
   })
 
   return refund
+}
+
+/**
+ * Registra uma falha de estorno de forma VISÍVEL e REPROCESSÁVEL (follow-up do
+ * #7, Red Team 2026-10-28). Chamada no catch dos pontos que emitem estorno
+ * (cancelamento de reserva e desfecho de disputa).
+ *
+ * Faz três coisas, nesta ordem de importância:
+ *  1. loga (operador lendo o console vê na hora);
+ *  2. alerta no Sentry com a tag `refund-failure` (mantém o alerta que o #7 já
+ *     tinha criado);
+ *  3. enfileira um `PendingRefund` PENDING para o cron de reconciliação
+ *     reprocessar — a parte que o #7 deixou como follow-up.
+ *
+ * 🪤 Upsert por (bookingId, motivo): se a mesma falha reaparecer (retry da rota),
+ * NÃO cria uma segunda linha — soma +1 em `attempts` e atualiza `lastError`,
+ * mantendo a linha em PENDING para o cron. Duas linhas PENDING para o mesmo
+ * estorno fariam o cron disparar dois `refunds.create` concorrentes (a
+ * idempotencyKey da Stripe os colapsa, mas é desperdício e ruído).
+ *
+ * NUNCA lança: um erro ao enfileirar não pode derrubar a rota que já respondeu
+ * o cancelamento/a disputa. Se o próprio enqueue falhar, resta o log + Sentry.
+ */
+export async function recordRefundFailure({
+  bookingId,
+  paymentIntentId,
+  amount,
+  motivo,
+  error,
+}: {
+  bookingId:       string
+  paymentIntentId: string
+  amount:          number
+  motivo:          RefundMotivo
+  error:           unknown
+}): Promise<void> {
+  const err = error instanceof Error ? error : new Error(String(error))
+
+  console.error(`[refund] estorno (${motivo}) de ${amount} em ${bookingId} FALHOU:`, err.message)
+  Sentry.captureException(err, {
+    extra: { bookingId, amount, motivo },
+    tags:  { pagamento: "refund-failure" },
+  })
+
+  try {
+    await prisma.pendingRefund.upsert({
+      where:  { bookingId_motivo: { bookingId, motivo } },
+      create: { bookingId, paymentIntentId, amount, motivo, status: "PENDING", attempts: 0, lastError: err.message },
+      // Reabre para reprocessamento: se uma tentativa anterior marcou FAILED e a
+      // falha voltou a acontecer no fluxo normal, volta a PENDING. `attempts` NÃO
+      // zera — o teto do cron continua valendo sobre o total histórico.
+      update: { status: "PENDING", amount, paymentIntentId, lastError: err.message },
+    })
+  } catch (e) {
+    // Último recurso: o enqueue não pode mascarar nem substituir o alerta acima.
+    console.error(
+      `[refund] id=${bookingId} motivo=${motivo} — enfileirar PendingRefund falhou:`,
+      e instanceof Error ? e.message : e,
+    )
+  }
 }

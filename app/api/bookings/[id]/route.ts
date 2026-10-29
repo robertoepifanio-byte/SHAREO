@@ -1,7 +1,6 @@
 import type { NextRequest } from "next/server"
 import { NextResponse, after } from "next/server"
 import { randomInt } from "node:crypto"
-import * as Sentry from "@sentry/nextjs"
 import { prisma } from "@/lib/prisma"
 import { resolveUserId } from "@/lib/resolveUserId"
 import { taxaDeAtrasoQuitada } from "@/lib/lateFee"
@@ -19,7 +18,7 @@ import { hasPickupAddress, redactOwnerAddress } from "@/lib/ownerAddress"
 import { criarPayoutDaReserva } from "@/lib/payout"
 import { checkDisputeWindow } from "@/lib/disputeWindow"
 import { openDispute } from "@/lib/openDispute"
-import { emitCancellationRefund, getChargeFeeCents } from "@/lib/payments/refund"
+import { emitCancellationRefund, getChargeFeeCents, recordRefundFailure } from "@/lib/payments/refund"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -620,16 +619,19 @@ export async function PATCH(req: NextRequest, { params }: Params) {
           bookingId:       id,
           paymentIntentId: booking.stripePaymentIntentId,
           amount:          updated.refundAmount,
-        }).catch((e) => {
+        }).catch((error) =>
           // 🪤 #7 (Red Team 2026-10-28): falha de estorno nao pode sumir em
-          // console.error. `updated.refundAmount` fica no banco como o valor
-          // devido para reprocessamento manual; o Sentry alerta os operadores.
-          console.error("[booking.cancel] emitCancellationRefund:", e instanceof Error ? e.message : e)
-          Sentry.captureException(e instanceof Error ? e : new Error(String(e)), {
-            extra: { bookingId: id, amount: updated.refundAmount, motivo: "cancellation" },
-            tags:  { pagamento: "refund-failure" },
+          // console.error. `recordRefundFailure` loga, alerta no Sentry E enfileira
+          // um PendingRefund para o cron `refund-reconcile` reprocessar;
+          // `updated.refundAmount` fica no banco como rede de segurança.
+          recordRefundFailure({
+            bookingId:       id,
+            paymentIntentId: booking.stripePaymentIntentId!,
+            amount:          updated.refundAmount!,
+            motivo:          "cancellation",
+            error,
           })
-        })
+        )
       } else {
         console.error(`[booking.cancel] id=${id} refundAmount=${updated.refundAmount} mas sem stripePaymentIntentId — estorno não pôde ser emitido`)
       }

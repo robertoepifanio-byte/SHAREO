@@ -666,6 +666,7 @@ model Booking {
   platformTransactions  PlatformTransaction[]
   payouts               Payout[]
   ambassadorCommissions AmbassadorCommission[]
+  pendingRefunds        PendingRefund[]
   couponUsed            Coupon?                @relation("CouponUsedInBooking")
   // Story B — itens da locação (mesmo dono, mesmo período). Reserva de item único = 1 BookingItem.
   // Booking.itemId continua apontando para o item principal (compat retroativa).
@@ -1140,6 +1141,47 @@ model ExportJob {
   @@index([requestedBy, createdAt])
   @@index([status])
   @@map("export_jobs")
+}
+
+// Fila de reprocessamento de estornos (follow-up do #7, Red Team 2026-10-28).
+//
+// Quando `emitCancellationRefund` falha (Stripe fora do ar, timeout, cartão já
+// expirado), as rotas de cancelamento e de disputa logam + alertam no Sentry,
+// mas o dinheiro devido fica só em `booking.refundAmount` e nada o reprocessa.
+// Cada falha enfileira UMA linha aqui; o cron `GET /api/cron/refund-reconcile`
+// reexecuta `emitCancellationRefund` (a idempotencyKey por `motivo+bookingId`
+// já evita estorno duplo), marca COMPLETED no sucesso ou FAILED ao esgotar as
+// tentativas.
+//
+// 🪤 `@@unique([bookingId, motivo])`: a chave de idempotência da Stripe é
+// `${motivo}-refund-${bookingId}`, então (bookingId, motivo) identifica UM
+// estorno lógico. O enfileiramento faz upsert sobre essa chave — uma falha que
+// se repete (retry da rota, segunda tentativa manual) atualiza a linha
+// existente em vez de criar duplicatas que o cron tentaria estornar em paralelo.
+model PendingRefund {
+  id              String              @id @default(cuid())
+  bookingId       String
+  booking         Booking             @relation(fields: [bookingId], references: [id])
+  paymentIntentId String
+  amount          Int
+  // Origem do estorno — repassada verbatim a emitCancellationRefund (une a chave
+  // de idempotência e o registro contábil). Valores: "cancellation" |
+  // "dispute-partial" | "dispute-full". String (não enum) para acompanhar o
+  // union de TS em lib/payments/refund.ts sem acoplar o schema.
+  motivo          String
+  // Reusa o EventQueueStatus das filas irmãs (StripeEventQueue, EmailQueue) —
+  // mesmo conceito, um vocabulário só. PROCESSING fica sem uso: este cron reivindica
+  // a linha por um increment de `attempts` guardado por status (não por flip para
+  // PROCESSING), o que evita a armadilha "preso em PROCESSING" do cron de payout (#8).
+  status          EventQueueStatus    @default(PENDING)
+  attempts        Int                 @default(0)
+  lastError       String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@unique([bookingId, motivo])
+  @@index([status, createdAt])
+  @@map("pending_refunds")
 }
 
 model StripeEventQueue {

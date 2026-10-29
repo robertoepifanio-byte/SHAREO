@@ -43,8 +43,13 @@ const mockAuth = jest.fn()
 jest.mock("@/lib/auth", () => ({ auth: () => mockAuth() }))
 
 const mockRefund = jest.fn()
+// #7 follow-up: o catch do estorno chama recordRefundFailure (loga + Sentry +
+// enfileira PendingRefund). O comportamento interno do helper é coberto em
+// __tests__/unit/lib/refund.test.ts; aqui só garantimos que a rota o aciona.
+const mockRecordRefundFailure = jest.fn().mockResolvedValue(undefined)
 jest.mock("@/lib/payments/refund", () => ({
   emitCancellationRefund: (...a: unknown[]) => mockRefund(...a),
+  recordRefundFailure:    (...a: unknown[]) => mockRecordRefundFailure(...a),
 }))
 
 const mockSentry = jest.fn()
@@ -351,21 +356,22 @@ describe("PATCH /api/admin/disputes/[id]", () => {
   })
 
   // 🪤 #7 (Red Team 2026-10-28): uma recusa da Stripe no estorno não pode sumir em
-  // console.error. O banco já marcou refundAmount/refundPercent; sem alerta, a
+  // console.error. O banco já marcou refundAmount/refundPercent; sem tratamento, a
   // divergência (banco diz "reembolsado", dinheiro não saiu) só apareceria por
-  // reclamação. Agora a falha vai para o Sentry.
-  it("🪤 estorno recusado pela Stripe: resposta segue 200 mas a falha vai ao Sentry", async () => {
+  // reclamação. Agora a falha vai para recordRefundFailure (loga + Sentry +
+  // enfileira PendingRefund para o cron refund-reconcile reprocessar).
+  it("🪤 estorno recusado pela Stripe: resposta segue 200 mas a falha é enfileirada/alertada", async () => {
     mockBookingFindOrThrow.mockResolvedValue({ id: BOOKING_ID, status: "CANCELLED", updatedAt: new Date() })
     mockRefund.mockRejectedValueOnce(new Error("card_declined"))
 
     const res = await PATCH(makeReq({ action: "resolve_cancelled" }), makeParams())
 
     expect(res.status).toBe(200) // a disputa já foi resolvida; o refund é reprocessável
-    expect(mockSentry).toHaveBeenCalledTimes(1)
-    const [, ctx] = mockSentry.mock.calls[0] as [Error, { extra: { bookingId: string; motivo: string }; tags: { pagamento: string } }]
-    expect(ctx.extra.bookingId).toBe(BOOKING_ID)
-    expect(ctx.extra.motivo).toBe("dispute-full")
-    expect(ctx.tags.pagamento).toBe("refund-failure")
+    expect(mockRecordRefundFailure).toHaveBeenCalledTimes(1)
+    const [arg] = mockRecordRefundFailure.mock.calls[0] as [{ bookingId: string; amount: number; motivo: string; error: unknown }]
+    expect(arg.bookingId).toBe(BOOKING_ID)
+    expect(arg.motivo).toBe("dispute-full")
+    expect(arg.error).toBeInstanceOf(Error)
   })
 
   describe("resolve_partial — desfecho proporcional", () => {
