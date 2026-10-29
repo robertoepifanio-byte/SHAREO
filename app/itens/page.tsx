@@ -364,7 +364,9 @@ export default async function ExplorarPage({ searchParams }: Props) {
             // Ícone de 52 px: com 96 px os 7 chips passavam da largura e, com a barra
             // de rolagem escondida, o mouse não alcançava Ferramentas/Festas (relato de
             // 01/10/2026). Em duas linhas ficou feio (fundador); 52 px cabe a 1280 px.
-            className="mb-5 flex gap-2 overflow-x-auto scrollbar-hide pb-1"
+            // Abaixo de 1280 px ainda transborda: scrollbar-thin mostra uma barra fina
+            // (só quando transborda) para o mouse alcançar os últimos chips.
+            className="mb-5 flex gap-2 overflow-x-auto scrollbar-thin pb-1"
             role="list"
             aria-label="Filtrar por categoria"
           >
