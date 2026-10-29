@@ -523,6 +523,11 @@ export default function RecebimentosScreen() {
                 title: "Repasse via PIX",
                 desc:  `O valor líquido (após a taxa ShareO de ${feeLabel}) é enviado para a sua chave cadastrada.`,
               },
+              {
+                icon:  "🏦",
+                title: "Depósito no banco",
+                desc:  "No repasse automático pela Stripe, o depósito na sua conta bancária segue o prazo da Stripe — nos primeiros repasses de uma conta nova, pode levar até 30 dias; os seguintes são mais rápidos.",
+              },
             ] as const).map((item) => (
               <View key={item.title} className="flex-row gap-3">
                 <Text
