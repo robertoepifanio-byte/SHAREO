@@ -11,8 +11,16 @@ import { isStripeTestMode } from "@/lib/payments/charge-guards"
 import { BillingSwitch } from "./_BillingSwitch"
 import { formatPrice, formatDateShort, formatDateTime } from "@/utils/format"
 import { StatCard } from "@/components/ui/StatCard"
+import { StatusBadge } from "@/components/ui/StatusBadge"
 
 export const metadata: Metadata = { title: "Admin — Financeiro" }
+
+// Rótulo humano por origem do estorno (motivo em PendingRefund).
+const MOTIVO_ESTORNO_LABEL: Record<string, string> = {
+  "dispute-partial": "Estorno parcial de disputa",
+  "dispute-full":    "Estorno integral de disputa",
+  "cancellation":    "Estorno de cancelamento",
+}
 
 export default async function AdminFinanceiroPage() {
   const session = await requireAdminPage("ADMIN_SUPERADMIN", "ADMIN_FINANCEIRO")
@@ -30,6 +38,7 @@ export default async function AdminFinanceiroPage() {
     processingPayouts,
     pixAccountStats,
     disputedBookings,
+    pendingRefunds,
   ] = await Promise.all([
 
     getPlatformFeeRate(),
@@ -86,6 +95,24 @@ export default async function AdminFinanceiroPage() {
         item:           { select: { title: true } },
         owner:          { select: { name: true } },
         borrower:       { select: { name: true } },
+      },
+    }),
+    // Fila de estornos aguardando reprocessamento automático (cron
+    // refund-reconcile). PENDING = ainda tentando; FAILED = esgotou o teto e
+    // exige devolução manual por outro meio. COMPLETED não aparece (já resolvido).
+    prisma.pendingRefund.findMany({
+      where:   { status: { in: ["PENDING", "FAILED"] } },
+      take:    30,
+      orderBy: { createdAt: "asc" },
+      select: {
+        id:        true,
+        amount:    true,
+        motivo:    true,
+        status:    true,
+        attempts:  true,
+        lastError: true,
+        createdAt: true,
+        booking:   { select: { id: true, item: { select: { title: true } } } },
       },
     }),
   ])
@@ -271,6 +298,53 @@ export default async function AdminFinanceiroPage() {
       {processingPayouts.length === 0 && pendingPayouts === 0 && (
         <div className="rounded-xl border border-border bg-surface p-8 text-center text-sm text-muted-foreground">
           Nenhum repasse pendente no momento.
+        </div>
+      )}
+
+      {/* ── Estornos na fila de reprocessamento (cron refund-reconcile) ── */}
+      {pendingRefunds.length > 0 && (
+        <div className="rounded-xl border border-border bg-surface overflow-hidden">
+          <div className="flex items-center justify-between border-b border-border px-5 py-4">
+            <h2 className="font-semibold text-foreground">
+              Estornos na fila de reprocessamento
+              <StatusBadge variant="warning" size="sm" className="ml-2">
+                {pendingRefunds.length}
+              </StatusBadge>
+            </h2>
+          </div>
+          <div className="divide-y divide-border">
+            {pendingRefunds.map((r) => (
+              <div key={r.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 text-sm">
+                <div className="min-w-0">
+                  <p className="font-semibold text-foreground truncate">{r.booking.item.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {MOTIVO_ESTORNO_LABEL[r.motivo] ?? "Estorno de cancelamento"}
+                    {" · "}{r.attempts} tentativa(s) · desde {formatDateTime(r.createdAt)}
+                  </p>
+                  {r.lastError && (
+                    <p className="text-xs font-mono text-muted-foreground truncate">{r.lastError}</p>
+                  )}
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <p className="text-lg font-bold text-foreground">{formatPrice(r.amount)}</p>
+                  <StatusBadge variant={r.status === "FAILED" ? "danger" : "warning"}>
+                    {r.status === "FAILED" ? "Falhou — devolver manualmente" : "Reprocessando"}
+                  </StatusBadge>
+                  <Link
+                    href={`/admin/reservas/${r.booking.id}`}
+                    className="ml-2 text-xs text-brand hover:underline"
+                  >
+                    Ver reserva →
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="px-5 py-3 bg-muted/30 border-t border-border">
+            <p className="text-xs text-muted-foreground">
+              Reprocessados de hora em hora pelo cron. <strong>Reprocessando</strong> = tentativa automática ainda em curso; <strong>Falhou</strong> = esgotou o limite de tentativas e o valor precisa ser devolvido por outro meio (o valor devido segue registrado na reserva).
+            </p>
+          </div>
         </div>
       )}
 
