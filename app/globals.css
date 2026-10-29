@@ -233,4 +233,24 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  /* Barra fina e sutil para faixas roláveis na horizontal. O gesto de arrastar
+     do touch não existe no desktop com mouse, então esconder a barra deixa os
+     últimos itens inalcançáveis quando a faixa transborda (relato do fundador
+     sobre os chips de categoria abaixo de 1280px). Com overflow-x: auto a barra
+     só aparece quando há transbordo. A cor vem dos tokens (adapta a light/dark). */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--muted-foreground) / 0.4) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    height: 8px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: rgb(var(--muted-foreground) / 0.4);
+    border-radius: 9999px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
 }
