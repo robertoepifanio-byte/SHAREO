@@ -3,6 +3,8 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { getAmbassadorRatesBp } from "@/lib/platform-config"
+import { formatRatePct } from "@/lib/ambassador"
 import { AppHeader } from "@/components/layout/AppHeader"
 
 export const metadata: Metadata = { title: "Bem-vindo ao ShareO" }
@@ -17,10 +19,13 @@ export default async function BemVindoPage() {
   const session = await auth()
   if (!session) redirect("/login?callbackUrl=/bem-vindo")
 
-  const user = await prisma.user.findUnique({
-    where:  { id: session.user.id },
-    select: { name: true, profileCompletedAt: true },
-  })
+  const [user, rates] = await Promise.all([
+    prisma.user.findUnique({
+      where:  { id: session.user.id },
+      select: { name: true, profileCompletedAt: true },
+    }),
+    getAmbassadorRatesBp(),
+  ])
 
   const firstName = (user?.name ?? "").trim().split(" ")[0] || "por aqui"
   const isComplete = !!user?.profileCompletedAt
@@ -84,7 +89,7 @@ export default async function BemVindoPage() {
             <h2 className="font-semibold text-primary">Convide amigos e seja embaixador</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Gere seu link de indicação e compartilhe com amigos. A cada locação de quem você
-              indicar, você acumula uma parte da nossa taxa (Bronze 2% · Prata 3% · Ouro 5%).
+              indicar, você acumula uma parte da nossa taxa (Bronze {formatRatePct(rates.BRONZE)}% · Prata {formatRatePct(rates.SILVER)}% · Ouro {formatRatePct(rates.GOLD)}%).
               Os créditos ficam guardados e são liberados após a validação jurídica.
             </p>
             <Link

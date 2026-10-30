@@ -140,4 +140,6 @@ describe("getTierCommissionRateBp", () => {
   it("GOLD → 500 bps (5%)",   () => expect(getTierCommissionRateBp("GOLD")).toBe(500))
   it("SILVER → 300 bps (3%)", () => expect(getTierCommissionRateBp("SILVER")).toBe(300))
   it("BRONZE → 200 bps (2%)", () => expect(getTierCommissionRateBp("BRONZE")).toBe(200))
+  it("usa as taxas passadas (config do painel)", () =>
+    expect(getTierCommissionRateBp("SILVER", { BRONZE: 100, SILVER: 450, GOLD: 900 })).toBe(450))
 })

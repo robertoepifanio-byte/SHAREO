@@ -37,6 +37,7 @@ function makeStats(overrides: Partial<{
     status: "PENDING" | "APPROVED" | "PAID" | "CANCELLED"; createdAt: string; referralId: string
   }>
   payoutEnabled:     boolean
+  ratesBp:           Record<"BRONZE" | "SILVER" | "GOLD", number>
 }> = {}) {
   return {
     referralCode:      overrides.referralCode      ?? null,
@@ -48,6 +49,7 @@ function makeStats(overrides: Partial<{
     totalPaidCents:    0,
     payoutEnabled:     overrides.payoutEnabled     ?? false,
     hasBeenReferred:   false,
+    ...(overrides.ratesBp ? { ratesBp: overrides.ratesBp } : {}),
   }
 }
 
@@ -205,6 +207,15 @@ describe("EmbaixadorScreen — rótulos verbatim e fluxos principais", () => {
     expect(screen.getByText("· 2%")).toBeTruthy()
     expect(screen.getByText("· 3%")).toBeTruthy()
     expect(screen.getByText("· 5%")).toBeTruthy()
+  })
+
+  it("usa as taxas do payload (config do painel) quando presentes", () => {
+    setupQuery(makeData(true, { totalReferrals: 1, ratesBp: { BRONZE: 250, SILVER: 400, GOLD: 600 } }))
+    render(<EmbaixadorScreen />)
+    expect(screen.getByText("· 2,5%")).toBeTruthy()
+    expect(screen.getByText("· 4%")).toBeTruthy()
+    expect(screen.getByText("· 6%")).toBeTruthy()
+    expect(screen.getByText("Próximo: Bronze (2,5%)", { exact: false })).toBeTruthy()
   })
 
   // ── Banner pré-lançamento — verbatim de _AmbassadorSection.tsx linha 124 ──

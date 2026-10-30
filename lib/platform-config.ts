@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma"
+import type { AmbassadorTier } from "@prisma/client"
 
 const DEFAULT_FEE_RATE = 1500 // 15% em basis points
 
@@ -76,6 +77,31 @@ export async function getAmbassadorThresholds(): Promise<AmbassadorThresholds> {
     }
   } catch {
     return DEFAULT_AMBASSADOR_THRESHOLDS
+  }
+}
+
+// ─── Taxas de comissão de embaixador ──────────────────────────────────────────
+
+/** Basis points por tier sobre platformFeeAmount (200 = 2%). */
+export type AmbassadorRatesBp = Record<AmbassadorTier, number>
+
+export const DEFAULT_AMBASSADOR_RATES_BP: AmbassadorRatesBp = { BRONZE: 200, SILVER: 300, GOLD: 500 }
+
+/** Lê as taxas que /admin/embaixadores grava; valor ausente ou fora de 0–10000 bps → default. */
+export async function getAmbassadorRatesBp(): Promise<AmbassadorRatesBp> {
+  try {
+    const map = await loadConfig()
+    const rate = (key: string, fallback: number) => {
+      const v = intFrom(map, key)
+      return Number.isFinite(v) && v >= 0 && v <= 10000 ? v : fallback
+    }
+    return {
+      BRONZE: rate("ambassadorBronzeRate", DEFAULT_AMBASSADOR_RATES_BP.BRONZE),
+      SILVER: rate("ambassadorSilverRate", DEFAULT_AMBASSADOR_RATES_BP.SILVER),
+      GOLD:   rate("ambassadorGoldRate",   DEFAULT_AMBASSADOR_RATES_BP.GOLD),
+    }
+  } catch {
+    return DEFAULT_AMBASSADOR_RATES_BP
   }
 }
 

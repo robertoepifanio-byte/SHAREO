@@ -133,7 +133,8 @@ export const FUNDADORES_BENEFICIOS = [
 /**
  * Faixas do Programa Embaixadores.
  *
- * 2/3/5% — fonte da verdade é getTierCommissionRateBp em lib/ambassador.ts.
+ * 2/3/5% = DEFAULT_AMBASSADOR_RATES_BP (lib/platform-config.ts). Texto de
+ * marketing fixo: NÃO acompanha a taxa editada em /admin/embaixadores.
  */
 export const EMBAIXADOR_TIERS = [
   { nome: "Bronze", faixa: "1 a 10 indicados", percentual: 2 },
