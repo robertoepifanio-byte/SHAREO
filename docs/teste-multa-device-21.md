@@ -29,8 +29,8 @@ BEGIN;
 
 WITH alvo AS (
   SELECT b.id
-  FROM "Booking" b
-  JOIN "User" u ON u.id = b."borrowerId"
+  FROM "bookings" b
+  JOIN "users" u ON u.id = b."borrowerId"
   WHERE u.email = 'locatario.fixture@shareo-test.com'
     AND b."paymentStatus" = 'PAID'
     AND b.status <> 'CANCELLED'
@@ -38,7 +38,7 @@ WITH alvo AS (
   ORDER BY (b.status = 'COMPLETED') DESC, b."createdAt" DESC   -- prefere COMPLETED
   LIMIT 1
 )
-UPDATE "Booking" b
+UPDATE "bookings" b
 SET "lateFeeAmount"            = 4500,     -- R$ 45,00 (centavos)
     "lateFeeCalculatedUntil"  = now(),
     "lateFeeSessionId"        = NULL,
@@ -74,12 +74,12 @@ Se **não** chegou a pagar (multa segue não quitada):
 
 ```sql
 -- STAGING — desfaz a semeadura (só se NÃO pagou)
-UPDATE "Booking" b
+UPDATE "bookings" b
 SET "lateFeeAmount" = NULL,
     "lateFeeCalculatedUntil" = NULL,
     "lateFeeSessionId" = NULL,
     "lateFeeSessionExpiresAt" = NULL
-FROM "User" u
+FROM "users" u
 WHERE u.id = b."borrowerId"
   AND u.email = 'locatario.fixture@shareo-test.com'
   AND b."lateFeePaymentIntentId" IS NULL
@@ -90,13 +90,13 @@ Se **pagou** no teste (há `lateFeePaymentIntentId` gravado — é um PaymentInt
 
 ```sql
 -- STAGING — reset total (apaga também o vínculo do pagamento de teste)
-UPDATE "Booking" b
+UPDATE "bookings" b
 SET "lateFeeAmount" = NULL,
     "lateFeeCalculatedUntil" = NULL,
     "lateFeePaymentIntentId" = NULL,
     "lateFeeSessionId" = NULL,
     "lateFeeSessionExpiresAt" = NULL
-FROM "User" u
+FROM "users" u
 WHERE u.id = b."borrowerId"
   AND u.email = 'locatario.fixture@shareo-test.com'
   AND b."lateFeeAmount" = 4500;
