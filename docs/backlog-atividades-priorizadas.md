@@ -8,6 +8,16 @@
 
 ---
 
+## 🔎 Landings `/pilotos` — decidir em dezembro/2026 se mantém ou exclui (registrado em 01/11/2026)
+
+O hub `/pilotos` e as 14 landings `/pilotos/<cidade>` (criadas em 19/06 e 10/08/2026 para captar fundadores e escolher cidade-piloto) estão **em desuso** (confirmado pelo fundador em 01/11). Hoje ficam **no ar, com `noindex` e fora do sitemap** (#604). Decisão pendente: manter ou excluir.
+
+| # | Item | Por que importa | Esforço |
+|---|---|---|---|
+| **SEO-PIL-01** 🟡 | **Analisar em dezembro/2026 se vale manter as 14 landings ou excluí-las.** Levantar antes: (1) leads recentes por `campaign = piloto-<cidade>` em `/admin/fundadores`; (2) acessos a `/pilotos/*` nos últimos 30 dias; (3) se alguma campanha, e-mail ou material ainda aponta para elas; (4) se `shareo.com.br/pilotos` aparece com link no Google depois do `noindex`. Sem uso nos três primeiros, **excluir**: apagar `app/pilotos`, `lib/pilot-cities.ts` e `lib/seo-text.ts` (`pilotSeoText`), responder 410 ou redirecionar `/pilotos/*` para `/`, e conferir quem importa `PILOT_CITIES` (testes de `founders-attribution` e `founder-welcome-saudacao`). | Páginas quase idênticas (~240 palavras, 74% de similaridade entre si) pesam como conteúdo fino. Mantê-las com `noindex` custa pouco, mas é código e rota sem dono. Se a captura por cidade voltar a ser usada, o caminho é enriquecer cada cidade com oferta real, não reindexar como está. | Baixo para excluir; médio para enriquecer |
+
+---
+
 ## 💳 Stripe live em produção — pendências abertas na ativação (25/09/2026)
 
 Em 25/09 a produção passou a ter chave live, os dois destinos de evento (`/api/webhooks/stripe` e `/api/webhooks/stripe-connect`) e o `stripeConnectEnabled` ligado. A cobrança real (`billingEnabled`) segue **fechada**. O ping do destino do Connect respondeu 200 e um proprietário concluiu o cadastro Express live, mas a locação assistida ainda não rodou.
