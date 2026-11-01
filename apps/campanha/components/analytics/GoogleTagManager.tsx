@@ -1,20 +1,21 @@
 /**
- * Google Tag Manager — DESLIGADO desde 29/10/2026, aguardando parecer jurídico.
+ * Google Tag Manager — religado em 01/11/2026 por instrução explícita do fundador,
+ * com o parecer jurídico ainda pendente.
  *
  * Histórico: ativado na campanha em 15/09/2026 ([[project-gtm-campanha-2026-09-15]]),
  * revertendo a trava de 04/09. No go-live (01/10) mediu-se que o container
  * `GTM-5TQLGHFT` disparava ao GA4 e ao Google Ads — transferência internacional
- * não prevista na decisão C2.9 (art. 33). Desligado no marketplace (#549) e aqui.
+ * não prevista na decisão C2.9 (art. 33). Foi desligado no marketplace (#549) e aqui.
  * Registro e perguntas em `docs/juridico/incidente-gtm-ga4-d0-2026-10-01.md`.
  *
  * `GTM_LIBERADO` é o interruptor único — mesmo papel que `GA4_LIBERADO` tem
- * no componente irmão: um lugar versionado e grepável. Só religar após o
- * parecer, com o container restrito ao que a Política declarar.
+ * no componente irmão: um lugar versionado e grepável. O parecer segue pendente e o
+ * container deve ficar restrito ao que a Política declarar.
  */
 
 import Script from "next/script"
 
-export const GTM_LIBERADO = false
+export const GTM_LIBERADO = true
 
 // O ID do container não é segredo (aparece em texto puro em todo HTML
 // publicado), por isso o default hardcoded; a env var só permite trocar de
