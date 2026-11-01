@@ -5,12 +5,13 @@ import { prisma } from "@/lib/prisma"
 import { PILOT_CITIES } from "@/lib/pilot-cities"
 import { normalizePlace } from "@/lib/geo/normalize-place"
 import { jsonLdScript } from "@/lib/jsonLd"
+import { APP_URL } from "@/lib/app-url"
 
 // Mesmo ISR da landing de cidade: o conteúdo muda pouco e a contagem tem cache
 // próprio, invalidado pela tag "founders".
 export const revalidate = 3600
 
-const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://shareo-rouge.vercel.app"
+const BASE = APP_URL
 
 const TITLE = "Onde o Shareo vai abrir primeiro — entre na lista da sua cidade"
 const DESCRIPTION =

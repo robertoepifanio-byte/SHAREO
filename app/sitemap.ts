@@ -3,10 +3,11 @@ import { prisma } from "@/lib/prisma"
 import { canonicalItemPath } from "@/lib/item-url"
 import { canonicalStorePath } from "@/lib/store-url"
 import { PILOT_CITIES } from "@/lib/pilot-cities"
+import { APP_URL } from "@/lib/app-url"
 
 export const dynamic = "force-dynamic"
 
-const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://shareo-rouge.vercel.app"
+const BASE = APP_URL
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [items, categories, lojas] = await Promise.all([

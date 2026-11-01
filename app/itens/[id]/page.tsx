@@ -24,6 +24,7 @@ import { TrackEvent } from "@/components/analytics/TrackEvent"
 import { formatPrice } from "@/utils/format"
 import { RatingStars } from "@/components/ui/RatingStars"
 import { incrementViewCount } from "@/lib/viewCounter"
+import { APP_URL } from "@/lib/app-url"
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ back?: string; publicado?: string }> }
 
@@ -212,7 +213,7 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
 
   const ownerLocation = [item.owner.neighborhood, item.owner.city].filter(Boolean).join(", ")
 
-  const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://shareo-rouge.vercel.app"
+  const BASE = APP_URL
 
   // P1-30 — BreadcrumbList JSON-LD
   const breadcrumbJsonLd = {
