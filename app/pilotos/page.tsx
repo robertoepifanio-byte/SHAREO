@@ -18,9 +18,12 @@ const DESCRIPTION =
   "Estas são as cidades candidatas a receber o Shareo primeiro. Quanto mais gente " +
   "de uma cidade entra na lista, mais cedo abrimos por lá. Veja se a sua está aqui."
 
+// Landings de captura em desuso (decisão do fundador, 01/11/2026): ficam no ar para quem já tem o link,
+// mas fora do índice e do sitemap — ~240 palavras com 74% de similaridade entre as 14 viram conteúdo fino.
 export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
+  robots: { index: false, follow: true },
   alternates: { canonical: `${BASE}/pilotos` },
   openGraph: { title: TITLE, description: DESCRIPTION, url: `${BASE}/pilotos`, type: "website" },
   twitter:   { card: "summary_large_image", title: TITLE, description: DESCRIPTION },

@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma"
 import { canonicalItemPath } from "@/lib/item-url"
 import { canonicalStorePath } from "@/lib/store-url"
 import { canonicalCategoryPath } from "@/lib/category-url"
-import { PILOT_CITIES } from "@/lib/pilot-cities"
 import { APP_URL } from "@/lib/app-url"
 
 export const dynamic = "force-dynamic"
@@ -73,12 +72,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority:        0.6,
     }))
 
-  const pilotRoutes: MetadataRoute.Sitemap = PILOT_CITIES.map((c) => ({
-    url:             `${BASE}/pilotos/${c.slug}`,
-    lastModified:    new Date(),
-    changeFrequency: "weekly" as const,
-    priority:        0.7,
-  }))
-
-  return [...staticRoutes, ...categoryRoutes, ...itemRoutes, ...lojaRoutes, ...pilotRoutes]
+  return [...staticRoutes, ...categoryRoutes, ...itemRoutes, ...lojaRoutes]
 }
