@@ -21,10 +21,30 @@ import { PullToRefresh } from "@/components/items/PullToRefresh"
 import { FloatingCTA } from "@/components/items/FloatingCTA"
 import { TrackEvent } from "@/components/analytics/TrackEvent"
 import { RentBanner } from "./_RentBanner"
+import { canonicalCategoryPath } from "@/lib/category-url"
 
-export const metadata: Metadata = {
-  title:       "Explorar anúncios",
-  description: "Encontre itens para alugar perto de você no ShareO.",
+const EXPLORAR_TITLE = "Explorar anúncios"
+
+/** Só a vitrine de UMA categoria (sem outros parâmetros) é indexável; o resto herda o canonical `/itens`. */
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  const sp = await searchParams
+  const base: Metadata = {
+    title:       EXPLORAR_TITLE,
+    description: "Encontre itens para alugar perto de você no ShareO: ferramentas, eletrônicos, casa e jardim, festas e mais, de pessoas da sua região.",
+  }
+  const soCategoria = !!sp.categoryId && Object.keys(sp).length === 1
+  if (!soCategoria) return base
+
+  const categoria = await prisma.category
+    .findFirst({ where: { id: sp.categoryId, parentId: null }, select: { id: true, name: true } })
+    .catch(() => null)
+  if (!categoria) return base
+
+  return {
+    title:       `Alugar ${categoria.name} perto de você`,
+    description: `Encontre ${categoria.name} para alugar perto de você no ShareO. Compare preços e reserve direto com quem já tem.`,
+    alternates:  { canonical: canonicalCategoryPath(categoria.id) },
+  }
 }
 
 interface SearchParams {
@@ -223,6 +243,7 @@ export default async function ExplorarPage({ searchParams }: Props) {
   }
 
   const [rawItems, total, categories] = dbResult
+  const categoriaAtiva = categories.find((c) => c.id === categoryId)
 
   // Filtros em JS: distância e avaliação mínima
   function avgRating(i: { reviews?: { rating: number }[] }) {
@@ -320,6 +341,9 @@ export default async function ExplorarPage({ searchParams }: Props) {
       {/* P2-53 — Pull-to-refresh wrapper (mobile) */}
       <PullToRefresh>
       <main className="container py-6">
+        <h1 className="sr-only">
+          {categoriaAtiva ? `Alugar ${categoriaAtiva.name}` : EXPLORAR_TITLE}
+        </h1>
 
         {/* ─── BANNER "COMO ALUGAR" (intent=rent) ─── */}
         {sp.intent === "rent" && <RentBanner />}

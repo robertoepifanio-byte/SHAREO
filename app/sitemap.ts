@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next"
 import { prisma } from "@/lib/prisma"
 import { canonicalItemPath } from "@/lib/item-url"
 import { canonicalStorePath } from "@/lib/store-url"
+import { canonicalCategoryPath } from "@/lib/category-url"
 import { PILOT_CITIES } from "@/lib/pilot-cities"
 import { APP_URL } from "@/lib/app-url"
 
@@ -47,7 +48,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]
 
   const categoryRoutes: MetadataRoute.Sitemap = categories.map((c) => ({
-    url:             `${BASE}/itens?categoryId=${c.id}`,
+    url:             `${BASE}${canonicalCategoryPath(c.id)}`,
     changeFrequency: "daily" as const,
     priority:        0.7,
   }))
