@@ -30,6 +30,8 @@ export async function generateMetadata(
   return {
     title,
     description,
+    // Em desuso: fora do índice e do sitemap (ver app/pilotos/page.tsx).
+    robots: { index: false, follow: true },
     alternates: { canonical: url },
     openGraph: { title, description, url, type: "website" },
     twitter:   { card: "summary_large_image", title, description },
