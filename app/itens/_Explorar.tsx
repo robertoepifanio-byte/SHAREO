@@ -43,6 +43,8 @@ type Props = {
   searchParams: Promise<SearchParams>
   /** Renderizado por `/alugar/[slug]`: não redireciona para a própria URL canônica. */
   viaSlug?:     boolean
+  /** Parágrafo visível sob o título da vitrine de categoria (texto próprio para busca). */
+  intro?:       string
 }
 
 const PAGE_SIZE = 20
@@ -61,7 +63,7 @@ function getOrderBy(sort?: string) {
   }
 }
 
-export async function Explorar({ searchParams, viaSlug = false }: Props) {
+export async function Explorar({ searchParams, viaSlug = false, intro }: Props) {
   const [sp, session] = await Promise.all([
     searchParams,
     auth().catch(() => null),
@@ -339,6 +341,10 @@ export async function Explorar({ searchParams, viaSlug = false }: Props) {
         <h1 className="sr-only">
           {categoriaAtiva ? `Alugar ${categoriaAtiva.name}` : EXPLORAR_TITLE}
         </h1>
+
+        {intro && page === 1 && (
+          <p className="mb-4 max-w-3xl text-sm leading-relaxed text-muted-foreground">{intro}</p>
+        )}
 
         {/* ─── BANNER "COMO ALUGAR" (intent=rent) ─── */}
         {sp.intent === "rent" && <RentBanner />}

@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { prisma } from "@/lib/prisma"
 import { canonicalCategoryPath } from "@/lib/category-url"
+import { categorySeoText } from "@/lib/category-seo"
 import { Explorar, type SearchParams } from "@/app/itens/_Explorar"
 
 type Props = {
@@ -25,7 +26,7 @@ export async function generateMetadata({ params }: Pick<Props, "params">): Promi
 
   return {
     title:       `Alugar ${categoria.name} perto de você`,
-    description: `Encontre ${categoria.name} para alugar perto de você no ShareO. Compare preços e reserve direto com quem já tem.`,
+    description: categorySeoText(categoria).description,
     // Fixo, também com ?sort= ou ?page=: toda variação de filtro conta para esta URL.
     alternates:  { canonical: canonicalCategoryPath(categoria) },
   }
@@ -38,5 +39,5 @@ export default async function AlugarCategoriaPage({ params, searchParams }: Prop
   if (!categoria) notFound()
 
   const sp = await searchParams
-  return <Explorar searchParams={Promise.resolve({ ...sp, categoryId: categoria.id })} viaSlug />
+  return <Explorar searchParams={Promise.resolve({ ...sp, categoryId: categoria.id })} viaSlug intro={categorySeoText(categoria).intro} />
 }

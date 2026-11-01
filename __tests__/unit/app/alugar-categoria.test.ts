@@ -51,7 +51,7 @@ describe("generateMetadata de /alugar/[slug]", () => {
   it("título, descrição e canonical próprios", async () => {
     const m = await meta("ferramentas")
     expect(m.title).toBe("Alugar Ferramentas perto de você")
-    expect(m.description).toContain("Ferramentas")
+    expect(m.description).toContain("furadeira") // texto próprio de `ferramentas`, não o genérico
     expect(m.alternates?.canonical).toBe("/alugar/ferramentas")
     expect(mockCategoryFindFirst).toHaveBeenCalledWith(
       expect.objectContaining({ where: { slug: "ferramentas", parentId: null } }),
