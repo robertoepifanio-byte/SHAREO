@@ -9,6 +9,7 @@ import { ItemCard } from "@/components/items/ItemCard"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { RatingStars } from "@/components/ui/RatingStars"
 import { formatMonthYear } from "@/utils/format"
+import { storeSeoText } from "@/lib/seo-text"
 
 type Props = { params: Promise<{ slug: string }> }
 
@@ -16,16 +17,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
   const user = await getOwner(slug)
   if (!user) return { title: "Vitrine não encontrada" }
+  const seo = storeSeoText(user)
   return {
-    title: `${user.name} — Vitrine`,
-    description: user.bio ?? `Confira os itens disponíveis para aluguel de ${user.name} no ShareO.`,
+    title: seo.title,
+    description: seo.description,
     // Duas URLs servem esta vitrine (id e slug). Sem canonical isso é conteúdo
     // duplicado aos olhos do buscador; com ele, os sinais se consolidam na
     // forma descritiva — a mesma que o sitemap já publica.
     alternates: { canonical: canonicalStorePath(user) },
     openGraph: {
-      title: `${user.name} — Vitrine ShareO`,
-      description: user.bio ?? `Alugue itens de ${user.name} no ShareO.`,
+      title: seo.ogTitle,
+      description: seo.ogDescription,
       // 🪤 O Next NÃO deriva `og:url` do canonical — são campos independentes.
       // Sem esta linha, compartilhar a vitrine no WhatsApp fixaria no preview a
       // URL que a pessoa visitou, divergindo do canonical.

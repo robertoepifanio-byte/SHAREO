@@ -6,6 +6,7 @@ import { PILOT_CITIES, getPilotCity } from "@/lib/pilot-cities"
 import { normalizePlace } from "@/lib/geo/normalize-place"
 import { FounderCaptureForm } from "@/components/home/FounderCaptureForm"
 import { APP_URL } from "@/lib/app-url"
+import { pilotSeoText } from "@/lib/seo-text"
 
 // ISR: as landings mudam pouco; revalida a cada hora.
 export const revalidate = 3600
@@ -23,8 +24,7 @@ export async function generateMetadata(
   const city = getPilotCity(cidade)
   if (!city) return { title: "Cidade não encontrada — Shareo" }
 
-  const title = `Shareo está chegando em ${city.name} (${city.uf}) — entre na lista`
-  const description = `Ganhe renda com o que está parado em casa ou alugue o que precisa de quem é perto de você em ${city.name}. Quanto mais gente de ${city.name} entrar, mais cedo o Shareo abre aí.`
+  const { title, description } = pilotSeoText(city)
   const url = `${BASE}/pilotos/${city.slug}`
 
   return {

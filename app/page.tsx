@@ -17,7 +17,7 @@ import { FAQ } from "@/lib/landing-content"
 import { jsonLdScript } from "@/lib/jsonLd"
 
 export const metadata: Metadata = {
-  title: { absolute: "Aluguel de ferramentas, câmeras e bikes entre pessoas | ShareO" },
+  title: { absolute: "Alugue ferramentas, câmeras e bikes entre pessoas | ShareO" },
   description:
     "Alugue furadeira, câmera, bicicleta e mais de quem mora perto de você, ou ganhe dinheiro alugando o que está parado. Cadastre-se grátis no ShareO.",
 }
