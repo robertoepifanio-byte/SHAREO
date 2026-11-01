@@ -25,6 +25,7 @@ import { formatPrice } from "@/utils/format"
 import { RatingStars } from "@/components/ui/RatingStars"
 import { incrementViewCount } from "@/lib/viewCounter"
 import { APP_URL } from "@/lib/app-url"
+import { itemSeoText, TITLE_SUFFIX } from "@/lib/seo-text"
 
 type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ back?: string; publicado?: string }> }
 
@@ -58,13 +59,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   })
   if (!item) return { title: "Anúncio não encontrado" }
 
-  const description = item.description.slice(0, 160)
-  const location    = [item.city, item.state].filter(Boolean).join(", ")
-  const ogImage     = item.images[0]?.url
+  const { title, description } = itemSeoText(item)
+  const ogImage = item.images[0]?.url
 
   return {
-    title:       item.title,
-    description: `${description}${location ? ` — ${location}` : ""}`,
+    title,
+    description,
     // Duas URLs servem este anúncio (id e slug). Sem canonical isso é conteúdo
     // duplicado aos olhos do buscador; com ele, os sinais de ranqueamento se
     // consolidam na forma descritiva.
@@ -74,7 +74,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       // Sem esta linha, compartilhar o anúncio no WhatsApp fixaria no preview a
       // URL que a pessoa visitou, divergindo do canonical e do JSON-LD.
       url:         canonicalItemPath(item),
-      title:       `${item.title} | ShareO`,
+      title:       `${title}${TITLE_SUFFIX}`,
       description,
       type:        "website",
       locale:      "pt_BR",
@@ -82,7 +82,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card:        "summary_large_image",
-      title:       item.title,
+      title,
       description,
       ...(ogImage && { images: [ogImage] }),
     },
