@@ -100,5 +100,14 @@ export default process.env.SENTRY_AUTH_TOKEN
       silent:                true,
       disableLogger:         true,
       automaticVercelMonitors: true,
+      // O client do Sentry era o maior script próprio do site (~346 KB, ~370 ms de CPU no
+      // Lighthouse mobile). Tira do bundle o que o app não usa: logs de debug e o código de
+      // Session Replay para iframe e Shadow DOM (não há replayIntegration). Tracing fica,
+      // porque tracesSampleRate está em uso.
+      bundleSizeOptimizations: {
+        excludeDebugStatements: true,
+        excludeReplayIframe:    true,
+        excludeReplayShadowDom: true,
+      },
     })
   : config
