@@ -20,7 +20,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }),
     prisma.category.findMany({
       where:  { parentId: null },
-      select: { id: true },
+      select: { slug: true },
     }),
     prisma.user.findMany({
       // 🪤 O sitemap publicava o que a própria página recusa ou não vale
@@ -48,7 +48,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]
 
   const categoryRoutes: MetadataRoute.Sitemap = categories.map((c) => ({
-    url:             `${BASE}${canonicalCategoryPath(c.id)}`,
+    url:             `${BASE}${canonicalCategoryPath(c)}`,
     changeFrequency: "daily" as const,
     priority:        0.7,
   }))
