@@ -26,13 +26,15 @@ interface ItemCardProps {
   showActions?:     boolean
   isFavorited?:     boolean
   hotBadge?:        boolean
+  /** Imagem acima da dobra (candidata a LCP): carrega já, sem `loading="lazy"`. */
+  priority?:        boolean
   toggling?:        boolean
   backHref?:        string
   onDelete?:        (id: string) => void
   onToggleActive?:  (id: string, currentStatus: string) => void
 }
 
-export function ItemCard({ item, showActions = false, isFavorited = false, hotBadge = false, toggling = false, backHref, onDelete, onToggleActive }: ItemCardProps) {
+export function ItemCard({ item, showActions = false, isFavorited = false, hotBadge = false, priority = false, toggling = false, backHref, onDelete, onToggleActive }: ItemCardProps) {
   const imageUrl = item.images[0]?.url
   const price    = formatPrice(item.pricePerDay)
   const location = item.neighborhood
@@ -61,8 +63,9 @@ export function ItemCard({ item, showActions = false, isFavorited = false, hotBa
               src={imageUrl}
               alt={item.title}
               fill
+              priority={priority}
               className="object-cover transition-transform duration-300 group-hover:scale-105"
-              sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
+              sizes="(max-width: 767px) 50vw, (max-width: 1279px) 33vw, 25vw"
             />
           ) : (
             <div className="flex h-full items-center justify-center text-muted-foreground/30">
