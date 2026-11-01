@@ -11,6 +11,7 @@ import { GoogleTagManager } from "@/components/analytics/GoogleTagManager"
 import { Providers } from "@/components/layout/Providers"
 import { jsonLdScript } from "@/lib/jsonLd"
 import { NOINDEX_ENABLED } from "@/lib/seo-flags"
+import { APP_URL } from "@/lib/app-url"
 import "./globals.css"
 
 const montserrat = Montserrat({
@@ -27,18 +28,9 @@ const inter = Inter({
   display:  "swap",
 })
 
-/**
- * `||`, não `??`. O `??` só cai no fallback com null/undefined — e em PR do
- * Dependabot o GitHub NÃO expõe os secrets do repositório, então
- * `NEXT_PUBLIC_APP_URL: ${{ secrets.STAGING_URL }}` chega como STRING VAZIA.
- * Com `??`, `new URL("")` lançava `TypeError: Invalid URL` e o build quebrava
- * em "Failed to collect configuration for /_not-found" — por isso TODO PR do
- * Dependabot estava vermelho, independente do pacote que bumpava.
- *
- * Mesmo defeito do `getHmacKey()` (`??` × `||` com string vazia), corrigido em
- * junho no PR #125. Vale para os 6 pontos que leem NEXT_PUBLIC_APP_URL.
- */
-const BASE = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+// Fonte única da URL pública (lib/app-url.ts): já trata env vazia (PR do Dependabot)
+// e evita o fallback `localhost:3000` que vazava para og:image e JSON-LD.
+const BASE = APP_URL
 
 export const metadata: Metadata = {
   title: {
@@ -48,6 +40,9 @@ export const metadata: Metadata = {
   description:
     "Marketplace de economia circular para aluguel local de itens entre pessoas e empresas em todo o Brasil.",
   metadataBase: new URL(BASE),
+  // "./" resolve para a URL da própria página (sem query). Páginas que declaram
+  // o próprio canonical (item, loja, pilotos) sobrescrevem este.
+  alternates: { canonical: "./" },
   openGraph: {
     type:     "website",
     locale:   "pt_BR",
@@ -78,6 +73,7 @@ export const metadata: Metadata = {
     statusBarStyle:   "default",
   },
   icons: {
+    icon:  "/logos/favicon-32-v4.png",
     apple: "/icons/shareo-logo.png",
   },
 }
@@ -87,7 +83,7 @@ const orgJsonLd = {
   "@type":      "Organization",
   name:         "ShareO",
   url:          BASE,
-  logo:         `${BASE}/shareo-logo.png`,
+  logo:         `${BASE}/logos/shareo-logo.png`,
   description:  "Marketplace de economia circular para aluguel local de itens em todo o Brasil.",
   sameAs:       [],
   contactPoint: {

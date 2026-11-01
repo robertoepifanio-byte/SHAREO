@@ -5,11 +5,12 @@ import { prisma } from "@/lib/prisma"
 import { PILOT_CITIES, getPilotCity } from "@/lib/pilot-cities"
 import { normalizePlace } from "@/lib/geo/normalize-place"
 import { FounderCaptureForm } from "@/components/home/FounderCaptureForm"
+import { APP_URL } from "@/lib/app-url"
 
 // ISR: as landings mudam pouco; revalida a cada hora.
 export const revalidate = 3600
 
-const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://shareo-rouge.vercel.app"
+const BASE = APP_URL
 
 export function generateStaticParams() {
   return PILOT_CITIES.map((c) => ({ cidade: c.slug }))
