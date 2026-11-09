@@ -69,7 +69,6 @@ export default async function FavoritosPage() {
                 key={item.id}
                 item={item}
                 isFavorited={true}
-                backHref="/favoritos"
               />
             ))}
           </div>

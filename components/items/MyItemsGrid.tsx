@@ -146,7 +146,6 @@ export function MyItemsGrid({ initialItems }: MyItemsGridProps) {
               item={item}
               showActions
               toggling={toggling === item.id}
-              backHref="/meus-anuncios"
               onDelete={handleDelete}
               onToggleActive={handleToggleActive}
             />

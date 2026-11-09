@@ -854,7 +854,7 @@ do Raimundo. Ver `docs/juridico/pauta-promessas-remanescentes-2026-09-02.md`.
 
 | # | Atividade | Detalhe |
 |---|---|---|
-| 4 | ✅ **Preservação de contexto de busca** | `ItemCard` passa `?back=` com filtros; detalhe do item usa no link "← Voltar" |
+| 4 | ✅ **Preservação de contexto de busca** | detalhe do item volta à página de origem (guardada em sessionStorage, `lib/origem-anuncio.ts`), sem `?back=` na URL; sem origem cai em `/itens` |
 | 5 | ✅ **Extensão de prazo — UI** | Locatário solicita nova data; proprietário aprova/recusa via banner; chama `POST/PATCH /extend` |
 | 6 | ✅ **Relatório de problema estruturado** | 4 categorias + descrição obrigatória + foto opcional; abre disputa com reason formatada |
 | 7 | ✅ **Prazos de auto-cancelamento hardcoded** | Resolvido 2026-06-12: `getAutoCancelConfig()` (chaves `autoCancelPendingHours`/`autoCancelOwnerHours`); mensagens de notificação dinâmicas. |
