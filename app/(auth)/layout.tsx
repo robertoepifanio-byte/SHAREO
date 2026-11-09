@@ -1,6 +1,13 @@
+import type { Metadata } from "next"
 import type { ReactNode } from "react"
 import Link from "next/link"
 import Image from "next/image"
+
+// Login/cadastro/recuperar senha não têm conteúdo para buscar. Sem isto o Google
+// indexa variações (?callbackUrl=) como "cópia sem canônica".
+export const metadata: Metadata = {
+  robots: { index: false, follow: true },
+}
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
