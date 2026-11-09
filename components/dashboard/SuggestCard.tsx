@@ -1,5 +1,5 @@
 import Image from "next/image"
-import Link from "next/link"
+import { AnuncioLink } from "@/components/items/AnuncioLink"
 
 interface Props {
   item: {
@@ -8,18 +8,17 @@ interface Props {
     pricePerDay: number
     images:     { url: string }[]
   }
-  backHref?: string
 }
 
 const fmt = (cents: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100)
 
-export function SuggestCard({ item, backHref }: Props) {
+export function SuggestCard({ item }: Props) {
   const imageUrl = item.images[0]?.url
 
   return (
-    <Link
-      href={`/itens/${item.id}${backHref ? `?back=${encodeURIComponent(backHref)}` : ""}`}
+    <AnuncioLink
+      href={`/itens/${item.id}`}
       className="group min-w-[140px] overflow-hidden rounded-xl border border-border bg-surface transition-shadow hover:shadow-md flex-shrink-0"
       aria-label={item.title}
     >
@@ -51,6 +50,6 @@ export function SuggestCard({ item, backHref }: Props) {
           <span className="text-[10px] font-normal text-muted-foreground">/dia</span>
         </p>
       </div>
-    </Link>
+    </AnuncioLink>
   )
 }

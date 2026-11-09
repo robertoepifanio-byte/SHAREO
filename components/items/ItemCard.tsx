@@ -1,6 +1,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { FavoriteButton } from "./FavoriteButton"
+import { AnuncioLink } from "./AnuncioLink"
 import { formatPrice } from "@/utils/format"
 import { RatingStars } from "@/components/ui/RatingStars"
 
@@ -29,12 +30,11 @@ interface ItemCardProps {
   /** Imagem acima da dobra (candidata a LCP): carrega já, sem `loading="lazy"`. */
   priority?:        boolean
   toggling?:        boolean
-  backHref?:        string
   onDelete?:        (id: string) => void
   onToggleActive?:  (id: string, currentStatus: string) => void
 }
 
-export function ItemCard({ item, showActions = false, isFavorited = false, hotBadge = false, priority = false, toggling = false, backHref, onDelete, onToggleActive }: ItemCardProps) {
+export function ItemCard({ item, showActions = false, isFavorited = false, hotBadge = false, priority = false, toggling = false, onDelete, onToggleActive }: ItemCardProps) {
   const imageUrl = item.images[0]?.url
   const price    = formatPrice(item.pricePerDay)
   const location = item.neighborhood
@@ -52,8 +52,8 @@ export function ItemCard({ item, showActions = false, isFavorited = false, hotBa
         !isAvailable ? "opacity-60" : "",
       ].join(" ")}
     >
-      <Link
-        href={`/itens/${item.id}${backHref ? `?back=${encodeURIComponent(backHref)}` : ""}`}
+      <AnuncioLink
+        href={`/itens/${item.id}`}
         className="block flex-1 rounded-t-lg outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
       >
         {/* Imagem */}
@@ -144,7 +144,7 @@ export function ItemCard({ item, showActions = false, isFavorited = false, hotBa
             )}
           </div>
         </div>
-      </Link>
+      </AnuncioLink>
 
       {/* Ações do proprietário */}
       {showActions && (

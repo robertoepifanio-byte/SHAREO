@@ -26,8 +26,9 @@ import { RatingStars } from "@/components/ui/RatingStars"
 import { incrementViewCount } from "@/lib/viewCounter"
 import { APP_URL } from "@/lib/app-url"
 import { itemSeoText, TITLE_SUFFIX } from "@/lib/seo-text"
+import { BackToResultsLink } from "./_BackToResultsLink"
 
-type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ back?: string; publicado?: string }> }
+type Props = { params: Promise<{ id: string }>; searchParams: Promise<{ publicado?: string }> }
 
 const CONDITION_LABEL: Record<string, string> = {
   NEW:       "Novo",
@@ -91,7 +92,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ItemDetailPage({ params, searchParams }: Props) {
   const [{ id }, sp] = await Promise.all([params, searchParams])
-  const backHref = sp.back ? decodeURIComponent(sp.back) : "/itens"
 
   const [item, session] = await Promise.all([
     prisma.item.findFirst({
@@ -295,12 +295,7 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
       {/* P1-33 — Barra de volta + P1-30 Breadcrumb */}
       <div className="border-b border-border bg-surface">
         <div className="container py-3 flex flex-col gap-1">
-          <Link
-            href={backHref}
-            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            ← Voltar para resultados
-          </Link>
+          <BackToResultsLink />
           {/* P1-30 — Breadcrumb acessível */}
           <nav aria-label="Breadcrumb">
             <ol className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">

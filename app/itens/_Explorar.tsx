@@ -544,7 +544,7 @@ export async function Explorar({ searchParams, viaSlug = false, intro }: Props) 
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
                     {items.map((item, i) => (
                       // Os dois primeiros cobrem a primeira linha no celular (2 colunas): é onde está o LCP.
-                      <ItemCard key={item.id} item={item} backHref={buildUrl({ page })} priority={i < 2} />
+                      <ItemCard key={item.id} item={item} priority={i < 2} />
                     ))}
                   </div>
                   {totalPages > 1 && (
