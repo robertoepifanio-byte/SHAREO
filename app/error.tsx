@@ -152,7 +152,7 @@ export default function Error({
       {/* Link de suporte */}
       <p className="mt-8 text-xs text-muted-foreground">
         O problema persiste?{" "}
-        <Link href="/contato" className="text-brand hover:underline">
+        <Link href="/suporte" className="text-brand hover:underline">
           Fale com o suporte
         </Link>
       </p>

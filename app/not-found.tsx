@@ -66,7 +66,7 @@ export default function NotFound() {
       {/* Link de suporte */}
       <p className="mt-8 text-xs text-muted-foreground">
         Precisa de ajuda?{" "}
-        <Link href="/contato" className="text-brand hover:underline">
+        <Link href="/suporte" className="text-brand hover:underline">
           Entre em contato
         </Link>
       </p>

@@ -37,7 +37,7 @@ export function StickyBookingCTA({ pricePerDay, isLoggedIn, itemId }: Props) {
   // existe. Não logado: manda para o login e volta ao item.
   const href = isLoggedIn
     ? `#price-calc`
-    : `/login?next=/itens/${itemId}`
+    : `/login?callbackUrl=/itens/${itemId}`
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (!isLoggedIn) return // deixa o link de login navegar normalmente
