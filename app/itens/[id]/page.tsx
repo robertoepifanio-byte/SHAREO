@@ -253,6 +253,7 @@ export default async function ItemDetailPage({ params, searchParams }: Props) {
       "@type":         "Offer",
       priceCurrency:   "BRL",
       price:           (item.pricePerDay / 100).toFixed(2),
+      itemCondition:   "https://schema.org/UsedCondition",
       priceSpecification: {
         "@type":           "UnitPriceSpecification",
         price:             (item.pricePerDay / 100).toFixed(2),
